@@ -1,0 +1,327 @@
+.formContainer {
+    margin: 0;
+}
+
+.inputField,
+.textareaField,
+.selectField {
+    width: 100%;
+    max-width: 500px;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+    color: #333;
+    /* Ensure consistent text color */
+}
+
+.fieldsetContainer {
+    margin-bottom: 20px;
+    padding: 20px;
+    border: 1px solid #ccc;
+}
+
+.legendText {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.labelText {
+    display: block;
+    margin-bottom: 5px;
+    text-align: left;
+    font-family: 'Poppins', sans-serif;
+    color: #333;
+    /* Ensure consistent text color */
+}
+
+.title {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.subtitle {
+    text-align: center;
+    margin-bottom: 40px;
+    margin-top: 20px;
+}
+
+.ageRangeContainer {
+    display: flex;
+    align-items: center;
+}
+
+.ageRangeSeparator {
+    margin: 0 10px;
+    font-size: 0.9em;
+}
+
+.manualOptions {
+    display: flex;
+    flex-direction: column;
+    /* Stack placements vertically */
+    margin-bottom: 20px;
+    /* Extra space between platforms */
+}
+
+.optionContainer {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.checkbox {
+    margin-right: 10px;
+}
+
+.optionHeading {
+    font-weight: bold;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.MuiCheckbox-root {
+    color: #5356FF;
+}
+
+.MuiCheckbox-root.Mui-checked {
+    color: #5356FF !important;
+}
+
+.button {
+    background-color: #007bff;
+    color: #fff;
+    padding: 10px 20px;
+    margin: 10px 5px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-weight: 600;
+}
+
+.budgetOptimizationToggle {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    margin-bottom: 30px;
+    width: 100%;
+}
+
+.toggleButton {
+    flex: 0 0 auto;
+    padding: 10px 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #ffffff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    color: #5356FF;
+    margin-right: 0;
+}
+
+.toggleButton:first-child {
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+}
+
+.lastButton {
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+
+.optimizationLabel {
+    font-size: 14px;
+    color: #050315B2;
+    margin-left: 20px;
+    margin-top: 10px;
+    display: block;
+}
+
+.toggleButton.active {
+    background-color: #5356FF;
+    color: #fff;
+}
+
+.sectionBox {
+    padding: 0 15px;
+}
+
+.sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    cursor: pointer;
+}
+
+.sectionHeader h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 400;
+    color: #1E1E1E;
+    margin-bottom: 10px;
+}
+
+.toggleIcon {
+    width: 10px;
+    height: 16px;
+    transition: transform 0.3s ease;
+}
+
+.toggleIcon.expanded {
+    transform: rotate(180deg);
+}
+
+.sectionContent {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    padding: 15px 0;
+}
+
+.sectionDivider {
+    border-top: 1px solid #ccc;
+    margin-left: -15px;
+    margin-right: -15px;
+}
+
+.column {
+    flex: 0 0 48%;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+}
+
+.column label {
+    font-size: 14px;
+    color: #1E1E1E;
+    margin-bottom: 5px;
+    text-align: left;
+}
+
+.column input,
+.column select {
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+    border-radius: 5px;
+    box-sizing: border-box;
+    color: #333;
+    /* Ensure consistent text color */
+}
+
+/* Additional styles for the Placements section */
+.placementToggle {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.placementToggle .toggleButton {
+    padding: 8px 16px;
+}
+
+.manualOptions.disabled {
+    opacity: 0.5;
+}
+
+@media (max-width: 768px) {
+    .column {
+        flex: 0 0 100%;
+        /* Make columns full width on smaller screens */
+    }
+}
+
+@media (max-width: 520px) {
+    .toggleButton {
+        font-size: 12px;
+        padding: 8px 12px;
+    }
+
+    .sectionHeader h3 {
+        font-size: 14px;
+        margin-bottom: 0px;
+    }
+
+    .column label {
+        font-size: 12px;
+    }
+
+    .column input,
+    .column select {
+        font-size: 12px;
+        padding: 8px;
+    }
+
+    .optimizationLabel {
+        font-size: 12px;
+        margin-left: 10px;
+    }
+}
+
+@media (max-width: 768px) {
+    .manualOptions {
+        flex-direction: column;
+        /* Keep placements in a single column on smaller screens */
+    }
+}
+
+@media (min-width: 769px) {
+    .manualOptions {
+        flex-direction: column;
+        /* Still a single column on larger screens */
+    }
+}
+
+.sectionDivider2 {
+    border: 0;
+    border-top: 1px solid #ccc;
+    height: 0;
+    width: 100%;
+    margin: 16px 0;
+}
+
+.platformContainer {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+@media (max-width: 768px) {
+    .platformContainer {
+        flex-direction: row;
+        /* Ensure platforms are in a row on smaller screens */
+        flex-wrap: wrap;
+        /* Allow wrapping if necessary */
+    }
+
+    .platformContainer .MuiFormControlLabel-root {
+        margin-right: 10px;
+        /* Add some spacing between items in the row */
+    }
+}
+
+.platformContainer.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.blurredField {
+    opacity: 0.5;
+    pointer-events: none;
+    /* Prevent interaction */
+}
+
+.disabledButton {
+    background-color: #d3d3d3;
+    /* Grey background */
+    color: #808080;
+    /* Grey text */
+    cursor: not-allowed;
+    /* Disabled cursor */
+    opacity: 0.6;
+}

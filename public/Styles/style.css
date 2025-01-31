@@ -1,0 +1,121 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Poppins, sans-serif;
+}
+
+.main-container {
+    display: flex;
+    max-width: 100vw;
+    width: 100%;
+    background-color: #fff;
+}
+
+.main-content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    width: 100%;
+    border-bottom: 1px solid black;
+}
+
+header nav {
+    height: 80px;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    background-color: #fff;
+}
+
+header nav .profile img {
+    width: 40px;
+    height: 40px;
+    margin-right: 30px;
+    cursor: pointer;
+}
+
+main {
+    padding: 20px;
+    margin-left: 290px;
+}
+
+/* Nav Porfile Toggle Dropdown */
+.dropdown-menu {
+    font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+    position: absolute;
+    top: 60px;
+    right: 50px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    width: 200px;
+    z-index: 1000;
+    padding: 5px;
+    display: none;
+    /* Hide initially */
+}
+
+.dropdown-menu.open {
+    display: block;
+
+    /* Show when 'open' class is added */
+}
+
+.dropdown-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #333;
+    margin: 2px;
+    font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+
+}
+
+.linktag {
+    text-decoration: none;
+
+}
+
+.dropdown-item1 {
+    font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+
+    padding: 10px 15px;
+    white-space: nowrap;
+    font-size: 14px;
+    color: #333;
+    margin: 2px;
+}
+
+.dropdown-item:hover {
+    background-color: #5356FF;
+    color: white;
+    border-radius: 7px;
+}
+
+.dropdown-item:not(:last-child) {
+    border-bottom: 1px solid #ddd;
+}
+
+
+
+
+/* Responsive */
+@media screen and (max-width: 768px) {
+    main {
+        padding: 20px;
+        margin-left: 0;
+    }
+
+    header nav .profile img {
+        margin-right: 10px;
+    }
+}

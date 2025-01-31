@@ -1,0 +1,101 @@
+/* Interaction Blocking Overlay */
+.interactionBlockingOverlay {
+  position: fixed;
+  top: 0;
+  left: calc(50% - 310px); /* Center the overlay based on modal width */
+  width: 620px; /* Match modal width */
+  height: auto; /* Full height of the screen */
+  background-color: transparent; /* Invisible overlay */
+  z-index: 999; /* Below the modal */
+  pointer-events: auto; /* Block interactions within modal width */
+}
+
+/* Modal Container Styles */
+.modalContainer {
+  position: absolute;
+  top: 20px;
+  left: calc(50% + 125px); /* Shift it right by half the sidebar's width */
+  transform: translateX(-50%);
+  width: 100%; /* Ensure it takes the full width of the screen */
+  display: flex;
+  justify-content: center;
+  z-index: 10000;
+  pointer-events: none; /* Prevent interaction outside modal */
+}
+
+@media (max-width: 960px) {
+  .modalContainer {
+    left: 50%; /* Center on smaller screens */
+  }
+}
+
+/* Modal Box Styles */
+.modal {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  padding: 15px 20px;
+  max-width: 620px; /* Only the modal is 620px, not the entire container */
+  width: 100%; /* Modal width */
+  text-align: center;
+  position: relative;
+  pointer-events: auto; /* Enable interactions within the modal */
+  z-index: 10001; /* Above everything, including overlay */
+}
+
+.closeIcon {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+  color: #000000;
+}
+
+.closeIcon:hover {
+  color: #000000;
+}
+
+.modalHeading {
+  font-size: 22px;
+  font-weight: 500;
+  color: #000000;
+  margin-bottom: 5px;
+  padding-top: 5px;
+}
+
+.modalMessage {
+  font-size: 16px;
+  color: #666666;
+  margin-bottom: 15px;
+}
+
+/* Form-specific container */
+.formContainer {
+  max-height: 600px; /* Apply this only to the form content */
+  overflow-y: auto;
+}
+
+.buttonContainer {
+  display: flex;
+  justify-content: center;
+}
+
+.setupButton {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background-color: #5356FF;
+  color: #ffffff;
+  transition: background-color 0.3s ease;
+}
+
+.setupButton:hover {
+  background-color: #4044C9;
+}

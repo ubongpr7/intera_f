@@ -1,0 +1,264 @@
+/* General Container Styles */
+.formContainer {
+  text-align: center;
+  font-family: 'Poppins', sans-serif;
+  width: 100%; /* Make the container width 100% */
+  max-width: 600px; /* Max width remains 600px */
+  margin: 20px auto; 
+  padding: 20px;
+  background-color: #fff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box; /* Ensure padding is included in the width */
+  overflow-y: auto; /* Enable vertical scrolling */
+}
+
+/* Parent Container Styling */
+.parentContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0; /* Ensure no extra padding */
+  margin: 0; /* Ensure no extra margins */
+}
+
+/* Header Styles */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.goBackIcon {
+  cursor: pointer;
+  margin-right: 15px;
+  width: 10px;
+  height: 16px;
+  margin-bottom: 10px;
+}
+
+/* Title and Subtitle Styles */
+.title {
+  font-size: 24px;
+  font-weight: 500;
+  color: #000000;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #666;
+  text-align: center;
+  width: 100%;
+}
+
+/* Tutorial Video Styling */
+.tutorialVideo {
+  width: 80%;
+  height: 250px;
+  background-color: #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 20px auto;
+  font-weight: 400;
+  font-size: 22px;
+  color: #050315B2;
+  margin-top: 40px;
+  margin-bottom: 40px;
+}
+
+.formSectionsContainer {
+  border: 1px solid #ccc; 
+  border-radius: 8px;
+  background-color: #fff;
+  margin: 0 auto; /* Center container */
+  width: 100%; /* Full width of the parent container */
+  max-width: 600px; /* Define a maximum width to prevent overflow */
+  box-sizing: border-box; /* Include padding/border in width calculations */
+}
+
+
+/* Section Box Styles */
+.sectionBox {
+  padding: 0 15px; /* Padding inside each section box */
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  cursor: pointer;
+}
+
+.sectionHeader h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 400;
+  color:#1E1E1E;
+  padding: 10px 0;
+}
+
+.toggleIcon {
+  width: 10px;
+  height: 16px;
+  transition: transform 0.3s ease;
+}
+
+.toggleIcon.expanded {
+  transform: rotate(180deg);
+}
+
+.sectionContent {
+  padding: 15px 0;
+}
+
+.sectionDivider {
+  border-top: 1px solid #ccc;
+  margin: 0;
+}
+
+/* Upload Box Styling */
+.uploadBox {
+  width: 100%;
+  height: 200px;
+  border: 2px dashed #19191980;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  position: relative;
+  background-color: #EEEEEE;
+}
+
+.uploadIcon {
+  position: absolute;
+  top: 20px;
+  width: 40px;
+  height: 40px;
+  margin-top: 25px;
+}
+
+.uploadBox p {
+  color: #050315B2;
+  margin-top: 100px; 
+  margin-bottom: 35px;
+}
+
+.hiddenFileInput {
+  display: none;
+}
+
+/* Input Field Styling */
+.inputField {
+  width: 100%; /* Ensure input fields are 100% width */
+  max-width: 420px; /* Maximum width of 420px */
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+/* Button Container Styling */
+.buttonContainer {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.createAdButton, .goBackButton {
+  margin-right: 10px;
+  background-color: #5356FF;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-weight: 600;
+  height: 40px;
+  line-height: normal;
+}
+
+.createAdButton:hover {
+  background-color: #4044C9;
+}
+
+.goBackButton {
+  background-color: #050315;
+}
+
+.goBackButton:hover {
+  background-color: #0e0933;
+}
+
+/* Responsive Styling */
+@media (max-width: 520px) {
+  .formContainer {
+    width: 100%; /* Ensure it fits within the parent container */
+    padding: 15px; /* Adjust padding for smaller screens */
+  }
+
+  .header h2 {
+    font-size: 20px;
+  }
+
+  .inputField {
+    width: 100%; /* Make input fields full width */
+  }
+}
+
+@media (max-width: 768px) {
+  .column {
+    flex: 0 0 100%; /* Switch to a single-column layout */
+  }
+}
+
+@media (max-width: 520px) {
+  .toggleButton {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+  
+  .sectionHeader h3 {
+    font-size: 14px;
+  }
+
+  .column label {
+    font-size: 12px;
+  }
+
+  .column input,
+  .column select {
+    font-size: 12px;
+    padding: 8px;
+  }
+}
+
+@media (max-width: 520px) {
+  .createAdButton, .goBackButton {
+    font-size: 11px; /* Adjust font size for smaller screens */
+    padding: 4px 12px; /* Adjust padding for smaller screens */
+    height: 36px; /* Adjust height for smaller screens */
+  }
+}
+
+@media (min-width: 630px) {
+  .formSectionsContainer {
+    min-width: 550px;
+  }
+  
+}

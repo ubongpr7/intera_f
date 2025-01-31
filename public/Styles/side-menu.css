@@ -1,0 +1,265 @@
+.sidebarContainer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 260px;
+    background-color: #1E1E1E;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px;
+    overflow-y: auto;
+    z-index: 1000;
+    transition: transform 0.3s ease-in-out;
+}
+
+.open {
+    transform: translateX(0);
+}
+
+.hamburgerIcon {
+    display: none;
+}
+
+@media (max-width: 960px) {
+    .hamburgerIcon {
+        display: block;
+        font-size: 24px;
+        cursor: pointer;
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 1100;
+    }
+}
+
+.logoImage {
+    margin-top: 10px;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    margin-bottom: 30px;
+}
+
+.horizontalRule {
+    border: 0;
+    height: 1px;
+    background-color: #FFFFFF1A;
+    width: 80%;
+    margin: 10px auto;
+}
+
+.accountsContainer {
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.accountButton {
+    background-color: #1E1E1E;
+    color: white;
+    border: none;
+    padding: 5px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    border-radius: 8px;
+    text-align: left;
+    width: 85%;
+    margin: 8px auto;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.accountButton2 {
+    background-color: #1E1E1E;
+    color: white;
+    border: none;
+    padding: 5px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    border-radius: 8px;
+    text-align: left;
+    width: 85%;
+    margin: 8px auto;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #5356FF;
+}
+
+.accountButton2:hover {
+    background-color: #4044C9;
+}
+
+.icon {
+    margin-right: 15px;
+    width: 18px;
+    height: 18px;
+}
+
+.accountActive {
+    background-color: #5356FF;
+}
+
+.sectionTitle {
+    font-family: 'Poppins', sans-serif;
+    font-size: 15px;
+    margin: 20px 0 10px;
+}
+
+.input {
+    background-color: #1E1E1E;
+    color: #AEAEAE;
+    border: none;
+    padding: 4px;
+    width: 100%;
+    border-radius: 5px;
+}
+
+.input:focus {
+    outline: none;
+    background-color: #1E1E1E;
+}
+
+.dropdownSection {
+    display: flex;
+    flex-direction: column;
+}
+
+.sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.sectionTitle {
+    font-family: 'Poppins', sans-serif;
+    font-size: 18px;
+    margin-top: 10px;
+    margin-left: 20px;
+}
+
+.dropdownIcon {
+    transition: transform 0.3s ease;
+    margin-right: 35px;
+}
+
+.rotated {
+    transform: rotate(180deg);
+}
+
+.dropdownContent {
+    display: flex;
+    flex-direction: column;
+}
+
+.inlineContainer {
+    display: flex;
+    align-items: center;
+    /* Vertically align the input and span */
+}
+
+.lab {
+    margin-right: -45px;
+    /* Add spacing between the label and input */
+}
+
+.horizontalRule1 {
+    border: 0;
+    height: 1px;
+    background-color: #AEAEAE;
+    width: 95%;
+}
+
+.input::placeholder {
+    color: #AEAEAE;
+}
+.inputtext{
+    font-size: 15px;
+}
+.input1 {
+    font-size: 14px !important;
+    margin-top: 10px;
+}
+
+.hidden {
+    visibility: hidden;
+    /* height: 0; */
+}
+
+.upgradeButton {
+    background-color: transparent;
+    color: #FFFFFF;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    padding: 10px 20px;
+    cursor: pointer;
+    border: 1px solid;
+    border-image-source: linear-gradient(90deg, #5356FF 0%, #378CE7 50%, #67C6E3 100%);
+    border-image-slice: 1;
+    width: 80%;
+    transition: background-image 0.5s ease-in-out;
+    display: block;
+    margin: 10px auto;
+    border-radius: 8px;
+    text-decoration: none;
+    text-align: center;
+}
+
+.linktag{
+    text-decoration: none;
+
+}
+.upgradeButton:hover {
+    background-image: linear-gradient(90deg, #5356FF 0%, #378CE7 50%, #67C6E3 100%);
+}
+
+
+
+.upgradeButton {
+    animation: gradientAnimation 2s infinite;
+}
+
+.footer {
+    margin-top: 10px;
+    padding-bottom: 10px;
+    color: #FFFFFF;
+    font-family: 'Poppins', sans-serif;
+    font-size: 10px;
+    text-align: center;
+    align-self: center;
+}
+
+@media (max-width: 960px) {
+    .sidebarContainer {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease-in-out;
+        width: 290px;
+    }
+
+    .open {
+        transform: translateX(0);
+    }
+
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 900;
+    }
+}

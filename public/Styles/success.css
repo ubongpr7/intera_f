@@ -1,0 +1,89 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap");
+
+:root {
+    --font-primary: "Poppins", sans-serif;
+}
+.forclr{
+    background-color: #fff;
+}
+.paymentSuccess {
+    display: flex;
+    justify-content: flex-start;
+    /* Align towards the top */
+    align-items: center;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #fff;
+    padding: 40px 20px;
+    /* Add padding to the top and reduce side padding for responsiveness */
+    font-family: var(--font-primary);
+}
+
+.successMessageContainer {
+    text-align: center;
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+    /* Center the container */
+    padding: 20px;
+    box-sizing: border-box;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.successHeading {
+    font-size: 24px;
+    font-weight: 700;
+    color: #050315;
+    margin-bottom: 12px;
+}
+
+.successText {
+    font-size: 16px;
+    color: #667085;
+    margin-bottom: 32px;
+}
+
+.successButton {
+    padding: 12px 16px;
+    border-radius: 5px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    background-color: #5356FF;
+    color: white;
+    border: none;
+    font-weight: 600;
+}
+
+.successButton:hover {
+    background-color: #4044C9;
+}
+
+/* Media Query for smaller screens */
+@media (max-width: 768px) {
+    .paymentSuccess {
+        padding: 20px;
+        /* Reduce padding on smaller screens */
+    }
+
+    .successHeading {
+        font-size: 24px;
+        /* Adjust font size for smaller screens */
+    }
+
+    .successText {
+        font-size: 16px;
+        /* Adjust font size for smaller screens */
+    }
+
+    .successButton {
+        font-size: 12px;
+        /* Adjust button size for smaller screens */
+        padding: 10px 14px;
+    }
+}

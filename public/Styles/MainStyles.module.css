@@ -1,0 +1,286 @@
+
+.formContainer {
+    text-align: center;
+    font-family: 'Poppins', sans-serif;
+    width: 80%;
+    max-width: 600px; 
+    margin: 20px auto; 
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+  }
+  
+  .heading {
+    font-size: 27px;
+    margin-bottom: 20px;
+    font-weight: 500;
+    color: #000000;
+  }
+  
+  .objectiveContainer {
+    margin-top: 65px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 50px;
+  }
+  
+  .objective {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border: 2px solid #E5E5E5;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s, border-color 0.3s;
+  }
+  
+  .objective.selected {
+    border: 2px solid;
+    border-image: linear-gradient(to right, #5356FF, #378CE7, #67C6E3) 1;
+    border-radius: 8px;
+  }
+  
+  .objective:hover {
+    background-color: #f0f0f0; /* Grey background on hover */
+  }
+  
+  .icon {
+    margin-right: 15px;
+  }
+  
+  .content h3 {
+    font-size: 18px;
+    font-weight: 500;
+    margin: 0;
+    color: #000000;
+    text-align: left;
+  }
+  
+  .content p {
+    font-size: 14px;
+    color: #666;
+    margin: 5px 0 0;
+  }
+  
+  .campaignTypeContainer {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    margin-top: 30px;
+  }
+  
+  .campaignTypeButton {
+    width: 48%;
+    padding: 10px;
+    background-color: #ffffff;
+    border: 2px solid #E5E5E5;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #000000;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s, border-color 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: 'Poppins', sans-serif;
+    text-align: left;
+  }
+  
+  .campaignTypeButton.selected {
+    border: 2px solid;
+    border-image: linear-gradient(to right, #5356FF, #378CE7, #67C6E3) 1;
+    border-radius: 8px;
+  }
+  
+  .campaignTypeButton:hover {
+    background-color: #E5E5E5;
+  }
+  
+  .nextButton {
+    margin-top: 20px;
+    width: 100%;
+    padding: 12px;
+    background-color: #5356FF;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-weight: 400;
+    font-family: 'Poppins', sans-serif;
+  }
+  
+  .nextButton:hover {
+    background-color: #4044C9;
+  }
+  
+  /* Mobile Responsive Adjustments */
+  @media (max-width: 768px) {
+    .formContainer {
+      width: 90%; /* Adjust the width to fit better on smaller screens */
+      padding: 15px;
+    }
+  
+    .heading {
+      font-size: 24px; /* Slightly reduce the heading size */
+    }
+  
+    .objective {
+      flex-direction: column; /* Stack content vertically on smaller screens */
+      text-align: left;
+    }
+  
+    .icon {
+      margin-right: 0; /* Remove right margin when stacked vertically */
+      margin-bottom: 10px; /* Add margin to separate icon from text */
+    }
+  
+    .content h3 {
+      font-size: 16px; /* Adjust font size for smaller screens */
+    }
+  
+    .content p {
+      font-size: 13px; /* Adjust font size for smaller screens */
+    }
+  
+    .campaignTypeContainer {
+      flex-direction: column; /* Stack buttons vertically */
+      gap: 10px;
+    }
+  
+    .campaignTypeButton {
+      width: 100%; /* Make buttons full-width */
+    }
+  
+    .nextButton {
+      font-size: 14px; /* Adjust button text size */
+      padding: 10px; /* Adjust button padding */
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .formContainer {
+      width: 95%; /* Further adjust width for very small screens */
+      padding: 10px;
+    }
+  
+    .heading {
+      font-size: 22px; /* Further reduce heading size */
+    }
+  
+    .content h3 {
+      font-size: 15px; /* Adjust font size for smaller screens */
+    }
+  
+    .content p {
+      font-size: 12px; /* Adjust font size for smaller screens */
+    }
+  
+    .nextButton {
+      font-size: 13px; /* Further adjust button text size */
+      padding: 8px; /* Further adjust button padding */
+    }
+  }
+  
+  /* MainDropdown.module.css */
+  
+  .dropdownContainer {
+    position: relative;
+    width: 80%;
+    max-width: 100%;
+    margin: 0 auto; /* Center the dropdown container */
+  }
+  
+  .dropdown,
+  .dropdownHeader {
+    width: 100%;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    background-color: white;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    outline: none;
+  }
+  
+  .dropdown:hover,
+  .dropdownHeader:hover {
+    border-color: #6C63FF; /* Purple border on hover */
+  }
+  
+  .dropdown:focus,
+  .dropdownHeader:focus {
+    border-color: #6C63FF;
+    box-shadow: 0 0 5px rgba(108, 99, 255, 0.5);
+  }
+  
+  .dropdownList {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: white;
+    border: 1px solid #ccc;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  
+  .dropdownItem {
+    padding: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+  }
+  
+  .dropdownItem:hover {
+    background-color: #f0f0f0;
+  }
+  
+  .dropdownItem input {
+    margin-right: 10px;
+  }
+  
+  .cancelButton {
+    background-color: #5356FF;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-weight: 600;
+    cursor: pointer;
+    color: white;
+    border: none;
+    margin-top: 15px;
+  }
+  
+  .cancelButton:hover {
+    background-color: #4044C9;
+  }
+  
+  @media (max-width: 520px) {
+    .cancelButton {
+      font-size: 11px;
+      padding: 8px 10px;
+    }
+  }
+  
+  /* ProgressBar.module.css */
+  .progressContainer {
+    text-align: center;
+    font-family: 'Poppins', sans-serif;
+    width: 80%;
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+  }
