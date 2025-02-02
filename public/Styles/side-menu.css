@@ -2,19 +2,44 @@
     position: fixed;
     top: 0;
     left: 0;
-    height: 100%;
+    height: 100vh; /* Full height of viewport */
     width: 260px;
     background-color: #1E1E1E;
     color: #fff;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    align-items: flex-start; /* Align content to the start */
+    justify-content: flex-start; /* Stack items at the top */
     padding: 20px;
-    overflow-y: auto;
+    overflow-y: auto; /* Enable scrolling if content exceeds height */
     z-index: 1000;
     transition: transform 0.3s ease-in-out;
+    gap: 10px; /* Controls spacing between items */
 }
 
+/* Scrollbar styling for better appearance */
+.sidebarContainer::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebarContainer::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+}
+
+.sidebarContainer::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* Ensure child elements do not expand unexpectedly */
+.sidebarContainer > * {
+    flex-shrink: 0; /* Prevent elements from stretching */
+    width: 100%; /* Make items take full width */
+}
+
+.formargin{
+    /* margin-top: 113%; */
+}
 .open {
     transform: translateX(0);
 }

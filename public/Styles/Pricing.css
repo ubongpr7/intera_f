@@ -239,7 +239,7 @@
 @media (max-width: 768px) {
     .pricingSection {
         padding-inline: 24px;
-        padding-block: 43px;
+        padding-block: 0px;
     }
 
     .priceHeading {
