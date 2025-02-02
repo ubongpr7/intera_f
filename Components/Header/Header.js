@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import "/public/Styles/side-menu.css";
+import "./SidebarWithHeader.module.css";
 
 const SidebarWithHeader = () => {
     const [activeAccount, setActiveAccount] = useState(1);
