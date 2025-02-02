@@ -3,10 +3,9 @@ import React, { useState, useEffect } from "react";
 import "/public/Styles/side-menu.css";
 import "/public/Styles/style.css";
 import "/public/Styles/home.css";
-// import "/public/Styles/font.css";
 
 import Header from "@/Components/Header/Header";
-import Sidebar from "@/Components/Sidebar/Sidebar";
+import Link from "next/link";
 
 const Page = () => {
   const [selectedObjective, setSelectedObjective] = useState("Website Conversions");
@@ -64,7 +63,6 @@ const Page = () => {
 
   return (
     <div className="forclr">
-        <Sidebar />
           <Header />
       <div className="main-container">
         <div className="main-content" id="content">
@@ -155,12 +153,7 @@ const Page = () => {
                   </div>
                 )}
 
-                <button
-                  className="nextButton"
-                  onClick={() => (window.location.href = "CampaignForm.html")}
-                >
-                  Next
-                </button>
+                <Link href="/campaign_form"><button className="nextButton">Next</button></Link>
               </div>
             </div>
           </main>
