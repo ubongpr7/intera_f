@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 
-const CampaignForm = () => {
+const CampaignFormComp = () => {
     const [selectedObjective, setSelectedObjective] = useState(null);
     const [selectedCampaign, setSelectedCampaign] = useState(null);
     const [dropdownVisible, setDropdownVisible] = useState(false);
@@ -74,4 +74,4 @@ const CampaignForm = () => {
     );
 };
 
-export default CampaignForm;
+export default CampaignFormComp;
