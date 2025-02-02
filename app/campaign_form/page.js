@@ -327,13 +327,13 @@ const CampaignForm = ({
                         <button type="submit" className={styles.createAdButton}>
                             {isNewCampaign ? "Create Campaign" : "Create Ad Set"}
                         </button>
-                        <button
+                        <Link href="/main"><button
                             type="button"
                             className={styles.goBackButton}
                             onClick={onGoBack}
                         >
                             Cancel
-                        </button>
+                        </button></Link>
                         <button
                             type="button"
                             onClick={handleSaveConfig}

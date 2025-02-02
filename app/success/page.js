@@ -13,13 +13,13 @@ const page = () => {
     <div className='forclr'>
       <Sidebar />
       <Header />
-      <div class="main-container">
-        <div class="main-content" id="content"> 
+      <div className="main-container">
+        <div className="main-content" id="content"> 
           <main>
-            <div class="content">
-              <div class="paymentSuccess">
-                <div class="successMessageContainer">
-                  <h2 class="successHeading">Subscription Successful!</h2>
+            <div className="content">
+              <div className="paymentSuccess">
+                <div className="successMessageContainer">
+                  <h2 className="successHeading">Subscription Successful!</h2>
                   <p className="successText">
                     Thank you for your subscription. Your journey towards effective ad management starts
                     now!

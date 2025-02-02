@@ -1,4 +1,5 @@
 "use client"
+import { Link } from '@mui/material';
 import React, { useState, useEffect } from 'react';
 const ProfileManagement = ({ onLogout, activeAccount, setActiveAccount, onPlanUpgrade }) => {
   // const navigate = useNavigate();
@@ -270,7 +271,7 @@ const ProfileManagement = ({ onLogout, activeAccount, setActiveAccount, onPlanUp
               </div>
             </div>
             <div className="priceCardFooter">
-              <button className="ctaBtn">Upgrade to Plan</button>
+              <Link href="/success"><button className="ctaBtn">Upgrade to Plan</button></Link>
             </div>
           </div>
 
@@ -306,7 +307,7 @@ const ProfileManagement = ({ onLogout, activeAccount, setActiveAccount, onPlanUp
               </div>
             </div>
             <div className="priceCardFooter priceStartBtn">
-              <button className="ctaBtn">Upgrade to Plan</button>
+              <Link href="/success"><button className="ctaBtn">Upgrade to Plan</button></Link>
             </div>
           </div>
         </div>
