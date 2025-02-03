@@ -1,6 +1,6 @@
 services:
   web:
-    image: ubongpr7/sofireweb:latest
+    image: ubongpr7/facebook_camp_f:latest
     ports:
       - "3000:3000"  
     environment:

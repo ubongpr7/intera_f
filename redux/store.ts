@@ -7,7 +7,9 @@ export const makeStore = ()=>
             [apiSlice.reducerPath]:apiSlice.reducer,
         },
         
-            auth: authReducer,
+        auth: authReducer,
+        middleware: getDefaultMiddleware =>
+            getDefaultMiddleware().concat(apiSlice.middleware),
         devtools:process.NODE_ENV !=='production'
     })
 

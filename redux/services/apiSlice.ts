@@ -8,11 +8,12 @@ import type {
 import { setAuth,logout } from '../features/authSlice'
 import { Mutex } from 'async-mutex'
 import { url } from 'inspector'
+import env from '@/env_file'
 
 // create a new mutex
 const mutex = new Mutex()
 const baseQuery = fetchBaseQuery({ 
-  baseUrl: `{process.env.NEXT_HOST_URL}/api`,
+  baseUrl: env.BACKEND_HOST_URL,
   credentials: 'include',
 })
 const baseQueryWithReauth: BaseQueryFn<
