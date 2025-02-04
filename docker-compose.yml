@@ -1,6 +1,6 @@
 services:
   web:
-    image: ubongpr7/facebook_camp_f:latest
+    build: .
     ports:
       - "80:80"  
     environment:
