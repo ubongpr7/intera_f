@@ -10,19 +10,28 @@ const REDIRECT_URI = `${env.FRONTEND_HOST_URL}/accounts/facebook/`;
 export default function FacebookSetupPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const code = searchParams.get("code");
   const [token, setToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false); // ✅ Track client render
+
+  useEffect(() => {
+    setIsClient(true); // ✅ Mark as client-rendered
+  }, []);
 
   const handleFacebookLogin = () => {
-    const oauthURL = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent(
-      REDIRECT_URI
-    )}&scope=ads_read,pages_read_engagement,ads_management&response_type=code`;
+    if (typeof window !== "undefined") {
+      const oauthURL = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent(
+        REDIRECT_URI
+      )}&scope=ads_read,pages_read_engagement,ads_management&response_type=code`;
 
-    window.location.href = oauthURL;
+      window.location.href = oauthURL;
+    }
   };
 
   useEffect(() => {
+    if (!isClient) return; // ✅ Ensure client-side execution
+
+    const code = searchParams.get("code");
     if (code) {
       fetch(`/api/facebook-auth?code=${code}`)
         .then((res) => res.json())
@@ -30,14 +39,16 @@ export default function FacebookSetupPage() {
           if (data.access_token) {
             setToken(data.access_token);
             localStorage.setItem("facebook_token", data.access_token);
-            router.replace("/accounts/facebook/"); // Clean URL
+            router.replace("/accounts/facebook/");
           } else {
             setError(data.error || "Failed to get token");
           }
         })
-        .catch((err) => setError("Server error"));
+        .catch(() => setError("Server error"));
     }
-  }, [code, router]);
+  }, [isClient, searchParams, router]);
+
+  if (!isClient) return null; // ✅ Prevent mismatch during SSR
 
   return (
     <div className="p-5">
