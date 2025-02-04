@@ -5,6 +5,7 @@ import Nav from '../NavBar/Nav';
 import Footer from '../Footer/Footer';
 import Link from 'next/link';
 import env from '@/env_file'
+import Image from 'next/image'
 const handleFaqClick = (e) => {
   const faqHeading = e.target.closest('.faq-single-heading');
   if (faqHeading) {
