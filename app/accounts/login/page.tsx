@@ -85,8 +85,8 @@ const LoginPage = () => {
 
       router.push("/main");
     } catch (error) {
-      console.error("Login failed:", error);
-      alert(`${error.data.detail}`);
+      // console.error("Login failed:", error);
+      // alert(`${error.data.detail}`);
     }
   };
 
