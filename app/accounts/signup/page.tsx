@@ -24,7 +24,7 @@ interface Errors {
 const RegisterPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const sessionId = searchParams.get("session_id") || undefined;
+  const sessionId = searchParams.get("session_id") || '';
 
   const [register, { isLoading }] = useRegisterMutation();
   const [formData, setFormData] = useState<FormData>({
