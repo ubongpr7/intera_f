@@ -72,7 +72,7 @@ const Page = () => {
               <div className="form-container">
                 <h2 className="form-heading">Choose Campaign Objective</h2>
                 <div className="objectiveContainer">
-                  {[
+                  {/* {[
                     {
                       title: "Website Conversions",
                       description:
@@ -91,7 +91,8 @@ const Page = () => {
                         "Drive more visitors to your website through targeted traffic campaigns.",
                       imgSrc: "/assets/Click--Streamline-Tabler.png",
                     },
-                  ].map((item, index) => (
+                  ]
+                  .map((item, index) => (
                     <div
                       key={index}
                       className={`objective ${
@@ -108,6 +109,43 @@ const Page = () => {
                       </div>
                     </div>
                   ))}
+
+ */}
+
+                  {[
+                    {
+                      title: "Website Conversions",
+                      description: "Send people to your website and track conversions using the FB Pixel.",
+                      imgSrc: "/assets/Website-Ad--Streamline-Atlas.png",
+                    },
+                    {
+                      title: "Lead Form Campaign",
+                      description: "Capture leads using instant forms from your ad account.",
+                      imgSrc: "/assets/Device-Tablet-Search--Streamline-Tabler.png",
+                    },
+                    {
+                      title: "Traffic Campaign",
+                      description: "Drive more visitors to your website through targeted traffic campaigns.",
+                      imgSrc: "/assets/Click--Streamline-Tabler.png",
+                    },
+                  ].map((item, index) => (
+                    <div
+                      key={index}
+                      className={`objective ${
+                        selectedObjective === item.title ? "objective-select" : ""
+                      }`}
+                      onClick={() => handleObjectiveClick(item.title)}
+                    >
+                      <div className="objective-icon">
+                        <Image src={item.imgSrc} alt={item.title} width={100} height={100} />
+                      </div>
+                      <div className="content">
+                        <h3>{item.title}</h3>
+                        <p>{item.description}</p>
+                      </div>
+                    </div>
+                  ))}
+
                 </div>
 
                 <h2 className="heading">Configure Your Campaign</h2>
