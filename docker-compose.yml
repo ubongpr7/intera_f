@@ -2,7 +2,7 @@ services:
   web:
     image: ubongpr7/facebook_camp_f:latest
     ports:
-      - "3000:80"  
+      - "80:80"  
     environment:
       - NODE_ENV=development 
     volumes:
