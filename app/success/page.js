@@ -9,7 +9,7 @@ import "/public/Styles/success.css"
 import "/public/Styles/style.css"
 import Link from 'next/link'
 
-const page = () => {
+const Page = () => {
   return (
     <div className='forclr'>
       <Sidebar />
@@ -37,4 +37,4 @@ const page = () => {
   )
 }
 
-export default page
+export default Page

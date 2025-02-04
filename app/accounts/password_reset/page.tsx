@@ -3,6 +3,7 @@
 import { useState, FormEvent } from "react";
 import Link from "next/link";
 import { useResetPasswordMutation } from "@/redux/features/authApiSlice";
+import Image from "next/image";
 
 const Page = () => {
   const [formData, setFormData] = useState({

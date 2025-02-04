@@ -3,6 +3,7 @@ import Header from '@/Components/Header/Header'
 import React from 'react'
 import styles from './Pricing.module.css'
 import Link from 'next/link'
+import Image from "next/image";
 
 const Pricing = () => {
   return (

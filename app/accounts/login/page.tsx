@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import "./Login.css";
 import { useLoginMutation } from "@/redux/features/authApiSlice";
+import Image from "next/image";
 
 const LoginPage = () => {
   const router = useRouter();

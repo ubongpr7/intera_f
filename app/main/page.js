@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import "/public/Styles/side-menu.css";
 import "/public/Styles/style.css";
 import "/public/Styles/home.css";
+import Image from "next/image";
 
 import Header from "@/Components/Header/Header";
 import Link from "next/link";

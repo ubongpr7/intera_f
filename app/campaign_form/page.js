@@ -13,6 +13,7 @@ import Placement from "@/Components/Placement/Placement";
 import TargettingDelivery from "@/Components/TargettingDelivery/TargettingDelivery";
 import CampaignTracking from "@/Components/CampaignTracking/CampaignTracking";
 import Link from "next/link";
+import Image from "next/image";
 
 
 const CampaignForm = ({

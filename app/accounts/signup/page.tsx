@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Spinner from "@/components/common/Spinner";
 import { useRegisterMutation } from "@/redux/features/authApiSlice";
+import Image from "next/image";
 
 interface FormData {
   first_name: string;

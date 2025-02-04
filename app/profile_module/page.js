@@ -5,6 +5,7 @@ import "/public/Styles/side-menu.css";
 import "/public/Styles/style.css";
 import Header from "@/Components/Header/Header";
 import Link from "next/link";
+import Image from "next/image";
 
 const Page = () => {
     // States for handling profile data and image
