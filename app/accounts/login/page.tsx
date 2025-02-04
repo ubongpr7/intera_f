@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, Suspense } from "react"; // Import Suspense here
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import "./Login.css";
 import { useLoginMutation } from "@/redux/features/authApiSlice";
 import Image from "next/image";
 
+// Suspense boundary around the login page
 const LoginPage = () => {
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -82,7 +83,6 @@ const LoginPage = () => {
 
     try {
       await login({ email: formData.email, password: formData.password }).unwrap();
-
       router.push("/main");
     } catch (error) {
       // console.error("Login failed:", error);
@@ -91,102 +91,96 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="page-container">
-      {/* Logo */}
-      <Link href="/">
-        {/* <img src="/assets/logo-header.png" alt="Logo" className="logo-header" /> */}
-        <Image
+    <Suspense fallback={<div>Loading...</div>}> {/* Suspense Boundary added here */}
+      <div className="page-container">
+        {/* Logo */}
+        <Link href="/">
+          <Image
             src="/assets/logo-header.png"
             alt="Logo"
             width={150} // Adjust as needed
             height={150}
             className="logo-header"
           />
-      </Link>
+        </Link>
 
-      {/* Login Container */}
-      <div className="container">
-        <h1>Login</h1>
+        {/* Login Container */}
+        <div className="container">
+          <h1>Login</h1>
 
-        <form onSubmit={handleSubmit} className="form-container">
-          {/* Email Input */}
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            className="form-input"
-            required
-          />
-          {errors.email && <p className="error">{errors.email}</p>}
-
-          {/* Password Input */}
-          <div className="password-container">
+          <form onSubmit={handleSubmit} className="form-container">
+            {/* Email Input */}
             <input
-              type={showPassword ? "text" : "password"}
-              name="password"
-              placeholder="Password"
-              value={formData.password}
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={formData.email}
               onChange={handleChange}
               onBlur={handleBlur}
               className="form-input"
               required
             />
-            <span
-              onClick={() => setShowPassword(!showPassword)}
-              className="password-toggle"
-            >
-              {/* <img
-                src={showPassword ? "/assets/eye-off.svg" : "/assets/eye.svg"}
-                alt="Toggle Password Visibility"
-                width="20"
-                height="20"
-              /> */}
-              <Image
-            src="/assets/logo-header.png"
-            alt="Logo"
-            width={20} // Adjust as needed
-            height={20}
-            className="logo-header"
-          />
-              
-            </span>
-          </div>
-          {errors.password && <p className="error">{errors.password}</p>}
+            {errors.email && <p className="error">{errors.email}</p>}
 
-          {/* Remember Me Checkbox */}
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-            <input
-              type="checkbox"
-              name="rememberMe"
-              checked={formData.rememberMe}
-              onChange={handleChange}
-            />
-            <span className="remember-me-text">Remember me</span>
-          </div>
+            {/* Password Input */}
+            <div className="password-container">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Password"
+                value={formData.password}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className="form-input"
+                required
+              />
+              <span
+                onClick={() => setShowPassword(!showPassword)}
+                className="password-toggle"
+              >
+                <Image
+                  src="/assets/logo-header.png"
+                  alt="Logo"
+                  width={20} // Adjust as needed
+                  height={20}
+                  className="logo-header"
+                />
+              </span>
+            </div>
+            {errors.password && <p className="error">{errors.password}</p>}
 
-          {/* Submit Button */}
-          <button type="submit" className="option-button" disabled={isLoading}>
-            {isLoading ? "Signing In..." : "Sign In"}
-          </button>
-        </form>
+            {/* Remember Me Checkbox */}
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+              <input
+                type="checkbox"
+                name="rememberMe"
+                checked={formData.rememberMe}
+                onChange={handleChange}
+              />
+              <span className="remember-me-text">Remember me</span>
+            </div>
 
-        {/* Links */}
-        <p className="switchLink">
-          Don’t have an account?{" "}
-          <Link href="/accounts/signup" className="linkText">
-            Register
-          </Link>
-        </p>
-        <p className="switchLink">
-          <Link href="/accounts/password_reset" className="linkText">
-            Forgot your password?
-          </Link>
-        </p>
+            {/* Submit Button */}
+            <button type="submit" className="option-button" disabled={isLoading}>
+              {isLoading ? "Signing In..." : "Sign In"}
+            </button>
+          </form>
+
+          {/* Links */}
+          <p className="switchLink">
+            Don’t have an account?{" "}
+            <Link href="/accounts/signup" className="linkText">
+              Register
+            </Link>
+          </p>
+          <p className="switchLink">
+            <Link href="/accounts/password_reset" className="linkText">
+              Forgot your password?
+            </Link>
+          </p>
+        </div>
       </div>
-    </div>
+    </Suspense>
   );
 };
 
