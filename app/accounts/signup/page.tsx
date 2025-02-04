@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Spinner from "@/components/common/Spinner";
 import { useRegisterMutation } from "@/redux/features/authApiSlice";
 import Image from "next/image";
+import { Suspense } from "react"; // Import Suspense
 
 interface FormData {
   first_name: string;
@@ -81,50 +82,22 @@ const RegisterPage = () => {
     validateField(e.target.name as keyof FormData, e.target.value);
   };
 
-  // const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-  //   event.preventDefault();
-
-  //   // Validate all fields before submission
-  //   const isFormValid = Object.keys(formData).every((key) => {
-  //     if (key === "sessionId") return true; // Skip sessionId validation
-  //     validateField(key as keyof FormData, formData[key as keyof FormData]);
-  //     return !errors[key as keyof Errors];
-  //   });
-
-  //   if (!isFormValid) {
-  //     alert("Please fix the errors before submitting.");
-  //     return;
-  //   }
-
-  //   try {
-  //     await register(formData).unwrap();
-  //     router.push("/accounts/login");
-  //   } catch (error) {
-  //     console.error("Registration failed:", error);
-  //     alert("Registration failed. Please try again.");
-  //   }
-  // };
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-  
-    // Validate all fields before submission
+
     const isFormValid = Object.keys(formData).every((key) => {
-      // Skip sessionId validation
       if (key === "sessionId") return true;
-  
-      // Ensure the field value is not undefined before validating
       const value = formData[key as keyof FormData];
-      if (value === undefined) return false; // Skip validation if value is undefined
-  
+      if (value === undefined) return false;
       validateField(key as keyof FormData, value);
       return !errors[key as keyof Errors];
     });
-  
+
     if (!isFormValid) {
       alert("Please fix the errors before submitting.");
       return;
     }
-  
+
     try {
       await register(formData).unwrap();
       router.push("/accounts/login");
@@ -133,95 +106,91 @@ const RegisterPage = () => {
       alert("Registration failed. Please try again.");
     }
   };
-  
+
   return (
-    <div className="page-container">
-      <link rel="stylesheet" href="/Styles/Login.css" />
-      <Link href="/">
-        {/* <img src="/assets/logo-header.png" alt="Logo" className="logo-header" /> */}
-        <Image
+    <Suspense fallback={<div>Loading...</div>}>
+      <div className="page-container">
+        <link rel="stylesheet" href="/Styles/Login.css" />
+        <Link href="/">
+          <Image
             src="/assets/logo-header.png"
             alt="Logo"
             width={200} 
             height={150}
             className="logo-header"
           />
-      </Link>
+        </Link>
 
-      <div className="container">
-        <h1>Register</h1>
+        <div className="container">
+          <h1>Register</h1>
 
-        <form onSubmit={handleSubmit} className="form-container">
-          {/* Name */}
-          <input
-            type="text"
-            name="first_name"
-            placeholder="Name"
-            value={formData.first_name}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            className="form-input"
-            required
-          />
-          {errors.first_name && <p className="error">{errors.first_name}</p>}
+          <form onSubmit={handleSubmit} className="form-container">
+            <input
+              type="text"
+              name="first_name"
+              placeholder="Name"
+              value={formData.first_name}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className="form-input"
+              required
+            />
+            {errors.first_name && <p className="error">{errors.first_name}</p>}
 
-          {/* Email */}
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            className="form-input"
-            required
-          />
-          {errors.email && <p className="error">{errors.email}</p>}
+            <input
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={formData.email}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className="form-input"
+              required
+            />
+            {errors.email && <p className="error">{errors.email}</p>}
 
-          {/* Password */}
-          <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            value={formData.password}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            className="form-input"
-            required
-          />
-          {errors.password && <p className="error">{errors.password}</p>}
+            <input
+              type="password"
+              name="password"
+              placeholder="Password"
+              value={formData.password}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className="form-input"
+              required
+            />
+            {errors.password && <p className="error">{errors.password}</p>}
 
-          {/* Confirm Password */}
-          <input
-            type="password"
-            name="re_password"
-            placeholder="Confirm Password"
-            value={formData.re_password}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            className="form-input"
-            required
-          />
-          {errors.re_password && <p className="error">{errors.re_password}</p>}
+            <input
+              type="password"
+              name="re_password"
+              placeholder="Confirm Password"
+              value={formData.re_password}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className="form-input"
+              required
+            />
+            {errors.re_password && <p className="error">{errors.re_password}</p>}
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            className="option-button"
-            disabled={isLoading}
-          >
-            {isLoading ? <Spinner sm /> : "Create account"}
-          </button>
-        </form>
+            <button
+              type="submit"
+              className="option-button"
+              disabled={isLoading}
+            >
+              {isLoading ? <Spinner sm /> : "Create account"}
+            </button>
+          </form>
 
-        <p className="switchLink">
-          Already have an account?{" "}
-          <Link href="/accounts/login" className="linkText">
-            Sign in
-          </Link>
-        </p>
+          <p className="switchLink">
+            Already have an account?{" "}
+            <Link href="/accounts/login" className="linkText">
+              Sign in
+            </Link>
+          </p>
+        </div>
       </div>
-    </div>
+    </Suspense>
   );
 };
 
