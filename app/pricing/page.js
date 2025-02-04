@@ -14,7 +14,14 @@ const Pricing = () => {
           <div className={styles.pricingSection}>
             <div className={styles.header}>
               <Link href="/main">
-                <img src="/assets/Vector4.png" alt="Go Back" className={styles.goBackIcon} onClick={() => window.history.back()} />
+                {/* <img src="/assets/Vector4.png" alt="Go Back" className={styles.goBackIcon} onClick={() => window.history.back()} /> */}
+                <Image
+                  src="/assets/logo-header.png"
+                  alt="Logo"
+                  width={150} 
+                  height={150}
+                  className="logo-header"
+                />
               </Link>
               <p className={styles.priceHeading}>Choose the <span>Perfect Plan</span> for Your Needs</p>
             </div>

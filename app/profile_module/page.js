@@ -58,7 +58,16 @@ const Page = () => {
                                         className="goBackIcon"
                                         onClick={() => window.history.back()}
                                     /> */}
-                                    <Link href="/main"><img src="/assets/arrow-left.png" alt="Go Back" className="goBackIcon"/></Link>
+                                    <Link href="/main">
+                                    {/* <img src="/assets/arrow-left.png" alt="Go Back" className="goBackIcon"/> */}
+                                    <Image
+                                        src="/assets/arrow-left.png"
+                                        alt="Logo"
+                                        width={150} 
+                                        height={150}
+                                        className="logo-header"
+                                    />
+                                    </Link>
                                     <h2>Profile Management</h2>
                                 </div>
                                 <div className="profileContent">
@@ -68,11 +77,12 @@ const Page = () => {
                                             <div className="profilePicSection">
                                                 <div className="profilePicWrapper">
                                                     <div className="placeholder">
-                                                        <img
+                                                        {/* <img
                                                             src={profilePic}
                                                             alt="Profile"
                                                             className="placeholderIcon"
-                                                        />
+                                                        /> */}
+                                                        
                                                     </div>
                                                     <input
                                                         type="file"
@@ -83,7 +93,8 @@ const Page = () => {
                                                 </div>
                                                 <div>
                                                     <p className="uploadText">
-                                                        <img src="/assets/upload.png" alt="Upload" /> Upload Image
+                                                        {/* <img src="/assets/upload.png" alt="Upload" /> */}
+                                                         Upload Image
                                                     </p>
                                                     <p className="fileHint">JPG, PNG, or GIF, Max 2MB</p>
                                                 </div>
@@ -117,7 +128,7 @@ const Page = () => {
                                                     ) : (
                                                         <>
                                                             Delete Account{" "}
-                                                            <img src="/assets/trash.png" alt="trash" width="20" height="20" />
+                                                            {/* <img src="/assets/trash.png" alt="trash" width="20" height="20" /> */}
                                                         </>
                                                     )}
                                                 </button>
@@ -125,7 +136,7 @@ const Page = () => {
                                                 {/* Save Profile Button */}
                                                 <button className="button primaryButton" onClick={handleSaveProfile}>
                                                     Save Profile{" "}
-                                                    <img src="/assets/save.png" alt="save" width="20" height="20" />
+                                                    {/* <img src="/assets/save.png" alt="save" width="20" height="20" /> */}
                                                 </button>
                                             </div>
                                         </div>
@@ -161,12 +172,12 @@ const Page = () => {
                                     <div className="infoContainer">
                                         <div className="infoBox">
                                             <h2>
-                                                <img
+                                                {/* <img
                                                     src="/assets/circle-alert.png"
                                                     alt="info"
                                                     width="24"
                                                     height="24"
-                                                />{" "}
+                                                />{" "} */}
                                                 How to Change Your Connected Ad Account
                                             </h2>
                                             <div className="infoContent">

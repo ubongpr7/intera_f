@@ -5,7 +5,6 @@ import Nav from '../NavBar/Nav';
 import Footer from '../Footer/Footer';
 import Link from 'next/link';
 import env from '@/env_file'
-
 const handleFaqClick = (e) => {
   const faqHeading = e.target.closest('.faq-single-heading');
   if (faqHeading) {
@@ -40,8 +39,23 @@ const Landing = () => {
     <div id='home'>
       <Nav/>
       <div className="hero">
+{/*         
         <img className="back-shadow hero-mid-shadow" src="/assets/hero-center-shadow.svg" alt="" />
-        <img className="back-shadow hero-bottom-shadow" src="/assets/hero-bottom-shadow.svg" alt="" />
+        <img className="back-shadow hero-bottom-shadow" src="/assets/hero-bottom-shadow.svg" alt="" /> */}
+              <Image
+        className="back-shadow hero-mid-shadow"
+        src="/assets/hero-center-shadow.svg"
+        alt="Hero Center Shadow"
+        width={500}
+        height={300}
+      />
+      <Image
+        className="back-shadow hero-bottom-shadow"
+        src="/assets/hero-bottom-shadow.svg"
+        alt="Hero Bottom Shadow"
+        width={500}
+        height={300}
+      />
         <div className="hero-inner">
           <p className="hero-heading">
             Revolutionize Your Facebook
@@ -184,9 +198,31 @@ const Landing = () => {
         </div>
       </div>
       <div className="how-works-section">
-        <img className="back-shadow how-work-bottom-shadow" src="/assets/how-works-bottom-shadow.svg" alt="" />
+        {/* <img className="back-shadow how-work-bottom-shadow" src="/assets/how-works-bottom-shadow.svg" alt="" />
         <img className="back-shadow how-work-mid-shadow" src="/assets/how-work-mid-shadow.svg" alt="" />
-        <img className="back-shadow how-work-right-shadow" src="/assets/how-works-right-shadow.svg" alt="" />
+        <img className="back-shadow how-work-right-shadow" src="/assets/how-works-right-shadow.svg" alt="" /> */}
+        <Image
+        className="back-shadow how-work-bottom-shadow"
+        src="/assets/how-works-bottom-shadow.svg"
+        alt="How Works Bottom Shadow"
+        width={500}
+        height={300}
+      />
+      <Image
+        className="back-shadow how-work-mid-shadow"
+        src="/assets/how-work-mid-shadow.svg"
+        alt="How Work Mid Shadow"
+        width={500}
+        height={300}
+      />
+      <Image
+        className="back-shadow how-work-right-shadow"
+        src="/assets/how-works-right-shadow.svg"
+        alt="How Works Right Shadow"
+        width={500}
+        height={300}
+      />
+
         <div className="how-work-left">
           <p className="how-work-heading">How <span>QuickCampaigns</span> Works</p>
           <div className="how-work-right">
@@ -394,11 +430,22 @@ const Landing = () => {
         <div className="customer-say-container">
           <div className="single-customer-say">
             <div>
+              {/* <img src="/assets/star.svg" alt="" />
               <img src="/assets/star.svg" alt="" />
               <img src="/assets/star.svg" alt="" />
               <img src="/assets/star.svg" alt="" />
-              <img src="/assets/star.svg" alt="" />
-              <img src="/assets/star.svg" alt="" />
+              <img src="/assets/star.svg" alt="" /> */}
+              <div className="flex gap-2">
+      {Array.from({ length: 5 }).map((_, index) => (
+        <Image
+          key={index}
+          src="/assets/star.svg"
+          alt="Star Icon"
+          width={30}
+          height={30}
+        />
+      ))}
+    </div>
             </div>
             <p>
               This software has been a game-changer for our agency. We can now
@@ -410,11 +457,22 @@ const Landing = () => {
           </div>
           <div className="single-customer-say">
             <div>
+              {/* <img src="/assets/star.svg" alt="" />
               <img src="/assets/star.svg" alt="" />
               <img src="/assets/star.svg" alt="" />
               <img src="/assets/star.svg" alt="" />
-              <img src="/assets/star.svg" alt="" />
-              <img src="/assets/star.svg" alt="" />
+              <img src="/assets/star.svg" alt="" /> */}
+              <div className="flex gap-2">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <Image
+                    key={index}
+                    src="/assets/star.svg"
+                    alt="Star Icon"
+                    width={30}
+                    height={30}
+                  />
+                ))}
+              </div>
             </div>
             <p>
               As a solo entrepreneur, time is my most valuable resource. This tool
@@ -427,8 +485,23 @@ const Landing = () => {
         </div>
       </div>
       <div className="get-start-section">
-        <img className="back-shadow get-start-shadow" src="/assets/get-start-shadow.svg" alt="" />
-        <img className="back-shadow money-back-shadow" src="/assets/money-back-shadow.svg" alt="" />
+        {/* <img className="back-shadow get-start-shadow" src="/assets/get-start-shadow.svg" alt="" />
+        <img className="back-shadow money-back-shadow" src="/assets/money-back-shadow.svg" alt="" /> */}
+              <Image
+        className="back-shadow get-start-shadow"
+        src="/assets/get-start-shadow.svg"
+        alt="Get Start Shadow"
+        width={500}
+        height={300}
+      />
+      <Image
+        className="back-shadow money-back-shadow"
+        src="/assets/money-back-shadow.svg"
+        alt="Money Back Shadow"
+        width={500}
+        height={300}
+      />
+
         <div className="get-start-wrapper get-start-wrapper-first">
           <p className="get-start-heading">Get Started Today</p>
           <p className="get-start-desc">

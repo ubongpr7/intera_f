@@ -6,7 +6,7 @@ const Footer = () => {
     <div>
       <footer>
         <div className="footer-first-col">
-          <Link href="/"><img className="footer-logo" src="/assets/logo-footer.png" alt="QuickCampaigns Footer Logo" /></Link>
+          {/* <Link href="/"><img className="footer-logo" src="/assets/logo-footer.png" alt="QuickCampaigns Footer Logo" /></Link> */}
           <p className="footer-logo-desc">
             Our software intelligently creates campaigns, ad sets, and ads based on your selected folders and default settings.
           </p>

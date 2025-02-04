@@ -1,6 +1,7 @@
 import "./globals.css"
 import type { Metadata } from "next";
 import StoreProvider  from "@/redux/provider";
+import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "Quick Campaign",

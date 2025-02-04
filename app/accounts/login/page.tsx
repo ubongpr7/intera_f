@@ -93,7 +93,14 @@ const LoginPage = () => {
     <div className="page-container">
       {/* Logo */}
       <Link href="/">
-        <img src="/assets/logo-header.png" alt="Logo" className="logo-header" />
+        {/* <img src="/assets/logo-header.png" alt="Logo" className="logo-header" /> */}
+        <Image
+            src="/assets/logo-header.png"
+            alt="Logo"
+            width={150} // Adjust as needed
+            height={150}
+            className="logo-header"
+          />
       </Link>
 
       {/* Login Container */}
@@ -130,12 +137,20 @@ const LoginPage = () => {
               onClick={() => setShowPassword(!showPassword)}
               className="password-toggle"
             >
-              <img
+              {/* <img
                 src={showPassword ? "/assets/eye-off.svg" : "/assets/eye.svg"}
                 alt="Toggle Password Visibility"
                 width="20"
                 height="20"
-              />
+              /> */}
+              <Image
+            src="/assets/logo-header.png"
+            alt="Logo"
+            width={20} // Adjust as needed
+            height={20}
+            className="logo-header"
+          />
+              
             </span>
           </div>
           {errors.password && <p className="error">{errors.password}</p>}

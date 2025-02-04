@@ -99,7 +99,7 @@ const Page = () => {
                       onClick={() => handleObjectiveClick(item.title)}
                     >
                       <div className="objective-icon">
-                        <img src={item.imgSrc} alt={item.title} />
+                       <Image src={imgSrc} alt={title} width={100} height={100} />
                       </div>
                       <div className="content">
                         <h3>{item.title}</h3>
@@ -117,7 +117,13 @@ const Page = () => {
                     }`}
                     onClick={() => handleCampaignClick("new")}
                   >
-                    <img src="/assets/Component 2.png" alt="New Campaign" />
+                    {/* <img src="/assets/Component 2.png" alt="New Campaign" /> */}
+                    <Image
+                      src="/assets/Component 2.png"
+                      alt="New Campaign"
+                      width={150} // Adjust as needed
+                      height={150}
+                    />
                     New Campaign
                   </button>
                   <button
@@ -126,7 +132,13 @@ const Page = () => {
                     }`}
                     onClick={() => handleCampaignClick("existing")}
                   >
-                    <img src="/assets/Component 2 (1).png" alt="Existing Campaign" />
+                    {/* <img src="/assets/Component 2 (1).png" alt="Existing Campaign" /> */}
+                    <Image
+                        src="/assets/Component 2 (1).png"
+                        alt="Existing Campaign"
+                        width={150} // Adjust as needed
+                        height={150}
+                      />
                     Existing Campaign
                   </button>
                 </div>

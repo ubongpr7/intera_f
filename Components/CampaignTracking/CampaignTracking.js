@@ -72,13 +72,13 @@ const CampaignTracking = () => {
           onClick={() => toggleSection("campaignTracking")}
         >
           <h3>Campaign & Tracking</h3>
-          <img
+          {/* <img
             src="/assets/Vectorw.svg"
             alt="Toggle Section"
             className={`${styles.toggleIcon} ${
               expandedSections["campaignTracking"] ? styles.expanded : ""
             }`}
-          />
+          /> */}
         </div>
         {expandedSections["campaignTracking"] && (
           <div className={styles.sectionContent}>

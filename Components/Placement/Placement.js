@@ -100,13 +100,13 @@ const Placement = () => {
           onClick={() => toggleSection("placements")}
         >
           <h3>Placements</h3>
-          <img
+          {/* <img
             src="/assets/Vectorw.svg"
             alt="Toggle Section"
             className={`${styles.toggleIcon} ${
               expandedSections["placements"] ? styles.expanded : ""
             }`}
-          />
+          /> */}
         </div>
         {expandedSections["placements"] && (
           <div className={styles.sectionContent}>

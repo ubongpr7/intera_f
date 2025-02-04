@@ -10,9 +10,9 @@ const Nav = () => {
     return (
         <div>
             <nav>
-                <img className="back-shadow nav-shadow" src="/assets/nav-shadow.svg" alt="" />
+                {/* <img className="back-shadow nav-shadow" src="/assets/nav-shadow.svg" alt="" /> */}
 
-                <Link href="/"><img className="header-logo" src="/assets/logo-header.png" alt="" /></Link>
+                {/* <Link href="/"><img className="header-logo" src="/assets/logo-header.png" alt="" /></Link> */}
                 <svg className="hamburg-menu" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" onClick={handleHamburgMenuClick}>
                     <path d="M3 6H21M3 12H21M3 18H21" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>

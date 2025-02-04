@@ -59,7 +59,15 @@ const Page = () => {
     <div className="page-container">
       <link rel="stylesheet" href="/Styles/Login.css" />
       <Link href="/">
-        <img src="/assets/logo-header.png" alt="Logo" className="logo-header" />
+        {/* <img src="/assets/logo-header.png" alt="Logo" className="logo-header" />
+         */}
+          <Image
+            src="/assets/logo-header.png"
+            alt="Logo"
+            width={150} 
+            height={150}
+            className="logo-header"
+          />
       </Link>
 
       <div className="container">

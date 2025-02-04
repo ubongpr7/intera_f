@@ -68,12 +68,12 @@ const ProfileManagement = ({ onLogout, activeAccount, setActiveAccount, onPlanUp
 
     <div className="container">
       <div className="header">
-        <img
+        {/* <img
           src="/assets/arrow-left.png"
           alt="Go Back"
           className="goBackIcon"
           onClick={() => navigate('/')}
-        />
+        /> */}
         <h2>Profile Management</h2>
       </div>
       <div className="profileContent">
@@ -88,11 +88,11 @@ const ProfileManagement = ({ onLogout, activeAccount, setActiveAccount, onPlanUp
                     {/* <img src="/assets/profileImage.png" alt="Profile" className="profilePic" /> */}
                  
                     <div className="placeholder">
-                      <img
+                      {/* <img
                         src="/assets/profileImage.png"
                         alt="Placeholder"
                         className="placeholderIcon"
-                      />
+                      /> */}
                     </div>
                   <input
                     type="file"
@@ -102,7 +102,9 @@ const ProfileManagement = ({ onLogout, activeAccount, setActiveAccount, onPlanUp
                   />
                 </div>
                 <div>
-                  <p className="uploadText"><img src='/assets/upload.png' alt="Upload" /> Upload Image</p>
+                  <p className="uploadText">
+                    {/* <img src='/assets/upload.png' alt="Upload" />  */}
+                    Upload Image</p>
                   <p className="fileHint">JPG, PNG, or GIF, Max 2MB</p>
                 </div>
               </div>
@@ -137,13 +139,15 @@ const ProfileManagement = ({ onLogout, activeAccount, setActiveAccount, onPlanUp
                   onClick={handleDeleteAccount}
                   className="button dangerButton"
                 >
-                  Delete Account <img src='/assets/trash.png' alt='trash' width={20} height={20} />
+                  Delete Account 
+                  {/* <img src='/assets/trash.png' alt='trash' width={20} height={20} /> */}
                 </button>
                 <button
                   onClick={handleSaveChanges}
                   className="button primaryButton"
                 >
-                  Save Profile <img src='/assets/save.png' alt='save' width={20} height={20} />
+                  Save Profile 
+                  {/* <img src='/assets/save.png' alt='save' width={20} height={20} /> */}
                 </button>
               </div>
             </div>
@@ -173,7 +177,9 @@ const ProfileManagement = ({ onLogout, activeAccount, setActiveAccount, onPlanUp
 
         <div className="infoContainer">
           <div className="infoBox">
-            <h2><img src="/assets/circle-alert.png" alt='info' width={24} height={24} /> How to Change Your Connected Ad Account</h2>
+            <h2>
+              {/* <img src="/assets/circle-alert.png" alt='info' width={24} height={24} />  */}
+            How to Change Your Connected Ad Account</h2>
             <div className="infoContent">
               <p>
                 Currently, the only way to change the ad account linked to your

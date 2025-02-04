@@ -108,12 +108,23 @@ const CampaignForm = ({
                 <Header />
             <div className={styles.formContainer}>
                 <div className={styles.header}>
-                    <Link href="/main"><img
+                    <Link href="/main">
+                    {/* <img
                         src="/assets/Vector4.png" // Place in public/assets folder
                         alt="Go Back"
                         className={styles.goBackIcon}
                         onClick={onGoBack}
-                    /></Link>
+                    /> */}
+                     <Image
+                        src="/assets/Vector4.png"
+                        alt="Go Back"
+                        className={styles.goBackIcon}
+                        width={40} // Adjust size as needed
+                        height={40}
+                        onClick={onGoBack}
+                        style={{ cursor: "pointer" }} // Ensure it's clickable
+                        />
+                    </Link>
                 </div>
                 <h2 className={styles.title}>Choose Your Launch Setting</h2>
                 <p className={styles.subtitle}>
@@ -137,12 +148,19 @@ const CampaignForm = ({
                                     {uploadedFiles.length > 0 &&
                                         `(${uploadedFiles.length} files uploaded)`}
                                 </h3>
-                                <img
+                                {/* <img
                                     src="/assets/Vectorw.svg" // Place in public/assets folder
                                     alt="Toggle Section"
                                     className={`${styles.toggleIcon} ${expandedSections["creativeUploading"] ? styles.expanded : ""
                                         }`}
-                                />
+                                /> */}
+                                    <Image
+                                        src="/assets/Vectorw.svg"
+                                        alt="Toggle Section"
+                                        className={`${styles.toggleIcon} ${expanded ? styles.expanded : ""}`}
+                                        width={30}
+                                        height={30}
+                                        />
                             </div>
                             {expandedSections["creativeUploading"] && (
                                 <div className={styles.sectionContent}>
@@ -150,11 +168,19 @@ const CampaignForm = ({
                                         className={styles.uploadBox}
                                         onClick={handleFileUploadClick}
                                     >
-                                        <img
+                                        {/* <img
                                             src="/assets/Vector6.png" // Place in public/assets folder
                                             alt="Upload Icon"
                                             className={styles.uploadIcon}
-                                        />
+                                        /> */}
+                                            <Image
+                                                src="/assets/Vector6.png"
+                                                alt="Upload Icon"
+                                                className={styles.uploadIcon}
+                                                width={40}
+                                                height={40}
+                                                />
+
                                         <p>Click to upload or drag and drop</p>
                                     </div>
                                     <input
@@ -180,12 +206,19 @@ const CampaignForm = ({
                                 onClick={() => toggleSection("budgetSchedule")}
                             >
                                 <h3>Budget & Schedule</h3>
-                                <img
+                                {/* <img
                                     src="/assets/Vectorw.svg"
                                     alt="Toggle Section"
                                     className={`${styles.toggleIcon} ${expandedSections["budgetSchedule"] ? styles.expanded : ""
                                         }`}
-                                />
+                                /> */}
+                                    <Image
+                                        src="/assets/Vectorw.svg"
+                                        alt="Toggle Section"
+                                        className={`${styles.toggleIcon} ${expanded ? styles.expanded : ""}`}
+                                        width={30}
+                                        height={30}
+                                        />
                             </div>
                             {expandedSections["budgetSchedule"] && (
                                 <div className={styles.sectionContent}>

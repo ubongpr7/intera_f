@@ -5,8 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Spinner from "@/components/common/Spinner";
 import { useRegisterMutation } from "@/redux/features/authApiSlice";
 
-
-// }
 interface FormData {
   first_name: string;
   email: string;
@@ -110,7 +108,14 @@ const RegisterPage = () => {
     <div className="page-container">
       <link rel="stylesheet" href="/Styles/Login.css" />
       <Link href="/">
-        <img src="/assets/logo-header.png" alt="Logo" className="logo-header" />
+        {/* <img src="/assets/logo-header.png" alt="Logo" className="logo-header" /> */}
+        <Image
+            src="/assets/logo-header.png"
+            alt="Logo"
+            width={200} 
+            height={150}
+            className="logo-header"
+          />
       </Link>
 
       <div className="container">

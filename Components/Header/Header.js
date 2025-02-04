@@ -73,7 +73,7 @@ const SidebarWithHeader = () => {
             <div id="menu" className={`sidebarContainer ${isSidebarOpen ? 'open' : ''}`} ref={sidebarRef}>
                 <div>
                     <Link href="/main">
-                        <img src="/assets/logo-footer.png" alt="Logo" className="logoImage" />
+                        {/* <img src="/assets/logo-footer.png" alt="Logo" className="logoImage" /> */}
                     </Link>
                 </div>
                 <hr className="horizontalRule" />
