@@ -1,11 +1,11 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 import Nav from "@/Components/NavBar/Nav";
 import Footer from "@/Components/Footer/Footer";
 const TermsOfService = () => {
-  const router = useRouter(); // Use Next.js router
+  // const router = useRouter(); // Use Next.js router
 
   return (
     <div id="terms-of-service">
