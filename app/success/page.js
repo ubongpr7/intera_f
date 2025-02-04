@@ -8,6 +8,7 @@ import "/public/Styles/success.css"
 
 import "/public/Styles/style.css"
 import Link from 'next/link'
+
 const page = () => {
   return (
     <div className='forclr'>
