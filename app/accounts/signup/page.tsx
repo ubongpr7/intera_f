@@ -1,18 +1,17 @@
 "use client";
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useEffect } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Spinner from "@/components/common/Spinner";
 import { useRegisterMutation } from "@/redux/features/authApiSlice";
 import Image from "next/image";
-import { Suspense } from "react"; // Import Suspense
 
 interface FormData {
   first_name: string;
   email: string;
   password: string;
   re_password: string;
-  sessionId?: string; // sessionId is optional
+  sessionId?: string;
 }
 
 interface Errors {
@@ -24,24 +23,29 @@ interface Errors {
 
 const RegisterPage = () => {
   const router = useRouter();
-  const searchParams = useSearchParams(); // Using useSearchParams from next/navigation
-  const sessionId = searchParams.get("session_id") || ''; // Get sessionId from query string, default to an empty string
-
   const [register, { isLoading }] = useRegisterMutation();
   const [formData, setFormData] = useState<FormData>({
     first_name: "",
     email: "",
     password: "",
     re_password: "",
-    sessionId: sessionId, // Initialize sessionId with query parameter
+    sessionId: "", // Default as empty string
   });
-
   const [errors, setErrors] = useState<Errors>({
     first_name: "",
     email: "",
     password: "",
     re_password: "",
   });
+
+  useEffect(() => {
+    // Using URLSearchParams to directly get the sessionId from the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get("session_id");
+    if (sessionId) {
+      setFormData((prev) => ({ ...prev, sessionId }));
+    }
+  }, []);
 
   const validateField = (name: keyof FormData, value: string) => {
     let error = "";
@@ -85,19 +89,8 @@ const RegisterPage = () => {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    // Add sessionId only if it's part of the query
-    if (!formData.sessionId && sessionId) {
-      setFormData({
-        ...formData,
-        sessionId: sessionId, // Add sessionId from query parameter if it exists
-      });
-    }
-
     // Validate all fields before submission
     const isFormValid = Object.keys(formData).every((key) => {
-      // Skip sessionId validation since it's optional
-      if (key === "sessionId") return true;
-
       const value = formData[key as keyof FormData];
       if (value === undefined) return false;
 
@@ -112,7 +105,7 @@ const RegisterPage = () => {
 
     try {
       await register(formData).unwrap();
-      router.push("/accounts/login"); // Redirect to login after successful registration
+      router.push("/accounts/login");
     } catch (error) {
       console.error("Registration failed:", error);
       alert("Registration failed. Please try again.");
