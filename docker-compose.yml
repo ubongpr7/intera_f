@@ -1,13 +1,12 @@
+
 services:
   web:
     build: .
     ports:
       - "80:80"  
     environment:
-      - NODE_ENV=development 
+      - NODE_ENV=production  
     volumes:
-      - .:/app               
-      - /app/node_modules    
-    command: ["yarn", "dev"] 
+      - .:/app                # Mount current directory
+      - /app/node_modules     # Avoid overwriting node_modules
     restart: unless-stopped
-
