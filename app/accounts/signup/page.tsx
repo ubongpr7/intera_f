@@ -1,10 +1,12 @@
 "use client";
-import { useState, FormEvent, useEffect } from "react";
+
+import { useState, FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import Head from "next/head";
+import Image from "next/image";
 import Spinner from "@/components/common/Spinner";
 import { useRegisterMutation } from "@/redux/features/authApiSlice";
-import Image from "next/image";
 
 interface FormData {
   first_name: string;
@@ -23,29 +25,24 @@ interface Errors {
 
 const RegisterPage = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const sessionId = searchParams.get("session_id") || ""; // Extract session_id from URL if available
+
   const [register, { isLoading }] = useRegisterMutation();
   const [formData, setFormData] = useState<FormData>({
     first_name: "",
     email: "",
     password: "",
     re_password: "",
-    sessionId: "", // Default as empty string
+    sessionId, // Assign directly from URL parameter
   });
+
   const [errors, setErrors] = useState<Errors>({
     first_name: "",
     email: "",
     password: "",
     re_password: "",
   });
-
-  useEffect(() => {
-    // Using URLSearchParams to directly get the sessionId from the URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const sessionId = urlParams.get("session_id");
-    if (sessionId) {
-      setFormData((prev) => ({ ...prev, sessionId }));
-    }
-  }, []);
 
   const validateField = (name: keyof FormData, value: string) => {
     let error = "";
@@ -114,13 +111,18 @@ const RegisterPage = () => {
 
   return (
     <div className="page-container">
-      <link rel="stylesheet" href="/Styles/Login.css" />
+      {/* Move <link> inside <Head> for proper SSR handling */}
+      <Head>
+        <link rel="stylesheet" href="/Styles/Login.css" />
+      </Head>
+
       <Link href="/">
         <Image
           src="/assets/logo-header.png"
           alt="Logo"
           width={200}
           height={150}
+          priority
           className="logo-header"
         />
       </Link>
