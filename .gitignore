@@ -12,7 +12,7 @@
 package-lock.json
 # testing
 /coverage
-env_file.ts
+# env_file.ts
 # next.js
 /.next/
 /out/

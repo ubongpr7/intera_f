@@ -4,10 +4,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Spinner from "@/components/common/Spinner";
 import { useRegisterMutation } from "@/redux/features/authApiSlice";
-import type { MetaData } from "next";
-// export const metadata:MetaData={
-//   title:'Sign',
-//   description:'Signup Page'
 
 
 // }
