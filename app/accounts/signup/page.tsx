@@ -81,21 +81,50 @@ const RegisterPage = () => {
     validateField(e.target.name as keyof FormData, e.target.value);
   };
 
+  // const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  //   event.preventDefault();
+
+  //   // Validate all fields before submission
+  //   const isFormValid = Object.keys(formData).every((key) => {
+  //     if (key === "sessionId") return true; // Skip sessionId validation
+  //     validateField(key as keyof FormData, formData[key as keyof FormData]);
+  //     return !errors[key as keyof Errors];
+  //   });
+
+  //   if (!isFormValid) {
+  //     alert("Please fix the errors before submitting.");
+  //     return;
+  //   }
+
+  //   try {
+  //     await register(formData).unwrap();
+  //     router.push("/accounts/login");
+  //   } catch (error) {
+  //     console.error("Registration failed:", error);
+  //     alert("Registration failed. Please try again.");
+  //   }
+  // };
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
+  
     // Validate all fields before submission
     const isFormValid = Object.keys(formData).every((key) => {
-      if (key === "sessionId") return true; // Skip sessionId validation
-      validateField(key as keyof FormData, formData[key as keyof FormData]);
+      // Skip sessionId validation
+      if (key === "sessionId") return true;
+  
+      // Ensure the field value is not undefined before validating
+      const value = formData[key as keyof FormData];
+      if (value === undefined) return false; // Skip validation if value is undefined
+  
+      validateField(key as keyof FormData, value);
       return !errors[key as keyof Errors];
     });
-
+  
     if (!isFormValid) {
       alert("Please fix the errors before submitting.");
       return;
     }
-
+  
     try {
       await register(formData).unwrap();
       router.push("/accounts/login");
@@ -104,7 +133,7 @@ const RegisterPage = () => {
       alert("Registration failed. Please try again.");
     }
   };
-
+  
   return (
     <div className="page-container">
       <link rel="stylesheet" href="/Styles/Login.css" />
