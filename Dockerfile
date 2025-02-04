@@ -20,7 +20,7 @@ COPY . .
 RUN yarn build 
 
 # Expose port 80
-EXPOSE 80 
+EXPOSE 3000 
 
 # Start the Next.js production server
-CMD ["yarn", "start", "-p", "80"]
+CMD ["yarn", "start"]
