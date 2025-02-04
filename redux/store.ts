@@ -29,7 +29,7 @@ export const makeStore = () =>
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware().concat(apiSlice.middleware),
-    devtools: process.env.NODE_ENV !== "production", // Correct usage of process.env
+    // devtools: process.env.NODE_ENV !== "production", // Correct usage of process.env
   });
 
 export type AppStore = ReturnType<typeof makeStore>;
