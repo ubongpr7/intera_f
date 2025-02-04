@@ -110,20 +110,14 @@ const CampaignForm = ({
             <div className={styles.formContainer}>
                 <div className={styles.header}>
                     <Link href="/main">
-                    {/* <img
-                        src="/assets/Vector4.png" // Place in public/assets folder
-                        alt="Go Back"
-                        className={styles.goBackIcon}
-                        onClick={onGoBack}
-                    /> */}
                      <Image
                         src="/assets/Vector4.png"
                         alt="Go Back"
                         className={styles.goBackIcon}
-                        width={40} // Adjust size as needed
+                        width={40} 
                         height={40}
                         onClick={onGoBack}
-                        style={{ cursor: "pointer" }} // Ensure it's clickable
+                        style={{ cursor: "pointer" }}
                         />
                     </Link>
                 </div>
@@ -149,19 +143,13 @@ const CampaignForm = ({
                                     {uploadedFiles.length > 0 &&
                                         `(${uploadedFiles.length} files uploaded)`}
                                 </h3>
-                                {/* <img
-                                    src="/assets/Vectorw.svg" // Place in public/assets folder
-                                    alt="Toggle Section"
-                                    className={`${styles.toggleIcon} ${expandedSections["creativeUploading"] ? styles.expanded : ""
-                                        }`}
-                                /> */}
                                     <Image
                                         src="/assets/Vectorw.svg"
                                         alt="Toggle Section"
                                         className={`${styles.toggleIcon} ${expanded ? styles.expanded : ""}`}
                                         width={30}
                                         height={30}
-                                        />
+                                    />
                             </div>
                             {expandedSections["creativeUploading"] && (
                                 <div className={styles.sectionContent}>
@@ -169,11 +157,6 @@ const CampaignForm = ({
                                         className={styles.uploadBox}
                                         onClick={handleFileUploadClick}
                                     >
-                                        {/* <img
-                                            src="/assets/Vector6.png" // Place in public/assets folder
-                                            alt="Upload Icon"
-                                            className={styles.uploadIcon}
-                                        /> */}
                                             <Image
                                                 src="/assets/Vector6.png"
                                                 alt="Upload Icon"
@@ -192,8 +175,8 @@ const CampaignForm = ({
                                         directory="true"
                                         multiple
                                         className={styles.hiddenFileInput}
-                                        ref={fileInputRef} // Attach ref here
-                                        onChange={handleFileChange} // Handle file changes
+                                        ref={fileInputRef} 
+                                        onChange={handleFileChange} 
                                     />
                                 </div>
                             )}
@@ -207,19 +190,13 @@ const CampaignForm = ({
                                 onClick={() => toggleSection("budgetSchedule")}
                             >
                                 <h3>Budget & Schedule</h3>
-                                {/* <img
-                                    src="/assets/Vectorw.svg"
-                                    alt="Toggle Section"
-                                    className={`${styles.toggleIcon} ${expandedSections["budgetSchedule"] ? styles.expanded : ""
-                                        }`}
-                                /> */}
                                     <Image
                                         src="/assets/Vectorw.svg"
                                         alt="Toggle Section"
                                         className={`${styles.toggleIcon} ${expanded ? styles.expanded : ""}`}
                                         width={30}
                                         height={30}
-                                        />
+                                    />
                             </div>
                             {expandedSections["budgetSchedule"] && (
                                 <div className={styles.sectionContent}>
@@ -331,49 +308,34 @@ const CampaignForm = ({
                                             className={styles.selectField}
                                         >
                                             <option value="AUCTION">Auction</option>
-                                            <option value="RESERVED">Reserved</option>
+                                            <option value="FIXED_PRICE">Fixed Price</option>
                                         </select>
-                                    </div>
-
-                                    <div className={styles.column}>
-                                        <label className={styles.labelText} htmlFor="app_events">
-                                            Schedule:
-                                        </label>
-                                        <input
-                                            type="datetime-local"
-                                            id="app_events"
-                                            name="app_events"
-                                            value={config.app_events}
-                                            onChange={handleChange}
-                                            className={styles.inputField}
-                                        />
                                     </div>
                                 </div>
                             )}
                         </div>
-                        <hr className={styles.sectionDivider} />
+
+                        {/* Placement Section */}
+                        <Placement />
+                        {/* Targeting & Delivery Section */}
+                        <TargettingDelivery />
+                        {/* Campaign Tracking Section */}
+                        <CampaignTracking />
                     </div>
-                    <Placement />
-                    <TargettingDelivery />
-                    <CampaignTracking />
-                    {/* Button container outside the formSectionsContainer */}
-                    <div className={styles.buttonContainer}>
-                        <button type="submit" className={styles.createAdButton}>
-                            {isNewCampaign ? "Create Campaign" : "Create Ad Set"}
-                        </button>
-                        <Link href="/main"><button
-                            type="button"
-                            className={styles.goBackButton}
-                            onClick={onGoBack}
-                        >
-                            Cancel
-                        </button></Link>
+
+                    <div className={styles.saveButtonContainer}>
                         <button
                             type="button"
+                            className={styles.saveButton}
                             onClick={handleSaveConfig}
-                            className={styles.createAdButton}
                         >
-                            Save Current Settings
+                            Save Campaign Configuration
+                        </button>
+                    </div>
+
+                    <div className={styles.submitButtonContainer}>
+                        <button type="submit" className={styles.submitButton}>
+                            Submit Campaign
                         </button>
                     </div>
                 </form>
@@ -382,13 +344,14 @@ const CampaignForm = ({
     );
 };
 
+// Prop validation
 CampaignForm.propTypes = {
     formId: PropTypes.string.isRequired,
     onSubmit: PropTypes.func.isRequired,
     initialConfig: PropTypes.object,
     isNewCampaign: PropTypes.bool.isRequired,
     onGoBack: PropTypes.func.isRequired,
-    objective: PropTypes.string.isRequired, // Include objective as a required prop
+    objective: PropTypes.string.isRequired,
 };
 
 export default CampaignForm;
