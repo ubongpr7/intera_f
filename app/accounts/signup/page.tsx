@@ -12,7 +12,7 @@ interface FormData {
   email: string;
   password: string;
   re_password: string;
-  sessionId?: string;
+  sessionId?: string; // sessionId is optional
 }
 
 interface Errors {
@@ -24,8 +24,8 @@ interface Errors {
 
 const RegisterPage = () => {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const sessionId = searchParams.get("session_id") || '';
+  const searchParams = useSearchParams(); // Using useSearchParams from next/navigation
+  const sessionId = searchParams.get("session_id") || ''; // Get sessionId from query string, default to an empty string
 
   const [register, { isLoading }] = useRegisterMutation();
   const [formData, setFormData] = useState<FormData>({
@@ -33,7 +33,7 @@ const RegisterPage = () => {
     email: "",
     password: "",
     re_password: "",
-    sessionId,
+    sessionId: sessionId, // Initialize sessionId with query parameter
   });
 
   const [errors, setErrors] = useState<Errors>({
@@ -85,10 +85,22 @@ const RegisterPage = () => {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    // Add sessionId only if it's part of the query
+    if (!formData.sessionId && sessionId) {
+      setFormData({
+        ...formData,
+        sessionId: sessionId, // Add sessionId from query parameter if it exists
+      });
+    }
+
+    // Validate all fields before submission
     const isFormValid = Object.keys(formData).every((key) => {
+      // Skip sessionId validation since it's optional
       if (key === "sessionId") return true;
+
       const value = formData[key as keyof FormData];
       if (value === undefined) return false;
+
       validateField(key as keyof FormData, value);
       return !errors[key as keyof Errors];
     });
@@ -100,7 +112,7 @@ const RegisterPage = () => {
 
     try {
       await register(formData).unwrap();
-      router.push("/accounts/login");
+      router.push("/accounts/login"); // Redirect to login after successful registration
     } catch (error) {
       console.error("Registration failed:", error);
       alert("Registration failed. Please try again.");
@@ -108,89 +120,92 @@ const RegisterPage = () => {
   };
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <div className="page-container">
-        <link rel="stylesheet" href="/Styles/Login.css" />
-        <Link href="/">
-          <Image
-            src="/assets/logo-header.png"
-            alt="Logo"
-            width={200} 
-            height={150}
-            className="logo-header"
+    <div className="page-container">
+      <link rel="stylesheet" href="/Styles/Login.css" />
+      <Link href="/">
+        <Image
+          src="/assets/logo-header.png"
+          alt="Logo"
+          width={200}
+          height={150}
+          className="logo-header"
+        />
+      </Link>
+
+      <div className="container">
+        <h1>Register</h1>
+
+        <form onSubmit={handleSubmit} className="form-container">
+          {/* Name */}
+          <input
+            type="text"
+            name="first_name"
+            placeholder="Name"
+            value={formData.first_name}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            className="form-input"
+            required
           />
-        </Link>
+          {errors.first_name && <p className="error">{errors.first_name}</p>}
 
-        <div className="container">
-          <h1>Register</h1>
+          {/* Email */}
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            value={formData.email}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            className="form-input"
+            required
+          />
+          {errors.email && <p className="error">{errors.email}</p>}
 
-          <form onSubmit={handleSubmit} className="form-container">
-            <input
-              type="text"
-              name="first_name"
-              placeholder="Name"
-              value={formData.first_name}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className="form-input"
-              required
-            />
-            {errors.first_name && <p className="error">{errors.first_name}</p>}
+          {/* Password */}
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            value={formData.password}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            className="form-input"
+            required
+          />
+          {errors.password && <p className="error">{errors.password}</p>}
 
-            <input
-              type="email"
-              name="email"
-              placeholder="Email"
-              value={formData.email}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className="form-input"
-              required
-            />
-            {errors.email && <p className="error">{errors.email}</p>}
+          {/* Confirm Password */}
+          <input
+            type="password"
+            name="re_password"
+            placeholder="Confirm Password"
+            value={formData.re_password}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            className="form-input"
+            required
+          />
+          {errors.re_password && <p className="error">{errors.re_password}</p>}
 
-            <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className="form-input"
-              required
-            />
-            {errors.password && <p className="error">{errors.password}</p>}
+          {/* Submit Button */}
+          <button
+            type="submit"
+            className="option-button"
+            disabled={isLoading}
+          >
+            {isLoading ? <Spinner sm /> : "Create account"}
+          </button>
+        </form>
 
-            <input
-              type="password"
-              name="re_password"
-              placeholder="Confirm Password"
-              value={formData.re_password}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className="form-input"
-              required
-            />
-            {errors.re_password && <p className="error">{errors.re_password}</p>}
-
-            <button
-              type="submit"
-              className="option-button"
-              disabled={isLoading}
-            >
-              {isLoading ? <Spinner sm /> : "Create account"}
-            </button>
-          </form>
-
-          <p className="switchLink">
-            Already have an account?{" "}
-            <Link href="/accounts/login" className="linkText">
-              Sign in
-            </Link>
-          </p>
-        </div>
+        <p className="switchLink">
+          Already have an account?{" "}
+          <Link href="/accounts/login" className="linkText">
+            Sign in
+          </Link>
+        </p>
       </div>
-    </Suspense>
+    </div>
   );
 };
 
