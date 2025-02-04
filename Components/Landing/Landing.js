@@ -362,7 +362,6 @@ const Landing = () => {
             {/* <Link href="/accounts/signup"><button className="price-start-btn">Get Started</button></Link> */}
             <a 
       href={`${env.BACKEND_HOST_URL}/stripe/subscribe/${env.ENTERPRICE_PRICE_ID}?success_path=${env.FRONTEND_HOST_URL}/accounts/signup/&cancel_path=${env.FRONTEND_HOST_URL}`}
-      target="_blank" 
       rel="noopener noreferrer"
       style={{ marginTop: "10px" }}
     >
