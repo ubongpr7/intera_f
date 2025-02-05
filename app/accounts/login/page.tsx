@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import "./Login.css";
 import { useLoginMutation } from "@/redux/features/authApiSlice";
 import Image from "next/image";
-
+import { useEffect } from "react";
 
 const LoginPage = () => {
   const router = useRouter();
@@ -15,8 +15,8 @@ const LoginPage = () => {
     password: "",
     rememberMe: false,
   });
-
-  const [login, { isLoading }] = useLoginMutation();
+  // const [login, { data, isSuccess }] = useLoginMutation();
+  const [login, {data, isLoading }] = useLoginMutation();
   const [errors, setErrors] = useState({
     email: "",
     password: "",
@@ -114,7 +114,11 @@ const LoginPage = () => {
           localStorage.setItem("accessToken", response.access);
           localStorage.setItem("refreshToken", response.refresh);
           localStorage.setItem("user", JSON.stringify(response.user));
-
+          useEffect(() => {
+            if (isSuccess && data?.user) {
+                dispatch(setUser(data.user)); // Store user in Redux
+            }
+        }, [isSuccess, data, dispatch]);
           router.push("/main");
         }
       } catch (error) {

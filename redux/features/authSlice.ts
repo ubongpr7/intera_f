@@ -1,4 +1,5 @@
 import {createSlice} from "@reduxjs/toolkit";
+
 interface AuthState{
     isAuthenticated:boolean;
     isLoading:boolean;
