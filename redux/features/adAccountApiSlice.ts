@@ -1,14 +1,19 @@
 import { apiSlice } from '../services/apiSlice';
 
+// interface AdAccount {
+//     id?: number;
+//     ad_account_id?: string;
+//     // pixel_id?: string;
+//     // facebook_page_id?: string;
+//     access_token?: string;
+//     // is_bound?: boolean;
+//     // name?: string;
+//     // business_manager_id?: string;
+// }
 interface AdAccount {
     id?: number;
     ad_account_id?: string;
-    pixel_id?: string;
-    facebook_page_id?: string;
     access_token?: string;
-    is_bound?: boolean;
-    name?: string;
-    business_manager_id?: string;
 }
 const ads_manager_api='ads_manager_api'
 const adAccountApiSlice = apiSlice.injectEndpoints({

@@ -1,16 +1,16 @@
+
 "use client";
 
 import env from "@/env_file";
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import { useCreateAdAccountMutation } from "@/redux/features/adAccountApiSlice";
+import { useCreateAdAccountMutation } from "@/redux/features/adAccountApiSlice"; 
 
 const FACEBOOK_APP_ID = env.FACEBOOK_APP_ID;
 
 const useFacebookAuth = () => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [userID, setUserID] = useState<string | null>(null);
-  const [expiresIn, setExpiresIn] = useState<number | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [createAdAccount] = useCreateAdAccountMutation(); // Mutation to send data to backend
 
@@ -41,39 +41,6 @@ const useFacebookAuth = () => {
     loadFacebookSDK();
   }, []);
 
-  const fetchFacebookData = async (token: string) => {
-    try {
-      const fields = "id,name,adaccounts{id,name,account_id},businesses{id,name},pixel_id";
-      const response = await fetch(`https://graph.facebook.com/v20.0/me?fields=${fields}&access_token=${token}`);
-      const data = await response.json();
-
-      if (!data.id) {
-        throw new Error("Failed to fetch Facebook data");
-      }
-
-      const adAccounts = data.adaccounts?.data?.[0] || {};
-      const business = data.businesses?.data?.[0] || {};
-
-      // Construct payload
-      const adAccountData = {
-        ad_account_id: adAccounts.account_id || null,
-        name: adAccounts.name || null,
-        business_manager_id: business.id || null,
-        pixel_id: data.pixel_id || null,
-        facebook_page_id: data.id, 
-        access_token: token,
-        is_bound: true,
-      };
-
-      // Send data to backend
-      await createAdAccount(adAccountData).unwrap();
-      toast.success("Ad account successfully created!");
-    } catch (error: any) {
-      console.error("Error fetching Facebook data:", error);
-      toast.error("Failed to fetch Facebook data.");
-    }
-  };
-
   const loginWithFacebook = () => {
     if (!window.FB) {
       toast.error("Facebook SDK not loaded. Please try again.");
@@ -81,14 +48,19 @@ const useFacebookAuth = () => {
     }
 
     window.FB.login(
-      (response) => {
+      async (response) => {
         if (response.authResponse) {
-          const { accessToken, userID, expiresIn } = response.authResponse;
+          const { accessToken, userID } = response.authResponse;
           setAccessToken(accessToken);
           setUserID(userID);
-          setExpiresIn(expiresIn);
 
-          fetchFacebookData(accessToken);
+          try {
+            await createAdAccount({ ad_account_id: userID, access_token: accessToken }).unwrap();
+            toast.success("Ad account successfully created!");
+          } catch (error: any) {
+            console.error("Error creating ad account:", error);
+            toast.error("Failed to create ad account.");
+          }
         } else {
           toast.error("Facebook login failed or was cancelled.");
         }
@@ -101,20 +73,18 @@ const useFacebookAuth = () => {
     loginWithFacebook,
     accessToken,
     userID,
-    expiresIn,
     isInitialized,
   };
 };
 
 export default useFacebookAuth;
 
-
 // "use client";
 
 // import env from "@/env_file";
 // import { useState, useEffect } from "react";
 // import { toast } from "react-toastify";
-
+// import { useCreateAdAccountMutation } from "@/redux/features/adAccountApiSlice";
 // const FACEBOOK_APP_ID =env.FACEBOOK_APP_ID;
 
 // const useFacebookAuth = () => {
@@ -122,7 +92,7 @@ export default useFacebookAuth;
 //   const [userID, setUserID] = useState<string | null>(null);
 //   const [expiresIn, setExpiresIn] = useState<number | null>(null);
 //   const [isInitialized, setIsInitialized] = useState(false);
-
+//     const [createAd]=useCreateAdAccountMutation();
 //   useEffect(() => {
 //     const loadFacebookSDK = () => {
 //       if (window.FB) {
@@ -162,6 +132,7 @@ export default useFacebookAuth;
 //           setAccessToken(response.authResponse.accessToken);
 //           setUserID(response.authResponse.userID);
 //           setExpiresIn(response.authResponse.expiresIn);
+//           toast.success("Facebook login sucessful");
 //         } else {
 //           toast.error("Facebook login failed or was cancelled.");
 //         }
@@ -180,4 +151,3 @@ export default useFacebookAuth;
 // };
 
 // export default useFacebookAuth;
-
