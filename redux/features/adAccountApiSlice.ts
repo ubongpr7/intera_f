@@ -5,67 +5,34 @@ interface AdAccount {
     ad_account_id?: string;
     access_token?: string;
 }
-
-const ads_manager_api = 'ads_manager_api';
-
-// Modify the apiSlice to include the authorization header
+const ads_manager_api='ads_manager_api'
 const adAccountApiSlice = apiSlice.injectEndpoints({
     endpoints: builder => ({
         createAdAccount: builder.mutation<AdAccount, Partial<AdAccount>>({
-            query: (adAccountData) => {
-                // Get the token from localStorage
-                const token = localStorage.getItem("accessToken");
-                return {
-                    url: `/${ads_manager_api}/ad-accounts/create/`,
-                    method: 'POST',
-                    body: adAccountData,
-                    // Include the authorization header if the token is available
-                    headers: token ? { Authorization: `Bearer ${token}` } : {},
-                };
-            },
+            query: (adAccountData) => ({
+                url: `/${ads_manager_api}/ad-accounts/create/`,
+                method: 'POST',
+                body: adAccountData,
+            }),
         }),
         getAdAccounts: builder.query<AdAccount[], void>({
-            query: () => {
-                // Get the token from localStorage
-                const token = localStorage.getItem("accessToken");
-                return {
-                    url: `/${ads_manager_api}/ad-accounts/`,
-                    headers: token ? { Authorization: `Bearer ${token}` } : {},
-                };
-            },
+            query: () =>  `/${ads_manager_api}/ad-accounts/`,
         }),
         getAdAccount: builder.query<AdAccount, number>({
-            query: (id) => {
-                // Get the token from localStorage
-                const token = localStorage.getItem("accessToken");
-                return {
-                    url: `/${ads_manager_api}/ad-accounts/${id}/`,
-                    headers: token ? { Authorization: `Bearer ${token}` } : {},
-                };
-            },
+            query: (id) => `/${ads_manager_api}/ad-accounts/${id}/`,
         }),
         updateAdAccount: builder.mutation<AdAccount, { id: number; data: Partial<AdAccount> }>({
-            query: ({ id, data }) => {
-                // Get the token from localStorage
-                const token = localStorage.getItem("accessToken");
-                return {
-                    url: `/${ads_manager_api}/ad-accounts/${id}/`,
-                    method: 'PATCH',
-                    body: data,
-                    headers: token ? { Authorization: `Bearer ${token}` } : {},
-                };
-            },
+            query: ({ id, data }) => ({
+                url: `/${ads_manager_api}/ad-accounts/${id}/`,
+                method: 'PATCH',
+                body: data,
+            }),
         }),
         deleteAdAccount: builder.mutation<{ success: boolean }, number>({
-            query: (id) => {
-                // Get the token from localStorage
-                const token = localStorage.getItem("accessToken");
-                return {
-                    url: `/${ads_manager_api}/ad-accounts/${id}/`,
-                    method: 'DELETE',
-                    headers: token ? { Authorization: `Bearer ${token}` } : {},
-                };
-            },
+            query: (id) => ({
+                url:  `/${ads_manager_api}/ad-accounts/${id}/`,
+                method: 'DELETE',
+            }),
         }),
     }),
 });
