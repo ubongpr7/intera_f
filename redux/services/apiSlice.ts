@@ -29,7 +29,7 @@ const baseQueryWithReauth: BaseQueryFn<
       try {
         const refreshResult = await baseQuery(
           {
-            url: '/jwt/refresh',
+            url: '/auth-token/jwt/refresh',
             method: 'POST',
           },
           api,

@@ -59,7 +59,7 @@ const authApiSlice = apiSlice.injectEndpoints({
 		}),
 		verify: builder.mutation({
 			query: () => ({
-				url: '/jwt/verify/',
+				url: '/auth-token/jwt/verify/',
 				method: 'POST',
 			}),
 		}),
