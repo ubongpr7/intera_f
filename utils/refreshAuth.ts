@@ -1,18 +1,20 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import axios from 'axios';
-import env from '@/env_file'; // Make sure env variables are set correctly
+import { setCookie, getCookie } from 'cookies-next'; 
+import env from '@/env_file'; 
 
 const redirectToLogin = () => {
   const router = useRouter();
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem("refreshToken");
-  localStorage.removeItem("user");
+  setCookie('accessToken', '', { maxAge: -1 }); 
+  setCookie('refreshToken', '', { maxAge: -1 });
+  setCookie('user', '', { maxAge: -1 }); 
 
-  router.push("/accounts/login");
+  router.push('/accounts/login');
 };
+
 const refreshAccessToken = async () => {
-  const refreshToken = localStorage.getItem("refreshToken");
+  const refreshToken = getCookie('refreshToken'); // Get refresh token from cookies
 
   if (!refreshToken) {
     redirectToLogin();
@@ -23,7 +25,8 @@ const refreshAccessToken = async () => {
     const response = await axios.post(`${env.BACKEND_HOST_URL}/jwt/refresh/`, { refresh: refreshToken });
 
     if (response.data && response.data.access) {
-      localStorage.setItem("accessToken", response.data.access);
+      // Set the new access token in cookies
+      setCookie('accessToken', response.data.access, { maxAge: 60 * 60 });  // 1 hour expiration
       console.log('Access token refreshed');
     } else {
       redirectToLogin();
@@ -34,18 +37,23 @@ const refreshAccessToken = async () => {
   }
 };
 
-// This is a custom hook to refresh the token periodically
+// Custom hook to refresh the token periodically
 export const useTokenRefresh = () => {
   const router = useRouter();
 
   useEffect(() => {
-    // Set interval for token refresh (e.g., every 15 minutes)
-    const intervalId = setInterval(() => {
+    // Check if the current route is protected (i.e., not starting with '/accounts')
+    if (!router.pathname.startsWith('/accounts')) {
+      // Refresh token every 15 minutes (or on initial load)
       refreshAccessToken();
-    }, 900000); // 15 minutes
 
-    // Cleanup the interval on unmount
-    return () => clearInterval(intervalId);
+      const intervalId = setInterval(() => {
+        refreshAccessToken();
+      }, 900000); // 15 minutes
+
+      // Cleanup the interval on unmount
+      return () => clearInterval(intervalId);
+    }
   }, [router]);
 
   return {

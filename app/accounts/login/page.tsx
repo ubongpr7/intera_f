@@ -65,6 +65,7 @@ const LoginPage = () => {
   // Validate onBlur (when the user moves to another field)
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     validateField(e.target.name, e.target.value);
+
   };
 
   // Handle form submission
@@ -100,14 +101,20 @@ const LoginPage = () => {
         alert("Please fix the errors before submitting.");
         return;
       }
+
     
       try {
         const response = await login({ email: formData.email, password: formData.password }).unwrap();
     
         if (response.access) {
+          document.cookie = `accessToken=${response.data.access}; path=/; max-age=${60 * 60}`; // 1 hour
+          document.cookie = `refreshToken=${response.data.refresh}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 days
+
+
           localStorage.setItem("accessToken", response.access);
           localStorage.setItem("refreshToken", response.refresh);
           localStorage.setItem("user", JSON.stringify(response.user));
+
           router.push("/main");
         }
       } catch (error) {
