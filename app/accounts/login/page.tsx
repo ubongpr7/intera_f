@@ -68,29 +68,53 @@ const LoginPage = () => {
   };
 
   // Handle form submission
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  // const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  //   e.preventDefault();
 
-    // Validate all fields before submitting
-    validateField("email", formData.email);
-    validateField("password", formData.password);
+  //   // Validate all fields before submitting
+  //   validateField("email", formData.email);
+  //   validateField("password", formData.password);
 
-    // Ensure no errors exist before submitting
-    if (errors.email || errors.password) {
-      alert("Please fix the errors before submitting.");
-      return;
-    }
+  //   // Ensure no errors exist before submitting
+  //   if (errors.email || errors.password) {
+  //     alert("Please fix the errors before submitting.");
+  //     return;
+  //   }
 
-    try {
-      await login({ email: formData.email, password: formData.password }).unwrap();
+  //   try {
+  //     await login({ email: formData.email, password: formData.password }).unwrap();
 
-      router.push("/main");
-    } catch (error) {
-      // console.error("Login failed:", error);
-      // alert(`${error.data.detail}`);
-    }
-  };
-
+  //     router.push("/main");
+  //   } catch (error) {
+  //     // console.error("Login failed:", error);
+  //     // alert(`${error.data.detail}`);
+  //   }
+  // };
+    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+    
+      validateField("email", formData.email);
+      validateField("password", formData.password);
+    
+      if (errors.email || errors.password) {
+        alert("Please fix the errors before submitting.");
+        return;
+      }
+    
+      try {
+        const response = await login({ email: formData.email, password: formData.password }).unwrap();
+    
+        if (response.access) {
+          localStorage.setItem("accessToken", response.access);
+          localStorage.setItem("refreshToken", response.refresh);
+          localStorage.setItem("user", JSON.stringify(response.user));
+          router.push("/main");
+        }
+      } catch (error) {
+        alert("Login failed: " + error?.data?.detail);
+      }
+    };
+  
   return (
     <div className="page-container">
       {/* Logo */}
