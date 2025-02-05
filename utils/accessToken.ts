@@ -1,23 +1,32 @@
-"use client"; // Required for Next.js App Router (ensures client-side execution)
+"use client";
 
+import env from "@/env_file";
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 
-const FacebookLogin = () => {
-  const [accessToken, setAccessToken] = useState("");
+const FACEBOOK_APP_ID =env.FACEBOOK_APP_ID;
+
+const useFacebookAuth = () => {
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [userID, setUserID] = useState<string | null>(null);
+  const [expiresIn, setExpiresIn] = useState<number | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    // Load Facebook SDK dynamically on the client side
     const loadFacebookSDK = () => {
-      if (window.FB) return; // Prevent multiple loads
+      if (window.FB) {
+        setIsInitialized(true);
+        return;
+      }
 
       window.fbAsyncInit = function () {
         window.FB.init({
-          appId: "FACEBOOK_APP_ID", 
+          appId: FACEBOOK_APP_ID,
           cookie: true,
           xfbml: true,
           version: "v20.0",
         });
+        setIsInitialized(true);
       };
 
       const script = document.createElement("script");
@@ -30,7 +39,7 @@ const FacebookLogin = () => {
     loadFacebookSDK();
   }, []);
 
-  const handleFacebookLogin = () => {
+  const loginWithFacebook = () => {
     if (!window.FB) {
       toast.error("Facebook SDK not loaded. Please try again.");
       return;
@@ -39,9 +48,9 @@ const FacebookLogin = () => {
     window.FB.login(
       (response) => {
         if (response.authResponse) {
-          const token = response.authResponse.accessToken;
-          setAccessToken(token);
-          console.log("Facebook Access Token:", token);
+          setAccessToken(response.authResponse.accessToken);
+          setUserID(response.authResponse.userID);
+          setExpiresIn(response.authResponse.expiresIn);
         } else {
           toast.error("Facebook login failed or was cancelled.");
         }
@@ -50,12 +59,13 @@ const FacebookLogin = () => {
     );
   };
 
-  return (
-    <div>
-      <button onClick={handleFacebookLogin}>Login with Facebook</button>
-      {accessToken && <p>Access Token: {accessToken}</p>}
-    </div>
-  );
+  return {
+    loginWithFacebook,
+    accessToken,
+    userID,
+    expiresIn,
+    isInitialized,
+  };
 };
 
-export default FacebookLogin;
+export default useFacebookAuth;

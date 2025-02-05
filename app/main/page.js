@@ -4,7 +4,7 @@ import "/public/Styles/side-menu.css";
 import "/public/Styles/style.css";
 import "/public/Styles/home.css";
 import Image from "next/image";
-
+import { useFacebookAuth } from "@/utils";
 import Header from "@/Components/Header/Header";
 import Link from "next/link";
 
@@ -13,6 +13,7 @@ const Page = () => {
   const [selectedCampaign, setSelectedCampaign] = useState("new");
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [dropdownOption, setDropdownOption] = useState("Select Options");
+  const { loginWithFacebook, accessToken, userID, isInitialized } = useFacebookAuth();
 
   const campaignOptions = [
     "findproccesserror",
@@ -65,9 +66,22 @@ const Page = () => {
   return (
     <div className="forclr">
           <Header />
+
       <div className="main-container">
         <div className="main-content" id="content">
           <main>
+          <div>
+          <button onClick={loginWithFacebook} disabled={!isInitialized}>
+            Login with Facebook
+          </button>
+          {accessToken && (
+            <div>
+              <p>Access Token: {accessToken}</p>
+              <p>User ID: {userID}</p>
+            </div>
+          )}
+        </div>
+
             <div className="content">
               <div className="form-container">
                 <h2 className="form-heading">Choose Campaign Objective</h2>
