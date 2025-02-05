@@ -5,8 +5,6 @@ interface AdAccount {
     ad_account_id?: string;
     pixel_id?: string;
     facebook_page_id?: string;
-    app_id?: string;
-    app_secret?: string;
     access_token?: string;
     is_bound?: boolean;
     name?: string;

@@ -81,14 +81,6 @@ const SidebarWithHeader = () => {
                 <hr className="horizontalRule" />
                 <div className="accountsContainer">
 
-                <button
-                    className={`accountButton `}
-                            // onClick={() => handleAccountClick(index + 1)}
-                            aria-label={`Switch to Ad Account `}
-                        >
-                            <Image src="/assets/user-round.png" alt="User Icon" width={20} height={20} className="icon" />
-                            {`${userID}->${accessToken}`}
-                        </button>
                     {[...Array(10)].map((_, index) => (
                         <button
                             key={index}
