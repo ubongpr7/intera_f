@@ -61,7 +61,7 @@ const useFacebookAuth = () => {
   useEffect(() => {
     if (accessToken && userID) {
         try{
-            createAdAccount(accessToken, userID);
+            createAdAccount(accessToken, userID).unwrap();
             toast.success(' Facebook Token Added')
         }
         catch(error){
