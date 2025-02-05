@@ -11,7 +11,7 @@ const SidebarWithHeader = () => {
     const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
     const [facebookDropdownOpen, setFacebookDropdownOpen] = useState(false);
   const { loginWithFacebook, accessToken, userID, isInitialized } = useFacebookAuth();
-
+                
     const sidebarRef = useRef(null);
     const menuBtnRef = useRef(null);
     
@@ -95,10 +95,24 @@ const SidebarWithHeader = () => {
 
                 </div>
                 <hr className="horizontalRule" />
-                 
-                <button onClick={loginWithFacebook} disabled={!isInitialized} className="accountButton2" aria-label="Create New Ad Account">
+                {accessToken ? (
+                <button
+                    onClick={loginWithFacebook}
+                    disabled={!isInitialized}
+                    className="accountButton2"
+                    aria-label="Create New Ad Account"
+                >
+                    Setup Facebook Account  
+                </button>
+            ) : (
+                <button
+                    disabled={!isInitialized}
+                    className="accountButton2"
+                    aria-label="Create New Ad Account"
+                >
                     Add New Ad Account
                 </button>
+            )}
                 <div>
                     
                     {accessToken && (
