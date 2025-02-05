@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import { CreateAdAccountComponent } from "./createFunctions";
 import env from "@/env_file";
 const FACEBOOK_APP_ID = env.FACEBOOK_APP_ID
-
+import { useCreateAdAccountMutation } from "@/redux/features/adAccountApiSlice";
 const useFacebookAuth = () => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [userID, setUserID] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [createAdAccount, { isLoading }] = useCreateAdAccountMutation();
 
   useEffect(() => {
     const loadFacebookSDK = () => {
@@ -60,7 +60,13 @@ const useFacebookAuth = () => {
 
   useEffect(() => {
     if (accessToken && userID) {
-      CreateAdAccountComponent(accessToken, userID);
+        try{
+            createAdAccount(accessToken, userID);
+            toast.success(' Facebook Token Added')
+        }
+        catch(error){
+            console.log(error)
+        }
     }
   }, [accessToken, userID]);
 
