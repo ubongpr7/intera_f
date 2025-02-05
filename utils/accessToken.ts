@@ -5,6 +5,20 @@ import { toast } from "react-toastify";
 import env from "@/env_file";
 const FACEBOOK_APP_ID = env.FACEBOOK_APP_ID
 import { useCreateAdAccountMutation } from "@/redux/features/adAccountApiSlice";
+
+
+
+const fetchAdAccounts = async (accessToken:string) => {
+  try {
+    const response = await fetch(`https://graph.facebook.com/v10.0/me/adaccounts?fields=name,account_id&access_token=${accessToken}`);
+    const data = await response.json();
+    console.log(data.data);
+    return data.data; // Return the fetched data
+  } catch (error) {
+    console.error('Error fetching ad accounts:', error);
+    return null; // Return null in case of an error
+  }
+};
 const useFacebookAuth = () => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [userID, setUserID] = useState<string | null>(null);
@@ -66,7 +80,16 @@ const useFacebookAuth = () => {
         }
         catch(error){
             console.log(error)
-        }
+        };
+        fetchAdAccounts(accessToken).then((accounts) => {
+          if (accounts) {
+            console.log("Ad Accounts:", accounts);
+          } else {
+            console.log("Failed to fetch ad accounts.");
+          }
+});
+
+
     }
   }, [accessToken, userID]);
 
