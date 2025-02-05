@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { CreateAdAccountComponent } from "./createFunctions";
+
 const FACEBOOK_APP_ID = "YOUR_FACEBOOK_APP_ID";
 
 const useFacebookAuth = () => {
@@ -32,6 +33,17 @@ const useFacebookAuth = () => {
       script.src = "https://connect.facebook.net/en_US/sdk.js";
       script.async = true;
       script.defer = true;
+      script.onload = () => {
+        if (window.FB) {
+          window.FB.init({
+            appId: FACEBOOK_APP_ID,
+            cookie: true,
+            xfbml: true,
+            version: "v20.0",
+          });
+          setIsInitialized(true);
+        }
+      };
       document.body.appendChild(script);
     };
 
@@ -39,18 +51,21 @@ const useFacebookAuth = () => {
   }, []);
 
   const loginWithFacebook = () => {
-    if (!window.FB) {
-      toast.error("Facebook SDK not loaded. Please try again.");
+    if (!isInitialized || !window.FB) {
+      toast.error("Facebook SDK not fully loaded. Please try again.");
       return;
     }
 
     window.FB.login(
-      (response:any) => {
+      (response: any) => {
         if (response.authResponse) {
-          setAccessToken(response.authResponse.accessToken);
-          setUserID(response.authResponse.userID);
-          setExpiresIn(response.authResponse.expiresIn);
-          CreateAdAccountComponent(accessToken,userID)
+          const { accessToken, userID, expiresIn } = response.authResponse;
+          setAccessToken(accessToken);
+          setUserID(userID);
+          setExpiresIn(expiresIn);
+
+          // Send data to backend
+          CreateAdAccountComponent(accessToken, userID);
         } else {
           toast.error("Facebook login failed or was cancelled.");
         }
