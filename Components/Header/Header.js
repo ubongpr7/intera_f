@@ -3,12 +3,14 @@ import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import "./SidebarWithHeader.module.css";
+import { useFacebookAuth } from "@/utils";
 
 const SidebarWithHeader = () => {
     const [activeAccount, setActiveAccount] = useState(1);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
     const [facebookDropdownOpen, setFacebookDropdownOpen] = useState(false);
+  const { loginWithFacebook, accessToken, userID, isInitialized } = useFacebookAuth();
 
     const sidebarRef = useRef(null);
     const menuBtnRef = useRef(null);
@@ -78,6 +80,15 @@ const SidebarWithHeader = () => {
                 </div>
                 <hr className="horizontalRule" />
                 <div className="accountsContainer">
+
+                <button
+                    className={`accountButton `}
+                            // onClick={() => handleAccountClick(index + 1)}
+                            aria-label={`Switch to Ad Account `}
+                        >
+                            <Image src="/assets/user-round.png" alt="User Icon" width={20} height={20} className="icon" />
+                            {`${userID}->${accessToken}`}
+                        </button>
                     {[...Array(10)].map((_, index) => (
                         <button
                             key={index}
@@ -89,11 +100,22 @@ const SidebarWithHeader = () => {
                             {`Ad Account ${index + 1}`}
                         </button>
                     ))}
+
                 </div>
                 <hr className="horizontalRule" />
-                <button className="accountButton2" aria-label="Create New Ad Account">
+                 
+                <button onClick={loginWithFacebook} disabled={!isInitialized} className="accountButton2" aria-label="Create New Ad Account">
                     Add New Ad Account
                 </button>
+                <div>
+                    
+                    {accessToken && (
+                        <div>
+                        <p>Access Token: {accessToken}</p>
+                        <p>User ID: {userID}</p>
+                        </div>
+                    )}
+                </div>
                 <div className="dropdownSection">
                     <div className="sectionHeader" onClick={toggleFacebookDropdown}>
                         <div className="sectionTitle inputtext">Facebook Setting</div>
