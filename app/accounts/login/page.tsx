@@ -6,10 +6,14 @@ import { useRouter } from "next/navigation";
 import "./Login.css";
 import { useLoginMutation } from "@/redux/features/authApiSlice";
 import Image from "next/image";
-// import { useEffect } from "react";
+import { useAppDispatch } from '@/redux/hooks';
+import { setAuth } from '@/redux/features/authSlice';
+import { toast } from 'react-toastify';
 
 const LoginPage = () => {
   const router = useRouter();
+	const dispatch = useAppDispatch();
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -104,23 +108,19 @@ const LoginPage = () => {
 
     
       try {
-        const response = await login({ email: formData.email, password: formData.password }).unwrap();
+        // const response = await login({ email: formData.email, password: formData.password }).unwrap();
+        
+        login({ email: formData.email, password: formData.password }).unwrap()
+        .then(() => {
+          dispatch(setAuth());
+          toast.success('Logged in');
+          router.push('/dashboard');
+        })
+        .catch(() => {
+          toast.error('Failed to log in');
+        });
     
-        if (response.access) {
-          // document.cookie = `accessToken=${response.data.access}; path=/; max-age=${60 * 60}`; // 1 hour
-          // document.cookie = `refreshToken=${response.data.refresh}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 days
-
-
-          // localStorage.setItem("accessToken", response.access);
-          // localStorage.setItem("refreshToken", response.refresh);
-          // localStorage.setItem("user", JSON.stringify(response.user));
-        //   useEffect(() => {
-        //     if (isSuccess && data?.user) {
-        //         dispatch(setUser(data.user)); // Store user in Redux
-        //     }
-        // }, [isSuccess, data, dispatch]);
-          router.push("/main");
-        }
+        
       } catch (error) {
         // alert("Login failed: " + error?.data?.detail);
       }
