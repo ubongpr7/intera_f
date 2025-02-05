@@ -8,6 +8,7 @@ import { useCreateAdAccountMutation } from "@/redux/features/adAccountApiSlice";
 
 
 
+
 const fetchAdAccounts = async (accessToken:string) => {
   try {
     const response = await fetch(`https://graph.facebook.com/v10.0/me/adaccounts?fields=name,account_id&access_token=${accessToken}`);
