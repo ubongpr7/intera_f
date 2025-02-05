@@ -9,7 +9,16 @@ import Image from "next/image";
 import { useAppDispatch } from '@/redux/hooks';
 import { setAuth } from '@/redux/features/authSlice';
 import { toast } from 'react-toastify';
+import { setCookie, getCookie } from 'cookies-next'; 
 
+export interface AuthResponse {
+  access: string;
+  refresh: string;
+  user: {
+    id: number;
+    email: string;
+  };
+}
 const LoginPage = () => {
   const router = useRouter();
 	const dispatch = useAppDispatch();
@@ -110,8 +119,29 @@ const LoginPage = () => {
       try {
         // const response = await login({ email: formData.email, password: formData.password }).unwrap();
         
-        login({ email: formData.email, password: formData.password }).unwrap()
-        .then(() => {
+        // login({ email: formData.email, password: formData.password }).unwrap()
+        // .then(() => {
+        //   dispatch(setAuth());
+        //   toast.success('Logged in');
+        //   router.push('/dashboard');
+        // })
+        // .catch(() => {
+        //   toast.error('Failed to log in');
+        // });
+
+        login({ email: formData.email, password: formData.password })
+        .unwrap()
+        .then((response:AuthResponse) => {
+          if (response?.access) {
+            // Store access token
+            setCookie('accessToken', response.access, { maxAge: 60 * 60, path: '/' }); // 1 hour expiration
+          }
+
+          if (response?.refresh) {
+            // Store refresh token
+            setCookie('refreshToken', response.refresh, { maxAge: 60 * 60 * 24 * 7, path: '/' }); // 7 days expiration
+          }
+
           dispatch(setAuth());
           toast.success('Logged in');
           router.push('/dashboard');
