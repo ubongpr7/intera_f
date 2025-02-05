@@ -2,11 +2,6 @@ import { apiSlice } from '../services/apiSlice';
 
 const ads_manager_api = 'ads_manager_api';
 
-// Define an interface for the authentication token
-interface AuthHeaders {
-    Authorization: string;
-}
-
 interface Campaign {
     id?: number;
     campaign_id?: string;
@@ -56,11 +51,6 @@ interface LeadForm {
     updated_at?: string;
 }
 
-const getAuthHeaders = (): AuthHeaders => {
-    const token = localStorage.getItem('authToken'); 
-    return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
 const adManagerApiSlice = apiSlice.injectEndpoints({
     endpoints: builder => ({
         // Campaign Endpoints
@@ -68,27 +58,19 @@ const adManagerApiSlice = apiSlice.injectEndpoints({
             query: campaignData => ({
                 url: `/${ads_manager_api}/campaigns/create/`,
                 method: 'POST',
-                headers: getAuthHeaders(),
                 body: campaignData,
             }),
         }),
         getCampaigns: builder.query<Campaign[], void>({
-            query: () => ({
-                url: `/${ads_manager_api}/campaigns/`,
-                headers: getAuthHeaders(),
-            }),
+            query: () => `/${ads_manager_api}/campaigns/`,
         }),
         getCampaign: builder.query<Campaign, number>({
-            query: id => ({
-                url: `/${ads_manager_api}/campaigns/${id}/`,
-                headers: getAuthHeaders(),
-            }),
+            query: id => `/${ads_manager_api}/campaigns/${id}/`,
         }),
         updateCampaign: builder.mutation<Campaign, { id: number; data: Partial<Campaign> }>({
             query: ({ id, data }) => ({
                 url: `/${ads_manager_api}/campaigns/${id}/`,
                 method: 'PATCH',
-                headers: getAuthHeaders(),
                 body: data,
             }),
         }),
@@ -96,7 +78,6 @@ const adManagerApiSlice = apiSlice.injectEndpoints({
             query: id => ({
                 url: `/${ads_manager_api}/campaigns/${id}/`,
                 method: 'DELETE',
-                headers: getAuthHeaders(),
             }),
         }),
 
@@ -105,27 +86,19 @@ const adManagerApiSlice = apiSlice.injectEndpoints({
             query: adSetData => ({
                 url: `/${ads_manager_api}/adsets/create/`,
                 method: 'POST',
-                headers: getAuthHeaders(),
                 body: adSetData,
             }),
         }),
         getAdSets: builder.query<AdSet[], void>({
-            query: () => ({
-                url: `/${ads_manager_api}/adsets/`,
-                headers: getAuthHeaders(),
-            }),
+            query: () => `/${ads_manager_api}/adsets/`,
         }),
         getAdSet: builder.query<AdSet, number>({
-            query: id => ({
-                url: `/${ads_manager_api}/adsets/${id}/`,
-                headers: getAuthHeaders(),
-            }),
+            query: id => `/${ads_manager_api}/adsets/${id}/`,
         }),
         updateAdSet: builder.mutation<AdSet, { id: number; data: Partial<AdSet> }>({
             query: ({ id, data }) => ({
                 url: `/${ads_manager_api}/adsets/${id}/`,
                 method: 'PATCH',
-                headers: getAuthHeaders(),
                 body: data,
             }),
         }),
@@ -133,7 +106,6 @@ const adManagerApiSlice = apiSlice.injectEndpoints({
             query: id => ({
                 url: `/${ads_manager_api}/adsets/${id}/`,
                 method: 'DELETE',
-                headers: getAuthHeaders(),
             }),
         }),
 
@@ -142,27 +114,19 @@ const adManagerApiSlice = apiSlice.injectEndpoints({
             query: adData => ({
                 url: `/${ads_manager_api}/ads/create/`,
                 method: 'POST',
-                headers: getAuthHeaders(),
                 body: adData,
             }),
         }),
         getAds: builder.query<Ad[], void>({
-            query: () => ({
-                url: `/${ads_manager_api}/ads/`,
-                headers: getAuthHeaders(),
-            }),
+            query: () => `/${ads_manager_api}/ads/`,
         }),
         getAd: builder.query<Ad, number>({
-            query: id => ({
-                url: `/${ads_manager_api}/ads/${id}/`,
-                headers: getAuthHeaders(),
-            }),
+            query: id => `/${ads_manager_api}/ads/${id}/`,
         }),
         updateAd: builder.mutation<Ad, { id: number; data: Partial<Ad> }>({
             query: ({ id, data }) => ({
                 url: `/${ads_manager_api}/ads/${id}/`,
                 method: 'PATCH',
-                headers: getAuthHeaders(),
                 body: data,
             }),
         }),
@@ -170,7 +134,6 @@ const adManagerApiSlice = apiSlice.injectEndpoints({
             query: id => ({
                 url: `/${ads_manager_api}/ads/${id}/`,
                 method: 'DELETE',
-                headers: getAuthHeaders(),
             }),
         }),
 
@@ -179,27 +142,19 @@ const adManagerApiSlice = apiSlice.injectEndpoints({
             query: leadFormData => ({
                 url: `/${ads_manager_api}/leadforms/create/`,
                 method: 'POST',
-                headers: getAuthHeaders(),
                 body: leadFormData,
             }),
         }),
         getLeadForms: builder.query<LeadForm[], void>({
-            query: () => ({
-                url: `/${ads_manager_api}/leadforms/`,
-                headers: getAuthHeaders(),
-            }),
+            query: () => `/${ads_manager_api}/leadforms/`,
         }),
         getLeadForm: builder.query<LeadForm, number>({
-            query: id => ({
-                url: `/${ads_manager_api}/leadforms/${id}/`,
-                headers: getAuthHeaders(),
-            }),
+            query: id => `/${ads_manager_api}/leadforms/${id}/`,
         }),
         updateLeadForm: builder.mutation<LeadForm, { id: number; data: Partial<LeadForm> }>({
             query: ({ id, data }) => ({
                 url: `/${ads_manager_api}/leadforms/${id}/`,
                 method: 'PATCH',
-                headers: getAuthHeaders(),
                 body: data,
             }),
         }),
@@ -207,7 +162,6 @@ const adManagerApiSlice = apiSlice.injectEndpoints({
             query: id => ({
                 url: `/${ads_manager_api}/leadforms/${id}/`,
                 method: 'DELETE',
-                headers: getAuthHeaders(),
             }),
         }),
     }),
