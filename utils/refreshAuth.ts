@@ -1,4 +1,4 @@
-'use client'
+// 'use client'
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -15,7 +15,7 @@ const redirectToLogin = () => {
 };
 
 const refreshAccessToken = async () => {
-  const refreshToken = getCookie('refreshToken'); // Get refresh token from cookies
+  const refreshToken = getCookie('refreshToken'); 
 
   if (!refreshToken) {
     redirectToLogin();
