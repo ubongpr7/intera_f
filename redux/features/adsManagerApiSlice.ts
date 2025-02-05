@@ -1,11 +1,12 @@
 import { apiSlice } from '../services/apiSlice';
+import { getCookie } from 'cookies-next'; // Import getCookie from cookie-next
 
 const ads_manager_api = 'ads_manager_api';
 
-// Define an interface for the authentication token
-interface AuthHeaders {
-    Authorization: string;
-}
+// Function to load the access token from cookies
+const loadAccessToken = () => {
+    return getCookie('accessToken'); // Retrieve the accessToken from cookies
+};
 
 interface Campaign {
     id?: number;
@@ -56,159 +57,262 @@ interface LeadForm {
     updated_at?: string;
 }
 
-const getAuthHeaders = (): AuthHeaders => {
-    const token = localStorage.getItem('accessToken'); // Assuming the token is stored in localStorage
-    return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
 const adManagerApiSlice = apiSlice.injectEndpoints({
     endpoints: builder => ({
         // Campaign Endpoints
         createCampaign: builder.mutation<Campaign, Partial<Campaign>>({
-            query: campaignData => ({
-                url: `/${ads_manager_api}/campaigns/create/`,
-                method: 'POST',
-                headers: getAuthHeaders(),
-                body: campaignData,
-            }),
+            query: campaignData => {
+                const token = loadAccessToken(); // Get the access token from cookies
+                return {
+                    url: `/${ads_manager_api}/campaigns/create/`,
+                    method: 'POST',
+                    body: campaignData,
+                    headers: {
+                        'Content-Type': 'application/json', // Ensure JSON content type
+                        ...(token && { Authorization: `Bearer ${token}` }), // Add authorization header if token exists
+                    },
+                };
+            },
         }),
         getCampaigns: builder.query<Campaign[], void>({
-            query: () => ({
-                url: `/${ads_manager_api}/campaigns/`,
-                headers: getAuthHeaders(),
-            }),
+            query: () => {
+                const token = loadAccessToken(); // Get the access token from cookies
+                return {
+                    url: `/${ads_manager_api}/campaigns/`,
+                    headers: {
+                        ...(token && { Authorization: `Bearer ${token}` }), // Add authorization header if token exists
+                    },
+                };
+            },
         }),
         getCampaign: builder.query<Campaign, number>({
-            query: id => ({
-                url: `/${ads_manager_api}/campaigns/${id}/`,
-                headers: getAuthHeaders(),
-            }),
+            query: id => {
+                const token = loadAccessToken(); // Get the access token from cookies
+                return {
+                    url: `/${ads_manager_api}/campaigns/${id}/`,
+                    headers: {
+                        ...(token && { Authorization: `Bearer ${token}` }), // Add authorization header if token exists
+                    },
+                };
+            },
         }),
         updateCampaign: builder.mutation<Campaign, { id: number; data: Partial<Campaign> }>({
-            query: ({ id, data }) => ({
-                url: `/${ads_manager_api}/campaigns/${id}/`,
-                method: 'PATCH',
-                headers: getAuthHeaders(),
-                body: data,
-            }),
+            query: ({ id, data }) => {
+                const token = loadAccessToken(); // Get the access token from cookies
+                return {
+                    url: `/${ads_manager_api}/campaigns/${id}/`,
+                    method: 'PATCH',
+                    body: data,
+                    headers: {
+                        'Content-Type': 'application/json', // Ensure JSON content type
+                        ...(token && { Authorization: `Bearer ${token}` }), // Add authorization header if token exists
+                    },
+                };
+            },
         }),
         deleteCampaign: builder.mutation<{ success: boolean }, number>({
-            query: id => ({
-                url: `/${ads_manager_api}/campaigns/${id}/`,
-                method: 'DELETE',
-                headers: getAuthHeaders(),
-            }),
+            query: id => {
+                const token = loadAccessToken(); // Get the access token from cookies
+                return {
+                    url: `/${ads_manager_api}/campaigns/${id}/`,
+                    method: 'DELETE',
+                    headers: {
+                        ...(token && { Authorization: `Bearer ${token}` }), // Add authorization header if token exists
+                    },
+                };
+            },
         }),
 
         // AdSet Endpoints
         createAdSet: builder.mutation<AdSet, Partial<AdSet>>({
-            query: adSetData => ({
-                url: `/${ads_manager_api}/adsets/create/`,
-                method: 'POST',
-                headers: getAuthHeaders(),
-                body: adSetData,
-            }),
+            query: adSetData => {
+                const token = loadAccessToken(); // Get the access token from cookies
+                return {
+                    url: `/${ads_manager_api}/adsets/create/`,
+                    method: 'POST',
+                    body: adSetData,
+                    headers: {
+                        'Content-Type': 'application/json', // Ensure JSON content type
+                        ...(token && { Authorization: `Bearer ${token}` }), // Add authorization header if token exists
+                    },
+                };
+            },
         }),
         getAdSets: builder.query<AdSet[], void>({
-            query: () => ({
-                url: `/${ads_manager_api}/adsets/`,
-                headers: getAuthHeaders(),
-            }),
+            query: () => {
+                const token = loadAccessToken(); // Get the access token from cookies
+                return {
+                    url: `/${ads_manager_api}/adsets/`,
+                    headers: {
+                        ...(token && { Authorization: `Bearer ${token}` }), // Add authorization header if token exists
+                    },
+                };
+            },
         }),
         getAdSet: builder.query<AdSet, number>({
-            query: id => ({
-                url: `/${ads_manager_api}/adsets/${id}/`,
-                headers: getAuthHeaders(),
-            }),
+            query: id => {
+                const token = loadAccessToken(); // Get the access token from cookies
+                return {
+                    url: `/${ads_manager_api}/adsets/${id}/`,
+                    headers: {
+                        ...(token && { Authorization: `Bearer ${token}` }), // Add authorization header if token exists
+                    },
+                };
+            },
         }),
         updateAdSet: builder.mutation<AdSet, { id: number; data: Partial<AdSet> }>({
-            query: ({ id, data }) => ({
-                url: `/${ads_manager_api}/adsets/${id}/`,
-                method: 'PATCH',
-                headers: getAuthHeaders(),
-                body: data,
-            }),
+            query: ({ id, data }) => {
+                const token = loadAccessToken(); // Get the access token from cookies
+                return {
+                    url: `/${ads_manager_api}/adsets/${id}/`,
+                    method: 'PATCH',
+                    body: data,
+                    headers: {
+                        'Content-Type': 'application/json', // Ensure JSON content type
+                        ...(token && { Authorization: `Bearer ${token}` }), // Add authorization header if token exists
+                    },
+                };
+            },
         }),
         deleteAdSet: builder.mutation<{ success: boolean }, number>({
-            query: id => ({
-                url: `/${ads_manager_api}/adsets/${id}/`,
-                method: 'DELETE',
-                headers: getAuthHeaders(),
-            }),
+            query: id => {
+                const token = loadAccessToken(); // Get the access token from cookies
+                return {
+                    url: `/${ads_manager_api}/adsets/${id}/`,
+                    method: 'DELETE',
+                    headers: {
+                        ...(token && { Authorization: `Bearer ${token}` }), // Add authorization header if token exists
+                    },
+                };
+            },
         }),
 
         // Ad Endpoints
         createAd: builder.mutation<Ad, Partial<Ad>>({
-            query: adData => ({
-                url: `/${ads_manager_api}/ads/create/`,
-                method: 'POST',
-                headers: getAuthHeaders(),
-                body: adData,
-            }),
+            query: adData => {
+                const token = loadAccessToken(); // Get the access token from cookies
+                return {
+                    url: `/${ads_manager_api}/ads/create/`,
+                    method: 'POST',
+                    body: adData,
+                    headers: {
+                        'Content-Type': 'application/json', // Ensure JSON content type
+                        ...(token && { Authorization: `Bearer ${token}` }), // Add authorization header if token exists
+                    },
+                };
+            },
         }),
         getAds: builder.query<Ad[], void>({
-            query: () => ({
-                url: `/${ads_manager_api}/ads/`,
-                headers: getAuthHeaders(),
-            }),
+            query: () => {
+                const token = loadAccessToken(); // Get the access token from cookies
+                return {
+                    url: `/${ads_manager_api}/ads/`,
+                    headers: {
+                        ...(token && { Authorization: `Bearer ${token}` }), // Add authorization header if token exists
+                    },
+                };
+            },
         }),
         getAd: builder.query<Ad, number>({
-            query: id => ({
-                url: `/${ads_manager_api}/ads/${id}/`,
-                headers: getAuthHeaders(),
-            }),
+            query: id => {
+                const token = loadAccessToken(); // Get the access token from cookies
+                return {
+                    url: `/${ads_manager_api}/ads/${id}/`,
+                    headers: {
+                        ...(token && { Authorization: `Bearer ${token}` }), // Add authorization header if token exists
+                    },
+                };
+            },
         }),
         updateAd: builder.mutation<Ad, { id: number; data: Partial<Ad> }>({
-            query: ({ id, data }) => ({
-                url: `/${ads_manager_api}/ads/${id}/`,
-                method: 'PATCH',
-                headers: getAuthHeaders(),
-                body: data,
-            }),
+            query: ({ id, data }) => {
+                const token = loadAccessToken(); // Get the access token from cookies
+                return {
+                    url: `/${ads_manager_api}/ads/${id}/`,
+                    method: 'PATCH',
+                    body: data,
+                    headers: {
+                        'Content-Type': 'application/json', // Ensure JSON content type
+                        ...(token && { Authorization: `Bearer ${token}` }), // Add authorization header if token exists
+                    },
+                };
+            },
         }),
         deleteAd: builder.mutation<{ success: boolean }, number>({
-            query: id => ({
-                url: `/${ads_manager_api}/ads/${id}/`,
-                method: 'DELETE',
-                headers: getAuthHeaders(),
-            }),
+            query: id => {
+                const token = loadAccessToken(); // Get the access token from cookies
+                return {
+                    url: `/${ads_manager_api}/ads/${id}/`,
+                    method: 'DELETE',
+                    headers: {
+                        ...(token && { Authorization: `Bearer ${token}` }), // Add authorization header if token exists
+                    },
+                };
+            },
         }),
 
         // LeadForm Endpoints
         createLeadForm: builder.mutation<LeadForm, Partial<LeadForm>>({
-            query: leadFormData => ({
-                url: `/${ads_manager_api}/leadforms/create/`,
-                method: 'POST',
-                headers: getAuthHeaders(),
-                body: leadFormData,
-            }),
+            query: leadFormData => {
+                const token = loadAccessToken(); // Get the access token from cookies
+                return {
+                    url: `/${ads_manager_api}/leadforms/create/`,
+                    method: 'POST',
+                    body: leadFormData,
+                    headers: {
+                        'Content-Type': 'application/json', // Ensure JSON content type
+                        ...(token && { Authorization: `Bearer ${token}` }), // Add authorization header if token exists
+                    },
+                };
+            },
         }),
         getLeadForms: builder.query<LeadForm[], void>({
-            query: () => ({
-                url: `/${ads_manager_api}/leadforms/`,
-                headers: getAuthHeaders(),
-            }),
+            query: () => {
+                const token = loadAccessToken(); // Get the access token from cookies
+                return {
+                    url: `/${ads_manager_api}/leadforms/`,
+                    headers: {
+                        ...(token && { Authorization: `Bearer ${token}` }), // Add authorization header if token exists
+                    },
+                };
+            },
         }),
         getLeadForm: builder.query<LeadForm, number>({
-            query: id => ({
-                url: `/${ads_manager_api}/leadforms/${id}/`,
-                headers: getAuthHeaders(),
-            }),
+            query: id => {
+                const token = loadAccessToken(); // Get the access token from cookies
+                return {
+                    url: `/${ads_manager_api}/leadforms/${id}/`,
+                    headers: {
+                        ...(token && { Authorization: `Bearer ${token}` }), // Add authorization header if token exists
+                    },
+                };
+            },
         }),
         updateLeadForm: builder.mutation<LeadForm, { id: number; data: Partial<LeadForm> }>({
-            query: ({ id, data }) => ({
-                url: `/${ads_manager_api}/leadforms/${id}/`,
-                method: 'PATCH',
-                headers: getAuthHeaders(),
-                body: data,
-            }),
+            query: ({ id, data }) => {
+                const token = loadAccessToken(); // Get the access token from cookies
+                return {
+                    url: `/${ads_manager_api}/leadforms/${id}/`,
+                    method: 'PATCH',
+                    body: data,
+                    headers: {
+                        'Content-Type': 'application/json', // Ensure JSON content type
+                        ...(token && { Authorization: `Bearer ${token}` }), // Add authorization header if token exists
+                    },
+                };
+            },
         }),
         deleteLeadForm: builder.mutation<{ success: boolean }, number>({
-            query: id => ({
-                url: `/${ads_manager_api}/leadforms/${id}/`,
-                method: 'DELETE',
-                headers: getAuthHeaders(),
-            }),
+            query: id => {
+                const token = loadAccessToken(); // Get the access token from cookies
+                return {
+                    url: `/${ads_manager_api}/leadforms/${id}/`,
+                    method: 'DELETE',
+                    headers: {
+                        ...(token && { Authorization: `Bearer ${token}` }), // Add authorization header if token exists
+                    },
+                };
+            },
         }),
     }),
 });

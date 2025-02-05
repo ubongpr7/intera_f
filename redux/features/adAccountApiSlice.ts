@@ -1,4 +1,5 @@
 import { apiSlice } from '../services/apiSlice';
+import { getCookie } from 'cookies-next'; // Import getCookie from cookie-next
 
 interface AdAccount {
     id?: number;
@@ -8,62 +9,74 @@ interface AdAccount {
 
 const ads_manager_api = 'ads_manager_api';
 
+// Function to load the access token from cookies
+const loadAccessToken = () => {
+    console.log('see refresh token', getCookie('accessToken'))
+    return getCookie('accessToken'); // Retrieve the accessToken from cookies
+};
+
 // Modify the apiSlice to include the authorization header
 const adAccountApiSlice = apiSlice.injectEndpoints({
     endpoints: builder => ({
         createAdAccount: builder.mutation<AdAccount, Partial<AdAccount>>({
             query: (adAccountData) => {
-                // Get the token from localStorage
-                const token = localStorage.getItem("accessToken");
+                const token = loadAccessToken(); // Get the token from cookies
                 return {
                     url: `/${ads_manager_api}/ad-accounts/create/`,
                     method: 'POST',
                     body: adAccountData,
-                    // Include the authorization header if the token is available
-                    headers: token ? { Authorization: `Bearer ${token}` } : {},
+                    headers: {
+                        'Content-Type': 'application/json', // Ensure JSON content type
+                        ...(token && { Authorization: `Bearer ${token}` }), // Add authorization header if token exists
+                    },
                 };
             },
         }),
         getAdAccounts: builder.query<AdAccount[], void>({
             query: () => {
-                // Get the token from localStorage
-                const token = localStorage.getItem("accessToken");
+                const token = loadAccessToken(); // Get the token from cookies
                 return {
                     url: `/${ads_manager_api}/ad-accounts/`,
-                    headers: token ? { Authorization: `Bearer ${token}` } : {},
+                    headers: {
+                        ...(token && { Authorization: `Bearer ${token}` }), // Add authorization header if token exists
+                    },
                 };
             },
         }),
         getAdAccount: builder.query<AdAccount, number>({
             query: (id) => {
-                // Get the token from localStorage
-                const token = localStorage.getItem("accessToken");
+                const token = loadAccessToken(); // Get the token from cookies
                 return {
                     url: `/${ads_manager_api}/ad-accounts/${id}/`,
-                    headers: token ? { Authorization: `Bearer ${token}` } : {},
+                    headers: {
+                        ...(token && { Authorization: `Bearer ${token}` }), // Add authorization header if token exists
+                    },
                 };
             },
         }),
         updateAdAccount: builder.mutation<AdAccount, { id: number; data: Partial<AdAccount> }>({
             query: ({ id, data }) => {
-                // Get the token from localStorage
-                const token = localStorage.getItem("accessToken");
+                const token = loadAccessToken(); // Get the token from cookies
                 return {
                     url: `/${ads_manager_api}/ad-accounts/${id}/`,
                     method: 'PATCH',
                     body: data,
-                    headers: token ? { Authorization: `Bearer ${token}` } : {},
+                    headers: {
+                        'Content-Type': 'application/json', // Ensure JSON content type
+                        ...(token && { Authorization: `Bearer ${token}` }), // Add authorization header if token exists
+                    },
                 };
             },
         }),
         deleteAdAccount: builder.mutation<{ success: boolean }, number>({
             query: (id) => {
-                // Get the token from localStorage
-                const token = localStorage.getItem("accessToken");
+                const token = loadAccessToken(); // Get the token from cookies
                 return {
                     url: `/${ads_manager_api}/ad-accounts/${id}/`,
                     method: 'DELETE',
-                    headers: token ? { Authorization: `Bearer ${token}` } : {},
+                    headers: {
+                        ...(token && { Authorization: `Bearer ${token}` }), // Add authorization header if token exists
+                    },
                 };
             },
         }),
