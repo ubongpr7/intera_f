@@ -6,6 +6,8 @@ import "/public/Styles/home.css";
 import Image from "next/image";
 import Header from "@/Components/Header/Header";
 import Link from "next/link";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Page = () => {
   
@@ -63,7 +65,10 @@ const Page = () => {
   }, [dropdownVisible]);
 
   return (
+    
     <div className="forclr">
+            <ToastContainer position="top-right" autoClose={3000} />
+
           <Header />
 
       <div className="main-container">

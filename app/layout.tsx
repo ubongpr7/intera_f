@@ -1,12 +1,6 @@
-"use client";
 import "./globals.css";
 import type { Metadata } from "next";
 import StoreProvider from "@/redux/provider";
-// import {getCookie,setCookie} from 'cookies-next'
-// import TokenRefresh from "@/utils/refreshAuthClient";
-// import AuthChecker from "@/utils/checktokenClient";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
 export const metadata: Metadata = {
   title: "Quick Campaign",
@@ -24,7 +18,6 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <StoreProvider>
-        <ToastContainer position="top-right" autoClose={3000} />
           {children}
         </StoreProvider>
       </body>
