@@ -89,7 +89,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
   let result = await baseQuery(args, api, extraOptions);
 
   // Store tokens after login
-  if (result?.data && (args as FetchArgs).url === "/jwt/create/") {
+  if (result?.data && ((args as FetchArgs).url === "/jwt/create/" || (args as FetchArgs).url === "/jwt/refresh/")) {
     const response = result.data as { access: string; refresh: string };
     setCookie("accessToken", response.access, { maxAge: 60 * 60, path: "/" });
     setCookie("refreshToken", response.refresh, { maxAge: 60 * 60 * 24 * 7, path: "/" });
@@ -97,7 +97,6 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
     api.dispatch(setAuth()); // Update auth state in Redux
   }
 
-  // If unauthorized (401), try refreshing the token
   if (result.error && result.error.status === 401) {
     if (!mutex.isLocked()) {
       const release = await mutex.acquire();
