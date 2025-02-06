@@ -8,6 +8,8 @@ import Image from "next/image";
 import Spinner from "@/components/common/Spinner";
 import { useRegisterMutation } from "@/redux/features/authApiSlice";
 import { toast } from "react-toastify";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 interface FormData {
   first_name: string;
   email: string;
@@ -135,6 +137,7 @@ const RegisterPage = () => {
       <Head>
         <link rel="stylesheet" href="/Styles/Login.css" />
       </Head>
+            <ToastContainer position="top-right" autoClose={3000} />
 
       <Link href="/">
         <Image

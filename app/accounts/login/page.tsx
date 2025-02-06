@@ -10,6 +10,9 @@ import { useAppDispatch } from '@/redux/hooks';
 import { setAuth } from '@/redux/features/authSlice';
 import { toast } from 'react-toastify';
 import { setCookie } from 'cookies-next'; 
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 export interface AuthResponse {
   access: string;
   refresh: string;
@@ -163,6 +166,8 @@ const LoginPage = () => {
       {/* Logo */}
       <Link href="/">
         {/* <img src="/assets/logo-header.png" alt="Logo" className="logo-header" /> */}
+                    <ToastContainer position="top-right" autoClose={3000} />
+        
         <Image
             src="/assets/logo-header.png"
             alt="Logo"
