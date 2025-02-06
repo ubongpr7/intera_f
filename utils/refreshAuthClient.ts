@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import refreshUserToken  from './utils/refreshToken';
+import refreshUserToken  from './refreshAuth';
 
 export default function TokenRefresh() {
   useEffect(() => {
