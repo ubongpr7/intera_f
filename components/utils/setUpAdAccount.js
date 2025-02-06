@@ -28,7 +28,7 @@ const SetupAdAccountPopup = ({ onClose, onSubmit, accessToken,userId }) => {
 
   const handleSubmit = () => {
     onSubmit(selectedAdAccount);
-    createAdAccount(selectedAdAccount.ad_account_id,accessToken,selectedAdAccount.name,userId)
+    createAdAccount(selectedAdAccount.account_id,accessToken,selectedAdAccount.name,userId)
   };
 
   const handleClickOutside = (e) => {
