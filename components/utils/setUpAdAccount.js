@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './SetupAdAccountPopup.module.css';
-
-const SetupAdAccountPopup = ({ onClose, onSubmit, accessToken }) => {
+import { useCreateAdAccountMutation } from '@/redux/features/adAccountApiSlice';
+const SetupAdAccountPopup = ({ onClose, onSubmit, accessToken,userId }) => {
   const [adAccounts, setAdAccounts] = useState([]);
   const [selectedAdAccount, setSelectedAdAccount] = useState('');
   const [selectedAdAccountName, setSelectedAdAccountName] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [createAdAccount, { isLoading }] = useCreateAdAccountMutation();
 
   const popupRef = useRef(null);
 
@@ -27,6 +28,7 @@ const SetupAdAccountPopup = ({ onClose, onSubmit, accessToken }) => {
 
   const handleSubmit = () => {
     onSubmit(selectedAdAccount);
+    createAdAccount(selectedAdAccount.ad_account_id,accessToken,selectedAdAccount.name,userId)
   };
 
   const handleClickOutside = (e) => {

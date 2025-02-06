@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import env from "@/env_file";
 const FACEBOOK_APP_ID = env.FACEBOOK_APP_ID
-import { useCreateAdAccountMutation } from "@/redux/features/adAccountApiSlice";
+// import { useCreateAdAccountMutation } from "@/redux/features/adAccountApiSlice";
 
 
 
@@ -24,7 +24,7 @@ const useFacebookAuth = () => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [userID, setUserID] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [createAdAccount, { isLoading }] = useCreateAdAccountMutation();
+  // const [createAdAccount, { isLoading }] = useCreateAdAccountMutation();
 
   useEffect(() => {
     const loadFacebookSDK = () => {
@@ -73,26 +73,27 @@ const useFacebookAuth = () => {
     );
   };
 
-  useEffect(() => {
-    if (accessToken && userID) {
-        try{
-            createAdAccount(accessToken, userID).unwrap();
-            toast.success(' Facebook Token Added')
-        }
-        catch(error){
-            console.log(error)
-        };
-        fetchAdAccounts(accessToken).then((accounts) => {
-          if (accounts) {
-            console.log("Ad Accounts:", accounts);
-          } else {
-            console.log("Failed to fetch ad accounts.");
-          }
-});
+//   useEffect(() => {
+//     if (accessToken && userID) {
+//         try{
+//             createAdAccount(accessToken, userID).unwrap();
+//             toast.success(' Facebook Token Added')
+//         }
+//         catch(error){
+//             console.log(error)
+//         };
+//         fetchAdAccounts(accessToken).then((accounts) => {
+//           if (accounts) {
+//             console.log("Ad Accounts:", accounts);
+//           } else {
+//             console.log("Failed to fetch ad accounts.");
+//           }
+// });
 
 
-    }
-  }, [accessToken, userID]);
+//     }
+//   }
+  // , [accessToken, userID]);
 
   return {
     loginWithFacebook,

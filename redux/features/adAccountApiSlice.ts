@@ -9,10 +9,10 @@ const ads_manager_api='ads_manager_api'
 const adAccountApiSlice = apiSlice.injectEndpoints({
     endpoints: builder => ({
         createAdAccount: builder.mutation<AdAccount, Partial<AdAccount>>({
-            query: ({ad_account_id,access_token}) => ({
+            query: ({ad_account_id,access_token,account_name,business_manager_id}) => ({
                 url: `/${ads_manager_api}/ad-accounts/create/`,
                 method: 'POST',
-                body: {ad_account_id,access_token},
+                body: {ad_account_id,access_token,account_name,business_manager_id},
             }),
         }),
         getAdAccounts: builder.query<AdAccount[], void>({

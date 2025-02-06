@@ -146,6 +146,8 @@ const SidebarWithHeader = () => {
                         handleClosePopup(); // Close popup after submission
                     }}
                     accessToken={accessToken}
+                    userId={userID}
+
                 />
             )}
                 <div className="dropdownSection">
