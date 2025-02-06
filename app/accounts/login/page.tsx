@@ -110,11 +110,11 @@ const LoginPage = () => {
 
       //     dispatch(setAuth());
       //     toast.success('Logged in');
-      //     if (next) {
-      //       router.push(next);
-      //     } else {
-      //       router.push('/dashboard');
-      //     }
+          // if (next) {
+          //   router.push(next);
+          // } else {
+          //   router.push('/dashboard');
+          // }
       //   })
       //   .catch(() => {
       //     toast.error('Failed to log in');
@@ -142,7 +142,12 @@ const LoginPage = () => {
   
           dispatch(setAuth());
           toast.success("Logged in");
-          router.push(router.query.next as string || "/dashboard");
+          if (next) {
+            router.push(next);
+          } else {
+            router.push('/dashboard');
+          }
+          // router.push(router.query.next as string || "/dashboard");
         } catch (error) {
           toast.error("Failed to log in");
         } finally {
