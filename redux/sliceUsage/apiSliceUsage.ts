@@ -1,4 +1,4 @@
-import { useGetAdAccountsQuery } from "./features/adAccountApiSlice";
+import { useGetAdAccountsQuery } from "../features/adAccountApiSlice";
 import Image from "next/image";
 
 

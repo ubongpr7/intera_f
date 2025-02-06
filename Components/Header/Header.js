@@ -5,8 +5,8 @@ import Link from "next/link";
 import "./SidebarWithHeader.module.css";
 import { useFacebookAuth } from "@/utils";
 import SetupAdAccountPopup from "@/components/utils/setUpAdAccount";
-import { useGetAdAccountsQuery } from "@/redux/features/adAccountApiSlice";
-import AdAccountsList from "@/redux/apiSliceUsage";
+// import { useGetAdAccountsQuery } from "@/redux/features/adAccountApiSlice";
+import AdAccountsList from "@/redux/sliceUsage/apiSliceUsage";
 const SidebarWithHeader = () => {
     const [activeAccount, setActiveAccount] = useState(1);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -14,7 +14,7 @@ const SidebarWithHeader = () => {
     const [facebookDropdownOpen, setFacebookDropdownOpen] = useState(false);
   const { loginWithFacebook, accessToken, userID, isInitialized } = useFacebookAuth();
   const [showPopup, setShowPopup] = useState(false);
-    const [getAdAccounts, {isLoading}]=useGetAdAccountsQuery();
+    // const [getAdAccounts, {isLoading}]=useGetAdAccountsQuery();
   const handleOpenPopup = () => {
       if (accessToken) {
           setShowPopup(true);
