@@ -1,14 +1,15 @@
+// utils/refreshUserToken.ts
 import env from '@/env_file';
-import { setCookie, getCookie } from 'cookies-next';
-import { useRouter } from 'next/router';
+import { setCookie } from 'cookies-next';
 
-const refreshUserToken = async () => {
-  const router = useRouter();
-  const refreshToken = getCookie('refreshToken');
-
+export const refreshUserToken = async (
+  refreshToken: string | undefined,
+  pathname: string,
+  router: any // Pass the router object from the component
+) => {
   if (!refreshToken) {
-    if (!router.pathname.startsWith('/accounts') && router.pathname !== '/') {
-      router.push(`/accounts/login?next=${encodeURIComponent(router.asPath)}`);
+    if (!pathname.startsWith('/accounts') && pathname !== '/') {
+      router.push(`/accounts/login?next=${encodeURIComponent(pathname)}`);
     }
     return;
   }
@@ -18,25 +19,23 @@ const refreshUserToken = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${refreshToken}`,
+        Authorization: `Bearer ${refreshToken}`,
       },
       body: JSON.stringify({ refreshToken }),
     });
 
     if (response.ok) {
       const data = await response.json();
-      setCookie('accessToken', data.access, { maxAge: 50 * 60 }); 
-      setCookie('refreshToken', data.refresh, { maxAge: 10 * 24 * 60 * 60 });
+      setCookie('accessToken', data.access, { maxAge: 50 * 60 }); // 50 minutes
+      setCookie('refreshToken', data.refresh, { maxAge: 10 * 24 * 60 * 60 }); // 10 days
     } else {
       throw new Error('Token refresh failed');
     }
   } catch (error) {
     console.error('Error refreshing token:', error);
     // Redirect to login if token refresh fails
-    if (!router.pathname.startsWith('/accounts') && router.pathname !== '/') {
-      router.push(`/accounts/login?next=${encodeURIComponent(router.asPath)}`);
+    if (!pathname.startsWith('/accounts') && pathname !== '/') {
+      router.push(`/accounts/login?next=${encodeURIComponent(pathname)}`);
     }
   }
 };
-
-export default refreshUserToken;
