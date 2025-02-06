@@ -29,9 +29,8 @@ const SetupAdAccountPopup = ({ onClose, onSubmit, accessToken,userId }) => {
   const handleSubmit = () => {
     onSubmit(selectedAdAccount);
     console.log('selectedAdAccount: ',selectedAdAccount)
-    createAdAccount(selectedAdAccount,accessToken,selectedAdAccountName,userId)
+    createAdAccount({ad_account_id:selectedAdAccount,access_token:accessToken,account_name:selectedAdAccountName,business_manager_id:userId})
   };
-
   const handleClickOutside = (e) => {
     if (popupRef.current && !popupRef.current.contains(e.target)) {
       onClose();
