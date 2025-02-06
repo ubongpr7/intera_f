@@ -7,7 +7,7 @@ import Head from "next/head";
 import Image from "next/image";
 import Spinner from "@/components/common/Spinner";
 import { useRegisterMutation } from "@/redux/features/authApiSlice";
-
+import { toast } from "react-toastify";
 interface FormData {
   first_name: string;
   email: string;
