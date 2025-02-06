@@ -19,9 +19,9 @@ export const refreshUserToken = async (
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${refreshToken}`,
+        // Authorization: `Bearer ${refreshToken}`,
       },
-      body: JSON.stringify({ refreshToken }),
+      body:  refreshToken ,
     });
 
     if (response.ok) {
