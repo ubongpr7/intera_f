@@ -5,6 +5,7 @@ import Link from "next/link";
 import "./SidebarWithHeader.module.css";
 import { useFacebookAuth } from "@/utils";
 import SetupAdAccountPopup from "@/components/utils/setUpAdAccount";
+import { toast } from "react-toastify";
 const SidebarWithHeader = () => {
     const [activeAccount, setActiveAccount] = useState(1);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);

@@ -34,7 +34,7 @@ const SetupAdAccountPopup = ({ onClose, onSubmit, accessToken,userId }) => {
     })
     .unwrap()
     .then((response) => {
-        console.log("Ad account created successfully:", response);
+        toast.success("Ad account created successfully:", response);
     })
     .catch((error) => {
         if (error.status === 401 && retryCount < 3) { // Retry up to 3 times
