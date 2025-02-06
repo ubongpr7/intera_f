@@ -15,7 +15,7 @@ export const refreshUserToken = async (
   }
 
   try {
-    const response = await fetch(`${env.BACKEND_HOST_URL}/jwt/refresh`, {
+    const response = await fetch(`${env.BACKEND_HOST_URL}/jwt/refresh/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -32,8 +32,7 @@ export const refreshUserToken = async (
       throw new Error('Token refresh failed');
     }
   } catch (error) {
-    console.error('Error refreshing token:', error);
-    // Redirect to login if token refresh fails
+    console.log('Error refreshing token:', error);
     if (!pathname.startsWith('/accounts') && pathname !== '/') {
       router.push(`/accounts/login?next=${encodeURIComponent(pathname)}`);
     }
