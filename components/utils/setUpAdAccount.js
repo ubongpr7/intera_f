@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-// import styles from './SetupAdAccountPopup.module.css';
+import styles from './SetupAdAccountPopup.module.css';
 
 const SetupAdAccountPopup = ({ onClose, onSubmit, accessToken }) => {
   const [adAccounts, setAdAccounts] = useState([]);

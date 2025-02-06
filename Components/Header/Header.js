@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import "./SidebarWithHeader.module.css";
 import { useFacebookAuth } from "@/utils";
-import SetupAdAccountPopup from "@/components/dashboard/setupAddAccount";
+import SetupAdAccountPopup from "@/components/utils/setUpAdAccount";
 const SidebarWithHeader = () => {
     const [activeAccount, setActiveAccount] = useState(1);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
