@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent,useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Head from "next/head";
@@ -29,6 +29,7 @@ const RegisterPage = () => {
   const sessionId = searchParams.get("session_id") || ""; // Extract session_id from URL if available
 
   const [register, { isLoading }] = useRegisterMutation();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     first_name: "",
     email: "",
@@ -99,15 +100,34 @@ const RegisterPage = () => {
       alert("Please fix the errors before submitting.");
       return;
     }
+    setIsSubmitting(true);
 
-    try {
-      await register(formData).unwrap();
-      router.push("/accounts/login");
-    } catch (error) {
-      console.error("Registration failed:", error);
-      alert("Registration failed. Please try again.");
-    }
+    // try {
+    //   await register(formData).unwrap();
+    //   router.push("/accounts/login");
+    // } catch (error) {
+    //   console.error("Registration failed:", error);
+    //   alert("Registration failed. Please try again.");
+    // }
   };
+  useEffect(() => {
+    if (!isSubmitting) return;
+
+    const registerUser = async () => {
+      try {
+        await register(formData).unwrap();
+        toast.success("Registration successful! Redirecting...");
+        router.push("/accounts/login");
+      } catch (error) {
+        toast.error("Registration failed. Please try again.");
+      } finally {
+        setIsSubmitting(false); // Reset after completion
+      }
+    };
+
+    registerUser();
+  }, [isSubmitting, register, formData, router]);
+
 
   return (
     <div className="page-container">
