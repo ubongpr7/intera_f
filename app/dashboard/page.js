@@ -6,21 +6,13 @@ import "/public/Styles/home.css";
 import Image from "next/image";
 import Header from "@/Components/Header/Header";
 import Link from "next/link";
-import {getCookie,setCookie} from 'cookies-next'
-import { redirect } from 'next/navigation';
 
 const Page = () => {
-  const accessToken = getCookie('accessToken');
-  const refreshToken = getCookie('refreshToken');
-
-  if (!accessToken && !refreshToken) {
-    redirect(`/accounts/login?next=${encodeURIComponent('/dashboard')}`);
-  }
+  
   const [selectedObjective, setSelectedObjective] = useState("Website Conversions");
   const [selectedCampaign, setSelectedCampaign] = useState("new");
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [dropdownOption, setDropdownOption] = useState("Select Options");
-  // const { loginWithFacebook, accessToken, userID, isInitialized } = useFacebookAuth();
 
   const campaignOptions = [
     "findproccesserror",
