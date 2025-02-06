@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './SetupAdAccountPopup.module.css';
 import { useCreateAdAccountMutation } from '@/redux/features/adAccountApiSlice';
+import { toast } from "react-toastify";
+
 const SetupAdAccountPopup = ({ onClose, onSubmit, accessToken,userId }) => {
   const [adAccounts, setAdAccounts] = useState([]);
   const [selectedAdAccount, setSelectedAdAccount] = useState('');
@@ -41,7 +43,7 @@ const SetupAdAccountPopup = ({ onClose, onSubmit, accessToken,userId }) => {
             console.warn(`Unauthorized request. Retrying in 0.5s... (Attempt ${retryCount + 1})`);
             setTimeout(() => attemptCreateAdAccount(retryCount + 1), 700);
         } else {
-            console.error("Ad account creation failed:", error);
+            // console.error("Ad account creation failed:", error);
         }
     });
 };
