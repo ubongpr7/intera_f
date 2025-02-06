@@ -25,11 +25,34 @@ const SetupAdAccountPopup = ({ onClose, onSubmit, accessToken,userId }) => {
       console.error('Error fetching ad accounts:', error);
     }
   };
+  const attemptCreateAdAccount = (retryCount = 0) => {
+    createAdAccount({
+        ad_account_id: selectedAdAccount,
+        access_token: accessToken,
+        account_name: selectedAdAccountName,
+        business_manager_id: userId
+    })
+    .unwrap()
+    .then((response) => {
+        console.log("Ad account created successfully:", response);
+    })
+    .catch((error) => {
+        if (error.status === 401 && retryCount < 3) { // Retry up to 3 times
+            console.warn(`Unauthorized request. Retrying in 0.5s... (Attempt ${retryCount + 1})`);
+            setTimeout(() => attemptCreateAdAccount(retryCount + 1), 700);
+        } else {
+            console.error("Ad account creation failed:", error);
+        }
+    });
+};
+
+// Call the function to execute the mutation
 
   const handleSubmit = () => {
     onSubmit(selectedAdAccount);
     console.log('selectedAdAccount: ',selectedAdAccount)
-    createAdAccount({ad_account_id:selectedAdAccount,access_token:accessToken,account_name:selectedAdAccountName,business_manager_id:userId})
+    attemptCreateAdAccount();
+
   };
   const handleClickOutside = (e) => {
     if (popupRef.current && !popupRef.current.contains(e.target)) {
