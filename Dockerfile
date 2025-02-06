@@ -17,10 +17,10 @@ RUN yarn add sass
 COPY . . 
 
 # Build the Next.js app for production
-RUN yarn build 
+# RUN yarn dev 
 
 # Expose port 80
 EXPOSE 3000 
 
 # Start the Next.js production server
-CMD ["yarn", "start"]
+CMD ["yarn", "dev"]
