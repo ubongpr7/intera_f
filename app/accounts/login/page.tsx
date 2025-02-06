@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState,useEffect, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter,useSearchParams  } from "next/navigation";
 import "./Login.css";
@@ -10,7 +10,6 @@ import { useAppDispatch } from '@/redux/hooks';
 import { setAuth } from '@/redux/features/authSlice';
 import { toast } from 'react-toastify';
 import { setCookie } from 'cookies-next'; 
-
 export interface AuthResponse {
   access: string;
   refresh: string;
@@ -29,6 +28,7 @@ const LoginPage = () => {
     password: "",
     rememberMe: false,
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   // const [login, { data, isSuccess }] = useLoginMutation();
   const [login, {data, isLoading }] = useLoginMutation();
   const [errors, setErrors] = useState({
@@ -92,39 +92,66 @@ const LoginPage = () => {
         return;
       }
 
-    
-      try {
+      setIsSubmitting(true);
+      // try {
 
-        login({ email: formData.email, password: formData.password })
-        .unwrap()
-        .then((response:AuthResponse) => {
-          if (response?.access) {
-            // Store access token
-            setCookie('accessToken', response.access, { maxAge: 60 * 60, path: '/' }); // 1 hour expiration
-          }
+      //   login({ email: formData.email, password: formData.password })
+      //   .unwrap()
+      //   .then((response:AuthResponse) => {
+      //     if (response?.access) {
+      //       // Store access token
+      //       setCookie('accessToken', response.access, { maxAge: 60 * 60, path: '/' }); // 1 hour expiration
+      //     }
 
-          if (response?.refresh) {
-            // Store refresh token
-            setCookie('refreshToken', response.refresh, { maxAge: 60 * 60 * 24 * 7, path: '/' }); // 7 days expiration
-          }
+      //     if (response?.refresh) {
+      //       // Store refresh token
+      //       setCookie('refreshToken', response.refresh, { maxAge: 60 * 60 * 24 * 7, path: '/' }); // 7 days expiration
+      //     }
 
-          dispatch(setAuth());
-          toast.success('Logged in');
-          if (next) {
-            router.push(next);
-          } else {
-            router.push('/dashboard');
-          }
-        })
-        .catch(() => {
-          toast.error('Failed to log in');
-        });
+      //     dispatch(setAuth());
+      //     toast.success('Logged in');
+      //     if (next) {
+      //       router.push(next);
+      //     } else {
+      //       router.push('/dashboard');
+      //     }
+      //   })
+      //   .catch(() => {
+      //     toast.error('Failed to log in');
+      //   });
     
         
-      } catch (error) {
-        // alert("Login failed: " + error?.data?.detail);
-      }
+      // } catch (error) {
+      //   // alert("Login failed: " + error?.data?.detail);
+      // }
     };
+    useEffect(() => {
+      if (!isSubmitting) return;
+  
+      const loginUser = async () => {
+        try {
+          const response = await login({ email: formData.email, password: formData.password }).unwrap();
+  
+          if (response?.access) {
+            setCookie("accessToken", response.access, { maxAge: 60 * 60, path: "/" }); // 1 hour expiration
+          }
+  
+          if (response?.refresh) {
+            setCookie("refreshToken", response.refresh, { maxAge: 60 * 60 * 24 * 7, path: "/" }); // 7 days expiration
+          }
+  
+          dispatch(setAuth());
+          toast.success("Logged in");
+          router.push(router.query.next as string || "/dashboard");
+        } catch (error) {
+          toast.error("Failed to log in");
+        } finally {
+          setIsSubmitting(false); // Reset submitting state
+        }
+      };
+  
+      loginUser();
+    }, [isSubmitting, login, formData, dispatch, router]);
   
   return (
     <div className="page-container">
