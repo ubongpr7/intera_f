@@ -138,6 +138,7 @@ const SidebarWithHeader = () => {
                     
                 </div>
                 {showPopup && (
+                    
                 <SetupAdAccountPopup
                     onClose={handleClosePopup}
                     onSubmit={(selectedAdAccount) => {
