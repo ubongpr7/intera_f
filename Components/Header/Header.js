@@ -5,6 +5,8 @@ import Link from "next/link";
 import "./SidebarWithHeader.module.css";
 import { useFacebookAuth } from "@/utils";
 import SetupAdAccountPopup from "@/components/utils/setUpAdAccount";
+import { useGetAdAccountsQuery } from "@/redux/features/adAccountApiSlice";
+import AdAccountsList from "@/redux/apiSliceUsage";
 const SidebarWithHeader = () => {
     const [activeAccount, setActiveAccount] = useState(1);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -12,7 +14,7 @@ const SidebarWithHeader = () => {
     const [facebookDropdownOpen, setFacebookDropdownOpen] = useState(false);
   const { loginWithFacebook, accessToken, userID, isInitialized } = useFacebookAuth();
   const [showPopup, setShowPopup] = useState(false);
-
+    const [getAdAccounts, {isLoading}]=useGetAdAccountsQuery();
   const handleOpenPopup = () => {
       if (accessToken) {
           setShowPopup(true);
@@ -51,6 +53,7 @@ const SidebarWithHeader = () => {
             setIsSidebarOpen(false);
         }
     };
+
 
     useEffect(() => {
         document.addEventListener("click", closeSidebarOnClickOutside);
@@ -92,7 +95,7 @@ const SidebarWithHeader = () => {
                 <hr className="horizontalRule" />
                 <div className="accountsContainer">
 
-                    {[...Array(10)].map((_, index) => (
+                    {/* {[...Array(10)].map((_, index) => (
                         <button
                             key={index}
                             className={`accountButton ${activeAccount === index + 1 ? 'accountActive' : ''}`}
@@ -102,7 +105,8 @@ const SidebarWithHeader = () => {
                             <Image src="/assets/user-round.png" alt="User Icon" width={20} height={20} className="icon" />
                             {`Ad Account ${index + 1}`}
                         </button>
-                    ))}
+                    ))} */}
+                    <AdAccountsList />
 
                 </div>
                 <hr className="horizontalRule" />
