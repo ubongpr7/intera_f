@@ -2,14 +2,14 @@
 
 import { useState, FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter,useSearchParams  } from "next/navigation";
 import "./Login.css";
 import { useLoginMutation } from "@/redux/features/authApiSlice";
 import Image from "next/image";
 import { useAppDispatch } from '@/redux/hooks';
 import { setAuth } from '@/redux/features/authSlice';
 import { toast } from 'react-toastify';
-import { setCookie, getCookie } from 'cookies-next'; 
+import { setCookie } from 'cookies-next'; 
 
 export interface AuthResponse {
   access: string;
@@ -22,7 +22,8 @@ export interface AuthResponse {
 const LoginPage = () => {
   const router = useRouter();
 	const dispatch = useAppDispatch();
-
+  const searchParams = useSearchParams();
+  const next = searchParams.get('next');
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -144,7 +145,11 @@ const LoginPage = () => {
 
           dispatch(setAuth());
           toast.success('Logged in');
-          router.push('/dashboard');
+          if (next) {
+            router.push(next);
+          } else {
+            router.push('/dashboard');
+          }
         })
         .catch(() => {
           toast.error('Failed to log in');

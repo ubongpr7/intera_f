@@ -7,10 +7,17 @@ import Image from "next/image";
 // import { useFacebookAuth } from "@/utils";
 import Header from "@/Components/Header/Header";
 import Link from "next/link";
-
-
+import {getCookie,setCookie} from 'cookies-next'
+// import { setCookie } from 'cookies-next'; 
+import { redirect } from 'next/navigation';
 
 const Page = () => {
+  const accessToken = getCookie('accessToken');
+  const refreshToken = getCookie('refreshToken');
+
+  if (!accessToken && !refreshToken) {
+    redirect(`/accounts/login?next=${encodeURIComponent('/dashboard')}`);
+  }
   const [selectedObjective, setSelectedObjective] = useState("Website Conversions");
   const [selectedCampaign, setSelectedCampaign] = useState("new");
   const [dropdownVisible, setDropdownVisible] = useState(false);
@@ -72,18 +79,7 @@ const Page = () => {
       <div className="main-container">
         <div className="main-content" id="content">
           <main>
-          {/* <div>
-          <button onClick={loginWithFacebook} disabled={!isInitialized}>
-            Login with Facebook
-          </button>
-          {accessToken && (
-            <div>
-              <p>Access Token: {accessToken}</p>
-              <p>User ID: {userID}</p>
-            </div>
-          )}
-        </div> */}
-
+      
             <div className="content">
               <div className="form-container">
                 <h2 className="form-heading">Choose Campaign Objective</h2>

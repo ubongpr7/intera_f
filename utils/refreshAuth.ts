@@ -1,63 +1,42 @@
-// 'use client'
-// import { useEffect } from 'react';
-// import { useRouter } from 'next/navigation';
-// import axios from 'axios';
-// import { setCookie, getCookie } from 'cookies-next'; 
-// import env from '@/env_file'; 
+import env from '@/env_file';
+import { setCookie, getCookie } from 'cookies-next';
+import { useRouter } from 'next/router';
 
-// const redirectToLogin = () => {
-//   const router = useRouter();
-//   setCookie('accessToken', '', { maxAge: -1 }); 
-//   setCookie('refreshToken', '', { maxAge: -1 });
-//   setCookie('user', '', { maxAge: -1 }); 
+const refreshUserToken = async () => {
+  const router = useRouter();
+  const refreshToken = getCookie('refreshToken');
 
-//   router.push('/accounts/login');
-// };
+  if (!refreshToken) {
+    if (!router.pathname.startsWith('/accounts') && router.pathname !== '/') {
+      router.push(`/accounts/login?next=${encodeURIComponent(router.asPath)}`);
+    }
+    return;
+  }
 
-// const refreshAccessToken = async () => {
-//   const refreshToken = getCookie('refreshToken'); 
+  try {
+    const response = await fetch(`${env.BACKEND_HOST_URL}/jwt/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${refreshToken}`,
+      },
+      body: JSON.stringify({ refreshToken }),
+    });
 
-//   if (!refreshToken) {
-//     redirectToLogin();
-//     return;
-//   }
+    if (response.ok) {
+      const data = await response.json();
+      setCookie('accessToken', data.access, { maxAge: 50 * 60 }); 
+      setCookie('refreshToken', data.refresh, { maxAge: 10 * 24 * 60 * 60 });
+    } else {
+      throw new Error('Token refresh failed');
+    }
+  } catch (error) {
+    console.error('Error refreshing token:', error);
+    // Redirect to login if token refresh fails
+    if (!router.pathname.startsWith('/accounts') && router.pathname !== '/') {
+      router.push(`/accounts/login?next=${encodeURIComponent(router.asPath)}`);
+    }
+  }
+};
 
-//   try {
-//     const response = await axios.post(`${env.BACKEND_HOST_URL}/jwt/refresh/`, { refresh: refreshToken });
-
-//     if (response.data && response.data.access) {
-//       // Set the new access token in cookies
-//       setCookie('accessToken', response.data.access, { maxAge: 60 * 60 });  // 1 hour expiration
-//       console.log('Access token refreshed');
-//     } else {
-//       redirectToLogin();
-//     }
-//   } catch (error) {
-//     console.error('Refresh token request failed', error);
-//     redirectToLogin();
-//   }
-// };
-
-// // Custom hook to refresh the token periodically
-// export const useTokenRefresh = () => {
-//   const router = useRouter();
-
-//   useEffect(() => {
-//     // Check if the current route is protected (i.e., not starting with '/accounts')
-//     if (!router.pathname.startsWith('/accounts')) {
-//       // Refresh token every 15 minutes (or on initial load)
-//       refreshAccessToken();
-
-//       const intervalId = setInterval(() => {
-//         refreshAccessToken();
-//       }, 900000); // 15 minutes
-
-//       // Cleanup the interval on unmount
-//       return () => clearInterval(intervalId);
-//     }
-//   }, [router]);
-
-//   return {
-//     refreshAccessToken,
-//   };
-// };
+export default refreshUserToken;
