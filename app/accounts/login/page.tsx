@@ -76,35 +76,11 @@ const LoginPage = () => {
     });
   };
 
-  // Validate onBlur (when the user moves to another field)
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     validateField(e.target.name, e.target.value);
 
   };
 
-  // Handle form submission
-  // const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-  //   e.preventDefault();
-
-  //   // Validate all fields before submitting
-  //   validateField("email", formData.email);
-  //   validateField("password", formData.password);
-
-  //   // Ensure no errors exist before submitting
-  //   if (errors.email || errors.password) {
-  //     alert("Please fix the errors before submitting.");
-  //     return;
-  //   }
-
-  //   try {
-  //     await login({ email: formData.email, password: formData.password }).unwrap();
-
-  //     router.push("/main");
-  //   } catch (error) {
-  //     // console.error("Login failed:", error);
-  //     // alert(`${error.data.detail}`);
-  //   }
-  // };
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
       e.preventDefault();
     
@@ -118,17 +94,6 @@ const LoginPage = () => {
 
     
       try {
-        // const response = await login({ email: formData.email, password: formData.password }).unwrap();
-        
-        // login({ email: formData.email, password: formData.password }).unwrap()
-        // .then(() => {
-        //   dispatch(setAuth());
-        //   toast.success('Logged in');
-        //   router.push('/dashboard');
-        // })
-        // .catch(() => {
-        //   toast.error('Failed to log in');
-        // });
 
         login({ email: formData.email, password: formData.password })
         .unwrap()
