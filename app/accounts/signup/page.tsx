@@ -1,4 +1,4 @@
-"use client";
+// "use client";
 
 import { useState, FormEvent,useEffect } from "react";
 import Link from "next/link";
@@ -7,7 +7,7 @@ import Head from "next/head";
 import Image from "next/image";
 import Spinner from "@/components/common/Spinner";
 import { useRegisterMutation } from "@/redux/features/authApiSlice";
-import { toast } from "react-toastify";
+// import { toast } from "react-toastify";
 interface FormData {
   first_name: string;
   email: string;
@@ -116,10 +116,10 @@ const RegisterPage = () => {
     const registerUser = async () => {
       try {
         await register(formData).unwrap();
-        toast.success("Registration successful! Redirecting...");
+        // toast.success("Registration successful! Redirecting...");
         router.push("/accounts/login");
       } catch (error) {
-        toast.error("Registration failed. Please try again.");
+        // toast.error("Registration failed. Please try again.");
       } finally {
         setIsSubmitting(false); // Reset after completion
       }
