@@ -4,11 +4,9 @@ import "/public/Styles/side-menu.css";
 import "/public/Styles/style.css";
 import "/public/Styles/home.css";
 import Image from "next/image";
-// import { useFacebookAuth } from "@/utils";
 import Header from "@/Components/Header/Header";
 import Link from "next/link";
 import {getCookie,setCookie} from 'cookies-next'
-// import { setCookie } from 'cookies-next'; 
 import { redirect } from 'next/navigation';
 
 const Page = () => {

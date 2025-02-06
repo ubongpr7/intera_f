@@ -3,8 +3,8 @@ import "./globals.css";
 import type { Metadata } from "next";
 import StoreProvider from "@/redux/provider";
 import {getCookie,setCookie} from 'cookies-next'
-import { redirect } from 'next/navigation';
 import TokenRefresh from "@/utils/refreshAuthClient";
+import AuthChecker from "@/utils/checktokenClient";
 
 export const metadata: Metadata = {
   title: "Quick Campaign",
@@ -16,20 +16,18 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-    const accessToken = getCookie('accessToken');
-    const refreshToken = getCookie('refreshToken');
-  
-  if (!accessToken && !refreshToken && !window.location.pathname.startsWith('/accounts') && window.location.pathname !== '/') {
-    redirect(`/accounts/login?next=${encodeURIComponent(window.location.pathname)}`);
-  }
+   
 
+  const accessToken = getCookie('accessToken');
+  const refreshToken = getCookie('refreshToken');
 
   return (
     <html lang="en">
       <body>
         <StoreProvider>
+        // <TokenRefresh />
+        <AuthChecker accessToken={accessToken} refreshToken={refreshToken} />
         <TokenRefresh />
-
           {children}
         </StoreProvider>
       </body>
