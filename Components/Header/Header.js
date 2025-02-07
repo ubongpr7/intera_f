@@ -8,8 +8,11 @@ import SetupAdAccountPopup from "@/components/utils/setUpAdAccount";
 import { useGetAdAccountsQuery } from "@/redux/features/adAccountApiSlice";
 import AdAccountsList from "@/redux/sliceUsage/apiSliceUsage";
 import { getCookie } from "cookies-next";
-
-const SidebarWithHeader = () => {
+// interface ChildProps {
+//     sendData: (value: string) => void;
+//   }
+  
+const SidebarWithHeader = ({handleSetActiveAd}) => {
     const [activeAccount, setActiveAccount] = useState(1);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -103,19 +106,12 @@ const SidebarWithHeader = () => {
                 <hr className="horizontalRule" />
                 <div className="accountsContainer">
 
-                    {/* {[...Array(10)].map((_, index) => (
-                        <button
-                            key={index}
-                            className={`accountButton ${activeAccount === index + 1 ? 'accountActive' : ''}`}
-                            onClick={() => handleAccountClick(index + 1)}
-                            aria-label={`Switch to Ad Account ${index + 1}`}
-                        >
-                            <Image src="/assets/user-round.png" alt="User Icon" width={20} height={20} className="icon" />
-                            {`Ad Account ${index + 1}`}
-                        </button>
-                    ))} */}
-                    {/* <AdAccountsList /> */}
-                    <AdAccountsList adAccounts={adAccounts}handleAccountClick={handleAccountClick}  activeAccount={activeAccount} />
+                    <AdAccountsList 
+                    adAccounts={adAccounts}
+                    handleAccountClick={handleAccountClick} 
+                     activeAccount={activeAccount} 
+                     handleSetActiveAd={handleSetActiveAd}
+                     />
 
 
                 </div>
