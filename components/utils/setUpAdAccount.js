@@ -11,7 +11,7 @@ const SetupAdAccountPopup = ({ onClose, onSubmit, accessToken,userId }) => {
   const [createAdAccount, { isLoading }] = useCreateAdAccountMutation();
 
   const popupRef = useRef(null);
-
+  
   useEffect(() => {
     if (accessToken) {
       fetchAdAccounts();
