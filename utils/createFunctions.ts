@@ -15,7 +15,6 @@ function setUserDataFromToken(data:DecodedToken | null) {
     sameSite: "strict",
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    path: "/",
     maxAge: 3 * 24 * 60 * 60, // 3 days in seconds
   };
 
