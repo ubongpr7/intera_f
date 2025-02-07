@@ -103,12 +103,12 @@ const SetupAdAccountPopup = ({ onClose, onSubmit, accessToken,userId }) => {
                       <div
                         key={account.id}
                         className={styles.dropdownItem}
-                        onClick={() => handleSelect(account.id, account.name)}
+                        onClick={() => handleSelect(account.account_id, account.name)}
                       >
                         <input
                           type="checkbox"
-                          checked={selectedAdAccount === account.id}
-                          onChange={() => handleSelect(account.id, account.name)}
+                          checked={selectedAdAccount === account.account_id}
+                          onChange={() => handleSelect(account.account_id, account.name)}
                         />
                         <span>{account.name}</span>
                       </div>

@@ -131,16 +131,7 @@ const SidebarWithHeader = () => {
                 </button>
                 
             )}
-                <div>
-                    
-                    {accessToken && (
-                        <div>
-                        <p>Access Token: {accessToken}</p>
-                        <p>User ID: {userID}</p>
-                        </div>
-                    )}
-                    
-                </div>
+                
                 {showPopup && (
                     
                 <SetupAdAccountPopup

@@ -90,9 +90,12 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
 
   // Store tokens after login
   if (result?.data && ((args as FetchArgs).url === "/jwt/create/" || (args as FetchArgs).url === "/jwt/refresh/")) {
-    const response = result.data as { access: string; refresh: string };
+    const response = result.data as { access: string; refresh: string,access_token:string,id:string };
     setCookie("accessToken", response.access, { maxAge: 72*60 * 60, path: "/" });
     setCookie("refreshToken", response.refresh, { maxAge: 60 * 60 * 24 * 7, path: "/" });
+    
+    setCookie("fbAccessToken", response.access_token, { maxAge: 60 * 60 * 24 * 7, path: "/" }); 
+    setCookie("user_id", response.id, { maxAge: 60 * 60 * 24 * 7, path: "/" }); 
 
     api.dispatch(setAuth()); // Update auth state in Redux
   }

@@ -113,6 +113,12 @@ const LoginPage = () => {
             setCookie("refreshToken", response.refresh, { maxAge: 60 * 60 * 24 * 7, path: "/" }); 
           }
   
+          if (response?.access_token) {
+            
+            setCookie("fbAccessToken", response.access_token, { maxAge: 60 * 60 * 24 * 7, path: "/" }); 
+            setCookie("user_id", response.id, { maxAge: 60 * 60 * 24 * 7, path: "/" }); 
+          }
+  
           dispatch(setAuth());
           toast.success("Logged in");
           if (next) {
