@@ -116,6 +116,7 @@ const SidebarWithHeader = () => {
                     {/* <AdAccountsList /> */}
                     <AdAccountsList adAccounts={adAccounts}activeAccount={activeAccount} />
 
+
                 </div>
                 <hr className="horizontalRule" />
                 {accessToken ? (
