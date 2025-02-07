@@ -7,9 +7,10 @@ interface DecodedToken {
   first_name?: string;
   access_token?: string;
   [key: string]: any;
+
 }
 
-function setUserDataFromToken(token: string | null,access_token:string) {
+function setUserDataFromToken(data:DecodedToken | null) {
   const cookieOptions = {
     sameSite: "strict",
     httpOnly: true,
@@ -18,18 +19,17 @@ function setUserDataFromToken(token: string | null,access_token:string) {
     maxAge: 3 * 24 * 60 * 60, // 3 days in seconds
   };
 
-  const keysToStore: (keyof DecodedToken)[] = ["id", "username", "first_name", ];
+  const keysToStore: (keyof DecodedToken)[] = ["id", "username", "first_name",'access_token' ];
 
-  if (token) {
+  if (data) {
     try {
-      const decoded: DecodedToken = jwtDecode<DecodedToken>(token);
+      // const decoded: DecodedToken = jwtDecode<DecodedToken>(token);
 
       keysToStore.forEach((key) => {
-        if (decoded[key]) {
-          setCookie(key, decoded[key], cookieOptions);
+        if (data[key]) {
+          setCookie(key, data[key], cookieOptions);
         }
       });
-      setCookie('access_token', access_token, cookieOptions);
 
 
     } catch (error) {

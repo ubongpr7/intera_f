@@ -95,7 +95,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
     setCookie("accessToken", response.access, { maxAge: 72*60 * 60, path: "/" });
     setCookie("refreshToken", response.refresh, { maxAge: 60 * 60 * 24 * 7, path: "/" });
     
-    setUserDataFromToken(response?.access,response?.access_token);
+    setUserDataFromToken(response);
 
     api.dispatch(setAuth()); // Update auth state in Redux
   }
