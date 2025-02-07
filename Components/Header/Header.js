@@ -53,6 +53,7 @@ const SidebarWithHeader = () => {
 
     const handleAccountClick = (accountNumber) => {
         setActiveAccount(accountNumber);
+        
     };
     
     const closeSidebarOnClickOutside = (e) => {
@@ -114,7 +115,7 @@ const SidebarWithHeader = () => {
                         </button>
                     ))} */}
                     {/* <AdAccountsList /> */}
-                    <AdAccountsList adAccounts={adAccounts}activeAccount={activeAccount} />
+                    <AdAccountsList adAccounts={adAccounts}handleAccountClick={handleAccountClick}  activeAccount={activeAccount} />
 
 
                 </div>
@@ -136,7 +137,8 @@ const SidebarWithHeader = () => {
                     className="accountButton2"
                     aria-label="Create New Ad Account"
                 >
-                    Setup Facebook Account  
+                    Connect To Facebook
+                    
                 </button>
                 
             )}
