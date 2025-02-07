@@ -36,7 +36,9 @@
 
 // export default AdAccountsList;
 
-const AdAccountsList = ({ adAccounts,handleAccountClick,activeAccount,handleSetActiveAd }) => {
+const AdAccountsList = ({ handleAccountClick,activeAccount }) => {
+      const { data: adAccounts, refetch } = useGetAdAccountsQuery();
+    
     if (!adAccounts) return <p>Loading...</p>;
 
     return (
@@ -48,8 +50,8 @@ const AdAccountsList = ({ adAccounts,handleAccountClick,activeAccount,handleSetA
                         <button
                         className={`accountButton ${activeAccount === index + 1 ? 'accountActive' : ''}`}
                         onClick={() => {
-                            handleAccountClick(index + 1);
-                            handleSetActiveAd(account);
+                            handleAccountClick(index + 1,account);
+                            // handleSetActiveAd(account);
                         }}
                         aria-label={`Switch to Ad Account ${index + 1}`}
                         >

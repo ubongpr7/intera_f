@@ -15,7 +15,6 @@ const Page = () => {
   const [selectedCampaign, setSelectedCampaign] = useState("new");
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [dropdownOption, setDropdownOption] = useState("Select Options");
-  const [activeAd,setActiveAd]=useState('')
   const campaignOptions = [
     "findproccesserror",
     "LIVE APP",
@@ -25,9 +24,7 @@ const Page = () => {
     "Test(Newton)",
     "14 january - test with newton",
   ];
-  const handleSetActiveAd = (value) => {
-    setActiveAd(value);
-  };
+  
     
   const handleObjectiveClick = (objective) => {
     setSelectedObjective(objective);
@@ -72,7 +69,7 @@ const Page = () => {
     <div className="forclr">
             <ToastContainer position="top-right" autoClose={3000} />
 
-          <Header handleSetActiveAd={handleSetActiveAd}/>
+          <Header />
 
       <div className="main-container">
         <div className="main-content" id="content">

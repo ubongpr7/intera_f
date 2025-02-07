@@ -7,25 +7,23 @@ import { useFacebookAuth } from "@/utils";
 import SetupAdAccountPopup from "@/components/utils/setUpAdAccount";
 import { useGetAdAccountsQuery } from "@/redux/features/adAccountApiSlice";
 import AdAccountsList from "@/redux/sliceUsage/apiSliceUsage";
-import { getCookie } from "cookies-next";
+import { getCookie ,setCookie} from "cookies-next";
 
-const SidebarWithHeader = ({handleSetActiveAd}) => {
+const SidebarWithHeader = () => {
     const [activeAccount, setActiveAccount] = useState(1);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
     const [facebookDropdownOpen, setFacebookDropdownOpen] = useState(false);
   const { loginWithFacebook, accessToken, userID, isInitialized } = useFacebookAuth();
   const [showPopup, setShowPopup] = useState(false);
-  const { data: adAccounts, refetch } = useGetAdAccountsQuery();
+//   const { data: adAccounts, refetch } = useGetAdAccountsQuery();
   const handleOpenPopup = () => {
       if (accessToken) {
           setShowPopup(true);
       }
   };
 
-  const refreshAdAccounts = () => {
-    refetch();
-};
+  
 
   const handleClosePopup = () => {
       setShowPopup(false);
@@ -50,8 +48,9 @@ const SidebarWithHeader = ({handleSetActiveAd}) => {
         setFacebookDropdownOpen(!facebookDropdownOpen);
     };
 
-    const handleAccountClick = (accountNumber) => {
+    const handleAccountClick = (accountNumber,account) => {
         setActiveAccount(accountNumber);
+        setCookie('ad_id',account.id)
         
     };
     
@@ -105,10 +104,8 @@ const SidebarWithHeader = ({handleSetActiveAd}) => {
                 <div className="accountsContainer">
 
                     <AdAccountsList 
-                    adAccounts={adAccounts}
                     handleAccountClick={handleAccountClick} 
                      activeAccount={activeAccount} 
-                     handleSetActiveAd={handleSetActiveAd}
                      />
 
 
