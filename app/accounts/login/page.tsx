@@ -41,13 +41,7 @@ const LoginPage = () => {
   });
 
   const [showPassword, setShowPassword] = useState(false);
-  useEffect(() => {
-    const token = localStorage.getItem('jwt_token'); // Get the token (e.g., from localStorage)
 
-    setUserDataFromToken(token, { set: setCookie, get: (name) => cookies[name], remove: removeCookie }); // Call the function
-
-}, []);
-  // Field validation function
   const validateField = (name: string, value: string) => {
     let error = "";
 
