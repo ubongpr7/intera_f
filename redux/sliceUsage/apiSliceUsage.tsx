@@ -10,12 +10,13 @@ const AdAccountsList = () => {
 
     if (isLoading) return <p>Loading...</p>;
     if (isError) return <p>Error fetching ad accounts</p>;
-    
+
     return (
         <div>
             <h4>Ad Accounts</h4>
             {adAccounts?.length > 0 ? (
                 adAccounts.map((account) => (
+                    <div>
                     <button
                         key={account.id}
                         className="accountButton"
@@ -25,6 +26,7 @@ const AdAccountsList = () => {
                         {account.name}
                         </button>
                        <p> {account.account_name}</p>
+                       </div>
                 ))
             ) : (
                 <p>No ad accounts available</p>
