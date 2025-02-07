@@ -50,7 +50,8 @@ const SidebarWithHeader = () => {
 
     const handleAccountClick = (accountNumber,account) => {
         setActiveAccount(accountNumber);
-        setCookie('ad_id',account.id)
+        setCookie('selected_ad_id',account.id)
+        console.log('selected_ad_id',getCookie('selected_ad_id'))
         
     };
     

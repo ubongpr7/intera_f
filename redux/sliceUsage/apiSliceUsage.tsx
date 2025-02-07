@@ -22,6 +22,7 @@ const AdAccountsList = ({ handleAccountClick,activeAccount }) => {
 
     if (!adAccounts) return <p>Loading...</p>;
     setCookie('selected_ad_id',adAccounts[0].id)
+    console.log('selected_ad_id',getCookie('selected_ad_id'))
     return (
         <div>
             <h4>Ad Accounts</h4>
