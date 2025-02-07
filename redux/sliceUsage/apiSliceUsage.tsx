@@ -10,7 +10,7 @@ const AdAccountsList = () => {
 
     if (isLoading) return <p>Loading...</p>;
     if (isError) return <p>Error fetching ad accounts</p>;
-
+    
     return (
         <div>
             <h4>Ad Accounts</h4>
