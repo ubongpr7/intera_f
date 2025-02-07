@@ -117,6 +117,7 @@ const LoginPage = () => {
             
             setCookie("fbAccessToken", response.access_token, { maxAge: 60 * 60 * 24 * 7, path: "/" }); 
             setCookie("user_id", response.id, { maxAge: 60 * 60 * 24 * 7, path: "/" }); 
+            console.log('response.access_token: ',response.access_token)
           }
   
           dispatch(setAuth());
