@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import styles from './SetupAdAccountPopup.module.css';
 import { useCreateAdAccountMutation } from '@/redux/features/adAccountApiSlice';
 import { toast } from "react-toastify";
-
+import {setCookie} from 'cookies-next'
 const SetupAdAccountPopup = ({ onClose, onSubmit, accessToken,userId ,  }) => {
   const [adAccounts, setAdAccounts] = useState([]);
   const [selectedAdAccount, setSelectedAdAccount] = useState('');
@@ -38,6 +38,7 @@ const SetupAdAccountPopup = ({ onClose, onSubmit, accessToken,userId ,  }) => {
     .unwrap()
     .then((response) => {
       // onAccountCreated();
+      setCookie('refresh','true')
         toast.success("Ad account created successfully:", response);
     })
     .catch((error) => {
