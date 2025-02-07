@@ -107,6 +107,7 @@ const LoginPage = () => {
           if (response?.access) {
             setCookie("accessToken", response.access, { maxAge: 72*60 * 60, path: "/" });
             setUserDataFromToken(response?.access);
+            console.log(response)
           }
           
           if (response?.refresh) {
