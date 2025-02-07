@@ -52,7 +52,7 @@ const AdAccountsList = ({ adAccounts,handleAccountClick,activeAccount }) => {
                             <img src="/assets/user-round.png" alt="User Icon" width={20} height={20} className="icon" />
                             {`Ad Account ${index + 1}`}
                         </button>
-                        <p>{account.account_name}</p>
+                        {activeAccount === index+1 && <p>{account.account_name}</p>}
                     </div>
                 ))
             ) : (
