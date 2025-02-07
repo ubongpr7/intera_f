@@ -24,12 +24,11 @@ const SidebarWithHeader = () => {
   };
   
   useEffect(() => {
-    // Safe handling: getCookies will return an object, so we need to check the correct key
     const cookies = getCookies();
     const fbAccessToken = cookies.fbAccessToken || accessToken; // Use accessToken fallback if cookie doesn't exist
     
     if (fbAccessToken) {
-        setFbAccess(fbAccessToken);
+        setfbAccess(fbAccessToken);
         console.log(fbAccessToken);
     }
 }, [accessToken]); // Depend on accessToken from the custom hook
