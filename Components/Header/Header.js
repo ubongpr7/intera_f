@@ -144,7 +144,7 @@ const SidebarWithHeader = () => {
                     }}
                     accessToken={accessToken}
                     userId={userID}
-                    onAccountCreated={refreshAdAccounts}
+                    // onAccountCreated={refreshAdAccounts}
 
                 />
             )}
