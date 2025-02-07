@@ -7,7 +7,6 @@ import { useFacebookAuth } from "@/utils";
 import SetupAdAccountPopup from "@/components/utils/setUpAdAccount";
 import { useGetAdAccountsQuery } from "@/redux/features/adAccountApiSlice";
 import AdAccountsList from "@/redux/sliceUsage/apiSliceUsage";
-// import {getCookie} from 'cookies-next';
 import { getCookie } from "cookies-next";
 
 const SidebarWithHeader = () => {
@@ -17,11 +16,10 @@ const SidebarWithHeader = () => {
     const [facebookDropdownOpen, setFacebookDropdownOpen] = useState(false);
   const { loginWithFacebook, accessToken, userID, isInitialized } = useFacebookAuth();
   const [showPopup, setShowPopup] = useState(false);
-  const [fbAccess, setFbAccess] = useState('');
   const { data: adAccounts, refetch } = useGetAdAccountsQuery();
 
   const handleOpenPopup = () => {
-      if (fbAccess) {
+      if (accessToken) {
           setShowPopup(true);
       }
   };
@@ -70,20 +68,7 @@ const SidebarWithHeader = () => {
             document.removeEventListener("click", closeSidebarOnClickOutside);
         };
     }, []);
-    useEffect(() => {
-        const token = getCookie('access_token');
-        console.log('tried to get access token:', token);
-    
-        if (token) {
-            setFbAccess(token);
-        }else if(accessToken){
-            setFbAccess(accessToken);
-
-        }
-    }, []);
-    useEffect(() => {
-        console.log('fbAccess updated:', fbAccess);
-    }, [fbAccess]);
+   
     return (
         <div>
             {/* Header with Menu Button */}
@@ -129,14 +114,14 @@ const SidebarWithHeader = () => {
                         </button>
                     ))} */}
                     {/* <AdAccountsList /> */}
-                    <AdAccountsList adAccounts={adAccounts} />
+                    <AdAccountsList adAccounts={adAccounts}activeAccount={activeAccount} />
 
                 </div>
                 <hr className="horizontalRule" />
-                {fbAccess ? (
+                {accessToken ? (
                 
                 <button
-                    disabled={!fbAccess} // Ensure button is disabled when there's no access token
+                    disabled={!accessToken} // Ensure button is disabled when there's no access token
                     className="accountButton2"
                     aria-label="Create New Ad Account"
                     onClick={handleOpenPopup} // Trigger popup
@@ -164,7 +149,7 @@ const SidebarWithHeader = () => {
                         handleClosePopup(); // Close popup after submission
                         onAccountCreated={refreshAdAccounts}
                     }}
-                    accessToken={fbAccess}
+                    accessToken={accessToken}
                     userId={userID}
 
                 />

@@ -35,7 +35,7 @@
 // };
 
 // export default AdAccountsList;
-const AdAccountsList = ({ adAccounts }) => {
+const AdAccountsList = ({ adAccounts,handleAccountClick,activeAccount }) => {
     if (!adAccounts) return <p>Loading...</p>;
 
     return (
@@ -44,7 +44,11 @@ const AdAccountsList = ({ adAccounts }) => {
             {adAccounts.length > 0 ? (
                 adAccounts.map((account, index) => (
                     <div key={account.id}>
-                        <button className="accountButton">
+                        <button
+                        className={`accountButton ${activeAccount === index + 1 ? 'accountActive' : ''}`}
+                        onClick={() => handleAccountClick(index + 1)}
+                        aria-label={`Switch to Ad Account ${index + 1}`}
+                        >
                             <img src="/assets/user-round.png" alt="User Icon" width={20} height={20} className="icon" />
                             {`Ad Account ${index + 1}`}
                         </button>
