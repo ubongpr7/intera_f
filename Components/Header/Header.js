@@ -150,10 +150,10 @@ const SidebarWithHeader = () => {
                     onSubmit={(selectedAdAccount) => {
                         console.log("Selected Ad Account:", selectedAdAccount);
                         handleClosePopup(); // Close popup after submission
-                        onAccountCreated={refreshAdAccounts}
                     }}
                     accessToken={accessToken}
                     userId={userID}
+                    onAccountCreated={refreshAdAccounts}
 
                 />
             )}
