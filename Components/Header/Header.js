@@ -23,18 +23,16 @@ const SidebarWithHeader = () => {
       }
   };
   
-    useEffect(() => {
-        const fbAccessToken = getCookies('fbAccessToken');
-        
-        if (fbAccessToken) {
-            setFbAccess(fbAccessToken);
-            console.log(fbAccessToken);
-        }
-        else if (accessToken) {
-            setFbAccess(accessToken);
-            console.log(accessToken);
-        }
-    }, [accessToken]);
+  useEffect(() => {
+    // Safe handling: getCookies will return an object, so we need to check the correct key
+    const cookies = getCookies();
+    const fbAccessToken = cookies.fbAccessToken || accessToken; // Use accessToken fallback if cookie doesn't exist
+    
+    if (fbAccessToken) {
+        setFbAccess(fbAccessToken);
+        console.log(fbAccessToken);
+    }
+}, [accessToken]); // Depend on accessToken from the custom hook
 
   const handleClosePopup = () => {
       setShowPopup(false);
