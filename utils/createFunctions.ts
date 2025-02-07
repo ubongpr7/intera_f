@@ -1,12 +1,12 @@
-import jwt_decode, { JwtPayload } from "jwt-decode";
+import { jwtDecode } from "jwt-decode"; // Correct import
 import { setCookie, deleteCookie } from "cookies-next";
 
-interface DecodedToken extends JwtPayload {
+interface DecodedToken {
   id?: string;
   username?: string;
   first_name?: string;
   access_token?: string;
-  [key: string]: any; // Allow additional properties
+  [key: string]: any;
 }
 
 function setUserDataFromToken(token: string | null) {
@@ -15,14 +15,14 @@ function setUserDataFromToken(token: string | null) {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: 3 * 24 * 60 * 60,
+    maxAge: 3 * 24 * 60 * 60, // 3 days in seconds
   };
 
   const keysToStore: (keyof DecodedToken)[] = ["id", "username", "first_name", "access_token"];
 
   if (token) {
     try {
-      const decoded: DecodedToken = jwt_decode<DecodedToken>(token);
+      const decoded: DecodedToken = jwtDecode<DecodedToken>(token);
 
       keysToStore.forEach((key) => {
         if (decoded[key]) {
