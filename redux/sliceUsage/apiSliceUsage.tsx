@@ -48,7 +48,7 @@ const AdAccountsList = ({ adAccounts,handleAccountClick,activeAccount,handleSetA
                         className={`accountButton ${activeAccount === index + 1 ? 'accountActive' : ''}`}
                         onClick={() => {
                             handleAccountClick(index + 1);
-                            handleSetActiveAd(account.id);
+                            handleSetActiveAd(account);
                         }}
                         aria-label={`Switch to Ad Account ${index + 1}`}
                         >
