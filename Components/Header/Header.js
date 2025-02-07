@@ -20,7 +20,7 @@ const SidebarWithHeader = ({handleSetActiveAd}) => {
   const { loginWithFacebook, accessToken, userID, isInitialized } = useFacebookAuth();
   const [showPopup, setShowPopup] = useState(false);
   const { data: adAccounts, refetch } = useGetAdAccountsQuery();
-
+  handleSetActiveAd(adAccounts[0])
   const handleOpenPopup = () => {
       if (accessToken) {
           setShowPopup(true);
