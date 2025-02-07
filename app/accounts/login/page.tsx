@@ -70,7 +70,6 @@ const LoginPage = () => {
     }));
   };
 
-  // Handle input change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     setFormData({
