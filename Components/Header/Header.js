@@ -7,6 +7,8 @@ import { useFacebookAuth } from "@/utils";
 import SetupAdAccountPopup from "@/components/utils/setUpAdAccount";
 // import { useGetAdAccountsQuery } from "@/redux/features/adAccountApiSlice";
 import AdAccountsList from "@/redux/sliceUsage/apiSliceUsage";
+import {getCookie} from 'cookies-next'
+
 const SidebarWithHeader = () => {
     const [activeAccount, setActiveAccount] = useState(1);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -63,7 +65,7 @@ const SidebarWithHeader = () => {
         };
     }, []);
     useEffect(() => {
-        token=getCookies('access_token')
+        token=getCookie('access_token')
         if (token){
             setFbAccess(token)
             console.log('fbAccess: ',fbAccess)
