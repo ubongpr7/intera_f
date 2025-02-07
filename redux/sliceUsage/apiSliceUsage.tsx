@@ -15,18 +15,17 @@ const AdAccountsList = () => {
         <div>
             <h4>Ad Accounts</h4>
             {adAccounts?.length > 0 ? (
-                adAccounts.map((account) => (
-                    <div>
-                    <button
-                        key={account.id}
-                        className="accountButton"
-                        onClick={() => console.log(`Selected: ${account.account_name}`)}
-                    >
-                        <Image src="/assets/user-round.png" alt="User Icon" width={20} height={20} className="icon" />
-                        {account.name}
+                adAccounts.map((account, index) => (  // Add index parameter
+                    <div key={account.id}>
+                        <button
+                            className="accountButton"
+                            onClick={() => console.log(`Selected: ${account.account_name}`)}
+                        >
+                            <Image src="/assets/user-round.png" alt="User Icon" width={20} height={20} className="icon" />
+                            {`Ad Account ${index + 1}`}  {/* ✅ Use index to number the accounts */}
                         </button>
-                       <p> {account.account_name}</p>
-                       </div>
+                        <p>{account.account_name}</p>
+                    </div>
                 ))
             ) : (
                 <p>No ad accounts available</p>
