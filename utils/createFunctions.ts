@@ -18,7 +18,7 @@ function setUserDataFromToken(data:DecodedToken | null) {
     maxAge: 3 * 24 * 60 * 60, // 3 days in seconds
   };
 
-  const keysToStore: (keyof DecodedToken)[] = ["id", "username", "first_name",'access_token' ];
+  const keysToStore: (keyof DecodedToken)[] = ["id", "username", "first_name", ];
 
   if (data) {
     try {

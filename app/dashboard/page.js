@@ -28,14 +28,7 @@ const Page = () => {
   const handleSetActiveAd = (value) => {
     setActiveAd(value);
   };
-    useEffect(() => {
-          if (activeAd){
-  
-          console.log('activeAdID: ',activeAd)
-
-          }
-  
-          },[]);
+    
   const handleObjectiveClick = (objective) => {
     setSelectedObjective(objective);
   };

@@ -10,6 +10,8 @@ import { useRegisterMutation } from "@/redux/features/authApiSlice";
 import { toast } from "react-toastify";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import "../login/Login.css";
+
 interface FormData {
   first_name: string;
   email: string;

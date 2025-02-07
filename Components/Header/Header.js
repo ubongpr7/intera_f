@@ -8,10 +8,7 @@ import SetupAdAccountPopup from "@/components/utils/setUpAdAccount";
 import { useGetAdAccountsQuery } from "@/redux/features/adAccountApiSlice";
 import AdAccountsList from "@/redux/sliceUsage/apiSliceUsage";
 import { getCookie } from "cookies-next";
-// interface ChildProps {
-//     sendData: (value: string) => void;
-//   }
-  
+
 const SidebarWithHeader = ({handleSetActiveAd}) => {
     const [activeAccount, setActiveAccount] = useState(1);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);

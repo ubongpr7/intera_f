@@ -35,6 +35,7 @@
 // };
 
 // export default AdAccountsList;
+
 const AdAccountsList = ({ adAccounts,handleAccountClick,activeAccount,handleSetActiveAd }) => {
     if (!adAccounts) return <p>Loading...</p>;
 
