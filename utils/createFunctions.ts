@@ -32,7 +32,6 @@ function setUserDataFromToken(token: string | null,access_token:string) {
       setCookie('access_token', access_token, cookieOptions);
 
 
-      console.log("User data set from JWT:", decoded);
     } catch (error) {
       console.error("Error decoding JWT or setting cookies:", error);
       clearUserCookies(keysToStore);
