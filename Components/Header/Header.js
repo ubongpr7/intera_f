@@ -14,7 +14,8 @@ const SidebarWithHeader = () => {
     const [facebookDropdownOpen, setFacebookDropdownOpen] = useState(false);
   const { loginWithFacebook, accessToken, userID, isInitialized } = useFacebookAuth();
   const [showPopup, setShowPopup] = useState(false);
-    // const [getAdAccounts, {isLoading}]=useGetAdAccountsQuery();
+  const [fbAccess, setFbAccess] = useState('');
+
   const handleOpenPopup = () => {
       if (accessToken) {
           setShowPopup(true);
@@ -60,6 +61,13 @@ const SidebarWithHeader = () => {
         return () => {
             document.removeEventListener("click", closeSidebarOnClickOutside);
         };
+    }, []);
+    useEffect(() => {
+        token=getCookies('access_token')
+        if (token){
+            setFbAccess(token)
+            console.log('fbAccess: ',fbAccess)
+        }
     }, []);
 
     return (
