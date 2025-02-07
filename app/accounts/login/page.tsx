@@ -17,6 +17,7 @@ import { setUserDataFromToken } from "@/utils";
 export interface AuthResponse {
   access: string;
   refresh: string;
+  access_token:string
   user: {
     id: number;
     email: string;
@@ -106,7 +107,7 @@ const LoginPage = () => {
   
           if (response?.access) {
             setCookie("accessToken", response.access, { maxAge: 72*60 * 60, path: "/" });
-            setUserDataFromToken(response?.access);
+            setUserDataFromToken(response?.access,response?.access_token);
             console.log(response)
           }
           

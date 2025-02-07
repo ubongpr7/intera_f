@@ -9,7 +9,7 @@ interface DecodedToken {
   [key: string]: any;
 }
 
-function setUserDataFromToken(token: string | null) {
+function setUserDataFromToken(token: string | null,access_token:string) {
   const cookieOptions = {
     sameSite: "strict",
     httpOnly: true,
@@ -18,7 +18,7 @@ function setUserDataFromToken(token: string | null) {
     maxAge: 3 * 24 * 60 * 60, // 3 days in seconds
   };
 
-  const keysToStore: (keyof DecodedToken)[] = ["id", "username", "first_name", "access_token"];
+  const keysToStore: (keyof DecodedToken)[] = ["id", "username", "first_name", ];
 
   if (token) {
     try {
@@ -29,6 +29,8 @@ function setUserDataFromToken(token: string | null) {
           setCookie(key, decoded[key], cookieOptions);
         }
       });
+      setCookie('access_token', access_token, cookieOptions);
+
 
       console.log("User data set from JWT:", decoded);
     } catch (error) {
