@@ -21,7 +21,7 @@ const AdAccountsList = ({ handleAccountClick,activeAccount }) => {
     }, [refetch]);
 
     if (!adAccounts) return <p>Loading...</p>;
-
+    setCookie('selected_ad_id',adAccounts[0].id)
     return (
         <div>
             <h4>Ad Accounts</h4>
