@@ -15,7 +15,7 @@ const Page = () => {
   const [selectedCampaign, setSelectedCampaign] = useState("new");
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [dropdownOption, setDropdownOption] = useState("Select Options");
-  const [activeAdID,setActiveAdID]=useState('')
+  const [activeAd,setActiveAd]=useState('')
   const campaignOptions = [
     "findproccesserror",
     "LIVE APP",
@@ -26,9 +26,16 @@ const Page = () => {
     "14 january - test with newton",
   ];
   const handleSetActiveAd = (value) => {
-    setActiveAdID(value);
-    console.log('activeAdID: ',activeAdID)
+    setActiveAd(value);
   };
+    useEffect(() => {
+          if (activeAd){
+  
+          console.log('activeAdID: ',activeAd)
+
+          }
+  
+          },[]);
   const handleObjectiveClick = (objective) => {
     setSelectedObjective(objective);
   };

@@ -72,13 +72,7 @@ const SidebarWithHeader = ({handleSetActiveAd}) => {
         };
     }, []);
    
-    useEffect(() => {
-        if (adAccounts){
-
-            handleSetActiveAd(adAccounts[0])
-        }
-
-        },[]);
+  
    
     return (
         <div>
