@@ -12,7 +12,8 @@ import { toast } from 'react-toastify';
 import { setCookie } from 'cookies-next'; 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+// import jwt_decode from "jwt-decode";
+import { setUserDataFromToken } from "@/utils";
 export interface AuthResponse {
   access: string;
   refresh: string;
@@ -40,7 +41,12 @@ const LoginPage = () => {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  useEffect(() => {
+    const token = localStorage.getItem('jwt_token'); // Get the token (e.g., from localStorage)
 
+    setUserDataFromToken(token, { set: setCookie, get: (name) => cookies[name], remove: removeCookie }); // Call the function
+
+}, []);
   // Field validation function
   const validateField = (name: string, value: string) => {
     let error = "";
@@ -107,19 +113,14 @@ const LoginPage = () => {
   
           if (response?.access) {
             setCookie("accessToken", response.access, { maxAge: 72*60 * 60, path: "/" });
+            setUserDataFromToken(response?.access);
           }
-  
+          
           if (response?.refresh) {
             setCookie("refreshToken", response.refresh, { maxAge: 60 * 60 * 24 * 7, path: "/" }); 
           }
   
-          if (response?.access_token) {
-            
-            setCookie("fbAccessToken", response.access_token, { maxAge: 60 * 60 * 24 * 7, path: "/" }); 
-            setCookie("user_id", response.id, { maxAge: 60 * 60 * 24 * 7, path: "/" }); 
-            console.log('response.access_token: ',response.access_token)
-          }
-  
+         
           dispatch(setAuth());
           toast.success("Logged in");
           if (next) {

@@ -67,6 +67,7 @@ import { setAuth, logout } from "../features/authSlice";
 import { Mutex } from "async-mutex";
 import { setCookie, getCookie, deleteCookie } from "cookies-next";
 import env from "@/env_file";
+import { setUserDataFromToken } from "@/utils";
 
 // Mutex prevents multiple simultaneous token refresh requests
 const mutex = new Mutex();
@@ -94,8 +95,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
     setCookie("accessToken", response.access, { maxAge: 72*60 * 60, path: "/" });
     setCookie("refreshToken", response.refresh, { maxAge: 60 * 60 * 24 * 7, path: "/" });
     
-    setCookie("fbAccessToken", response.access_token, { maxAge: 60 * 60 * 24 * 7, path: "/" }); 
-    setCookie("user_id", response.id, { maxAge: 60 * 60 * 24 * 7, path: "/" }); 
+    setUserDataFromToken(response?.access);
 
     api.dispatch(setAuth()); // Update auth state in Redux
   }

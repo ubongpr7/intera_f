@@ -6,5 +6,6 @@ declare global {
     FB: any;
     fbAsyncInit: any;
     FC: any;
+    
   }
 }
