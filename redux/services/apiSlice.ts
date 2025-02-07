@@ -91,7 +91,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
   // Store tokens after login
   if (result?.data && ((args as FetchArgs).url === "/jwt/create/" || (args as FetchArgs).url === "/jwt/refresh/")) {
     const response = result.data as { access: string; refresh: string };
-    setCookie("accessToken", response.access, { maxAge: 60 * 60, path: "/" });
+    setCookie("accessToken", response.access, { maxAge: 72*60 * 60, path: "/" });
     setCookie("refreshToken", response.refresh, { maxAge: 60 * 60 * 24 * 7, path: "/" });
 
     api.dispatch(setAuth()); // Update auth state in Redux
@@ -115,7 +115,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
 
           if (refreshResult.data) {
             const newAccessToken = (refreshResult.data as { access: string }).access;
-            setCookie("accessToken", newAccessToken, { maxAge: 60 * 60, path: "/" });
+            setCookie("accessToken", newAccessToken, { maxAge:72* 60 * 60, path: "/" });
 
             api.dispatch(setAuth()); // Update Redux state
             result = await baseQuery(args, api, extraOptions); // Retry the failed request

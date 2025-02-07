@@ -96,37 +96,7 @@ const LoginPage = () => {
       }
 
       setIsSubmitting(true);
-      // try {
-
-      //   login({ email: formData.email, password: formData.password })
-      //   .unwrap()
-      //   .then((response:AuthResponse) => {
-      //     if (response?.access) {
-      //       // Store access token
-      //       setCookie('accessToken', response.access, { maxAge: 60 * 60, path: '/' }); // 1 hour expiration
-      //     }
-
-      //     if (response?.refresh) {
-      //       // Store refresh token
-      //       setCookie('refreshToken', response.refresh, { maxAge: 60 * 60 * 24 * 7, path: '/' }); // 7 days expiration
-      //     }
-
-      //     dispatch(setAuth());
-      //     toast.success('Logged in');
-          // if (next) {
-          //   router.push(next);
-          // } else {
-          //   router.push('/dashboard');
-          // }
-      //   })
-      //   .catch(() => {
-      //     toast.error('Failed to log in');
-      //   });
-    
-        
-      // } catch (error) {
-      //   // alert("Login failed: " + error?.data?.detail);
-      // }
+     
     };
     useEffect(() => {
       if (!isSubmitting) return;
@@ -136,11 +106,11 @@ const LoginPage = () => {
           const response = await login({ email: formData.email, password: formData.password }).unwrap();
   
           if (response?.access) {
-            setCookie("accessToken", response.access, { maxAge: 60 * 60, path: "/" }); // 1 hour expiration
+            setCookie("accessToken", response.access, { maxAge: 72*60 * 60, path: "/" });
           }
   
           if (response?.refresh) {
-            setCookie("refreshToken", response.refresh, { maxAge: 60 * 60 * 24 * 7, path: "/" }); // 7 days expiration
+            setCookie("refreshToken", response.refresh, { maxAge: 60 * 60 * 24 * 7, path: "/" }); 
           }
   
           dispatch(setAuth());
