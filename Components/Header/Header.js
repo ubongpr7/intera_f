@@ -65,7 +65,7 @@ const SidebarWithHeader = () => {
         };
     }, []);
     useEffect(() => {
-        token=getCookie('access_token')
+        const token=getCookie('access_token')
         if (token){
             setFbAccess(token)
             console.log('fbAccess: ',fbAccess)
