@@ -3,7 +3,7 @@ import styles from './SetupAdAccountPopup.module.css';
 import { useCreateAdAccountMutation } from '@/redux/features/adAccountApiSlice';
 import { toast } from "react-toastify";
 
-const SetupAdAccountPopup = ({ onClose, onSubmit, accessToken,userId }) => {
+const SetupAdAccountPopup = ({ onClose, onSubmit, accessToken,userId,onAccountCreated  }) => {
   const [adAccounts, setAdAccounts] = useState([]);
   const [selectedAdAccount, setSelectedAdAccount] = useState('');
   const [selectedAdAccountName, setSelectedAdAccountName] = useState('');
@@ -33,9 +33,11 @@ const SetupAdAccountPopup = ({ onClose, onSubmit, accessToken,userId }) => {
         access_token: accessToken,
         account_name: selectedAdAccountName,
         business_manager_id: userId
+
     })
     .unwrap()
     .then((response) => {
+      onAccountCreated();
         toast.success("Ad account created successfully:", response);
     })
     .catch((error) => {

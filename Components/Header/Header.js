@@ -5,7 +5,7 @@ import Link from "next/link";
 import "./SidebarWithHeader.module.css";
 import { useFacebookAuth } from "@/utils";
 import SetupAdAccountPopup from "@/components/utils/setUpAdAccount";
-// import { useGetAdAccountsQuery } from "@/redux/features/adAccountApiSlice";
+import { useGetAdAccountsQuery } from "@/redux/features/adAccountApiSlice";
 import AdAccountsList from "@/redux/sliceUsage/apiSliceUsage";
 // import {getCookie} from 'cookies-next';
 import { getCookie } from "cookies-next";
@@ -18,12 +18,17 @@ const SidebarWithHeader = () => {
   const { loginWithFacebook, accessToken, userID, isInitialized } = useFacebookAuth();
   const [showPopup, setShowPopup] = useState(false);
   const [fbAccess, setFbAccess] = useState('');
+  const { data: adAccounts, refetch } = useGetAdAccountsQuery();
 
   const handleOpenPopup = () => {
       if (fbAccess) {
           setShowPopup(true);
       }
   };
+
+  const refreshAdAccounts = () => {
+    refetch();
+};
 
   const handleClosePopup = () => {
       setShowPopup(false);
@@ -123,7 +128,8 @@ const SidebarWithHeader = () => {
                             {`Ad Account ${index + 1}`}
                         </button>
                     ))} */}
-                    <AdAccountsList />
+                    {/* <AdAccountsList /> */}
+                    <AdAccountsList adAccounts={adAccounts} />
 
                 </div>
                 <hr className="horizontalRule" />
@@ -156,6 +162,7 @@ const SidebarWithHeader = () => {
                     onSubmit={(selectedAdAccount) => {
                         console.log("Selected Ad Account:", selectedAdAccount);
                         handleClosePopup(); // Close popup after submission
+                        onAccountCreated={refreshAdAccounts}
                     }}
                     accessToken={fbAccess}
                     userId={userID}
