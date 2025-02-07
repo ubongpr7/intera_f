@@ -7,7 +7,8 @@ import { useFacebookAuth } from "@/utils";
 import SetupAdAccountPopup from "@/components/utils/setUpAdAccount";
 // import { useGetAdAccountsQuery } from "@/redux/features/adAccountApiSlice";
 import AdAccountsList from "@/redux/sliceUsage/apiSliceUsage";
-import {getCookie} from 'cookies-next'
+// import {getCookie} from 'cookies-next';
+import { getCookie } from "cookies-next";
 
 const SidebarWithHeader = () => {
     const [activeAccount, setActiveAccount] = useState(1);

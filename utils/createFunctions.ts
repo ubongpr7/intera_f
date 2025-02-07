@@ -13,7 +13,7 @@ interface DecodedToken {
 function setUserDataFromToken(data:DecodedToken | null) {
   const cookieOptions = {
     sameSite: "strict",
-    httpOnly: true,
+    // httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     maxAge: 3 * 24 * 60 * 60, // 3 days in seconds
   };
