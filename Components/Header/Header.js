@@ -66,6 +66,7 @@ const SidebarWithHeader = () => {
     }, []);
     useEffect(() => {
         const token=getCookie('access_token')
+        console.log('tried to get access token')
         if (token){
             setFbAccess(token)
             console.log('fbAccess: ',fbAccess)

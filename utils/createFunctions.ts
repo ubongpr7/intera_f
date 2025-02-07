@@ -28,6 +28,7 @@ function setUserDataFromToken(data:DecodedToken | null) {
       keysToStore.forEach((key) => {
         if (data[key]) {
           setCookie(key, data[key], cookieOptions);
+          console.log(key,data[key] )
         }
       });
 
