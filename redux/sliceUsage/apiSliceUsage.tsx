@@ -4,27 +4,21 @@ import { getCookie ,setCookie} from "cookies-next";
 
 const AdAccountsList = ({ handleAccountClick,activeAccount }) => {
       const { data: adAccounts, refetch } = useGetAdAccountsQuery();
-      const [refresh, setRefresh] = useState(getCookie("refresh") === "true");
-      useEffect(() => {
-        if (refresh) {
-            refetch().then(() => {
-                setCookie("refresh", "false"); // Reset cookie
-                setRefresh(false); // Update state
-            });
-        }
-    }, [refresh, refetch]);
 
-    useEffect(() => {
-        const checkCookie = () => {
+      useEffect(() => {
+        const checkRefresh = () => {
             const shouldRefresh = getCookie("refresh") === "true";
+            console.log('shouldRefresh: ', shouldRefresh)
             if (shouldRefresh) {
-                setRefresh(true); // Trigger refetch
+                refetch();  
+                setCookie("refresh", "false");  
             }
         };
 
-        document.addEventListener("cookieChange", checkCookie);
-        return () => document.removeEventListener("cookieChange", checkCookie);
-    }, []);
+        const interval = setInterval(checkRefresh, 1000);
+
+        return () => clearInterval(interval); 
+    }, [refetch]);
 
     if (!adAccounts) return <p>Loading...</p>;
 
