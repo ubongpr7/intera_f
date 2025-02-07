@@ -20,7 +20,7 @@ const SidebarWithHeader = () => {
   const [fbAccess, setFbAccess] = useState('');
 
   const handleOpenPopup = () => {
-      if (accessToken) {
+      if (fbAccess) {
           setShowPopup(true);
       }
   };
@@ -71,6 +71,9 @@ const SidebarWithHeader = () => {
     
         if (token) {
             setFbAccess(token);
+        }else if(accessToken){
+            setFbAccess(accessToken);
+
         }
     }, []);
     useEffect(() => {
@@ -124,10 +127,10 @@ const SidebarWithHeader = () => {
 
                 </div>
                 <hr className="horizontalRule" />
-                {accessToken ? (
+                {fbAccess ? (
                 
                 <button
-                    disabled={!accessToken} // Ensure button is disabled when there's no access token
+                    disabled={!fbAccess} // Ensure button is disabled when there's no access token
                     className="accountButton2"
                     aria-label="Create New Ad Account"
                     onClick={handleOpenPopup} // Trigger popup
@@ -154,7 +157,7 @@ const SidebarWithHeader = () => {
                         console.log("Selected Ad Account:", selectedAdAccount);
                         handleClosePopup(); // Close popup after submission
                     }}
-                    accessToken={accessToken}
+                    accessToken={fbAccess}
                     userId={userID}
 
                 />
