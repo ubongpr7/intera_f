@@ -4,6 +4,7 @@ import { getCookie ,setCookie} from "cookies-next";
 
 const AdAccountsList = ({ handleAccountClick,activeAccount }) => {
       const { data: adAccounts, refetch } = useGetAdAccountsQuery();
+      const [shouldSet,setShouldSet]=useState(true)
 
       useEffect(() => {
         const checkRefresh = () => {
@@ -21,8 +22,12 @@ const AdAccountsList = ({ handleAccountClick,activeAccount }) => {
     }, [refetch]);
 
     if (!adAccounts) return <p>Loading...</p>;
-    setCookie('selected_ad_id',adAccounts[0].id)
-    console.log('selected_ad_id',getCookie('selected_ad_id'))
+    if (shouldSet){
+        setCookie('selected_ad_id',adAccounts[0].id)
+        console.log('selected_ad_id',getCookie('selected_ad_id'))
+        setShouldSet(false)
+
+    }
     return (
         <div>
             <h4>Ad Accounts</h4>

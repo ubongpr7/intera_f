@@ -9,7 +9,6 @@ const SetupAdAccountPopup = ({ onClose, onSubmit, accessToken,userId ,  }) => {
   const [selectedAdAccountName, setSelectedAdAccountName] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [createAdAccount, { isLoading }] = useCreateAdAccountMutation();
-
   const popupRef = useRef(null);
   
   useEffect(() => {
