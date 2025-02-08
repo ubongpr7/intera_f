@@ -36,7 +36,6 @@ const CampaignForm = ({
 
     const fileInputRef = useRef(null);
 
-    // This effect ensures that client-specific code only runs after hydration
     useEffect(() => {
         setIsHydrated(true);
         if (!isNewCampaign && initialConfig.campaignId) {
@@ -102,7 +101,9 @@ const CampaignForm = ({
         setConfig((prevConfig) => ({
             ...prevConfig,
             [name]: value,
+
         }));
+        console.log('config: ', config)
     };
 
     // Hydration safety check: Render only after the client is hydrated
@@ -157,6 +158,7 @@ const CampaignForm = ({
                                     height={30}
                                 />
                             </div>
+
                             {expandedSections["creativeUploading"] && (
                                 <div className={styles.sectionContent}>
                                     <div
