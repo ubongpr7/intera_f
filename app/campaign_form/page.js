@@ -297,7 +297,6 @@ const CampaignForm = ({
                                             </div>
                                         </>
                                     )}
-
                                     <div className={styles.column}>
                                         <label className={styles.labelText} htmlFor="buying_type">
                                             Buying Type:
