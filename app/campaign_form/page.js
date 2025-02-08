@@ -53,7 +53,16 @@ const CampaignForm = ({
     const handleSaveConfig = () => {
         toast.success("Configuration saved locally!");
     };
-
+    const convertFormDataToObject = (formData) => {
+        const dataObject = {};
+    
+        formData.forEach((value, key) => {
+            dataObject[key] = value;
+        });
+    
+        return dataObject;
+    };
+    
     const handleSubmit =async  (event) => {
         event.preventDefault();
 
@@ -81,11 +90,12 @@ const CampaignForm = ({
                 formData.append(key, value);
             } 
           }
-
+          
         // onSubmit(formData, isNewCampaign);
+        mainData=convertFormDataToObject(formData)
         try {
-            console.log(formData)
-            const response = await  createAdSet(formData).unwrap();
+            console.log(mainData)
+            const response = await  createAdSet(mainData).unwrap();
             console.log("Success:", response);
             toast.success("Ad Set created successfully!");
         } catch (error) {
