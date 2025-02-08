@@ -3,18 +3,17 @@ import React, { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import styles from "/public/Styles/CampaignForm.module.css"; // Adjust path as necessary
+import styles from "/public/Styles/CampaignForm.module.css";
 import Header from "@/Components/Header/Header";
 import CampaignFormComp from "@/Components/CampaignFormComp/CampaignFormComp";
-import "/public/Styles/side-menu.css"
-import "/public/Styles/style.css"
-import "/public/Styles/home.css"
+import "/public/Styles/side-menu.css";
+import "/public/Styles/style.css";
+import "/public/Styles/home.css";
 import Placement from "@/Components/Placement/Placement";
 import TargettingDelivery from "@/Components/TargettingDelivery/TargettingDelivery";
 import CampaignTracking from "@/Components/CampaignTracking/CampaignTracking";
 import Link from "next/link";
 import Image from "next/image";
-
 
 const CampaignForm = ({
     formId,
@@ -27,17 +26,19 @@ const CampaignForm = ({
     const [campaignName, setCampaignName] = useState("");
     const [savedConfig, setSavedConfig] = useState(initialConfig);
     const [expandedSections, setExpandedSections] = useState({
-        creativeUploading: true,
-        budgetSchedule: true,
+        creativeUploading: false,
+        budgetSchedule: false,
     });
     const [uploadedFiles, setUploadedFiles] = useState([]);
     const [isCBO, setIsCBO] = useState(true);
     const [config, setConfig] = useState(initialConfig);
+    const [isHydrated, setIsHydrated] = useState(false); // Added for hydration check
 
-    // Ref for file input
     const fileInputRef = useRef(null);
 
+    // This effect ensures that client-specific code only runs after hydration
     useEffect(() => {
+        setIsHydrated(true);
         if (!isNewCampaign && initialConfig.campaignId) {
             setCampaignName(initialConfig.campaignName || "");
         }
@@ -104,6 +105,11 @@ const CampaignForm = ({
         }));
     };
 
+    // Hydration safety check: Render only after the client is hydrated
+    if (!isHydrated) {
+        return null; // Or a loading spinner/placeholder
+    }
+
     return (
         <div className="forclr">
             <Header />
@@ -150,7 +156,6 @@ const CampaignForm = ({
                                     width={30}
                                     height={30}
                                 />
-
                             </div>
                             {expandedSections["creativeUploading"] && (
                                 <div className={styles.sectionContent}>
@@ -165,7 +170,6 @@ const CampaignForm = ({
                                             width={40}
                                             height={40}
                                         />
-
                                         <p>Click to upload or drag and drop</p>
                                     </div>
                                     <input
@@ -198,23 +202,20 @@ const CampaignForm = ({
                                     width={30}
                                     height={30}
                                 />
-
                             </div>
                             {expandedSections["budgetSchedule"] && (
                                 <div className={styles.sectionContent}>
                                     <div className={styles.budgetOptimizationToggle}>
                                         <button
                                             type="button"
-                                            className={`${styles.toggleButton} ${!isCBO ? styles.active : ""
-                                                }`}
+                                            className={`${styles.toggleButton} ${!isCBO ? styles.active : ""}`}
                                             onClick={() => setIsCBO(false)}
                                         >
                                             ABO
                                         </button>
                                         <button
                                             type="button"
-                                            className={`${styles.toggleButton} ${isCBO ? styles.active : ""
-                                                }`}
+                                            className={`${styles.toggleButton} ${isCBO ? styles.active : ""}`}
                                             onClick={() => setIsCBO(true)}
                                         >
                                             CBO
