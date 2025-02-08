@@ -1,18 +1,31 @@
 import React from 'react'
 import Link from 'next/link'
+import Image from 'next/image';
+
 const handleCloseSidebarClick = () => {
     document.querySelector('.nav-menu-btn-container').style.right = '-310px';
-  };
-  const handleHamburgMenuClick = () => {
+};
+const handleHamburgMenuClick = () => {
     document.querySelector('.nav-menu-btn-container').style.right = '0';
-  };
+};
 const Nav = () => {
     return (
         <div>
             <nav>
-                {/* <img className="back-shadow nav-shadow" src="/assets/nav-shadow.svg" alt="" /> */}
-
-                {/* <Link href="/"><img className="header-logo" src="/assets/logo-header.png" alt="" /></Link> */}
+                <Image
+                    src="/assets/nav-shadow.svg"
+                    alt=""
+                    width={360}  // specify width according to your requirements
+                    height={373}  // specify height according to your requirements
+                    className='back-shadow nav-shadow'
+                />
+                <Link href="/"><Image
+                    className="header-logo"
+                    src="/assets/logo-header.png"
+                    alt="Header Logo"
+                    width={150}  // specify width according to your requirements
+                    height={50}  // specify height according to your requirements
+                /></Link>
                 <svg className="hamburg-menu" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" onClick={handleHamburgMenuClick}>
                     <path d="M3 6H21M3 12H21M3 18H21" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>

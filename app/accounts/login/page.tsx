@@ -1,15 +1,15 @@
 "use client";
 
-import { useState,useEffect, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import Link from "next/link";
-import { useRouter,useSearchParams  } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import "./Login.css";
 import { useLoginMutation } from "@/redux/features/authApiSlice";
 import Image from "next/image";
 import { useAppDispatch } from '@/redux/hooks';
 import { setAuth } from '@/redux/features/authSlice';
 import { toast } from 'react-toastify';
-import { setCookie } from 'cookies-next'; 
+import { setCookie } from 'cookies-next';
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 // import jwt_decode from "jwt-decode";
@@ -17,7 +17,7 @@ import { setUserDataFromToken } from "@/utils";
 export interface AuthResponse {
   access: string;
   refresh: string;
-  access_token:string
+  access_token: string
   user: {
     id: number;
     email: string;
@@ -25,7 +25,7 @@ export interface AuthResponse {
 }
 const LoginPage = () => {
   const router = useRouter();
-	const dispatch = useAppDispatch();
+  const dispatch = useAppDispatch();
   const searchParams = useSearchParams();
   const next = searchParams.get('next');
   const [formData, setFormData] = useState({
@@ -35,7 +35,7 @@ const LoginPage = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   // const [login, { data, isSuccess }] = useLoginMutation();
-  const [login, {data, isLoading }] = useLoginMutation();
+  const [login, { data, isLoading }] = useLoginMutation();
   const [errors, setErrors] = useState({
     email: "",
     password: "",
@@ -84,70 +84,70 @@ const LoginPage = () => {
 
   };
 
-    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
-    
-      validateField("email", formData.email);
-      validateField("password", formData.password);
-    
-      if (errors.email || errors.password) {
-        alert("Please fix the errors before submitting.");
-        return;
-      }
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
-      setIsSubmitting(true);
-     
-    };
-    useEffect(() => {
-      if (!isSubmitting) return;
-  
-      const loginUser = async () => {
-        try {
-          const response = await login({ email: formData.email, password: formData.password }).unwrap();
-  
-          if (response?.access) {
-            setCookie("accessToken", response.access, { maxAge: 72*60 * 60, path: "/" });
-            setUserDataFromToken(response,);
-            // console.log(response)
-          }
-          
-          if (response?.refresh) {
-            setCookie("refreshToken", response.refresh, { maxAge: 60 * 60 * 24 * 7, path: "/" }); 
-          }
-  
-         
-          dispatch(setAuth());
-          toast.success("Logged in");
-          if (next) {
-            router.push(next);
-          } else {
-            router.push('/dashboard');
-          }
-          // router.push(router.query.next as string || "/dashboard");
-        } catch (error) {
-          toast.error("Failed to log in");
-        } finally {
-          setIsSubmitting(false); // Reset submitting state
+    validateField("email", formData.email);
+    validateField("password", formData.password);
+
+    if (errors.email || errors.password) {
+      alert("Please fix the errors before submitting.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+  };
+  useEffect(() => {
+    if (!isSubmitting) return;
+
+    const loginUser = async () => {
+      try {
+        const response = await login({ email: formData.email, password: formData.password }).unwrap();
+
+        if (response?.access) {
+          setCookie("accessToken", response.access, { maxAge: 72 * 60 * 60, path: "/" });
+          setUserDataFromToken(response,);
+          // console.log(response)
         }
-      };
-  
-      loginUser();
-    }, [isSubmitting, login, formData, dispatch, router]);
-  
+
+        if (response?.refresh) {
+          setCookie("refreshToken", response.refresh, { maxAge: 60 * 60 * 24 * 7, path: "/" });
+        }
+
+
+        dispatch(setAuth());
+        toast.success("Logged in");
+        if (next) {
+          router.push(next);
+        } else {
+          router.push('/dashboard');
+        }
+        // router.push(router.query.next as string || "/dashboard");
+      } catch (error) {
+        toast.error("Failed to log in");
+      } finally {
+        setIsSubmitting(false); // Reset submitting state
+      }
+    };
+
+    loginUser();
+  }, [isSubmitting, login, formData, dispatch, router]);
+
   return (
     <div className="page-container">
       {/* Logo */}
       <Link href="/">
         {/* <img src="/assets/logo-header.png" alt="Logo" className="logo-header" /> */}
-                    <ToastContainer position="top-right" autoClose={3000} />
-        
+        <ToastContainer position="top-right" autoClose={3000} />
+
         <Image
-            src="/assets/logo-header.png"
-            alt="Logo"
-            width={150} // Adjust as needed
-            height={150}
-            className="logo-header"
-          />
+          src="/assets/logo-header.png"
+          alt="Logo"
+          width={285} // Adjust as needed
+          height={47}
+          className="logo-header"
+        />
       </Link>
 
       {/* Login Container */}
@@ -184,20 +184,13 @@ const LoginPage = () => {
               onClick={() => setShowPassword(!showPassword)}
               className="password-toggle"
             >
-              {/* <img
+              <Image
                 src={showPassword ? "/assets/eye-off.svg" : "/assets/eye.svg"}
                 alt="Toggle Password Visibility"
-                width="20"
-                height="20"
-              /> */}
-              <Image
-            src="/assets/logo-header.png"
-            alt="Logo"
-            width={20} // Adjust as needed
-            height={20}
-            className="logo-header"
-          />
-              
+                width={16}  // updated width
+                height={16}  // updated height
+              />
+
             </span>
           </div>
           {errors.password && <p className="error">{errors.password}</p>}

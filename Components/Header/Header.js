@@ -7,32 +7,32 @@ import SetupAdAccountPopup from "@/components/utils/setUpAdAccount";
 import { useGetAdAccountsQuery } from "@/redux/features/adAccountApiSlice";
 import AdAccountsList from "@/redux/sliceUsage/apiSliceUsage";
 import React, { useState, useEffect, useRef } from "react";
-import { getCookie ,setCookie} from "cookies-next";
+import { getCookie, setCookie } from "cookies-next";
 
 const SidebarWithHeader = () => {
     const [activeAccount, setActiveAccount] = useState(1);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
     const [facebookDropdownOpen, setFacebookDropdownOpen] = useState(false);
-  const { loginWithFacebook, accessToken, userID, isInitialized } = useFacebookAuth();
-  const [showPopup, setShowPopup] = useState(false);
-//   const { data: adAccounts, refetch } = useGetAdAccountsQuery();
+    const { loginWithFacebook, accessToken, userID, isInitialized } = useFacebookAuth();
+    const [showPopup, setShowPopup] = useState(false);
+    //   const { data: adAccounts, refetch } = useGetAdAccountsQuery();
 
-  const handleOpenPopup = () => {
-      if (accessToken) {
-          setShowPopup(true);
-      }
-  };
+    const handleOpenPopup = () => {
+        if (accessToken) {
+            setShowPopup(true);
+        }
+    };
 
-  
 
-  const handleClosePopup = () => {
-      setShowPopup(false);
-  };
+
+    const handleClosePopup = () => {
+        setShowPopup(false);
+    };
     const sidebarRef = useRef(null);
     const menuBtnRef = useRef(null);
 
-    
+
     const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen);
     };
@@ -49,13 +49,13 @@ const SidebarWithHeader = () => {
         setFacebookDropdownOpen(!facebookDropdownOpen);
     };
 
-    const handleAccountClick = (accountNumber,account) => {
+    const handleAccountClick = (accountNumber, account) => {
         setActiveAccount(accountNumber);
-        setCookie('selected_ad_id',account.id)
-        console.log('selected_ad_id',getCookie('selected_ad_id'))
-        
+        setCookie('selected_ad_id', account.id)
+        console.log('selected_ad_id', getCookie('selected_ad_id'))
+
     };
-    
+
     const closeSidebarOnClickOutside = (e) => {
         if (sidebarRef.current && !sidebarRef.current.contains(e.target) && !menuBtnRef.current.contains(e.target)) {
             setIsSidebarOpen(false);
@@ -69,9 +69,9 @@ const SidebarWithHeader = () => {
             document.removeEventListener("click", closeSidebarOnClickOutside);
         };
     }, []);
-   
-  
-   
+
+
+
     return (
         <div>
             {/* Header with Menu Button */}
@@ -99,57 +99,63 @@ const SidebarWithHeader = () => {
             <div id="menu" className={`sidebarContainer ${isSidebarOpen ? 'open' : ''}`} ref={sidebarRef}>
                 <div>
                     <Link href="/main">
-                        {/* <img src="/assets/logo-footer.png" alt="Logo" className="logoImage" /> */}
+                        <Image
+                            src="/assets/logo-footer.png"
+                            alt="Logo"
+                            className="logoImage"
+                            width={200}  // specify the width according to your requirements
+                            height={50}  // specify the height according to your requirements
+                        />
                     </Link>
                 </div>
                 <hr className="horizontalRule" />
                 <div className="accountsContainer">
 
-                    <AdAccountsList 
-                    handleAccountClick={handleAccountClick} 
-                     activeAccount={activeAccount} 
-                     />
+                    <AdAccountsList
+                        handleAccountClick={handleAccountClick}
+                        activeAccount={activeAccount}
+                    />
 
 
                 </div>
                 <hr className="horizontalRule" />
                 {accessToken ? (
-                
-                <button
-                    disabled={!accessToken} // Ensure button is disabled when there's no access token
-                    className="accountButton2"
-                    aria-label="Create New Ad Account"
-                    onClick={handleOpenPopup} // Trigger popup
-                >
-                    Add New Ad Account
-                </button>
-            ) : (
-                <button
-                    onClick={loginWithFacebook}
-                    disabled={!isInitialized}
-                    className="accountButton2"
-                    aria-label="Create New Ad Account"
-                >
-                    Connect To Facebook
-                    
-                </button>
-                
-            )}
-                
+
+                    <button
+                        disabled={!accessToken} // Ensure button is disabled when there's no access token
+                        className="accountButton2"
+                        aria-label="Create New Ad Account"
+                        onClick={handleOpenPopup} // Trigger popup
+                    >
+                        Add New Ad Account
+                    </button>
+                ) : (
+                    <button
+                        onClick={loginWithFacebook}
+                        disabled={!isInitialized}
+                        className="accountButton2"
+                        aria-label="Create New Ad Account"
+                    >
+                        Connect To Facebook
+
+                    </button>
+
+                )}
+
                 {showPopup && (
-                    
-                <SetupAdAccountPopup
-                    onClose={handleClosePopup}
-                    onSubmit={(selectedAdAccount) => {
-                        console.log("Selected Ad Account:", selectedAdAccount);
-                        handleClosePopup(); // Close popup after submission
-                    }}
-                    accessToken={accessToken}
-                    userId={userID}
+
+                    <SetupAdAccountPopup
+                        onClose={handleClosePopup}
+                        onSubmit={(selectedAdAccount) => {
+                            console.log("Selected Ad Account:", selectedAdAccount);
+                            handleClosePopup(); // Close popup after submission
+                        }}
+                        accessToken={accessToken}
+                        userId={userID}
                     // onAccountCreated={refreshAdAccounts}
 
-                />
-            )}
+                    />
+                )}
                 <div className="dropdownSection">
                     <div className="sectionHeader" onClick={toggleFacebookDropdown}>
                         <div className="sectionTitle inputtext">Facebook Setting</div>

@@ -63,12 +63,12 @@ const Page = () => {
         {/* <img src="/assets/logo-header.png" alt="Logo" className="logo-header" />
          */}
           <Image
-            src="/assets/logo-header.png"
-            alt="Logo"
-            width={150} 
-            height={150}
-            className="logo-header"
-          />
+                    src="/assets/logo-header.png"
+                    alt="Logo"
+                    width={285} // Adjust as needed
+                    height={47}
+                    className="logo-header"
+                  />
       </Link>
 
       <div className="container">

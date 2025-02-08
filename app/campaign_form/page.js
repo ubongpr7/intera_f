@@ -114,8 +114,8 @@ const CampaignForm = ({
                             src="/assets/Vector4.png"
                             alt="Go Back"
                             className={styles.goBackIcon}
-                            width={40}
-                            height={40}
+                            width={25}
+                            height={33}
                             onClick={onGoBack}
                             style={{ cursor: "pointer" }}
                         />

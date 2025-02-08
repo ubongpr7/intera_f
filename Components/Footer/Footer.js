@@ -1,12 +1,19 @@
 import React from 'react'
 import Link from 'next/link';
+import Image from 'next/image';
 
 const Footer = () => {
   return (
     <div>
       <footer>
         <div className="footer-first-col">
-          {/* <Link href="/"><img className="footer-logo" src="/assets/logo-footer.png" alt="QuickCampaigns Footer Logo" /></Link> */}
+          <Link href="/"> <Image
+            className="footer-logo"
+            src="/assets/logo-footer.png"
+            alt="QuickCampaigns Footer Logo"
+            width={200} // specify width according to your requirements
+            height={50} // specify height according to your requirements
+          /></Link>
           <p className="footer-logo-desc">
             Our software intelligently creates campaigns, ad sets, and ads based on your selected folders and default settings.
           </p>

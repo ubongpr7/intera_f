@@ -19,7 +19,13 @@ const Sidebar = () => {
             <div>
                 <div>
                     <Link href="/main">
-                        {/* <img src="/assets/logo-footer.png" alt="Logo" className="logoImage" /> */}
+                        <Image
+                            src="/assets/logo-footer.png"
+                            alt="Logo"
+                            className="logoImage"
+                            width={150}  // specify width according to your requirements
+                            height={50}  // specify height according to your requirements
+                        />
                     </Link>
                 </div>
                 <hr className="horizontalRule" />

@@ -38,25 +38,25 @@ const Landing = () => {
   };
   return (
     <div id='home'>
-      <Nav/>
+      <Nav />
       <div className="hero">
-{/*         
+        {/*         
         <img className="back-shadow hero-mid-shadow" src="/assets/hero-center-shadow.svg" alt="" />
         <img className="back-shadow hero-bottom-shadow" src="/assets/hero-bottom-shadow.svg" alt="" /> */}
-              <Image
-        className="back-shadow hero-mid-shadow"
-        src="/assets/hero-center-shadow.svg"
-        alt="Hero Center Shadow"
-        width={500}
-        height={300}
-      />
-      <Image
-        className="back-shadow hero-bottom-shadow"
-        src="/assets/hero-bottom-shadow.svg"
-        alt="Hero Bottom Shadow"
-        width={500}
-        height={300}
-      />
+        <Image
+          className="back-shadow hero-mid-shadow"
+          src="/assets/hero-center-shadow.svg"
+          alt="Hero Center Shadow"
+          width={1518}
+          height={1518}
+        />
+        <Image
+          className="back-shadow hero-bottom-shadow"
+          src="/assets/hero-bottom-shadow.svg"
+          alt="Hero Bottom Shadow"
+          width={380}
+          height={760}
+        />
         <div className="hero-inner">
           <p className="hero-heading">
             Revolutionize Your Facebook
@@ -203,26 +203,26 @@ const Landing = () => {
         <img className="back-shadow how-work-mid-shadow" src="/assets/how-work-mid-shadow.svg" alt="" />
         <img className="back-shadow how-work-right-shadow" src="/assets/how-works-right-shadow.svg" alt="" /> */}
         <Image
-        className="back-shadow how-work-bottom-shadow"
-        src="/assets/how-works-bottom-shadow.svg"
-        alt="How Works Bottom Shadow"
-        width={500}
-        height={300}
-      />
-      <Image
-        className="back-shadow how-work-mid-shadow"
-        src="/assets/how-work-mid-shadow.svg"
-        alt="How Work Mid Shadow"
-        width={500}
-        height={300}
-      />
-      <Image
-        className="back-shadow how-work-right-shadow"
-        src="/assets/how-works-right-shadow.svg"
-        alt="How Works Right Shadow"
-        width={500}
-        height={300}
-      />
+          className="back-shadow how-work-bottom-shadow"
+          src="/assets/how-works-bottom-shadow.svg"
+          alt="How Works Bottom Shadow"
+          width={500}
+          height={300}
+        />
+        <Image
+          className="back-shadow how-work-mid-shadow"
+          src="/assets/how-work-mid-shadow.svg"
+          alt="How Work Mid Shadow"
+          width={500}
+          height={300}
+        />
+        <Image
+          className="back-shadow how-work-right-shadow"
+          src="/assets/how-works-right-shadow.svg"
+          alt="How Works Right Shadow"
+          width={500}
+          height={300}
+        />
 
         <div className="how-work-left">
           <p className="how-work-heading">How <span>QuickCampaigns</span> Works</p>
@@ -360,13 +360,13 @@ const Landing = () => {
               </div>
             </div>
             {/* <Link href="/accounts/signup"><button className="price-start-btn">Get Started</button></Link> */}
-            <a 
-      href={`${env.BACKEND_HOST_URL}/stripe/subscribe/${env.ENTERPRICE_PRICE_ID}?success_path=${env.FRONTEND_HOST_URL}/accounts/signup/&cancel_path=${env.FRONTEND_HOST_URL}`}
-      rel="noopener noreferrer"
-      style={{ marginTop: "10px" }}
-    >
-      <button className="price-start-btn">Get Started</button>
-    </a>
+            <a
+              href={`${env.BACKEND_HOST_URL}/stripe/subscribe/${env.ENTERPRICE_PRICE_ID}?success_path=${env.FRONTEND_HOST_URL}/accounts/signup/&cancel_path=${env.FRONTEND_HOST_URL}`}
+              rel="noopener noreferrer"
+              style={{ marginTop: "10px" }}
+            >
+              <button className="price-start-btn">Get Started</button>
+            </a>
 
 
           </div>
@@ -413,14 +413,14 @@ const Landing = () => {
                 Receive dedicated support for ad management.
               </div>
             </div>
-            <a 
-      href={`${env.BACKEND_HOST_URL}/stripe/subscribe/${env.EXCLUSIVE_PRICE_ID}?success_path=${env.FRONTEND_HOST_URL}/accounts/signup/&cancel_path=${env.FRONTEND_HOST_URL}`}
-      target="_blank" 
-      rel="noopener noreferrer"
-      style={{ marginTop: "10px" }}
-    >
-      <button className="price-start-btn">Get Started</button>
-    </a>
+            <a
+              href={`${env.BACKEND_HOST_URL}/stripe/subscribe/${env.EXCLUSIVE_PRICE_ID}?success_path=${env.FRONTEND_HOST_URL}/accounts/signup/&cancel_path=${env.FRONTEND_HOST_URL}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ marginTop: "10px" }}
+            >
+              <button className="price-start-btn">Get Started</button>
+            </a>
             {/* <Link href="/accounts/signup"><button className="price-start-btn">Get Started</button></Link> */}
           </div>
         </div>
@@ -430,22 +430,48 @@ const Landing = () => {
         <div className="customer-say-container">
           <div className="single-customer-say">
             <div>
-              {/* <img src="/assets/star.svg" alt="" />
-              <img src="/assets/star.svg" alt="" />
-              <img src="/assets/star.svg" alt="" />
-              <img src="/assets/star.svg" alt="" />
-              <img src="/assets/star.svg" alt="" /> */}
+              <Image
+                src="/assets/star.svg"
+                alt="Star"
+                width={25}
+                height={24}
+              />
+              <Image
+                src="/assets/star.svg"
+                alt="Star"
+                width={25}
+                height={24}
+              />
+              <Image
+                src="/assets/star.svg"
+                alt="Star"
+                width={25}
+                height={24}
+              />
+              <Image
+                src="/assets/star.svg"
+                alt="Star"
+                width={25}
+                height={24}
+              />
+              <Image
+                src="/assets/star.svg"
+                alt="Star"
+                width={25}
+                height={24}
+              />
+
               <div className="flex gap-2">
-      {Array.from({ length: 5 }).map((_, index) => (
-        <Image
-          key={index}
-          src="/assets/star.svg"
-          alt="Star Icon"
-          width={30}
-          height={30}
-        />
-      ))}
-    </div>
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <Image
+                    key={index}
+                    src="/assets/star.svg"
+                    alt="Star Icon"
+                    width={30}
+                    height={30}
+                  />
+                ))}
+              </div>
             </div>
             <p>
               This software has been a game-changer for our agency. We can now
@@ -457,11 +483,37 @@ const Landing = () => {
           </div>
           <div className="single-customer-say">
             <div>
-              {/* <img src="/assets/star.svg" alt="" />
-              <img src="/assets/star.svg" alt="" />
-              <img src="/assets/star.svg" alt="" />
-              <img src="/assets/star.svg" alt="" />
-              <img src="/assets/star.svg" alt="" /> */}
+              <Image
+                src="/assets/star.svg"
+                alt="Star"
+                width={25}
+                height={24}
+              />
+              <Image
+                src="/assets/star.svg"
+                alt="Star"
+                width={25}
+                height={24}
+              />
+              <Image
+                src="/assets/star.svg"
+                alt="Star"
+                width={25}
+                height={24}
+              />
+              <Image
+                src="/assets/star.svg"
+                alt="Star"
+                width={25}
+                height={24}
+              />
+              <Image
+                src="/assets/star.svg"
+                alt="Star"
+                width={25}
+                height={24}
+              />
+
               <div className="flex gap-2">
                 {Array.from({ length: 5 }).map((_, index) => (
                   <Image
@@ -487,20 +539,20 @@ const Landing = () => {
       <div className="get-start-section">
         {/* <img className="back-shadow get-start-shadow" src="/assets/get-start-shadow.svg" alt="" />
         <img className="back-shadow money-back-shadow" src="/assets/money-back-shadow.svg" alt="" /> */}
-              <Image
-        className="back-shadow get-start-shadow"
-        src="/assets/get-start-shadow.svg"
-        alt="Get Start Shadow"
-        width={500}
-        height={300}
-      />
-      <Image
-        className="back-shadow money-back-shadow"
-        src="/assets/money-back-shadow.svg"
-        alt="Money Back Shadow"
-        width={500}
-        height={300}
-      />
+        <Image
+          className="back-shadow get-start-shadow"
+          src="/assets/get-start-shadow.svg"
+          alt="Get Start Shadow"
+          width={394}
+          height={760}
+        />
+        <Image
+          className="back-shadow money-back-shadow"
+          src="/assets/money-back-shadow.svg"
+          alt="Money Back Shadow"
+          width={432}
+          height={760}
+        />
 
         <div className="get-start-wrapper get-start-wrapper-first">
           <p className="get-start-heading">Get Started Today</p>
@@ -630,7 +682,7 @@ const Landing = () => {
           <button className="contact-send-msg">Send Message</button>
         </form>
       </div>
-      <Footer/>
+      <Footer />
     </div>
   )
 }

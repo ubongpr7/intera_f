@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent,useEffect } from "react";
+import { useState, FormEvent, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Head from "next/head";
@@ -139,15 +139,14 @@ const RegisterPage = () => {
       <Head>
         <link rel="stylesheet" href="/Styles/Login.css" />
       </Head>
-            <ToastContainer position="top-right" autoClose={3000} />
+      <ToastContainer position="top-right" autoClose={3000} />
 
       <Link href="/">
         <Image
           src="/assets/logo-header.png"
           alt="Logo"
-          width={200}
-          height={150}
-          priority
+          width={285} // Adjust as needed
+          height={47}
           className="logo-header"
         />
       </Link>
