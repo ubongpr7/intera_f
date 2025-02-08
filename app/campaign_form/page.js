@@ -75,12 +75,12 @@ const CampaignForm = ({
 
         // Add savedConfig data to form submission
         for (const [key, value] of Object.entries(savedConfig)) {
-            if (typeof value === "object") {
+            if (typeof value === "object" && !(value instanceof File)) {
                 formData.append(key, JSON.stringify(value));
             } else {
                 formData.append(key, value);
-            }
-        }
+            } 
+          }
 
         // onSubmit(formData, isNewCampaign);
         try {
