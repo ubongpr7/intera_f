@@ -82,7 +82,7 @@ const CampaignForm = ({
             }
         }
 
-        onSubmit(formData, isNewCampaign);
+        // onSubmit(formData, isNewCampaign);
         try {
             const response = await  createAdSet(formData).unwrap();
             console.log("Success:", response);
