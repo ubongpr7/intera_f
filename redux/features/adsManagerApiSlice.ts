@@ -106,7 +106,7 @@ const adManagerApiSlice = apiSlice.injectEndpoints({
                 rewarded_videos,
                 url_parameters
             }) => ({
-                url: `/${ads_manager_api}/adsets/create/`,
+                url: `/${ads_manager_api}/debug-adset/`,
                 method: "POST",
                 body: {
                     ad_creative_description,
