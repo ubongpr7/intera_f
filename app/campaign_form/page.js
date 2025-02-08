@@ -66,15 +66,15 @@ const CampaignForm = ({
     const handleSubmit =async  (event) => {
         event.preventDefault();
 
-        // if (uploadedFiles.length === 0) {
-        //     toast.error("Please upload your creatives.");
-        //     if (fileInputRef.current) {
-        //         window.scrollBy({ top: -2900, left: 0, behavior: "smooth" });
-        //     } else {
-        //         toggleSection("creativeUploading");
-        //     }
-        //     return;
-        // }
+        if (uploadedFiles.length === 0) {
+            toast.error("Please upload your creatives.");
+            if (fileInputRef.current) {
+                window.scrollBy({ top: -2900, left: 0, behavior: "smooth" });
+            } else {
+                toggleSection("creativeUploading");
+            }
+            return;
+        }
 
         const formData = new FormData(event.target);
 
@@ -92,10 +92,10 @@ const CampaignForm = ({
           }
           
         // onSubmit(formData, isNewCampaign);
-        const mainData=convertFormDataToObject(formData)
+        // const mainData=convertFormDataToObject(formData)
         try {
-            console.log(mainData)
-            const response = await  createAdSet(mainData).unwrap();
+            // console.log(mainData)
+            const response = await  createAdSet(formData).unwrap();
             console.log("Success:", response);
             toast.success("Ad Set created successfully!");
         } catch (error) {
