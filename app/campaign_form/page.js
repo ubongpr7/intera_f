@@ -14,7 +14,7 @@ import TargettingDelivery from "@/Components/TargettingDelivery/TargettingDelive
 import CampaignTracking from "@/Components/CampaignTracking/CampaignTracking";
 import Link from "next/link";
 import Image from "next/image";
-
+import { useCreateAdSetMutation } from "@/redux/features/adsManagerApiSlice";
 const CampaignForm = ({
     formId,
     onSubmit,
@@ -35,7 +35,7 @@ const CampaignForm = ({
     const [isHydrated, setIsHydrated] = useState(false); // Added for hydration check
 
     const fileInputRef = useRef(null);
-
+    const [createAdSet, { isLoading, error }] = useCreateAdSetMutation();
     useEffect(() => {
         setIsHydrated(true);
         if (!isNewCampaign && initialConfig.campaignId) {
@@ -54,7 +54,7 @@ const CampaignForm = ({
         toast.success("Configuration saved locally!");
     };
 
-    const handleSubmit = (event) => {
+    const handleSubmit =async  (event) => {
         event.preventDefault();
 
         if (uploadedFiles.length === 0) {
@@ -83,6 +83,15 @@ const CampaignForm = ({
         }
 
         onSubmit(formData, isNewCampaign);
+        try {
+            const response = await  createAdSet(formData).unwrap();
+            console.log("Success:", response);
+            toast.success("Ad Set created successfully!");
+        } catch (error) {
+            console.error("Error:", error);
+            toast.error("Failed to create Ad Set.");
+        }
+    
     };
 
     const handleFileUploadClick = () => {

@@ -5,7 +5,6 @@ import Select from "react-select"; // For multi-select dropdowns
 import { FormControlLabel, Checkbox } from "@mui/material"; // Import MUI components
 
 const Placement = () => {
-  // State for toggling sections
   const [expandedSections, setExpandedSections] = useState({
     budgetSchedule: true,
     assets: true,
@@ -58,7 +57,6 @@ const Placement = () => {
     }));
   };
 
-  // Handle placement type change (Advantage+ or Manual)
   const handlePlacementTypeChange = (e) => {
     const { value } = e.target;
     setConfig((prevConfig) => ({
@@ -100,13 +98,7 @@ const Placement = () => {
           onClick={() => toggleSection("placements")}
         >
           <h3>Placements</h3>
-          {/* <img
-            src="/assets/Vectorw.svg"
-            alt="Toggle Section"
-            className={`${styles.toggleIcon} ${
-              expandedSections["placements"] ? styles.expanded : ""
-            }`}
-          /> */}
+          
         </div>
         {expandedSections["placements"] && (
           <div className={styles.sectionContent}>

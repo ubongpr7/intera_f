@@ -82,11 +82,11 @@ const adManagerApiSlice = apiSlice.injectEndpoints({
         }),
 
         // AdSet Endpoints
-        createAdSet: builder.mutation<AdSet, Partial<AdSet>>({
-            query: adSetData => ({
+        createAdSet: builder.mutation<any, FormData>({
+            query: (formData) => ({
                 url: `/${ads_manager_api}/adsets/create/`,
-                method: 'POST',
-                body: adSetData,
+                method: "POST",
+                body: formData,
             }),
         }),
         getAdSets: builder.query<AdSet[], void>({
