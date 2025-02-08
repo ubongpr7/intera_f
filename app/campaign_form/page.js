@@ -91,7 +91,7 @@ const CampaignForm = ({
             } 
           }
           
-        onSubmit(formData, isNewCampaign);
+        // onSubmit(formData, isNewCampaign);
         const mainData=convertFormDataToObject(formData)
         try {
             console.log(mainData)
