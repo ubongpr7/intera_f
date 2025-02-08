@@ -92,10 +92,10 @@ const CampaignForm = ({
           }
           
         // onSubmit(formData, isNewCampaign);
-        const mainData=convertFormDataToObject(formData)
+        // const mainData=convertFormDataToObject(formData)
         try {
-            console.log(mainData)
-            const response = await  createAdSet(mainData).unwrap();
+            // console.log(mainData)
+            const response = await  createAdSet(formData).unwrap();
             console.log("Success:", response);
             toast.success("Ad Set created successfully!");
         } catch (error) {
