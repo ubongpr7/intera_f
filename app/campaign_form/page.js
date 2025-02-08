@@ -84,6 +84,7 @@ const CampaignForm = ({
 
         // onSubmit(formData, isNewCampaign);
         try {
+            console.log(formData)
             const response = await  createAdSet(formData).unwrap();
             console.log("Success:", response);
             toast.success("Ad Set created successfully!");
