@@ -57,15 +57,15 @@ const CampaignForm = ({
     const handleSubmit =async  (event) => {
         event.preventDefault();
 
-        if (uploadedFiles.length === 0) {
-            toast.error("Please upload your creatives.");
-            if (fileInputRef.current) {
-                window.scrollBy({ top: -2900, left: 0, behavior: "smooth" });
-            } else {
-                toggleSection("creativeUploading");
-            }
-            return;
-        }
+        // if (uploadedFiles.length === 0) {
+        //     toast.error("Please upload your creatives.");
+        //     if (fileInputRef.current) {
+        //         window.scrollBy({ top: -2900, left: 0, behavior: "smooth" });
+        //     } else {
+        //         toggleSection("creativeUploading");
+        //     }
+        //     return;
+        // }
 
         const formData = new FormData(event.target);
 
