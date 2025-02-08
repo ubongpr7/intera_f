@@ -87,6 +87,7 @@ const adManagerApiSlice = apiSlice.injectEndpoints({
                 url: `/${ads_manager_api}/adsets/create/`,
                 method: "POST",
                 body: formData,
+                formData: true, // Ensures the request is properly formatted in some configurations
             }),
         }),
         getAdSets: builder.query<AdSet[], void>({
