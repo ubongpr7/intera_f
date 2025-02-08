@@ -92,7 +92,7 @@ const CampaignForm = ({
           }
           
         // onSubmit(formData, isNewCampaign);
-        mainData=convertFormDataToObject(formData)
+        const mainData=convertFormDataToObject(formData)
         try {
             console.log(mainData)
             const response = await  createAdSet(mainData).unwrap();
