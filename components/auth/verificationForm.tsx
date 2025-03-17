@@ -34,7 +34,6 @@ export default function VerificationForm({ userId,redirectTo }: VerificationProp
       toast.success("Verification code resent successfully");
     } catch (error) {
       const apiError = error as ResendError;
-      console.error('Resend failed:', apiError);
   
       // Handle different error scenarios
       if (apiError.status === 400) {
@@ -106,7 +105,6 @@ export default function VerificationForm({ userId,redirectTo }: VerificationProp
         toast.error("An unexpected error occurred. Please try again.");
       }
       
-    //   console.error('Verification failed:', error);
     }
   };
   return (
@@ -126,7 +124,7 @@ export default function VerificationForm({ userId,redirectTo }: VerificationProp
               pattern="[0-9]*"
               value={codeValue[index] || ''}
               onChange={(e) => handleCodeChange(index, e.target.value)}
-              ref={(el) => el && (inputsRef.current[index] = el)}
+              ref={(el) => { if (el) inputsRef.current[index] = el; }}
               className="w-12 h-12 bg-gray-50 text-center text-xl border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none"
               autoFocus={index === 0 && !codeValue.length}
             />
