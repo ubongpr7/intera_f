@@ -159,7 +159,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                             <input
                               type="checkbox"
                               {...field}
-                              checked={Boolean(field.value)} // Ensure boolean value
+                              checked={typeof field.value === 'boolean' ? field.value : false}
                               className="w-5 h-5"
                             />
                           ) : (

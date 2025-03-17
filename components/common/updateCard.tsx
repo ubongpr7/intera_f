@@ -153,7 +153,8 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                             <input
                               type="checkbox"
                               {...field}
-                              checked={field.value as boolean | undefined}
+                              checked={typeof field.value === 'boolean' ? field.value : false}
+
                               className="w-5 h-5"
                             />
                           ) : (
