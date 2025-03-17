@@ -6,8 +6,11 @@ import { Column, DataTable } from "@/components/common/DataTable/DataTable";
 import { InventoryData } from "@/components/interfaces/inventory";
 import { useGetInventoryDataQuery, useCreateInventoryMutation } from "@/redux/features/inventory/inventoryAPiSlice";
 import CustomCreateCard from '../common/createCard';
-import { InventoryInterfaceKeys, selectOptions,defaultValues } from './selectOptions';
+import { InventoryInterfaceKeys,defaultValues } from './selectOptions';
 import { InventoryKeyInfo } from './selectOptions';
+import { useGetUnitsQuery,useGetTypesByModelQuery } from "@/redux/features/common/typeOF";
+import { useGetInventoryCategoriesQuery } from "@/redux/features/inventory/inventoryAPiSlice";
+
 
 const strategies = {
   FQ: 'Fixed Quantity',
@@ -58,6 +61,63 @@ function InventoryView() {
     setIsCreateOpen(false); // Close the modal after creation
     await refetch(); // Refresh the data
   };
+
+    //////////////////////////////
+    const { data: categories = [], isLoading: isCatLoading, error: catError } = useGetInventoryCategoriesQuery(1);
+      const { data: types } = useGetTypesByModelQuery('inventory');
+      const { data: units } = useGetUnitsQuery();
+      
+      const unitOptions = units ? units.map((unit: any) => ({
+        value: unit.id,
+        text: unit.name,
+      })) : [];
+      
+      const typeOptions = types ? types.map((inventory_type: any) => ({
+        value: inventory_type.id,
+        text: inventory_type.name,
+      })) : [];
+    
+      const categoryOptions = categories.map((cat: any) => ({
+        value: cat.id,
+        text: cat.name,
+      }));
+      
+    const  selectOptions = {
+          
+            category:categoryOptions,
+            unit:unitOptions,
+            inventory_type:typeOptions,
+            reorder_strategy: [
+              { value: 'FQ', text: 'Fixed Quantity' },
+              { value: 'FI', text: 'Fixed Interval' },
+              { value: 'DY', text: 'Demand-Based' }
+            ],
+            expiration_policy: [
+              { value: '0', text: 'Dispose of Stock' },
+              { value: '1', text: 'Return to Manufacturer' }
+            ],
+            recall_policy: [
+              { value: '0', text: 'Remove from Stock' },
+              { value: '1', text: 'Notify Customers' },
+              { value: '3', text: 'Replace Item' },
+              { value: '4', text: 'Destroy Item' },
+              { value: '5', text: 'Repair Item' }
+            ],
+            near_expiry_policy: [
+              { value: 'DISCOUNT', text: 'Sell at Discount' },
+              { value: 'DONATE', text: 'Donate to Charity' },
+              { value: 'DESTROY', text: 'Destroy Immediately' },
+              { value: 'RETURN', text: 'Return to Supplier' }
+            ],
+            forecast_method: [
+              { value: 'SA', text: 'Simple Average' },
+              { value: 'MA', text: 'Moving Average' },
+              { value: 'ES', text: 'Exponential Smoothing' }
+            ],
+          
+      }
+  
+    //////////////////////////////
 
   const handleRefresh = async () => {
     await refetch();
@@ -110,7 +170,7 @@ function InventoryView() {
           onClose={() => setIsCreateOpen(false)}
           onSubmit={handleCreate}
           isLoading={inventoryCreateLoading}
-          selectOptions={selectOptions()}
+          selectOptions={selectOptions}
           keyInfo={InventoryKeyInfo}
           notEditableFields={notEditableFields}
           interfaceKeys={InventoryInterfaceKeys}

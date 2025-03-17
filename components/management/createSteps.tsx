@@ -17,7 +17,7 @@ export function Step1({ register, errors }: {
             {...register('name', { required: 'Company name is required' })}
             className="mt-1 block w-full bg-gray-50 rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
           />
-          {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
+          {errors.name && typeof errors.name.message === 'string' && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
         </div>
   
         {/* Updated Industry field with select */}
@@ -45,7 +45,7 @@ export function Step1({ register, errors }: {
               <option value="">No industries available</option>
             )}
           </select>
-          {errors.industry && <p className="text-red-500 text-sm mt-1">{errors.industry.message}</p>}
+          {errors.industry && typeof errors.industry.message === 'string' && <p className="text-red-500 text-sm mt-1">{errors.industry.message}</p>}
         </div>
   
         {/* Founded Date field remains unchanged */}
@@ -137,7 +137,7 @@ export function Step4({ register, errors }: {
   const { data: response, isLoading, error } = useGetCurrenciesQuery();
 
   // Extract currencies from the response
-  const currencies = response?.currencies || [];
+  const currencies = response || [];
 
   return (
     <div className="space-y-4">
@@ -179,7 +179,7 @@ export function Step4({ register, errors }: {
           )}
         </select>
         {/* Safely access the currency error */}
-        {errors?.currency && (
+        {errors?.currency && typeof errors.currency.message === 'string' && (
           <p className="text-red-500 text-sm mt-1">{errors.currency.message}</p>
         )}
       </div>

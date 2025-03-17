@@ -5,6 +5,7 @@ export interface DropdownOption {
   }
 export interface CurrencyResponse {
     currencies:{
-      
+      code: string;
+      name: string;
     }
   }

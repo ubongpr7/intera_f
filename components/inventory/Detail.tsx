@@ -6,7 +6,6 @@ import { useUpdateInventoryMutation } from '@/redux/features/inventory/inventory
 import { useGetTypesByModelQuery, useGetUnitsQuery } from '@/redux/features/common/typeOF';
 import LoadingAnimation from '../common/LoadingAnimation';
 import { InventoryKeyInfo } from './selectOptions';
-import { selectOptions } from './selectOptions';
 
 
 export default function InventoryDetail({ id }: { id: string }) {
@@ -21,7 +20,66 @@ export default function InventoryDetail({ id }: { id: string }) {
   const handleUpdate = async (updatedData: Partial<InventoryData>) => {
     await updateInventory({ id: inventoryData.id, data: updatedData }).unwrap();
   };
-  const options=selectOptions()
+
+
+//////////////////////////////
+const { data: categories = [], isLoading: isCatLoading, error: catError } = useGetInventoryCategoriesQuery(1);
+const { data: types } = useGetTypesByModelQuery('inventory');
+const { data: units } = useGetUnitsQuery();
+
+const unitOptions = units ? units.map((unit: any) => ({
+  value: unit.id,
+  text: unit.name,
+})) : [];
+
+const typeOptions = types ? types.map((inventory_type: any) => ({
+  value: inventory_type.id,
+  text: inventory_type.name,
+})) : [];
+
+const categoryOptions = categories.map((cat: any) => ({
+  value: cat.id,
+  text: cat.name,
+}));
+
+const  selectOptions = {
+    
+      category:categoryOptions,
+      unit:unitOptions,
+      inventory_type:typeOptions,
+      reorder_strategy: [
+        { value: 'FQ', text: 'Fixed Quantity' },
+        { value: 'FI', text: 'Fixed Interval' },
+        { value: 'DY', text: 'Demand-Based' }
+      ],
+      expiration_policy: [
+        { value: '0', text: 'Dispose of Stock' },
+        { value: '1', text: 'Return to Manufacturer' }
+      ],
+      recall_policy: [
+        { value: '0', text: 'Remove from Stock' },
+        { value: '1', text: 'Notify Customers' },
+        { value: '3', text: 'Replace Item' },
+        { value: '4', text: 'Destroy Item' },
+        { value: '5', text: 'Repair Item' }
+      ],
+      near_expiry_policy: [
+        { value: 'DISCOUNT', text: 'Sell at Discount' },
+        { value: 'DONATE', text: 'Donate to Charity' },
+        { value: 'DESTROY', text: 'Destroy Immediately' },
+        { value: 'RETURN', text: 'Return to Supplier' }
+      ],
+      forecast_method: [
+        { value: 'SA', text: 'Simple Average' },
+        { value: 'MA', text: 'Moving Average' },
+        { value: 'ES', text: 'Exponential Smoothing' }
+      ],
+    
+}
+
+//////////////////////////////
+
+
 
 
   if (isLoading) return <div>
@@ -39,7 +97,7 @@ export default function InventoryDetail({ id }: { id: string }) {
       updateMutation={handleUpdate}
       excludeFields={['id','inventory_type','category','forecast_method','expiration_policy','recall_policy','reorder_strategy','unit','profile','automate_reorder','batch_tracking_enabled',]}
       handleRefresh={handleRefresh}
-      selectOptions={options}
+      selectOptions={selectOptions}
       isLoading={updateIsLoading}
       policyFields={['description']}
       keyInfo={InventoryKeyInfo}
