@@ -71,7 +71,7 @@ export function DataTable<T>({
                         column.className || ''
                       }`}
                     >
-                      {column.render ? column.render(value, row) : value}
+                      {column.render ? column.render(value, row) : (value as React.ReactNode)}
                     </td>
                   );
                 })}
