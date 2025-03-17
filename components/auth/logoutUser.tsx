@@ -18,7 +18,6 @@ function LogoutButton() {
       toast.success('Logged out successfully');
     } catch (error) {
       toast.error('Logout failed. Please try again.');
-      console.error('Logout error:', error);
     }
   };
 

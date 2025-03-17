@@ -111,7 +111,7 @@ export default function CompanyForm() {
         {currentStep === 1 && <Step1 register={register} errors={errors} />}
         {currentStep === 2 && <Step2 register={register} />}
         {currentStep === 3 && <Step3 register={register} errors={errors} />}
-        {currentStep === 4 && <Step4 register={register} />}
+        {currentStep === 4 && <Step4 register={register} errors={errors} />}
 
         <div className="mt-8 flex justify-between">
           <button
@@ -180,7 +180,6 @@ export function AddressForm({ defaultValues }: AddressFormProps) {
         setValue('company', data.id);
       }
     }).catch((error) => {
-      console.error('Failed to fetch company profile:', error);
     });
   }, [getOwnerCompanyProfile, setValue]);
   
@@ -207,12 +206,10 @@ export function AddressForm({ defaultValues }: AddressFormProps) {
   const onSubmit: SubmitHandler<Address> = async (data) => {
     try {
       await createCompanyProfileAddress(data).unwrap();
-      console.log('Address created successfully!');
       toast.success('Address created successfully!');
       router.push('/dashboard');
 
     } catch (error) {
-      console.error('Failed to create address:', error);
     }
   };
 

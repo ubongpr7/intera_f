@@ -67,7 +67,6 @@ export default function CustomCreateCard<T extends Record<string, any>>({
       onClose();
       reset()
     } catch (error) {
-      console.error('Create failed:', error);
     }
   };
 

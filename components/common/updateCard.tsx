@@ -64,7 +64,6 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
       handleRefresh();
       onClose();
     } catch (error) {
-      console.error('Update failed:', error);
     }
   };
 

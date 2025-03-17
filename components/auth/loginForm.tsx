@@ -25,7 +25,6 @@ export default function LoginForm() {
       toast.success("Verification code resent successfully");
     } catch (error) {
       const apiError = error as ResendError;
-      console.error('Resend failed:', apiError);
   
       // Handle different error scenarios
       if (apiError.status === 400) {

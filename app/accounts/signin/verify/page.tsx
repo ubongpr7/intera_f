@@ -10,9 +10,6 @@ export default function VerifyPage() {
     const storedUserId = getCookie("userID") as string | null;
     setUserId(storedUserId);
 
-    if (process.env.NODE_ENV !== "production") {
-      console.log(storedUserId);
-    }
   }, []);
 
   if (!userId) {
