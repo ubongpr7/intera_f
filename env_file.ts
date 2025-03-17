@@ -1,6 +1,5 @@
 const env = {
-    BACKEND_HOST_URL: 'https://backend.quickcampaigns.io',
-    // BACKEND_HOST_URL: 'http://91.108.112.100:7726',
+    BACKEND_HOST_URL: 'http://localhost:8000/',
     FRONTEND_HOST_URL: 'https://quickcampaigns.io/',
     RECAPTCHA_SECRET_KEY:'6LdiOKsqAAAAAMt7E8lrjzZ97uIT18WcFVcpnHHg',
     ENTERPRICE_PRICE_ID:'price_1Qo3xrBslQSg03TDESIIAFM2',

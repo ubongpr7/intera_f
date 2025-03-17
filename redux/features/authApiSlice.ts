@@ -1,3 +1,4 @@
+import { getCookie } from 'cookies-next';
 import { apiSlice } from '../services/apiSlice';
 
 interface User {
@@ -16,6 +17,7 @@ interface CreateUserResponse {
 	success: boolean;
 	user: User;
 }
+const refreshToken = getCookie("refreshToken");
 
 const authApiSlice = apiSlice.injectEndpoints({
 	endpoints: builder => ({
@@ -45,17 +47,30 @@ const authApiSlice = apiSlice.injectEndpoints({
 				body: { email, password },
 			}),
 		}),
+		verifyAccount: builder.mutation({
+			query: ({ userId, code }) => ({
+				url: '/api/v1/accounts/verify/',
+				method: 'POST',
+				body: { userId, code },
+			}),
+		}),
+		getverifyAccount: builder.mutation({
+			query: ({ id, }) => ({
+				url: `/api/v1/accounts/verify/?id=${id}`,
+				method: 'GET',
+				// body: { id, },
+			}),
+		}),
 		register: builder.mutation({
 			query: ({
 				first_name,
 				email,
 				password,
 				re_password,
-				sessionId,
 			}) => ({
-				url: '/acccount-api/register/',
+				url: '/api/v1/accounts/register/',
 				method: 'POST',
-				body: {first_name,  email, password, re_password,sessionId },
+				body: {first_name,  email, password, re_password, },
 			}),
 		}),
 		verify: builder.mutation({
@@ -66,8 +81,11 @@ const authApiSlice = apiSlice.injectEndpoints({
 		}),
 		logout: builder.mutation({
 			query: () => ({
-				url: '/logout/',
+				
+				url: '/api/v1/accounts/logout/',
 				method: 'POST',
+				body: { refresh: refreshToken },
+
 			}),
 		}),
 		activation: builder.mutation({
@@ -100,6 +118,8 @@ export const {
 	useLoginMutation,
 	useRegisterMutation,
 	useVerifyMutation,
+	useVerifyAccountMutation,
+	useGetverifyAccountMutation,
 	useLogoutMutation,
 	useActivationMutation,
 	useResetPasswordMutation,

@@ -1,37 +1,58 @@
-// import {configureStore} from "@reduxjs/toolkit";
-// import authReducer from "./features/authSlice";
-// import { apiSlice } from "./services/apiSlice";
-// export const makeStore = ()=>
-//     configureStore({
-//         reducer:{
-//             [apiSlice.reducerPath]:apiSlice.reducer,
-//         },
-        
-//         auth: authReducer,
-//         middleware: getDefaultMiddleware =>
-//             getDefaultMiddleware().concat(apiSlice.middleware),
-//         devtools:process.NODE_ENV !=='production'
-//     })
-
-//     export type AppStore =ReturnType<typeof makeStore>;
-//     export type RootState = ReturnType<AppStore['getState']>;
-//     export type AppDispatch = AppStore['dispatch'];
-
-import { configureStore } from "@reduxjs/toolkit";
+// store.ts
+import { combineReducers, configureStore } from "@reduxjs/toolkit";
+import { persistStore, persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from "redux-persist";
+import createWebStorage from "redux-persist/lib/storage/createWebStorage";
 import authReducer from "./features/authSlice";
 import { apiSlice } from "./services/apiSlice";
+import globalReducer from "./state";
+import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
+// Server-safe storage
+const createNoopStorage = () => ({
+  getItem() {
+    return Promise.resolve(null);
+  },
+  setItem(_key: string, value: any) {
+    return Promise.resolve(value);
+  },
+  removeItem() {
+    return Promise.resolve();
+  },
+});
 
-export const makeStore = () =>
-  configureStore({
-    reducer: {
-      [apiSlice.reducerPath]: apiSlice.reducer,
-      auth: authReducer,  // Make sure auth is included here
-    },
+const storage = typeof window === "undefined" 
+  ? createNoopStorage()
+  : createWebStorage("local");
+
+// Persist config for global slice only
+const globalPersistConfig = {
+  key: "global",
+  storage,
+  whitelist: ["isDarkMode", "isSidebarCollapsed"]
+};
+
+const rootReducer = combineReducers({
+  auth: authReducer,
+  [apiSlice.reducerPath]: apiSlice.reducer,
+  global: persistReducer(globalPersistConfig, globalReducer),
+});
+
+export const makeStore = () => {
+  return configureStore({
+    reducer: rootReducer,
     middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware().concat(apiSlice.middleware),
-    // devtools: process.env.NODE_ENV !== "production", // Correct usage of process.env
+      getDefaultMiddleware({
+        serializableCheck: {
+          ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+        },
+      }).concat(apiSlice.middleware),
   });
+};
 
+export const persistor = persistStore(makeStore());
+
+// Keep existing types
 export type AppStore = ReturnType<typeof makeStore>;
-export type RootState = ReturnType<AppStore['getState']>;
-export type AppDispatch = AppStore['dispatch'];
+export type RootState = ReturnType<AppStore["getState"]>;
+export type AppDispatch = AppStore["dispatch"];
+export const useAppDispatch = () => useDispatch<AppDispatch>();
+export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;

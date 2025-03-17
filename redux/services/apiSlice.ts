@@ -4,9 +4,7 @@ import { setAuth, logout } from "../features/authSlice";
 import { Mutex } from "async-mutex";
 import { setCookie, getCookie, deleteCookie } from "cookies-next";
 import env from "@/env_file";
-import { setUserDataFromToken } from "@/utils";
 
-// Mutex prevents multiple simultaneous token refresh requests
 const mutex = new Mutex();
 
 const baseQuery = fetchBaseQuery({
@@ -26,15 +24,19 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
   await mutex.waitForUnlock();
   let result = await baseQuery(args, api, extraOptions);
 
-  // Store tokens after login
   if (result?.data && ((args as FetchArgs).url === "/jwt/create/" || (args as FetchArgs).url === "/jwt/refresh/")) {
     const response = result.data as { access: string; refresh: string,access_token:string,id:string };
     setCookie("accessToken", response.access, { maxAge: 72*60 * 60, path: "/" });
     setCookie("refreshToken", response.refresh, { maxAge: 60 * 60 * 24 * 7, path: "/" });
+    setCookie("userID", response.id, { maxAge: 60 * 60 * 24 * 7, path: "/" });
     
-    setUserDataFromToken(response);
 
-    api.dispatch(setAuth()); // Update auth state in Redux
+    api.dispatch(setAuth()); 
+  }else if(result?.data && (args as FetchArgs).url === '/api/v1/accounts/logout/') {
+    deleteCookie('accessToken');
+    deleteCookie('refreshToken');
+    deleteCookie('userID');
+    console.log('refreshToken deleted')
   }
 
   if (result.error && result.error.status === 401) {
@@ -79,7 +81,6 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
   return result;
 };
 
-// Create the API slice with custom query handling
 export const apiSlice = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWithReauth,
