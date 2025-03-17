@@ -11,7 +11,6 @@ interface DetailCardProps<T> {
   policyFields?: (keyof T)[];
   notEditableFields?: (keyof T)[];
   updateMutation?: (data: Partial<T>) => Promise<void>;
-  handleRefresh?: () => Promise<void>;
   selectOptions?: Partial<Record<keyof T, Array<{ value: string; text: string }>>>;
   isLoading: boolean;
   keyInfo?: Partial<Record<keyof T, string>>;
@@ -37,7 +36,6 @@ export default function DetailCard<T extends Record<string, any>>({
   policyFields = [],
   notEditableFields = [],
   updateMutation,
-  handleRefresh,
   selectOptions,
   isLoading,
   keyInfo,
@@ -104,7 +102,7 @@ export default function DetailCard<T extends Record<string, any>>({
         isPolicyField ? 'bg-blue-50/30 border-blue-100' : 'border-gray-100'
       } bg-white rounded-lg border shadow-sm hover:shadow-md transition-shadow p-6`}
     >
-      <div className="space-y-1"> {/* Reduced space */}
+      <div className="space-y-1">
         <span
           className={`${
             isPolicyField ? 'text-blue-600' : 'text-gray-500'
@@ -156,7 +154,6 @@ export default function DetailCard<T extends Record<string, any>>({
           editableFields={editableFields}
           onClose={() => setIsEditOpenOption(false)}
           onSubmit={updateMutation}
-          handleRefresh={handleRefresh}
           isLoading={isLoading}
           keyInfo={keyInfo}
         />

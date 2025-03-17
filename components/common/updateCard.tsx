@@ -10,7 +10,6 @@ interface CustomUpdateCardProps<T> {
   editableFields: (keyof T)[];
   onClose: () => void;
   onSubmit: (data: Partial<T>) => Promise<void>;
-  handleRefresh: () => Promise<void>;
   selectOptions?: Partial<Record<keyof T, Array<{ value: string; text: string }>>>;
   isLoading: boolean;
   keyInfo?: Partial<Record<keyof T, string>>;
@@ -22,7 +21,6 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
   onClose,
   onSubmit,
   selectOptions,
-  handleRefresh,
   isLoading,
   keyInfo,
 }: CustomUpdateCardProps<T>) {
@@ -61,7 +59,6 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
   const onSubmitHandler = async (formData: Partial<T>) => {
     try {
       await onSubmit(formData);
-      handleRefresh();
       onClose();
     } catch (error) {
     }

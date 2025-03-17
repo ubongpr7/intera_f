@@ -13,12 +13,11 @@ export default function InventoryDetail({ id }: { id: string }) {
   const inventoryData = inventory as InventoryData;
   const [updateInventory,{isLoading:updateIsLoading}] = useUpdateInventoryMutation();
 
-  const handleRefresh = async () => {
-    await refetch();
-  }
   
   const handleUpdate = async (updatedData: Partial<InventoryData>) => {
     await updateInventory({ id: inventoryData.id, data: updatedData }).unwrap();
+    await refetch();
+
   };
 
 
@@ -96,7 +95,6 @@ const  selectOptions = {
       notEditableFields={['id', 'created_at','updated_at','forecast_method_name','expiration_policy_name' ,'reorder_strategy_name','recall_policy_name','unit_name','category_name','external_system_id', ]}
       updateMutation={handleUpdate}
       excludeFields={['id','inventory_type','category','forecast_method','expiration_policy','recall_policy','reorder_strategy','unit','profile','automate_reorder','batch_tracking_enabled',]}
-      handleRefresh={handleRefresh}
       selectOptions={selectOptions}
       isLoading={updateIsLoading}
       policyFields={['description']}
