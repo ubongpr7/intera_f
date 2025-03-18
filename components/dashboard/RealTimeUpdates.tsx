@@ -3,8 +3,16 @@
 import { useEffect, useState } from 'react';
 import { RefreshCw, Package, CheckCircle, AlertTriangle } from 'lucide-react';
 
-const simulateWebSocket = (callback) => {
-  const events = [
+interface Event {
+  type: 'restock' | 'lowstock' | 'order';
+  product: string;
+  quantity: number;
+}
+
+type Callback = (event: Event) => void;
+
+const simulateWebSocket = (callback: Callback): (() => void) => {
+  const events: Event[] = [
     { type: 'restock', product: 'Wireless Headphones', quantity: 50 },
     { type: 'lowstock', product: 'Smart Watches', quantity: 8 },
     { type: 'order', product: 'Bluetooth Speaker', quantity: 12 },
@@ -19,8 +27,9 @@ const simulateWebSocket = (callback) => {
   return () => clearInterval(interval);
 };
 
+
 export default function RealTimeUpdates() {
-  const [updates, setUpdates] = useState([]);
+  const [updates, setUpdates] = useState<{ id: number; type: 'restock' | 'lowstock' | 'order'; product: string; quantity: number; timestamp: string; }[]>([]);
 
   useEffect(() => {
     return simulateWebSocket((event) => {
@@ -37,7 +46,13 @@ export default function RealTimeUpdates() {
     });
   }, []);
 
-  const getEventDetails = (type) => {
+  interface EventDetails {
+    icon: React.ComponentType<{ className?: string }>;
+    color: string;
+    text: string;
+  }
+
+  const getEventDetails = (type: 'restock' | 'lowstock' | 'order'): EventDetails => {
     switch (type) {
       case 'restock':
         return { icon: CheckCircle, color: 'bg-green-100', text: 'text-green-800' };
