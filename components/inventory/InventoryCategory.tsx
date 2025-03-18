@@ -4,7 +4,7 @@ import { PageHeader } from "../inventory/PageHeader"
 import { title } from "process"
 import { useRouter } from 'nextjs-toploader/app'
 import { DataTable,Column } from "../common/DataTable/DataTable";
-import { useCreateCategoryMutation, useGetInventoryCategoriesQuery} from "redux/features/inventory/inventoryAPiSlice";
+import { useCreateCategoryMutation, useGetInventoryCategoriesQuery} from "../../redux/features/inventory/inventoryAPiSlice";
 import { CategoryData } from '../interfaces/inventory';
 import CustomCreateCard from '../common/createCard';
 
