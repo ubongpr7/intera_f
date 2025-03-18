@@ -1,7 +1,7 @@
 'use client'
-import { useState, useEffect, InputHTMLAttributes } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { useForm, Controller, DefaultValues, Path } from 'react-hook-form';
+import { useForm, Controller, Path, DefaultValues } from 'react-hook-form';
 import LoadingAnimation from './LoadingAnimation';
 import { FieldInfo } from './fileFieldInfor';
 
@@ -14,7 +14,7 @@ interface CustomCreateCardProps<T> {
   keyInfo?: Partial<Record<keyof T, string>>;
   notEditableFields?: (keyof T)[];
   interfaceKeys: (keyof T)[];
-  optionalFields?: (keyof T)[]; // Add optionalFields prop
+  optionalFields?: (keyof T)[];
 }
 
 export default function CustomCreateCard<T extends Record<string, any>>({
@@ -28,19 +28,19 @@ export default function CustomCreateCard<T extends Record<string, any>>({
   interfaceKeys,
   optionalFields = [],
 }: CustomCreateCardProps<T>) {
-  const initializedDefaultValues = interfaceKeys.reduce((acc, key) => {
-    acc[key] = (defaultValues[key] ?? '') as T[keyof T]
-    return acc;
-  }, {} as Partial<T>);
-
   const {
     control,
     handleSubmit,
     watch,
-    reset, 
+    reset,
     trigger,
     formState: { errors },
-  } = useForm<Partial<T>>({ defaultValues: initializedDefaultValues as DefaultValues<Partial<T>> });
+  } = useForm<Partial<T>>({
+    defaultValues: interfaceKeys.reduce((acc, key) => ({
+      ...acc,
+      [key]: defaultValues[key] ?? '',
+    }), {} as DefaultValues<Partial<T>>),
+  });
 
   const minStock = watch('minimum_stock_level' as Path<Partial<T>>);
   const reOrderPoint = watch('re_order_point' as Path<Partial<T>>);
@@ -48,16 +48,22 @@ export default function CustomCreateCard<T extends Record<string, any>>({
   const safetyQty = watch('safety_stock_level' as Path<Partial<T>>);
 
   useEffect(() => {
-    trigger(['minimum_stock_level', 're_order_point', 'safety_stock_level', 're_order_quantity'] as Path<Partial<T>>[]);
+    trigger([
+      'minimum_stock_level',
+      're_order_point',
+      'safety_stock_level',
+      're_order_quantity'
+    ] as Path<Partial<T>>[]);
   }, [minStock, reOrderPoint, reOrderQty, safetyQty, trigger]);
 
   const formatLabel = (str: string) => {
     return str.replace(/_/g, ' ').replace(/(^\w|\s\w)/g, m => m.toUpperCase());
   };
 
-  const getInputType = (value: any) => {
+  const getInputType = (key: keyof T) => {
+    const value = defaultValues[key];
     if (typeof value === 'boolean') return 'checkbox';
-    if (!isNaN(value) && value !== '') return 'number';
+    if (typeof value === 'number') return 'number';
     return 'text';
   };
 
@@ -65,8 +71,9 @@ export default function CustomCreateCard<T extends Record<string, any>>({
     try {
       await onSubmit(formData);
       onClose();
-      reset()
+      reset();
     } catch (error) {
+      // Handle error
     }
   };
 
@@ -96,13 +103,13 @@ export default function CustomCreateCard<T extends Record<string, any>>({
 
         <form onSubmit={handleSubmit(onSubmitHandler)} className="flex flex-col overflow-y-auto h-full">
           <div className="p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold">Create New Entry</h2>
+            <h2 className="text-xl font-semibold">Create New</h2>
           </div>
 
           <div className="flex-1 overflow-y-auto p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
               {regularFields.map((key) => {
-                const inputType = getInputType(initializedDefaultValues[key]);
+                const inputType = getInputType(key);
                 const fieldOptions = selectOptions?.[key];
                 const info = keyInfo?.[key];
 
@@ -117,7 +124,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                         name={key as Path<Partial<T>>}
                         control={control}
                         rules={{
-                          required: optionalFields?.includes(key) ? undefined : 'This field is required', // Conditionally set required
+                          required: optionalFields.includes(key) ? false : 'This field is required',
                           validate: (value) => {
                             if (key === 'safety_stock_level' && typeof value === 'number' && Number(value) > Number(minStock)) {
                               return 'Must be ≤ minimum stock level';
@@ -133,14 +140,14 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                             if (key === 're_order_quantity' && typeof value === 'number' && Number(value) <= Number(reOrderPoint)) {
                               return 'Must be > re-order point';
                             }
-                            return true; // Ensure validation always returns a boolean
+                            return true;
                           },
                         }}
                         render={({ field }) =>
                           fieldOptions ? (
                             <select
                               {...field}
-                              value={String(field.value ?? '')}
+                              value={field.value as string ?? ''}
                               className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
                                 focus:border-blue-500 py-2 rounded-md ${
                                 errors[key as string] 
@@ -156,17 +163,23 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                               ))}
                             </select>
                           ) : inputType === 'checkbox' ? (
-                            <input
-                              type="checkbox"
-                              {...field}
-                              checked={!!field.value}
-                              className="w-5 h-5"
+                            <Controller
+                              name={key as Path<Partial<T>>}
+                              control={control}
+                              render={({ field: { value, ...rest } }) => (
+                                <input
+                                  type="checkbox"
+                                  checked={!!value}
+                                  onChange={(e) => rest.onChange(e.target.checked)}
+                                  className="w-5 h-5"
+                                />
+                              )}
                             />
                           ) : (
                             <input
                               type={inputType}
                               {...field}
-                              value={String(field.value ?? '')} // Ensure value is never undefined
+                              value={field.value as string | number | undefined}
                               className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
                                 focus:border-blue-500 py-2 rounded-md ${
                                 errors[key as string] 
@@ -179,7 +192,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                       />
                       {errors[key as string] && (
                         <p className="text-xs text-red-600 mt-1">
-                          {errors[key as string]?.message as string | undefined}
+                          {String(errors[key as string]?.message)}
                         </p>
                       )}
                     </div>
@@ -202,8 +215,8 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                       render={({ field }) => (
                         <textarea
                           {...field}
-                          value={String(field.value ?? '')} // Ensure value is never undefined
                           rows={4}
+                          value={field.value as string || ''}
                           className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
                             focus:border-blue-500 py-2 rounded-md ${
                             errors.description 
@@ -215,7 +228,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                     />
                     {errors.description && (
                       <p className="text-xs text-red-600 mt-1">
-                        {typeof errors.description?.message === 'string' ? errors.description.message : ''}
+                        {String(errors.description?.message)}
                       </p>
                     )}
                   </div>

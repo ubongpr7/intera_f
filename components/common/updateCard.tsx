@@ -150,12 +150,20 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                               ))}
                             </select>
                           ) : inputType === 'checkbox' ? (
-                            <input
-                              type="checkbox"
-                              {...field}
-
-                              className="w-5 h-5"
-                            />
+                            <Controller
+                            name={key as Path<Partial<T>>}
+                            control={control}
+                            render={({ field: { value, ...rest } }) => (
+                              <input
+                                type="checkbox"
+                                checked={!!value}
+                                onChange={(e) => rest.onChange(e.target.checked)}
+                                onBlur={rest.onBlur}
+                                ref={rest.ref}
+                                className="w-5 h-5"
+                              />
+                            )}
+                          />
                           ) : (
                             <input
                               type={inputType}
