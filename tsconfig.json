@@ -16,31 +16,31 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
-    // "jsx": "preserve",
     "incremental": true,
+    "baseUrl": ".",
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "@/*": ["./app/*"],
+      "@components/*": ["./components/*"]
+    },
     "plugins": [
       {
         "name": "next"
       }
-    ],
-    "paths": {
-      "@/*": [
-        "./*"
-      ]
-    }
+    ]
   },
   "include": [
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "Components/CampaignForm/CampaignForm.js",
-    "Components/Footer/Footer.js",
-    "Components/Forms/CampaignForm.js",
-    "Components/Forms/ConfigForm.js",
-    "Components/Header/Header.js",
-    "Components/Landing/Landing.js",
-    "Components/Modals/SetupAdAccountModal.js",
+    "components/CampaignForm/CampaignForm.js",
+    "components/Footer/Footer.js",
+    "components/Forms/CampaignForm.js",
+    "components/Forms/ConfigForm.js",
+    "components/Header/Header.js",
+    "components/Landing/Landing.js",
+    "components/Modals/SetupAdAccountModal.js",
     "app/dashboard/page.js",
     "app/page.js",
     "app/accounts/signup/page.js",
