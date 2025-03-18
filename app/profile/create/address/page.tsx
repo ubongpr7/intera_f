@@ -1,4 +1,4 @@
-import { AddressForm } from "@components/management/companyCreationForm"
+import { AddressForm } from "components/management/companyCreationForm"
 
 export default function AddressPage() {
   return (
