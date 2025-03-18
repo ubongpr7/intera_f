@@ -25,7 +25,7 @@ interface Props {
 }
 
 export default function StoreProvider({ children }: Props) {
-  const storeRef = useRef<ReturnType<typeof makeStore>>();
+  const storeRef = useRef<ReturnType<typeof makeStore> | null>(null);
   if (!storeRef.current) {
     storeRef.current = makeStore();
   }
