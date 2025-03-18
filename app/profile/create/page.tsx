@@ -1,5 +1,5 @@
 // app/create-company/page.tsx
-import CompanyForm from "components/management/companyCreationForm";
+import CompanyForm from "../../../components/management/companyCreationForm";
 
 export default function CreateCompanyPage() {
   return (

@@ -1,8 +1,8 @@
 'use client'
 import Link from 'next/link'
 import { Sun, Moon } from 'lucide-react'
-import { useAppSelector, useAppDispatch } from "redux/store";
-import { setIsDarkMode } from "redux/state";
+import { useAppSelector, useAppDispatch } from "../../redux/store";
+import { setIsDarkMode } from "../../redux/state";
 
 const Navbar = () => {
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);

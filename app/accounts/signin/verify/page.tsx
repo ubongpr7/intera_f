@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import VerificationForm from "components/auth/verificationForm";
+import VerificationForm from "../../../../components/auth/verificationForm";
 import { getCookie } from "cookies-next";
 
 export default function VerifyPage() {

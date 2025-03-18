@@ -1,7 +1,7 @@
 // components/company/steps/Step1.tsx (Basic Info)
-import { useGetTypesByModelQuery } from 'redux/features/common/typeOF';
+import { useGetTypesByModelQuery } from '../../redux/features/common/typeOF';
 import { UseFormRegister, FieldErrors } from 'react-hook-form';
-import { useGetCurrenciesQuery } from 'redux/features/common/typeOF';
+import { useGetCurrenciesQuery } from '../../redux/features/common/typeOF';
 export function Step1({ register, errors }: { 
     register: UseFormRegister<any>;
     errors: FieldErrors<any>;

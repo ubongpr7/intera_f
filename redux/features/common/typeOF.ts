@@ -1,7 +1,7 @@
 import { get } from 'http';
 import { apiSlice } from '../../services/apiSlice';
 
-import { DropdownOption } from 'components/interfaces/common';
+import { DropdownOption } from '../../../components/interfaces/common';
 
 const common_api='common_api'
 interface TypeOfData {

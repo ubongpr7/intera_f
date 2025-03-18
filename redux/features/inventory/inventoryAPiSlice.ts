@@ -1,5 +1,5 @@
 import { apiSlice } from '../../services/apiSlice';
-import { CategoryData, InventoryData } from 'components/interfaces/inventory';
+import { CategoryData, InventoryData } from '../../../components/interfaces/inventory';
 const management_api='inventory_api'
 export const inventoryApiSlice = apiSlice.injectEndpoints({
   endpoints: builder => ({

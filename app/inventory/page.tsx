@@ -1,7 +1,7 @@
 // app/inventory/page.tsx
-import Tabs from 'components/common/Tabs';
-import InventoryCategoryView from 'components/inventory/InventoryCategory';
-import InventoryView from 'components/inventory/InventoryView';
+import Tabs from '../../components/common/Tabs';
+import InventoryCategoryView from '../../components/inventory/InventoryCategory';
+import InventoryView from '../../components/inventory/InventoryView';
 
 const InventoryPage = () => {
   const tabs = [

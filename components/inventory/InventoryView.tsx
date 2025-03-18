@@ -1,15 +1,15 @@
 'use client'
 import { useEffect, useState } from 'react';
-import { PageHeader } from "components/inventory/PageHeader";
+import { PageHeader } from "../inventory/PageHeader";
 import { useRouter } from 'nextjs-toploader/app';
-import { Column, DataTable } from "components/common/DataTable/DataTable";
-import { InventoryData } from "components/interfaces/inventory";
-import { useGetInventoryDataQuery, useCreateInventoryMutation } from "redux/features/inventory/inventoryAPiSlice";
+import { Column, DataTable } from "../common/DataTable/DataTable";
+import { InventoryData } from "../interfaces/inventory";
+import { useGetInventoryDataQuery, useCreateInventoryMutation } from "../../redux/features/inventory/inventoryAPiSlice";
 import CustomCreateCard from '../common/createCard';
 import { InventoryInterfaceKeys,defaultValues } from './selectOptions';
 import { InventoryKeyInfo } from './selectOptions';
-import { useGetUnitsQuery,useGetTypesByModelQuery } from "redux/features/common/typeOF";
-import { useGetInventoryCategoriesQuery } from "redux/features/inventory/inventoryAPiSlice";
+import { useGetUnitsQuery,useGetTypesByModelQuery } from "../../redux/features/common/typeOF";
+import { useGetInventoryCategoriesQuery } from "../../redux/features/inventory/inventoryAPiSlice";
 
 
 const strategies = {

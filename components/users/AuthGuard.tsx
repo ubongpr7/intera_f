@@ -1,4 +1,4 @@
-import { useAuth } from "redux/features/users/useAuth";
+import { useAuth } from "../../redux/features/users/useAuth";
 
 export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
     

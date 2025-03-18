@@ -1,6 +1,6 @@
 'use client';
 import { useForm, SubmitHandler } from 'react-hook-form';
-import { useRegisterMutation } from 'redux/features/authApiSlice';
+import { useRegisterMutation } from '../../redux/features/authApiSlice';
 // import { useRouter } from "next/navigation";
 import { toast } from "react-toastify"
 import { setCookie } from "cookies-next";

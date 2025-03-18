@@ -1,6 +1,6 @@
 'use client'
 import { Search, Plus } from 'lucide-react';
-import { Button } from 'components/buttons/button';
+import { Button } from '../buttons/button';
 import Link from 'next/link';
 
 interface PageHeaderProps {

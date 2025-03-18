@@ -1,7 +1,7 @@
 'use client';
 
 import { useForm, SubmitHandler } from 'react-hook-form';
-import { useLoginMutation } from 'redux/features/authApiSlice';
+import { useLoginMutation } from '../../redux/features/authApiSlice';
 import { toast } from "react-toastify"
 // import { useRouter, useSearchParams } from "next/navigation";
 import Link from 'next/link';

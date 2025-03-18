@@ -1,4 +1,4 @@
-import { useLogoutMutation } from 'redux/features/authApiSlice';
+import { useLogoutMutation } from '../../redux/features/authApiSlice';
 import { useRouter } from 'nextjs-toploader/app';
 import { toast } from 'react-toastify';
 
