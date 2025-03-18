@@ -1,4 +1,4 @@
-import InventoryDetail from "@components/inventory/Detail";
+import InventoryDetail from "components/inventory/Detail";
 
 export default async function InventoryDetailPage({
   params,
