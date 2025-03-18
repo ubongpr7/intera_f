@@ -4,7 +4,6 @@ import SideBar from './sideBar'
 import { useAppSelector, useAppDispatch } from "../../redux/store";
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import "react-toastify/dist/ReactToastify.css";
 import { toast } from "react-toastify"
 import { ToastContainer } from "react-toastify";
 import { useGetLoggedInUserQuery } from '../../redux/features/users/userApiSlice';
