@@ -2,7 +2,7 @@
 'use client';
 import { useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { Button } from '@/components/buttons/button';
+import { Button } from '../buttons/button';
 import { ArrowUp, ArrowDown, Activity } from 'lucide-react';
 
 const data = [

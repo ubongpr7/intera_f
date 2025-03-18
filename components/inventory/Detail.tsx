@@ -1,5 +1,5 @@
 'use client'
-import DetailCard from 'components/common/Detail';
+import DetailCard from '../common/Detail';
 import { useGetInventoryCategoriesQuery, useGetInventoryQuery } from '../../redux/features/inventory/inventoryAPiSlice';
 import { InventoryData } from '../interfaces/inventory';
 import { useUpdateInventoryMutation } from '../../redux/features/inventory/inventoryAPiSlice';

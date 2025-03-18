@@ -1,4 +1,3 @@
-// components/dashboard/InventoryMovement.tsx
 import { ArrowDown, ArrowUp, Activity } from 'lucide-react';
 
 export default function InventoryMovement() {
