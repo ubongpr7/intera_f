@@ -1,5 +1,5 @@
 // app/login/page.tsx
-import LoginForm from "@/components/auth/loginForm";
+import LoginForm from "@components/auth/loginForm";
 export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">

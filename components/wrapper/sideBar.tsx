@@ -1,7 +1,7 @@
 'use client'
 import classNames from 'classnames'
-import { useAppSelector, useAppDispatch } from "@/redux/store";
-import { setIsDarkMode, setIsSidebarCollapsed } from "@/redux/state";
+import { useAppSelector, useAppDispatch } from "redux/store";
+import { setIsDarkMode, setIsSidebarCollapsed } from "redux/state";
 import { generateColorFromName } from '../utils/colorGenerator';
 import { SidebarLink } from './SideBarLinks';
 import {   Archive,

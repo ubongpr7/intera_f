@@ -1,5 +1,5 @@
 import { apiSlice } from '../../services/apiSlice';
-import { Address, CompanyProfileData } from '@/components/interfaces/management';
+import { Address, CompanyProfileData } from 'components/interfaces/management';
 const management_api='management_api'
 export const companyApiSlice = apiSlice.injectEndpoints({
   endpoints: builder => ({

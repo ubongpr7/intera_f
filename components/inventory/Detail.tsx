@@ -1,9 +1,9 @@
 'use client'
-import DetailCard from '@/components/common/Detail';
-import { useGetInventoryCategoriesQuery, useGetInventoryQuery } from '@/redux/features/inventory/inventoryAPiSlice';
+import DetailCard from 'components/common/Detail';
+import { useGetInventoryCategoriesQuery, useGetInventoryQuery } from 'redux/features/inventory/inventoryAPiSlice';
 import { InventoryData } from '../interfaces/inventory';
-import { useUpdateInventoryMutation } from '@/redux/features/inventory/inventoryAPiSlice';
-import { useGetTypesByModelQuery, useGetUnitsQuery } from '@/redux/features/common/typeOF';
+import { useUpdateInventoryMutation } from 'redux/features/inventory/inventoryAPiSlice';
+import { useGetTypesByModelQuery, useGetUnitsQuery } from 'redux/features/common/typeOF';
 import LoadingAnimation from '../common/LoadingAnimation';
 import { InventoryKeyInfo } from './selectOptions';
 

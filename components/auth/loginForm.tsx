@@ -1,7 +1,7 @@
 'use client';
 
 import { useForm, SubmitHandler } from 'react-hook-form';
-import { useLoginMutation } from '@/redux/features/authApiSlice';
+import { useLoginMutation } from 'redux/features/authApiSlice';
 import { toast } from "react-toastify"
 // import { useRouter, useSearchParams } from "next/navigation";
 import Link from 'next/link';
@@ -10,7 +10,7 @@ import { LoginErrorResponse, LoginResponse } from '../types/authResponse';
 import { LoginFormData } from '../types/authForms';
 import { setCookie } from 'cookies-next';
 import { VerificationError, ErrorResponse, ResendError } from '../types/authResponse';
-import { useVerifyAccountMutation, useGetverifyAccountMutation } from '@/redux/features/authApiSlice';
+import { useVerifyAccountMutation, useGetverifyAccountMutation } from 'redux/features/authApiSlice';
 
 export default function LoginForm() {
   const [login, { isLoading, error }] = useLoginMutation();

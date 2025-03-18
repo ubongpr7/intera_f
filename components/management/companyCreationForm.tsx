@@ -1,5 +1,5 @@
 'use client';
-import { useCreateCompanyProfileMutation } from '@/redux/features/management/companyProfileApiSlice';
+import { useCreateCompanyProfileMutation } from 'redux/features/management/companyProfileApiSlice';
 import { useEffect, useState } from 'react';
 import { useForm, SubmitHandler,Controller } from 'react-hook-form';
 // import { useRouter } from 'next/navigation';
@@ -8,13 +8,13 @@ import { Step1, Step2, Step3, Step4 } from './createSteps';
 import classNames from 'classnames';
 import { Address } from '../interfaces/management';
 import { useRouter } from 'nextjs-toploader/app'
-import { useCreateCompanyProfileAddressMutation,useGetOwnerCompanyProfileMutation  } from '@/redux/features/management/companyProfileApiSlice';
+import { useCreateCompanyProfileAddressMutation,useGetOwnerCompanyProfileMutation  } from 'redux/features/management/companyProfileApiSlice';
 import {
   useGetCountriesQuery,
   useGetRegionsQuery,
   useGetSubregionsQuery,
   useGetCitiesQuery,
-} from '@/redux/features/common/typeOF';
+} from 'redux/features/common/typeOF';
 import Select from 'react-select'; // For better dropdown UI
 
 type FormData = {

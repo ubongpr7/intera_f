@@ -1,5 +1,5 @@
-import { useGetUnitsQuery,useGetTypesByModelQuery } from "@/redux/features/common/typeOF";
-import { useGetInventoryCategoriesQuery } from "@/redux/features/inventory/inventoryAPiSlice";
+import { useGetUnitsQuery,useGetTypesByModelQuery } from "redux/features/common/typeOF";
+import { useGetInventoryCategoriesQuery } from "redux/features/inventory/inventoryAPiSlice";
 import { InventoryData } from "../interfaces/inventory";
 
 

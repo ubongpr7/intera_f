@@ -4,8 +4,8 @@ import React from 'react'
 import {Menu, Bell, Search,Sun,Moon,Settings as SettingsIcon,  User} from 'lucide-react'
 import Link from 'next/link'
 import { Settings } from 'http2'
-import { useAppSelector, useAppDispatch } from "@/redux/store";
-import { setIsDarkMode, setIsSidebarCollapsed } from "@/redux/state";
+import { useAppSelector, useAppDispatch } from "redux/store";
+import { setIsDarkMode, setIsSidebarCollapsed } from "redux/state";
 import { UserData } from '../interfaces/User'
 import LogoutButton from '../auth/logoutUser'
 

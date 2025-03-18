@@ -1,7 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import StoreProvider from "@/redux/provider";
-import DashboardHeader from "@/components/wrapper/dashboardHeader";
+import StoreProvider from "redux/provider";
+import DashboardHeader from "@components/wrapper/dashboardHeader";
 import NextTopLoader from 'nextjs-toploader';
 export const metadata: Metadata = {
   title: "Gern App",
