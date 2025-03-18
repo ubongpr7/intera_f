@@ -4,11 +4,22 @@ import { useState } from 'react';
 import { Dialog } from '@headlessui/react';
 import { Truck, Clock, Star, X } from 'lucide-react';
 
-const SupplierDetailsModal = ({ supplier, onClose }) => (
+interface Supplier {
+  name: string;
+  avgLeadTime: number;
+  rating: number;
+}
+
+interface SupplierDetailsModalProps {
+  supplier: Supplier;
+  onClose: () => void;
+}
+const SupplierDetailsModal = ({ supplier, onClose }: SupplierDetailsModalProps) => (
   <Dialog open={true} onClose={onClose} className="fixed inset-0 z-10 overflow-y-auto">
     <div className="flex items-center justify-center min-h-screen">
-      <Dialog.Overlay className="fixed inset-0 bg-black/30" />
-      
+      {/* Manual overlay */}
+      <div className="fixed inset-0 bg-black/30" onClick={onClose} />
+
       <div className="relative bg-white rounded-xl p-8 max-w-2xl mx-4 shadow-xl">
         <div className="flex justify-between items-start mb-6">
           <Dialog.Title className="text-2xl font-semibold">{supplier.name}</Dialog.Title>
@@ -52,8 +63,8 @@ const SupplierDetailsModal = ({ supplier, onClose }) => (
 );
 
 export default function SupplierCard() {
-  const [selectedSupplier, setSelectedSupplier] = useState(null);
-  const suppliers = [
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+  const suppliers: Supplier[] = [
     { name: "TechParts Co", avgLeadTime: 2, rating: 4.8 },
     { name: "Global Supply", avgLeadTime: 5, rating: 3.9 },
   ];
