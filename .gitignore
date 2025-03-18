@@ -16,7 +16,7 @@ package-lock.json
 # next.js
 /.next/
 /out/
-
+docker-compose.yml
 # production
 /build
 
