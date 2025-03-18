@@ -3,7 +3,7 @@ import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from "@reduxjs/toolk
 import { setAuth, logout } from "../features/authSlice";
 import { Mutex } from "async-mutex";
 import { setCookie, getCookie, deleteCookie } from "cookies-next";
-import env from "env_file";
+import env from "../../env_file";
 
 const mutex = new Mutex();
 
