@@ -6,7 +6,6 @@
       "dom.iterable",
       "esnext"
     ],
-    "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
@@ -19,10 +18,6 @@
     "incremental": true,
     "baseUrl": ".",
     "forceConsistentCasingInFileNames": true,
-    "paths": {
-      "@/*": ["./app/*"],
-      "@components/*": ["./components/*"]
-    },
     "plugins": [
       {
         "name": "next"
@@ -34,19 +29,10 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "components/CampaignForm/CampaignForm.js",
-    "components/Footer/Footer.js",
-    "components/Forms/CampaignForm.js",
-    "components/Forms/ConfigForm.js",
-    "components/Header/Header.js",
-    "components/Landing/Landing.js",
-    "components/Modals/SetupAdAccountModal.js",
-    "app/dashboard/page.js",
-    "app/page.js",
-    "app/accounts/signup/page.js",
-    "app/Terms/CookiesPolicy/page.js",
-    "app/accounts/facebook/page.js",
-    "app/campaign_form/page.js"
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "components/**/*.ts",
+    "components/**/*.tsx"
   ],
   "exclude": [
     "node_modules"
