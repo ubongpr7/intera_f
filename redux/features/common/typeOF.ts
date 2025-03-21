@@ -36,6 +36,11 @@ interface Currency {
   code: string;
   name: string;
 }
+interface CurrencyInterface {
+  id: string;
+  code: string;
+  name: string;
+}
 
 export const currencyApiSlice = apiSlice.injectEndpoints({
   endpoints: builder => ({
@@ -43,11 +48,16 @@ export const currencyApiSlice = apiSlice.injectEndpoints({
       query: () => `/${common_api}/currencies/`,
       
     }),
+    getCurrency: builder.query<CurrencyInterface[], void>({
+      query: () => `/${common_api}/currency/`,
+      
+    }),
   }),
 });
 
 export const { 
-  useGetCurrenciesQuery 
+  useGetCurrenciesQuery ,
+  useGetCurrencyQuery
 } = currencyApiSlice;
 
 export const commonApiSlice = apiSlice.injectEndpoints({

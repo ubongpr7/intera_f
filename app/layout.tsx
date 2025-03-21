@@ -19,11 +19,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
       <NextTopLoader />
-
         <StoreProvider>
         <DashboardHeader>
         {children}
-        
         </DashboardHeader>
         </StoreProvider>
         

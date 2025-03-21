@@ -5,6 +5,7 @@ import { useForm, Controller, Path, DefaultValues } from 'react-hook-form';
 import LoadingAnimation from './LoadingAnimation';
 import { FieldInfo } from './fileFieldInfor';
 
+
 interface CustomCreateCardProps<T> {
   defaultValues?: Partial<T>;
   onClose: () => void;
@@ -61,6 +62,9 @@ export default function CustomCreateCard<T extends Record<string, any>>({
   };
 
   const getInputType = (key: keyof T) => {
+    const keyStr = String(key).toLowerCase();
+    if (keyStr === 'website' || keyStr === 'link') return 'url';
+    
     const value = defaultValues[key];
     if (typeof value === 'boolean') return 'checkbox';
     if (typeof value === 'number') return 'number';
@@ -112,6 +116,8 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                 const inputType = getInputType(key);
                 const fieldOptions = selectOptions?.[key];
                 const info = keyInfo?.[key];
+                const keyStr = String(key).toLowerCase();
+                const isUrlField = keyStr === 'website' || keyStr === 'link';
 
                 return (
                   <div key={key as string} className="space-y-2 min-w-[200px]">
@@ -126,6 +132,8 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                         rules={{
                           required: optionalFields.includes(key) ? false : 'This field is required',
                           validate: (value) => {
+                            
+
                             if (key === 'safety_stock_level' && typeof value === 'number' && Number(value) > Number(minStock)) {
                               return 'Must be ≤ minimum stock level';
                             }
@@ -171,6 +179,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                                   type="checkbox"
                                   checked={!!value}
                                   onChange={(e) => rest.onChange(e.target.checked)}
+                                  required={false}
                                   className="w-5 h-5"
                                 />
                               )}
@@ -180,6 +189,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                               type={inputType}
                               {...field}
                               value={field.value as string | number | undefined}
+                              placeholder={isUrlField ? 'https://example.com' : undefined}
                               className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
                                 focus:border-blue-500 py-2 rounded-md ${
                                 errors[key as string] 

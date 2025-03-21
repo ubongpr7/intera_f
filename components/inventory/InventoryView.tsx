@@ -46,9 +46,10 @@ const inventoryColumns: Column<InventoryData>[] = [
   {
     header: 'Expiration Policy',
     accessor: 'expiration_policy',
-    render: (value) => (value === '0' ? 'FIFO' : 'LIFO'),
+    render: (value) => (value === '0' ? 'Dispose of Stock' : 'Return to Manufacturer'),
   },
 ];
+
 
 function InventoryView() {
   const { data, isLoading, refetch, error } = useGetInventoryDataQuery('');
