@@ -25,10 +25,10 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         body: data
       }),
     }),
-    getOwnerCompanyProfile: builder.mutation({
+    getOwnerCompanyProfile: builder.query({
       query: () => ({
         url: `/${management_api}/onwnercompany-profile/`,
-        method: 'GET',
+        // method: 'GET',
       }),
     }),
  
@@ -39,5 +39,5 @@ export const {
   useCreateCompanyProfileMutation,
   useCreateCompanyProfileAddressMutation,
   useUpdateCompanyProfileMutation ,
-  useGetOwnerCompanyProfileMutation,
+  useGetOwnerCompanyProfileQuery,
 } = companyApiSlice;

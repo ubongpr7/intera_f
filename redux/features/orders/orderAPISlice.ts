@@ -5,7 +5,7 @@ export const purchaseOderApiSlice = apiSlice.injectEndpoints({
   endpoints: builder => ({
     createPurchaseOder: builder.mutation({
       query: (PurchaseOderData: Partial<PurchaseOrderInterface>) => ({
-        url: `/${management_api}/purchase_orders/`,
+        url: `/${management_api}/purchase_order/`,
         method: 'POST',
         body: PurchaseOderData
       }),
@@ -13,18 +13,14 @@ export const purchaseOderApiSlice = apiSlice.injectEndpoints({
     
     updatePurchaseOder: builder.mutation({
       query: ({ id, data }) => ({
-        url: `/${management_api}/purchase_orders/${id}/`,
+        url: `/${management_api}/purchase-order/update/${id}/`,
         method: 'PATCH',
         body: data
       }),
     }),
     getPurchaseOder: builder.query({
-      query: (id) => `/${management_api}/purchase_order/${id}/`,
+      query: (id) => `/${management_api}/purchase-order/item/${id}/`,
     }),
-  
-    // getPurchaseOderCategories: builder.query({
-    //   query: () => `/${management_api}/category/`,
-    // }),
   
     getPurchaseOderData: builder.query({
       query: () => ({

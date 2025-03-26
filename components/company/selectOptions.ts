@@ -1,4 +1,10 @@
-import { CompanyAddressInterface, CompanyDataInterface } from "components/interfaces/company";
+import { 
+  CompanyAddressDataInterface,
+  CompanyAddressInterface, 
+  CompanyDataInterface ,
+  ContactPersonInterface
+
+} from "../interfaces/company";
 
 export const CompanyKeyInfo = {
     name: 'The legal name of the company (required, unique identifier)',
@@ -31,6 +37,24 @@ export const CompanyKeyInfo = {
     'currency'
   ];
   
+  
+  export const CompanyAddressInterfaceKeys: (keyof CompanyAddressDataInterface)[] = [
+    'title',
+    'primary',
+    'country',
+    'region',
+    'city',
+    `subregion`,
+    'apt_number',
+    'street_number',
+    'street',
+    'postal_code',
+    'shipping_notes',
+    'internal_shipping_notes',
+    'link',
+    // 'company'
+  ];
+  
   export const defaultValues: Partial<CompanyDataInterface> = {
     is_customer: false,
     is_supplier: true,
@@ -48,19 +72,12 @@ export const CompanyKeyInfo = {
 export const CompanyAddressKeyInfo = {
   title: 'Human-readable name for the address location',
   primary: 'Mark as primary company address',
-  line1: 'First line of street address',
-  line2: 'Additional address information',
   postal_code: 'Postal/ZIP code and city',
   country: 'Country code (2-letter ISO)',
   shipping_notes: 'Special instructions for couriers',
   internal_shipping_notes: 'Internal notes about shipping to this address',
   link: 'External link with map or additional info'
 };
-
-export const CompanyAddressInterfaceKeys: (keyof CompanyAddressInterface)[] = [
-  'title', 'primary', 'line1', 'line2', 'postal_code', 'country',
-  'shipping_notes', 'internal_shipping_notes', 'link'
-];
 
 export const defaultAddressValues: Partial<CompanyAddressInterface> = {
   primary: false,
@@ -75,3 +92,9 @@ export const defaultAddressValues: Partial<CompanyAddressInterface> = {
 export const nonEditableAddressFields: (keyof CompanyAddressInterface)[] = [
   'id', 'company', 'created_at', 'updated_at'
 ];
+
+
+export const contactPersonInterfaceKeys: (keyof ContactPersonInterface )[] =[
+'name','phone','email','role',
+]
+

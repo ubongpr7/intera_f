@@ -1,41 +1,58 @@
-// Enum for status (assuming your PurchaseOrderStatus values)
 export enum PurchaseOrderStatus {
-  PENDING = 0,
-  ISSUED = 1,
-  RECEIVED = 2,
-  COMPLETED = 3,
-  CANCELLED = 4
+  PENDING = 10,
+  ISSUED = 20,
+  RECEIVED = 30,
+  COMPLETED = 40,
+  CANCELLED = 50
 }
 
 interface BaseOrder {
     id: number;
     description?: string;
     link?: string;
-    target_date?: string; // ISO date string
-    creation_date?: string; // ISO date string
-    created_by?: number; // User ID
-    responsible?: number; // User ID
-    contact?: number; // Contact ID
-    address?: number; // CompanyAddress ID
+    delivery_date?: string;
+    created_at?: string; 
+    created_by?: number;
+    responsible?: number; 
+    contact?: number;
+    inventory: number;
+    currency?: string;
+    address?: number;
   }
   
   interface TotalPriceMixin {
     total_price?: number;
-    order_currency?: string; // 3-letter currency code (e.g., "USD")
+    order_currency?: string; 
   }
   
 export  interface PurchaseOrderInterface extends BaseOrder, TotalPriceMixin {
     reference: string;
-    status: PurchaseOrderStatus;
-    supplier: number; // Company ID
+    // status: PurchaseOrderStatus;
+    supplier: number; 
     supplier_reference?: string;
-    received_by?: number; // User ID
-    issue_date?: string; // ISO date string
-    complete_date?: string; // ISO date string
+    received_by?: number;
+    status?: number; 
+    issue_date?: string; 
+    complete_date?: string; 
     attachments?: Attachment[];
     line_items?: PurchaseOrderLineItem[];
   }
-  
+export const notEditableFields: (keyof PurchaseOrderInterface)[] =[
+  "id",
+  "complete_date",
+  "created_at",
+  "created_by",
+  "issue_date",
+  "reference",
+  "status",
+  "supplier_reference",
+  "total_price",
+  "address",
+  "received_by",
+  "line_items",
+  "contact",
+
+]
   // Supporting interfaces
   interface Attachment {
     id: number;

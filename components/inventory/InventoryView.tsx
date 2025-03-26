@@ -52,7 +52,7 @@ const inventoryColumns: Column<InventoryData>[] = [
 
 
 function InventoryView() {
-  const { data, isLoading, refetch, error } = useGetInventoryDataQuery('');
+  const { data, isLoading, refetch, error } = useGetInventoryDataQuery();
   const [createInventory, { isLoading: inventoryCreateLoading }] = useCreateInventoryMutation();
   const [isCreateOpen, setIsCreateOpen] = useState(false); // Renamed for clarity
   const router = useRouter();
@@ -175,6 +175,7 @@ function InventoryView() {
           keyInfo={InventoryKeyInfo}
           notEditableFields={notEditableFields}
           interfaceKeys={InventoryInterfaceKeys}
+          optionalFields={['batch_tracking_enabled','description']}
         />
       </div>
     </div>

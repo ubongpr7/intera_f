@@ -18,7 +18,6 @@ export interface CompanyProfileData {
   
 }
 
-// interfaces/address.ts
 export interface Address {
     country: number | null; // Assuming country is referenced by ID
     region: number | null; // Assuming region is referenced by ID
@@ -29,5 +28,6 @@ export interface Address {
     street: string | null;
     postal_code: string | null;
     company: string | null;
+    full_address: string | null;
   }
   

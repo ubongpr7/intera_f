@@ -18,7 +18,10 @@ import {   Archive,
   Tag,
   Factory,
   ReceiptText,
-  CreditCard} from 'lucide-react';
+  CreditCard,
+  ShoppingCart,
+  Bus,
+  Truck} from 'lucide-react';
   import { useEffect, useRef } from 'react';
 import { UserData } from '../interfaces/User';
 interface SideBarDataProps{
@@ -81,11 +84,13 @@ const SideBar = ({user}:SideBarDataProps) => {
             <div className={`flex-grow mt-8 `}>
             <SidebarLink href="/dashboard" icon={Home} label="Dashboard" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/inventory" icon={Package} label="Inventory" isCollapsed={SidebarCollapsed} />
+            <SidebarLink href="/profile/staff" icon={Users} label="Staff" isCollapsed={SidebarCollapsed} />
+            <SidebarLink href="/companies" icon={Truck} label="Affilications" isCollapsed={SidebarCollapsed} />
+            <SidebarLink href="/order/purchase" icon={ShoppingCart} label="Purchase Orders" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/stockitems" icon={Box} label="Stock Items" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/warehouse" icon={Warehouse } label="Warehouse" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/point-of-sales" icon={CreditCard} label="Sales" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/pricing" icon={Tag} label="Pricing" isCollapsed={SidebarCollapsed} />
-            <SidebarLink href="/users" icon={Users} label="Staff" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/settings" icon={Settings} label="Settings" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/archive" icon={Archive} label="Archive" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/billing" icon={CircleDollarSign} label="Billing" isCollapsed={SidebarCollapsed} />

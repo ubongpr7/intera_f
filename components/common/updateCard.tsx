@@ -4,6 +4,16 @@ import { X } from 'lucide-react';
 import { useForm, Controller, Path, DefaultValues } from 'react-hook-form';
 import LoadingAnimation from './LoadingAnimation';
 import { FieldInfo } from './fileFieldInfor';
+import dynamic from 'next/dynamic';
+import { isValidPhoneNumber } from 'libphonenumber-js';
+
+const PhoneInput = dynamic(
+  () => import('react-phone-number-input'),
+  { 
+    ssr: false,
+    loading: () => <input className="border rounded p-2" placeholder="Loading phone input..." />
+  }
+);
 
 interface CustomUpdateCardProps<T> {
   data: T;
@@ -13,6 +23,9 @@ interface CustomUpdateCardProps<T> {
   selectOptions?: Partial<Record<keyof T, Array<{ value: string; text: string }>>>;
   isLoading: boolean;
   keyInfo?: Partial<Record<keyof T, string>>;
+  dateFields?: (keyof T)[];
+  datetimeFields?: (keyof T)[];
+  optionalFields?: (keyof T)[]; 
 }
 
 export default function CustomUpdateCard<T extends Record<string, any>>({
@@ -23,6 +36,9 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
   selectOptions,
   isLoading,
   keyInfo,
+  dateFields = [],
+  datetimeFields = [],
+  optionalFields=[]
 }: CustomUpdateCardProps<T>) {
   const {
     control,
@@ -37,22 +53,37 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
     }), {} as DefaultValues<Partial<T>>),
   });
 
-  const minStock = watch('minimum_stock_level'  as Path<Partial<T>>);
-  const reOrderPoint = watch('re_order_point'  as Path<Partial<T>>);
-  const reOrderQty = watch('re_order_quantity'  as Path<Partial<T>>);
-  const safetyQty = watch('safety_stock_level'  as Path<Partial<T>>);
+  const minStock = watch('minimum_stock_level' as Path<Partial<T>>);
+  const reOrderPoint = watch('re_order_point' as Path<Partial<T>>);
+  const reOrderQty = watch('re_order_quantity' as Path<Partial<T>>);
+  const safetyQty = watch('safety_stock_level' as Path<Partial<T>>);
 
   useEffect(() => {
-    trigger(['minimum_stock_level', 're_order_point', 'safety_stock_level', 're_order_quantity'] as Path<Partial<T>>[])  ;
+    trigger([
+      'minimum_stock_level',
+      're_order_point',
+      'safety_stock_level',
+      're_order_quantity'
+    ] as Path<Partial<T>>[]);
   }, [minStock, reOrderPoint, reOrderQty, safetyQty, trigger]);
 
   const formatLabel = (str: string) => {
     return str.replace(/_/g, ' ').replace(/(^\w|\s\w)/g, m => m.toUpperCase());
   };
 
-  const getInputType = (value: any) => {
+  const getInputType = (key: keyof T) => {
+    if (dateFields.includes(key)) return 'date';
+    if (datetimeFields.includes(key)) return 'datetime-local';
+    
+    const keyStr = String(key).toLowerCase();
+    if (keyStr === 'phone') return 'phone';
+    if (keyStr === 'website' || keyStr === 'link') return 'url';
+    if (keyStr === 'password') return 'password';
+    if (keyStr === 'email') return 'email';
+    
+    const value = data[key];
     if (typeof value === 'boolean') return 'checkbox';
-    if (!isNaN(value) && value !== '') return 'number';
+    if (typeof value === 'number') return 'number';
     return 'text';
   };
 
@@ -61,6 +92,7 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
       await onSubmit(formData);
       onClose();
     } catch (error) {
+      // Handle error
     }
   };
 
@@ -72,7 +104,6 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
     return () => window.removeEventListener('keydown', handleEscape);
   }, [onClose]);
 
-  // Split fields into regular fields and description
   const regularFields = editableFields.filter(key => String(key) !== 'description');
   const hasDescription = editableFields.some(key => String(key) === 'description');
 
@@ -96,9 +127,14 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
           <div className="flex-1 overflow-y-auto p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
               {regularFields.map((key) => {
-                const inputType = getInputType(data[key]);
+                const inputType = getInputType(key);
                 const fieldOptions = selectOptions?.[key];
                 const info = keyInfo?.[key];
+                const keyStr = String(key).toLowerCase();
+                const isUrlField = keyStr === 'website' || keyStr === 'link';
+                const isDateField = dateFields.includes(key);
+                const isDatetimeField = datetimeFields.includes(key);
+                const isPhoneField = inputType === 'phone';
 
                 return (
                   <div key={key as string} className="space-y-2 min-w-[200px]">
@@ -111,8 +147,11 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                         name={key as Path<Partial<T>>}
                         control={control}
                         rules={{
-                          required: 'This field is required',
+                          required: optionalFields.includes(key) ? false : 'This field is required',
                           validate: (value) => {
+                            if (isPhoneField && value) {
+                              return isValidPhoneNumber(value.toString()) || 'Invalid phone number';
+                            }
                             if (key === 'safety_stock_level' && typeof value === 'number' && Number(value) > Number(minStock)) {
                               return 'Must be ≤ minimum stock level';
                             }
@@ -151,24 +190,52 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                             </select>
                           ) : inputType === 'checkbox' ? (
                             <Controller
-                            name={key as Path<Partial<T>>}
-                            control={control}
-                            render={({ field: { value, ...rest } }) => (
-                              <input
-                                type="checkbox"
-                                checked={!!value}
-                                onChange={(e) => rest.onChange(e.target.checked)}
-                                onBlur={rest.onBlur}
-                                ref={rest.ref}
-                                className="w-5 h-5"
-                              />
-                            )}
-                          />
+                              name={key as Path<Partial<T>>}
+                              control={control}
+                              render={({ field: { value, ...rest } }) => (
+                                <input
+                                  type="checkbox"
+                                  checked={!!value}
+                                  onChange={(e) => rest.onChange(e.target.checked)}
+                                  className="w-5 h-5"
+                                />
+                              )}
+                            />
+                          ) : isPhoneField ? (
+                            <PhoneInput
+                              {...field}
+                              international
+                              defaultCountry="NG"
+                              className={`w-full bg-gray-50 text-gray-100 px-3 border-2 border-gray-300 focus:outline-none 
+                                focus:border-blue-500 py-2 rounded-md ${
+                                errors[key as string] 
+                                  ? 'border-red-500 ring-red-500' 
+                                  : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                              }`}
+                              countrySelectProps={{
+                                className: "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-100"
+                              }}
+                              onChange={(value) => field.onChange(value)}
+                              value={field.value as string}
+                            />
+                          ) : isDateField || isDatetimeField ? (
+                            <input
+                              type={inputType}
+                              {...field}
+                              value={field.value as string || ''}
+                              className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
+                                focus:border-blue-500 py-2 rounded-md ${
+                                errors[key as string] 
+                                  ? 'border-red-500 ring-red-500' 
+                                  : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                              }`}
+                            />
                           ) : (
                             <input
                               type={inputType}
                               {...field}
                               value={field.value as string | number | undefined}
+                              placeholder={isUrlField ? 'https://example.com' : undefined}
                               className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
                                 focus:border-blue-500 py-2 rounded-md ${
                                 errors[key as string] 
@@ -217,7 +284,7 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                     />
                     {errors.description && (
                       <p className="text-xs text-red-600 mt-1">
-                        {typeof errors.description?.message === 'string' ? errors.description.message : ''}
+                        {String(errors.description?.message)}
                       </p>
                     )}
                   </div>

@@ -4,7 +4,7 @@ import { PageHeader } from "../inventory/PageHeader";
 import { useRouter } from 'nextjs-toploader/app';
 import { Column, DataTable } from "../common/DataTable/DataTable";
 import { CompanyDataInterface } from "../interfaces/company";
-import { useGetCompanyDataQuery, useCreateCompanyMutation } from '../../redux/features/company/companyAPISlice';
+import { useGetCompanyDataQuery, useCreateCompanyMutation,useGetSupplersQuery } from '../../redux/features/company/companyAPISlice';
 import CustomCreateCard from '../common/createCard';
 import { CompanyInterfaceKeys,defaultValues } from './selectOptions';
 import { CompanyKeyInfo } from './selectOptions';
@@ -57,12 +57,14 @@ function CompanyView() {
   const router = useRouter();
   const { data: response,isLoading:currencyLoading,error:currencyError } = useGetCurrencyQuery();
   const currencies = response||[]
+  
 
   console.log(typeof currencies);
   const currencyOptions = currencies.map(currency => ({
   value: currency.id,
   text: `${currency.code} `
 }));
+ 
   const  selectOptions = {
           
     currency:currencyOptions,
@@ -70,12 +72,10 @@ function CompanyView() {
   
   const handleCreate = async (createdData: Partial<CompanyDataInterface>) => {
     await createInventory(createdData).unwrap();
-    setIsCreateOpen(false); // Close the modal after creation
-    await refetch(); // Refresh the data
+    setIsCreateOpen(false); 
+    await refetch(); 
   };
 
-    //////////////////////////////
-    //////////////////////////////
 
   const handleRefresh = async () => {
     await refetch();

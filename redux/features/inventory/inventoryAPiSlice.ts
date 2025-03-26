@@ -32,7 +32,7 @@ export const inventoryApiSlice = apiSlice.injectEndpoints({
       query: () => `/${management_api}/categories/`,
     }),
   
-    getInventoryData: builder.query({
+    getInventoryData: builder.query<InventoryData[], void>({
       query: () => ({
         url: `/${management_api}/inventories/list/`,
         method: 'GET',

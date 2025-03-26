@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
 import { Step1, Step2, Step3, Step4 } from './createSteps';
 import { Address } from '../interfaces/management';
 import { useRouter } from 'nextjs-toploader/app'
-import { useCreateCompanyProfileAddressMutation,useGetOwnerCompanyProfileMutation  } from '../../redux/features/management/companyProfileApiSlice';
+import { useCreateCompanyProfileAddressMutation,useGetOwnerCompanyProfileQuery  } from '../../redux/features/management/companyProfileApiSlice';
 import {
   useGetCountriesQuery,
   useGetRegionsQuery,
@@ -14,7 +14,7 @@ import {
   useGetCitiesQuery,
 } from '../../redux/features/common/typeOF';
 
-import Select from 'react-select'; // For better dropdown UI
+import Select from 'react-select'; 
 
 type FormData = {
   name: string;
@@ -170,27 +170,14 @@ export function AddressForm({ defaultValues }: AddressFormProps) {
     useCreateCompanyProfileAddressMutation();
 
   // Fetch the company profile for the authenticated user
-  const [getOwnerCompanyProfile, { data: companyProfile }] = useGetOwnerCompanyProfileMutation();
-
-  useEffect(() => {
-    getOwnerCompanyProfile(1).unwrap().then((data) => {
-      if (data?.id) {
-        // Set the company ID in the hidden input field
-        setValue('company', data.id);
-      }
-    }).catch((error) => {
-    });
-  }, [getOwnerCompanyProfile, setValue]);
-  
+  // const  { data: companyProfile }= useGetOwnerCompanyProfileQuery('');
   const { data: countries } = useGetCountriesQuery();
 
-  // Fetch regions based on selected country
   const selectedCountry = watch('country');
   const { data: regions } = useGetRegionsQuery(selectedCountry || 0, {
     skip: !selectedCountry, // Skip if no country is selected
   });
 
-  // Fetch subregions based on selected region
   const selectedRegion = watch('region');
   const { data: subregions } = useGetSubregionsQuery(selectedRegion || 0, {
     skip: !selectedRegion, // Skip if no region is selected
@@ -241,12 +228,13 @@ export function AddressForm({ defaultValues }: AddressFormProps) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      {/* Hidden input for company ID */}
+      {/* Hidden input for company ID 
       <input
         type="hidden"
+        value={companyProfile?.id}
         {...register('company')}
       />
-
+*/}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Country */}
         <div>

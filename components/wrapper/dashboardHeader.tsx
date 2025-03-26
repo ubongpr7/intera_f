@@ -27,7 +27,7 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
   
 
   const shouldHideDashboardUI = (path: string) => {
-    return path.startsWith('/accounts')|| path.startsWith('/profile') || path === '/';
+    return path.startsWith('/accounts')|| path ==='/profile' || path === '/';
   };
   useEffect(()=>{
     if (isDarkMode){

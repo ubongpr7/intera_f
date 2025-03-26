@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Edit } from 'lucide-react';
 import CustomUpdateCard from './updateCard';
+import ActionHeader, { ActionItem } from './actions';
 
 interface DetailCardProps<T> {
   data: T;
@@ -14,6 +15,10 @@ interface DetailCardProps<T> {
   selectOptions?: Partial<Record<keyof T, Array<{ value: string; text: string }>>>;
   isLoading: boolean;
   keyInfo?: Partial<Record<keyof T, string>>;
+  dateFields?: (keyof T)[];
+  datetimeFields?: (keyof T)[];
+  optionalFields?: (keyof T)[];
+  actions?:ActionItem[]
 }
 
 const formatDateTime = (value: string) => {
@@ -39,6 +44,10 @@ export default function DetailCard<T extends Record<string, any>>({
   selectOptions,
   isLoading,
   keyInfo,
+  dateFields = [],
+  datetimeFields = [],
+  optionalFields = [],
+  actions=[]
 }: DetailCardProps<T>) {
   const [isEditOpenOption, setIsEditOpenOption] = useState(false);
 
@@ -79,7 +88,7 @@ export default function DetailCard<T extends Record<string, any>>({
     if (['created_at', 'updated_at'].includes(key as string)) {
       return (
         <div>
-        <p className="text-lg font-semibold text-gray-900">
+        <p className="text-sm font-semibold text-gray-900">
           {formatDateTime(value as string)}
         </p>
         </div>
@@ -88,7 +97,7 @@ export default function DetailCard<T extends Record<string, any>>({
 
     return (
       
-      <p className="text-lg font-semibold text-gray-900">
+      <p className="text-sm font-semibold text-gray-900">
         {value}
       </p>
     );
@@ -110,7 +119,7 @@ export default function DetailCard<T extends Record<string, any>>({
         >
           {formatLabel(key as string)}
         </span>
-        <div className="mt-1">{renderValue(key, value)}</div> {/* Reduced margin */}
+        <div className="mt-1">{renderValue(key, value)}</div> 
       </div>
     </div>
   );
@@ -125,7 +134,7 @@ export default function DetailCard<T extends Record<string, any>>({
           <Edit className="w-5 h-5 text-gray-500" />
         </button>
       )}
-
+      
       {data[titleField] && (
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">
@@ -133,7 +142,12 @@ export default function DetailCard<T extends Record<string, any>>({
           </h1>
         </div>
       )}
-
+      {actions && (
+        <ActionHeader
+          items={actions}
+        className="p-4 border-b"
+      />
+      )}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {mainFields.map(([key, value]) => renderField(key, value))}
       </div>
@@ -156,6 +170,9 @@ export default function DetailCard<T extends Record<string, any>>({
           onSubmit={updateMutation}
           isLoading={isLoading}
           keyInfo={keyInfo}
+          dateFields={dateFields}
+          datetimeFields={datetimeFields}
+          optionalFields={optionalFields}
         />
       )}
     </div>

@@ -1,4 +1,4 @@
-import { PurchaseOrderInterface } from "components/interfaces/order";
+import { PurchaseOrderInterface } from "../../interfaces/order";
 
 // Enum for status (assuming your PurchaseOrderStatus values)
 enum PurchaseOrderStatus {
@@ -39,8 +39,7 @@ export const PurchaseOrderKeyInfo = {
   export const defaultValues: Partial<PurchaseOrderInterface> = {
     description: 'New Purchase Order',
     link: '',
-    target_date: new Date().toISOString().split('T')[0],
-    creation_date: new Date().toISOString().split('T')[0], 
+    delivery_date: new Date().toISOString().split('T')[0],
     
     total_price: 0,
     order_currency: 'USD',
@@ -50,28 +49,27 @@ export const PurchaseOrderKeyInfo = {
     
     // line_items: [], 
   };
-  export const PurchaseOrderInterfaceKeys: (keyof PurchaseOrderInterface)[] = [
-    'description',
-    'link',
-    'target_date',
-    'creation_date',
-    'created_by',
-    'responsible',
-    'contact',
-    'address',
   
+  export const PurchaseOrderInterfaceKeys: (keyof PurchaseOrderInterface)[] = [
+    // 'reference',
+    'description',
+    'inventory',
+    'delivery_date',
+    'responsible',
+    'link',
+    'contact',
+    // 'address',
     // TotalPriceMixin fields
-    'total_price',
+    // 'total_price',
     'order_currency',
   
     // PurchaseOrder-specific fields
-    'reference',
-    'status',
+    // 'status',
     'supplier',
-    'supplier_reference',
-    'received_by',
-    'issue_date',
-    'complete_date',
+    // 'supplier_reference',
+    // 'received_by',
+    // 'issue_date',
+    // 'complete_date',
+
   
-    'line_items',
   ];

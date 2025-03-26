@@ -1,12 +1,12 @@
 // app/inventory/page.tsx
 import Tabs from '../../../components/common/Tabs';
-import PurchaseOrderView from '../../../components/orders/PurchaseOrderView';
+import PurchaseOrderView from '../../../components/orders/purchaseOrder/PurchaseOrderView';
 
 const InventoryPage = () => {
   const tabs = [
     {
       id: 'all',
-      label: 'All Inventory',
+      label: 'All Purchase Orders',
       content: <PurchaseOrderView />,
     },
     

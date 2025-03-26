@@ -1,3 +1,18 @@
+
+import { Address } from "./management";
+
+export interface CompanyAddressDataInterface extends Address {
+  company: string;
+  title: string;
+  primary: boolean;
+  link?: string;
+  created_at?: string;
+  updated_at?: string;
+  id: number;
+  shipping_notes?: string;
+  internal_shipping_notes?: string;
+}
+
 export interface CompanyDataInterface {
     id: number;
     name: string;
@@ -23,10 +38,9 @@ export interface CompanyDataInterface {
     short_address?:string;
         
   }
-  // interfaces/company.ts
 export interface CompanyAddressInterface {
   id: number;
-  company: number;  // Company ID reference
+  company: number; 
   title: string;
   primary: boolean;
   line1: string;
@@ -36,6 +50,18 @@ export interface CompanyAddressInterface {
   shipping_notes?: string;
   internal_shipping_notes?: string;
   link?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+
+export interface ContactPersonInterface {
+  id: number;
+  company: number;
+  name: string;
+  phone?: string;
+  email?: string | null;
+  role?: string;
   created_at?: string;
   updated_at?: string;
 }

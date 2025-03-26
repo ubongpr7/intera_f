@@ -1,7 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
+@import 'react-phone-number-input/style.css';
 *,
 *::before,
 *::after{
@@ -73,3 +73,21 @@ img{
 .nprogress .peg {
   display: none;
 }
+
+/* Dark mode styles for phone input country dropdown */
+.dark .PhoneInputCountrySelect {
+  @apply bg-gray-800 text-gray-100;
+}
+
+.dark .PhoneInputCountrySelect option {
+  @apply bg-gray-800 text-gray-100;
+}
+
+.dark .PhoneInputCountryIcon {
+  @apply bg-gray-700;
+}
+
+.dark .PhoneInputCountrySelectArrow {
+  @apply text-gray-400;
+}
+

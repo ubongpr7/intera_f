@@ -1,7 +1,7 @@
 // components/company/steps/Step1.tsx (Basic Info)
 import { useGetTypesByModelQuery } from '../../redux/features/common/typeOF';
 import { UseFormRegister, FieldErrors } from 'react-hook-form';
-import { useGetCurrenciesQuery } from '../../redux/features/common/typeOF';
+import { useGetCurrenciesQuery,useGetCurrencyQuery } from '../../redux/features/common/typeOF';
 export function Step1({ register, errors }: { 
     register: UseFormRegister<any>;
     errors: FieldErrors<any>;
@@ -134,7 +134,7 @@ export function Step4({ register, errors }: {
   register: UseFormRegister<any>;
   errors: FieldErrors<any>;
 }) {
-  const { data: response, isLoading, error } = useGetCurrenciesQuery();
+  const { data: response, isLoading, error } = useGetCurrencyQuery();
 
   // Extract currencies from the response
   const currencies = response || [];
@@ -169,8 +169,8 @@ export function Step4({ register, errors }: {
               {currencies
                 .filter((currency) => currency.code !== null) // Filter out currencies with null codes
                 .map((currency) => (
-                  <option key={currency.code} value={currency.code}>
-                    {currency.name} ({currency.code})
+                  <option key={currency.id} value={currency.id}>
+                    {currency.code}
                   </option>
                 ))}
             </>

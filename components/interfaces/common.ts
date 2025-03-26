@@ -1,3 +1,5 @@
+import { LucideIcon } from "lucide-react";
+
 // interfaces/dropdown.ts
 export interface DropdownOption {
     id: number;
@@ -8,4 +10,12 @@ export interface CurrencyResponse {
       code: string;
       name: string;
     }
+  }
+
+  export interface ActionItem {
+    icon: LucideIcon
+    text: string
+    action: () => Promise<void> | void  
+    disabled?: boolean
+    helpText: string
   }

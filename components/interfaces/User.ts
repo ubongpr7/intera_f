@@ -16,6 +16,7 @@ export interface UserData {
     profile?: number | null;
     date_joined: Date | string;
     last_login?: Date | string | null;
+    password:string;
   }
   
   
