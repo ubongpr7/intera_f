@@ -66,9 +66,9 @@ const staffCreateCard =()=>{
                     onSubmit={handleCreate}
                     isLoading={staffCreateLoading}
                     selectOptions={{}}
-                    keyInfo={[]}
+                    keyInfo={{}}
                     notEditableFields={[]}
-                    interfaceKeys={[,'first_name','email', 'password','phone']}
+                    interfaceKeys={['first_name','email', 'password','phone']}
                     optionalFields={[]}
                 />
                 </div>
