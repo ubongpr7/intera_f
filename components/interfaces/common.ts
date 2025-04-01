@@ -19,3 +19,20 @@ export interface CurrencyResponse {
     disabled?: boolean
     helpText: string
   }
+
+
+
+
+
+
+export interface Permission {
+    codename: string
+    name: string
+    description: string
+    category: string
+    has_permission: boolean
+  }
+  
+export  interface CategoryGroup {
+    [key: string]: Permission[]
+  }

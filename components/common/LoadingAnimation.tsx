@@ -7,13 +7,26 @@ interface LoadingAnimationProps {
   size?: number; // Size of the ring in pixels
 }
 
-// Define the component with TypeScript
+
+// components/ActivityLogSkeleton.tsx
+export const ActivityLogSkeleton = () => (
+  <div className="animate-pulse space-y-4 p-6">
+    {[...Array(5)].map((_, i) => (
+      <div key={i} className="flex space-x-4">
+        <div className="h-4 bg-gray-200 rounded w-1/6" />
+        <div className="h-4 bg-gray-200 rounded w-1/6" />
+        <div className="h-4 bg-gray-200 rounded w-1/6" />
+        <div className="h-4 bg-gray-200 rounded w-1/6" />
+        <div className="h-4 bg-gray-200 rounded w-2/6" />
+      </div>
+    ))}
+  </div>
+);
 const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
   text = 'Loading',
-  ringColor = '#3b82f6', // Default color (blue)
+  ringColor = '#3b82f6', 
   size = 16,
 }) => {
-  // Define the ring style using React.CSSProperties
   const ringStyle: React.CSSProperties = {
     width: `${size}px`,
     height: `${size}px`,

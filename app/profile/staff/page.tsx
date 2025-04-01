@@ -1,12 +1,18 @@
 // app/inventory/page.tsx
 import Tabs from '../../../components/common/Tabs';
-import StaffCreateCard from 'components/management/Staff';
+import StaffCreateCard from '../../../components/management/Staff';
+import StaffGroup from '../../../components/management/groups';
 const StaffPage = () => {
   const tabs = [
     {
       id: 'all',
       label: 'All Staff',
       content: <StaffCreateCard />,
+    },
+    {
+      id: 'group',
+      label: 'Staff Group',
+      content: <StaffGroup />,
     },
     
   ];

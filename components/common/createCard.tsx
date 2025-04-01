@@ -212,7 +212,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
           </div>
 
           <div className="flex-1 overflow-y-auto p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
+            <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4 pb-4">
               {regularFields.map((key) => {
                 const keyStr = String(key).toLowerCase();
                 const inputType = getInputType(key);
@@ -276,7 +276,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                                     ? 'border-red-500 ring-red-500' 
                                     : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                                 }`}
-                                value={field.value as string | number | readonly string[] | undefined}
+                                value={field.value as string | number | undefined}
                               >
                                 <option value="">Select {formatLabel(String(key))}</option>
                                 {geoConfig?.data?.map((item) => (

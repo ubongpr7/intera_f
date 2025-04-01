@@ -1,15 +1,12 @@
 'use client'
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useForm, Controller, Path, DefaultValues } from 'react-hook-form';
 import dynamic from 'next/dynamic';
 import LoadingAnimation from './LoadingAnimation';
 import { FieldInfo } from './fileFieldInfor';
 import { isValidPhoneNumber } from 'libphonenumber-js';
-import {
-  useGetContactPersonQuery,
-  useGetCompanyDataQuery,
-} from '../../redux/features/company/companyAPISlice';
+import { useGetContactPersonQuery, useGetCompanyDataQuery } from '../../redux/features/company/companyAPISlice';
 import {
   useGetCountriesQuery,
   useGetRegionsQuery,
@@ -25,47 +22,46 @@ const PhoneInput = dynamic(
   }
 );
 
-interface CustomUpdateCardProps<T> {
-  data: T;
-  editableFields: (keyof T)[];
-  onClose: () => void;
+interface CustomCreateCardProps<T> {
+  defaultValues?: Partial<T>;
   onSubmit: (data: Partial<T>) => Promise<void>;
   selectOptions?: Partial<Record<keyof T, Array<{ value: string; text: string }>>>;
   isLoading: boolean;
   keyInfo?: Partial<Record<keyof T, string>>;
+  notEditableFields?: (keyof T)[];
+  interfaceKeys: (keyof T)[];
+  optionalFields?: (keyof T)[];
   dateFields?: (keyof T)[];
   datetimeFields?: (keyof T)[];
-  optionalFields?: (keyof T)[];
   hiddenFields?: Partial<Record<keyof T, any>>;
-  notEditableFields?: (keyof T)[];
 }
 
-export default function CustomUpdateCard<T extends Record<string, any>>({
-  data,
-  editableFields,
-  onClose,
+export default function CustomCreateForm<T extends Record<string, any>>({
+  defaultValues = {},
   onSubmit,
-  selectOptions,
+  selectOptions = {},
   isLoading,
   keyInfo,
+  notEditableFields = [],
+  interfaceKeys,
+  optionalFields = [],
   dateFields = [],
   datetimeFields = [],
-  optionalFields = [],
   hiddenFields = {},
-  notEditableFields = [],
-}: CustomUpdateCardProps<T>) {
+}: CustomCreateCardProps<T>) {
   const {
     control,
     handleSubmit,
     watch,
     trigger,
+    reset,
     setValue,
     formState: { errors },
   } = useForm<Partial<T>>({
     defaultValues: {
-      ...editableFields.reduce((acc, key) => ({
+      ...interfaceKeys.reduce((acc, key) => ({
         ...acc,
-        [key]: data[key],
+        [key]: defaultValues[key] ?? '',
       }), {} as DefaultValues<Partial<T>>),
       ...hiddenFields,
     },
@@ -98,7 +94,6 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
     },
   };
 
-  // Fetch geo data
   Object.entries(geoFields).forEach(([key, config]) => {
     const watchValue = config.watchKey ? watch(config.watchKey as Path<Partial<T>>) : null;
     const { data } = config.query((watchValue || 0) as any, { skip: !watchValue && !!config.dependsOn });
@@ -107,6 +102,7 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
 
   const selectedSupplier = watch('supplier' as Path<Partial<T>>);
   const { data: contactPersons = [] } = useGetContactPersonQuery(selectedSupplier || 0);
+  const { data: companyData = [] } = useGetCompanyDataQuery(''); 
 
   useEffect(() => {
     const resetDependents = (parentKey: keyof T, ...dependentKeys: (keyof T)[]) => {
@@ -138,7 +134,7 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
   const formatLabel = (str: string) => {
     return str.replace('first_name', 'Name').replace(/_/g, ' ').replace(/(^\w|\s\w)/g, m => m.toUpperCase());
   };
-
+  
   const getInputType = (key: keyof T) => {
     const keyStr = String(key).toLowerCase();
     
@@ -151,7 +147,7 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
     if (keyStr === 'email') return 'email';
     if (selectOptions?.[key]) return 'select';
     
-    const value = data[key];
+    const value = defaultValues[key];
     if (typeof value === 'boolean') return 'checkbox';
     if (typeof value === 'number') return 'number';
     return 'text';
@@ -160,42 +156,22 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
   const onSubmitHandler = async (formData: Partial<T>) => {
     try {
       await onSubmit(formData);
-      onClose();
+      reset();
     } catch (error) {
-      // Handle error
     }
   };
 
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
-  }, [onClose]);
 
-  const regularFields = editableFields.filter(key => 
-    !notEditableFields.includes(key) && String(key) !== 'description'
-  );
-  const hasDescription = editableFields.some(key => 
-    !notEditableFields.includes(key) && String(key) === 'description'
-  );
+  const fields = interfaceKeys.filter(key => !notEditableFields.includes(key));
+  const regularFields = fields.filter(key => String(key) !== 'description');
+  const hasDescription = fields.some(key => String(key) === 'description');
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="fixed inset-0" onClick={onClose} />
-
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl relative flex flex-col max-h-[90vh]">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 z-10"
-        >
-          <X className="w-5 h-5 text-gray-500" />
-        </button>
-
+    <div className="">
+      <div className="">
         <form onSubmit={handleSubmit(onSubmitHandler)} className="flex flex-col overflow-y-auto h-full">
           <div className="p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold">Edit Details</h2>
+            <h2 className="text-xl font-semibold">Create New</h2>
           </div>
 
           <div>
@@ -221,8 +197,10 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                 const keyStr = String(key).toLowerCase();
                 const inputType = getInputType(key);
                 const isGeoField = inputType === 'geo-select';
+                const isOptional = optionalFields.includes(key);
                 const geoConfig = isGeoField ? geoFields[keyStr as keyof typeof geoFields] : null;
                 const isDisabled = geoConfig?.dependsOn ? !watch(geoConfig.dependsOn as Path<Partial<T>>) : false;
+
                 const isContactField = key === 'contact';
                 const isSupplierSelected = !!selectedSupplier;
 
@@ -237,7 +215,7 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                         name={key as Path<Partial<T>>}
                         control={control}
                         rules={{
-                          required: optionalFields.includes(key) ? false : 'This field is required',
+                          required: isOptional ? false : 'This field is required',
                           validate: (value) => {
                             if (isGeoField && value) {
                               const isValid = geoConfig?.data.some(
@@ -248,6 +226,7 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                             if (inputType === 'phone' && value && !isValidPhoneNumber(value.toString())) {
                               return 'Invalid phone number';
                             }
+
                             if (key === 'safety_stock_level' && typeof value === 'number' && Number(value) > Number(minStock)) {
                               return 'Must be ≤ minimum stock level';
                             }
@@ -270,7 +249,6 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                             return (
                               <select
                                 {...field}
-                                value={field.value as string | number | undefined}
                                 disabled={isDisabled}
                                 className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
                                   focus:border-blue-500 py-2 rounded-md ${
@@ -278,10 +256,14 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                                     ? 'border-red-500 ring-red-500' 
                                     : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                                 }`}
+                                value={field.value as string | number | readonly string[] | undefined}
                               >
                                 <option value="">Select {formatLabel(String(key))}</option>
                                 {geoConfig?.data?.map((item) => (
-                                  <option key={item.id} value={item.id}>
+                                  <option
+                                    key={`geo-option-${keyStr}-${item.id}`}
+                                    value={item.id}
+                                  >
                                     {item.name}
                                   </option>
                                 ))}
@@ -323,8 +305,11 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                                 }`}
                               >
                                 <option value="">Select {formatLabel(String(key))}</option>
-                                {selectOptions?.[key]?.map((option) => (
-                                  <option key={option.value} value={option.value}>
+                                {selectOptions[key]?.map((option) => (
+                                  <option
+                                    key={`select-option-${String(key)}-${option.value}`}
+                                    value={option.value}
+                                  >
                                     {option.text}
                                   </option>
                                 ))}
@@ -339,7 +324,6 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                                 {...field}
                                 checked={!!field.value}
                                 className="w-5 h-5"
-                                value={undefined} // Ensure value is not passed for checkboxes
                               />
                             );
                           }
@@ -366,7 +350,7 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                             <input
                               type={inputType}
                               {...field}
-                              value={field.value as string | number | undefined}
+                              value={field.value as string | number | readonly string[] | undefined}
                               className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
                                 focus:border-blue-500 py-2 rounded-md ${
                                 errors[key as string] 
@@ -403,7 +387,6 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                       render={({ field }) => (
                         <textarea
                           {...field}
-                          value={field.value as string || ''}
                           rows={4}
                           className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
                             focus:border-blue-500 py-2 rounded-md ${
@@ -427,21 +410,15 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
 
           <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6">
             <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-100"
-              >
-                Cancel
-              </button>
+              
               <button
                 type="submit"
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500"
               >
                 {isLoading ? (
-                  <LoadingAnimation text="Updating..." ringColor="#3b82f6" />
+                  <LoadingAnimation text="Creating..." ringColor="#3b82f6" />
                 ) : (
-                  'Save Changes'
+                  'Create'
                 )}
               </button>
             </div>

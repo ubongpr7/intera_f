@@ -31,3 +31,15 @@ export interface Address {
     full_address: string | null;
   }
   
+  export interface GroupData{
+    id: number;
+    name: string;
+    description?: string;
+    users: string;
+    users_num: number;
+    permission_num: number;
+  }
+  
+  export interface RoleData extends GroupData{
+
+  }

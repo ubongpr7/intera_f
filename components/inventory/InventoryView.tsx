@@ -155,8 +155,7 @@ function InventoryView() {
     <div>
       <PageHeader
         title="Inventory"
-        onClose={() => setIsCreateOpen(true)} // Renamed to onCreate for clarity
-      />
+        onClose={() =>setIsCreateOpen(true)}      />
       <DataTable<InventoryData>
         columns={inventoryColumns}
         data={data || []}
@@ -168,7 +167,9 @@ function InventoryView() {
       <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>
         <CustomCreateCard
           defaultValues={defaultValues}
-          onClose={() => setIsCreateOpen(false)}
+          onClose={() => {setIsCreateOpen(false)
+          
+          }}
           onSubmit={handleCreate}
           isLoading={inventoryCreateLoading}
           selectOptions={selectOptions}

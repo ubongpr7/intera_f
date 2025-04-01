@@ -57,6 +57,7 @@ export const PurchaseOrderKeyInfo = {
     'delivery_date',
     'responsible',
     'link',
+    'supplier',
     'contact',
     // 'address',
     // TotalPriceMixin fields
@@ -65,7 +66,6 @@ export const PurchaseOrderKeyInfo = {
   
     // PurchaseOrder-specific fields
     // 'status',
-    'supplier',
     // 'supplier_reference',
     // 'received_by',
     // 'issue_date',

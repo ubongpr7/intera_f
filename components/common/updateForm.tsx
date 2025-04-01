@@ -28,7 +28,6 @@ const PhoneInput = dynamic(
 interface CustomUpdateCardProps<T> {
   data: T;
   editableFields: (keyof T)[];
-  onClose: () => void;
   onSubmit: (data: Partial<T>) => Promise<void>;
   selectOptions?: Partial<Record<keyof T, Array<{ value: string; text: string }>>>;
   isLoading: boolean;
@@ -40,10 +39,9 @@ interface CustomUpdateCardProps<T> {
   notEditableFields?: (keyof T)[];
 }
 
-export default function CustomUpdateCard<T extends Record<string, any>>({
+export default function CustomUpdateForm<T extends Record<string, any>>({
   data,
   editableFields,
-  onClose,
   onSubmit,
   selectOptions,
   isLoading,
@@ -160,19 +158,11 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
   const onSubmitHandler = async (formData: Partial<T>) => {
     try {
       await onSubmit(formData);
-      onClose();
     } catch (error) {
-      // Handle error
+
     }
   };
 
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
-  }, [onClose]);
 
   const regularFields = editableFields.filter(key => 
     !notEditableFields.includes(key) && String(key) !== 'description'
@@ -182,17 +172,8 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
   );
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="fixed inset-0" onClick={onClose} />
-
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl relative flex flex-col max-h-[90vh]">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 z-10"
-        >
-          <X className="w-5 h-5 text-gray-500" />
-        </button>
-
+    <div className="">
+      <div className="">
         <form onSubmit={handleSubmit(onSubmitHandler)} className="flex flex-col overflow-y-auto h-full">
           <div className="p-6 border-b border-gray-200">
             <h2 className="text-xl font-semibold">Edit Details</h2>
@@ -427,13 +408,7 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
 
           <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6">
             <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-100"
-              >
-                Cancel
-              </button>
+              
               <button
                 type="submit"
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500"

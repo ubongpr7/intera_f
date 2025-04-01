@@ -108,7 +108,7 @@ function CompanyAddressView({company_id}:CompanyProps) {
           keyInfo={CompanyAddressKeyInfo}
           notEditableFields={notEditableCompanyFields}
           interfaceKeys={CompanyAddressInterfaceKeys}
-          optionalFields={['primary','city', 'subregion','shipping_notes']}
+          optionalFields={['primary','city','link', 'subregion','shipping_notes']}
           hiddenFields={{
           company:company_id
           }}

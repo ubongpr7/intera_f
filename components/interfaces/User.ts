@@ -1,3 +1,4 @@
+
 // types/user.ts
 export interface UserData {
     id: number;
@@ -19,4 +20,31 @@ export interface UserData {
     password:string;
   }
   
+
+export interface ActivityLogInterface {
+  id: string;
+  user: {
+    id: string;
+    username: string;
+    email: string;
+  };
+  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'APPROVE' | 'CANCEL';
+  model_name: string;
+  object_id: number;
+  timestamp: string;
+  details: {
+    changes: Record<string, { old: unknown; new: unknown }>;
+    ip_address: string;
+    user_agent: string;
+  };
+  model_identifier: string;
+}
+
+export interface ActivityLogResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: ActivityLogInterface[];
+}
+
   

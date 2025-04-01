@@ -151,6 +151,7 @@ function PurchaseOrderView() {
           notEditableFields={notEditableFields}
           interfaceKeys={PurchaseOrderInterfaceKeys}
           dateFields={['delivery_date']}
+          optionalFields={['link']}
         />
       </div>
     </div>

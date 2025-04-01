@@ -1,66 +1,76 @@
 'use client'
-import { UserData } from "../interfaces/User";
+import { RoleData } from "../interfaces/management";
 import CustomCreateCard from "../common/createCard";
 import { PageHeader } from "../inventory/PageHeader";
 import { useState } from "react";
-import { useGetCompanyUsersQuery,useCreateStaffUserMutation } from "../../redux/features/users/userApiSlice";
+import { useGetRolesQuery,useCreateRoleMutation } from "../../redux/features/management/groups";
+import { useGetRolePermissionQuery,useUpdateRolePermissionMutation, } from "../../redux/features/permission/permit";
 import { Column, DataTable } from "../common/DataTable/DataTable";
 import { useRouter } from 'nextjs-toploader/app';
 import VerticalTabs from '../common/verticalTabs'
-import ActivityLogs from './activityLogs'
-import { useUpdateUserPermissionMutation,useGetUserPermissionQuery } from "../../redux/features/permission/permit";
-import UserPermissionForm from '../permissions/customPermission';
+import RolePermissionForm from '../permissions/customPermission';
+import ActivityLogs from './activityLogs';
+import { Permission } from "components/interfaces/common";
 
 
 
-const inventoryColumns: Column<UserData>[] = [
+
+const inventoryColumns: Column<RoleData>[] = [
   {
     header: 'Name',
-    accessor: 'first_name',
+    accessor: 'name',
     render: (value) => value || 'N/A',
     className: 'font-medium',
   },
   {
-    header: 'Email',
-    accessor: 'email',
+    header: 'Permission',
+    accessor: 'permission_num',
     render: (value) => value || 'N/A',
-    info: 'Category to which the inventory belong',
+    info: 'Number of Permissions',
+  },
+  {
+    header: 'Users',
+    accessor: 'users_num',
+    render: (value) => value || 'N/A',
+    info: 'Number of Users',
+  },
+  {
+    header: 'Email',
+    accessor: 'description',
+    render: (value) => value || 'N/A',
+    info: '',
   },
   
-  {
-    header: 'Phone',
-    accessor: 'phone',
-    render: (value) => value || 'N/A',
-    info: 'Category to which the inventory belong',
-  },
   
 ];
 
 
-const staffCreateCard =()=>{
+const StaffRole =()=>{
   const [isCreateOpen, setIsCreateOpen] = useState(false); 
   const [openTabs, setOpenTabs] = useState(false); 
-  const [userId, setUserId] = useState('0'); 
+  const [roleId, setRoleId] = useState('0'); 
   const [refetchData, setRefetchData] = useState(false); 
-  const { data, isLoading, refetch, error } = useGetCompanyUsersQuery();
+  const { data, isLoading, refetch, error } = useGetRolesQuery();
   const router = useRouter();
-  const [createStaff, { isLoading: staffCreateLoading }] = useCreateStaffUserMutation();
+  const [createGroup, { isLoading: staffCreateLoading }] = useCreateRoleMutation();
+
   
   const { data: permissionsData,
      isLoading:permissionDataLoading,
-     refetch :refetchPermissions} = useGetUserPermissionQuery(userId, {
-      skip: !userId || userId === "0",
+     refetch :refetchPermissions} = useGetRolePermissionQuery(roleId, {
+      skip: !roleId || roleId === "0",
     });
-  const [updatePermission, { isLoading: permissionLoading }] = useUpdateUserPermissionMutation();
+  const [updatePermission, { isLoading: permissionLoading }] = useUpdateRolePermissionMutation();
 
   const handleUpdatePermissionSubmit = async (createdData: { permissions: string[] }) => {
-    await updatePermission({id:userId,data: createdData}).unwrap();
+    await updatePermission({id:roleId,data: createdData}).unwrap();
     await refetch();
     await refetchPermissions()
   };
-  const handleRowClick =  (row: UserData) => {
+
+  const handleRowClick =  (row: RoleData) => {
     setRefetchData(true)
-    setUserId(`${row.id}`)
+    setRoleId(`${row.id}`)
     if (permissionsData) {
       refetchPermissions();
     };
@@ -69,10 +79,8 @@ const staffCreateCard =()=>{
 
   };
 
-
-
-  const handleCreate = async (createdData: Partial<UserData>) => {
-    await createStaff(createdData).unwrap();
+  const handleCreate = async (createdData: Partial<RoleData>) => {
+    await createGroup(createdData).unwrap();
     setIsCreateOpen(false); 
     await refetch();
   };
@@ -81,10 +89,10 @@ const staffCreateCard =()=>{
         <div>
         
             <PageHeader
-            title="Staff"
+            title="Roles"
             onClose={() => setIsCreateOpen(true)}
             />
-            <DataTable<UserData>
+            <DataTable<RoleData>
             columns={inventoryColumns}
             data={data || []}
             isLoading={isLoading}
@@ -100,7 +108,7 @@ const staffCreateCard =()=>{
                     selectOptions={{}}
                     keyInfo={{}}
                     notEditableFields={[]}
-                    interfaceKeys={['first_name','email', 'password','phone']}
+                    interfaceKeys={['name', 'description' ]}
                     optionalFields={[]}
                 />
                 </div>
@@ -108,19 +116,11 @@ const staffCreateCard =()=>{
             <div className={`fixed  inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${openTabs ? 'block' : 'hidden'}`}>
                 <VerticalTabs
                         items={[
-                        {
-                            id: 'activities',
-                            label: 'Staff Activities',
-                            content: <ActivityLogs 
-                            userId={userId}
-                            refetchData={refetchData}
-                            onRefetchComplete={() => setRefetchData(false)}
-                            />
-                          },
+                        
                           {
                             id: 'permission',
-                            label: 'Staff Permissions',
-                            content:<UserPermissionForm 
+                            label: 'Staff Role Permissions',
+                            content:<RolePermissionForm 
                             permissionsData={permissionsData}
                             permissionLoading={permissionLoading}
                             isLoading= {permissionDataLoading}
@@ -140,4 +140,4 @@ const staffCreateCard =()=>{
         </div>
     )
 }
-export default staffCreateCard;
+export default StaffRole;

@@ -1,90 +1,95 @@
 'use client'
-import { UserData } from "../interfaces/User";
+import { GroupData } from "../interfaces/management";
 import CustomCreateCard from "../common/createCard";
 import { PageHeader } from "../inventory/PageHeader";
 import { useState } from "react";
-import { useGetCompanyUsersQuery,useCreateStaffUserMutation } from "../../redux/features/users/userApiSlice";
+import { useGetGroupsQuery,useCreateGroupMutation } from "../../redux/features/management/groups";
 import { Column, DataTable } from "../common/DataTable/DataTable";
 import { useRouter } from 'nextjs-toploader/app';
 import VerticalTabs from '../common/verticalTabs'
-import ActivityLogs from './activityLogs'
-import { useUpdateUserPermissionMutation,useGetUserPermissionQuery } from "../../redux/features/permission/permit";
-import UserPermissionForm from '../permissions/customPermission';
+import GroupPermissionForm from '../permissions/customPermission';
+import ActivityLogs from './activityLogs';
+import { useUpdateGroupPermissionMutation,useGetGroupPermissionQuery } from "../../redux/features/permission/permit";
+import { Permission } from "components/interfaces/common";
 
 
 
-const inventoryColumns: Column<UserData>[] = [
+
+const inventoryColumns: Column<GroupData>[] = [
   {
     header: 'Name',
-    accessor: 'first_name',
+    accessor: 'name',
     render: (value) => value || 'N/A',
     className: 'font-medium',
   },
   {
-    header: 'Email',
-    accessor: 'email',
+    header: 'Permission',
+    accessor: 'permission_num',
     render: (value) => value || 'N/A',
-    info: 'Category to which the inventory belong',
+    info: 'Number of Permissions',
+  },
+  {
+    header: 'Users',
+    accessor: 'users_num',
+    render: (value) => value || 'N/A',
+    info: 'Number of Users',
+  },
+  {
+    header: 'Email',
+    accessor: 'description',
+    render: (value) => value || 'N/A',
+    info: '',
   },
   
-  {
-    header: 'Phone',
-    accessor: 'phone',
-    render: (value) => value || 'N/A',
-    info: 'Category to which the inventory belong',
-  },
   
 ];
 
 
-const staffCreateCard =()=>{
+const StaffGroup =()=>{
   const [isCreateOpen, setIsCreateOpen] = useState(false); 
   const [openTabs, setOpenTabs] = useState(false); 
-  const [userId, setUserId] = useState('0'); 
+  const [groupId, setGroupId] = useState('0'); 
   const [refetchData, setRefetchData] = useState(false); 
-  const { data, isLoading, refetch, error } = useGetCompanyUsersQuery();
-  const router = useRouter();
-  const [createStaff, { isLoading: staffCreateLoading }] = useCreateStaffUserMutation();
-  
+  const { data, isLoading, refetch, error } = useGetGroupsQuery();
+  const [createGroup, { isLoading: staffCreateLoading }] = useCreateGroupMutation();
   const { data: permissionsData,
      isLoading:permissionDataLoading,
-     refetch :refetchPermissions} = useGetUserPermissionQuery(userId, {
-      skip: !userId || userId === "0",
+     refetch :refetchPermissions} = useGetGroupPermissionQuery(groupId, {
+      skip: !groupId || groupId === "0",
     });
-  const [updatePermission, { isLoading: permissionLoading }] = useUpdateUserPermissionMutation();
+  const [updatePermission, { isLoading: permissionLoading }] = useUpdateGroupPermissionMutation();
+  
 
   const handleUpdatePermissionSubmit = async (createdData: { permissions: string[] }) => {
-    await updatePermission({id:userId,data: createdData}).unwrap();
+    await updatePermission({id:groupId,data: createdData}).unwrap();
     await refetch();
     await refetchPermissions()
   };
-  const handleRowClick =  (row: UserData) => {
-    setRefetchData(true)
-    setUserId(`${row.id}`)
+
+  const handleCreate = async (createdData: Partial<GroupData>) => {
+    await createGroup(createdData).unwrap();
+    setIsCreateOpen(false); 
+    await refetch();
+  };
+  const handleRowClick =  (row: GroupData) => {
+    setRefetchData(true)  
+    setGroupId(`${row.id}`)
     if (permissionsData) {
       refetchPermissions();
     };
     setOpenTabs(true)
     refetch()
 
+
   };
-
-
-
-  const handleCreate = async (createdData: Partial<UserData>) => {
-    await createStaff(createdData).unwrap();
-    setIsCreateOpen(false); 
-    await refetch();
-  };
- 
     return (
         <div>
         
             <PageHeader
-            title="Staff"
+            title="Groups"
             onClose={() => setIsCreateOpen(true)}
             />
-            <DataTable<UserData>
+            <DataTable<GroupData>
             columns={inventoryColumns}
             data={data || []}
             isLoading={isLoading}
@@ -100,7 +105,7 @@ const staffCreateCard =()=>{
                     selectOptions={{}}
                     keyInfo={{}}
                     notEditableFields={[]}
-                    interfaceKeys={['first_name','email', 'password','phone']}
+                    interfaceKeys={['name', 'description' ]}
                     optionalFields={[]}
                 />
                 </div>
@@ -108,19 +113,11 @@ const staffCreateCard =()=>{
             <div className={`fixed  inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${openTabs ? 'block' : 'hidden'}`}>
                 <VerticalTabs
                         items={[
-                        {
-                            id: 'activities',
-                            label: 'Staff Activities',
-                            content: <ActivityLogs 
-                            userId={userId}
-                            refetchData={refetchData}
-                            onRefetchComplete={() => setRefetchData(false)}
-                            />
-                          },
+                        
                           {
                             id: 'permission',
-                            label: 'Staff Permissions',
-                            content:<UserPermissionForm 
+                            label: 'Staff Group Permissions',
+                            content:<GroupPermissionForm 
                             permissionsData={permissionsData}
                             permissionLoading={permissionLoading}
                             isLoading= {permissionDataLoading}
@@ -140,4 +137,6 @@ const staffCreateCard =()=>{
         </div>
     )
 }
-export default staffCreateCard;
+export default StaffGroup;
+
+

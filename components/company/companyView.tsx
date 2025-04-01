@@ -42,7 +42,7 @@ const inventoryColumns: Column<CompanyDataInterface>[] = [
     info: 'Category to which the inventory belong',
   },
   {
-    header: 'Base Currency',
+    header: 'Currency',
     accessor: 'base_currency',
     render: (value) => value || 'N/A',
     info: 'Category to which the inventory belong',
@@ -128,7 +128,7 @@ function CompanyView() {
           keyInfo={CompanyKeyInfo}
           notEditableFields={notEditableCompanyFields}
           interfaceKeys={CompanyInterfaceKeys}
-          optionalFields={['is_supplier', 'is_customer','is_manufacturer']}
+          optionalFields={['is_supplier','description', 'is_customer','is_manufacturer']}
         />
       </div>
     </div>
