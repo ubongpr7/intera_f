@@ -1,4 +1,5 @@
 // app/inventory/page.tsx
+import StaffRole from '../../../components/management/roles';
 import Tabs from '../../../components/common/Tabs';
 import StaffCreateCard from '../../../components/management/Staff';
 import StaffGroup from '../../../components/management/groups';
@@ -13,6 +14,12 @@ const StaffPage = () => {
       id: 'group',
       label: 'Staff Group',
       content: <StaffGroup />,
+    },
+    
+    {
+      id: 'role',
+      label: 'Staff Role',
+      content: <StaffRole />,
     },
     
   ];

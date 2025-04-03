@@ -8,7 +8,6 @@ import { Column, DataTable } from "../common/DataTable/DataTable";
 import { useRouter } from 'nextjs-toploader/app';
 import VerticalTabs from '../common/verticalTabs'
 import GroupPermissionForm from '../permissions/customPermission';
-import ActivityLogs from './activityLogs';
 import { useUpdateGroupPermissionMutation,useGetGroupPermissionQuery } from "../../redux/features/permission/permit";
 import { Permission } from "components/interfaces/common";
 

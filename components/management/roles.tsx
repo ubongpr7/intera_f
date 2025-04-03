@@ -3,13 +3,12 @@ import { RoleData } from "../interfaces/management";
 import CustomCreateCard from "../common/createCard";
 import { PageHeader } from "../inventory/PageHeader";
 import { useState } from "react";
-import { useGetRolesQuery,useCreateRoleMutation } from "../../redux/features/management/groups";
-import { useGetRolePermissionQuery,useUpdateRolePermissionMutation, } from "../../redux/features/permission/permit";
+import { useCreateRoleMutation,useGetRolesQuery } from "../../redux/features/management/groups";
 import { Column, DataTable } from "../common/DataTable/DataTable";
 import { useRouter } from 'nextjs-toploader/app';
 import VerticalTabs from '../common/verticalTabs'
 import RolePermissionForm from '../permissions/customPermission';
-import ActivityLogs from './activityLogs';
+import { useUpdateRolePermissionMutation,useGetRolePermissionQuery } from "../../redux/features/permission/permit";
 import { Permission } from "components/interfaces/common";
 
 
@@ -48,35 +47,22 @@ const inventoryColumns: Column<RoleData>[] = [
 const StaffRole =()=>{
   const [isCreateOpen, setIsCreateOpen] = useState(false); 
   const [openTabs, setOpenTabs] = useState(false); 
-  const [roleId, setRoleId] = useState('0'); 
+  const [roleID, setRoleID] = useState('0'); 
   const [refetchData, setRefetchData] = useState(false); 
   const { data, isLoading, refetch, error } = useGetRolesQuery();
-  const router = useRouter();
   const [createGroup, { isLoading: staffCreateLoading }] = useCreateRoleMutation();
-
-  
   const { data: permissionsData,
      isLoading:permissionDataLoading,
-     refetch :refetchPermissions} = useGetRolePermissionQuery(roleId, {
-      skip: !roleId || roleId === "0",
+     refetch :refetchPermissions} = useGetRolePermissionQuery(roleID, {
+      skip: !roleID || roleID === "0",
     });
   const [updatePermission, { isLoading: permissionLoading }] = useUpdateRolePermissionMutation();
+  
 
   const handleUpdatePermissionSubmit = async (createdData: { permissions: string[] }) => {
-    await updatePermission({id:roleId,data: createdData}).unwrap();
+    await updatePermission({id:roleID,data: createdData}).unwrap();
     await refetch();
     await refetchPermissions()
-  };
-
-  const handleRowClick =  (row: RoleData) => {
-    setRefetchData(true)
-    setRoleId(`${row.id}`)
-    if (permissionsData) {
-      refetchPermissions();
-    };
-    setOpenTabs(true)
-    refetch()
-
   };
 
   const handleCreate = async (createdData: Partial<RoleData>) => {
@@ -84,7 +70,17 @@ const StaffRole =()=>{
     setIsCreateOpen(false); 
     await refetch();
   };
- 
+  const handleRowClick =  (row: RoleData) => {
+    setRefetchData(true)  
+    setRoleID(`${row.id}`)
+    if (permissionsData) {
+      refetchPermissions();
+    };
+    setOpenTabs(true)
+    refetch()
+
+
+  };
     return (
         <div>
         
@@ -119,7 +115,7 @@ const StaffRole =()=>{
                         
                           {
                             id: 'permission',
-                            label: 'Staff Role Permissions',
+                            label: 'Staff Group Permissions',
                             content:<RolePermissionForm 
                             permissionsData={permissionsData}
                             permissionLoading={permissionLoading}
@@ -141,3 +137,5 @@ const StaffRole =()=>{
     )
 }
 export default StaffRole;
+
+
