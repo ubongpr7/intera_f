@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import { Edit } from 'lucide-react';
 import CustomUpdateCard from './updateCard';
-import ActionHeader, { ActionItem } from './actions';
+import ActionHeader from './actions';
+import { ActionItem } from '../interfaces/common'
+
 
 interface DetailCardProps<T> {
   data: T;
