@@ -59,7 +59,6 @@ function CompanyView() {
   const currencies = response||[]
   
 
-  console.log(typeof currencies);
   const currencyOptions = currencies.map(currency => ({
   value: currency.id,
   text: `${currency.code} `

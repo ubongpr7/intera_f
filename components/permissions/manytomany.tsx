@@ -60,7 +60,6 @@ const UserGroupManager: React.FC<UserGroupManagerProps> = ({ userId }) => {
       refetchUserGroups();
       setHasChanges(false);
     } catch (error) {
-      console.error('Update error:', error);
       toast.error('Failed to update user groups.');
     }
   };

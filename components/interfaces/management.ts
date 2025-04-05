@@ -40,9 +40,7 @@ export interface Address {
     permission_num: number;
   }
   
-  export interface RoleData extends GroupData{
-
-  }
+  export type RoleData = GroupData;
 
 
   // Request payload for creating/updating a role assignment
