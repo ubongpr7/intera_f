@@ -47,7 +47,7 @@ interface ItemType {
   belongs_to: boolean;
 }
 
-const staffCreateCard =()=>{
+const StaffCreateCard =()=>{
   const [isCreateOpen, setIsCreateOpen] = useState(false); 
   const [openTabs, setOpenTabs] = useState(false); 
   const [userId, setUserId] = useState('0'); 
@@ -195,4 +195,4 @@ const staffCreateCard =()=>{
         </div>
     )
 }
-export default staffCreateCard;
+export default StaffCreateCard;
