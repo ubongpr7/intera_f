@@ -55,6 +55,7 @@ export default function VerificationForm({ userId,redirectTo }: VerificationProp
       }
     }
   };
+
   const handleCodeChange = (index: number, value: string) => {
     // Allow only numbers and limit to 1 character
     const numericValue = value.replace(/\D/g, '').slice(0, 1);

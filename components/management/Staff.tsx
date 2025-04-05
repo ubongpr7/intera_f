@@ -8,9 +8,14 @@ import { Column, DataTable } from "../common/DataTable/DataTable";
 import { useRouter } from 'nextjs-toploader/app';
 import VerticalTabs from '../common/verticalTabs'
 import ActivityLogs from './activityLogs'
-import { useUpdateUserPermissionMutation,useGetUserPermissionQuery } from "../../redux/features/permission/permit";
+import { useUpdateUserPermissionMutation,useGetUserPermissionQuery,useGetUserGroupsQuery, useUpdateUserGroupMutation, useAssignUserRoleMutation } from "../../redux/features/permission/permit";
 import UserPermissionForm from '../permissions/customPermission';
-
+import UserGroupManager from '../permissions/manytomany';
+import CustomUpdateForm from "../common/updateForm";
+import { useUpdateUserMutation } from "../../redux/features/users/userApiSlice";
+import { RoleAssignment, RoleData } from "components/interfaces/management";
+import { useGetRolesQuery } from "../../redux/features/management/groups";
+import RoleManager from "./roleManager";
 
 
 const inventoryColumns: Column<UserData>[] = [
@@ -36,6 +41,11 @@ const inventoryColumns: Column<UserData>[] = [
   
 ];
 
+interface ItemType {
+  id: string;
+  name: string;
+  belongs_to: boolean;
+}
 
 const staffCreateCard =()=>{
   const [isCreateOpen, setIsCreateOpen] = useState(false); 
@@ -45,7 +55,8 @@ const staffCreateCard =()=>{
   const { data, isLoading, refetch, error } = useGetCompanyUsersQuery();
   const router = useRouter();
   const [createStaff, { isLoading: staffCreateLoading }] = useCreateStaffUserMutation();
-  
+  const [userRoles, setUserRoles] = useState<RoleAssignment[]>([]);
+
   const { data: permissionsData,
      isLoading:permissionDataLoading,
      refetch :refetchPermissions} = useGetUserPermissionQuery(userId, {
@@ -58,9 +69,16 @@ const staffCreateCard =()=>{
     await refetch();
     await refetchPermissions()
   };
+
+
+
+
   const handleRowClick =  (row: UserData) => {
     setRefetchData(true)
     setUserId(`${row.id}`)
+    setUserDetail(row)
+    setUserRoles(row?.roles || []);
+    
     if (permissionsData) {
       refetchPermissions();
     };
@@ -71,12 +89,22 @@ const staffCreateCard =()=>{
 
 
 
+ 
   const handleCreate = async (createdData: Partial<UserData>) => {
     await createStaff(createdData).unwrap();
     setIsCreateOpen(false); 
     await refetch();
   };
- 
+  const [updateUser, { isLoading: userUpdateLoading }] = useUpdateUserMutation();
+  const [userDetail,setUserDetail] = useState<UserData>();
+  
+    const handleUpdate = async (createdData: Partial<UserData>) => {
+      const updateData=await updateUser({id:userId,data: createdData}).unwrap();
+      setUserDetail(updateData)
+      await refetch();
+    };
+    
+    
     return (
         <div>
         
@@ -107,35 +135,62 @@ const staffCreateCard =()=>{
 
             <div className={`fixed  inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${openTabs ? 'block' : 'hidden'}`}>
                 <VerticalTabs
-                        items={[
+                    items={[
+                      {
+                        id: 'activities',
+                        label: 'Staff Activities',
+                        content: <ActivityLogs 
+                          userId={userId}
+                          refetchData={refetchData}
+                          onRefetchComplete={() => setRefetchData(false)}
+                        />,
+                      },
+                      {
+                        id: 'permission',
+                        label: 'Staff Permissions',
+                        content: <UserPermissionForm 
+                          permissionsData={permissionsData}
+                          permissionLoading={permissionLoading}
+                          isLoading={permissionDataLoading}
+                          onSubmit={handleUpdatePermissionSubmit}
+                        />,
+                      },
+                      ...(userId !== '0' ? [
                         {
-                            id: 'activities',
-                            label: 'Staff Activities',
-                            content: <ActivityLogs 
-                            userId={userId}
-                            refetchData={refetchData}
-                            onRefetchComplete={() => setRefetchData(false)}
-                            />
-                          },
-                          {
-                            id: 'permission',
-                            label: 'Staff Permissions',
-                            content:<UserPermissionForm 
-                            permissionsData={permissionsData}
-                            permissionLoading={permissionLoading}
-                            isLoading= {permissionDataLoading}
-                            onSubmit={handleUpdatePermissionSubmit}
-
-                            />
-                          },
-                          
-                         
+                          id: 'details',
+                          label: 'User Details',
+                          content: <CustomUpdateForm
+                            data={userDetail}
+                            isLoading={userUpdateLoading}
+                            onSubmit={handleUpdate}
+                            editableFields={['first_name', 'phone']}
+                            displayKeys={['first_name', 'phone', 'email']}
+                            selectOptions={{}}
+                            keyInfo={{}}
+                            notEditableFields={[]}
+                          />,
+                        },
+                        {
+                          id: 'group',
+                          label: 'Staff Group',
+                          content: <UserGroupManager userId={userId} />,
+                        },
                         
-                        ]}
-                        onClose={()=>setOpenTabs(false)}
-                        className="border rounded-lg p-4"
-                      />
-
+                        {
+                          id: 'update',
+                          label: ' Staff Roles',
+                          content: <RoleManager
+                            userId={userId}
+                            roles={userRoles || []}
+                            refetch={refetch}
+                            closeTab={() => setOpenTabs(false)}
+                          />,
+                        },
+                      ] : []),
+                    ]}
+                    onClose={() => setOpenTabs(false)}
+                    className="border rounded-lg p-4"
+                  />
                 </div>
         </div>
     )

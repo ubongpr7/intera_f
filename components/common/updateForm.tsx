@@ -17,6 +17,8 @@ import {
   useGetCitiesQuery,
 } from '../../redux/features/common/typeOF';
 
+
+
 const PhoneInput = dynamic(
   () => import('react-phone-number-input'),
   { 
@@ -37,6 +39,7 @@ interface CustomUpdateCardProps<T> {
   optionalFields?: (keyof T)[];
   hiddenFields?: Partial<Record<keyof T, any>>;
   notEditableFields?: (keyof T)[];
+  displayKeys?: (keyof T)[];
 }
 
 export default function CustomUpdateForm<T extends Record<string, any>>({
@@ -51,7 +54,9 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
   optionalFields = [],
   hiddenFields = {},
   notEditableFields = [],
+  displayKeys = [],
 }: CustomUpdateCardProps<T>) {
+  const safeData = data || {} as T;
   const {
     control,
     handleSubmit,
@@ -63,12 +68,12 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
     defaultValues: {
       ...editableFields.reduce((acc, key) => ({
         ...acc,
-        [key]: data[key],
+        [key]: safeData[key] ?? '', // Use safeData with fallback
       }), {} as DefaultValues<Partial<T>>),
       ...hiddenFields,
     },
   });
-
+  
   const geoFields = {
     country: {
       query: useGetCountriesQuery,
@@ -102,7 +107,7 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
     const { data } = config.query((watchValue || 0) as any, { skip: !watchValue && !!config.dependsOn });
     geoFields[key as keyof typeof geoFields].data = data || [];
   });
-
+  const [edit,setEdit] = useState(false);
   const selectedSupplier = watch('supplier' as Path<Partial<T>>);
   const { data: contactPersons = [] } = useGetContactPersonQuery(selectedSupplier || 0);
 
@@ -149,7 +154,7 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
     if (keyStr === 'email') return 'email';
     if (selectOptions?.[key]) return 'select';
     
-    const value = data[key];
+    const value = data?.[key];
     if (typeof value === 'boolean') return 'checkbox';
     if (typeof value === 'number') return 'number';
     return 'text';
@@ -158,8 +163,8 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
   const onSubmitHandler = async (formData: Partial<T>) => {
     try {
       await onSubmit(formData);
+      setEdit(false);
     } catch (error) {
-
     }
   };
 
@@ -170,15 +175,38 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
   const hasDescription = editableFields.some(key => 
     !notEditableFields.includes(key) && String(key) === 'description'
   );
-
+  
   return (
     <div className="">
-      <div className="">
-        <form onSubmit={handleSubmit(onSubmitHandler)} className="flex flex-col overflow-y-auto h-full">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold">Edit Details</h2>
-          </div>
+    {!edit && (
+      <div>
+      {}
+    <ResponsiveDataGrid
+        data={safeData}
+        keys={displayKeys}
 
+      />
+      
+      <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6">
+      <div className="flex justify-end gap-3">
+        
+        <button
+          type="button"
+          onClick={() => setEdit(true)}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500"
+        >
+        Edit    
+      </button>
+      </div>
+      </div>
+      </div>
+    )}
+      <div className="">
+      {edit && (
+      <form 
+        onSubmit={handleSubmit(onSubmitHandler)} 
+        className={`flex flex-col overflow-y-auto h-full `}
+      >
           <div>
             {Object.entries(hiddenFields).map(([fieldName, fieldValue]) => (
               <Controller
@@ -195,7 +223,6 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
               />
             ))}
           </div>
-
           <div className="flex-1 overflow-y-auto p-6">
             <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4 pb-4">
               {regularFields.map((key) => {
@@ -331,7 +358,7 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
                                 {...field}
                                 international
                                 defaultCountry="NG"
-                                className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none 
+                                className={`w-full  bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none 
                                   focus:border-blue-500 py-2 rounded-md ${
                                   errors[key as string] 
                                     ? 'border-red-500 ring-red-500' 
@@ -422,7 +449,64 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
             </div>
           </div>
         </form>
+      )}
       </div>
+    </div>
+  );
+}
+
+
+import { clsx } from 'clsx';
+
+interface DataGridProps<T extends Record<string, any>> {
+  data: T;
+  keys: (keyof T)[];
+}
+
+const formatLabel = (str: string) => {
+  return str
+    .replace(/([A-Z])/g, ' $1') // Add space before capital letters
+    .replace(/_/g, ' ') // Replace underscores with spaces
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase()); // Capitalize first letter of each word
+};
+
+export  function ResponsiveDataGrid<T extends Record<string, any>>({
+  data,
+  keys,
+}: DataGridProps<T>) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+      {keys.map((key) => {
+        const value = data[key];
+        const isDescription = key === 'description';
+
+        return (
+          <div
+            key={String(key)}
+            className={clsx(
+              'bg-white p-4 rounded-lg border border-gray-200 shadow-sm',
+              {
+                'col-span-full': isDescription,
+                'break-words': isDescription,
+              }
+            )}
+          >
+            <div className="text-sm font-medium text-gray-500 mb-1 capitalize">
+              {formatLabel(String(key))}
+            </div>
+            <div className={clsx('text-gray-900', { 'text-sm': isDescription })}>
+              {typeof value === 'boolean' ? (
+                <span className="text-blue-600">{value ? 'Yes' : 'No'}</span>
+              ) : value ? (
+                String(value)
+              ) : (
+                <span className="text-gray-400">N/A</span>
+              )}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

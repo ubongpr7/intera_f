@@ -1,3 +1,4 @@
+import { RoleAssignment } from "./management";
 
 // types/user.ts
 export interface UserData {
@@ -18,6 +19,7 @@ export interface UserData {
     date_joined: Date | string;
     last_login?: Date | string | null;
     password:string;
+    roles?: RoleAssignment[];
   }
   
 

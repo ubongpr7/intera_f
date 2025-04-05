@@ -1,3 +1,4 @@
+import { RoleAssignment } from '../../../components/interfaces/management';
 import { apiSlice } from '../../services/apiSlice';
 
 const management_api=`permission_api`
@@ -12,14 +13,31 @@ export const permisionsAPISlice = apiSlice.injectEndpoints({
         body: data
       }),
     }),
-    
+    assignUserRole: builder.mutation({
+      query: (  data:Partial<RoleAssignment> ) => ({
+        url: `/${management_api}/role-assignments/roles/`,
+        method: 'POST',
+        body: data
+      }),
+    }),
     getUserPermission: builder.query({
       query: (id) => `/${management_api}/users/${id}/permissions/`,
+    }),
+  
+    getUserGroups: builder.query({
+      query: (id) => `/${management_api}/user/${id}/groups/`,
     }),
   
     updateGroupPermission: builder.mutation({
       query: ({ id, data }) => ({
         url: `/${management_api}/groups/${id}/permissions/`,
+        method: 'PUT',
+        body: data
+      }),
+    }),
+    updateUserGroup: builder.mutation({
+      query: ({ id, data }) => ({
+        url: `/${management_api}/user/${id}/groups/`,
         method: 'PUT',
         body: data
       }),
@@ -45,10 +63,14 @@ export const permisionsAPISlice = apiSlice.injectEndpoints({
 });
 
 export const {
+  useAssignUserRoleMutation,
   useUpdateUserPermissionMutation,
   useGetUserPermissionQuery,
   useUpdateGroupPermissionMutation,
   useGetGroupPermissionQuery,
   useUpdateRolePermissionMutation,
   useGetRolePermissionQuery,
+  useUpdateUserGroupMutation,
+  useGetUserGroupsQuery,
+
 } = permisionsAPISlice;

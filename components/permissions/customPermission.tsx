@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useGetGroupPermissionQuery, useUpdateGroupPermissionMutation } from '../../redux/features/permission/permit';
 import LoadingAnimation from '../common/LoadingAnimation';

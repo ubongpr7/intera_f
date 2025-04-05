@@ -3,13 +3,14 @@ import { RoleData } from "../interfaces/management";
 import CustomCreateCard from "../common/createCard";
 import { PageHeader } from "../inventory/PageHeader";
 import { useState } from "react";
-import { useCreateRoleMutation,useGetRolesQuery } from "../../redux/features/management/groups";
+import { useCreateRoleMutation,useGetRolesQuery, useUpdateRoleMutation } from "../../redux/features/management/groups";
 import { Column, DataTable } from "../common/DataTable/DataTable";
 import { useRouter } from 'nextjs-toploader/app';
 import VerticalTabs from '../common/verticalTabs'
 import RolePermissionForm from '../permissions/customPermission';
 import { useUpdateRolePermissionMutation,useGetRolePermissionQuery } from "../../redux/features/permission/permit";
 import { Permission } from "components/interfaces/common";
+import CustomUpdateForm from "components/common/updateForm";
 
 
 
@@ -43,7 +44,6 @@ const inventoryColumns: Column<RoleData>[] = [
   
 ];
 
-
 const StaffRole =()=>{
   const [isCreateOpen, setIsCreateOpen] = useState(false); 
   const [openTabs, setOpenTabs] = useState(false); 
@@ -70,17 +70,29 @@ const StaffRole =()=>{
     setIsCreateOpen(false); 
     await refetch();
   };
+
   const handleRowClick =  (row: RoleData) => {
     setRefetchData(true)  
     setRoleID(`${row.id}`)
+    setRoleDetail(row)
+
     if (permissionsData) {
       refetchPermissions();
     };
     setOpenTabs(true)
     refetch()
-
-
+  
   };
+  const [updateRole, { isLoading: roleUpdateLoading }] = useUpdateRoleMutation();
+  const [roleDetail,setRoleDetail] = useState<RoleData>();
+
+  
+  const handleUpdate = async (createdData: Partial<RoleData>) => {
+    const updateData=await updateRole({id:roleID,data: createdData}).unwrap();
+    setRoleDetail(updateData)
+    await refetch();
+  };
+
     return (
         <div>
         
@@ -115,7 +127,7 @@ const StaffRole =()=>{
                         
                           {
                             id: 'permission',
-                            label: 'Staff Group Permissions',
+                            label: 'Staff Role Permissions',
                             content:<RolePermissionForm 
                             permissionsData={permissionsData}
                             permissionLoading={permissionLoading}
@@ -124,7 +136,20 @@ const StaffRole =()=>{
 
                             />
                           },
-                          
+                          ...(roleID !== '0' ? [{
+                              id: 'details',
+                              label: 'Role Details',
+                              content: <CustomUpdateForm 
+                                data={roleDetail || {} as RoleData}
+                                isLoading={roleUpdateLoading}
+                                onSubmit={handleUpdate}
+                                selectOptions={{}}
+                                editableFields={['name', 'description']}
+                                keyInfo={{}}
+                                notEditableFields={[]}
+                                displayKeys={['name', 'description']}
+                              />
+                            }] : []),
                          
                         
                         ]}

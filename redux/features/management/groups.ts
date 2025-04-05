@@ -13,12 +13,14 @@ export const groupsAPISlice = apiSlice.injectEndpoints({
         }),
     updateGroup: builder.mutation({
       query: ({ id, data }) => ({
-        url: `/${management_api}/staff/groups/${id}/`,
+        url: `/${management_api}/staff/group-details/${id}/`,
         method: 'PUT',
         body: data
       }),
     }),
-    
+    getGroup: builder.query({
+      query: (id) => `/${management_api}/staff/group-details/${id}/`,
+    }),
     getGroups: builder.query<GroupData[], void>({
       query: () => `/${management_api}/staff/group/list/`,
     }),
@@ -36,7 +38,16 @@ export const groupsAPISlice = apiSlice.injectEndpoints({
         body: data
       }),
     }),
-    
+    deactivateRole: builder.mutation({
+      query: ({ id }) => ({
+        url: `/${management_api}/roles/${id}/deactivate/`,
+        method: 'POST',
+        body: {},
+      }),
+    }),
+    getRole: builder.query({
+      query: (id) => `/${management_api}/roles/${id}/`,
+    }),
     getRoles: builder.query<RoleData[], void>({
       query: () => `/${management_api}/staff/role/list/`,
     }),
@@ -52,4 +63,7 @@ export const {
   useCreateRoleMutation,
   useUpdateRoleMutation,
   useGetRolesQuery,
+  useGetGroupQuery,
+  useGetRoleQuery,
+  useDeactivateRoleMutation
 } = groupsAPISlice;

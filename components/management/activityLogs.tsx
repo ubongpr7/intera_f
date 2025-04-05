@@ -120,7 +120,11 @@ const ActivityLogs = ({ userId,
   refetchData,
   onRefetchComplete
  }: ActivityLogsProps) => {
-  const { data, isLoading, error,refetch } = useGetUserActivitiesQuery(userId );
+  const { data, isLoading, error,refetch } = useGetUserActivitiesQuery(userId,
+    {
+      skip: !userId || userId === "0",
+    }
+   );
 useEffect(() => {
     if (refetchData) {
       refetch().finally(() => {

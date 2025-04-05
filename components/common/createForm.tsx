@@ -156,7 +156,7 @@ export default function CustomCreateForm<T extends Record<string, any>>({
   const onSubmitHandler = async (formData: Partial<T>) => {
     try {
       await onSubmit(formData);
-      reset();
+      // reset();
     } catch (error) {
     }
   };
@@ -170,9 +170,7 @@ export default function CustomCreateForm<T extends Record<string, any>>({
     <div className="">
       <div className="">
         <form onSubmit={handleSubmit(onSubmitHandler)} className="flex flex-col overflow-y-auto h-full">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold">Create New</h2>
-          </div>
+          
 
           <div>
             {Object.entries(hiddenFields).map(([fieldName, fieldValue]) => (
@@ -328,6 +326,7 @@ export default function CustomCreateForm<T extends Record<string, any>>({
                             );
                           }
 
+                          
                           if (inputType === 'phone') {
                             return (
                               <PhoneInput

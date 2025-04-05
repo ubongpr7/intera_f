@@ -51,18 +51,9 @@ export default function LoginForm() {
       const userData = await login(data).unwrap() as LoginResponse;
       setCookie('userID',userData.id)
       
-        if (userData.is_main === true ){
-          if (userData.company === null){
-            router.push("/profile/create");
-
-          }
-          else{
-            toast.success("Login successful! Redirecting...");
-          handleResend(userData.id);
-
-            router.push("/accounts/signin/verify");
-
-          }
+        if (userData.profile === null) {
+          router.push("/profile/create");
+          
         }else{
         handleResend(userData.id);
           router.push("/accounts/signin/verify");

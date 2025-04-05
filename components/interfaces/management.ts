@@ -43,3 +43,44 @@ export interface Address {
   export interface RoleData extends GroupData{
 
   }
+
+
+  // Request payload for creating/updating a role assignment
+export interface CreateRoleAssignmentPayload {
+  
+  role: number;
+  
+  user: string;
+  start_date?: string;
+  
+  end_date?: string | null;
+
+  
+  is_active?: boolean;
+}
+
+export interface RoleAssignment {
+ 
+  id: number;
+  
+ 
+  user: string;
+  
+ 
+  role: string;
+  
+ 
+  start_date: string;
+ 
+  end_date: string | null;
+  
+ is_active: boolean;
+  assigned_by: number;
+  
+  assigned_at: string;
+  
+  profile: string;
+  
+  created_at?: string;
+  updated_at?: string;
+}

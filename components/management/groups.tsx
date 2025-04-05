@@ -3,13 +3,14 @@ import { GroupData } from "../interfaces/management";
 import CustomCreateCard from "../common/createCard";
 import { PageHeader } from "../inventory/PageHeader";
 import { useState } from "react";
-import { useGetGroupsQuery,useCreateGroupMutation } from "../../redux/features/management/groups";
+import { useGetGroupsQuery,useCreateGroupMutation,useUpdateGroupMutation ,useGetGroupQuery} from "../../redux/features/management/groups";
 import { Column, DataTable } from "../common/DataTable/DataTable";
 import { useRouter } from 'nextjs-toploader/app';
 import VerticalTabs from '../common/verticalTabs'
 import GroupPermissionForm from '../permissions/customPermission';
 import { useUpdateGroupPermissionMutation,useGetGroupPermissionQuery } from "../../redux/features/permission/permit";
 import { Permission } from "components/interfaces/common";
+import CustomUpdateForm from "../common/updateForm";
 
 
 
@@ -56,13 +57,21 @@ const StaffGroup =()=>{
      refetch :refetchPermissions} = useGetGroupPermissionQuery(groupId, {
       skip: !groupId || groupId === "0",
     });
+  const [groupDetail,setGroupDetail] = useState<GroupData>();
   const [updatePermission, { isLoading: permissionLoading }] = useUpdateGroupPermissionMutation();
-  
+  const [updateGroup, { isLoading: groupUpdateLoading }] = useUpdateGroupMutation();
 
+  
   const handleUpdatePermissionSubmit = async (createdData: { permissions: string[] }) => {
     await updatePermission({id:groupId,data: createdData}).unwrap();
     await refetch();
     await refetchPermissions()
+  };
+  
+  const handleUpdate = async (createdData: Partial<GroupData>) => {
+    const updateData=await updateGroup({id:groupId,data: createdData}).unwrap();
+    setGroupDetail(updateData)
+    await refetch();
   };
 
   const handleCreate = async (createdData: Partial<GroupData>) => {
@@ -73,6 +82,7 @@ const StaffGroup =()=>{
   const handleRowClick =  (row: GroupData) => {
     setRefetchData(true)  
     setGroupId(`${row.id}`)
+    setGroupDetail(row)
     if (permissionsData) {
       refetchPermissions();
     };
@@ -109,28 +119,39 @@ const StaffGroup =()=>{
                 />
                 </div>
 
+                
             <div className={`fixed  inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${openTabs ? 'block' : 'hidden'}`}>
                 <VerticalTabs
-                        items={[
-                        
-                          {
-                            id: 'permission',
-                            label: 'Staff Group Permissions',
-                            content:<GroupPermissionForm 
-                            permissionsData={permissionsData}
-                            permissionLoading={permissionLoading}
-                            isLoading= {permissionDataLoading}
-                            onSubmit={handleUpdatePermissionSubmit}
-
-                            />
-                          },
-                          
-                         
-                        
-                        ]}
-                        onClose={()=>setOpenTabs(false)}
-                        className="border rounded-lg p-4"
-                      />
+                    items={[
+                
+                      {
+                        id: 'permission',
+                        label: 'Staff Group Permissions',
+                        content: <GroupPermissionForm 
+                          permissionsData={permissionsData}
+                          permissionLoading={permissionLoading}
+                          isLoading={permissionDataLoading}
+                          onSubmit={handleUpdatePermissionSubmit}
+                        />
+                      },
+                          ...(groupId !== '0' ? [{
+                        id: 'details',
+                        label: 'Group Details',
+                        content: <CustomUpdateForm 
+                          data={groupDetail || {} as GroupData}
+                          isLoading={groupUpdateLoading}
+                          onSubmit={handleUpdate}
+                          selectOptions={{}}
+                          editableFields={['name', 'description']}
+                          keyInfo={{}}
+                          notEditableFields={[]}
+                          displayKeys={['name', 'description']}
+                        />
+                      }] : []),
+                    ]}
+                    onClose={() => setOpenTabs(false)}
+                    className="border rounded-lg p-4"
+                  />
 
                 </div>
         </div>
