@@ -81,7 +81,6 @@ const RoleManager = ({ userId, roles, refetch,closeTab }: RoleManagerProps) => {
             notEditableFields={[]}
             hiddenFields={{ user: userId }}
             defaultValues={{}}
-            formTitle="Assign New Role"
           />
         </div>
       )}

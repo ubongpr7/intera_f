@@ -63,15 +63,14 @@ export interface RoleAssignment {
   
  
   user: string;
-  
+  role_name: string;
  
   role: string;
   
  
   start_date: string;
  
-  end_date: string | null;
-  
+  end_date: string ;
  is_active: boolean;
   assigned_by: number;
   
