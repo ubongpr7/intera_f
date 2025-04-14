@@ -499,7 +499,12 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                           if (inputType === 'phone') {
                             return (
                               <PhoneInput
-                                {...field}
+                              value={field.value as string}
+                              onChange={(value) => field.onChange(value)}
+                              onBlur={field.onBlur}
+                              inputRef={field.ref}
+                              name={field.name}
+                        
                                 international
                                 defaultCountry="NG"
                                 className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none 
@@ -508,8 +513,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                                     ? 'border-red-500 ring-red-500' 
                                     : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                                 }`}
-                                onChange={value => field.onChange(value)}
-                                value={field.value as string}
+                               
                               />
                             );
                           }
