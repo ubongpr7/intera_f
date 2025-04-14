@@ -218,13 +218,13 @@ export default function CustomCreateCard<T extends Record<string, any>>({
   
       try {
         // Handle discount input
-        let discount = directDiscount ? 
+        const discount = directDiscount ? 
           getNum(value.discount) : 
           basePrice * (discountRate / 100);
         
         // Handle tax input
         const discountedPrice = Math.max(basePrice - discount, 0);
-        let tax = directTax ?
+        const tax = directTax ?
           getNum(value.tax_amount) :
           discountedPrice * (taxRate / 100);
   
