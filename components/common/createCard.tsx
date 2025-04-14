@@ -394,7 +394,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                               <input
                                 type="text"
                                 readOnly
-                                value={field.value ?? ''}
+                                value={field.value?.toString() ?? ''}
                                 className={`w-full px-3 border-2 py-2 rounded-md ${readonlyStyles}`}
                               />
                             );
