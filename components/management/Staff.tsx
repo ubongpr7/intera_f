@@ -160,7 +160,7 @@ const StaffCreateCard =()=>{
                           id: 'details',
                           label: 'User Details',
                           content: <CustomUpdateForm
-                            data={userDetail}
+                            data={userDetail || {} as UserData}
                             isLoading={userUpdateLoading}
                             onSubmit={handleUpdate}
                             editableFields={['first_name', 'phone']}
