@@ -438,13 +438,13 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                                 }`}
                                 // Explicitly set select props instead of spreading field
                                 value={field.value as string}  // Convert to string
-                                onChange={(e) => field.onChange(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => field.onChange(e.target.value)}
                                 onBlur={field.onBlur}
                                 name={field.name}
                                 ref={field.ref}
-                              >
+                                >
                                 <option value="">Select Contact Person</option>
-                                {contactPersons.map((contact) => (
+                                {contactPersons.map((contact: { id: number; name: string }) => (
                                   <option key={contact.id} value={contact.id.toString()}> {/* Ensure string value */}
                                     {contact.name}
                                   </option>
