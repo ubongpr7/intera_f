@@ -182,7 +182,9 @@ const StaffCreateCard =()=>{
                           content: <RoleManager
                             userId={userId}
                             roles={userRoles || []}
-                            refetch={refetch}
+                            refetch={async () => {
+                              await refetch();
+                            }}
                             closeTab={() => setOpenTabs(false)}
                           />,
                         },
