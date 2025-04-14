@@ -272,7 +272,6 @@ export default function CustomCreateForm<T extends Record<string, any>>({
                           if (isContactField) {
                             return (
                               <select
-                                {...field}
                                 disabled={!isSupplierSelected}
                                 className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
                                   focus:border-blue-500 py-2 rounded-md ${
@@ -280,17 +279,22 @@ export default function CustomCreateForm<T extends Record<string, any>>({
                                     ? 'border-red-500 ring-red-500' 
                                     : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                                 }`}
-                              >
+                                // Explicitly set select props instead of spreading field
+                                value={field.value as string}  // Convert to string
+                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => field.onChange(e.target.value)}
+                                onBlur={field.onBlur}
+                                name={field.name}
+                                ref={field.ref}
+                                >
                                 <option value="">Select Contact Person</option>
-                                {contactPersons.map((contact) => (
-                                  <option key={contact.id} value={contact.id}>
+                                {contactPersons.map((contact: { id: number; name: string }) => (
+                                  <option key={contact.id} value={contact.id.toString()}> {/* Ensure string value */}
                                     {contact.name}
                                   </option>
                                 ))}
                               </select>
                             );
                           }
-
                           if (inputType === 'select') {
                             return (
                               <select
@@ -319,8 +323,12 @@ export default function CustomCreateForm<T extends Record<string, any>>({
                             return (
                               <input
                                 type="checkbox"
-                                {...field}
+                                // Explicitly set checkbox props
                                 checked={!!field.value}
+                                onChange={(e) => field.onChange(e.target.checked)} // Use boolean directly
+                                onBlur={field.onBlur}
+                                name={field.name}
+                                ref={field.ref}
                                 className="w-5 h-5"
                               />
                             );
@@ -385,7 +393,6 @@ export default function CustomCreateForm<T extends Record<string, any>>({
                       rules={{ required: optionalFields.includes('description' as keyof T) ? false : 'This field is required' }}
                       render={({ field }) => (
                         <textarea
-                          {...field}
                           rows={4}
                           className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
                             focus:border-blue-500 py-2 rounded-md ${
@@ -393,6 +400,12 @@ export default function CustomCreateForm<T extends Record<string, any>>({
                               ? 'border-red-500 ring-red-500' 
                               : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                           }`}
+                          // Explicitly set textarea props
+                          value={field.value?.toString() ?? ''}  // Convert to string
+                          onChange={(e) => field.onChange(e.target.value)}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
                         />
                       )}
                     />
