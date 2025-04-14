@@ -200,8 +200,8 @@ export default function CustomCreateCard<T extends Record<string, any>>({
       const basePrice = precisionRound(quantity * unit_price);
   
       // Track direct input modes
-      let directDiscount = changedField === 'discount';
-      let directTax = changedField === 'tax_amount';
+      const directDiscount = changedField === 'discount';
+      const directTax = changedField === 'tax_amount';
   
       // Initialize rates and amounts
       let discountRate = directDiscount ? 0 : clampRate(getNum(value.discount_rate));
