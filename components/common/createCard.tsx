@@ -554,7 +554,6 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                       rules={{ required: optionalFields.includes('description' as keyof T) ? false : 'This field is required' }}
                       render={({ field }) => (
                         <textarea
-                          {...field}
                           rows={4}
                           className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
                             focus:border-blue-500 py-2 rounded-md ${
@@ -562,6 +561,12 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                               ? 'border-red-500 ring-red-500' 
                               : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                           }`}
+                          // Explicitly set textarea props
+                          value={field.value?.toString() ?? ''}  // Convert to string
+                          onChange={(e) => field.onChange(e.target.value)}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
                         />
                       )}
                     />
@@ -574,6 +579,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                 </div>
               </div>
             )}
+
           </div>
 
           <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6">
