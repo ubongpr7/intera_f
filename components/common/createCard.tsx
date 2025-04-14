@@ -370,12 +370,14 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                           if (inputType === 'percentage') {
                             return (
                               <div className="relative">
-                                <input
+                              <input
                                   type="number"
-                                  {...field}
                                   min={1}
                                   max={100}
                                   step={0.1}
+                                  value={field.value?.toString() ?? ""} // Convert number to string
+                                  onChange={(e) => field.onChange(e.target.valueAsNumber)} // Convert back to number
+                                  onBlur={field.onBlur}
                                   className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
                                     focus:border-blue-500 py-2 rounded-md ${
                                     errors[key as string] 
