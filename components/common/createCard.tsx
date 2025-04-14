@@ -485,8 +485,12 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                             return (
                               <input
                                 type="checkbox"
-                                {...field}
+                                // Explicitly set checkbox props
                                 checked={!!field.value}
+                                onChange={(e) => field.onChange(e.target.checked)} // Use boolean directly
+                                onBlur={field.onBlur}
+                                name={field.name}
+                                ref={field.ref}
                                 className="w-5 h-5"
                               />
                             );
