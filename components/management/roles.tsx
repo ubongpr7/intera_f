@@ -9,8 +9,8 @@ import { useRouter } from 'nextjs-toploader/app';
 import VerticalTabs from '../common/verticalTabs'
 import RolePermissionForm from '../permissions/customPermission';
 import { useUpdateRolePermissionMutation,useGetRolePermissionQuery } from "../../redux/features/permission/permit";
-import { Permission } from "components/interfaces/common";
-import CustomUpdateForm from "components/common/updateForm";
+import { Permission } from "../interfaces/common";
+import CustomUpdateForm from "../common/updateForm";
 
 
 
