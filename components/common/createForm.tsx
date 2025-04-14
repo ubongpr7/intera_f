@@ -298,7 +298,11 @@ export default function CustomCreateForm<T extends Record<string, any>>({
                           if (inputType === 'select') {
                             return (
                               <select
-                                {...field}
+                              value={field.value as string}  // Convert to string
+                              onChange={(e) => field.onChange(e.target.value)}
+                              onBlur={field.onBlur}
+                              name={field.name}
+                              ref={field.ref}
                                 className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
                                   focus:border-blue-500 py-2 rounded-md ${
                                   errors[key as string] 
