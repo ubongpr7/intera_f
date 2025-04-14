@@ -1,5 +1,5 @@
 'use client'
-import { useEffect } from 'react';
+import { useEffect,useRef } from 'react';
 import { X } from 'lucide-react';
 import { useForm, Controller, Path, DefaultValues } from 'react-hook-form';
 import dynamic from 'next/dynamic';
@@ -35,6 +35,9 @@ interface CustomCreateCardProps<T> {
   dateFields?: (keyof T)[];
   datetimeFields?: (keyof T)[];
   hiddenFields?: Partial<Record<keyof T, any>>;
+  readOnlyFields?: (keyof T)[]; 
+  itemTitle?: string;
+  
 }
 
 export default function CustomCreateCard<T extends Record<string, any>>({
@@ -50,6 +53,8 @@ export default function CustomCreateCard<T extends Record<string, any>>({
   dateFields = [],
   datetimeFields = [],
   hiddenFields = {},
+  readOnlyFields = [],
+  itemTitle='Item',
 }: CustomCreateCardProps<T>) {
   const {
     control,
@@ -95,7 +100,14 @@ export default function CustomCreateCard<T extends Record<string, any>>({
       watchKey: 'subregion',
     },
   };
-
+  
+  const percentageFieldsDict = {
+    'minimum_stock_level': 'Minimum stock level',
+    're_order_point': 'Re-order point',
+    'safety_stock_level': 'Safety stock level',
+    'alert_threshold': 'Alert threshold',
+    'supplier_reliability_score': 'Supplier reliability score',
+  };
   // Fetch geo data and manage dependencies
   Object.entries(geoFields).forEach(([key, config]) => {
     const watchValue = config.watchKey ? watch(config.watchKey as Path<Partial<T>>) : null;
@@ -124,15 +136,13 @@ export default function CustomCreateCard<T extends Record<string, any>>({
   const reOrderPoint = watch('re_order_point' as Path<Partial<T>>);
   const reOrderQty = watch('re_order_quantity' as Path<Partial<T>>);
   const safetyQty = watch('safety_stock_level' as Path<Partial<T>>);
-  
   useEffect(() => {
     trigger([
       'minimum_stock_level',
-      're_order_point',
-      'safety_stock_level',
-      're_order_quantity'
+      're_order_point', 
+      'safety_stock_level'
     ] as Path<Partial<T>>[]);
-  }, [minStock, reOrderPoint, reOrderQty, safetyQty, trigger]);
+  }, [minStock, reOrderPoint, safetyQty, trigger]);
 
   const formatLabel = (str: string) => {
     return str.replace('first_name', 'Name').replace(/_/g, ' ').replace(/(^\w|\s\w)/g, m => m.toUpperCase());
@@ -140,7 +150,15 @@ export default function CustomCreateCard<T extends Record<string, any>>({
   
   const getInputType = (key: keyof T) => {
     const keyStr = String(key).toLowerCase();
-    
+    const percentageFields = [
+    'minimum_stock_level',
+    're_order_point',
+    'safety_stock_level',
+    'alert_threshold',
+    'supplier_reliability_score',
+  ];
+  
+  if (percentageFields.includes(keyStr)) return 'percentage';
     if (keyStr in geoFields) return 'geo-select';
     if (dateFields.includes(key)) return 'date';
     if (datetimeFields.includes(key)) return 'datetime-local';
@@ -165,6 +183,76 @@ export default function CustomCreateCard<T extends Record<string, any>>({
     }
   };
 
+
+  const isUpdating = useRef(false);
+  useEffect(() => {
+    const subscription = watch((value, { name: changedField }) => {
+      if (isUpdating.current) return;
+      isUpdating.current = true;
+  
+      const clampRate = (rate: number) => Math.min(Math.max(rate, 0), 100);
+      const getNum = (val: any) => Math.max(parseFloat(val) || 0, 0);
+      const precisionRound = (num: number) => Math.round(num * 100) / 100;
+  
+      // Base values
+      const quantity = getNum(value.quantity);
+      const unit_price = getNum(value.unit_price);
+      const basePrice = precisionRound(quantity * unit_price);
+  
+      // Track direct input modes
+      let directDiscount = changedField === 'discount';
+      let directTax = changedField === 'tax_amount';
+  
+      // Initialize rates and amounts
+      let discountRate = directDiscount ? 0 : clampRate(getNum(value.discount_rate));
+      let taxRate = directTax ? 0 : clampRate(getNum(value.tax_rate));
+      
+      // Helper function for safe updates
+      const safeUpdate = (field: keyof T, value: number) => {
+        const current = getNum(field);
+        const rounded = precisionRound(value);
+        if (!Object.is(current, rounded)) {
+          setValue(field as Path<Partial<T>>, rounded as any);
+        }
+      };
+  
+      try {
+        // Handle discount input
+        let discount = directDiscount ? 
+          getNum(value.discount) : 
+          basePrice * (discountRate / 100);
+        
+        // Handle tax input
+        const discountedPrice = Math.max(basePrice - discount, 0);
+        let tax = directTax ?
+          getNum(value.tax_amount) :
+          discountedPrice * (taxRate / 100);
+  
+        // Update rates if direct input was used
+        if (directDiscount) {
+          discountRate = 0;
+          safeUpdate('discount_rate', 0);
+        }
+        if (directTax) {
+          taxRate = 0;
+          safeUpdate('tax_rate', 0);
+        }
+  
+        // Update calculated values
+        if (!directDiscount) safeUpdate('discount', discount);
+        if (!directTax) safeUpdate('tax_amount', tax);
+  
+        // Calculate total price
+        const total = discountedPrice + tax;
+        safeUpdate('total_price', total);
+  
+      } finally {
+        isUpdating.current = false;
+      }
+    });
+  
+    return () => subscription.unsubscribe();
+  }, [watch, setValue]);
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -190,10 +278,6 @@ export default function CustomCreateCard<T extends Record<string, any>>({
         </button>
 
         <form onSubmit={handleSubmit(onSubmitHandler)} className="flex flex-col overflow-y-auto h-full">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold">Create New</h2>
-          </div>
-
           <div>
             {Object.entries(hiddenFields).map(([fieldName, fieldValue]) => (
               <Controller
@@ -212,22 +296,24 @@ export default function CustomCreateCard<T extends Record<string, any>>({
           </div>
 
           <div className="flex-1 overflow-y-auto p-6">
-            <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4 pb-4">
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
               {regularFields.map((key) => {
+                const isReadOnly = readOnlyFields.includes(key);
                 const keyStr = String(key).toLowerCase();
                 const inputType = getInputType(key);
                 const isGeoField = inputType === 'geo-select';
                 const isOptional = optionalFields.includes(key);
                 const geoConfig = isGeoField ? geoFields[keyStr as keyof typeof geoFields] : null;
                 const isDisabled = geoConfig?.dependsOn ? !watch(geoConfig.dependsOn as Path<Partial<T>>) : false;
-
+                const readonlyStyles = 'bg-gray-100 cursor-not-allowed ring-gray-300 text-gray-700';
+  
                 const isContactField = key === 'contact';
                 const isSupplierSelected = !!selectedSupplier;
 
                 return (
                   <div key={`field-${String(key)}`} className="space-y-2 min-w-[200px]">
                     <label className="block text-sm font-medium text-gray-700">
-                      {formatLabel(String(key))}
+                      {formatLabel(String(key))} {isOptional && <span className="text-gray-500">(Optional)</span>}
                       {keyInfo?.[key] && <FieldInfo info={keyInfo[key]} displayBelow={true} />}
                     </label>
                     <div className="relative">
@@ -237,6 +323,22 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                         rules={{
                           required: isOptional ? false : 'This field is required',
                           validate: (value) => {
+
+                            
+
+                            if (percentageFieldsDict[keyStr as keyof typeof percentageFieldsDict]) {
+                              if (Number(value)  < 1 || Number(value) > 100) {
+                                return `${percentageFieldsDict[keyStr as keyof typeof percentageFieldsDict]} must be between 1% and 100%`;
+                              }
+                            }
+
+
+                            if (key === 'discount_rate' && Number(value) > 100) {
+                              return 'Discount rate cannot exceed 100%';
+                            }
+                            if (key === 'tax_rate' && Number(value) > 100) {
+                              return 'Tax rate cannot exceed 100%';
+                            }
                             if (isGeoField && value) {
                               const isValid = geoConfig?.data.some(
                                 (item) => item.id === Number(value)
@@ -265,6 +367,37 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                           },
                         }}
                         render={({ field }) => {
+                          if (inputType === 'percentage') {
+                            return (
+                              <div className="relative">
+                                <input
+                                  type="number"
+                                  {...field}
+                                  min={1}
+                                  max={100}
+                                  step={0.1}
+                                  className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
+                                    focus:border-blue-500 py-2 rounded-md ${
+                                    errors[key as string] 
+                                      ? 'border-red-500 ring-red-500' 
+                                      : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                                  }`}
+                                />
+                                <span className="absolute right-3 top-2.5 text-gray-500">%</span>
+                              </div>
+                            );
+                          }
+                          if (isReadOnly) {
+                            return (
+                              <input
+                                type="text"
+                                readOnly
+                                value={field.value ?? ''}
+                                className={`w-full px-3 border-2 py-2 rounded-md ${readonlyStyles}`}
+                              />
+                            );
+                          }
+                          
                           if (isGeoField) {
                             return (
                               <select
@@ -444,7 +577,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                 {isLoading ? (
                   <LoadingAnimation text="Creating..." ringColor="#3b82f6" />
                 ) : (
-                  'Create'
+                  `Create ${itemTitle}` 
                 )}
               </button>
             </div>

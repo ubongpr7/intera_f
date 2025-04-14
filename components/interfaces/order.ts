@@ -1,11 +1,13 @@
-export enum PurchaseOrderStatus {
-  PENDING = 10,
-  ISSUED = 20,
-  RECEIVED = 30,
-  COMPLETED = 40,
-  CANCELLED = 50
-}
-
+export const PurchaseOrderStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+  issued: 'issued',
+  received: 'received',
+  completed: 'completed',
+  cancelled: 'cancelled',
+  returned: 'returned'
+};
 interface BaseOrder {
     id: number;
     description?: string;
@@ -18,6 +20,7 @@ interface BaseOrder {
     inventory: number;
     currency?: string;
     address?: number;
+    received_date?: string;
   }
   
   interface TotalPriceMixin {
@@ -31,7 +34,7 @@ export  interface PurchaseOrderInterface extends BaseOrder, TotalPriceMixin {
     supplier: number; 
     supplier_reference?: string;
     received_by?: number;
-    status?: number; 
+    status?: string; 
     issue_date?: string; 
     complete_date?: string; 
     attachments?: Attachment[];
@@ -59,13 +62,7 @@ export const notEditableFields: (keyof PurchaseOrderInterface)[] =[
     file: string; // URL to attached file
   }
   
-  interface PurchaseOrderLineItem {
-    id: number;
-    stock_item: number; // Product ID
-    quantity: number;
-    unit_price: number;
-    total_price: number;
-  }
+  
   
   
 
@@ -114,3 +111,20 @@ export  interface ReturnOrderInterface extends BaseOrder, TotalPriceMixin {
     COMPLETED = 2,
     CANCELLED = 3
   }
+
+  export interface PurchaseOrderLineItem {
+    id?: number; 
+    purchase_order: string; 
+    stock_item?: number | null;
+    quantity: number;
+    unit_price: number;
+    tax_rate?: number | null; 
+    tax_amount?: number; 
+    discount_rate?: number | null;
+    discount?: number; 
+    total_price?: number; 
+    stock_item_name?: string;
+    stock_item_code?: string;
+    quantity_w_unit:string;
+  }
+  

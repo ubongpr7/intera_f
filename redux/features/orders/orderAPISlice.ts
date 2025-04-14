@@ -1,5 +1,5 @@
 import { apiSlice } from '../../services/apiSlice';
-import { PurchaseOrderInterface  } from '../../../components/interfaces/order';
+import { PurchaseOrderInterface, PurchaseOrderLineItem  } from '../../../components/interfaces/order';
 const management_api='order_api'
 export const purchaseOderApiSlice = apiSlice.injectEndpoints({
   endpoints: builder => ({
@@ -28,15 +28,88 @@ export const purchaseOderApiSlice = apiSlice.injectEndpoints({
         method: 'GET',
       }),
     }),
-  }),
-  // overrideExisting: true,
 
+
+    getPurchseOrderLineItems: builder.query({
+      query: (reference) => ({
+        url: `/${management_api}/line-item/?reference=${reference}`,
+        method: 'GET',
+      }),
+    }),
+    createPurchaseOrderLineItem: builder.mutation({
+      query: (  data:Partial<PurchaseOrderLineItem> ) => ({
+        url: `/${management_api}/line-item/`,
+        method: 'POST',
+        body: data
+      }),
+    }),
+    updatePurchaseOrderLineItem: builder.mutation({
+      query: ({ reference,id, data }) => ({
+        url: `/${management_api}/line-item/${id}/?reference=${reference}`,
+        method: 'PATCH',
+        body: data
+      }),
+    }),
+    deletePurchaseOrderLineItem: builder.mutation({
+      query: ({reference,id}) => ({
+        url: `/${management_api}/line-item/${id}/?reference=${reference}`,
+        method: 'DELETE',
+      }),
+    }),
+
+    
+  }),
+  
 });
 
 export const { 
   useCreatePurchaseOderMutation,
   useUpdatePurchaseOderMutation,
   useGetPurchaseOderQuery,
-//   useGetPurchaseOderCategoriesQuery,
-  useGetPurchaseOderDataQuery
+
+  useGetPurchaseOderDataQuery,
+
+  useGetPurchseOrderLineItemsQuery,
+  useCreatePurchaseOrderLineItemMutation,
+  useUpdatePurchaseOrderLineItemMutation,
+  useDeletePurchaseOrderLineItemMutation,
+  
 } = purchaseOderApiSlice ;
+
+
+export const purchaseOderManagementApiSlice = apiSlice.injectEndpoints({
+  endpoints: builder => ({
+    approvePurchaseOder: builder.mutation({
+      query: (id) => ({
+        url: `/${management_api}/purchase-orders/${id}/approve/`,
+        method: 'PUT',
+      }),
+    }),
+    issuePurchaseOder: builder.mutation({
+      query: (id) => ({
+        url: `/${management_api}/purchase-orders/${id}/issue/`,
+        method: 'PUT',
+      }),
+    }),
+    receivePurchaseOder: builder.mutation({
+      query: (id) => ({
+        url: `/${management_api}/purchase-orders/${id}/receive/`,
+        method: 'PUT',
+      }),
+    }),
+    completePurchaseOder: builder.mutation({
+      query: (id) => ({
+        url: `/${management_api}/purchase-orders/${id}/complete/`,
+        method: 'PUT',
+      }),
+    }),
+  }),
+  
+});
+
+export const { 
+  useApprovePurchaseOderMutation,
+  useIssuePurchaseOderMutation,
+  useReceivePurchaseOderMutation,
+  useCompletePurchaseOderMutation,
+} = purchaseOderManagementApiSlice ;

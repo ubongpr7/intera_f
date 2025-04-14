@@ -2,7 +2,7 @@
 import Tabs from '../../components/common/Tabs';
 import InventoryCategoryView from '../../components/inventory/InventoryCategory';
 import InventoryView from '../../components/inventory/InventoryView';
-
+import StockLocations from '../../components/stock/stockLoation';
 const InventoryPage = () => {
   const tabs = [
     {
@@ -12,14 +12,14 @@ const InventoryPage = () => {
     },
     {
       id: 'categories',
-      label: 'By Category',
+      label: 'Inventory Category',
       content: <InventoryCategoryView />,
     },
-    // {
-    //   id: 'types',
-    //   label: 'By Type',
-    //   content: <TypeView />,
-    // },
+    {
+      id: 'stock_locations',
+      label: 'Stock Locations',
+      content: <StockLocations />,
+    },
   ];
 
   return (

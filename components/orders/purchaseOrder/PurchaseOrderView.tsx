@@ -14,8 +14,8 @@ import { UserData } from '../../interfaces/User';
 import { useGetInventoryDataQuery } from '../../../redux/features/inventory/inventoryAPiSlice';
 
 
-function getStatusName(statusNumber: number): string {
-  return PurchaseOrderStatus[statusNumber] || 'UNKNOWN';
+function getStatusName(status: string): string {
+  return PurchaseOrderStatus[status as keyof typeof PurchaseOrderStatus] || 'UNKNOWN';
 }
 
 const inventoryColumns: Column<PurchaseOrderInterface>[] = [
@@ -53,8 +53,8 @@ function PurchaseOrderView() {
 
   const handleCreate = async (createdData: Partial<PurchaseOrderInterface>) => {
     await createPurchaseOrder(createdData).unwrap();
-    setIsCreateOpen(false); // Close the modal after creation
-    await refetch(); // Refresh the data
+    setIsCreateOpen(false); 
+    await refetch(); 
   };
   const { data: staff } = useGetCompanyUsersQuery()
   const { data: supplierResponse,isLoading:supplierLoading,error:supplierError } = useGetSupplersQuery();
@@ -95,13 +95,7 @@ function PurchaseOrderView() {
     // received_by:staffOptions,
     inventory:inventoryDataOptions,
     responsible:staffOptions,
-    status: [
-      { value: PurchaseOrderStatus.PENDING.toString(), text: 'Pending' },
-      { value: PurchaseOrderStatus.ISSUED.toString(), text: 'Issued' },
-      { value: PurchaseOrderStatus.RECEIVED.toString(), text: 'Received' },
-      { value: PurchaseOrderStatus.COMPLETED.toString(), text: 'Completed' },
-      { value: PurchaseOrderStatus.CANCELLED.toString(), text: 'Cancelled' },
-    ],
+    
   };
 
 

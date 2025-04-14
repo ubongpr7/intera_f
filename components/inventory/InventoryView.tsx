@@ -59,8 +59,8 @@ function InventoryView() {
 
   const handleCreate = async (createdData: Partial<InventoryData>) => {
     await createInventory(createdData).unwrap();
-    setIsCreateOpen(false); // Close the modal after creation
-    await refetch(); // Refresh the data
+    setIsCreateOpen(false); 
+    await refetch(); 
   };
 
     //////////////////////////////

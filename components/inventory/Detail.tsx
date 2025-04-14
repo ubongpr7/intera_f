@@ -99,6 +99,7 @@ const  selectOptions = {
       isLoading={updateIsLoading}
       policyFields={['description']}
       keyInfo={InventoryKeyInfo}
+      optionalFields={['description','batch_tracking_enabled','automate_reorder']}
 
     />
   );

@@ -1,4 +1,7 @@
 import InventoryDetail from "../../../components/inventory/Detail";
+import Tabs from '../../../components/common/Tabs';
+import StockItems from "../../../components/stock/CreateStockItems";
+
 
 export default async function InventoryDetailPage({
   params,
@@ -7,9 +10,28 @@ export default async function InventoryDetailPage({
 }) {
   const inventoryId = (await params).inventoryid;
 
+  const tabs = [
+    {
+      id: 'details',
+      label: 'Inventory Details',
+      content:<InventoryDetail id={inventoryId} />
+
+    },
+    {
+      id: 'stock',
+      label: 'Stock Items',
+      content:<StockItems reference={inventoryId} />
+
+    },
+   
+   
+   
+    
+    
+  ];
   return (
     <div>
-      <InventoryDetail id={inventoryId} />
+      <Tabs items={tabs} />
     </div>
   );
 }

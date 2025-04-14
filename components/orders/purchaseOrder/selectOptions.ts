@@ -1,13 +1,7 @@
-import { PurchaseOrderInterface } from "../../interfaces/order";
+import { PurchaseOrderInterface, PurchaseOrderStatus } from "../../interfaces/order";
 
 // Enum for status (assuming your PurchaseOrderStatus values)
-enum PurchaseOrderStatus {
-  PENDING = 0,
-  ISSUED = 1,
-  RECEIVED = 2,
-  COMPLETED = 3,
-  CANCELLED = 4
-}
+
 
 export const PurchaseOrderKeyInfo = {
     // BaseOrder fields
@@ -44,7 +38,7 @@ export const PurchaseOrderKeyInfo = {
     total_price: 0,
     order_currency: 'USD',
     reference: `PO-${new Date().getFullYear()}-001`, 
-    status: PurchaseOrderStatus.PENDING, 
+    status: PurchaseOrderStatus.pending, 
     supplier_reference: '',
     
     // line_items: [], 
@@ -63,7 +57,7 @@ export const PurchaseOrderKeyInfo = {
     // TotalPriceMixin fields
     // 'total_price',
     'order_currency',
-  
+    'received_date'
     // PurchaseOrder-specific fields
     // 'status',
     // 'supplier_reference',

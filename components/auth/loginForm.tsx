@@ -55,9 +55,9 @@ export default function LoginForm() {
           router.push("/profile/create");
           
         }else{
-        handleResend(userData.id);
-          router.push("/accounts/signin/verify");
-        
+        // handleResend(userData.id);
+        //   router.push("/accounts/signin/verify");
+        router.push("/dashboard");
       }
     } catch (err) {
       const error = err as LoginErrorResponse;

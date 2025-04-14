@@ -71,6 +71,13 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
     },
   });
 
+  const percentageFieldsDict = {
+    'minimum_stock_level': 'Minimum stock level',
+    're_order_point': 'Re-order point',
+    'safety_stock_level': 'Safety stock level',
+    'alert_threshold': 'Alert threshold',
+    'supplier_reliability_score': 'Supplier reliability score',
+  };
   const geoFields = {
     country: {
       query: useGetCountriesQuery,
@@ -141,7 +148,15 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
 
   const getInputType = (key: keyof T) => {
     const keyStr = String(key).toLowerCase();
+    const percentageFields = [
+      'minimum_stock_level',
+      're_order_point',
+      'safety_stock_level',
+      'alert_threshold',
+      'supplier_reliability_score',
+    ];
     
+    if (percentageFields.includes(keyStr)) return 'percentage';
     if (keyStr in geoFields) return 'geo-select';
     if (dateFields.includes(key)) return 'date';
     if (datetimeFields.includes(key)) return 'datetime-local';
@@ -239,6 +254,16 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                         rules={{
                           required: optionalFields.includes(key) ? false : 'This field is required',
                           validate: (value) => {
+
+                                                        
+
+                            if (percentageFieldsDict[keyStr as keyof typeof percentageFieldsDict]) {
+                              if (Number(value)  < 1 || Number(value) > 100) {
+                                return `${percentageFieldsDict[keyStr as keyof typeof percentageFieldsDict]} must be between 1% and 100%`;
+                              }
+                            }
+
+
                             if (isGeoField && value) {
                               const isValid = geoConfig?.data.some(
                                 (item) => item.id === Number(value)
@@ -266,6 +291,30 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                           },
                         }}
                         render={({ field }) => {
+                          {/*  i tried to do the same thing i d for update createCard on my update card,problem arises */}
+                          if (inputType === 'percentage') {
+                            return (
+                              <div className="relative">
+                                <input
+                                  type="number"
+                                  {...field}
+                                  value={field.value as number | 0}
+
+                                  min={1}
+                                  max={100}
+                                  step={0.1}
+                                  className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
+                                    focus:border-blue-500 py-2 rounded-md ${
+                                    errors[key as string] 
+                                      ? 'border-red-500 ring-red-500' 
+                                      : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                                  }`}
+                                />
+                                <span className="absolute right-3 top-2.5 text-gray-500">%</span>
+                              </div>
+                            );
+                          }
+
                           if (isGeoField) {
                             return (
                               <select

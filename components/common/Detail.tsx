@@ -87,7 +87,7 @@ export default function DetailCard<T extends Record<string, any>>({
       )
     }
 
-    if (['created_at', 'updated_at'].includes(key as string)) {
+    if (['created_at', 'updated_at','delivery_date','issue_date','complete_date','received_date'].includes(key as string)) {
       return (
         <div>
         <p className="text-sm font-semibold text-gray-900">

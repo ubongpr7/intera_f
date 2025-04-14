@@ -44,8 +44,9 @@ import { InventoryData } from "../interfaces/inventory";
 
 
 export const InventoryInterfaceKeys: (keyof InventoryData)[]=[
-    'name', 'description','category', 'inventory_type','reorder_strategy','re_order_quantity', 'safety_stock_level', 'minimum_stock_level', 're_order_point',
-      'automate_reorder','alert_threshold', 'supplier_lead_time',
+    'name', 'description','category', 'inventory_type','reorder_strategy','re_order_quantity',
+     'safety_stock_level', 'minimum_stock_level', 're_order_point','alert_threshold',
+      'automate_reorder', 'supplier_lead_time',
     'internal_processing_time', 'expiration_threshold', 'holding_cost_per_unit',
     'ordering_cost', 'stockout_cost',  'batch_tracking_enabled',
     'expiration_policy', 'recall_policy', 'near_expiry_policy',
@@ -57,17 +58,17 @@ export const defaultValues: Partial<InventoryData> = {
     // name: 'New Inventory Item',
     // description: 'A new item in the inventory',
     internal_processing_time:2,
-    expiration_threshold:30,
-    minimum_stock_level: 2000,
-    re_order_point: 3000,
+    expiration_threshold:0,
+    minimum_stock_level: 25,
+    re_order_point: 30,
     re_order_quantity: 10000,
-    safety_stock_level: 1500,
+    alert_threshold:35,
+    safety_stock_level: 20,
     automate_reorder: true,
     supplier_lead_time:7,
     holding_cost_per_unit:75,
     batch_tracking_enabled:false,
     stockout_cost:75,
-    alert_threshold:2500,
     supplier_reliability_score:50,
     ordering_cost:0
   };
