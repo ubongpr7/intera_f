@@ -102,7 +102,7 @@ const { data: staff } = useGetCompanyUsersQuery()
   };
   
   interface ActionItem {
-    icon: React.ElementType;
+    icon: LucideIcon;
     text: string;
     action: () => Promise<void>;
     helpText: string;
