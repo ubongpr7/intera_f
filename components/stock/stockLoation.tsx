@@ -33,7 +33,7 @@ const inventoryColumns: Column<StockLocation>[] = [
 ];
 
 function StockLocations() {
-    const {data:StockLocationData,isLoading:stockItemsLoading,refetch,error}=useGetStockItemDataLocationQuery('')
+    const {data:StockLocationData,isLoading:stockItemsLoading,refetch,error}=useGetStockItemDataLocationQuery()
     const [createStockLocation, { isLoading: stockItemCreateLoading }] = useCreateStockItemLocationMutation();
     const [isCreateOpen, setIsCreateOpen] = useState(false); 
     const {data:locationTypes,isLoading:locationTypesLoading}=useGetStockLocationTypesQuery('')
@@ -41,15 +41,15 @@ function StockLocations() {
     
     const locationTypeOptions = locationTypes?.map((locationType) => ({
         text: `${locationType.name } (${locationType.description})`,
-        value: locationType.id,
+        value: locationType.id.toString(),
       })) || [];
     const locationOptions = StockLocationData?.map((StockLocationItem) => ({
         text: `${StockLocationItem.name } (${StockLocationItem.code})`,
-        value: StockLocationItem.id,
+        value: StockLocationItem.id.toString(),
       })) || [];
     const userOptions = userData?.map((user) => ({
         text: `${user.first_name} ${user.email}`,
-        value: user.id,
+        value: user.id.toString(),
       })) || [];
       const selectionOpions={
         location_type:locationTypeOptions,
