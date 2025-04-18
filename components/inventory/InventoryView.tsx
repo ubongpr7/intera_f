@@ -86,7 +86,7 @@ function InventoryView() {
     const  selectOptions = {
           
             category:categoryOptions,
-            unit:unitOptions,
+            // unit:unitOptions,
             inventory_type:typeOptions,
             reorder_strategy: [
               { value: 'FQ', text: 'Fixed Quantity' },
@@ -144,7 +144,6 @@ function InventoryView() {
     'expiration_policy_name',
     'reorder_strategy_name',
     'recall_policy_name',
-    'unit_name',
     'category_name',
     'external_system_id',
   ];

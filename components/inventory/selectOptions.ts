@@ -10,7 +10,6 @@ import { InventoryData } from "../interfaces/inventory";
     inventory_type: 'The type of inventory (e.g., raw material, finished goods).',
     profile: 'The profile associated with this inventory item (if applicable).',
     category: 'The category to which this inventory item belongs.',
-    unit: 'The unit of measurement for this inventory item (e.g., pieces, kilograms).',
   
     // Step 2
     minimum_stock_level: 'The minimum stock level is the lowest quantity of this item that should be kept in stock.',

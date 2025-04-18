@@ -92,9 +92,9 @@ const  selectOptions = {
   return (
     <DetailCard 
       data={inventoryData}
-      notEditableFields={['id', 'created_at','updated_at','forecast_method_name','expiration_policy_name' ,'reorder_strategy_name','recall_policy_name','unit_name','category_name','external_system_id', ]}
+      notEditableFields={['id', 'created_at','updated_at','forecast_method_name','expiration_policy_name' ,'reorder_strategy_name','recall_policy_name','category_name','external_system_id', ]}
       updateMutation={handleUpdate}
-      excludeFields={['id','inventory_type','category','forecast_method','expiration_policy','recall_policy','reorder_strategy','unit','profile','automate_reorder','batch_tracking_enabled',]}
+      excludeFields={['id','inventory_type','category','forecast_method','expiration_policy','recall_policy','reorder_strategy','profile','automate_reorder','batch_tracking_enabled',]}
       selectOptions={selectOptions}
       isLoading={updateIsLoading}
       policyFields={['description']}

@@ -5,7 +5,6 @@ export interface InventoryData {
     inventory_type: number;
     profile?: number;
     category?: string;
-    unit?: number;
     id?:number;
     // Step 2
     minimum_stock_level: number;
@@ -13,7 +12,6 @@ export interface InventoryData {
     re_order_quantity: number;
     safety_stock_level: number;
     automate_reorder: boolean;
-    unit_name?:string;
     recall_policy_name?:string;
     // Step 3
     supplier_lead_time: number;

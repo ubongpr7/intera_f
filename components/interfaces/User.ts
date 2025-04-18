@@ -1,6 +1,5 @@
 import { RoleAssignment } from "./management";
 
-// types/user.ts
 export interface UserData {
     id: number;
     email: string;
