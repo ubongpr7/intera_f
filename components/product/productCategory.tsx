@@ -4,7 +4,7 @@ import { PageHeader } from "../inventory/PageHeader"
 import { title } from "process"
 import { useRouter } from 'nextjs-toploader/app'
 import { DataTable,Column } from "../common/DataTable/DataTable";
-import { useCreatePricingStrategyMutation, useGetProductCategoriesQuery} from "../../redux/features/product/productAPISlice";
+import { useCreateProductCategoryMutation, useGetProductCategoriesQuery} from "../../redux/features/product/productAPISlice";
 import { ProductCategoryData } from '../interfaces/product';
 import CustomCreateCard from '../common/createCard';
 
@@ -33,7 +33,7 @@ const inventoryColumns: Column<ProductCategoryData>[] = [
 function ProductCategoryView() {
   const { data, isLoading, error,refetch } = useGetProductCategoriesQuery('');
   const router = useRouter();
-  const [createCategory,{isLoading:creatingCategory,error:catError}]= useCreatePricingStrategyMutation()
+  const [createCategory,{isLoading:creatingCategory,error:catError}]= useCreateProductCategoryMutation()
   
   const categoryOptions = data?.map((cat: ProductCategoryData) => ({
       value: cat.id,

@@ -14,7 +14,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
     }),
     createProductCategory: builder.mutation({
       query: (data: Partial<ProductCategoryData>) => ({
-        url: `/${product_api}/categories/create/`,
+        url: `/${product_api}/categories/`,
         method: 'POST',
         body: data
       }),
