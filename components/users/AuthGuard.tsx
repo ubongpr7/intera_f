@@ -1,7 +1,6 @@
 import { User } from "lucide-react";
 import { useAuth } from "../../redux/features/users/useAuth";
 import { useRouter } from "next/router";
-import { useEffect } from "react";
 export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
     const router=useRouter()
     const { isLoading, isAuthenticated, isPublic } = useAuth();
@@ -16,11 +15,10 @@ export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
     if (!isPublic && !isAuthenticated) {
       return null; // Redirect already handled in useAuth
     }
-    useEffect(() => {
-      if (!isLoading && isPublic && isAuthenticated) {
-          router.push('/dashboard');
-      }
-  }, [isLoading, isPublic, isAuthenticated, router]);
-
+    
+    if (isPublic && isAuthenticated) {
+      router.push('/dashboard')
+    }
+  
     return <>{children}</>;
   };
