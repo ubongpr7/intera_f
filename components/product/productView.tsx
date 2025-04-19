@@ -128,7 +128,7 @@ function ProductView() {
           keyInfo={{}}
           notEditableFields={notEditableFields}
           interfaceKeys={InventoryInterfaceKeys}
-          optionalFields={['batch_tracking_enabled','description']}
+          optionalFields={['description']}
         />
       </div>
     </div>
