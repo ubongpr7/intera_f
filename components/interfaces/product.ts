@@ -25,6 +25,7 @@ export interface ProductData {
     is_active: boolean;
     profile: number;
     slug: string;
+    parent_name:string;
   }
   
   export interface PricingStrategy {

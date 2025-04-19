@@ -24,7 +24,7 @@ const inventoryColumns: Column<ProductCategoryData>[] = [
   
   {
     header: 'Parent Category',
-    accessor: 'parent',
+    accessor: 'parent_name',
     render: (value) => value || 'N/A',
     info:'Category to which the category belong'
   },
