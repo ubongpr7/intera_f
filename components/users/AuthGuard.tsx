@@ -1,8 +1,6 @@
-import { User } from "lucide-react";
 import { useAuth } from "../../redux/features/users/useAuth";
-import { useRouter } from "next/router";
 export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
-    const router=useRouter()
+    
     const { isLoading, isAuthenticated, isPublic } = useAuth();
   
     if (isLoading) {
@@ -16,9 +14,5 @@ export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
       return null; // Redirect already handled in useAuth
     }
     
-    if (isPublic && isAuthenticated) {
-      router.push('/dashboard')
-    }
-  
     return <>{children}</>;
   };
