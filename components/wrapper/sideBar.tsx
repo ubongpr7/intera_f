@@ -15,6 +15,7 @@ import {   Archive,
   UserSearch,Users, Settings, Package, 
   Warehouse,
   Box,
+  Gift,
   Tag,
   Factory,
   ReceiptText,
@@ -90,6 +91,7 @@ const SideBar = ({user}:SideBarDataProps) => {
             <SidebarLink href="/stockitems" icon={Box} label="Stock Items" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/warehouse" icon={Warehouse } label="Warehouse" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/point-of-sales" icon={CreditCard} label="Sales" isCollapsed={SidebarCollapsed} />
+            <SidebarLink href="/product" icon={Gift} label="Product" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/pricing" icon={Tag} label="Pricing" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/settings" icon={Settings} label="Settings" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/archive" icon={Archive} label="Archive" isCollapsed={SidebarCollapsed} />
