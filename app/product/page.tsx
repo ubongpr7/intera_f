@@ -6,12 +6,12 @@ const ProductPage = () => {
   const tabs = [
     {
       id: 'all',
-      label: 'All Inventory',
+      label: 'All Products',
       content: <ProductView />,
     },
     {
       id: 'categories',
-      label: 'Inventory Category',
+      label: 'Product Category',
       content: <ProductCategoryView />,
     },
    

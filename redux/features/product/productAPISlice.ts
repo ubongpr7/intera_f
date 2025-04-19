@@ -34,7 +34,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
     }),
     getProductData: builder.query<ProductData[], void>({
       query: () => ({
-        url: `/${product_api}/products/list/`,
+        url: `/${product_api}/products/`,
         method: 'GET',
       }),
     }),
