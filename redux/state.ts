@@ -1,8 +1,29 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
+// Helper function to safely get system theme
 const getSystemTheme = () => {
   if (typeof window === 'undefined') return false;
   return window.matchMedia('(prefers-color-scheme: dark)').matches;
+};
+
+const loadInitialState = () => {
+  if (typeof window === 'undefined') return {
+    isSidebarCollapsed: true,
+    isDarkMode: false,
+    isSystemTheme: true
+  };
+
+  const savedState = localStorage.getItem('globalSettings');
+  
+  // Return saved state if exists
+  if (savedState) return JSON.parse(savedState);
+
+  // Fallback to system theme
+  return {
+    isSidebarCollapsed: true,
+    isDarkMode: getSystemTheme(),
+    isSystemTheme: true
+  };
 };
 
 interface InitialStateTypes {
@@ -11,11 +32,7 @@ interface InitialStateTypes {
   isSystemTheme: boolean;
 }
 
-const initialState: InitialStateTypes = {
-  isSidebarCollapsed: false,
-  isDarkMode: getSystemTheme(),
-  isSystemTheme: true // Start with system theme by default
-};
+const initialState: InitialStateTypes = loadInitialState();
 
 export const globalSlice = createSlice({
   name: "global",
@@ -26,7 +43,7 @@ export const globalSlice = createSlice({
     },
     setIsDarkMode: (state, action: PayloadAction<boolean>) => {
       state.isDarkMode = action.payload;
-      state.isSystemTheme = false;
+      state.isSystemTheme = false; // User explicitly set theme
     },
     resetToSystemTheme: (state) => {
       state.isDarkMode = getSystemTheme();

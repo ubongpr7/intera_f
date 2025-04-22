@@ -1,4 +1,3 @@
-// store.ts
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { persistStore, persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from "redux-persist";
 import createWebStorage from "redux-persist/lib/storage/createWebStorage";
@@ -6,7 +5,6 @@ import authReducer from "./features/authSlice";
 import { apiSlice } from "./services/apiSlice";
 import globalReducer from "./state";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
-
 const createNoopStorage = () => ({
   getItem() {
     return Promise.resolve(null);
@@ -23,10 +21,11 @@ const storage = typeof window === "undefined"
   ? createNoopStorage()
   : createWebStorage("local");
 
+// Persist config for global slice only
 const globalPersistConfig = {
   key: "global",
   storage,
-  whitelist: ["isDarkMode", "isSidebarCollapsed", "isSystemTheme"]
+  whitelist: ["isDarkMode", "isSidebarCollapsed"]
 };
 
 const rootReducer = combineReducers({
@@ -49,7 +48,7 @@ export const makeStore = () => {
 
 export const persistor = persistStore(makeStore());
 
-// Type declarations remain the same
+// Keep existing types
 export type AppStore = ReturnType<typeof makeStore>;
 export type RootState = ReturnType<AppStore["getState"]>;
 export type AppDispatch = AppStore["dispatch"];
