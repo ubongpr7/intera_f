@@ -25,9 +25,8 @@ const storage = typeof window === "undefined"
 const globalPersistConfig = {
   key: "global",
   storage,
-  whitelist: ["isDarkMode", "isSidebarCollapsed"]
+  whitelist: ["isDarkMode", "isSidebarCollapsed", "isSystemTheme"] // Add isSystemTheme
 };
-
 const rootReducer = combineReducers({
   auth: authReducer,
   [apiSlice.reducerPath]: apiSlice.reducer,
