@@ -1,6 +1,8 @@
 "use client"
 
-import { useCreateCompanyProfileMutation, useGetOwnerCompanyProfileQuery, useUpdateCompanyProfileMutation } from "redux/features/management/companyProfileApiSlice"
+import { useCreateCompanyProfileMutation,
+   useGetOwnerCompanyProfileQuery, 
+   useUpdateCompanyProfileMutation } from "@/redux/features/management/companyProfileApiSlice"
 
 
 
