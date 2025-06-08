@@ -8,8 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Search, Download, Activity, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { useGetActivityLogsQuery, useExportActivityLogsMutation } from "@/redux/features/company/companyApiSlice"
-import type { ActivityLog } from "../types/company-profile"
+import { useGetActivityLogsQuery, useExportActivityLogsMutation } from "@/redux/features/management/companyProfileApiSlice"
+import type { ActivityLog } from "@/types/company-profile"
 
 interface ActivityLogViewProps {
   profileId: string
