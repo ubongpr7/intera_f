@@ -294,7 +294,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
     // Activity Log endpoints
     getActivityLogs: builder.query<
       ActivityLog[],
-      { page?: number; action?: string; model_name?: string; search?: string }
+      { page?: number; action?: string; model_name?: string; search?: string,page_size?: number }
     >({
       query: (params = {}) => ({
         url: `/${management_api}/activity-logs/`,

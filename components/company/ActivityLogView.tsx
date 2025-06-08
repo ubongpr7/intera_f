@@ -59,7 +59,6 @@ export function ActivityLogView({ profileId, userId }: ActivityLogViewProps) {
     isLoading,
     error: fetchError,
   } = useGetActivityLogsQuery({
-    profileId,
     ...filters,
     page,
     page_size: pageSize,
