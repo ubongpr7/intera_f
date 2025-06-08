@@ -18,6 +18,9 @@
     "incremental": true,
     "baseUrl": ".",
     "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "@/*": ["*"]  // This line allows you to use @/ for absolute imports
+    },
     "plugins": [
       {
         "name": "next"

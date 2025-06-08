@@ -1,10 +1,12 @@
 // app/create-company/page.tsx
 import CompanyForm from "../../../components/management/companyCreationForm";
 
+import CompanyProfileContainer from "@/components/company/CompanyProfileContainer";
+
 export default function CreateCompanyPage() {
   return (
     <div className="min-h-screen  bg-gray-50 flex items-center justify-center p-4">
-      <CompanyForm />
+      <CompanyProfileContainer />
     </div>
   );
 }

@@ -33,6 +33,7 @@
     "nextjs-toploader": "^3.7.15",
     "nprogress": "^0.2.0",
     "numeral": "^2.0.6",
+    "radix-ui": "^1.4.2",
     "react": "19.0.0-rc-66855b96-20241106",
     "react-dom": "19.0.0-rc-66855b96-20241106",
     "react-facebook-pixel": "^1.0.4",

@@ -67,7 +67,7 @@ export default function LoginForm() {
       setCookie('userID', userData.id);
       toast.success("Login successful. Welcome back!");
       if (!userData.provider) {
-        router.push("/accounts/profile/create");
+        router.push("/profile/create");
       } else {
       router.push("/dashboard");
       }
