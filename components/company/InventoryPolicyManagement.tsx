@@ -14,7 +14,10 @@ import { Plus, Edit, Trash2, FileText, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 import type { InventoryPolicy } from "@/types/company-profile"
-import { useCreateInventoryPolicyMutation, useDeleteInventoryPolicyMutation, useGetInventoryPoliciesQuery, useUpdateInventoryPolicyMutation } from "redux/features/management/companyProfileApiSlice"
+import { useCreateInventoryPolicyMutation, 
+  useDeleteInventoryPolicyMutation,
+   useGetInventoryPoliciesQuery, 
+   useUpdateInventoryPolicyMutation } from "@/redux/features/management/companyProfileApiSlice"
 
 interface InventoryPolicyManagementProps {
   profileId: string
