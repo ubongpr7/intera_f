@@ -109,6 +109,8 @@ export interface ActivityLog {
   object_id: number
   timestamp: string
   details: Record<string, any>
+  next: string
+  previous: string
 }
 
 export interface CompanyFormData {

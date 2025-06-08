@@ -8,7 +8,7 @@ import { CompanyBasicInfoForm } from "./CompanyBasicInfoForm"
 import { CompanyAddressForm } from "./CompanyAddressForm"
 import { CompanySocialLinksForm } from "./CompanySocialLinksForm"
 import { PolicyManagement } from "./PolicyManagement"
-import { ActivityLogView } from "./ActivityLogView"
+// import { ActivityLogView } from "./ActivityLogView"
 import type { CompanyProfile } from "@/types/company-profile"
 
 interface CompanyProfileContainerProps {
