@@ -79,6 +79,21 @@ const authApiSlice = apiSlice.injectEndpoints({
 				method: 'POST',
 			}),
 		}),
+		resendCode: builder.mutation<void, { email: string,action:string }>({
+      query: (data) => ({
+        url: '/api/v1/accounts/verify/',
+        method: 'POST',
+        body: data
+      })
+    }),
+    
+    verifyCode: builder.mutation<void, { email: string; code: string,action:string }>({
+      query: (data) => ({
+        url: '/api/v1/accounts/verify/',
+        method: 'POST',
+        body: data
+      })
+    }),
 		logout: builder.mutation({
 			query: () => ({
 				
@@ -118,6 +133,8 @@ export const {
 	useLoginMutation,
 	useRegisterMutation,
 	useVerifyMutation,
+	useResendCodeMutation,
+	useVerifyCodeMutation,
 	useVerifyAccountMutation,
 	useGetverifyAccountMutation,
 	useLogoutMutation,

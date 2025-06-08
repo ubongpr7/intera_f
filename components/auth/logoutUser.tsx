@@ -10,8 +10,6 @@ function LogoutButton() {
     try {
       await logoutMutation('').unwrap();
       
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
       
       router.push('/');
       

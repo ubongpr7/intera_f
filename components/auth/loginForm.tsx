@@ -1,127 +1,169 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
-import { useLoginMutation } from '../../redux/features/authApiSlice';
-import { toast } from "react-toastify"
-// import { useRouter, useSearchParams } from "next/navigation";
+import { useLoginMutation, useResendCodeMutation,
+	useVerifyCodeMutation,  } from '../../redux/features/authApiSlice';
+import { toast } from "react-toastify";
 import Link from 'next/link';
-import { useRouter } from 'nextjs-toploader/app'
+import { useRouter } from 'next/navigation';
 import { LoginErrorResponse, LoginResponse } from '../types/authResponse';
 import { LoginFormData } from '../types/authForms';
 import { setCookie } from 'cookies-next';
-import { VerificationError, ErrorResponse, ResendError } from '../types/authResponse';
-import { useVerifyAccountMutation, useGetverifyAccountMutation } from '../../redux/features/authApiSlice';
-
+interface VerificationFormData {
+  code: string;
+}
 export default function LoginForm() {
-  const [login, { isLoading, error }] = useLoginMutation();
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>();
+  const [currentStep, setCurrentStep] = useState<"EMAIL" | "VERIFICATION" | "PASSWORD">("EMAIL");
+  const [verifiedEmail, setVerifiedEmail] = useState<string>("");
   const router = useRouter();
-  const [resendCode, { isLoading: isResending }] = useGetverifyAccountMutation();
- 
-  const handleResend = async (userId: string) => {
-  
+
+  // API mutations
+  const [login, { isLoading }] = useLoginMutation();
+  const [resendCode, { isLoading: isResending }] = useResendCodeMutation();
+  const [verifyCode, { isLoading: isVerifying }] = useVerifyCodeMutation();
+
+  // Form handlers
+  const emailForm = useForm<LoginFormData>();
+  const verificationForm = useForm<VerificationFormData>();
+  const passwordForm = useForm<{ password: string }>();
+
+  // Step 1: Handle email submission and send verification code
+  const handleEmailSubmit: SubmitHandler<LoginFormData> = async (data) => {
     try {
-      await resendCode({ id: userId }).unwrap();
-      toast.success("Verification code resent successfully");
-    } catch (error) {
-      const apiError = error as ResendError;
-  
-      // Handle different error scenarios
-      if (apiError.status === 400) {
-        if (apiError.data?.error === "Maximum attempts reached") {
-          toast.error("Too many attempts. Please contact support.");
-        } else if (apiError.data?.error === "User ID required") {
-          toast.error("Session expired. Please register again.");
-        }
-      } else if (apiError.status === 404) {
-        if (apiError.data?.error === "User not found") {
-          toast.error("Account not found. Please register first.");
-        } else if (apiError.data?.error === "Verification code not found") {
-          toast.error("Verification expired. Please register again.");
-        }
-      } else if (apiError.status === 500) {
-        toast.error("Server error. Please try again later.");
-      } else {
-        toast.error("Failed to resend code. Check your connection.");
-      }
+      await resendCode({ email: data.email,action:'send_code' }).unwrap();
+      setVerifiedEmail(data.email);
+      setCurrentStep("VERIFICATION");
+      toast.success("Verification code sent. Check your email.");
+    } catch (err) {
+      const error = err as LoginErrorResponse;
+      const errorMessage = error.data?.detail || "Failed to send verification code.";
+      toast.error(errorMessage);
     }
   };
-  const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
+
+  const handleVerificationSubmit: SubmitHandler<VerificationFormData> = async (data) => {
     try {
-      const userData = await login(data).unwrap() as LoginResponse;
-      setCookie('userID',userData.id)
-      
-        if (userData.profile === null) {
-          router.push("/profile/create");
-          
-        }else{
-        // handleResend(userData.id);
-        //   router.push("/accounts/signin/verify");
-        router.push("/dashboard");
+      const userData = await verifyCode({
+        email: verifiedEmail,
+        code: data.code,
+        action: 'verify_code' 
+      }).unwrap();
+        setCurrentStep("PASSWORD");
+        toast.success("Email verified. Please enter your password to continue.");
+    } catch (err) {
+      const error = err as LoginErrorResponse;
+      const errorMessage = error.data?.detail || "Verification failed.";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handlePasswordSubmit: SubmitHandler<{ password: string }> = async (data) => {
+    try {
+      const userData = await login({
+        email: verifiedEmail,
+        password: data.password,
+      }).unwrap();
+      setCookie('userID', userData.id);
+      toast.success("Login successful. Welcome back!");
+      if (!userData.provider) {
+        router.push("/accounts/profile/create");
+      } else {
+      router.push("/dashboard");
       }
     } catch (err) {
       const error = err as LoginErrorResponse;
-      
-      if (error.status === 400) {
-        const errorMessage = error.data?.non_field_errors?.[0] || 
-                           error.data?.detail || 
-                           "Invalid email or password";
-        toast.error(errorMessage);
-      } else if (error.status === 401) {
-        toast.error("Unauthorized - Please check your credentials");
-      } else if (error.status === 500) {
-        toast.error("Server error - Please try again later");
-      } else {
-        toast.error("Login failed - Please check your network connection");
-      }
+      const errorMessage = error.data?.detail || "Login failed.";
+      toast.error(errorMessage);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Email</label>
-        <input
-          {...register('email', { required: 'Email is required' })}
-          type="email"
-          placeholder="Email"
-          className="mt-1 block w-full bg-gray-50 rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-        />
-        {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
+    <div className="max-w-md w-full space-y-6 mx-auto">
+      <div className="text-center">
+        <p className="mt-2 text-[14px]">
+          {currentStep === "EMAIL" && "Enter your email to begin"}
+          {currentStep === "VERIFICATION" && "Enter the verification code sent to your email"}
+          {currentStep === "PASSWORD" && "Enter your password to complete login"}
+        </p>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Password</label>
-        <input
-          {...register('password', { required: 'Password is required' })}
-          type="password"
-          placeholder='Password'
-          className="mt-1 block w-full bg-gray-50 rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-        />
-        {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>}
-      </div>
-      <div className="flex mt-2  justify-between">
-      <Link href="/accounts" className="text-blue-600 hover:text-blue-800"> Forgot Password?</Link>
-      </div>
+      {/* Step 1: Email Form */}
+      {currentStep === "EMAIL" && (
+        <form onSubmit={emailForm.handleSubmit(handleEmailSubmit)} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Email</label>
+            <input
+              {...emailForm.register('email', { required: 'Email is required' })}
+              type="email"
+              placeholder="Email"
+              className="mt-1 block w-full bg-gray-50 rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+            />
+            {emailForm.formState.errors.email && <p className="mt-1 text-sm text-red-600">{emailForm.formState.errors.email.message}</p>}
+          </div>
 
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
-      >
-        {isLoading ? 'Signing in...' : 'Sign in'}
-      </button>
-
-      {error && (
-        <div className="mt-2 text-sm text-red-600">
-          {'data' in error ? (error.data as { detail?: string }).detail : 'An error occurred'}
-        </div>
+          <button
+            type="submit"
+            disabled={isResending}
+            className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+          >
+            {isResending ? 'Sending...' : 'Send Verification Code'}
+          </button>
+        </form>
       )}
+
+      {/* Step 2: Verification Form */}
+      {currentStep === "VERIFICATION" && (
+        <form onSubmit={verificationForm.handleSubmit(handleVerificationSubmit)} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Verification Code</label>
+            <input
+              {...verificationForm.register('code', { required: 'Code is required', pattern: { value: /^\d{6}$/, message: "Must be 6 digits" } })}
+              type="text"
+              placeholder="123456"
+              className="mt-1 block w-full bg-gray-50 rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+            />
+            {verificationForm.formState.errors.code && <p className="mt-1 text-sm text-red-600">{verificationForm.formState.errors.code.message}</p>}
+          </div>
+
+          <button
+            type="submit"
+            disabled={isVerifying}
+            className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+          >
+            {isVerifying ? 'Verifying...' : 'Verify Code'}
+          </button>
+        </form>
+      )}
+
+      {/* Step 3: Password Form */}
+      {currentStep === "PASSWORD" && (
+        <form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit)} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Password</label>
+            <input
+              {...passwordForm.register('password', { required: 'Password is required' })}
+              type="password"
+              placeholder='Password'
+              className="mt-1 block w-full bg-gray-50 rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+            />
+            {passwordForm.formState.errors.password && <p className="mt-1 text-sm text-red-600">{passwordForm.formState.errors.password.message}</p>}
+          </div>
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+          >
+            {isLoading ? 'Logging in...' : 'Login'}
+          </button>
+        </form>
+      )}
+
       <div className="flex justify-center gap-1"> 
-      <p> No Account Yet?</p>
-       <Link href="/accounts" className="text-blue-600 hover:text-blue-800"> Register Here</Link>
-      
+        <p>No Account Yet?</p>
+        <Link href="/accounts" className="text-blue-600 hover:text-blue-800">Register Here</Link>
       </div>
-    </form>
+    </div>
   );
 }
