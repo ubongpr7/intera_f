@@ -1,18 +1,20 @@
 "use client"
 
 import { useCreateCompanyProfileMutation,
+   useGetCompanyProfileQuery,
    useGetOwnerCompanyProfileQuery, 
    useUpdateCompanyProfileMutation } from "@/redux/features/management/companyProfileApiSlice"
-
+import {useAuth} from "@/redux/features/users/useAuth"
 
 
 export function useCompanyProfile() {
+  const { user } = useAuth()
   const {
     data: profile,
     isLoading,
     error,
     refetch,
-  } = useGetOwnerCompanyProfileQuery()
+  } =   useGetCompanyProfileQuery(String(user?.profile))
 
   const [updateProfile, { isLoading: isUpdating }] = useUpdateCompanyProfileMutation()
   const [createProfile, { isLoading: isCreating }] = useCreateCompanyProfileMutation()

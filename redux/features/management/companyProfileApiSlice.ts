@@ -10,16 +10,15 @@ import type {
   InventoryPolicy,
   ActivityLog,
   CompanyFormData,
-} from "../../../types/company-profile"
+} from "@/types/company-profile"
 
-const management_api = "management_api"
+const management_api = "management"
 
 export const companyApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    // Company Profile endpoints
     createCompanyProfile: builder.mutation({
       query: (companyData: CompanyFormData) => ({
-        url: `/${management_api}/company-profiles/`,
+        url: `/${management_api}/profiles/`,
         method: "POST",
         body: companyData,
       }),
@@ -27,7 +26,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
 
     updateCompanyProfile: builder.mutation({
       query: ({ id, data }) => ({
-        url: `/${management_api}/company-profiles/${id}/`,
+        url: `/${management_api}/profiles/${id}/`,
         method: "PATCH",
         body: data,
       }),
@@ -35,7 +34,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
 
     getCompanyProfile: builder.query<CompanyProfile, string>({
       query: (id) => ({
-        url: `/${management_api}/company-profiles/${id}/`,
+        url: `/${management_api}/profiles/${id}/`,
       }),
     }),
 
