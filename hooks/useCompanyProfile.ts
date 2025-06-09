@@ -1,20 +1,26 @@
 "use client"
 
-import { useCreateCompanyProfileMutation,
-   useGetCompanyProfileQuery,
-   useGetOwnerCompanyProfileQuery, 
-   useUpdateCompanyProfileMutation } from "@/redux/features/management/companyProfileApiSlice"
-import {useAuth} from "@/redux/features/users/useAuth"
-
+import {
+  useCreateCompanyProfileMutation,
+  useGetCompanyProfileQuery,
+  useUpdateCompanyProfileMutation,
+} from "@/redux/features/management/companyProfileApiSlice"
+import { useAuth } from "@/redux/features/users/useAuth"
 
 export function useCompanyProfile() {
-  const { user } = useAuth()
+  const { user, isLoading: isAuthLoading } = useAuth()
+
+  const profileId = user?.profile
+  const shouldSkip = isAuthLoading || !profileId
+
   const {
     data: profile,
-    isLoading,
+    isLoading: isProfileLoading,
     error,
     refetch,
-  } =   useGetCompanyProfileQuery(String(user?.profile))
+  } = useGetCompanyProfileQuery(String(profileId), {
+    skip: shouldSkip,
+  })
 
   const [updateProfile, { isLoading: isUpdating }] = useUpdateCompanyProfileMutation()
   const [createProfile, { isLoading: isCreating }] = useCreateCompanyProfileMutation()
@@ -29,7 +35,7 @@ export function useCompanyProfile() {
 
   return {
     profile,
-    isLoading: isLoading || isUpdating || isCreating,
+    isLoading: isAuthLoading || isProfileLoading || isUpdating || isCreating,
     error,
     updateProfile: updateCompanyProfile,
     refetch,
