@@ -68,7 +68,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getCompanyProfileAddress: builder.query<CompanyAddress, string>({
+    getCompanyProfileAddress: builder.query<CompanyAddress, any>({
       query: (id) => ({
         url: `/${management_api}/company-addresses/${id}/`,
       }),

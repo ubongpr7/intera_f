@@ -18,7 +18,7 @@ export function useCompanyProfile() {
     isLoading: isProfileLoading,
     error,
     refetch,
-  } = useGetCompanyProfileQuery(String(profileId), {
+  } = useGetCompanyProfileQuery(profileId, {
     skip: shouldSkip,
   })
 
