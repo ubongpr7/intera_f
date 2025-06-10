@@ -59,10 +59,10 @@ export const ReactSelectField = forwardRef(
           ? "var(--color-blue-500)" // light: blue-500 (blue[400]), dark: blue-500 (blue[600])
           : state.isFocused
             ? "var(--color-blue-500 / 0.1)" // light: blue-500/10, dark: blue-500/10
-            : "transparent",
+            : "var(--color-gray-50)", // light: gray-50 (gray[900]), dark: gray-50 (gray[50])
         color: state.isSelected
           ? "var(--color-white)" // light: white (#fff), dark: white (gray-950)
-          : "var(--color-gray-900)", // light: gray-900 (gray[50]), dark: gray-900 (gray[900])
+          : "var(--color-gray-900)", // light: gray-900 (gray[50]), dark: gray-900 (gray[950])
         cursor: "pointer",
         padding: "8px 12px",
         "&:active": {
