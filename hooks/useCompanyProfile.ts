@@ -10,7 +10,7 @@ import { useAuth } from "@/redux/features/users/useAuth"
 export function useCompanyProfile() {
   const { user, isLoading: isAuthLoading } = useAuth()
 
-  const profileId = user?.profile
+  const profileId = String(user?.profile)
   const shouldSkip = isAuthLoading || !profileId
 
   const {
