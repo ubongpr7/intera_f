@@ -53,8 +53,8 @@ export const companyApiSlice = apiSlice.injectEndpoints({
 
     // Company Address endpoints
     createCompanyProfileAddress: builder.mutation({
-      query: (address: CompanyAddress) => ({
-        url: `/${management_api}/company-addresses/`,
+      query: (address) => ({
+        url: `/${management_api}/addresses/`,
         method: "POST",
         body: address,
       }),
