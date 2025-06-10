@@ -62,7 +62,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
 
     updateCompanyProfileAddress: builder.mutation({
       query: ({ id, data }) => ({
-        url: `/${management_api}/company-addresses/${id}/`,
+        url: `/${management_api}/addresses/${id}/`,
         method: "PATCH",
         body: data,
       }),
