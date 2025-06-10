@@ -58,7 +58,7 @@ export const ReactSelectField = forwardRef(
         backgroundColor: state.isSelected
           ? "var(--color-blue-500)" // light: blue-500 (blue[400]), dark: blue-500 (blue[600])
           : state.isFocused
-            ? "var(--color-blue-500 / 0.1)" // light: blue-500/10, dark: blue-500/10
+            ? "var(--color-blue-500 / 0.9)" // light: blue-500/10, dark: blue-500/10
             : "var(--color-gray-50)", // light: gray-50 (gray[900]), dark: gray-50 (gray[50])
         color: state.isSelected
           ? "var(--color-white)" // light: white (#fff), dark: white (gray-950)
@@ -68,12 +68,12 @@ export const ReactSelectField = forwardRef(
         "&:active": {
           backgroundColor: state.isSelected
             ? "var(--color-blue-600)" // light: blue-600 (blue[300]), dark: blue-600 (blue[700])
-            : "var(--color-blue-500 / 0.2)",
+            : "var(--color-blue-500 / 0.9)",
         },
       }),
       multiValue: (provided) => ({
         ...provided,
-        backgroundColor: "var(--color-blue-500 / 0.1)",
+        backgroundColor: "var(--color-blue-500 / 0.9)",
         borderRadius: "0.25rem",
       }),
       multiValueLabel: (provided) => ({
