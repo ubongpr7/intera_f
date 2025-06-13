@@ -20,8 +20,7 @@ import { useCreateInventoryPolicyMutation,
    useUpdateInventoryPolicyMutation } from "@/redux/features/management/companyProfileApiSlice"
 
 interface InventoryPolicyManagementProps {
-  profileId: string
-  userId: string
+  profileId: number
 }
 
 interface PolicyFormData {
@@ -34,6 +33,7 @@ interface PolicyFormData {
   effective_date: string
   expiry_date: string
   is_active: boolean
+  profile:number
 }
 
 const POLICY_TYPE_OPTIONS: SelectOption[] = [
@@ -45,8 +45,8 @@ const POLICY_TYPE_OPTIONS: SelectOption[] = [
   { value: "other", label: "Other" },
 ]
 
-export function InventoryPolicyManagement() {
-  const { data: policies = [], isLoading, error: fetchError } = useGetInventoryPoliciesQuery()
+export function InventoryPolicyManagement({profileId}:InventoryPolicyManagementProps) {
+  const { data: policies = [], isLoading, error: fetchError,refetch } = useGetInventoryPoliciesQuery()
   const [createPolicy, { isLoading: isCreating, error: createError }] = useCreateInventoryPolicyMutation()
   const [updatePolicy, { isLoading: isUpdating, error: updateError }] = useUpdateInventoryPolicyMutation()
   const [deletePolicy, { isLoading: isDeleting, error: deleteError }] = useDeleteInventoryPolicyMutation()
@@ -63,6 +63,8 @@ export function InventoryPolicyManagement() {
     effective_date: new Date().toISOString().split("T")[0],
     expiry_date: "",
     is_active: true,
+    profile:profileId
+
   })
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
@@ -80,6 +82,8 @@ export function InventoryPolicyManagement() {
         effective_date: editingPolicy.effective_date,
         expiry_date: editingPolicy.expiry_date || "",
         is_active: editingPolicy.is_active,
+        profile:profileId
+
       })
     } else {
       setFormData({
@@ -92,6 +96,8 @@ export function InventoryPolicyManagement() {
         effective_date: new Date().toISOString().split("T")[0],
         expiry_date: "",
         is_active: true,
+        profile:profileId
+
       })
     }
   }, [editingPolicy])
@@ -121,7 +127,7 @@ export function InventoryPolicyManagement() {
       }
       setShowForm(false)
       setEditingPolicy(null)
-
+      await refetch()
       // Clear success message after 3 seconds
       setTimeout(() => {
         setSuccessMessage(null)
@@ -141,7 +147,7 @@ export function InventoryPolicyManagement() {
       try {
         await deletePolicy(policyId).unwrap()
         setSuccessMessage("Policy deleted successfully")
-
+        await refetch()
         // Clear success message after 3 seconds
         setTimeout(() => {
           setSuccessMessage(null)
@@ -351,7 +357,7 @@ export function InventoryPolicyManagement() {
                       {policy.expiry_date && ` - ${new Date(policy.expiry_date).toLocaleDateString()}`}
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 text-gray-800">
                     <Button size="sm" variant="outline" onClick={() => toggleActive(policy)} disabled={isUpdating}>
                       {policy.is_active ? "Deactivate" : "Activate"}
                     </Button>

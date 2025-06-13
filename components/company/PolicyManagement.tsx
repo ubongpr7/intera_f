@@ -8,11 +8,10 @@ import { ReorderStrategyManagement } from "./ReorderStrategyManagement"
 import { InventoryPolicyManagement } from "./InventoryPolicyManagement"
 
 interface PolicyManagementProps {
-  profileId: string
-  userId: string
+  profileId: number
 }
 
-export function PolicyManagement() {
+export function PolicyManagement({profileId}:PolicyManagementProps) {
   const [activeTab, setActiveTab] = useState("recall")
 
   return (
@@ -30,15 +29,15 @@ export function PolicyManagement() {
             </TabsList>
 
             <TabsContent value="recall" className="mt-6">
-              <RecallPolicyManagement  />
+              <RecallPolicyManagement profileId={profileId} />
             </TabsContent>
 
             <TabsContent value="reorder" className="mt-6">
-              <ReorderStrategyManagement  />
+              <ReorderStrategyManagement profileId={profileId} />
             </TabsContent>
 
             <TabsContent value="inventory" className="mt-6">
-              <InventoryPolicyManagement  />
+              <InventoryPolicyManagement profileId={profileId}  />
             </TabsContent>
           </Tabs>
         </CardContent>

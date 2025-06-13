@@ -4,6 +4,8 @@ import { useVerifyAccountMutation, useGetverifyAccountMutation } from '../../red
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 // import  { useRouter } from 'next/navigation';
+import { useLoginMutation, useResendCodeMutation,
+  useVerifyCodeMutation,  } from '../../redux/features/authApiSlice';
 import { VerificationProps, VerifyFormData } from '../types/authForms';
 import { VerificationError, ErrorResponse, ResendError } from '../types/authResponse';
 import { useRouter } from 'nextjs-toploader/app'
@@ -18,7 +20,9 @@ export default function VerificationForm({ userId,redirectTo }: VerificationProp
   });
 
   const codeValue = watch('code', '');
-
+// email: verifiedEmail,
+//         code: data.code,
+//         action: 'verify_code'
   useEffect(() => {
     const timer = setInterval(() => {
       setCooldown(prev => Math.max(0, prev - 1));
@@ -29,7 +33,7 @@ export default function VerificationForm({ userId,redirectTo }: VerificationProp
     if (cooldown > 0) return;
     
     try {
-      await resendCode({ id: userId }).unwrap();
+      await resendCode({ id: userId, }).unwrap();
       setCooldown(120);
       toast.success("Verification code resent successfully");
     } catch (error) {

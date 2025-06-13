@@ -19,8 +19,7 @@ import {
 import type { RecallPolicy } from "@/types/company-profile"
 
 interface RecallPolicyManagementProps {
-  profileId: string
-  userId: string
+  profileId: number
 }
 
 interface PolicyFormData {
@@ -30,10 +29,11 @@ interface PolicyFormData {
   notification_template: string
   contact_information: Record<string, any>
   is_active: boolean
+  profile:number
 }
 
-export function RecallPolicyManagement() {
-  const { data: policies = [], isLoading, error: fetchError } = useGetRecallPoliciesQuery()
+export function RecallPolicyManagement({profileId}:RecallPolicyManagementProps) {
+  const { data: policies = [], isLoading, error: fetchError,refetch } = useGetRecallPoliciesQuery()
   const [createPolicy, { isLoading: isCreating, error: createError }] = useCreateRecallPolicyMutation()
   const [updatePolicy, { isLoading: isUpdating, error: updateError }] = useUpdateRecallPolicyMutation()
   const [deletePolicy, { isLoading: isDeleting, error: deleteError }] = useDeleteRecallPolicyMutation()
@@ -47,6 +47,7 @@ export function RecallPolicyManagement() {
     notification_template: "",
     contact_information: {},
     is_active: true,
+    profile:profileId
   })
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
@@ -61,6 +62,7 @@ export function RecallPolicyManagement() {
         notification_template: editingPolicy.notification_template || "",
         contact_information: editingPolicy.contact_information,
         is_active: editingPolicy.is_active,
+        profile:profileId
       })
     } else {
       setFormData({
@@ -70,6 +72,8 @@ export function RecallPolicyManagement() {
         notification_template: "",
         contact_information: {},
         is_active: true,
+        profile:profileId
+
       })
     }
   }, [editingPolicy])
@@ -137,7 +141,7 @@ export function RecallPolicyManagement() {
         data: { ...policy, is_active: !policy.is_active },
       }).unwrap()
       setSuccessMessage(`Policy ${policy.is_active ? "deactivated" : "activated"} successfully`)
-
+      await refetch()
       // Clear success message after 3 seconds
       setTimeout(() => {
         setSuccessMessage(null)
@@ -244,7 +248,7 @@ export function RecallPolicyManagement() {
       <div className="grid gap-4">
         {policies.length === 0 ? (
           <Card>
-            <CardContent className="p-6 text-center text-muted-foreground">
+            <CardContent className="p-6 text-center ">
               No recall policies found. Create your first policy to get started.
             </CardContent>
           </Card>
@@ -255,7 +259,7 @@ export function RecallPolicyManagement() {
                 <div className="flex justify-between items-start">
                   <div className="space-y-2">
                     <h4 className="font-medium">{policy.name}</h4>
-                    {policy.description && <p className="text-sm text-muted-foreground">{policy.description}</p>}
+                    {policy.description && <p className="text-sm ">{policy.description}</p>}
                     <div className="flex gap-2">
                       <Badge variant={policy.is_active ? "default" : "secondary"}>
                         {policy.is_active ? "Active" : "Inactive"}

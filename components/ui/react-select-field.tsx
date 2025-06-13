@@ -6,7 +6,7 @@ import Select, { type Props as ReactSelectProps, type StylesConfig, type GroupBa
 import { cn } from "@/lib/utils"
 
 export interface SelectOption {
-  value: string
+  value: any
   label: string
 }
 

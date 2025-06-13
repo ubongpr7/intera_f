@@ -63,7 +63,7 @@ export default function RegisterForm() {
       const userData = await registerUser(formData).unwrap() as RegisterResponse;
       toast.success("Registration successful! Redirecting...");
       setCookie("userID", userData.id);
-      router.push("/accounts/verify");
+      router.push("/accounts/signin");
     } catch (error) {
       const apiError = error as ErrorResponse;
       const errorMessage = apiError.data?.detail || "Registration failed";

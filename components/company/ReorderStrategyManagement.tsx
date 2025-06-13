@@ -21,8 +21,7 @@ import {
 import type { ReorderStrategy } from "@/types/company-profile"
 
 interface ReorderStrategyManagementProps {
-  profileId: string
-  userId: string
+  profileId: number
 }
 
 interface StrategyFormData {
@@ -33,6 +32,7 @@ interface StrategyFormData {
   applies_to_categories: string
   applies_to_all: boolean
   is_active: boolean
+  profile:number
 }
 
 const STRATEGY_TYPE_OPTIONS: SelectOption[] = [
@@ -44,8 +44,8 @@ const STRATEGY_TYPE_OPTIONS: SelectOption[] = [
   { value: "custom", label: "Custom" },
 ]
 
-export function ReorderStrategyManagement() {
-  const { data: strategies = [], isLoading, error: fetchError } = useGetReorderStrategiesQuery()
+export function ReorderStrategyManagement({profileId}:ReorderStrategyManagementProps) {
+  const { data: strategies = [], isLoading, error: fetchError,refetch } = useGetReorderStrategiesQuery()
   const [createStrategy, { isLoading: isCreating, error: createError }] = useCreateReorderStrategyMutation()
   const [updateStrategy, { isLoading: isUpdating, error: updateError }] = useUpdateReorderStrategyMutation()
   const [deleteStrategy, { isLoading: isDeleting, error: deleteError }] = useDeleteReorderStrategyMutation()
@@ -60,6 +60,7 @@ export function ReorderStrategyManagement() {
     applies_to_categories: "",
     applies_to_all: false,
     is_active: true,
+    profile:profileId
   })
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
@@ -75,6 +76,7 @@ export function ReorderStrategyManagement() {
         applies_to_categories: editingStrategy.applies_to_categories || "",
         applies_to_all: editingStrategy.applies_to_all,
         is_active: editingStrategy.is_active,
+        profile:profileId
       })
     } else {
       setFormData({
@@ -85,6 +87,8 @@ export function ReorderStrategyManagement() {
         applies_to_categories: "",
         applies_to_all: false,
         is_active: true,
+        profile:profileId
+
       })
     }
   }, [editingStrategy])
@@ -114,6 +118,7 @@ export function ReorderStrategyManagement() {
       }
       setShowForm(false)
       setEditingStrategy(null)
+      await refetch()
 
       // Clear success message after 3 seconds
       setTimeout(() => {
@@ -127,6 +132,7 @@ export function ReorderStrategyManagement() {
   const handleEdit = (strategy: ReorderStrategy) => {
     setEditingStrategy(strategy)
     setShowForm(true)
+
   }
 
   const handleDelete = async (strategyId: string) => {
@@ -134,6 +140,7 @@ export function ReorderStrategyManagement() {
       try {
         await deleteStrategy(strategyId).unwrap()
         setSuccessMessage("Strategy deleted successfully")
+        await refetch()
 
         // Clear success message after 3 seconds
         setTimeout(() => {
@@ -190,7 +197,7 @@ export function ReorderStrategyManagement() {
           <RotateCcw className="h-5 w-5" />
           Reorder Strategies
         </h3>
-        <Button onClick={() => setShowForm(true)} className="flex items-center gap-2">
+        <Button onClick={() => setShowForm(true)} className="flex items-center gap-2 ">
           <Plus className="h-4 w-4" />
           Add Strategy
         </Button>

@@ -114,3 +114,62 @@ select {
   scrollbar-width: thin; 
   scrollbar-color: rgba(0, 0, 0, 0.02) transparent; 
 }
+select {
+  @apply bg-white text-black border border-gray-300 rounded-md p-2;
+  appearance: none; /* Remove native dropdown arrow for custom styling (optional) */
+}
+
+option {
+  background-color: bg-gray-700; /* force option bg for supporting browsers */
+  color: text-gray-900;
+  z-index: 9999;
+}
+
+
+
+/* Tooltip base styles */
+[data-tooltip] {
+  position: relative;
+  cursor: pointer;
+}
+
+/* Tooltip content */
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 125%; /* Above the element */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #333;
+  color: #fff;
+  padding: 6px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease-in-out;
+  z-index: 1000;
+}
+
+/* Tooltip arrow */
+[data-tooltip]::before {
+  content: "";
+  position: absolute;
+  bottom: 115%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: #333 transparent transparent transparent;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+  z-index: 1000;
+}
+
+/* Show on hover */
+[data-tooltip]:hover::after,
+[data-tooltip]:hover::before {
+  opacity: 1;
+}
+

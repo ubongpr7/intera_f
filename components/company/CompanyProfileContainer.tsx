@@ -79,7 +79,7 @@ export default function CompanyProfileContainer() {
             </TabsContent>
 
             <TabsContent value="policies" className="mt-6">
-              <PolicyManagement  />
+              <PolicyManagement profileId={Number(profile?.id)}  />
             </TabsContent>
 
           </Tabs>

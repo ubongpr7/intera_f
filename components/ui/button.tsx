@@ -3,22 +3,18 @@ import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
-
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-gray-100 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        default: "bg-blue-500 text-white hover:bg-blue-600",
+        destructive: "bg-red-500 text-white hover:bg-red-600",
         outline:
-          "border border-input bg-gray-100 text-foreground hover:bg-accent hover:text-accent-foreground dark:border-gray-700 dark:bg-transparent dark:hover:bg-gray-800 dark:text-gray-100 dark:hover:text-white",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600",
-        ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-gray-800 dark:text-gray-100",
-        link: "text-primary underline-offset-4 hover:underline dark:text-blue-400 dark:hover:text-blue-300",
+          "border border-gray-300 bg-gray-100 text-gray-900 hover:bg-gray-800 hover:text-gray-100",
+        secondary: "bg-gray-500 text-white hover:bg-gray-600",
+        ghost: "hover:bg-gray-800 hover:text-gray-100",
+        link: "text-blue-500 underline-offset-4 hover:underline hover:text-blue-600",
       },
       size: {
         default: "h-10 px-4 py-2",
