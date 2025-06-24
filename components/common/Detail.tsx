@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Edit } from 'lucide-react';
+import { Check, CheckCircle, Edit, XCircle } from 'lucide-react';
 import CustomUpdateCard from './updateCard';
 import ActionHeader from './actions';
 import { ActionItem } from '../interfaces/common'
@@ -64,8 +64,8 @@ export default function DetailCard<T extends Record<string, any>>({
     ([key]) => !policyFields.includes(key)
   );
 
-  const policyData = policyFields.length > 0
-    ? filteredData.filter(([key]) => policyFields.includes(key))
+  const policyData = policyFields?.length > 0
+    ? filteredData?.filter(([key]) => policyFields?.includes(key))
     : null;
 
   const editableFields = Object.keys(data).filter(
@@ -76,6 +76,15 @@ export default function DetailCard<T extends Record<string, any>>({
     return str.replace(/_name$/, '').replace(/_/g, ' ');
   };
   const renderValue = (key: keyof T, value: any) => {
+    if (typeof value === 'boolean'){
+      if (value ){
+        return (<CheckCircle/>)
+
+      }else {
+        return <XCircle/>
+      }
+
+    }
     if (typeof value === 'object' && !Array.isArray(value) && value !== null) {
       return (
         <div>
@@ -96,7 +105,6 @@ export default function DetailCard<T extends Record<string, any>>({
         </div>
       )
     }
-
     return (
       
       <p className="text-sm font-semibold text-gray-900">

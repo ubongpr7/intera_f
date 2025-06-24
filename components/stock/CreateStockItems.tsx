@@ -1,11 +1,12 @@
 'use client'
 import { StockItem } from "../interfaces/stock";
 import { Column, DataTable } from "../common/DataTable/DataTable";
-import { useGetStockItemDataQuery,useCreateStockItemMutation, useGetStockItemDataLocationQuery } from "../../redux/features/stock/stockAPISlice";
-import { useState } from "react";
+import { useGetStockItemDataForInventoryQuery,useCreateStockItemMutation, useGetStockItemDataLocationQuery } from "../../redux/features/stock/stockAPISlice";
+import { useEffect, useState } from "react";
 import { PageHeader } from "../inventory/PageHeader";
 import CustomCreateCard from '../common/createCard';
 import { PACKAGING_OPTIONS } from "./options";
+import { useGetMinimalInventoryQuery } from "@/redux/features/inventory/inventoryAPiSlice";
 
 
 
@@ -36,11 +37,22 @@ const inventoryColumns: Column<StockItem>[] = [
 ];
 
 function StockItems({reference}:{reference:string}) {
-    const {data:stockItems,isLoading:stockItemsLoading,refetch,error}=useGetStockItemDataQuery(reference)
+    const {data:stockItems,isLoading:stockItemsLoading,refetch,error}=useGetStockItemDataForInventoryQuery(reference)
     const [createStockItem, { isLoading: stockItemCreateLoading }] = useCreateStockItemMutation();
+    const [reorderQuantity,setReorderQuantity] = useState(100)
     const [isCreateOpen, setIsCreateOpen] = useState(false); 
     const {data:StockLocationData,isLoading:stockLocationsLoading,}=useGetStockItemDataLocationQuery()
-    
+    const {data:minimalInventory,isLoading:inventoryLoading } =useGetMinimalInventoryQuery(reference)
+   
+    useEffect(()=>{
+      if (!inventoryLoading && minimalInventory){
+        setReorderQuantity(minimalInventory.re_order_quantity)
+        console.log('setting')
+        console.log(reorderQuantity)
+      }
+
+    },[!inventoryLoading,minimalInventory])
+
     const stockItemsOptions = stockItems?.map((StockItem) => ({
         text: `${StockItem.name } (${StockItem.sku})`,
         value: StockItem.id,
@@ -116,16 +128,16 @@ function StockItems({reference}:{reference:string}) {
 
         <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>
                 <CustomCreateCard
-                  defaultValues={{packaging:'box','quantity':1,status:'ok',inventory:reference,purchase_price:0,delete_on_deplete:false}}
+                  defaultValues={{packaging:'box','quantity':reorderQuantity,status:'ok',inventory:reference,purchase_price:0,delete_on_deplete:false}}
                   onClose={() => setIsCreateOpen(false)}
                   onSubmit={handleCreate}
                   isLoading={stockItemCreateLoading}
                   selectOptions={selectionOpions}
-                  keyInfo={{}}
+                  keyInfo={{location:`Optional, defaults to parent or inventory's category location `}}
                   notEditableFields={[]}
                   interfaceKeys={interfaceKeys}
                   dateFields={['expiry_date']}
-                  optionalFields={['parent','notes','belongs_to','link','serial','delete_on_deplete']}
+                  optionalFields={['parent','notes','belongs_to','link','serial','location','delete_on_deplete']}
                   readOnlyFields={['inventory']}
                   hiddenFields={{}}
                 />

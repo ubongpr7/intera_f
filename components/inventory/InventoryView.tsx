@@ -3,13 +3,14 @@ import { useEffect, useState } from 'react';
 import { PageHeader } from "../inventory/PageHeader";
 import { useRouter } from 'nextjs-toploader/app';
 import { Column, DataTable } from "../common/DataTable/DataTable";
-import { InventoryData } from "../interfaces/inventory";
+import { InventoryData, inventoryTypes } from "../interfaces/inventory";
 import { useGetInventoryDataQuery, useCreateInventoryMutation } from "../../redux/features/inventory/inventoryAPiSlice";
 import CustomCreateCard from '../common/createCard';
 import { InventoryInterfaceKeys,defaultValues } from './selectOptions';
 import { InventoryKeyInfo } from './selectOptions';
 import { useGetUnitsQuery,useGetTypesByModelQuery } from "../../redux/features/common/typeOF";
 import { useGetInventoryCategoriesQuery } from "../../redux/features/inventory/inventoryAPiSlice";
+import { useGetCompanyUsersQuery } from '@/redux/features/users/userApiSlice';
 
 
 const strategies = {
@@ -38,7 +39,7 @@ const inventoryColumns: Column<InventoryData>[] = [
   },
   {
     header: 'Reorder Strategy',
-    accessor: 'reorder_strategy_name',
+    accessor: 'reorder_strategy',
     render: (value: keyof typeof strategies) => {
       return strategies[value] || value;
     },
@@ -65,29 +66,34 @@ function InventoryView() {
 
     //////////////////////////////
     const { data: categories = [], isLoading: isCatLoading, error: catError } = useGetInventoryCategoriesQuery(1);
-      const { data: types } = useGetTypesByModelQuery('inventory');
       const { data: units } = useGetUnitsQuery();
+      const { data: userData, isLoading: userLoading,  } = useGetCompanyUsersQuery();
       
       const unitOptions = units ? units.map((unit: any) => ({
         value: unit.id,
-        text: unit.name,
+        text: `${unit.name} (${unit.dimension_type})`,
       })) : [];
       
-      const typeOptions = types ? types.map((inventory_type: any) => ({
+      const typeOptions = inventoryTypes ? inventoryTypes.map((inventory_type: any) => ({
         value: inventory_type.id,
-        text: inventory_type.name,
+        text: inventory_type.text,
       })) : [];
     
       const categoryOptions = categories.map((cat: any) => ({
         value: cat.id,
         text: cat.name,
       }));
-      
+  
+    const userOptions = userData?.map((user) => ({
+        text: `${user.first_name} ${user.email}`,
+        value: user.id.toString(),
+      })) || [];      
     const  selectOptions = {
           
             category:categoryOptions,
-            // unit:unitOptions,
+            officer_in_charge:userOptions,
             inventory_type:typeOptions,
+            unit:unitOptions,
             reorder_strategy: [
               { value: 'FQ', text: 'Fixed Quantity' },
               { value: 'FI', text: 'Fixed Interval' },
@@ -125,7 +131,7 @@ function InventoryView() {
   };
 
   const handleRowClick = (row: InventoryData) => {
-    router.push(`/inventory/${row.external_system_id}`);
+    router.push(`/inventory/${row.id}`);
   };
 
   if (error) {
@@ -146,6 +152,7 @@ function InventoryView() {
     'recall_policy_name',
     'category_name',
     'external_system_id',
+    'unit_name'
   ];
 
   

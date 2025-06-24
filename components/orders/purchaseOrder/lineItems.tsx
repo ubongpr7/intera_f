@@ -5,7 +5,7 @@ import { useGetPurchseOrderLineItemsQuery,useCreatePurchaseOrderLineItemMutation
 import { useState } from "react";
 import { PageHeader } from "../../inventory/PageHeader";
 import CustomCreateCard from '../../common/createCard';
-import { useGetStockItemDataQuery } from "../../../redux/features/stock/stockAPISlice";
+import { useGetStockItemDataForInventoryQuery } from "@/redux/features/stock/stockAPISlice";
 
 
 const inventoryColumns: Column<PurchaseOrderLineItem>[] = [
@@ -48,7 +48,7 @@ function PurchaseOrderLineItems({reference}:{reference:string}) {
     const {data:lineItems,isLoading:lineItemsLoading,refetch,error}=useGetPurchseOrderLineItemsQuery(reference)
     const [createLineItem, { isLoading: lineItemCreateLoading }] = useCreatePurchaseOrderLineItemMutation();
     const [isCreateOpen, setIsCreateOpen] = useState(false); // Renamed for clarity
-    const {data:stockItems,isLoading:stockItemsLoading,}=useGetStockItemDataQuery(reference)
+    const {data:stockItems,isLoading:stockItemsLoading,}=useGetStockItemDataForInventoryQuery(reference)
     
     const handleCreate = async (createdData: Partial<PurchaseOrderLineItem>) => {
     try {   

@@ -7,6 +7,8 @@ import { DataTable,Column } from "../common/DataTable/DataTable";
 import { useCreateCategoryMutation, useGetInventoryCategoriesQuery} from "../../redux/features/inventory/inventoryAPiSlice";
 import { CategoryData } from '../interfaces/inventory';
 import CustomCreateCard from '../common/createCard';
+import { toast } from 'react-toastify';
+import { useGetStockItemDataLocationQuery } from '@/redux/features/stock/stockAPISlice';
 
 const inventoryColumns: Column<CategoryData>[] = [
   {
@@ -24,7 +26,7 @@ const inventoryColumns: Column<CategoryData>[] = [
   
   {
     header: 'Parent Category',
-    accessor: 'parent',
+    accessor: 'parent_name',
     render: (value) => value || 'N/A',
     info:'Category to which the category belong'
   },
@@ -34,26 +36,35 @@ function InventoryCategoryView() {
   const { data, isLoading, error,refetch } = useGetInventoryCategoriesQuery('');
   const router = useRouter();
   const [createCategory,{isLoading:creatingCategory,error:catError}]= useCreateCategoryMutation()
+  const {data:StockLocationData,isLoading:stockLocationsLoading,}=useGetStockItemDataLocationQuery()
   
+
   const categoryOptions = data?.map((cat: CategoryData) => ({
       value: cat.id,
       text: cat.name,
     }));
-  
+  const locationOptions = StockLocationData?.map((StockLocationItem) => ({
+        text: `${StockLocationItem.name } (${StockLocationItem.code})`,
+        value: StockLocationItem.id.toString(),
+      })) || [];
   const [isCreateOpen, setIsCreateOpen] = useState(false); // Renamed for clarity
   const CategoryInterfaceKeys: (keyof CategoryData)[]=[
-    'name','description','parent'
+    'name','description','parent','structural','default_location'
   ]
   const notEditableFields: (keyof CategoryData)[] = [
-    'id','inventory_count'
+    'id','inventory_count',
   ]
+  
   const selectOptions: Partial<Record<keyof CategoryData, { value: string; text: string; }[]>> = {
-      parent: categoryOptions
+      parent: categoryOptions,
+      default_location:locationOptions
     }
     const handleCreate = async (createdData: Partial<CategoryData>) => {
       await createCategory(createdData).unwrap();
-      setIsCreateOpen(false);
-      await refetch(); 
+        await refetch(); 
+        setIsCreateOpen(false);
+
+      
     };
     const handleRowClick = (row: CategoryData) => {
     
@@ -78,15 +89,15 @@ function InventoryCategoryView() {
       />
       <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>
               <CustomCreateCard
-                defaultValues={{}}
+                defaultValues={{structural:false}}
                 onClose={() => setIsCreateOpen(false)}
                 onSubmit={handleCreate}
                 isLoading={creatingCategory}
                 selectOptions={selectOptions}
-                keyInfo={{}}
+                keyInfo={{default_location:`Optional, defaults to parent's location`}}
                 notEditableFields={notEditableFields}
                 interfaceKeys={CategoryInterfaceKeys}
-                optionalFields={['description', 'parent']}
+                optionalFields={['description', 'parent','structural','default_location']}
                 />
             </div>
     </div>

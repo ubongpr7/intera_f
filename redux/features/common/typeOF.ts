@@ -21,6 +21,7 @@ export const typeOfApiSlice = apiSlice.injectEndpoints({
       query: (forWhichModel) => ({
         url: `/${common_api}/types/`,
         params: { for_which_model: forWhichModel },
+        service: 'users',
       }),
       
     }),
@@ -64,7 +65,7 @@ export const commonApiSlice = apiSlice.injectEndpoints({
   endpoints: builder => ({
     
     getUnits: builder.query<Currency[], void>({
-      query: () => `/${common_api}/units/`,
+      query: () => `/inventory_api/units/`,
       
     }),
   }),

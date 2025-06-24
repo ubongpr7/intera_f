@@ -46,10 +46,10 @@ export const InventoryInterfaceKeys: (keyof InventoryData)[]=[
     'name', 'description','category', 'inventory_type','reorder_strategy','re_order_quantity',
      'safety_stock_level', 'minimum_stock_level', 're_order_point','alert_threshold',
       'automate_reorder', 'supplier_lead_time',
-    'internal_processing_time', 'expiration_threshold', 'holding_cost_per_unit',
-    'ordering_cost', 'stockout_cost',  'batch_tracking_enabled',
+    'internal_processing_time', 'expiration_threshold', 'officer_in_charge',
+    'batch_tracking_enabled',
     'expiration_policy', 'recall_policy', 'near_expiry_policy',
-    'forecast_method', 'supplier_reliability_score',
+    'forecast_method', 'supplier_reliability_score','unit'
   
 ]
 

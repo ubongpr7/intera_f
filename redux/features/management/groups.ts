@@ -1,7 +1,7 @@
 import { apiSlice } from '../../services/apiSlice';
 import { GroupData, RoleData } from '../../../components/interfaces/management';
 const management_api=`management_api`
-
+// http://localhost:8000/permission_api/role-assignments/roles/
 export const groupsAPISlice = apiSlice.injectEndpoints({
   endpoints: builder => ({
     createGroup: builder.mutation({
@@ -49,7 +49,7 @@ export const groupsAPISlice = apiSlice.injectEndpoints({
       query: (id) => `/${management_api}/roles/${id}/`,
     }),
     getRoles: builder.query<RoleData[], void>({
-      query: () => `/${management_api}/staff/role/list/`,
+      query: () => `permission_api/role-assignments/roles/`,
     }),
   
   }),

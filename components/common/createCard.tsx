@@ -13,6 +13,7 @@ import {
   useGetSubregionsQuery,
   useGetCitiesQuery,
 } from '../../redux/features/common/typeOF';
+import { toast } from 'react-toastify';
 
 const PhoneInput = dynamic(
   () => import('react-phone-number-input'),
@@ -177,12 +178,16 @@ export default function CustomCreateCard<T extends Record<string, any>>({
   const onSubmitHandler = async (formData: Partial<T>) => {
     try {
       await onSubmit(formData);
+      toast.success('Item Created Sucessfully')
       onClose();
       reset();
     } catch (error) {
+      console.log(error)
+      toast.error(`${error}`)
+
     }
   };
-
+  
 
   const isUpdating = useRef(false);
   useEffect(() => {
@@ -413,7 +418,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                                 }`}
                                 value={field.value as string | number | undefined}
                               >
-                                <option value="">Select {formatLabel(String(key))}</option>
+                                <option value="" disabled={true}>Select {formatLabel(String(key))}</option>
                                 {geoConfig?.data?.map((item) => (
                                   <option
                                     key={`geo-option-${keyStr}-${item.id}`}
@@ -443,7 +448,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                                 name={field.name}
                                 ref={field.ref}
                                 >
-                                <option value="">Select Contact Person</option>
+                                <option value=""disabled={true}>Select Contact Person</option>
                                 {contactPersons.map((contact: { id: number; name: string }) => (
                                   <option key={contact.id} value={contact.id.toString()}> {/* Ensure string value */}
                                     {contact.name}
@@ -468,7 +473,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                                 name={field.name}
                                 ref={field.ref}
                               >
-                                <option value="">Select {formatLabel(String(key))}</option>
+                                <option value="" disabled={true}>Select {formatLabel(String(key))}</option>
                                 {selectOptions[key]?.map((option) => (
                                   <option
                                     key={`select-option-${String(key)}-${option.value}`}

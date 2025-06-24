@@ -5,6 +5,7 @@ export interface UserData {
     email: string;
     phone?: string | null;
     picture?: string | null;
+    profile_image?:string
     first_name: string;
     last_name: string;
     sex?: 'male' | 'female' | 'other' | 'prefer_not_to_say' | null;

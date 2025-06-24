@@ -15,17 +15,22 @@ const inventoryColumns: Column<StockLocation>[] = [
   },
   {
     header: 'Location Type',
-    accessor: 'location_type',
+    accessor: 'location_type_name',
     className: 'font-medium',
   },
   {
     header: 'Parent',
-    accessor: 'parent',
+    accessor: 'parent_name',
     className: 'font-medium',
   },
   {
     header: 'Code',
     accessor: 'code',
+    className: 'font-medium',
+  },
+  {
+    header: 'Physical Location',
+    accessor: 'physical_address',
     className: 'font-medium',
   },
   
@@ -47,6 +52,7 @@ function StockLocations() {
         text: `${StockLocationItem.name } (${StockLocationItem.code})`,
         value: StockLocationItem.id.toString(),
       })) || [];
+      
     const userOptions = userData?.map((user) => ({
         text: `${user.first_name} ${user.email}`,
         value: user.id.toString(),
@@ -77,6 +83,7 @@ function StockLocations() {
         'official',
         'external',
         'structural',
+        'physical_address'
         
 
       ];
@@ -101,11 +108,11 @@ function StockLocations() {
                   onSubmit={handleCreate}
                   isLoading={stockItemCreateLoading}
                   selectOptions={selectionOpions}
-                  keyInfo={{}}
+                  keyInfo={{'physical_address':`Optional, takes parent's address by default`}}
                   notEditableFields={[]}
                   interfaceKeys={interfaceKeys}
                   dateFields={[]}
-                  optionalFields={['parent','external','structural']}
+                  optionalFields={['parent','external','structural','physical_address']}
                   readOnlyFields={[]}
                   itemTitle='Location'
                 />

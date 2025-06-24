@@ -6,9 +6,9 @@ import StockLocations from '../../components/stock/stockLoation';
 const InventoryPage = () => {
   const tabs = [
     {
-      id: 'all',
-      label: 'All Inventory',
-      content: <InventoryView />,
+      id: 'stock_locations',
+      label: 'Stock Locations',
+      content: <StockLocations />,
     },
     {
       id: 'categories',
@@ -16,9 +16,9 @@ const InventoryPage = () => {
       content: <InventoryCategoryView />,
     },
     {
-      id: 'stock_locations',
-      label: 'Stock Locations',
-      content: <StockLocations />,
+      id: 'all',
+      label: 'All Inventory',
+      content: <InventoryView />,
     },
   ];
 

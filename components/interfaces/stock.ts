@@ -2,6 +2,7 @@ export interface StockItem {
     id: string;
     name: string;
     inventory: string;
+    IPN:string
     created_at: Date;
     updated_at: Date;
     quantity: number;
@@ -37,6 +38,9 @@ export interface StockLocation {
   id: number;
   created_at: string;
   updated_at: string;
+  parent_name:string
+  physical_address:string;
+  location_type_name:string
   name: string;
   code: string;
   description: string;

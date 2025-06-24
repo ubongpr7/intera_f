@@ -37,6 +37,8 @@ const authApiSlice = apiSlice.injectEndpoints({
 					Accept: 'application/json',
 					'Content-Type': 'application/x-www-form-urlencoded',
 				},
+				service: 'users',
+
 			}),
 		}),
 		
@@ -45,6 +47,8 @@ const authApiSlice = apiSlice.injectEndpoints({
 				url: '/jwt/create/',
 				method: 'POST',
 				body: { email, password },
+				service: 'users',
+
 			}),
 		}),
 		verifyAccount: builder.mutation({
@@ -52,6 +56,8 @@ const authApiSlice = apiSlice.injectEndpoints({
 				url: '/api/v1/accounts/verify/',
 				method: 'POST',
 				body: { userId, code },
+				service: 'users',
+
 			}),
 		}),
 		getverifyAccount: builder.mutation({
@@ -59,6 +65,8 @@ const authApiSlice = apiSlice.injectEndpoints({
 				url: `/api/v1/accounts/verify/?id=${id}`,
 				method: 'GET',
 				// body: { id, },
+				service: 'users',
+
 			}),
 		}),
 		register: builder.mutation({
@@ -71,19 +79,24 @@ const authApiSlice = apiSlice.injectEndpoints({
 				url: '/api/v1/accounts/register/',
 				method: 'POST',
 				body: {first_name,  email, password, re_password, },
+				service: 'users',
 			}),
 		}),
 		verify: builder.mutation({
 			query: () => ({
 				url: '/jwt/verify/',
 				method: 'POST',
+				service: 'users',
+
 			}),
 		}),
 		resendCode: builder.mutation<void, { email: string,action:string }>({
       query: (data) => ({
         url: '/api/v1/accounts/verify/',
         method: 'POST',
-        body: data
+        body: data,
+		service: 'users',
+
       })
     }),
     
@@ -91,7 +104,9 @@ const authApiSlice = apiSlice.injectEndpoints({
       query: (data) => ({
         url: '/api/v1/accounts/verify/',
         method: 'POST',
-        body: data
+        body: data,
+		service: 'users',
+
       })
     }),
 		logout: builder.mutation({
@@ -100,6 +115,7 @@ const authApiSlice = apiSlice.injectEndpoints({
 				url: '/api/v1/accounts/logout/',
 				method: 'POST',
 				body: { refresh: refreshToken },
+				service: 'users',
 
 			}),
 		}),
@@ -108,6 +124,8 @@ const authApiSlice = apiSlice.injectEndpoints({
 				url: '/users/activation/',
 				method: 'POST',
 				body: { uid, token },
+				service: 'users',
+
 			}),
 		}),
 		resetPassword: builder.mutation({
@@ -115,6 +133,7 @@ const authApiSlice = apiSlice.injectEndpoints({
 				url: '/auth-api/users/reset_password/',
 				method: 'POST',
 				body: { email },
+				service: 'users',
 			}),
 		}),
 		resetPasswordConfirm: builder.mutation({
@@ -122,6 +141,7 @@ const authApiSlice = apiSlice.injectEndpoints({
 				url: '/users/reset_password_confirm/',
 				method: 'POST',
 				body: { uid, token, new_password, re_new_password },
+				service: 'users',
 			}),
 		}),
 	}),

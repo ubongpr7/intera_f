@@ -113,7 +113,7 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
   });
 
   const selectedSupplier = watch('supplier' as Path<Partial<T>>);
-  const { data: contactPersons = [] } = useGetContactPersonQuery(selectedSupplier || 0);
+  const { data: contactPersons = [] } = useGetContactPersonQuery(selectedSupplier,{skip:!selectedSupplier});
 
   useEffect(() => {
     const resetDependents = (parentKey: keyof T, ...dependentKeys: (keyof T)[]) => {
@@ -231,7 +231,7 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
           </div>
 
           <div className="flex-1 overflow-y-auto p-6">
-            <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4 pb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
               {regularFields.map((key) => {
                 const keyStr = String(key).toLowerCase();
                 const inputType = getInputType(key);
@@ -299,7 +299,6 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                                   type="number"
                                   {...field}
                                   value={field.value as number | 0}
-
                                   min={1}
                                   max={100}
                                   step={0.1}
@@ -328,7 +327,7 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                                     : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                                 }`}
                               >
-                                <option value="">Select {formatLabel(String(key))}</option>
+                                <option value=""  disabled={true}>Select {formatLabel(String(key))}</option>
                                 {geoConfig?.data?.map((item) => (
                                   <option key={item.id} value={item.id}>
                                     {item.name}
@@ -356,7 +355,7 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                                 name={field.name}
                                 ref={field.ref}
                                 >
-                                <option value="">Select Contact Person</option>
+                                <option value="" disabled={true}>Select Contact Person</option>
                                 {contactPersons.map((contact: { id: number; name: string }) => (
                                   <option key={contact.id} value={contact.id.toString()}> {/* Ensure string value */}
                                     {contact.name}
@@ -382,7 +381,7 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                                     : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                                 }`}
                               >
-                                <option value="">Select {formatLabel(String(key))}</option>
+                                <option value="" disabled={true}>Select {formatLabel(String(key))}</option>
                                 {selectOptions?.[key]?.map((option) => (
                                   <option key={option.value} value={option.value}>
                                     {option.text}

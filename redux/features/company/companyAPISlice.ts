@@ -2,13 +2,16 @@ import { apiSlice } from '../../services/apiSlice';
 import {  CompanyAddressDataInterface, CompanyDataInterface, ContactPersonInterface } from '../../../components/interfaces/company';
 import exp from 'constants';
 const management_api='company_api'
+const service='inventory'
+
 export const companyApiSlice = apiSlice.injectEndpoints({
   endpoints: builder => ({
     createCompany: builder.mutation({
       query: (CompanyDataInterface: Partial<CompanyDataInterface>) => ({
         url: `/${management_api}/companies/`,
         method: 'POST',
-        body: CompanyDataInterface
+        body: CompanyDataInterface,
+        service: service,
       }),
     }),
 
@@ -17,21 +20,29 @@ export const companyApiSlice = apiSlice.injectEndpoints({
       query: ({ id, data }) => ({
         url: `/${management_api}/companies/${id}/`,
         method: 'PATCH',
-        body: data
+        body: data,
+        service: service,
       }),
     }),
     getCompany: builder.query({
-      query: (id) => `/${management_api}/company/detail/${id}/`,
+      query: (id) =>({
+        url: `/${management_api}/company/detail/${id}/`,
+        service: service,
+      })
     }),
   
     getSupplers: builder.query<CompanyDataInterface[], void>({
-      query: () => `/${management_api}/suppliers/`,
+      query: () =>({
+        url: `/${management_api}/suppliers/`,
+        service: service,
+      })
     }),
   
     getCompanyData: builder.query({
       query: () => ({
         url: `/${management_api}/companies/`,
         method: 'GET',
+        service: service,
       }),
     }),
   }),
@@ -55,7 +66,8 @@ export const companyAddressApiSlice = apiSlice.injectEndpoints({
       query: (AddressDataInterface: Partial<CompanyAddressDataInterface>) => ({
         url: `/${management_api}/company-addresses/`,
         method: 'POST',
-        body: AddressDataInterface
+        body: AddressDataInterface,
+        service: 'inventory',
       }),
     }),
     

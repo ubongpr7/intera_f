@@ -13,7 +13,7 @@ import type {
 } from "@/types/company-profile"
 
 const management_api = "management"
-
+const service= 'users'
 export const companyApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     createCompanyProfile: builder.mutation({
@@ -21,6 +21,8 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         url: `/${management_api}/profiles/`,
         method: "POST",
         body: companyData,
+        service: service,
+
       }),
     }),
 
@@ -29,18 +31,24 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         url: `/${management_api}/profiles/${id}/`,
         method: "PATCH",
         body: data,
+        service: service,
+
       }),
     }),
 
     getCompanyProfile: builder.query<CompanyProfile, string>({
       query: (id) => ({
         url: `/${management_api}/profiles/${id}/`,
+        service: service,
+
       }),
     }),
 
     getOwnerCompanyProfile: builder.query<CompanyProfile, void>({
       query: () => ({
         url: `/${management_api}/owner-company-profile/`,
+        service: service,
+
       }),
     }),
 
@@ -48,6 +56,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
       query: (id) => ({
         url: `/${management_api}/company-profiles/${id}/`,
         method: "DELETE",
+        service: service,
       }),
     }),
 
@@ -57,6 +66,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         url: `/${management_api}/addresses/`,
         method: "POST",
         body: address,
+        service: service,
       }),
     }),
 
@@ -65,12 +75,14 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         url: `/${management_api}/addresses/${id}/`,
         method: "PATCH",
         body: data,
+        service: service,
       }),
     }),
 
     getCompanyProfileAddress: builder.query<CompanyAddress, string>({
       query: (id) => ({
         url: `/${management_api}/company-addresses/${id}/`,
+        service: service,
       }),
     }),
 
@@ -80,6 +92,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         url: `/${management_api}/staff-roles/`,
         method: "POST",
         body: roleData,
+        service: service,
       }),
     }),
 
@@ -88,18 +101,22 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         url: `/${management_api}/staff-roles/${id}/`,
         method: "PATCH",
         body: data,
+        service: service,
       }),
     }),
 
     getStaffRoles: builder.query<StaffRole[], void>({
       query: () => ({
         url: `/${management_api}/staff-roles/`,
+        service: service,
       }),
     }),
 
     getStaffRole: builder.query<StaffRole, string>({
       query: (id) => ({
         url: `/${management_api}/staff-roles/${id}/`,
+        service: service,
+
       }),
     }),
 
@@ -107,6 +124,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
       query: (id) => ({
         url: `/${management_api}/staff-roles/${id}/`,
         method: "DELETE",
+        service: service,
       }),
     }),
 
@@ -116,6 +134,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         url: `/${management_api}/staff-groups/`,
         method: "POST",
         body: groupData,
+        service: service,
       }),
     }),
 
@@ -124,18 +143,23 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         url: `/${management_api}/staff-groups/${id}/`,
         method: "PATCH",
         body: data,
+        service: service,
+
       }),
     }),
 
     getStaffGroups: builder.query<StaffGroup[], void>({
       query: () => ({
         url: `/${management_api}/staff-groups/`,
+        service: service,
       }),
     }),
 
     getStaffGroup: builder.query<StaffGroup, string>({
       query: (id) => ({
         url: `/${management_api}/staff-groups/${id}/`,
+        service: service,
+
       }),
     }),
 
@@ -143,6 +167,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
       query: (id) => ({
         url: `/${management_api}/staff-groups/${id}/`,
         method: "DELETE",
+        service: service,
       }),
     }),
 
@@ -152,6 +177,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         url: `/${management_api}/staff-role-assignments/`,
         method: "POST",
         body: assignmentData,
+        service: service,
       }),
     }),
 
@@ -160,18 +186,21 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         url: `/${management_api}/staff-role-assignments/${id}/`,
         method: "PATCH",
         body: data,
+        service: service,
       }),
     }),
 
     getStaffRoleAssignments: builder.query<StaffRoleAssignment[], void>({
       query: () => ({
         url: `/${management_api}/staff-role-assignments/`,
+        service: service,
       }),
     }),
 
     getStaffRoleAssignment: builder.query<StaffRoleAssignment, string>({
       query: (id) => ({
         url: `/${management_api}/staff-role-assignments/${id}/`,
+        service: service,
       }),
     }),
 
@@ -179,6 +208,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
       query: (id) => ({
         url: `/${management_api}/staff-role-assignments/${id}/`,
         method: "DELETE",
+        service: service,
       }),
     }),
 
@@ -188,6 +218,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         url: `/${management_api}/recall-policies/`,
         method: "POST",
         body: policyData,
+        service:service,
       }),
     }),
 
@@ -196,18 +227,21 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         url: `/${management_api}/recall-policies/${id}/`,
         method: "PATCH",
         body: data,
+        service: service,
       }),
     }),
 
     getRecallPolicies: builder.query<RecallPolicy[], void>({
       query: () => ({
         url: `/${management_api}/recall-policies/`,
+        service: service,
       }),
     }),
 
     getRecallPolicy: builder.query<RecallPolicy, string>({
       query: (id) => ({
         url: `/${management_api}/recall-policies/${id}/`,
+        service: service,
       }),
     }),
 
@@ -215,6 +249,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
       query: (id) => ({
         url: `/${management_api}/recall-policies/${id}/`,
         method: "DELETE",
+        service: service,
       }),
     }),
 
@@ -224,6 +259,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         url: `/${management_api}/reorder-strategies/`,
         method: "POST",
         body: strategyData,
+        service: service,
       }),
     }),
 
@@ -232,18 +268,21 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         url: `/${management_api}/reorder-strategies/${id}/`,
         method: "PATCH",
         body: data,
+        service: service,
       }),
     }),
 
     getReorderStrategies: builder.query<ReorderStrategy[], void>({
       query: () => ({
         url: `/${management_api}/reorder-strategies/`,
+        service: service,
       }),
     }),
 
     getReorderStrategy: builder.query<ReorderStrategy, string>({
       query: (id) => ({
         url: `/${management_api}/reorder-strategies/${id}/`,
+        service: service,
       }),
     }),
 
@@ -251,6 +290,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
       query: (id) => ({
         url: `/${management_api}/reorder-strategies/${id}/`,
         method: "DELETE",
+        service: service,
       }),
     }),
 
@@ -260,6 +300,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         url: `/${management_api}/inventory-policies/`,
         method: "POST",
         body: policyData,
+        service: service,
       }),
     }),
 
@@ -268,18 +309,21 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         url: `/${management_api}/inventory-policies/${id}/`,
         method: "PATCH",
         body: data,
+        service: service,
       }),
     }),
 
     getInventoryPolicies: builder.query<InventoryPolicy[], void>({
       query: () => ({
         url: `/${management_api}/inventory-policies/`,
+        service: service,
       }),
     }),
 
     getInventoryPolicy: builder.query<InventoryPolicy, string>({
       query: (id) => ({
         url: `/${management_api}/inventory-policies/${id}/`,
+        service: service,
       }),
     }),
 
@@ -287,6 +331,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
       query: (id) => ({
         url: `/${management_api}/inventory-policies/${id}/`,
         method: "DELETE",
+        service: service,
       }),
     }),
 
@@ -298,12 +343,16 @@ export const companyApiSlice = apiSlice.injectEndpoints({
       query: (params = {}) => ({
         url: `/${management_api}/activity-logs/`,
         params,
+        service: service,
+
       }),
     }),
 
     getActivityLog: builder.query<ActivityLog, string>({
       query: (id) => ({
         url: `/${management_api}/activity-logs/${id}/`,
+        service: service,
+
       }),
     }),
 
@@ -313,6 +362,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         url: `/${management_api}/staff-roles/bulk-delete/`,
         method: "POST",
         body: { ids },
+        service: service,
       }),
     }),
 
@@ -321,6 +371,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         url: `/${management_api}/staff-groups/bulk-delete/`,
         method: "POST",
         body: { ids },
+        service: service,
       }),
     }),
 
@@ -329,6 +380,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         url: `/${management_api}/recall-policies/bulk-delete/`,
         method: "POST",
         body: { ids },
+        service: service,
       }),
     }),
 
@@ -337,6 +389,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         url: `/${management_api}/reorder-strategies/bulk-delete/`,
         method: "POST",
         body: { ids },
+        service: service,
       }),
     }),
 
@@ -345,6 +398,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         url: `/${management_api}/inventory-policies/bulk-delete/`,
         method: "POST",
         body: { ids },
+        service: service,
       }),
     }),
 
@@ -355,6 +409,8 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         method: "POST",
         body: params,
         responseHandler: (response) => response.blob(),
+        service: service,
+
       }),
     }),
 
@@ -364,6 +420,8 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         method: "POST",
         body: { format },
         responseHandler: (response) => response.blob(),
+        service: service,
+
       }),
     }),
   }),
