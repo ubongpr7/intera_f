@@ -16,7 +16,8 @@ import {
   useGetSubregionsQuery,
   useGetCitiesQuery,
 } from '../../redux/features/common/typeOF';
-
+import {toast} from 'react-toastify'
+import { extractErrorMessage } from '@/lib/utils';
 const PhoneInput = dynamic(
   () => import('react-phone-number-input'),
   { 
@@ -177,7 +178,9 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
       await onSubmit(formData);
       onClose();
     } catch (error) {
-      // Handle error
+      toast.error(`${extractErrorMessage(error,editableFields as string[])}`)
+      
+
     }
   };
 
