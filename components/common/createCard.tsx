@@ -14,6 +14,7 @@ import {
   useGetCitiesQuery,
 } from '../../redux/features/common/typeOF';
 import { toast } from 'react-toastify';
+import { extractErrorMessage } from '@/lib/utils';
 
 const PhoneInput = dynamic(
   () => import('react-phone-number-input'),
@@ -182,8 +183,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
       onClose();
       reset();
     } catch (error) {
-      console.log(error)
-      toast.error(`${error}`)
+      toast.error(`${extractErrorMessage(error,interfaceKeys as string[])}`)
 
     }
   };
