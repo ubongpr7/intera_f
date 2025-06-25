@@ -177,6 +177,7 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
     try {
       await onSubmit(formData);
       onClose();
+      toast.success('Item updated successfully')
     } catch (error) {
       toast.error(`${extractErrorMessage(error,editableFields as string[])}`)
       
