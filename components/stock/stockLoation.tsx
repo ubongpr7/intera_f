@@ -6,6 +6,7 @@ import { useState } from "react";
 import { PageHeader } from "../inventory/PageHeader";
 import CustomCreateCard from '../common/createCard';
 import { useGetCompanyUsersQuery } from "../../redux/features/users/userApiSlice";
+import { RefetchDataProp } from "../interfaces/common";
 
 const inventoryColumns: Column<StockLocation>[] = [
   {
@@ -37,7 +38,8 @@ const inventoryColumns: Column<StockLocation>[] = [
   
 ];
 
-function StockLocations() {
+
+function StockLocations({refetchData, setRefetchData}:RefetchDataProp) {
     const {data:StockLocationData,isLoading:stockItemsLoading,refetch,error}=useGetStockItemDataLocationQuery()
     const [createStockLocation, { isLoading: stockItemCreateLoading }] = useCreateStockItemLocationMutation();
     const [isCreateOpen, setIsCreateOpen] = useState(false); 
@@ -68,6 +70,7 @@ function StockLocations() {
         const response = await createStockLocation(createdData);
         setIsCreateOpen(false);
         await refetch(); 
+        setRefetchData(true)
     }
     catch (error) {
     }

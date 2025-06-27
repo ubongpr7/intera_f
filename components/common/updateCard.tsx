@@ -16,19 +16,20 @@ import {
   useGetSubregionsQuery,
   useGetCitiesQuery,
 } from '../../redux/features/common/typeOF';
-import {toast} from 'react-toastify'
+import { toast } from 'react-toastify';
 import { extractErrorMessage } from '@/lib/utils';
+
 const PhoneInput = dynamic(
   () => import('react-phone-number-input'),
-  { 
+  {
     ssr: false,
     loading: () => <input className="border rounded p-2" placeholder="Loading phone input..." />
   }
 );
 
-interface CustomUpdateCardProps<T> {
+interface CustomUpdateCardProps<T extends Record<string, any>> {
   data: T;
-  editableFields: (keyof T)[];
+  editableFields?: (keyof T)[];
   onClose: () => void;
   onSubmit: (data: Partial<T>) => Promise<void>;
   selectOptions?: Partial<Record<keyof T, Array<{ value: string; text: string }>>>;
@@ -39,22 +40,38 @@ interface CustomUpdateCardProps<T> {
   optionalFields?: (keyof T)[];
   hiddenFields?: Partial<Record<keyof T, any>>;
   notEditableFields?: (keyof T)[];
+  parentFields?: string[];
+  idOfItem?: string | number;
 }
 
 export default function CustomUpdateCard<T extends Record<string, any>>({
   data,
-  editableFields,
+  editableFields = [],
   onClose,
   onSubmit,
-  selectOptions,
+  selectOptions = {},
   isLoading,
-  keyInfo,
+  keyInfo = {},
   dateFields = [],
   datetimeFields = [],
   optionalFields = [],
   hiddenFields = {},
   notEditableFields = [],
+  parentFields = [],
+  idOfItem,
 }: CustomUpdateCardProps<T>) {
+  // Initialize default values, handling parent fields specially
+  const getDefaultValue = (key: keyof T) => {
+    const keyStr = String(key).toLowerCase();
+    if (parentFields.includes(keyStr) && selectOptions[key]) {
+      const filteredOptions = selectOptions[key].filter(option => option.value !== idOfItem);
+      const value = data[key];
+      // Only use value if it's valid in filteredOptions, otherwise default to ''
+      return (value && filteredOptions.some(option => option.value === String(value))) ? String(value) : '';
+    }
+    return data[key] ?? '';
+  };
+
   const {
     control,
     handleSubmit,
@@ -66,41 +83,50 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
     defaultValues: {
       ...editableFields.reduce((acc, key) => ({
         ...acc,
-        [key]: data[key],
+        [key]: getDefaultValue(key),
       }), {} as DefaultValues<Partial<T>>),
-      ...hiddenFields,
+      ...Object.entries(hiddenFields).reduce((acc, [key, value]) => ({
+        ...acc,
+        [key]: value ?? '',
+      }), {}),
     },
   });
 
-  const percentageFieldsDict = {
-    'minimum_stock_level': 'Minimum stock level',
-    're_order_point': 'Re-order point',
-    'safety_stock_level': 'Safety stock level',
-    'alert_threshold': 'Alert threshold',
-    'supplier_reliability_score': 'Supplier reliability score',
+  const percentageFieldsDict: Partial<Record<string, string>> = {
+    minimum_stock_level: 'Minimum stock level',
+    re_order_point: 'Re-order point',
+    safety_stock_level: 'Safety stock level',
+    alert_threshold: 'Alert threshold',
+    supplier_reliability_score: 'Supplier reliability score',
   };
-  const geoFields = {
+
+  const geoFields: Record<string, {
+    query: any;
+    data: Array<{ id: string | number; name: string }>;
+    dependsOn: string | null;
+    watchKey: string | null;
+  }> = {
     country: {
       query: useGetCountriesQuery,
-      data: [] as Array<{ id: string | number; name: string }>,
+      data: [],
       dependsOn: null,
       watchKey: null,
     },
     region: {
       query: useGetRegionsQuery,
-      data: [] as Array<{ id: string; name: string }>,
+      data: [],
       dependsOn: 'country',
       watchKey: 'country',
     },
     subregion: {
       query: useGetSubregionsQuery,
-      data: [] as Array<{ id: string; name: string }>,
+      data: [],
       dependsOn: 'region',
       watchKey: 'region',
     },
     city: {
       query: useGetCitiesQuery,
-      data: [] as Array<{ id: string; name: string }>,
+      data: [],
       dependsOn: 'subregion',
       watchKey: 'subregion',
     },
@@ -110,11 +136,25 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
   Object.entries(geoFields).forEach(([key, config]) => {
     const watchValue = config.watchKey ? watch(config.watchKey as Path<Partial<T>>) : null;
     const { data } = config.query((watchValue || 0) as any, { skip: !watchValue && !!config.dependsOn });
-    geoFields[key as keyof typeof geoFields].data = data || [];
+    geoFields[key].data = data || [];
   });
 
   const selectedSupplier = watch('supplier' as Path<Partial<T>>);
-  const { data: contactPersons = [] } = useGetContactPersonQuery(selectedSupplier,{skip:!selectedSupplier});
+  const { data: contactPersons = [] } = useGetContactPersonQuery(selectedSupplier, { skip: !selectedSupplier });
+
+  // Sync parent field values if invalid
+  useEffect(() => {
+    editableFields.forEach(key => {
+      const keyStr = String(key).toLowerCase();
+      if (parentFields.includes(keyStr) && selectOptions[key]) {
+        const filteredOptions = selectOptions[key].filter(option => option.value !== idOfItem);
+        const currentValue = watch(key as Path<Partial<T>>);
+        if (currentValue && !filteredOptions.some(option => option.value === String(currentValue))) {
+          setValue(key as Path<Partial<T>>, '' as any);
+        }
+      }
+    });
+  }, [editableFields, parentFields, selectOptions, idOfItem, watch, setValue]);
 
   useEffect(() => {
     const resetDependents = (parentKey: keyof T, ...dependentKeys: (keyof T)[]) => {
@@ -133,7 +173,7 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
   const reOrderPoint = watch('re_order_point' as Path<Partial<T>>);
   const reOrderQty = watch('re_order_quantity' as Path<Partial<T>>);
   const safetyQty = watch('safety_stock_level' as Path<Partial<T>>);
-  
+
   useEffect(() => {
     trigger([
       'minimum_stock_level',
@@ -147,7 +187,7 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
     return str.replace('first_name', 'Name').replace(/_/g, ' ').replace(/(^\w|\s\w)/g, m => m.toUpperCase());
   };
 
-  const getInputType = (key: keyof T) => {
+  const getInputType = (key: keyof T): string => {
     const keyStr = String(key).toLowerCase();
     const percentageFields = [
       'minimum_stock_level',
@@ -156,17 +196,18 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
       'alert_threshold',
       'supplier_reliability_score',
     ];
-    
+
     if (percentageFields.includes(keyStr)) return 'percentage';
     if (keyStr in geoFields) return 'geo-select';
+    if (parentFields.includes(keyStr)) return 'select';
     if (dateFields.includes(key)) return 'date';
     if (datetimeFields.includes(key)) return 'datetime-local';
     if (keyStr === 'phone') return 'phone';
     if (keyStr === 'website' || keyStr === 'link') return 'url';
     if (keyStr === 'password') return 'password';
     if (keyStr === 'email') return 'email';
-    if (selectOptions?.[key]) return 'select';
-    
+    if (selectOptions[key]) return 'select';
+
     const value = data[key];
     if (typeof value === 'boolean') return 'checkbox';
     if (typeof value === 'number') return 'number';
@@ -177,11 +218,9 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
     try {
       await onSubmit(formData);
       onClose();
-      toast.success('Item updated successfully')
+      toast.success('Item updated successfully');
     } catch (error) {
-      toast.error(`${extractErrorMessage(error,editableFields as string[])}`)
-      
-
+      toast.error(`${extractErrorMessage(error, editableFields as string[])}`);
     }
   };
 
@@ -193,10 +232,10 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
     return () => window.removeEventListener('keydown', handleEscape);
   }, [onClose]);
 
-  const regularFields = editableFields.filter(key => 
+  const regularFields = editableFields.filter(key =>
     !notEditableFields.includes(key) && String(key) !== 'description'
   );
-  const hasDescription = editableFields.some(key => 
+  const hasDescription = editableFields.some(key =>
     !notEditableFields.includes(key) && String(key) === 'description'
   );
 
@@ -227,7 +266,7 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                   <input
                     type="hidden"
                     {...field}
-                    value={fieldValue}
+                    value={fieldValue ?? ''}
                   />
                 )}
               />
@@ -240,16 +279,22 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                 const keyStr = String(key).toLowerCase();
                 const inputType = getInputType(key);
                 const isGeoField = inputType === 'geo-select';
-                const geoConfig = isGeoField ? geoFields[keyStr as keyof typeof geoFields] : null;
-                const isDisabled = geoConfig?.dependsOn ? !watch(geoConfig.dependsOn as Path<Partial<T>>) : false;
                 const isContactField = key === 'contact';
+                const isParentField = parentFields.includes(keyStr);
+                const geoConfig = isGeoField ? geoFields[keyStr] : null;
+                const isDisabled = geoConfig?.dependsOn ? !watch(geoConfig.dependsOn as Path<Partial<T>>) : false;
                 const isSupplierSelected = !!selectedSupplier;
+
+                // Filter options for parent fields to exclude idOfItem
+                const filteredOptions = isParentField && selectOptions[key]
+                  ? selectOptions[key].filter(option => option.value !== idOfItem)
+                  : selectOptions[key] || [];
 
                 return (
                   <div key={`field-${String(key)}`} className="space-y-2 min-w-[200px]">
                     <label className="block text-sm font-medium text-gray-700">
                       {formatLabel(String(key))}
-                      {keyInfo?.[key] && <FieldInfo info={keyInfo[key]} displayBelow={true} />}
+                      {keyInfo[key] && <FieldInfo info={keyInfo[key]} displayBelow={true} />}
                     </label>
                     <div className="relative">
                       <Controller
@@ -258,15 +303,11 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                         rules={{
                           required: optionalFields.includes(key) ? false : 'This field is required',
                           validate: (value) => {
-
-                                                        
-
-                            if (percentageFieldsDict[keyStr as keyof typeof percentageFieldsDict]) {
-                              if (Number(value)  < 1 || Number(value) > 100) {
-                                return `${percentageFieldsDict[keyStr as keyof typeof percentageFieldsDict]} must be between 1% and 100%`;
+                            if (percentageFieldsDict[keyStr]) {
+                              if (Number(value) < 1 || Number(value) > 100) {
+                                return `${percentageFieldsDict[keyStr]} must be between 1% and 100%`;
                               }
                             }
-
 
                             if (isGeoField && value) {
                               const isValid = geoConfig?.data.some(
@@ -274,9 +315,18 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                               );
                               return isValid || `Invalid ${formatLabel(String(key))} selection`;
                             }
+
+                            if (isParentField && value) {
+                              const isValid = filteredOptions.some(
+                                (option) => option.value === value
+                              );
+                              return isValid || `Invalid ${formatLabel(String(key))} selection`;
+                            }
+
                             if (inputType === 'phone' && value && !isValidPhoneNumber(value.toString())) {
                               return 'Invalid phone number';
                             }
+
                             if (key === 'safety_stock_level' && typeof value === 'number' && Number(value) > Number(minStock)) {
                               return 'Must be ≤ minimum stock level';
                             }
@@ -295,21 +345,20 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                           },
                         }}
                         render={({ field }) => {
-                          {/*  i tried to do the same thing i d for update createCard on my update card,problem arises */}
                           if (inputType === 'percentage') {
                             return (
                               <div className="relative">
                                 <input
                                   type="number"
                                   {...field}
-                                  value={field.value as number | 0}
+                                  value={Number(field.value) || 0}
                                   min={1}
                                   max={100}
                                   step={0.1}
                                   className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
                                     focus:border-blue-500 py-2 rounded-md ${
-                                    errors[key as string] 
-                                      ? 'border-red-500 ring-red-500' 
+                                    errors[key as string]
+                                      ? 'border-red-500 ring-red-500'
                                       : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                                   }`}
                                 />
@@ -322,16 +371,17 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                             return (
                               <select
                                 {...field}
-                                value={field.value as string | number | undefined}
+                                value={typeof field.value === 'string' || typeof field.value === 'number' ? field.value : ''}
                                 disabled={isDisabled}
                                 className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
                                   focus:border-blue-500 py-2 rounded-md ${
-                                  errors[key as string] 
-                                    ? 'border-red-500 ring-red-500' 
+                                  errors[key as string]
+                                    ? 'border-red-500 ring-red-500'
                                     : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                                 }`}
+                                onChange={(e) => field.onChange(e.target.value || '')}
                               >
-                                <option value=""  disabled={true}>Select {formatLabel(String(key))}</option>
+                                <option value="" disabled>Select {formatLabel(String(key))}</option>
                                 {geoConfig?.data?.map((item) => (
                                   <option key={item.id} value={item.id}>
                                     {item.name}
@@ -341,27 +391,25 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                             );
                           }
 
-                         
                           if (isContactField) {
                             return (
                               <select
                                 disabled={!isSupplierSelected}
                                 className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
                                   focus:border-blue-500 py-2 rounded-md ${
-                                  errors[key as string] 
-                                    ? 'border-red-500 ring-red-500' 
+                                  errors[key as string]
+                                    ? 'border-red-500 ring-red-500'
                                     : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                                 }`}
-                                // Explicitly set select props instead of spreading field
-                                value={field.value as string}  // Convert to string
-                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => field.onChange(e.target.value)}
+                                value={typeof field.value === 'string' || typeof field.value === 'number' ? field.value : ''}
+                                onChange={(e) => field.onChange(e.target.value || '')}
                                 onBlur={field.onBlur}
                                 name={field.name}
                                 ref={field.ref}
-                                >
-                                <option value="" disabled={true}>Select Contact Person</option>
+                              >
+                                <option value="" disabled>Select Contact Person</option>
                                 {contactPersons.map((contact: { id: number; name: string }) => (
-                                  <option key={contact.id} value={contact.id.toString()}> {/* Ensure string value */}
+                                  <option key={contact.id} value={contact.id.toString()}>
                                     {contact.name}
                                   </option>
                                 ))}
@@ -372,21 +420,18 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                           if (inputType === 'select') {
                             return (
                               <select
-                              value={field.value as string}  // Convert to string
-                              onChange={(e) => field.onChange(e.target.value)}
-                              onBlur={field.onBlur}
-                              name={field.name}
-                              ref={field.ref}
-
+                                {...field}
+                                value={typeof field.value === 'string' || typeof field.value === 'number' ? field.value : ''}
                                 className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
                                   focus:border-blue-500 py-2 rounded-md ${
-                                  errors[key as string] 
-                                    ? 'border-red-500 ring-red-500' 
+                                  errors[key as string]
+                                    ? 'border-red-500 ring-red-500'
                                     : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                                 }`}
+                                onChange={(e) => field.onChange(e.target.value || '')}
                               >
-                                <option value="" disabled={true}>Select {formatLabel(String(key))}</option>
-                                {selectOptions?.[key]?.map((option) => (
+                                <option value="" disabled>Select {formatLabel(String(key))}</option>
+                                {filteredOptions.map((option) => (
                                   <option key={option.value} value={option.value}>
                                     {option.text}
                                   </option>
@@ -398,33 +443,31 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                           if (inputType === 'checkbox') {
                             return (
                               <input
-                              type="checkbox"
-                              // Explicitly set checkbox props
-                              checked={!!field.value}
-                              onChange={(e) => field.onChange(e.target.checked)} // Use boolean directly
-                              onBlur={field.onBlur}
-                              name={field.name}
-                              ref={field.ref}
-                              className="w-5 h-5"
-                            />
+                                type="checkbox"
+                                checked={!!field.value}
+                                onChange={(e) => field.onChange(e.target.checked)}
+                                onBlur={field.onBlur}
+                                name={field.name}
+                                ref={field.ref}
+                                className="w-5 h-5"
+                              />
                             );
                           }
 
                           if (inputType === 'phone') {
                             return (
                               <PhoneInput
-                              value={field.value as string}
-                              onChange={(value) => field.onChange(value)}
-                              onBlur={field.onBlur}
-                              inputRef={field.ref}
-                              name={field.name}
-                        
+                                value={field.value as string | undefined}
+                                onChange={(value) => field.onChange(value || '')}
+                                onBlur={field.onBlur}
+                                inputRef={field.ref}
+                                name={field.name}
                                 international
                                 defaultCountry="NG"
-                                className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none 
+                                className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
                                   focus:border-blue-500 py-2 rounded-md ${
-                                  errors[key as string] 
-                                    ? 'border-red-500 ring-red-500' 
+                                  errors[key as string]
+                                    ? 'border-red-500 ring-red-500'
                                     : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                                 }`}
                               />
@@ -435,11 +478,11 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                             <input
                               type={inputType}
                               {...field}
-                              value={field.value as string | number | undefined}
+                              value={typeof field.value === 'string' || typeof field.value === 'number' ? field.value : ''}
                               className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
                                 focus:border-blue-500 py-2 rounded-md ${
-                                errors[key as string] 
-                                  ? 'border-red-500 ring-red-500' 
+                                errors[key as string]
+                                  ? 'border-red-500 ring-red-500'
                                   : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                               }`}
                             />
@@ -462,7 +505,7 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
                     Description
-                    {keyInfo?.description && <FieldInfo info={keyInfo.description} displayBelow={true} />}
+                    {keyInfo.description && <FieldInfo info={keyInfo.description} displayBelow={true} />}
                   </label>
                   <div className="relative">
                     <Controller
@@ -472,12 +515,12 @@ export default function CustomUpdateCard<T extends Record<string, any>>({
                       render={({ field }) => (
                         <textarea
                           {...field}
-                          value={field.value as string || ''}
+                          value={field.value as string | undefined || ''}
                           rows={4}
                           className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
                             focus:border-blue-500 py-2 rounded-md ${
-                            errors.description 
-                              ? 'border-red-500 ring-red-500' 
+                            errors.description
+                              ? 'border-red-500 ring-red-500'
                               : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                           }`}
                         />

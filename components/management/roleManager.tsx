@@ -34,6 +34,7 @@ const RoleManager = ({ userId, roles, refetch,closeTab }: RoleManagerProps) => {
       setLocalRoles(prev => prev.filter(role => role.id !== roleId));
       await deactivateRole({id:roleId}).unwrap();
       toast.success('Role deactivated successfully');
+      await refetch()
     } catch (error) {
       toast.error('Failed to deactivate role');
       setLocalRoles(roles); // Revert on error

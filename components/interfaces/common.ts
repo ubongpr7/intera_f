@@ -20,7 +20,10 @@ export interface CurrencyResponse {
     helpText: string
   }
 
-
+export interface RefetchDataProp{
+  setRefetchData:(refetchData:boolean)=>void;
+  refetchData:boolean
+}
 
 
 

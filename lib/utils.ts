@@ -137,6 +137,9 @@ export const extractErrorMessage = (error: any, listOfKeys: string[]): string =>
         case 429:
             return "Too many attempts: Please wait a moment before trying again";
         case 500:
+          return 'Check your data entry and try again, ensure you abide by the unique constraint' 
+        case 'PARSING_ERROR':
+          return 'Check your data entry and try again, ensure you abide by the unique constraint, item with same name or data already exist' 
         case 502:
         case 503:
             return "Server error: We're experiencing technical difficulties";
@@ -144,3 +147,15 @@ export const extractErrorMessage = (error: any, listOfKeys: string[]): string =>
             return "An error occurred. Please try again";
     }
 };
+
+import {jwtDecode} from 'jwt-decode'
+import {getCookie} from 'cookies-next'
+export function getDecodedToken(){
+  const token= getCookie('accessToken')
+  try{
+    return jwtDecode(`${token}`)
+  } catch{
+    return null
+  }
+}
+

@@ -89,7 +89,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
     // Staff Role endpoints
     createStaffRole: builder.mutation({
       query: (roleData: Partial<StaffRole>) => ({
-        url: `/${management_api}/staff-roles/`,
+        url: `/${management_api}/roles/`,
         method: "POST",
         body: roleData,
         service: service,
@@ -98,7 +98,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
 
     updateStaffRole: builder.mutation({
       query: ({ id, data }) => ({
-        url: `/${management_api}/staff-roles/${id}/`,
+        url: `/${management_api}/roles/${id}/`,
         method: "PATCH",
         body: data,
         service: service,
@@ -107,14 +107,14 @@ export const companyApiSlice = apiSlice.injectEndpoints({
 
     getStaffRoles: builder.query<StaffRole[], void>({
       query: () => ({
-        url: `/${management_api}/staff-roles/`,
+        url: `/${management_api}/roles/`,
         service: service,
       }),
     }),
 
     getStaffRole: builder.query<StaffRole, string>({
       query: (id) => ({
-        url: `/${management_api}/staff-roles/${id}/`,
+        url: `/${management_api}/oles/${id}/`,
         service: service,
 
       }),
@@ -122,7 +122,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
 
     deleteStaffRole: builder.mutation({
       query: (id) => ({
-        url: `/${management_api}/staff-roles/${id}/`,
+        url: `/${management_api}/roles/${id}/`,
         method: "DELETE",
         service: service,
       }),
@@ -131,7 +131,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
     // Staff Group endpoints
     createStaffGroup: builder.mutation({
       query: (groupData: Partial<StaffGroup>) => ({
-        url: `/${management_api}/staff-groups/`,
+        url: `/${management_api}/groups/`,
         method: "POST",
         body: groupData,
         service: service,
@@ -140,7 +140,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
 
     updateStaffGroup: builder.mutation({
       query: ({ id, data }) => ({
-        url: `/${management_api}/staff-groups/${id}/`,
+        url: `/${management_api}/groups/${id}/`,
         method: "PATCH",
         body: data,
         service: service,
@@ -150,14 +150,14 @@ export const companyApiSlice = apiSlice.injectEndpoints({
 
     getStaffGroups: builder.query<StaffGroup[], void>({
       query: () => ({
-        url: `/${management_api}/staff-groups/`,
+        url: `/${management_api}/groups/`,
         service: service,
       }),
     }),
 
     getStaffGroup: builder.query<StaffGroup, string>({
       query: (id) => ({
-        url: `/${management_api}/staff-groups/${id}/`,
+        url: `/${management_api}/groups/${id}/`,
         service: service,
 
       }),
@@ -165,7 +165,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
 
     deleteStaffGroup: builder.mutation({
       query: (id) => ({
-        url: `/${management_api}/staff-groups/${id}/`,
+        url: `/${management_api}/groups/${id}/`,
         method: "DELETE",
         service: service,
       }),

@@ -109,10 +109,21 @@ const authApiSlice = apiSlice.injectEndpoints({
 
       })
     }),
+
 		logout: builder.mutation({
 			query: () => ({
 				
 				url: '/api/v1/accounts/logout/',
+				method: 'POST',
+				body: { refresh: refreshToken },
+				service: 'users',
+
+			}),
+		}),
+		refresh: builder.mutation({
+			query: () => ({
+				
+				url: '/jwt/refresh/',
 				method: 'POST',
 				body: { refresh: refreshToken },
 				service: 'users',
@@ -157,6 +168,7 @@ export const {
 	useVerifyCodeMutation,
 	useVerifyAccountMutation,
 	useGetverifyAccountMutation,
+	useRefreshMutation,
 	useLogoutMutation,
 	useActivationMutation,
 	useResetPasswordMutation,

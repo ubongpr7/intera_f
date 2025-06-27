@@ -6,7 +6,8 @@ import { setCookie, getCookie, deleteCookie } from "cookies-next"
 import env from "../../env_file"
 
 export type serviceType = "users" | "inventory"
-
+const accessAge = 60*5
+const refreshAge = 60*60*24
 export const serviceMap: Record<serviceType, string> = {
   users: env.BACKEND_HOST_URL,
   inventory: env.INVENNTORY_BACKEND_URL,
@@ -125,8 +126,8 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
         id: string
         profile: string
       }
-      setCookie("accessToken", response.access, { maxAge: 72 * 60 * 60, path: "/" })
-      setCookie("refreshToken", response.refresh, { maxAge: 60 * 60 * 24 * 7, path: "/" })
+      setCookie("accessToken", response.access, { maxAge:  accessAge, path: "/" })
+      setCookie("refreshToken", response.refresh, { maxAge:refreshAge, path: "/" })
       setCookie("userID", response.id, { maxAge: 60 * 60 * 24 * 7, path: "/" })
       setCookie("profile", response.profile, { maxAge: 60 * 60 * 24 * 7, path: "/" })
       api.dispatch(setAuth())
@@ -142,7 +143,6 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
   // Handle errors
   if (result.error) {
     if (result.error.status === "FETCH_ERROR" && result.error.error?.includes("CORS")) {
-      console.error(`CORS error for ${service} service:`, result.error)
     }
 
     if (result.error.status === 401) {
@@ -150,22 +150,40 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
         const release = await mutex.acquire()
         try {
           const refreshToken = getCookie("refreshToken")
+          // const refreshToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc1MjY1OTUzNSwiaWF0IjoxNzUwOTMxNTM1LCJqdGkiOiJhMTFjZDY3NGZkYmQ0NTE0OTc4NGE2MjAzNGIxOTBlMiIsInVzZXJfaWQiOjEsInBlcm1pc3Npb25zIjpbInJlc3RvcmVfaW52ZW50b3J5IiwidXBkYXRlX2ludmVudG9yeV9jYXRlZ29yeSIsImNyZWF0ZV9pbnZlbnRvcnkiLCJhcmNoaXZlX2ludmVudG9yeSIsImRlbGV0ZV9pbnZlbnRvcnkiLCJ1cGRhdGVfaW52ZW50b3J5Iiwidmlld19pbnZlbnRvcnlfcmVwb3J0cyIsImFwcHJvdmVfaW52ZW50b3J5X2NhdGVnb3J5IiwicmVqZWN0X2ludmVudG9yeSIsImFwcHJvdmVfaW52ZW50b3J5IiwiY3JlYXRlX2ludmVudG9yeV9jYXRlZ29yeSIsImRlbGV0ZV9pbnZlbnRvcnlfY2F0ZWdvcnkiLCJtYW5hZ2VfaW52ZW50b3J5X3NldHRpbmdzIiwicmVhZF9pbnZlbnRvcnlfY2F0ZWdvcnkiLCJyZWFkX2ludmVudG9yeSJdLCJwcm9maWxlX2lkIjoxLCJvd25lcl9pZCI6MX0.unH-j4NY8tkE4HisouOSNeHFVn6JgvkRxeY-L_KKdY0'
+
           if (refreshToken) {
             // Always use users service for token refresh
-            const refreshResult = await baseQueries.users(
+            const refreshResult = await fetchBaseQuery({
+                  baseUrl:env.BACKEND_HOST_URL,
+                  credentials: "include",
+                  prepareHeaders: (headers, { getState }) => {
+              
+              headers.set("Content-Type", "application/json");
+              headers.set("X-Requested-With", "XMLHttpRequest");
+              return headers
+    },
+            })(
+                  
               {
                 url: "/jwt/refresh/",
                 method: "POST",
                 body: { refresh: refreshToken },
                 mode: "cors",
               },
+
               api,
               extraOptions,
             )
 
             if (refreshResult.data) {
-              const newAccessToken = (refreshResult.data as { access: string }).access
-              setCookie("accessToken", newAccessToken, { maxAge: 72 * 60 * 60, path: "/" })
+              const data = refreshResult.data as { access: string,refresh:string }
+              const newAccessToken = data.access
+              
+              const newRefreshToken = data.refresh
+              setCookie("accessToken", newAccessToken, { maxAge:   accessAge, path: "/" })
+              setCookie("refreshToken", newRefreshToken, { maxAge:   refreshAge, path: "/" })
+              
               api.dispatch(setAuth())
               // Retry the original request with the new token
               result = await appropriateBaseQuery(enhancedArgs, api, extraOptions)
@@ -178,6 +196,8 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
             }
           } else {
             api.dispatch(logout())
+            // window.location='/accounts/signin'
+            window.location.href='/accounts/signin'
           }
         } finally {
           release()

@@ -11,9 +11,10 @@ interface UserGroup {
 
 interface UserGroupManagerProps {
   userId: string;
+  setRefetchData:()=>void;
 }
 
-const UserGroupManager: React.FC<UserGroupManagerProps> = ({ userId }) => {
+const UserGroupManager: React.FC<UserGroupManagerProps> = ({ userId,setRefetchData }) => {
   const { 
     data: response, 
     isLoading: userGroupsLoading, 
@@ -59,6 +60,7 @@ const UserGroupManager: React.FC<UserGroupManagerProps> = ({ userId }) => {
       toast.success('User groups updated successfully!');
       refetchUserGroups();
       setHasChanges(false);
+      setRefetchData()
     } catch (error) {
       toast.error('Failed to update user groups.');
     }

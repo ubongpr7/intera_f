@@ -183,6 +183,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
       onClose();
       reset();
     } catch (error) {
+      console.log(error)
       toast.error(`${extractErrorMessage(error,interfaceKeys as string[])}`)
 
     }

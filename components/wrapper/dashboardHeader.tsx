@@ -10,6 +10,7 @@ import { useGetLoggedInUserQuery } from '../../redux/features/users/userApiSlice
 import { AuthGuard } from '../users/AuthGuard';
 import { publicRoutes } from '../../redux/features/users/useAuth';
 import NextTopLoader from 'nextjs-toploader';
+import { useRefreshMutation } from '@/redux/features/authApiSlice';
 
 const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
 
@@ -18,11 +19,20 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
   const dispatch = useAppDispatch();
   const pathname = usePathname();
   const isPublic = publicRoutes.includes(pathname);
-  
+
   const { data: user, isLoading, isSuccess } = useGetLoggedInUserQuery(undefined, {
     skip: isPublic,
     refetchOnMountOrArgChange: true,
   });
+  
+  // const [refreshToken,] =useRefreshMutation()
+  // useEffect(()=>{
+  //   const interval=setInterval(()=>{
+  //     refreshToken({});
+  //   },4*60*1000); // 4 mins
+  //   return ()=> clearInterval(interval);
+
+  // },[refreshToken] )
 
   
 

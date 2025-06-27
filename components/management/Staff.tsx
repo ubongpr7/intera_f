@@ -2,7 +2,7 @@
 import { UserData } from "../interfaces/User";
 import CustomCreateCard from "../common/createCard";
 import { PageHeader } from "../inventory/PageHeader";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useGetCompanyUsersQuery,useCreateStaffUserMutation } from "../../redux/features/users/userApiSlice";
 import { Column, DataTable } from "../common/DataTable/DataTable";
 import { useRouter } from 'nextjs-toploader/app';
@@ -16,6 +16,7 @@ import { useUpdateUserMutation } from "../../redux/features/users/userApiSlice";
 import { RoleAssignment, RoleData } from "components/interfaces/management";
 import { useGetRolesQuery } from "../../redux/features/management/groups";
 import RoleManager from "./roleManager";
+import { StaffManagementRefetchProp } from "./roles";
 
 
 const inventoryColumns: Column<UserData>[] = [
@@ -47,11 +48,10 @@ interface ItemType {
   belongs_to: boolean;
 }
 
-const StaffCreateCard =()=>{
+const StaffCreateCard =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
   const [isCreateOpen, setIsCreateOpen] = useState(false); 
   const [openTabs, setOpenTabs] = useState(false); 
   const [userId, setUserId] = useState('0'); 
-  const [refetchData, setRefetchData] = useState(false); 
   const { data, isLoading, refetch, error } = useGetCompanyUsersQuery();
   const router = useRouter();
   const [createStaff, { isLoading: staffCreateLoading }] = useCreateStaffUserMutation();
@@ -78,6 +78,7 @@ const StaffCreateCard =()=>{
     setUserId(`${row.id}`)
     setUserDetail(row)
     setUserRoles(row?.roles || []);
+    setRefetchData(false)
     
     if (permissionsData) {
       refetchPermissions();
@@ -88,12 +89,20 @@ const StaffCreateCard =()=>{
   };
 
 
-
+  useEffect(()=>{
+    if (refetchData){
+      refetch();
+      setRefetchData(false);
+      console.log('after',refetchData)
+    }
+    },[refetchData])
  
   const handleCreate = async (createdData: Partial<UserData>) => {
     await createStaff(createdData).unwrap();
     setIsCreateOpen(false); 
-    await refetch();
+    setRefetchData(true)
+
+    // await refetch();
   };
   const [updateUser, { isLoading: userUpdateLoading }] = useUpdateUserMutation();
   const [userDetail,setUserDetail] = useState<UserData>();
@@ -173,7 +182,7 @@ const StaffCreateCard =()=>{
                         {
                           id: 'group',
                           label: 'Staff Group',
-                          content: <UserGroupManager userId={userId} />,
+                          content: <UserGroupManager userId={userId} setRefetchData={()=>setRefetchData(true)} />,
                         },
                         
                         {
@@ -183,7 +192,9 @@ const StaffCreateCard =()=>{
                             userId={userId}
                             roles={userRoles || []}
                             refetch={async () => {
+                              setRefetchData(true)
                               await refetch();
+                              
                             }}
                             closeTab={() => setOpenTabs(false)}
                           />,

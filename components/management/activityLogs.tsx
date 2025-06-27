@@ -126,7 +126,7 @@ const ActivityLogs = ({ userId,
     }
    );
 useEffect(() => {
-    if (refetchData) {
+    if (refetchData && data) {
       refetch().finally(() => {
         onRefetchComplete();
       });

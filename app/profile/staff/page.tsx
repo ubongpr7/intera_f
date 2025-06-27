@@ -1,25 +1,27 @@
-// app/inventory/page.tsx
+'use client'
 import StaffRole from '../../../components/management/roles';
 import Tabs from '../../../components/common/Tabs';
 import StaffCreateCard from '../../../components/management/Staff';
 import StaffGroup from '../../../components/management/groups';
+import {useState} from 'react'
 const StaffPage = () => {
+  const [refetchData,setRefetchData] = useState(false)
   const tabs = [
     {
       id: 'all',
       label: 'All Staff',
-      content: <StaffCreateCard />,
+      content: <StaffCreateCard refetchData={refetchData} setRefetchData={setRefetchData} />,
     },
     {
       id: 'group',
       label: 'Staff Group',
-      content: <StaffGroup />,
+      content: <StaffGroup refetchData={refetchData} setRefetchData={setRefetchData}  />,
     },
     
     {
       id: 'role',
       label: 'Staff Role',
-      content: <StaffRole />,
+      content: <StaffRole refetchData={refetchData} setRefetchData={setRefetchData}  />,
     },
     
   ];

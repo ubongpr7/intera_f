@@ -11,6 +11,7 @@ import { InventoryKeyInfo } from './selectOptions';
 import { useGetUnitsQuery,useGetTypesByModelQuery } from "../../redux/features/common/typeOF";
 import { useGetInventoryCategoriesQuery } from "../../redux/features/inventory/inventoryAPiSlice";
 import { useGetCompanyUsersQuery } from '@/redux/features/users/userApiSlice';
+import { RefetchDataProp } from '../interfaces/common';
 
 
 const strategies = {
@@ -26,7 +27,7 @@ const inventoryColumns: Column<InventoryData>[] = [
     className: 'font-medium',
   },
   {
-    header: 'ID',
+    header: 'Reference',
     accessor: 'external_system_id',
     render: (value) => value || 'N/A',
     className: 'font-medium',
@@ -52,7 +53,7 @@ const inventoryColumns: Column<InventoryData>[] = [
 ];
 
 
-function InventoryView() {
+function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
   const { data, isLoading, refetch, error } = useGetInventoryDataQuery();
   const [createInventory, { isLoading: inventoryCreateLoading }] = useCreateInventoryMutation();
   const [isCreateOpen, setIsCreateOpen] = useState(false); // Renamed for clarity
@@ -65,10 +66,19 @@ function InventoryView() {
   };
 
     //////////////////////////////
-    const { data: categories = [], isLoading: isCatLoading, error: catError } = useGetInventoryCategoriesQuery(1);
+    const { data: categories = [], isLoading: isCatLoading, error: catError,refetch:refetchCategory } = useGetInventoryCategoriesQuery(1);
       const { data: units } = useGetUnitsQuery();
       const { data: userData, isLoading: userLoading,  } = useGetCompanyUsersQuery();
       
+
+      
+  useEffect(()=>{
+    if (categories){
+      refetchCategory()
+      setRefetchData(false)
+    }
+  },[refetchData])
+
       const unitOptions = units ? units.map((unit: any) => ({
         value: unit.id,
         text: `${unit.name} (${unit.dimension_type})`,
@@ -84,6 +94,7 @@ function InventoryView() {
         text: cat.name,
       }));
   
+
     const userOptions = userData?.map((user) => ({
         text: `${user.first_name} ${user.email}`,
         value: user.id.toString(),

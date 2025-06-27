@@ -2,7 +2,7 @@
 import { RoleData } from "../interfaces/management";
 import CustomCreateCard from "../common/createCard";
 import { PageHeader } from "../inventory/PageHeader";
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import { useCreateRoleMutation,useGetRolesQuery, useUpdateRoleMutation } from "../../redux/features/management/groups";
 import { Column, DataTable } from "../common/DataTable/DataTable";
 import { useRouter } from 'nextjs-toploader/app';
@@ -24,13 +24,13 @@ const inventoryColumns: Column<RoleData>[] = [
   },
   {
     header: 'Permission',
-    accessor: 'permission_num',
+    accessor: 'permission_count',
     render: (value) => value || 'N/A',
     info: 'Number of Permissions',
   },
   {
-    header: 'Users',
-    accessor: 'users_num',
+    header: 'Active Assignments',
+    accessor: 'assignments_count',
     render: (value) => value || 'N/A',
     info: 'Number of Users',
   },
@@ -43,12 +43,14 @@ const inventoryColumns: Column<RoleData>[] = [
   
   
 ];
-
-const StaffRole =()=>{
+export interface StaffManagementRefetchProp{
+  setRefetchData:(refetchData:boolean)=>void;
+  refetchData:boolean
+}
+const StaffRole =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
   const [isCreateOpen, setIsCreateOpen] = useState(false); 
   const [openTabs, setOpenTabs] = useState(false); 
   const [roleID, setRoleID] = useState('0'); 
-  const [refetchData, setRefetchData] = useState(false); 
   const { data, isLoading, refetch, error } = useGetRolesQuery();
   const [createGroup, { isLoading: staffCreateLoading }] = useCreateRoleMutation();
   const { data: permissionsData,
@@ -63,8 +65,18 @@ const StaffRole =()=>{
     await updatePermission({id:roleID,data: createdData}).unwrap();
     await refetch();
     await refetchPermissions()
-  };
+      setRefetchData(true);
 
+  };
+  useEffect(()=>{
+    if (refetchData){
+      console.log('before: ',refetchData)
+      refetch();
+      setRefetchData(false);
+      console.log('after',refetchData)
+    }
+    },[refetchData])
+ 
   const handleCreate = async (createdData: Partial<RoleData>) => {
     await createGroup(createdData).unwrap();
     setIsCreateOpen(false); 
@@ -72,7 +84,6 @@ const StaffRole =()=>{
   };
 
   const handleRowClick =  (row: RoleData) => {
-    setRefetchData(true)  
     setRoleID(`${row.id}`)
     setRoleDetail(row)
 
@@ -90,6 +101,8 @@ const StaffRole =()=>{
   const handleUpdate = async (createdData: Partial<RoleData>) => {
     const updateData=await updateRole({id:roleID,data: createdData}).unwrap();
     setRoleDetail(updateData)
+    setRefetchData(true)  
+
     await refetch();
   };
 

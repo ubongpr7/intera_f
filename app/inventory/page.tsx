@@ -1,24 +1,26 @@
-// app/inventory/page.tsx
+'use client'
 import Tabs from '../../components/common/Tabs';
 import InventoryCategoryView from '../../components/inventory/InventoryCategory';
 import InventoryView from '../../components/inventory/InventoryView';
 import StockLocations from '../../components/stock/stockLoation';
+import { useState } from 'react';
 const InventoryPage = () => {
+  const  [refetchData, setRefetchData] = useState(false)
   const tabs = [
     {
       id: 'stock_locations',
       label: 'Stock Locations',
-      content: <StockLocations />,
+      content: <StockLocations refetchData={refetchData} setRefetchData={setRefetchData} />,
     },
     {
       id: 'categories',
       label: 'Inventory Category',
-      content: <InventoryCategoryView />,
+      content: <InventoryCategoryView refetchData={refetchData} setRefetchData={setRefetchData}  />,
     },
     {
       id: 'all',
       label: 'All Inventory',
-      content: <InventoryView />,
+      content: <InventoryView refetchData={refetchData} setRefetchData={setRefetchData} />,
     },
   ];
 

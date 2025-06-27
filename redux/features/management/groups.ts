@@ -1,41 +1,55 @@
 import { apiSlice } from '../../services/apiSlice';
 import { GroupData, RoleData } from '../../../components/interfaces/management';
-const management_api=`management_api`
-// http://localhost:8000/permission_api/role-assignments/roles/
+const management_api=`management`
+const service='users'
 export const groupsAPISlice = apiSlice.injectEndpoints({
   endpoints: builder => ({
     createGroup: builder.mutation({
           query: (companyData: Partial<GroupData>) => ({
-            url: `/${management_api}/staff/groups/`,
+            url: `/${management_api}/groups/`,
             method: 'POST',
-            body: companyData
+            body: companyData,
+            service:service
           }),
         }),
     updateGroup: builder.mutation({
       query: ({ id, data }) => ({
-        url: `/${management_api}/staff/group-details/${id}/`,
+        url: `/${management_api}/groups/${id}/`,
         method: 'PUT',
-        body: data
+        body: data,
+        service:service
+
       }),
     }),
     getGroup: builder.query({
-      query: (id) => `/${management_api}/staff/group-details/${id}/`,
+      query: (id) => ({
+        url:`/${management_api}/groups/${id}/`,
+        service:service
+      }),
+
     }),
     getGroups: builder.query<GroupData[], void>({
-      query: () => `/${management_api}/staff/group/list/`,
+      query: () =>({
+        url: `/${management_api}/groups/`,
+        service:service
+      }),
     }),
     createRole: builder.mutation({
           query: (companyData: Partial<RoleData>) => ({
-            url: `/${management_api}/staff/roles/`,
+            url: `/${management_api}/roles/`,
             method: 'POST',
-            body: companyData
+            body: companyData,
+            service:service
+
           }),
         }),
     updateRole: builder.mutation({
       query: ({ id, data }) => ({
-        url: `/${management_api}/staff/roles/${id}/`,
+        url: `/${management_api}/roles/${id}/`,
         method: 'PUT',
-        body: data
+        body: data,
+        service:service
+
       }),
     }),
     deactivateRole: builder.mutation({
@@ -43,13 +57,21 @@ export const groupsAPISlice = apiSlice.injectEndpoints({
         url: `/${management_api}/roles/${id}/deactivate/`,
         method: 'POST',
         body: {},
+        service:service
       }),
     }),
     getRole: builder.query({
-      query: (id) => `/${management_api}/roles/${id}/`,
+      query: (id) =>({
+        url: `/${management_api}/roles/${id}/`,
+        service:service
+      })
     }),
     getRoles: builder.query<RoleData[], void>({
-      query: () => `permission_api/role-assignments/roles/`,
+      query: () =>({
+        url: `${management_api}/roles/`,
+        service:service
+      
+      }),
     }),
   
   }),

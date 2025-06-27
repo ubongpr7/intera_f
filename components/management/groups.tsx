@@ -2,7 +2,7 @@
 import { GroupData } from "../interfaces/management";
 import CustomCreateCard from "../common/createCard";
 import { PageHeader } from "../inventory/PageHeader";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useGetGroupsQuery,useCreateGroupMutation,useUpdateGroupMutation ,useGetGroupQuery} from "../../redux/features/management/groups";
 import { Column, DataTable } from "../common/DataTable/DataTable";
 import { useRouter } from 'nextjs-toploader/app';
@@ -11,6 +11,7 @@ import GroupPermissionForm from '../permissions/customPermission';
 import { useUpdateGroupPermissionMutation,useGetGroupPermissionQuery } from "../../redux/features/permission/permit";
 import { Permission } from "components/interfaces/common";
 import CustomUpdateForm from "../common/updateForm";
+import { StaffManagementRefetchProp } from "./roles";
 
 
 
@@ -24,13 +25,13 @@ const inventoryColumns: Column<GroupData>[] = [
   },
   {
     header: 'Permission',
-    accessor: 'permission_num',
+    accessor: 'permission_count',
     render: (value) => value || 'N/A',
     info: 'Number of Permissions',
   },
   {
     header: 'Users',
-    accessor: 'users_num',
+    accessor: 'users_count',
     render: (value) => value || 'N/A',
     info: 'Number of Users',
   },
@@ -45,11 +46,10 @@ const inventoryColumns: Column<GroupData>[] = [
 ];
 
 
-const StaffGroup =()=>{
+const StaffGroup =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
   const [isCreateOpen, setIsCreateOpen] = useState(false); 
   const [openTabs, setOpenTabs] = useState(false); 
   const [groupId, setGroupId] = useState('0'); 
-  const [refetchData, setRefetchData] = useState(false); 
   const { data, isLoading, refetch, error } = useGetGroupsQuery();
   const [createGroup, { isLoading: staffCreateLoading }] = useCreateGroupMutation();
   const { data: permissionsData,
@@ -61,6 +61,14 @@ const StaffGroup =()=>{
   const [updatePermission, { isLoading: permissionLoading }] = useUpdateGroupPermissionMutation();
   const [updateGroup, { isLoading: groupUpdateLoading }] = useUpdateGroupMutation();
 
+ useEffect(()=>{
+   if (refetchData){
+     console.log('before: ',refetchData)
+     refetch();
+     setRefetchData(false);
+     console.log('after',refetchData)
+   }
+   },[refetchData])
   
   const handleUpdatePermissionSubmit = async (createdData: { permissions: string[] }) => {
     await updatePermission({id:groupId,data: createdData}).unwrap();
@@ -78,6 +86,8 @@ const StaffGroup =()=>{
     await createGroup(createdData).unwrap();
     setIsCreateOpen(false); 
     await refetch();
+    setRefetchData(true)  
+
   };
   const handleRowClick =  (row: GroupData) => {
     setRefetchData(true)  

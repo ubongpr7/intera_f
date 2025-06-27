@@ -36,8 +36,9 @@ export interface Address {
     name: string;
     description?: string;
     users: string;
-    users_num: number;
-    permission_num: number;
+    users_count: number;
+    permission_count: number;
+    assignments_count:string
   }
   
   export type RoleData = GroupData;

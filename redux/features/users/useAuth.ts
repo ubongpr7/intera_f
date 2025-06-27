@@ -15,12 +15,12 @@ export const useAuth = () => {
     refetchOnMountOrArgChange: true,
   });
 
-  useEffect(() => {
-    if (!isLoading && !isPublic && !user) {
-      sessionStorage.setItem('redirectUrl', pathname);
-      router.push('/accounts/signin');
-    }
-  }, [user, isLoading, isPublic, pathname, router]);
+  // useEffect(() => {
+  //   if (!isLoading && !isPublic && !user) {
+  //     sessionStorage.setItem('redirectUrl', pathname);
+  //     router.push('/accounts/signin');
+  //   }
+  // }, [user, isLoading, isPublic, pathname, router]);
 
   return {
     user: user as UserData | undefined,
