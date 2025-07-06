@@ -44,6 +44,9 @@ interface DataTableProps<T> {
   showActionsColumn?: boolean
   actionsColumnHeader?: string
   actionsColumnWidth?: string
+  showRowNumbers?: boolean // New prop to control row numbering
+  rowNumberHeader?: string // Customizable header for row numbers
+  startNumberFrom?: number // Allow starting from a different number (useful for pagination)
 }
 
 export function DataTable<T>({
@@ -56,6 +59,9 @@ export function DataTable<T>({
   showActionsColumn = true,
   actionsColumnHeader = "Actions",
   actionsColumnWidth = "w-32",
+  showRowNumbers = true, // Default to true to show row numbers
+  rowNumberHeader = "#", // Default header for row numbers
+  startNumberFrom = 1, // Default starting number
 }: DataTableProps<T>) {
   const getButtonVariantClasses = (variant: ActionButton<T>["variant"] = "secondary") => {
     const baseClasses =
@@ -92,14 +98,12 @@ export function DataTable<T>({
 
   const renderActionButtons = (row: T) => {
     const visibleActions = actionButtons.filter((action) => !action.hidden?.(row))
-
     if (visibleActions.length === 0) return null
 
     return (
       <div className="flex items-center space-x-1">
         {visibleActions.map((action, index) => {
           const isDisabled = action.disabled?.(row) || false
-
           return (
             <button
               key={index}
@@ -142,6 +146,13 @@ export function DataTable<T>({
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50 sticky top-0">
             <tr>
+              {/* Row number header */}
+              {showRowNumbers && (
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
+                  {rowNumberHeader}
+                </th>
+              )}
+
               {columns.map((column, idx) => (
                 <th
                   key={idx}
@@ -153,6 +164,7 @@ export function DataTable<T>({
                   {column.info && <FieldInfo info={column.info} displayBelow={true} />}
                 </th>
               ))}
+
               {hasActions && (
                 <th
                   className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${actionsColumnWidth}`}
@@ -170,6 +182,13 @@ export function DataTable<T>({
                 onClick={() => onRowClick?.(row)}
                 className={`${onRowClick ? "cursor-pointer hover:bg-gray-50" : ""} transition-colors`}
               >
+                {/* Row number cell */}
+                {showRowNumbers && (
+                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-500 w-16">
+                    {startNumberFrom + rowIndex}
+                  </td>
+                )}
+
                 {columns.map((column, colIndex) => {
                   const value =
                     typeof column.accessor === "function" ? column.accessor(row) : row[column.accessor as keyof T]
@@ -182,6 +201,7 @@ export function DataTable<T>({
                     </td>
                   )
                 })}
+
                 {hasActions && (
                   <td className={`px-6 py-4 whitespace-nowrap text-sm ${actionsColumnWidth}`}>
                     {renderActionButtons(row)}
@@ -193,6 +213,7 @@ export function DataTable<T>({
         </table>
 
         {!isLoading && data.length === 0 && <div className="text-center py-8 text-gray-500">No records found</div>}
+
         {isLoading && data.length === 0 && (
           <div className="text-center flex items-center justify-center py-8 text-gray-500">
             <LoadingAnimation text="Loading..." ringColor="#3b82f6" />
