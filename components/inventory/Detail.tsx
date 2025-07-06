@@ -4,7 +4,7 @@ import { useGetInventoryCategoriesQuery, useGetInventoryQuery } from '@/redux/fe
 import { InventoryData, inventoryTypes } from '../interfaces/inventory';
 import { useUpdateInventoryMutation } from '../../redux/features/inventory/inventoryAPiSlice';
 import LoadingAnimation from '../common/LoadingAnimation';
-import { InventoryKeyInfo } from './selectOptions';
+import { InventoryInterfaceKeys, InventoryKeyInfo } from './selectOptions';
 import { useGetCompanyUsersQuery } from '@/redux/features/users/userApiSlice';
 import { useGetUnitsQuery } from '@/redux/features/common/typeOF';
 
@@ -31,7 +31,7 @@ const categoryOptions = categories.map((cat: any) => ({
   text: cat.name,
 }));
 const unitOptions = units.map((unit: any) => ({
-   value: unit.id,
+   value: `${unit.name} (${unit.dimension_type})`,
   text: `${unit.name} (${unit.dimension_type})`,
 }));
 const typeOptions = inventoryTypes ? inventoryTypes.map((inventory_type: any) => ({
@@ -97,7 +97,7 @@ const  selectOptions = {
   return (
     <DetailCard 
       data={inventoryData}
-      notEditableFields={['id','created_by_details','unit_name','profile','created_by','default_supplier','total_stock_value','current_stock','calculated_safety_stock','stock_status','sync_error_message','last_sync_timestamp','officer_in_charge_details','modified_by_details','sync_status','external_references','stock_analytics','category_details', 'created_at','updated_at','forecast_method_name','expiration_policy_name' ,'reorder_strategy_name','recall_policy_name','category_name','external_system_id', ]}
+            interfaceKeys={InventoryInterfaceKeys}
       updateMutation={handleUpdate}
       excludeFields={['id','external_references','unit','officer_in_charge','last_sync_timestamp','sync_error_message','sync_status','officer_in_charge_details','modified_by_details','created_by', 'created_by_details','stock_analytics','category_details','category','forecast_method','expiration_policy','recall_policy','reorder_strategy','profile','batch_tracking_enabled',]}
       selectOptions={selectOptions}

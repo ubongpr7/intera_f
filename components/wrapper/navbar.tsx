@@ -1,11 +1,11 @@
 'use client'
 import classNames from 'classnames'
-import React from 'react'
-import {Menu, Bell, Search,Sun,Moon,Settings as SettingsIcon,  User} from 'lucide-react'
+import React, { useRef, useState } from 'react'
+import {Menu, Bell, Search,Sun,Moon,Settings as SettingsIcon,  User, Monitor} from 'lucide-react'
 import Link from 'next/link'
 import { Settings } from 'http2'
 import { useAppSelector, useAppDispatch } from "../../redux/store";
-import { setIsDarkMode, setIsSidebarCollapsed } from "../../redux/state";
+import { setIsDarkMode, setIsSidebarCollapsed,resetToSystemTheme } from "@/redux/state";
 import { UserData } from '../interfaces/User'
 import LogoutButton from '../auth/logoutUser'
 
@@ -14,12 +14,25 @@ interface NavbarProps{
 }
 
 const  Navbar = ({user}:NavbarProps) => {
-    const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
+    // const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
     const dispatch = useAppDispatch();
+  const [themeMenuOpen, setThemeMenuOpen] = useState(false)
+  const { isDarkMode, isSystemTheme } = useAppSelector((state) => state.global)
+
     const SidebarCollapsed = useAppSelector((state) => state.global.isSidebarCollapsed);
         const toggleSidebar = () => {
             dispatch(setIsSidebarCollapsed(!SidebarCollapsed))
         }
+  const themeMenuRef = useRef<HTMLDivElement>(null)
+
+  const toggleTheme = (theme: "light" | "dark" | "system") => {
+    if (theme === "system") {
+      dispatch(resetToSystemTheme())
+    } else {
+      dispatch(setIsDarkMode(theme === "dark"))
+    }
+    setThemeMenuOpen(false)
+  }
 
   return (
     <div className={`flex justify-between items-center w-full mb-7`}> 
@@ -36,6 +49,7 @@ const  Navbar = ({user}:NavbarProps) => {
             <Menu className={`w-4 h-4 `} />
             </button>
         </div>
+        {/* 
         <div className={`relative`}> 
         <input 
             type="search"
@@ -51,19 +65,53 @@ const  Navbar = ({user}:NavbarProps) => {
             </div>
             
         </div>
+        */}
         </div>
         {/* Right Side */}
         <div className={`flex items-center justify-between gap-5`}> 
                 <div className={`hidden md:flex items-center gap-5 justify-between`}>
-                    <button 
-                        onClick={()=>{
-                            dispatch(setIsDarkMode(!isDarkMode))
-                        }}>
-                        {isDarkMode ?
-                        (<Sun  size={24} className={`cursor-pointer text-gray-500`}/>):
-                        (<Moon  size={24} className={`cursor-pointer text-gray-500`}/>)
-                        }
-                    </button>
+                     <div className="relative" ref={themeMenuRef}>
+          <button
+            className="p-2 rounded-full hover:bg-gray-200 "
+            onClick={() => setThemeMenuOpen(!themeMenuOpen)}
+            aria-label="Change theme"
+          >
+            {isDarkMode ? <Moon size={20} /> : <Sun size={20} />}
+          </button>
+
+          {themeMenuOpen && (
+            <div className={`absolute right-0 mt-2 w-48 bg-white  rounded-md shadow-lg py-1 z-10 border `}>
+              <button
+                className={`block px-4 py-2 text-sm w-full ${!isDarkMode && !isSystemTheme ? "bg-gray-100 dark:bg-gray-700" : ""} text-left text-gray-900`}
+                onClick={() => toggleTheme("light")}
+              >
+                <div className="flex items-center">
+                  <Sun size={16} className="mr-2" />
+                  Light
+                </div>
+              </button>
+              <button
+                className={`block px-4 py-2 text-sm w-full ${isDarkMode && !isSystemTheme ? "bg-gray-100" : ""} text-left text-gray-900`}
+                onClick={() => toggleTheme("dark")}
+              >
+                <div className="flex items-center text-gray-900">
+                  <Moon size={16} className="mr-2" />
+                  Dark
+                </div>
+              </button>
+              <button
+                className={`block px-4 py-2 text-sm w-full text-left text-gray-900  ${isSystemTheme ? 'bg-gray-100 ' : ''}`}
+                onClick={() => toggleTheme("system")}
+              >
+                <div className="flex items-center">
+                  <Monitor size={16} className="mr-2" />
+                  System
+                </div>
+              </button>
+            </div>
+          )}
+        </div>
+
                     <div className={`relative `}>
                     <button 
                         onClick={()=>{}}>

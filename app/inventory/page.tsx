@@ -1,4 +1,5 @@
 'use client'
+import { Folder, MapPin, Warehouse } from 'lucide-react';
 import Tabs from '../../components/common/Tabs';
 import InventoryCategoryView from '../../components/inventory/InventoryCategory';
 import InventoryView from '../../components/inventory/InventoryView';
@@ -11,16 +12,19 @@ const InventoryPage = () => {
       id: 'stock_locations',
       label: 'Stock Locations',
       content: <StockLocations refetchData={refetchData} setRefetchData={setRefetchData} />,
+      icon:MapPin
     },
     {
       id: 'categories',
       label: 'Inventory Category',
       content: <InventoryCategoryView refetchData={refetchData} setRefetchData={setRefetchData}  />,
+      icon:Folder
     },
     {
       id: 'all',
       label: 'All Inventory',
       content: <InventoryView refetchData={refetchData} setRefetchData={setRefetchData} />,
+      icon:Warehouse
     },
   ];
 

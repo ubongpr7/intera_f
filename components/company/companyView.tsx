@@ -9,6 +9,7 @@ import CustomCreateCard from '../common/createCard';
 import { CompanyInterfaceKeys,defaultValues } from './selectOptions';
 import { CompanyKeyInfo } from './selectOptions';
 import { useGetCurrencyQuery } from '../../redux/features/common/typeOF';
+import { getCurrencySymbol } from '@/lib/currency-utils';
 
 const inventoryColumns: Column<CompanyDataInterface>[] = [
   {
@@ -43,8 +44,8 @@ const inventoryColumns: Column<CompanyDataInterface>[] = [
   },
   {
     header: 'Currency',
-    accessor: 'base_currency',
-    render: (value) => value || 'N/A',
+    accessor: 'currency',
+    render: (value) => `${getCurrencySymbol(value)} ${value}` || 'N/A',
     info: 'Category to which the inventory belong',
   },
   
@@ -60,10 +61,9 @@ function CompanyView() {
   
 
   const currencyOptions = currencies.map(currency => ({
-  value: currency.id,
-  text: `${currency.code} `
+  value: currency.code,
+  text: `${getCurrencySymbol(currency.code)} ${currency.code} `
 }));
- 
   const  selectOptions = {
           
     currency:currencyOptions,
@@ -127,7 +127,7 @@ function CompanyView() {
           keyInfo={CompanyKeyInfo}
           notEditableFields={notEditableCompanyFields}
           interfaceKeys={CompanyInterfaceKeys}
-          optionalFields={['is_supplier','description', 'is_customer','is_manufacturer']}
+          optionalFields={['is_supplier', 'is_customer','is_manufacturer']}
         />
       </div>
     </div>

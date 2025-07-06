@@ -35,7 +35,7 @@ export interface InventoryData {
     // Step 1
     name: string;
     description?: string;
-    
+    current_stock_level:number;
     inventory_type: number;
     profile?: number;
     category?: string;
@@ -120,7 +120,7 @@ export interface InventoryData {
   }
   
   export interface CategoryData{
-    id:number;
+    id:string;
     name:string;
     inventory_count:number;
     description?:string;

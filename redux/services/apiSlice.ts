@@ -5,12 +5,15 @@ import { Mutex } from "async-mutex"
 import { setCookie, getCookie, deleteCookie } from "cookies-next"
 import env from "../../env_file"
 
-export type serviceType = "users" | "inventory"
-const accessAge = 60*5
+export type serviceType = "users" | "inventory"| "common"|"product"|'pos'
+const accessAge = 60*60*24
 const refreshAge = 60*60*24
 export const serviceMap: Record<serviceType, string> = {
   users: env.BACKEND_HOST_URL,
   inventory: env.INVENNTORY_BACKEND_URL,
+  common: env.COMMON_BACKEND_URL,
+  product: env.PRODUCT_BACKEND_URL,
+  pos: env.POS_BACKEND_URL,
 }
 
 const mutex = new Mutex()
@@ -52,11 +55,17 @@ const createBaseQuery = (baseUrl: string, isFileUpload = false) => {
 const baseQueries = {
   users: createBaseQuery(serviceMap.users),
   inventory: createBaseQuery(serviceMap.inventory),
+  common: createBaseQuery(serviceMap.common),
+  product: createBaseQuery(serviceMap.product),
+  pos: createBaseQuery(serviceMap.pos),
 }
 
 const fileUploadQueries = {
   users: createBaseQuery(serviceMap.users, true),
   inventory: createBaseQuery(serviceMap.inventory, true),
+  common: createBaseQuery(serviceMap.common, true),
+  product: createBaseQuery(serviceMap.product, true),
+  pos: createBaseQuery(serviceMap.pos, true),
 }
 
 // Helper function to determine if the request is a file upload
@@ -125,17 +134,20 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
         access_token: string
         id: string
         profile: string
+        currency:string
       }
       setCookie("accessToken", response.access, { maxAge:  accessAge, path: "/" })
       setCookie("refreshToken", response.refresh, { maxAge:refreshAge, path: "/" })
-      setCookie("userID", response.id, { maxAge: 60 * 60 * 24 * 7, path: "/" })
-      setCookie("profile", response.profile, { maxAge: 60 * 60 * 24 * 7, path: "/" })
+      setCookie("userID", response.id, { maxAge: refreshAge, path: "/" })
+      setCookie("profile", response.profile, { maxAge: refreshAge, path: "/" })
+      setCookie("currency", response.currency, { maxAge: refreshAge, path: "/" })
       api.dispatch(setAuth())
     } else if (url === "/api/v1/accounts/logout/") {
       deleteCookie("accessToken")
       deleteCookie("refreshToken")
       deleteCookie("userID")
       deleteCookie("profile")
+      deleteCookie("currency")
       api.dispatch(logout())
     }
   }

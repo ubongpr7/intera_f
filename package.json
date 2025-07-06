@@ -36,6 +36,7 @@
     "radix-ui": "^1.4.2",
     "react": "19.0.0-rc-66855b96-20241106",
     "react-dom": "19.0.0-rc-66855b96-20241106",
+    "react-dropzone": "^14.3.8",
     "react-facebook-pixel": "^1.0.4",
     "react-google-recaptcha": "^3.1.0",
     "react-hook-form": "^7.54.2",

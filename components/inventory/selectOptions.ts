@@ -43,13 +43,14 @@ import { InventoryData } from "../interfaces/inventory";
 
 
 export const InventoryInterfaceKeys: (keyof InventoryData)[]=[
-    'name', 'description','category', 'inventory_type','reorder_strategy','re_order_quantity',
-     'safety_stock_level', 'minimum_stock_level', 're_order_point','alert_threshold',
+    'name', 'description','category','officer_in_charge', 'inventory_type','reorder_strategy',
+     'expiration_policy', 'recall_policy', 'near_expiry_policy',
+    'forecast_method','unit',
+    're_order_quantity','safety_stock_level', 'minimum_stock_level', 're_order_point','alert_threshold',
       'automate_reorder', 'supplier_lead_time',
-    'internal_processing_time', 'expiration_threshold', 'officer_in_charge',
+    'internal_processing_time', 'expiration_threshold', 
     'batch_tracking_enabled',
-    'expiration_policy', 'recall_policy', 'near_expiry_policy',
-    'forecast_method', 'supplier_reliability_score','unit'
+    'supplier_reliability_score',
   
 ]
 

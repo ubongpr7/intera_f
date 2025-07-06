@@ -2,9 +2,10 @@
 import DetailCard from '../common/Detail';
 import { CompanyDataInterface } from '../interfaces/company';
 import LoadingAnimation from '../common/LoadingAnimation';
-import { CompanyKeyInfo } from './selectOptions';
+import { CompanyInterfaceKeys, CompanyKeyInfo } from './selectOptions';
 import { useGetCurrencyQuery } from '../../redux/features/common/typeOF';
 import { useGetCompanyQuery,useUpdateCompanyMutation } from '../../redux/features/company/companyAPISlice';
+import { getCurrencySymbol } from '@/lib/currency-utils';
 
 export default function CompanyDetail({ id }: { id: string }) {
   const { data: Company, isLoading,refetch  } = useGetCompanyQuery(id);
@@ -24,8 +25,8 @@ const { data: response,isLoading:currencyLoading,error:currencyError } = useGetC
   
 
   const currencyOptions = currencies.map(currency => ({
-  value: currency.id,
-  text: `${currency.code} `
+  value: currency.code,
+  text: `${getCurrencySymbol(currency.code)} ${currency.code} `
 }));
  
   const  selectOptions = {
@@ -50,6 +51,7 @@ const { data: response,isLoading:currencyLoading,error:currencyError } = useGetC
     <DetailCard 
     titleField={'name'}
       data={CompanyDataInterface}
+      interfaceKeys={CompanyInterfaceKeys}
       notEditableFields={['id','company_type', 'created_at','updated_at',]}
       updateMutation={handleUpdate}
       excludeFields={['id','is_customer','is_supplier','is_manufacturer',]}
@@ -57,7 +59,7 @@ const { data: response,isLoading:currencyLoading,error:currencyError } = useGetC
       isLoading={updateIsLoading}
       policyFields={['description']}
       keyInfo={CompanyKeyInfo}
-      optionalFields={['is_customer','is_supplier','is_manufacturer']}
+      optionalFields={['is_customer','is_supplier','is_manufacturer','notes']}
 
     />
   );

@@ -9,13 +9,9 @@ import CustomCreateCard from '../common/createCard';
 import { InventoryInterfaceKeys,defaultValues } from './selectOptions';
 import { useGetUnitsQuery,useGetTypesByModelQuery } from "../../redux/features/common/typeOF";
 import { useGetProductCategoriesQuery } from "../../redux/features/product/productAPISlice";
+import { useGetInventoryDataQuery } from '@/redux/features/inventory/inventoryAPiSlice';
+import {AIBulkCreateModal} from './AIBulkCreateModal';
 
-
-const strategies = {
-  FQ: 'Fixed Quantity',
-  FI: 'Fixed Interval',
-  DY: 'Dynamic',
-};
 
 const inventoryColumns: Column<ProductData>[] = [
   {
@@ -23,16 +19,22 @@ const inventoryColumns: Column<ProductData>[] = [
     accessor: 'name',
     className: 'font-medium',
   },
-  {
-    header: 'ID',
-    accessor: 'id',
-    render: (value) => value || 'N/A',
-    className: 'font-medium',
-  },
+  // {
+  //   header: 'ID',
+  //   accessor: 'barcode',
+  //   render: (value) => value || 'N/A',
+  //   className: 'font-medium',
+  // },
   {
     header: 'Category',
-    accessor: 'category_name',
-    render: (value) => value || 'N/A',
+    accessor: 'category_details',
+    render: (value) => value?.name || 'N/A',
+    info: 'Category to which the inventory belong',
+  },
+  {
+    header: 'Base Cost Price',
+    accessor: 'cost_price',
+    render: (value) => value || '0',
     info: 'Category to which the inventory belong',
   },
   {
@@ -50,7 +52,8 @@ function ProductView() {
   const [createInventory, { isLoading: inventoryCreateLoading }] = useCreateProductMutation();
   const [isCreateOpen, setIsCreateOpen] = useState(false); // Renamed for clarity
   const router = useRouter();
-
+  const { data:inventoryData=[] } = useGetInventoryDataQuery();
+  const [isAIBulkCreateOpen, setIsAIBulkCreateOpen] = useState(false);
   const handleCreate = async (createdData: Partial<ProductData>) => {
     await createInventory(createdData).unwrap();
     setIsCreateOpen(false); 
@@ -58,23 +61,27 @@ function ProductView() {
   };
 
     const { data: categories = [], isLoading: isCatLoading, error: catError } = useGetProductCategoriesQuery(1);
-      const { data: units } = useGetUnitsQuery();
-      
-      const unitOptions = units ? units.map((unit: any) => ({
-        value: unit.id,
-        text: unit.name,
-      })) : [];
-      
+      const { data: units=[] } = useGetUnitsQuery();
+      const unitOptions = units.map((unit: any) => ({
+        value: `${unit.name} (${unit.dimension_type})`,
+        text: `${unit.name} (${unit.dimension_type})`,
+      }));
     
       const categoryOptions = categories.map((cat: any) => ({
         value: cat.id,
         text: cat.name,
+      }));
+    
+      const inventoryOptions = inventoryData.map((inventory: any) => ({
+        value: inventory.id,
+        text: inventory.name,
       }));
       
     const  selectOptions = {
           
             category:categoryOptions,
             unit:unitOptions,
+            inventory:inventoryOptions,
            
       }
   
@@ -113,9 +120,24 @@ function ProductView() {
         data={data || []}
         isLoading={isLoading}
         onRowClick={handleRowClick}
+        actionButtons={[]}
+        secondaryButton={
+          {
+            label: 'Create Bulk Product',
+            onClick: () => setIsAIBulkCreateOpen(true),
+          }
+        }
       />
 
       {/* Always render CustomCreateCard but control visibility */}
+      {isAIBulkCreateOpen && (
+        <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isAIBulkCreateOpen ? 'block' : 'hidden'}`}>
+        <AIBulkCreateModal
+          isOpen={isAIBulkCreateOpen}
+          onClose={() => setIsAIBulkCreateOpen(false)}
+          />
+        </div>
+      )}
       <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>
         <CustomCreateCard
           defaultValues={defaultValues}
@@ -128,8 +150,11 @@ function ProductView() {
           keyInfo={{}}
           notEditableFields={notEditableFields}
           interfaceKeys={InventoryInterfaceKeys}
-          optionalFields={['description']}
+          optionalFields={['description','cost_price', 'dimensions','weight','max_discount_percent','allow_discount','tax_inclusive','quick_sale','pos_ready',]}
+          itemTitle={'New Product'}
         />
+       
+        
       </div>
     </div>
   );

@@ -26,14 +26,27 @@ export const companyApiSlice = apiSlice.injectEndpoints({
     }),
     getCompany: builder.query({
       query: (id) =>({
-        url: `/${management_api}/company/detail/${id}/`,
+        url: `/${management_api}/companies/${id}/`,
         service: service,
       })
     }),
   
     getSupplers: builder.query<CompanyDataInterface[], void>({
       query: () =>({
-        url: `/${management_api}/suppliers/`,
+        url: `/${management_api}/companies/?is_supplier=${true}`,
+        service: service,
+      })
+    }),
+  
+    getManufacturers: builder.query<CompanyDataInterface[], void>({
+      query: () =>({
+        url: `/${management_api}/companies/?is_manufacturer=${true}`,
+        service: service,
+      })
+    }),
+    getCustomer: builder.query<CompanyDataInterface[], void>({
+      query: () =>({
+        url: `/${management_api}/companies/?is_customer=${true}`,
         service: service,
       })
     }),
@@ -45,8 +58,21 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         service: service,
       }),
     }),
-  }),
 
+    getCompanyContactPerson: builder.query({
+          query: (company_id) => ({
+            url:`/${management_api}/companies/${company_id}/contacts/`,
+            service:service
+          
+          })
+        }),
+    getCompanyAddress: builder.query({
+          query: (company_id) => ({
+            url:`/${management_api}/companies/${company_id}/addresses/`,
+            service:service
+          })
+        }),
+  }),
 });
 
 
@@ -55,7 +81,11 @@ export const {
   useUpdateCompanyMutation,
   useGetCompanyQuery,
   useGetSupplersQuery,
-  useGetCompanyDataQuery
+  useGetCompanyDataQuery,
+  useGetManufacturersQuery,
+  useGetCustomerQuery,
+  useGetCompanyAddressQuery,
+  useGetCompanyContactPersonQuery
 } = companyApiSlice;
 
 
@@ -67,7 +97,7 @@ export const companyAddressApiSlice = apiSlice.injectEndpoints({
         url: `/${management_api}/company-addresses/`,
         method: 'POST',
         body: AddressDataInterface,
-        service: 'inventory',
+        service: service,
       }),
     }),
     
@@ -75,15 +105,16 @@ export const companyAddressApiSlice = apiSlice.injectEndpoints({
       query: ({ id, data }) => ({
         url: `/${management_api}/company-addresses/${id}/`,
         method: 'PATCH',
-        body: data
+        body: data,
+        service:service
       }),
     }),
-    // getCompanyAddress: builder.query({
-    //   query: (id) => `/${management_api}/companies/${id}/`,
-    // }),
   
     getCompanyAddresses: builder.query({
-      query: (company_id) => `/${management_api}/company-addresses/?company_id=${company_id}`,
+      query: (company_id) => ({
+        url:`/${management_api}/companies/${company_id}/addresses/`,
+        service:service
+      })
     }),
   
   }),
@@ -103,7 +134,9 @@ export const ContactPersonApiSlice = apiSlice.injectEndpoints({
       query: (AddressDataInterface: Partial<ContactPersonInterface>) => ({
         url: `/${management_api}/company-contacts/`,
         method: 'POST',
-        body: AddressDataInterface
+        body: AddressDataInterface,
+        service:service
+
       }),
     }),
     
@@ -111,12 +144,18 @@ export const ContactPersonApiSlice = apiSlice.injectEndpoints({
       query: ({ id, data }) => ({
         url: `/${management_api}/company-contacts/${id}/`,
         method: 'PATCH',
-        body: data
+        body: data,
+        service:service
+
       }),
     }),
     
     getContactPerson: builder.query({
-      query: (company_id) => `/${management_api}/company-contacts/?company_id=${company_id}`,
+      query: (company_id) => ({
+        url:`/${management_api}/companies/${company_id}/contacts/`,
+        service:service
+      
+      })
     }),
   
   }),

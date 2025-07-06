@@ -2,13 +2,16 @@
 
 import { useState } from 'react';
 import { Check, CheckCircle, Edit, XCircle } from 'lucide-react';
-import CustomUpdateCard from './updateCard';
 import ActionHeader from './actions';
 import { ActionItem } from '../interfaces/common'
+import { getCurrencySymbol } from '@/lib/currency-utils';
+import Image from 'next/image';
+import CustomCreateCard from './createCard';
 
 
 interface DetailCardProps<T> {
   data: T;
+  interfaceKeys: (keyof T)[];
   titleField?: keyof T;
   excludeFields?: (keyof T)[];
   policyFields?: (keyof T)[];
@@ -38,6 +41,7 @@ const formatDateTime = (value: string) => {
 
 export default function DetailCard<T extends Record<string, any>>({
   data,
+  interfaceKeys,
   titleField = 'name',
   excludeFields = [],
   policyFields = [],
@@ -73,9 +77,24 @@ export default function DetailCard<T extends Record<string, any>>({
   ) as (keyof T)[];
 
   const formatLabel = (str: string): string => {
+    if (str.toLocaleLowerCase().includes('weight')){
+      str = str+ ' (kg)'
+    }
+    if (str.toLocaleLowerCase().endsWith('margin')){
+      str = str+ ' (%)'
+    }
     return str.replace(/_name$/, '').replace(/_/g, ' ');
   };
   const renderValue = (key: keyof T, value: any) => {
+    if (key === 'currency' || String(key).toLowerCase().includes('currency') ){
+      return `${getCurrencySymbol(value)} ${value}`
+    }
+    if ( String(key).toLowerCase().includes('price') ){
+      return `${getCurrencySymbol('NGN')} ${value}`
+    }
+    // if (String(key).toLowerCase().includes('image') ){
+    //   return <Image src={value} width={24} alt={value}/>
+    // }
     if (typeof value === 'boolean'){
       if (value ){
         return (<CheckCircle/>)
@@ -86,15 +105,17 @@ export default function DetailCard<T extends Record<string, any>>({
 
     }
     if (typeof value === 'object' && !Array.isArray(value) && value !== null) {
-      return (
-        <div>
-          <pre className={`text-sm bg-gray-50 p-3 rounded-md whitespace-pre-wrap break-words font-mono`}>
-            {JSON.stringify(value, null, 2)}
-            </pre>
-            </div>
-
-      )
+      return
     }
+    if (key === 'display_image' && typeof value === 'string') {
+      return (
+        <div className="w-24 h-24 relative">
+          <Image src={value} alt={formatLabel(key as string)} fill className="object-cover rounded-lg" />
+        </div>
+      );
+    }
+    if (key === 'created_by' && typeof value === 'string') {
+      return }
 
     if (['created_at', 'updated_at','delivery_date','issue_date','complete_date','received_date'].includes(key as string)) {
       return (
@@ -129,7 +150,7 @@ export default function DetailCard<T extends Record<string, any>>({
         >
           {formatLabel(key as string)}
         </span>
-        <div className="mt-1">{renderValue(key, value)}</div> 
+        <div className="mt-1" >{renderValue(key, value)}</div> 
       </div>
     </div>
   );
@@ -172,19 +193,27 @@ export default function DetailCard<T extends Record<string, any>>({
       )}
 
       {isEditOpenOption && updateMutation && (
-        <CustomUpdateCard
-          data={data}
-          selectOptions={selectOptions}
-          editableFields={editableFields}
-          onClose={() => setIsEditOpenOption(false)}
-          onSubmit={updateMutation}
-          isLoading={isLoading}
-          keyInfo={keyInfo}
-          dateFields={dateFields}
+        
+        <CustomCreateCard
+            defaultValues={data}
+            onClose={() => setIsEditOpenOption(false)}
+
+            onSubmit={updateMutation}
+            isLoading={isLoading}
+            selectOptions={selectOptions}
+            keyInfo={keyInfo}
+
+            notEditableFields={[]}
+            interfaceKeys={interfaceKeys}
+            optionalFields={optionalFields}
+         dateFields={dateFields}
           datetimeFields={datetimeFields}
-          optionalFields={optionalFields}
-        />
+ 
+            hiddenFields={{}}
+            itemTitle={`Update ${data[titleField]}`}
+          />
       )}
     </div>
   );
 }
+

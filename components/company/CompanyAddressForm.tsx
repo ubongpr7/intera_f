@@ -15,28 +15,17 @@ import {
 } from "@/redux/features/common/typeOF"
 
 import { useCreateCompanyProfileAddressMutation,useUpdateCompanyProfileAddressMutation } from "@/redux/features/management/companyProfileApiSlice"
+import { Address } from "../interfaces/common"
+import { CompanyProfile } from "@/types/company-profile"
 
 
-  interface Address {
-    id?: number
-  country: number | null
-  region: number | null
-  subregion: number | null
-  city: number | null
-  apt_number: number | null
-  street_number: number | null
-  street: string | null
-  postal_code: string | null
-  company?: string | null
-  full_address: string | null
-}
 
-interface CompanyProfile {
-  id?: number
-  name?: string
-  headquarters_address?: Address
-  // Add other fields as needed
-}
+// interface CompanyProfile {
+//   id?: number
+//   name?: string
+//   headquarters_address?: Address
+//   // Add other fields as needed
+// }
 
 interface CompanyAddressFormProps {
   profile: CompanyProfile | null

@@ -33,13 +33,6 @@ export const stockApiSlice = apiSlice.injectEndpoints({
     }),
   }),
   
-    getStockItemDataForInventory: builder.query<StockItem[], string>({
-      query: (inventory_id) => ({
-        url: `/${management_api}/stock-items/get_inventory_items/?inventory_id=${inventory_id}`,
-        method: 'GET',
-				service:service,
-      }),
-    }),
     getStockItemData: builder.query<StockItem[], string>({
       query: () => ({
         url: `/${management_api}/stock-items/`,
@@ -67,6 +60,13 @@ export const stockApiSlice = apiSlice.injectEndpoints({
     getStockItemLocation: builder.query({
       query: (id) => ({
         url:`/${management_api}/locations/${id}/`,
+				service:service,
+      
+      }),
+    }),
+    getStockItemDataForInventory: builder.query({
+      query: (id) => ({
+        url:`/${management_api}/stock-items/get_inventory_items/?inventory_id=${id}`,
 				service:service,
       
       }),
@@ -103,13 +103,12 @@ export const {
   useUpdateStockItemMutation,
   useGetStockItemQuery,
   useGetStockItemDataQuery,
-  useGetStockItemDataForInventoryQuery,
 
   useCreateStockItemLocationMutation,
   useUpdateStockItemLocationMutation,
   useGetStockItemLocationQuery,
   useGetStockItemDataLocationQuery,
     useGetFilteredStockItemDataLocationQuery,
-
+  useGetStockItemDataForInventoryQuery,
     useGetStockLocationTypesQuery,
 } = stockApiSlice ;

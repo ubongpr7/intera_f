@@ -10,7 +10,9 @@ import { ReactSelectField, type SelectOption } from "@/components/ui/react-selec
 import { Building2, Calendar, Users, FileText } from "lucide-react"
 import { useUpdateCompanyProfileMutation } from "@/redux/features/management/companyProfileApiSlice"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useGetCurrencyQuery } from '../../redux/features/common/typeOF';
 import type { CompanyProfile, CompanyFormData } from "@/types/company-profile"
+import { getCurrencySymbol } from "@/lib/currency-utils"
 
 interface CompanyBasicInfoFormProps {
   profile: CompanyProfile | null
@@ -20,6 +22,7 @@ interface CompanyBasicInfoFormProps {
 interface FormErrors {
   name?: string
   industry?: string
+  currency:string
   description?: string
   founded_date?: string
   employees_count?: string
@@ -44,11 +47,17 @@ const INDUSTRY_OPTIONS: SelectOption[] = [
 ]
 
 export function CompanyBasicInfoForm({ profile, onSuccess }: CompanyBasicInfoFormProps) {
-  const [updateProfile, { isLoading, isSuccess, isError, error }] = useUpdateCompanyProfileMutation()
+  const [updateProfile, { isLoading, isSuccess, isError, error, }] = useUpdateCompanyProfileMutation()
+  const { data: currencies=[],isLoading:currencyLoading,error:currencyError } = useGetCurrencyQuery();
 
+  const currencyOptions = currencies.map(currency => ({
+  value: currency.code,
+  label: `${getCurrencySymbol(currency.code)} ${currency.code} `
+}));
   const [formData, setFormData] = useState<CompanyFormData>({
     name: "",
     industry: "",
+    currency:'',
     description: "",
     founded_date: "",
     employees_count: undefined,
@@ -65,6 +74,7 @@ export function CompanyBasicInfoForm({ profile, onSuccess }: CompanyBasicInfoFor
       setFormData({
         name: profile.name || "",
         industry: profile.industry || "",
+        currency:profile?.currency,
         description: profile.description || "",
         founded_date: profile.founded_date || "",
         employees_count: profile.employees_count || undefined,
@@ -149,6 +159,7 @@ export function CompanyBasicInfoForm({ profile, onSuccess }: CompanyBasicInfoFor
 
     try {
       await updateProfile({ id:profile?.id, data: formData }).unwrap()
+      onSuccess?.()
     } catch (err) {
       console.error("Failed to update company profile:", err)
     }
@@ -170,7 +181,7 @@ export function CompanyBasicInfoForm({ profile, onSuccess }: CompanyBasicInfoFor
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
         <div className="space-y-2">
           <Label htmlFor="name" className="flex items-center gap-2">
             <Building2 className="h-4 w-4" />
@@ -204,6 +215,26 @@ export function CompanyBasicInfoForm({ profile, onSuccess }: CompanyBasicInfoFor
             error={errors.industry}
           />
           {errors.industry && <p className="text-red-500 text-sm">{errors.industry}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="currency">Operational Currency</Label>
+          <ReactSelectField
+            options={currencyOptions}
+            value={currencyOptions.find((option) => option.value === formData.currency) || null}
+            onChange={(option) => {
+              if (option && !Array.isArray(option)) {
+                updateFormData({ currency: option?.value })
+              } else {
+                updateFormData({ currency: undefined})
+              }
+            }}
+            placeholder="Select currency"
+            isSearchable
+            isClearable
+            error={errors.industry}
+          />
+          {errors.currency && <p className="text-red-500 text-sm">{errors.currency}</p>}
         </div>
       </div>
 
@@ -315,7 +346,7 @@ export function CompanyBasicInfoForm({ profile, onSuccess }: CompanyBasicInfoFor
       </div>
 
       <div className="flex justify-end">
-        <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white" disabled={isLoading}>
+        <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white" disabled={isLoading }>
           {isLoading ? "Saving..." : "Save Changes"}
         </Button>
       </div>

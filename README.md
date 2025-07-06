@@ -1,0 +1,2 @@
+I am a software developer, developing inventory management software(IMS) using microservice architecture. There are 4 services I am working on currently, Users(account, tenant(companyprofile) management) , Inventory(Inventory app, order(purchase, sales, return models), stock(stockitem, StockLocation, models...) , Product service(product model, productvariant ...), point of sales service. I am using django and nextjs
+

@@ -36,7 +36,7 @@ export const PurchaseOrderKeyInfo = {
     delivery_date: new Date().toISOString().split('T')[0],
     
     total_price: 0,
-    order_currency: 'USD',
+    // order_currency: 'USD',
     reference: `PO-${new Date().getFullYear()}-001`, 
     status: PurchaseOrderStatus.pending, 
     supplier_reference: '',
@@ -47,7 +47,6 @@ export const PurchaseOrderKeyInfo = {
   export const PurchaseOrderInterfaceKeys: (keyof PurchaseOrderInterface)[] = [
     // 'reference',
     'description',
-    'inventory',
     'delivery_date',
     'responsible',
     'link',
@@ -57,7 +56,6 @@ export const PurchaseOrderKeyInfo = {
     // TotalPriceMixin fields
     // 'total_price',
     'order_currency',
-    'received_date'
     // PurchaseOrder-specific fields
     // 'status',
     // 'supplier_reference',

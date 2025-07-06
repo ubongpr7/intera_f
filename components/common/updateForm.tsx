@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { useForm, Controller, Path, DefaultValues } from 'react-hook-form';
 import dynamic from 'next/dynamic';
 import LoadingAnimation from './LoadingAnimation';
@@ -9,6 +9,7 @@ import { isValidPhoneNumber } from 'libphonenumber-js';
 import {
   useGetContactPersonQuery,
   useGetCompanyDataQuery,
+  useGetCompanyContactPersonQuery,
 } from '../../redux/features/company/companyAPISlice';
 import {
   useGetCountriesQuery,
@@ -109,7 +110,7 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
   });
   const [edit,setEdit] = useState(false);
   const selectedSupplier = watch('supplier' as Path<Partial<T>>);
-  const { data: contactPersons = [] } = useGetContactPersonQuery(selectedSupplier || 0);
+  const { data: contactPersons = [] } = useGetCompanyContactPersonQuery(selectedSupplier,{skip:!selectedSupplier});
 
   useEffect(() => {
     const resetDependents = (parentKey: keyof T, ...dependentKeys: (keyof T)[]) => {
@@ -473,6 +474,7 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
 
 
 import { clsx } from 'clsx';
+import { getCurrencySymbolForProfile } from '@/lib/currency-utils';
 
 interface DataGridProps<T extends Record<string, any>> {
   data: T;
@@ -512,13 +514,17 @@ export  function ResponsiveDataGrid<T extends Record<string, any>>({
               {formatLabel(String(key))}
             </div>
             <div className={clsx('text-gray-900', { 'text-sm': isDescription })}>
-              {typeof value === 'boolean' ? (
-                <span className="text-blue-600">{value ? 'Yes' : 'No'}</span>
-              ) : value ? (
-                String(value)
-              ) : (
-                <span className="text-gray-400">N/A</span>
-              )}
+            {
+              String(key).toLocaleLowerCase().endsWith('price')?(
+                <span className="text-blue-600">{getCurrencySymbolForProfile()} {value}</span>
+              ) :typeof value === 'boolean' ? (
+                  <span className="text-blue-600">{value ? <Check/> : <X/>}</span>
+                ) : value ? (
+                  String(value)
+                ) : (
+                  <span className="text-gray-400">N/A</span>
+                )
+            }
             </div>
           </div>
         );

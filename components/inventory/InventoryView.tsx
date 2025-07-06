@@ -12,6 +12,7 @@ import { useGetUnitsQuery,useGetTypesByModelQuery } from "../../redux/features/c
 import { useGetInventoryCategoriesQuery } from "../../redux/features/inventory/inventoryAPiSlice";
 import { useGetCompanyUsersQuery } from '@/redux/features/users/userApiSlice';
 import { RefetchDataProp } from '../interfaces/common';
+import { formatCurrencyCompact } from '@/lib/currency-utils';
 
 
 const strategies = {
@@ -24,6 +25,17 @@ const inventoryColumns: Column<InventoryData>[] = [
   {
     header: 'Name',
     accessor: 'name',
+    className: 'font-medium',
+  },
+  {
+    header: 'Stock Items',
+    accessor: 'current_stock_level',
+    className: 'font-medium',
+  },
+  {
+    header: 'Stock Value',
+    accessor: 'total_stock_value',
+    render:(value)=>formatCurrencyCompact('NGN',value),
     className: 'font-medium',
   },
   {
@@ -67,7 +79,7 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
 
     //////////////////////////////
     const { data: categories = [], isLoading: isCatLoading, error: catError,refetch:refetchCategory } = useGetInventoryCategoriesQuery(1);
-      const { data: units } = useGetUnitsQuery();
+      const { data: units=[] } = useGetUnitsQuery();
       const { data: userData, isLoading: userLoading,  } = useGetCompanyUsersQuery();
       
 
@@ -79,11 +91,10 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
     }
   },[refetchData])
 
-      const unitOptions = units ? units.map((unit: any) => ({
-        value: unit.id,
-        text: `${unit.name} (${unit.dimension_type})`,
-      })) : [];
-      
+     const unitOptions = units.map((unit: any) => ({
+   value: `${unit.name} (${unit.dimension_type})`,
+  text: `${unit.name} (${unit.dimension_type})`,
+})); 
       const typeOptions = inventoryTypes ? inventoryTypes.map((inventory_type: any) => ({
         value: inventory_type.id,
         text: inventory_type.text,
@@ -187,6 +198,7 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
           onClose={() => {setIsCreateOpen(false)
           
           }}
+          
           onSubmit={handleCreate}
           isLoading={inventoryCreateLoading}
           selectOptions={selectOptions}
@@ -194,6 +206,7 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
           notEditableFields={notEditableFields}
           interfaceKeys={InventoryInterfaceKeys}
           optionalFields={['batch_tracking_enabled','description']}
+          itemTitle={'Ceate Inventory'}
         />
       </div>
     </div>

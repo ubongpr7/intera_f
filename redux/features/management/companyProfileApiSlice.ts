@@ -1,7 +1,7 @@
+import { Address } from "@/components/interfaces/common"
 import { apiSlice } from "../../services/apiSlice"
 import type {
   CompanyProfile,
-  CompanyAddress,
   StaffRole,
   StaffGroup,
   StaffRoleAssignment,
@@ -79,7 +79,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getCompanyProfileAddress: builder.query<CompanyAddress, string>({
+    getCompanyProfileAddress: builder.query<Address, string>({
       query: (id) => ({
         url: `/${management_api}/company-addresses/${id}/`,
         service: service,

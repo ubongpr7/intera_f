@@ -4,6 +4,7 @@ import { apiSlice } from '../../services/apiSlice';
 import { DropdownOption } from '../../../components/interfaces/common';
 
 const common_api='common_api'
+const service ='common'
 interface TypeOfData {
   id: number;
   name: string;
@@ -21,7 +22,7 @@ export const typeOfApiSlice = apiSlice.injectEndpoints({
       query: (forWhichModel) => ({
         url: `/${common_api}/types/`,
         params: { for_which_model: forWhichModel },
-        service: 'users',
+        service:service,
       }),
       
     }),
@@ -45,19 +46,18 @@ interface CurrencyInterface {
 
 export const currencyApiSlice = apiSlice.injectEndpoints({
   endpoints: builder => ({
-    getCurrencies: builder.query<Currency[], void>({
-      query: () => `/${common_api}/currencies/`,
-      
-    }),
+    
     getCurrency: builder.query<CurrencyInterface[], void>({
-      query: () => `/${common_api}/currency/`,
+      query: () =>({
+        url: `/${common_api}/currency/`,
+        service:service,
+      })
       
     }),
   }),
 });
 
 export const { 
-  useGetCurrenciesQuery ,
   useGetCurrencyQuery
 } = currencyApiSlice;
 
@@ -65,7 +65,11 @@ export const commonApiSlice = apiSlice.injectEndpoints({
   endpoints: builder => ({
     
     getUnits: builder.query<Currency[], void>({
-      query: () => `/inventory_api/units/`,
+      query: () =>({
+        url: `/${common_api}/units/`,
+        service:service,
+
+      }),
       
     }),
   }),
@@ -78,16 +82,32 @@ export const {
 export const dropdownApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getCountries: builder.query<DropdownOption[], void>({
-      query: () => `/${common_api}/countries/`,
+      query: () => ({
+        url:`/${common_api}/countries/`,
+        service:service,
+      
+      })
+      
     }),
     getRegions: builder.query<DropdownOption[], number>({
-      query: (countryId) => `/${common_api}/regions/?country_id=${countryId}`,
+      query: (countryId) => ({
+        url:`/${common_api}/regions/?country_id=${countryId}`,
+        service:service,
+
+      })
     }),
     getSubregions: builder.query<DropdownOption[], number>({
-      query: (regionId) => `/${common_api}/subregions/?region_id=${regionId}`,
+      query: (regionId) =>({
+        url: `/${common_api}/subregions/?region_id=${regionId}`,
+        service:service,
+
+      })
     }),
     getCities: builder.query<DropdownOption[], number>({
-      query: (subregionId) => `/${common_api}/cities/?subregion_id=${subregionId}`,
+      query: (subregionId) => ({
+        url:`/${common_api}/cities/?subregion_id=${subregionId}`,
+        service:service,
+      })
     }),
   }),
 });

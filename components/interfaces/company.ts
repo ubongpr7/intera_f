@@ -21,6 +21,8 @@ export interface CompanyDataInterface {
     address?: string;       
     phone?: string | null;
     email?: string | null;
+    responsible?:string
+    budget_code:string
     link?: string | null;
     image?: string | null;   
     notes?: string | null;   

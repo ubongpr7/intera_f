@@ -59,7 +59,7 @@ export const CompanyKeyInfo = {
     is_customer: false,
     is_supplier: true,
     is_manufacturer: false,
-    // currency: 'USD',
+    currency: 'NGN',
     description: '',
     website: '',
     address: '',

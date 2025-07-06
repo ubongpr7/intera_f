@@ -1,3 +1,5 @@
+import { UserData } from "./User";
+
 export const PurchaseOrderStatus = {
   pending: 'pending',
   approved: 'approved',
@@ -16,11 +18,14 @@ interface BaseOrder {
     created_at?: string; 
     created_by?: number;
     responsible?: number; 
-    contact?: number;
-    inventory: number;
+    contact?: string;
+    profile?:number
     currency?: string;
-    address?: number;
+    address?: string;
     received_date?: string;
+    updated_at:string
+    approved_at:string
+    budget_code:string
   }
   
   interface TotalPriceMixin {
@@ -31,6 +36,9 @@ interface BaseOrder {
 export  interface PurchaseOrderInterface extends BaseOrder, TotalPriceMixin {
     reference: string;
     // status: PurchaseOrderStatus;
+    approved_by:string
+    department:string
+    workflow_state:string
     supplier: number; 
     supplier_reference?: string;
     received_by?: number;
@@ -39,11 +47,16 @@ export  interface PurchaseOrderInterface extends BaseOrder, TotalPriceMixin {
     complete_date?: string; 
     attachments?: Attachment[];
     line_items?: PurchaseOrderLineItem[];
+    responsible_details?:UserData
+    supplier_details?:UserData
+    received_by_details?:UserData,
+    order_analytics?:any
   }
 export const notEditableFields: (keyof PurchaseOrderInterface)[] =[
   "id",
   "complete_date",
   "created_at",
+  "updated_at",
   "created_by",
   "issue_date",
   "reference",
@@ -54,6 +67,18 @@ export const notEditableFields: (keyof PurchaseOrderInterface)[] =[
   "received_by",
   "line_items",
   "contact",
+  'line_items',
+  'supplier_details',
+  'received_by_details',
+  'responsible_details',
+  'order_analytics',
+  'profile',
+  'approved_at',
+  'budget_code',
+  'department',
+  'workflow_state'
+
+
 
 ]
   // Supporting interfaces

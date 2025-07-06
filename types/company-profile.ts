@@ -1,3 +1,5 @@
+import { Address } from "@/components/interfaces/common"
+
 export interface CompanyProfile {
   id: string
   name: string
@@ -14,8 +16,8 @@ export interface CompanyProfile {
   other_link?: string
   phone?: string
   email?: string
-  currency?: number
-  headquarters_address?: CompanyAddress
+  currency?: string
+  headquarters_address?: Address
   is_verified: boolean
   verification_date?: string
   created_at: string
@@ -23,14 +25,9 @@ export interface CompanyProfile {
   owner?: number
 }
 
-export interface CompanyAddress {
-  id?: string
-  street_address?: string
-  city?: string
-  state?: string
-  postal_code?: string
-  country?: string
-}
+
+
+
 
 export interface StaffRole {
   id: string
@@ -128,6 +125,6 @@ export interface CompanyFormData {
   other_link?: string
   phone?: string
   email?: string
-  currency?: number
-  headquarters_address?: CompanyAddress
+  currency?: string
+  headquarters_address?:Address
 }

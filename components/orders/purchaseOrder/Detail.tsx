@@ -1,7 +1,7 @@
 'use client'
 import DetailCard from '../../common/Detail';
 import { PurchaseOrderInterface, PurchaseOrderStatus,notEditableFields } from '../../interfaces/order';
-import { PurchaseOrderKeyInfo } from './selectOptions';
+import { PurchaseOrderInterfaceKeys, PurchaseOrderKeyInfo } from './selectOptions';
 import { 
   useGetPurchaseOderQuery,
   useUpdatePurchaseOderMutation,
@@ -10,12 +10,11 @@ import {
   useReceivePurchaseOderMutation,
   useCompletePurchaseOderMutation,
 
- } from '../../../redux/features/orders/orderAPISlice';
-import { useGetCurrencyQuery } from '../../../redux/features/common/typeOF';
-import { useGetSupplersQuery } from '../../../redux/features/company/companyAPISlice';
-import { useGetCompanyUsersQuery } from '../../../redux/features/users/userApiSlice';
+ } from '@/redux/features/orders/orderAPISlice';
+import { useGetCurrencyQuery } from '@/redux/features/common/typeOF';
+import { useGetSupplersQuery } from '@/redux/features/company/companyAPISlice';
+import { useGetCompanyUsersQuery } from '@/redux/features/users/userApiSlice';
 import { UserData } from '../../interfaces/User';
-import { useGetInventoryDataQuery } from '../../../redux/features/inventory/inventoryAPiSlice';
 import LoadingAnimation from '../../common/LoadingAnimation';
 import ActionHeader from '../../common/actions';
 import {
@@ -40,6 +39,7 @@ import {
 
 import { ActionItem as CommonActionItem } from '../../interfaces/common';
 import { toast } from 'react-toastify';
+import { getCurrencySymbol } from '@/lib/currency-utils';
 
 interface ActionItem extends CommonActionItem {
   icon: LucideIcon;
@@ -60,23 +60,17 @@ export default function PurchseOderDataDetail({ id }: { id: string }) {
 const { data: staff } = useGetCompanyUsersQuery()
   const { data: supplierResponse,isLoading:supplierLoading,error:supplierError } = useGetSupplersQuery();
   const { data: response,isLoading:currencyLoading,error:currencyError } = useGetCurrencyQuery();
-  const { 
-    data: inventoryData,
-     isLoading: inventoryLoading, 
-     refetch: inventoryRefetch, error: inventoryError 
-    } = useGetInventoryDataQuery();
-
-  
 
   const supplierResponseOptions = supplierResponse ? supplierResponse.map(supplier => ({
     value: supplier.id.toString(),
     text: `${supplier.name} `
   })) : [];
     const currencies = response||[]
-    const currencyOptions = currencies.map(currency => ({
-    value: currency.id,
-    text: `${currency.code}`
-  }));
+    
+      const currencyOptions = currencies.map(currency => ({
+      value: currency.code,
+      text: `${getCurrencySymbol(currency.code)} ${currency.code} `
+    }));
 
   const staffUsers = staff||[]
   
@@ -86,17 +80,11 @@ const { data: staff } = useGetCompanyUsersQuery()
   }));
     
 
-  const inventoryDataOptions = inventoryData ? inventoryData.map(inventory => ({
-    value: inventory.id?.toString() || '',
-    text: `${inventory.name} `
-  })) : [];
 
     
     const selectOptions = {
      order_currency:currencyOptions,
     supplier:supplierResponseOptions,
-    // received_by:staffOptions,
-    inventory:inventoryDataOptions,
     responsible:staffOptions,
     
   };
@@ -296,12 +284,29 @@ const { data: staff } = useGetCompanyUsersQuery()
   return (
     <div> 
     <DetailCard 
-
+      interfaceKeys={PurchaseOrderInterfaceKeys}
     titleField={'reference'}
       data={PurchaseOrderInterface}
       notEditableFields={notEditableFields}
       updateMutation={handleUpdate}
-      excludeFields={['id']}
+      excludeFields={[
+        'id',
+        'supplier_details',
+        'received_by_details',
+        'responsible_details',
+        'order_analytics',
+        'created_by',
+        'line_items',
+        'profile',
+        'responsible',
+        'budget_code',
+        'contact',
+        'supplier',
+        'approved_by',
+        'department',
+        'workflow_state'
+
+      ]}
       selectOptions={selectOptions}
       isLoading={updateIsLoading}
       policyFields={['description']}

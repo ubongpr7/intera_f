@@ -11,7 +11,8 @@ import { useGetCurrencyQuery } from '../../../redux/features/common/typeOF';
 import { useGetSupplersQuery } from '../../../redux/features/company/companyAPISlice';
 import { useGetCompanyUsersQuery } from '../../../redux/features/users/userApiSlice';
 import { UserData } from '../../interfaces/User';
-import { useGetInventoryDataQuery } from '../../../redux/features/inventory/inventoryAPiSlice';
+import { getCurrencySymbol } from '@/lib/currency-utils';
+// import { useGetInventoryDataQuery } from '../../../redux/features/inventory/inventoryAPiSlice';
 
 
 function getStatusName(status: string): string {
@@ -59,21 +60,22 @@ function PurchaseOrderView() {
   const { data: staff } = useGetCompanyUsersQuery()
   const { data: supplierResponse,isLoading:supplierLoading,error:supplierError } = useGetSupplersQuery();
   const { data: response,isLoading:currencyLoading,error:currencyError } = useGetCurrencyQuery();
-  const { 
-    data: inventoryData,
-     isLoading: inventoryLoading, 
-     refetch: inventoryRefetch, error: inventoryError 
-    } = useGetInventoryDataQuery();
+  // const { 
+  //   data: inventoryData,
+  //    isLoading: inventoryLoading, 
+  //    refetch: inventoryRefetch, error: inventoryError 
+  //   } = useGetInventoryDataQuery();
 
   const supplierResponseOptions = supplierResponse ? supplierResponse.map(supplier => ({
     value: supplier.id.toString(),
     text: `${supplier.name} `
   })) : [];
     const currencies = response||[]
-    const currencyOptions = currencies.map(currency => ({
-    value: currency.id,
-    text: `${currency.code} `
-  }));
+   
+     const currencyOptions = currencies.map(currency => ({
+     value: currency.code,
+     text: `${getCurrencySymbol(currency.code)} ${currency.code} `
+   }));
 
   const staffUsers = staff||[]
   
@@ -83,17 +85,17 @@ function PurchaseOrderView() {
   }));
     
 
-  const inventoryDataOptions = inventoryData ? inventoryData.map(inventory => ({
-    value: inventory.id?.toString() || '',
-    text: `${inventory.name} `
-  })) : [];
+  // const inventoryDataOptions = inventoryData ? inventoryData.map(inventory => ({
+  //   value: inventory.id?.toString() || '',
+  //   text: `${inventory.name} `
+  // })) : [];
 
     
     const selectOptions = {
      order_currency:currencyOptions,
     supplier:supplierResponseOptions,
     // received_by:staffOptions,
-    inventory:inventoryDataOptions,
+    // inventory:inventoryDataOptions,
     responsible:staffOptions,
     
   };
@@ -104,7 +106,7 @@ function PurchaseOrderView() {
   };
 
   const handleRowClick = (row: PurchaseOrderInterface) => {
-    router.push(`/order/purchase/${row.reference}`);
+    router.push(`/order/purchase/${row.id}`);
   };
 
   if (error) {
@@ -116,7 +118,7 @@ function PurchaseOrderView() {
   }
 
   const notEditableFields: (keyof PurchaseOrderInterface)[] = [
-    'id',
+    'id','received_date'
   ];
 
   

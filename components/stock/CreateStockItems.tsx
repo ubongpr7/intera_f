@@ -19,6 +19,7 @@ const inventoryColumns: Column<StockItem>[] = [
   {
     header: 'Quantity',
     accessor: 'quantity_w_unit',
+    render:(value)=>value||0,
     className: 'font-medium',
   },
   {
@@ -39,21 +40,12 @@ const inventoryColumns: Column<StockItem>[] = [
 function StockItems({reference}:{reference:string}) {
     const {data:stockItems,isLoading:stockItemsLoading,refetch,error}=useGetStockItemDataForInventoryQuery(reference)
     const [createStockItem, { isLoading: stockItemCreateLoading }] = useCreateStockItemMutation();
-    const [reorderQuantity,setReorderQuantity] = useState(100)
+    // const [reorderQuantity,setReorderQuantity] = useState(100)
     const [isCreateOpen, setIsCreateOpen] = useState(false); 
     const {data:StockLocationData,isLoading:stockLocationsLoading,}=useGetStockItemDataLocationQuery()
-    const {data:minimalInventory,isLoading:inventoryLoading } =useGetMinimalInventoryQuery(reference)
+    // const {data:minimalInventory,isLoading:inventoryLoading } =useGetMinimalInventoryQuery(reference)
    
-    useEffect(()=>{
-      if (!inventoryLoading && minimalInventory){
-        setReorderQuantity(minimalInventory.re_order_quantity)
-        console.log('setting')
-        console.log(reorderQuantity)
-      }
-
-    },[!inventoryLoading,minimalInventory])
-
-    const stockItemsOptions = stockItems?.map((StockItem) => ({
+    const stockItemsOptions = stockItems?.map((StockItem:StockItem) => ({
         text: `${StockItem.name } (${StockItem.sku})`,
         value: StockItem.id,
       })) || [];
@@ -84,8 +76,9 @@ function StockItems({reference}:{reference:string}) {
       
       }
     const handleCreate = async (createdData: Partial<StockItem>) => {
+      const Data= {...createdData,inventory:reference,}
     try {   
-        const response = await createStockItem(createdData);
+        const response = await createStockItem(Data);
         setIsCreateOpen(false);
         await refetch(); 
     }
@@ -109,7 +102,6 @@ function StockItems({reference}:{reference:string}) {
         'notes',
         'link',
         'delete_on_deplete',
-        'inventory',
 
       ];
       
@@ -128,7 +120,7 @@ function StockItems({reference}:{reference:string}) {
 
         <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>
                 <CustomCreateCard
-                  defaultValues={{packaging:'box','quantity':reorderQuantity,status:'ok',inventory:reference,purchase_price:0,delete_on_deplete:false}}
+                  defaultValues={{packaging:'box','quantity':0,status:'ok',purchase_price:0,delete_on_deplete:false}}
                   onClose={() => setIsCreateOpen(false)}
                   onSubmit={handleCreate}
                   isLoading={stockItemCreateLoading}
@@ -138,8 +130,8 @@ function StockItems({reference}:{reference:string}) {
                   interfaceKeys={interfaceKeys}
                   dateFields={['expiry_date']}
                   optionalFields={['parent','notes','belongs_to','link','serial','location','delete_on_deplete']}
-                  readOnlyFields={['inventory']}
                   hiddenFields={{}}
+                  itemTitle={'Create Stock Item'}
                 />
               </div>
     </div>

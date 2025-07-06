@@ -1,10 +1,12 @@
 'use client'
+import { LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 
 export interface TabItem {
   id: string;
   label: string;
   content: React.ReactNode;
+  icon?:LucideIcon
 }
 
 interface TabsProps {
@@ -25,7 +27,7 @@ const Tabs = ({ items, defaultActive, className }: TabsProps) => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap
+              className={`px-4 py-2 text-sm font-medium flex gap-1  transition-colors whitespace-nowrap
                 ${
                   activeTab === tab.id
                     ? 'text-blue-600 border-b-2 border-blue-600 '
@@ -35,6 +37,9 @@ const Tabs = ({ items, defaultActive, className }: TabsProps) => {
               aria-selected={activeTab === tab.id}
             >
               {tab.label}
+              {tab?.icon &&(
+                <tab.icon className='w-4 '/>
+              )}
             </button>
           ))}
         </div>

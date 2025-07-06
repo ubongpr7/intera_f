@@ -117,7 +117,7 @@ function StockLocations({refetchData, setRefetchData}:RefetchDataProp) {
                   dateFields={[]}
                   optionalFields={['parent','external','structural','physical_address']}
                   readOnlyFields={[]}
-                  itemTitle='Location'
+                  itemTitle='Create Location'
                 />
               </div>
     </div>

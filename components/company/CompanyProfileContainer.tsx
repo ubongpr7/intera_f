@@ -17,7 +17,7 @@ interface CompanyProfileContainerProps {
 }
 
 export default function CompanyProfileContainer() {
-  const { profile, isLoading, updateProfile } = useCompanyProfile()
+  const { profile, isLoading, refetch:updateProfile } = useCompanyProfile()
   const [activeTab, setActiveTab] = useState("basic-info")
 
   if (isLoading) {
@@ -49,7 +49,6 @@ export default function CompanyProfileContainer() {
               <TabsTrigger value="basic-info">Basic Info</TabsTrigger>
               <TabsTrigger value="address">Address</TabsTrigger>
               <TabsTrigger value="social">Social Links</TabsTrigger>
-              <TabsTrigger value="staff">Staff</TabsTrigger>
               <TabsTrigger value="policies">Policies</TabsTrigger>
               <TabsTrigger value="activity">Activity</TabsTrigger>
             </TabsList>
@@ -57,7 +56,7 @@ export default function CompanyProfileContainer() {
             <TabsContent value="basic-info" className="mt-6">
               <CompanyBasicInfoForm
                 profile={profile as CompanyProfile}
-                onUpdate={updateProfile}
+                onSuccess={updateProfile}
                 
               />
             </TabsContent>
