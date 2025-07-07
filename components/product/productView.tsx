@@ -21,10 +21,16 @@ const inventoryColumns: Column<ProductData>[] = [
   },
   {
     header: 'Category',
-    accessor: 'category_details',
-    render: (value) => value?.name || 'N/A',
+    accessor: 'pos_category',
+    render: (value) => value || 'N/A',
     info: 'Category to which the inventory belong',
   },
+  // {
+  //   header: 'Category',
+  //   accessor: 'category_details',
+  //   render: (value) => value?.name || 'N/A',
+  //   info: 'Category to which the inventory belong',
+  // },
   {
     header: 'Barcode',
     accessor: 'barcode',
@@ -38,7 +44,7 @@ const inventoryColumns: Column<ProductData>[] = [
       <img
         src={value || '/placeholder.png'}
         alt="Product Image"
-        className="w-10 h-10 object-cover rounded"
+        className="w-10 h-10 object-cover rounded hover:w-32 hover:h-32 hover:z-50 transition-all duration-300 cursor-pointer"
       />
     ),
    
