@@ -90,6 +90,7 @@ const SideBar = ({user}:SideBarDataProps) => {
             <SidebarLink href="/order/purchase" icon={ShoppingCart} label="Purchase Orders" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/product" icon={Gift} label="Product" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/stockitems" icon={Box} label="Stock Items" isCollapsed={SidebarCollapsed} />
+            {/*
             <SidebarLink href="/warehouse" icon={Warehouse } label="Warehouse" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/point-of-sales" icon={CreditCard} label="Sales" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/pricing" icon={Tag} label="Pricing" isCollapsed={SidebarCollapsed} />
@@ -97,7 +98,7 @@ const SideBar = ({user}:SideBarDataProps) => {
             <SidebarLink href="/archive" icon={Archive} label="Archive" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/billing" icon={CircleDollarSign} label="Billing" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/sales" icon={ReceiptText} label="Sales Record" isCollapsed={SidebarCollapsed} />
-            
+            */}
             </div>
             {/* Footer 
             <div className={`text-gray-500 text-xs text-center  ${SidebarCollapsed?"hidden":""} `}>
