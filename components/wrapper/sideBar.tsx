@@ -89,8 +89,8 @@ const SideBar = ({user}:SideBarDataProps) => {
             <SidebarLink href="/companies" icon={Truck} label="Affilications" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/order/purchase" icon={ShoppingCart} label="Purchase Orders" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/product" icon={Gift} label="Product" isCollapsed={SidebarCollapsed} />
-            <SidebarLink href="/stockitems" icon={Box} label="Stock Items" isCollapsed={SidebarCollapsed} />
             {/*
+            <SidebarLink href="/stockitems" icon={Box} label="Stock Items" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/warehouse" icon={Warehouse } label="Warehouse" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/point-of-sales" icon={CreditCard} label="Sales" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/pricing" icon={Tag} label="Pricing" isCollapsed={SidebarCollapsed} />
