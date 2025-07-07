@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Upload, ImageIcon, FileSpreadsheet, Brain, CheckCircle, XCircle, Download } from "lucide-react"
+import { Upload, ImageIcon, Brain, CheckCircle, XCircle, Download } from "lucide-react"
 import {
   useAiBulkCreateProductsMutation,
   useLazyGetBulkTaskStatusQuery,
@@ -26,11 +26,10 @@ interface AIBulkCreateModalProps {
 
 export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
   const [images, setImages] = useState<File[]>([])
-  const [excelFile, setExcelFile] = useState<File | null>(null)
   const [taskId, setTaskId] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
   const [status, setStatus] = useState<"idle" | "processing" | "completed" | "error">("idle")
-  const [selectedInventory, setSelectedInventory] = useState<string | null>(null) // Store selected inventory ID
+  const [selectedInventory, setSelectedInventory] = useState<string | null>(null)
 
   // RTK Query hooks
   const [aiBulkCreate, { isLoading: isCreating, error: createError }] = useAiBulkCreateProductsMutation()
@@ -44,7 +43,6 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
     const validFiles = acceptedFiles.filter((file) => {
       const isValidSize = file.size <= 10 * 1024 * 1024 // 10MB limit
       const isValidType = file.type.startsWith("image/")
-
       if (!isValidSize) {
         toast.error(`${file.name} is too large. Maximum size is 10MB.`)
         return false
@@ -55,27 +53,7 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
       }
       return true
     })
-
     setImages((prev) => [...prev, ...validFiles])
-  }, [])
-
-  const onExcelDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles.length > 0) {
-      const file = acceptedFiles[0]
-      const isValidType = file.type.includes("spreadsheet") || file.name.endsWith(".xlsx") || file.name.endsWith(".xls")
-      const isValidSize = file.size <= 5 * 1024 * 1024 // 5MB limit
-
-      if (!isValidType) {
-        toast.error("Please upload a valid Excel file (.xlsx or .xls)")
-        return
-      }
-      if (!isValidSize) {
-        toast.error("Excel file is too large. Maximum size is 5MB.")
-        return
-      }
-
-      setExcelFile(file)
-    }
   }, [])
 
   const imageDropzone = useDropzone({
@@ -87,22 +65,8 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
     maxSize: 10 * 1024 * 1024, // 10MB
   })
 
-  const excelDropzone = useDropzone({
-    onDrop: onExcelDrop,
-    accept: {
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
-      "application/vnd.ms-excel": [".xls"],
-    },
-    multiple: false,
-    maxSize: 5 * 1024 * 1024, // 5MB
-  })
-
   const removeImage = (index: number) => {
     setImages((prev) => prev.filter((_, i) => i !== index))
-  }
-
-  const removeExcelFile = () => {
-    setExcelFile(null)
   }
 
   const startProcessing = async () => {
@@ -110,46 +74,35 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
       toast.error("Please upload at least one product image")
       return
     }
-
     if (images.length > 50) {
       toast.error("Maximum 50 images allowed per batch")
       return
     }
-
     if (!selectedInventory) {
       toast.error("Please select an inventory location")
       return
     }
 
     const formData = new FormData()
-
     // Add images
     images.forEach((image, index) => {
       formData.append("images", image)
     })
     formData.append("images_count", images.length.toString())
-    formData.append("currency", `${getCookie("currency") || "NGN"}`) // Default to USD if cookie not set
-    if (excelFile) {
-      formData.append("excel_file", excelFile)
-    }
-
+    formData.append("currency", `${getCookie("currency") || "NGN"}`)
     formData.append("inventory", selectedInventory)
 
     try {
       const result = await aiBulkCreate(formData).unwrap()
-
       setTaskId(result.task_id)
       setStatus("processing")
       setProgress(10)
-
       toast.success("AI processing started successfully!")
-
       // Start polling for status
       pollTaskStatus(result.task_id)
     } catch (error: any) {
       console.error("Failed to start AI processing:", error)
       setStatus("error")
-
       const errorMessage = error?.data?.detail || error?.message || "Failed to start AI processing"
       toast.error(errorMessage)
     }
@@ -159,10 +112,8 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
     const pollInterval = setInterval(async () => {
       try {
         const result = await getTaskStatus(taskId)
-
         if (result.data) {
           const { status: taskStatus, error_message } = result.data
-
           if (taskStatus === "COMPLETED") {
             setStatus("completed")
             setProgress(100)
@@ -201,11 +152,10 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
 
   const reset = () => {
     setImages([])
-    setExcelFile(null)
     setTaskId(null)
     setProgress(0)
     setStatus("idle")
-    setSelectedInventory(null) // Reset inventory selection
+    setSelectedInventory(null)
   }
 
   const downloadReport = (resultFileUrl: string) => {
@@ -222,8 +172,8 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
   // Prepare inventory options from inventoryData
   const inventoryOptions: SelectOption[] = inventoryData
     ? inventoryData.map((item) => ({
-        value: item.id.toString(), // Assuming id is the unique identifier
-        label: item.name || `Location ${item.id}`, // Adjust based on your inventory data structure
+        value: item.id.toString(),
+        label: item.name || `Location ${item.id}`,
       }))
     : []
 
@@ -284,7 +234,6 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
                     </p>
                   </div>
                 )}
-
                 {status === "completed" && taskStatus && (
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-green-600">
@@ -303,7 +252,6 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
                     )}
                   </div>
                 )}
-
                 {status === "error" && (
                   <Alert variant="destructive">
                     <XCircle className="h-4 w-4" />
@@ -316,7 +264,7 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
             </Card>
           )}
 
-          {/* Inventory Selection (Moved to first position) */}
+          {/* Inventory Selection */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -341,7 +289,7 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
                 isClearable
                 className={cn(
                   "w-full",
-                  (inventoryError || (inventoryData && inventoryData.length === 0)) ? "border-red-500" : ""
+                  inventoryError || (inventoryData && inventoryData.length === 0) ? "border-red-500" : "",
                 )}
                 error={inventoryError ? "Failed to load inventory locations" : undefined}
               />
@@ -402,55 +350,12 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
             </CardContent>
           </Card>
 
-          {/* Excel Upload (Optional) */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileSpreadsheet className="h-4 w-4" />
-                Additional Product Data (Optional)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div
-                {...excelDropzone.getRootProps()}
-                className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${
-                  excelDropzone.isDragActive ? "border-green-500 bg-green-50" : "border-gray-300 hover:border-gray-400"
-                }`}
-              >
-                <input {...excelDropzone.getInputProps()} />
-                <FileSpreadsheet className="h-6 w-6 mx-auto mb-2 text-gray-400" />
-                <p className="text-sm text-gray-600">Upload Excel file with additional product information</p>
-                <p className="text-xs text-gray-500 mt-1">.xlsx or .xls format (Max 5MB)</p>
-              </div>
-
-              {excelFile && (
-                <div className="mt-2 flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <div className="flex items-center gap-2">
-                    <FileSpreadsheet className="h-4 w-4" />
-                    <span className="text-sm">{excelFile.name}</span>
-                    <span className="text-xs text-gray-500">({(excelFile.size / 1024 / 1024).toFixed(1)}MB)</span>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={removeExcelFile}
-                    disabled={isCreating || status === "processing"}
-                  >
-                    Remove
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
           {/* Action Buttons */}
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={onClose} disabled={isCreating || status === "processing"}>
               {status === "processing" ? "Close" : "Cancel"}
             </Button>
-
             {status === "completed" && <Button onClick={reset}>Start New Process</Button>}
-
             {status === "idle" && (
               <Button onClick={startProcessing} disabled={images.length === 0 || isCreating} className="min-w-[140px]">
                 {isCreating ? (
