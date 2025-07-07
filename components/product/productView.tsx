@@ -19,17 +19,35 @@ const inventoryColumns: Column<ProductData>[] = [
     accessor: 'name',
     className: 'font-medium',
   },
-  // {
-  //   header: 'ID',
-  //   accessor: 'barcode',
-  //   render: (value) => value || 'N/A',
-  //   className: 'font-medium',
-  // },
   {
     header: 'Category',
     accessor: 'category_details',
     render: (value) => value?.name || 'N/A',
     info: 'Category to which the inventory belong',
+  },
+  {
+    header: 'Barcode',
+    accessor: 'barcode',
+    render: (value) => value || 'N/A',
+    className: 'font-medium',
+  },
+  {
+    header: 'Image',
+    accessor: 'display_image',
+    render: (value) => (
+      <img
+        src={value || '/placeholder.png'}
+        alt="Product Image"
+        className="w-10 h-10 object-cover rounded"
+      />
+    ),
+   
+  },
+  {
+    header: 'Variants',
+    accessor: 'variant_count',
+    render: (value) => value || 'N/A',
+    className: 'font-medium',
   },
   {
     header: 'Base Cost Price',
