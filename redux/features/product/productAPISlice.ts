@@ -332,7 +332,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
     }),
     editVariantAttribute: builder.mutation({
       query: ({ variantId, attributeLinkId, data }) => ({
-        url: `/products/variants/${variantId}/edit_attribute/`,
+        url: `/${product_api}/variants/${variantId}/edit_attribute/`,
         method: "POST",
         body: {
           attribute_link_id: attributeLinkId,
