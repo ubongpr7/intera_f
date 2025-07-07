@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Upload, ImageIcon, Brain, CheckCircle, XCircle, Download } from "lucide-react"
+import { Upload, ImageIcon, Brain, CheckCircle, XCircle, Download, X } from "lucide-react"
 import {
   useAiBulkCreateProductsMutation,
   useLazyGetBulkTaskStatusQuery,
@@ -164,17 +164,12 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
 
   const handleClose = () => {
     if (status === "processing") {
-      // Show confirmation dialog for processing state
-      if (
-        window.confirm(
-          "AI processing is still running. Are you sure you want to close? You can check the status later in Recent Tasks.",
-        )
-      ) {
-        onClose()
-      }
-    } else {
-      onClose()
+      const confirmClose = window.confirm(
+        "AI processing is still in progress. You can check the status later in the Recent Tasks section. Are you sure you want to close?",
+      )
+      if (!confirmClose) return
     }
+    onClose()
   }
 
   // Auto-refresh task status when modal opens
@@ -196,12 +191,16 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto text-inherit">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Brain className="h-5 w-5" />
-            AI Bulk Product Creation
+          <DialogTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Brain className="h-5 w-5" />
+              AI Bulk Product Creation
+            </div>
+            <Button variant="ghost" size="sm" onClick={handleClose} className="h-6 w-6 p-0" disabled={isCreating}>
+              <X className="h-4 w-4" />
+            </Button>
           </DialogTitle>
         </DialogHeader>
-
         <div className="space-y-6">
           {/* Recent Tasks */}
           {bulkTasks && bulkTasks.length > 0 && (
@@ -336,18 +335,18 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
                 <p className="text-xs text-gray-500 mt-1">Supports PNG, JPG, JPEG, GIF, WebP (Max 10MB each)</p>
               </div>
 
-              {/* Image Preview with Hover Effects */}
+              {/* Image Preview with Enhanced Hover Effects */}
               {images.length > 0 && (
                 <div className="mt-4 grid grid-cols-4 gap-4 max-h-60 overflow-y-auto">
                   {images.map((image, index) => (
-                    <div key={index} className="relative group">
-                      <div className="relative overflow-hidden rounded border">
+                    <div key={index} className="relative group overflow-visible">
+                      <div className="relative overflow-hidden rounded border-2 border-gray-200 group-hover:border-blue-400 transition-all duration-300">
                         <img
                           src={URL.createObjectURL(image) || "/placeholder.svg"}
                           alt={`Product ${index + 1}`}
-                          className="w-full h-20 object-cover transition-transform duration-300 ease-in-out group-hover:scale-110 cursor-pointer"
+                          className="w-full h-20 object-cover transition-transform duration-300 ease-in-out group-hover:scale-110"
                         />
-                        {/* Overlay that appears on hover */}
+                        {/* Hover overlay */}
                         <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
                           <span className="text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                             Preview
@@ -357,7 +356,7 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
                       <Button
                         size="sm"
                         variant="destructive"
-                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                         onClick={() => removeImage(index)}
                         disabled={isCreating || status === "processing"}
                       >

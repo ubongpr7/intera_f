@@ -258,8 +258,9 @@ export function DataTable<T>({
         </div>
       )}
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+      {/* Table container with proper overflow handling */}
+      <div className="overflow-x-auto overflow-y-visible">
+        <table className="min-w-full divide-y divide-gray-200 table-auto">
           <thead className="bg-gray-50 sticky top-0">
             <tr>
               {/* Selection header */}
@@ -307,11 +308,11 @@ export function DataTable<T>({
               <tr
                 key={rowIndex}
                 onClick={() => onRowClick?.(row)}
-                className={`${onRowClick ? "cursor-pointer hover:bg-gray-50" : ""} transition-colors`}
+                className={`${onRowClick ? "cursor-pointer hover:bg-gray-50" : ""} transition-colors relative`}
               >
                 {/* Selection cell */}
                 {hasGeneralButtons && (
-                  <td className="px-4 py-4 whitespace-nowrap w-12">
+                  <td className="px-4 py-4 w-12">
                     <input
                       type="checkbox"
                       checked={selectedIds.includes(getRowId!(row))}
@@ -325,28 +326,21 @@ export function DataTable<T>({
                 )}
                 {/* Row number cell */}
                 {showRowNumbers && (
-                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-500 w-16">
-                    {startNumberFrom + rowIndex}
-                  </td>
+                  <td className="px-4 py-4 text-sm font-medium text-gray-500 w-16">{startNumberFrom + rowIndex}</td>
                 )}
 
                 {columns.map((column, colIndex) => {
                   const value =
                     typeof column.accessor === "function" ? column.accessor(row) : row[column.accessor as keyof T]
                   return (
-                    <td
-                      key={colIndex}
-                      className={`px-6 py-4 whitespace-nowrap text-sm text-gray-900 ${column.className || ""}`}
-                    >
+                    <td key={colIndex} className={`px-6 py-4 text-sm text-gray-900 relative ${column.className || ""}`}>
                       {column.render ? column.render(value, row) : (value as React.ReactNode)}
                     </td>
                   )
                 })}
 
                 {hasActions && (
-                  <td className={`px-6 py-4 whitespace-nowrap text-sm ${actionsColumnWidth}`}>
-                    {renderActionButtons(row)}
-                  </td>
+                  <td className={`px-6 py-4 text-sm ${actionsColumnWidth}`}>{renderActionButtons(row)}</td>
                 )}
               </tr>
             ))}
