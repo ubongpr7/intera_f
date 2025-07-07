@@ -17,6 +17,7 @@ import { useGetInventoryDataQuery } from "@/redux/features/inventory/inventoryAP
 import { toast } from "react-toastify"
 import { ReactSelectField, type SelectOption } from "@/components/ui/react-select-field"
 import { cn } from "@/lib/utils"
+import { getCookie } from "cookies-next"
 
 interface AIBulkCreateModalProps {
   isOpen: boolean
@@ -126,13 +127,12 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
     images.forEach((image, index) => {
       formData.append("images", image)
     })
-
-    // Add Excel file if provided
+    formData.append("images_count", images.length.toString())
+    formData.append("currency", `${getCookie("currency") || "NGN"}`) // Default to USD if cookie not set
     if (excelFile) {
       formData.append("excel_file", excelFile)
     }
 
-    // Add selected inventory
     formData.append("inventory", selectedInventory)
 
     try {
