@@ -407,25 +407,6 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
                       <div className="space-y-4">
                         <div className="flex justify-between items-center">
                           <p className="font-medium text-gray-900">Editing: {attr.attribute_name}</p>
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleSaveEdit(attr.attribute_link)}
-                              disabled={editAttributeLoading}
-                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                            >
-                              <Save className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={handleCancelEdit}
-                              className="text-gray-600 hover:text-gray-700 hover:bg-gray-50"
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </div>
                         </div>
 
                         {isEditAttributeValuesLoading ? (
@@ -506,6 +487,36 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
                                 step="0.01"
                                 className="w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none focus:border-blue-500 py-2 rounded-md"
                               />
+                            </div>
+                            <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4 pt-4 border-t">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={handleCancelEdit}
+                                className="w-full sm:w-auto bg-transparent"
+                                disabled={editAttributeLoading}
+                              >
+                                <X className="w-4 h-4 mr-2" />
+                                Cancel
+                              </Button>
+                              <Button
+                                type="button"
+                                onClick={() => handleSaveEdit(attr.attribute_link)}
+                                disabled={editAttributeLoading}
+                                className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
+                              >
+                                {editAttributeLoading ? (
+                                  <>
+                                    <LoadingAnimation />
+                                    Saving...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Save className="w-4 h-4 mr-2" />
+                                    Save Changes
+                                  </>
+                                )}
+                              </Button>
                             </div>
                           </>
                         )}
