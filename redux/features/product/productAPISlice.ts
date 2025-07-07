@@ -330,6 +330,18 @@ export const productApiSlice = apiSlice.injectEndpoints({
 
       }),
     }),
+    editVariantAttribute: builder.mutation({
+      query: ({ variantId, attributeLinkId, data }) => ({
+        url: `/products/variants/${variantId}/edit_attribute/`,
+        method: "POST",
+        body: {
+          attribute_link_id: attributeLinkId,
+          ...data,
+        },
+        service: service,
+      }),
+      
+    }),
     removeVariantAttribute: builder.mutation<void, { variantId: string; attributeLinkId: string }>({
       query: ({ variantId, attributeLinkId }) => ({
         url: `/${product_api}/variants/${variantId}/remove_attribute/`,
@@ -920,7 +932,9 @@ export const {
   useAddVariantMediaMutation,
   useRemoveVariantMediaMutation,
   useAddVariantAttributeMutation,
+  useEditVariantAttributeMutation,
   useRemoveVariantAttributeMutation,
+
 
   // Attribute links
   
