@@ -56,8 +56,11 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
 
   const [validationError, setValidationError] = useState<string>("")
 
+  // Debug logs for data verification
+  console.log("All attribute links:", allAttributeLinks)
   console.log("Variant attribute details:", variant?.attribute_details)
   console.log("Editing attribute:", editingAttribute)
+  console.log("Edit form data:", editFormData)
 
   // Get all attribute links for the product
   const {
@@ -85,9 +88,10 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
     data: editAttributeValues,
     isLoading: isEditAttributeValuesLoading,
     error: editAttributeValuesError,
+    refetch: refetchEditAttributeValues,
   } = useGetProductAttributeValuesQuery(
     { attributeId: editingAttribute?.attributeId || "" },
-    { skip: !editingAttribute?.attributeId },
+    { skip: !editingAttribute?.attributeId, refetchOnMountOrArgChange: true },
   )
 
   const [addAttribute, { isLoading: addAttributeLoading }] = useAddVariantAttributeMutation()
@@ -185,15 +189,27 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
   const handleStartEdit = (attr: ProductVariantAttribute) => {
     console.log("Starting edit for attribute:", attr)
 
-    // Find the attribute ID from the attribute link
+    // Find the attribute link
     const attributeLink = allAttributeLinks.find((link) => link.id === attr.attribute_link)
-    const attributeId = attributeLink?.attribute || ""
+    if (!attributeLink) {
+      console.error("Attribute link not found for attribute_link:", attr.attribute_link)
+      toast.error("Cannot edit attribute: Attribute link not found")
+      return
+    }
+
+    const attributeId = attributeLink.attribute || ""
+    if (!attributeId) {
+      console.error("Attribute ID is empty for attribute link:", attributeLink)
+      toast.error("Cannot edit attribute: Invalid attribute ID")
+      return
+    }
 
     console.log("Found attribute link:", attributeLink)
     console.log("Attribute ID:", attributeId)
+    console.log("Fetching attribute values for attributeId:", attributeId)
 
-    const editingData = {
-      attributeLinkId: attr.attribute_link,
+    const editingData: EditingAttribute = {
+      attribute,width: attr.attribute_link || "",
       attributeId: attributeId,
       currentValueId: attr.value || "",
       currentCustomValue: attr.custom_value || "",
@@ -208,7 +224,8 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
       custom_value: attr.custom_value || "",
       custom_modifier: attr.custom_modifier?.toString() || "",
     })
-    setValidationError("") // Clear any previous validation errors
+    setValidationError("")
+    refetchEditAttributeValues() // Trigger refetch to ensure fresh data
   }
 
   const handleCancelEdit = () => {
@@ -238,8 +255,8 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
 
       await editAttribute({
         variantId: variant.id,
-        attributeLinkId: attributeLinkId,
-        data:data,
+        attributeLinkId,
+        data,
       }).unwrap()
 
       setEditingAttribute(null)
@@ -272,6 +289,7 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
         newData.value_id = ""
       }
 
+      console.log("Updated editFormData:", newData)
       return newData
     })
 
@@ -482,6 +500,12 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
                             <AlertDescription className="text-red-700">
                               Error loading attribute values:{" "}
                               {(editAttributeValuesError as any).message || "Unknown error"}
+                            </AlertDescription>
+                          </Alert>
+                        ) : editAttributeValueOptions.length === 0 ? (
+                          <Alert className="border-yellow-500 bg-yellow-50">
+                            <AlertDescription className="text-yellow-700">
+                              No attribute values available for this attribute.
                             </AlertDescription>
                           </Alert>
                         ) : (
