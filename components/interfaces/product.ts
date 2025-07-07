@@ -179,6 +179,7 @@ export interface ProductAttributeLink {
 export interface ProductVariant extends UUIDBaseModel {
   product: string;
   display_name?: string;
+  pos_display_name?: string;
   product_details?: {
     id: string;
     name: string;

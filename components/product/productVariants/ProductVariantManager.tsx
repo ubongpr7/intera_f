@@ -20,7 +20,7 @@ interface ProductVariantManagerProps {
 const variantColumns: Column<ProductVariant>[] = [
   {
     header: "Display Name",
-    accessor: "display_name",
+    accessor: "pos_display_name",
     className: "font-medium",
   },
   {
