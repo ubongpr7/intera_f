@@ -1,17 +1,17 @@
 "use client"
 
 import type React from "react"
-import { useState, useMemo } from "react"
+
+import { useState, useMemo, useEffect } from "react"
 import {
   useGetProductAttributeLinksQuery,
   useGetProductAttributeValuesQuery,
   useAddVariantAttributeMutation,
   useRemoveVariantAttributeMutation,
-  useEditVariantAttributeMutation, // Add this import
 } from "@/redux/features/product/productAPISlice"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Trash2, Edit, Save, X } from "lucide-react"
+import { Trash2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ReactSelectField, type SelectOption } from "@/components/ui/react-select-field"
 import LoadingAnimation from "@/components/common/LoadingAnimation"
@@ -26,17 +26,10 @@ import { getCurrencySymbolForProfile } from "@/lib/currency-utils"
 interface VariantAttributesTabProps {
   variant: ProductVariant
   onSuccess: () => void
-  refetchData: boolean
+  refetchData:boolean
 }
 
-interface EditingAttribute {
-  id: string
-  value_id: string
-  custom_value: string
-  custom_modifier: string
-}
-
-const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttributesTabProps) => {
+const VariantAttributesTab = ({ variant, onSuccess,refetchData }: VariantAttributesTabProps) => {
   const [attributeFormData, setAttributeFormData] = useState({
     attribute_link_id: "",
     attribute_id: "",
@@ -44,52 +37,35 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
     custom_value: "",
     custom_modifier: "",
   })
-
-  const [editingAttribute, setEditingAttribute] = useState<EditingAttribute | null>(null)
-  const [editFormData, setEditFormData] = useState({
-    value_id: "",
-    custom_value: "",
-    custom_modifier: "",
-  })
-
-  console.log(variant?.attribute_details)
-
+console.log(variant?.attribute_details)
   // Get all attribute links for the product
   const {
     data: allAttributeLinks = [],
     isLoading: isAttributeLinksLoading,
     error: attributeLinksError,
-  } = useGetProductAttributeLinksQuery(
-    { productId: variant.product, variant: variant.id },
-    { skip: !variant.product || !variant.id || variant.product === undefined },
-  )
+  } = useGetProductAttributeLinksQuery({ productId: variant.product, variant: variant.id }, { skip: !variant.product || !variant.id||variant.product===undefined  })
 
   const {
     data: attributeValues,
     isLoading: isAttributeValuesLoading,
     error: attributeValuesError,
-    refetch: refetchLinks,
+    refetch:refetchLinks
   } = useGetProductAttributeValuesQuery(
     { attributeId: attributeFormData.attribute_id || "" },
     { skip: !attributeFormData.attribute_id },
   )
 
-  // For editing - get attribute values for the attribute being edited
-  const { data: editAttributeValues, isLoading: isEditAttributeValuesLoading } = useGetProductAttributeValuesQuery(
-    { attributeId: editingAttribute?.id || "" },
-    { skip: !editingAttribute?.id },
-  )
-
   const [addAttribute, { isLoading: addAttributeLoading }] = useAddVariantAttributeMutation()
   const [removeAttribute] = useRemoveVariantAttributeMutation()
-  const [editAttribute, { isLoading: editAttributeLoading }] = useEditVariantAttributeMutation()
 
   // Filter out attribute links that are already assigned to this variant
   const availableAttributeLinks = useMemo(() => {
     if (!allAttributeLinks || !variant.attribute_details) return allAttributeLinks
+
     const assignedAttributeLinkIds = variant.attribute_details.map(
       (attr: ProductVariantAttribute) => attr.attribute_link,
     )
+
     return allAttributeLinks.filter((link: ProductAttributeLink) => !assignedAttributeLinkIds.includes(link.id))
   }, [allAttributeLinks, variant.attribute_details])
 
@@ -113,14 +89,9 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
       label: value.effective_display_value || value.display_value || "No Value",
     })) || []
 
-  const editAttributeValueOptions: SelectOption[] =
-    editAttributeValues?.map((value: ProductAttributeValue) => ({
-      value: value.id,
-      label: value.effective_display_value || value.display_value || "No Value",
-    })) || []
-
   const handleAddAttribute = async (e: React.FormEvent) => {
     e.preventDefault()
+
     try {
       const data = {
         attribute_link_id: attributeFormData.attribute_link_id,
@@ -128,6 +99,7 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
         custom_value: attributeFormData.custom_value || undefined,
         custom_modifier: Number.parseFloat(attributeFormData.custom_modifier) || undefined,
       }
+
       await addAttribute({ variantId: variant.id, data }).unwrap()
       refetchLinks()
       // Reset form data
@@ -138,6 +110,7 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
         custom_value: "",
         custom_modifier: "",
       })
+
       onSuccess()
     } catch (error) {
       console.error("Failed to add attribute:", error)
@@ -151,60 +124,6 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
       refetchLinks()
     } catch (error) {
       console.error("Failed to remove attribute:", error)
-    }
-  }
-
-  const handleStartEdit = (attr: ProductVariantAttribute) => {
-    // Find the attribute ID from the attribute link
-    const attributeLink = allAttributeLinks.find((link) => link.id === attr.attribute_link)
-    const attributeId = attributeLink?.attribute || ""
-
-    setEditingAttribute({
-      id: attributeId,
-      value_id: attr.value || "",
-      custom_value: attr.custom_value || "",
-      custom_modifier: attr.custom_modifier?.toString() || "",
-    })
-    setEditFormData({
-      value_id: attr.value || "",
-      custom_value: attr.custom_value || "",
-      custom_modifier: attr.custom_modifier?.toString() || "",
-    })
-  }
-
-  const handleCancelEdit = () => {
-    setEditingAttribute(null)
-    setEditFormData({
-      value_id: "",
-      custom_value: "",
-      custom_modifier: "",
-    })
-  }
-
-  const handleSaveEdit = async (attributeLinkId: string) => {
-    try {
-      const data = {
-        value_id: editFormData.value_id || undefined,
-        custom_value: editFormData.custom_value || undefined,
-        custom_modifier: Number.parseFloat(editFormData.custom_modifier) || undefined,
-      }
-
-      await editAttribute({
-        variantId: variant.id,
-        attributeLinkId,
-        data,
-      }).unwrap()
-
-      setEditingAttribute(null)
-      setEditFormData({
-        value_id: "",
-        custom_value: "",
-        custom_modifier: "",
-      })
-      onSuccess()
-      refetchLinks()
-    } catch (error) {
-      console.error("Failed to edit attribute:", error)
     }
   }
 
@@ -228,6 +147,7 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
     <div className="p-4 max-h-[70vh] overflow-y-auto space-y-6">
       <div>
         <h3 className="text-lg font-semibold mb-4">Add Attribute</h3>
+
         {availableAttributeLinks.length === 0 ? (
           <Alert className="border-blue-500 bg-blue-50">
             <AlertDescription className="text-blue-700">
@@ -267,6 +187,7 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
                 className="w-full"
               />
             </div>
+
             {attributeFormData.attribute_link_id && (
               <>
                 {isAttributeValuesLoading ? (
@@ -305,6 +226,7 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
                         className="w-full"
                       />
                     </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">New Value (Optional)</label>
                       <input
@@ -320,6 +242,7 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
                         className="w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none focus:border-blue-500 py-2 rounded-md"
                       />
                     </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Additional Price Modifier (Optional)
@@ -342,6 +265,7 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
                 )}
               </>
             )}
+
             <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4">
               <Button
                 type="button"
@@ -375,141 +299,26 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
         <h3 className="text-lg font-semibold mb-4">Current Attributes</h3>
         {variant?.attribute_details && variant.attribute_details.length > 0 ? (
           <div className="space-y-2">
-            {variant.attribute_details.map((attr: ProductVariantAttribute) => {
-              const isEditing =
-                editingAttribute &&
-                allAttributeLinks.find((link) => link.id === attr.attribute_link)?.attribute === editingAttribute.id
-
-              return (
-                <Card key={attr.id}>
-                  <CardContent className="p-4">
-                    {isEditing ? (
-                      // Edit mode
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-center">
-                          <p className="font-medium text-gray-900">Editing: {attr.attribute_name}</p>
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleSaveEdit(attr.attribute_link)}
-                              disabled={editAttributeLoading}
-                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                            >
-                              <Save className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={handleCancelEdit}
-                              className="text-gray-600 hover:text-gray-700 hover:bg-gray-50"
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-
-                        {isEditAttributeValuesLoading ? (
-                          <LoadingAnimation />
-                        ) : (
-                          <>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">Value</label>
-                              <ReactSelectField
-                                options={editAttributeValueOptions}
-                                value={
-                                  editAttributeValueOptions.find((option) => option.value === editFormData.value_id) ||
-                                  null
-                                }
-                                onChange={(option) => {
-                                  if (option && !Array.isArray(option)) {
-                                    setEditFormData((prev) => ({
-                                      ...prev,
-                                      value_id: option.value,
-                                    }))
-                                  } else {
-                                    setEditFormData((prev) => ({
-                                      ...prev,
-                                      value_id: "",
-                                    }))
-                                  }
-                                }}
-                                placeholder="Select Value (Optional)"
-                                isSearchable
-                                isClearable
-                                className="w-full"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">Custom Value</label>
-                              <input
-                                type="text"
-                                value={editFormData.custom_value}
-                                onChange={(e) =>
-                                  setEditFormData((prev) => ({
-                                    ...prev,
-                                    custom_value: e.target.value,
-                                  }))
-                                }
-                                placeholder="Enter custom value"
-                                className="w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none focus:border-blue-500 py-2 rounded-md"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">Price Modifier</label>
-                              <input
-                                type="number"
-                                value={editFormData.custom_modifier}
-                                onChange={(e) =>
-                                  setEditFormData((prev) => ({
-                                    ...prev,
-                                    custom_modifier: e.target.value,
-                                  }))
-                                }
-                                placeholder="0.00"
-                                step="0.01"
-                                className="w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none focus:border-blue-500 py-2 rounded-md"
-                              />
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    ) : (
-                      // Display mode
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="font-medium text-gray-900">
-                            {attr.attribute_name}: {attr?.display_value}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            Modifier: {getCurrencySymbolForProfile()}
-                            {attr.custom_modifier || "0.00"}
-                          </p>
-                        </div>
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleStartEdit(attr)}
-                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveAttribute(attr.attribute_link)}
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )
-            })}
+            {variant.attribute_details.map((attr: ProductVariantAttribute) => (
+              <Card key={attr.id}>
+                <CardContent className="flex justify-between items-center p-4">
+                  <div>
+                    <p className="font-medium text-gray-900">
+                      {attr.attribute_name}: { attr?.display_value  }
+                    </p>
+                    <p className="text-sm text-gray-500">Modifier: {getCurrencySymbolForProfile()}{attr.custom_modifier || "0.00"}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemoveAttribute(attr.attribute_link)}
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         ) : (
           <Card className="border-dashed">
