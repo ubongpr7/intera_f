@@ -162,6 +162,21 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
     window.open(resultFileUrl, "_blank")
   }
 
+  const handleClose = () => {
+    if (status === "processing") {
+      // Show confirmation dialog for processing state
+      if (
+        window.confirm(
+          "AI processing is still running. Are you sure you want to close? You can check the status later in Recent Tasks.",
+        )
+      ) {
+        onClose()
+      }
+    } else {
+      onClose()
+    }
+  }
+
   // Auto-refresh task status when modal opens
   useEffect(() => {
     if (isOpen && taskId && status === "processing") {
@@ -178,7 +193,7 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
     : []
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto text-inherit">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -321,20 +336,28 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
                 <p className="text-xs text-gray-500 mt-1">Supports PNG, JPG, JPEG, GIF, WebP (Max 10MB each)</p>
               </div>
 
-              {/* Image Preview */}
+              {/* Image Preview with Hover Effects */}
               {images.length > 0 && (
                 <div className="mt-4 grid grid-cols-4 gap-4 max-h-60 overflow-y-auto">
                   {images.map((image, index) => (
                     <div key={index} className="relative group">
-                      <img
-                        src={URL.createObjectURL(image) || "/placeholder.svg"}
-                        alt={`Product ${index + 1}`}
-                        className="w-full h-20 object-cover rounded border"
-                      />
+                      <div className="relative overflow-hidden rounded border">
+                        <img
+                          src={URL.createObjectURL(image) || "/placeholder.svg"}
+                          alt={`Product ${index + 1}`}
+                          className="w-full h-20 object-cover transition-transform duration-300 ease-in-out group-hover:scale-110 cursor-pointer"
+                        />
+                        {/* Overlay that appears on hover */}
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                          <span className="text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            Preview
+                          </span>
+                        </div>
+                      </div>
                       <Button
                         size="sm"
                         variant="destructive"
-                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"
                         onClick={() => removeImage(index)}
                         disabled={isCreating || status === "processing"}
                       >
@@ -352,7 +375,7 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={onClose} disabled={isCreating || status === "processing"}>
+            <Button variant="outline" onClick={handleClose} disabled={isCreating}>
               {status === "processing" ? "Close" : "Cancel"}
             </Button>
             {status === "completed" && <Button onClick={reset}>Start New Process</Button>}

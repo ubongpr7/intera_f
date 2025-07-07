@@ -11,6 +11,7 @@ import { useGetUnitsQuery,useGetTypesByModelQuery } from "../../redux/features/c
 import { useGetProductCategoriesQuery } from "../../redux/features/product/productAPISlice";
 import { useGetInventoryDataQuery } from '@/redux/features/inventory/inventoryAPiSlice';
 import {AIBulkCreateModal} from './AIBulkCreateModal';
+import { TableImageHover } from '../common/table-image-render';
 
 
 const inventoryColumns: Column<ProductData>[] = [
@@ -37,17 +38,16 @@ const inventoryColumns: Column<ProductData>[] = [
     render: (value) => value || 'N/A',
     className: 'font-medium',
   },
-  {
-    header: 'Image',
-    accessor: 'display_image',
-    render: (value) => (
-      <img
-        src={value || '/placeholder.png'}
+ {
+    header: "Image",
+    accessor: "display_image",
+    render: (value: string) => (
+      <TableImageHover
+        src={value}
         alt="Product Image"
-        className="w-10 h-10 object-cover rounded hover:w-32 hover:h-32 hover:z-50 hover:object-fill transition-all duration-300 cursor-pointer"
+        className="hover:ring-2 hover:ring-blue-500 hover:ring-opacity-50"
       />
     ),
-   
   },
   {
     header: 'Variants',
