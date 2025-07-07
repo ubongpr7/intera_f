@@ -44,7 +44,7 @@ const inventoryColumns: Column<ProductData>[] = [
       <img
         src={value || '/placeholder.png'}
         alt="Product Image"
-        className="w-10 h-10 object-cover rounded hover:w-32 hover:h-32 hover:z-50 transition-all duration-300 cursor-pointer"
+        className="w-10 h-10 object-cover rounded hover:w-32 hover:h-32 hover:z-50 hover:object-fill transition-all duration-300 cursor-pointer"
       />
     ),
    
