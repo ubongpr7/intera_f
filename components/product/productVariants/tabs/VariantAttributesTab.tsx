@@ -238,8 +238,8 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
 
       await editAttribute({
         variantId: variant.id,
-        attributeLinkId,
-        data,
+        attributeLinkId: attributeLinkId,
+        data:data,
       }).unwrap()
 
       setEditingAttribute(null)
