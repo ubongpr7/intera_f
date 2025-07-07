@@ -56,12 +56,6 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
 
   const [validationError, setValidationError] = useState<string>("")
 
-  // Debug logs for data verification
-  console.log("All attribute links:", allAttributeLinks)
-  console.log("Variant attribute details:", variant?.attribute_details)
-  console.log("Editing attribute:", editingAttribute)
-  console.log("Edit form data:", editFormData)
-
   // Get all attribute links for the product
   const {
     data: allAttributeLinks = [],
@@ -71,6 +65,12 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
     { productId: variant.product, variant: variant.id },
     { skip: !variant.product || !variant.id || variant.product === undefined },
   )
+
+  // Debug logs for data verification
+  console.log("All attribute links:", allAttributeLinks)
+  console.log("Variant attribute details:", variant?.attribute_details)
+  console.log("Editing attribute:", editingAttribute)
+  console.log("Edit form data:", editFormData)
 
   // For adding new attributes
   const {
@@ -209,7 +209,7 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
     console.log("Fetching attribute values for attributeId:", attributeId)
 
     const editingData: EditingAttribute = {
-      attribute,width: attr.attribute_link || "",
+      attributeLinkId: attr.attribute_link || "",
       attributeId: attributeId,
       currentValueId: attr.value || "",
       currentCustomValue: attr.custom_value || "",
