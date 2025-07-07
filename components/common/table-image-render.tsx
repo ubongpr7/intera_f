@@ -26,8 +26,8 @@ export function TableImageHover({ src, alt, className = "" }: TableImageHoverPro
         <div className="absolute z-50 pointer-events-none">
           {/* Position the popup above and to the right of the original image */}
           <div className="absolute -top-32 -left-16 transform">
-            <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-2">
-              <img src={src || "/placeholder.png"} alt={alt} className="w-32 h-32 object-cover rounded" />
+            <div className="bg-white border border-gray-200 rounded-lg  p-2">
+              <img src={src || "/placeholder.png"} alt={alt} className="h-50 object-cover rounded" />
             </div>
             {/* Arrow pointing down to the original image */}
             <div className="absolute top-full left-1/2 transform -translate-x-1/2">
