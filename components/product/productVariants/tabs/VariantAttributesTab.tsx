@@ -11,7 +11,7 @@ import {
 } from "@/redux/features/product/productAPISlice"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Trash2, Edit, Save, X } from "lucide-react"
+import { Trash2, Edit, Save, X, AlertTriangle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ReactSelectField, type SelectOption } from "@/components/ui/react-select-field"
 import LoadingAnimation from "@/components/common/LoadingAnimation"
@@ -22,6 +22,7 @@ import type {
   ProductVariantAttribute,
 } from "@/components/interfaces/product"
 import { getCurrencySymbolForProfile } from "@/lib/currency-utils"
+import { toast } from "react-toastify"
 
 interface VariantAttributesTabProps {
   variant: ProductVariant
@@ -52,6 +53,8 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
     custom_value: "",
     custom_modifier: "",
   })
+
+  const [validationError, setValidationError] = useState<string>("")
 
   console.log("Variant attribute details:", variant?.attribute_details)
   console.log("Editing attribute:", editingAttribute)
@@ -126,6 +129,20 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
       label: value.effective_display_value || value.display_value || "No Value",
     })) || []
 
+  // Validation function for edit form
+  const validateEditForm = () => {
+    const hasValue = editFormData.value_id && editFormData.value_id.trim() !== ""
+    const hasCustomValue = editFormData.custom_value && editFormData.custom_value.trim() !== ""
+
+    if (!hasValue && !hasCustomValue) {
+      setValidationError("Please provide either a predefined value or a custom value")
+      return false
+    }
+
+    setValidationError("")
+    return true
+  }
+
   const handleAddAttribute = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
@@ -146,8 +163,10 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
         custom_modifier: "",
       })
       onSuccess()
-    } catch (error) {
+      toast.success("Attribute added successfully")
+    } catch (error: any) {
       console.error("Failed to add attribute:", error)
+      toast.error(error?.data?.detail || "Failed to add attribute")
     }
   }
 
@@ -156,8 +175,10 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
       await removeAttribute({ variantId: variant.id, attributeLinkId }).unwrap()
       onSuccess()
       refetchLinks()
-    } catch (error) {
+      toast.success("Attribute removed successfully")
+    } catch (error: any) {
       console.error("Failed to remove attribute:", error)
+      toast.error(error?.data?.detail || "Failed to remove attribute")
     }
   }
 
@@ -187,6 +208,7 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
       custom_value: attr.custom_value || "",
       custom_modifier: attr.custom_modifier?.toString() || "",
     })
+    setValidationError("") // Clear any previous validation errors
   }
 
   const handleCancelEdit = () => {
@@ -196,15 +218,23 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
       custom_value: "",
       custom_modifier: "",
     })
+    setValidationError("")
   }
 
   const handleSaveEdit = async (attributeLinkId: string) => {
+    // Validate before saving
+    if (!validateEditForm()) {
+      return
+    }
+
     try {
       const data = {
         value_id: editFormData.value_id || undefined,
         custom_value: editFormData.custom_value || undefined,
         custom_modifier: Number.parseFloat(editFormData.custom_modifier) || undefined,
       }
+
+      console.log("Saving edit data:", data)
 
       await editAttribute({
         variantId: variant.id,
@@ -218,10 +248,36 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
         custom_value: "",
         custom_modifier: "",
       })
+      setValidationError("")
       onSuccess()
       refetchLinks()
-    } catch (error) {
+      toast.success("Attribute updated successfully")
+    } catch (error: any) {
       console.error("Failed to edit attribute:", error)
+      const errorMessage = error?.data?.detail || "Failed to update attribute"
+      toast.error(errorMessage)
+      setValidationError(errorMessage)
+    }
+  }
+
+  // Handle form data changes with validation
+  const handleEditFormChange = (field: string, value: string) => {
+    setEditFormData((prev) => {
+      const newData = { ...prev, [field]: value }
+
+      // Clear the other value field when one is selected
+      if (field === "value_id" && value) {
+        newData.custom_value = ""
+      } else if (field === "custom_value" && value) {
+        newData.value_id = ""
+      }
+
+      return newData
+    })
+
+    // Clear validation error when user starts typing
+    if (validationError) {
+      setValidationError("")
     }
   }
 
@@ -409,6 +465,14 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
                           <p className="font-medium text-gray-900">Editing: {attr.attribute_name}</p>
                         </div>
 
+                        {/* Validation Error */}
+                        {validationError && (
+                          <Alert className="border-red-500 bg-red-50">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertDescription className="text-red-700">{validationError}</AlertDescription>
+                          </Alert>
+                        )}
+
                         {isEditAttributeValuesLoading ? (
                           <div className="flex justify-center py-4">
                             <LoadingAnimation />
@@ -424,7 +488,7 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
                           <>
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Predefined Value (Optional)
+                                Predefined Value <span className="text-red-500">*</span>
                               </label>
                               <ReactSelectField
                                 options={editAttributeValueOptions}
@@ -434,38 +498,26 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
                                 }
                                 onChange={(option) => {
                                   if (option && !Array.isArray(option)) {
-                                    setEditFormData((prev) => ({
-                                      ...prev,
-                                      value_id: option.value,
-                                      custom_value: "", // Clear custom value when selecting predefined
-                                    }))
+                                    handleEditFormChange("value_id", option.value)
                                   } else {
-                                    setEditFormData((prev) => ({
-                                      ...prev,
-                                      value_id: "",
-                                    }))
+                                    handleEditFormChange("value_id", "")
                                   }
                                 }}
-                                placeholder="Select predefined value (optional)"
+                                placeholder="Select predefined value"
                                 isSearchable
                                 isClearable
                                 className="w-full"
                               />
                             </div>
+                            <div className="text-center text-sm text-gray-500 font-medium">OR</div>
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Custom Value (Optional)
+                                Custom Value <span className="text-red-500">*</span>
                               </label>
                               <input
                                 type="text"
                                 value={editFormData.custom_value}
-                                onChange={(e) =>
-                                  setEditFormData((prev) => ({
-                                    ...prev,
-                                    custom_value: e.target.value,
-                                    value_id: e.target.value ? "" : prev.value_id, // Clear predefined value when typing custom
-                                  }))
-                                }
+                                onChange={(e) => handleEditFormChange("custom_value", e.target.value)}
                                 placeholder="Enter custom value"
                                 className="w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none focus:border-blue-500 py-2 rounded-md"
                               />
@@ -477,16 +529,15 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
                               <input
                                 type="number"
                                 value={editFormData.custom_modifier}
-                                onChange={(e) =>
-                                  setEditFormData((prev) => ({
-                                    ...prev,
-                                    custom_modifier: e.target.value,
-                                  }))
-                                }
+                                onChange={(e) => handleEditFormChange("custom_modifier", e.target.value)}
                                 placeholder="0.00"
                                 step="0.01"
                                 className="w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none focus:border-blue-500 py-2 rounded-md"
                               />
+                            </div>
+                            <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                              <span className="text-red-500">*</span> Either a predefined value or custom value is
+                              required
                             </div>
                             <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4 pt-4 border-t">
                               <Button
