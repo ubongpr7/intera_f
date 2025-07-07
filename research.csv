@@ -1,0 +1,11 @@
+Feature Type,Feature Name,Service Impact,AI Integration,Priority
+Onboarding,Personalized Onboarding Tours,"Users, All",High,1
+Onboarding,AI-Driven Data Import,"Inventory, Product",High,2
+Onboarding,Automated Role Assignment,Users,Medium,3
+Onboarding,Intelligent Form Filling,"Product, Inventory",Medium,4
+Onboarding,Chat-Based Guidance,All,High,5
+Standout,AI-Powered Demand Forecasting,Inventory,High,1
+Standout,Automated Stock Alerts,"Inventory, POS",Medium,2
+Standout,Real-Time Analytics Dashboard,All,High,3
+Standout,Multi-Warehouse Management,Inventory,Low,4
+Standout,AI Inventory Optimization,"Inventory, Product",High,5
