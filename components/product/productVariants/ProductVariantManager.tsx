@@ -9,6 +9,7 @@ import LoadingAnimation from "@/components/common/LoadingAnimation"
 import CreateVariantModal from "./CreateVariantModal"
 import VariantDetailsModal from "./VariantDetailsModal"
 import { getCurrencySymbolForProfile } from "@/lib/currency-utils"
+import { TableImageHover } from '@/components/common/table-image-render';
 
 interface ProductVariantManagerProps {
   productId: string
@@ -28,6 +29,17 @@ const variantColumns: Column<ProductVariant>[] = [
     accessor: "variant_barcode",
     render: (value) => value || "N/A",
     className: "font-medium",
+  },
+  {
+    header: "Image",
+    accessor: "main_image",
+    render: (value: string) => (
+      <TableImageHover
+        src={value}
+        alt="Product Image"
+        className="hover:ring-2 hover:ring-blue-500 hover:ring-opacity-50"
+      />
+    ),
   },
   {
     header: "SKU",
