@@ -136,9 +136,9 @@ export const productApiSlice = apiSlice.injectEndpoints({
 
     getProductCategories: builder.query({
       query: (params = {}) => ({
-        url: `/${product_api}/categories/`,
+        url: `/coommon_api/categories/`,
         params,
-        service: service,
+        service: 'common',
       }),
     }),
 
