@@ -243,7 +243,6 @@ const actionButtons: ActionButton<ProductData>[] = [
           {
             label: 'Create Bulk Product',
             onClick: () => setIsAIBulkCreateOpen(true),
-            icon: <BarChart3 size={16} />,
 
           }
         }
