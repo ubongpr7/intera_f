@@ -199,6 +199,7 @@ const actionButtons: ActionButton<ProductData>[] = [
       className: "text-orange-600 hover:text-orange-800",
       variant: "secondary",
       tooltip: "Remove Template Mode",
+      disabled: (row) => row.is_template !== true, 
     }
   
   ];
