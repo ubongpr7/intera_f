@@ -189,7 +189,7 @@ const actionButtons: ActionButton<ProductData>[] = [
       className: "text-purple-600 hover:text-purple-800",
       variant: "secondary",
       tooltip: "Duplicate Product",
-    }
+    },
       
 
     {
