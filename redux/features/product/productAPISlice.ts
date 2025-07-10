@@ -16,6 +16,14 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
+    removeTemplateMode: builder.mutation({
+      query: ({ id }) => ({
+        url: `/${product_api}/products/${id}/create_stock_items/`,
+        method: "POST",
+        body: {},
+        service: service,
+      }),
+    }),
     updateProduct: builder.mutation({
       query: ({ id, data }) => ({
         url: `/${product_api}/products/${id}/`,
@@ -46,7 +54,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
         service: service,
       }),
     }),
-
+  
     getProductData: builder.query<Product[], void>({
       query: () => ({
         url: `/${product_api}/products/`,
@@ -890,6 +898,7 @@ export const {
   // Product Management
   useCreateProductMutation,
   useUpdateProductMutation,
+  useRemoveTemplateModeMutation,
   useDeleteProductMutation,
   useGetProductQuery,
   useGetMinimalProductQuery,
