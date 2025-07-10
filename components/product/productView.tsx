@@ -169,7 +169,7 @@ const actionButtons: ActionButton<ProductData>[] = [
       variant: "secondary",
       tooltip: "Delete Product",
       disabled: (row) => deleteLoading,
-    }
+    },
       
     {
       label: "",
