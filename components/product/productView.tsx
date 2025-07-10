@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react';
+import { act, useEffect, useState } from 'react';
 import { PageHeader } from "../inventory/PageHeader";
 import { useRouter } from 'nextjs-toploader/app';
 import { Column, DataTable,ActionButton} from "../common/DataTable/DataTable";
@@ -12,7 +12,7 @@ import { useGetProductCategoriesQuery } from "@/redux/features/product/productAP
 import { useGetInventoryDataQuery } from '@/redux/features/inventory/inventoryAPiSlice';
 import {AIBulkCreateModal} from './AIBulkCreateModal';
 import { TableImageHover } from '../common/table-image-render';
-import { Edit, Trash2, Eye, Copy, BarChart3, Package, ShoppingCart } from "lucide-react"
+import { Edit, Trash2, Eye, Copy, BarChart3, Package, ShoppingCart, ToggleLeftIcon } from "lucide-react"
 import { toast } from 'react-toastify';
 
   
@@ -86,16 +86,28 @@ function ProductView() {
   const [removeTemplateMode] = useRemoveTemplateModeMutation();
 
 
+  // const handleDelete = async (row: ProductData) => {
+  //   if (window.confirm(`Are you sure you want to delete ${row.name}?`)) {
+  //     try {
+  //       await deleteProduct(row.id).unwrap();
+  //       await refetch(); // Refresh the data after deletion
+  //     } catch (error) {
+  //       console.error('Failed to delete product:', error);
+  //     }
+  //   }
   const handleDelete = async (row: ProductData) => {
     if (window.confirm(`Are you sure you want to delete ${row.name}?`)) {
       try {
         await deleteProduct(row.id).unwrap();
         await refetch(); // Refresh the data after deletion
+        toast.success("Product deleted successfully!");
       } catch (error) {
         console.error('Failed to delete product:', error);
+        toast.error("Failed to delete product");
       }
-    }
-    
+    } 
+  }
+
     const handleRemoveTemplateMode = async (row: ProductData) => {
       try {
         await removeTemplateMode({ id: row.id }).unwrap();
@@ -103,7 +115,7 @@ function ProductView() {
       } catch (error) {
         console.error('Failed to remove template mode:', error);
       }
-
+    }
       
     const { data: categories = [], isLoading: isCatLoading, error: catError } = useGetProductCategoriesQuery(1);
       const { data: units=[] } = useGetUnitsQuery();
@@ -156,14 +168,13 @@ function ProductView() {
     } catch (error) {
       toast.error("Failed to duplicate product")
     }
-  }
+  };
 
-
-
+  
 const actionButtons: ActionButton<ProductData>[] = [
   {
       label: "",
-      icon: <Trash2 size={16} />,
+      icon:Trash2,
       onClick:async (row) =>await handleDelete(row),
       className: "text-red-600 hover:text-red-800",
       variant: "secondary",
@@ -173,32 +184,27 @@ const actionButtons: ActionButton<ProductData>[] = [
       
     {
       label: "",
-      icon: <Copy size={16} />,
+      icon: Copy,
       onClick: (row) => handleDuplicate(row),
       className: "text-purple-600 hover:text-purple-800",
       variant: "secondary",
       tooltip: "Duplicate Product",
-    },
+    }
       
-    {
-      label: "",
-      icon: <Copy size={16} />,
-      onClick: async (row) => await handleDuplicate(row),
-      className: "text-purple-600 hover:text-purple-800",
-      variant: "secondary",
-      tooltip: "Duplicate Product",
-    },
 
     {
       label: "",
-      icon: <Package size={16} />,
+      icon:ToggleLeftIcon,
       onClick: (row) => handleRemoveTemplateMode(row),
       className: "text-orange-600 hover:text-orange-800",
       variant: "secondary",
       tooltip: "Remove Template Mode",
     }
   
-  ]
+  ];
+
+
+
 
 
 
@@ -227,16 +233,18 @@ const actionButtons: ActionButton<ProductData>[] = [
         onClose={() =>setIsCreateOpen(true)}      />
       <DataTable<ProductData>
         columns={inventoryColumns}
-        actionButtons={actionButtons}
+
         data={data || []}
         isLoading={isLoading}
         
         onRowClick={handleRowClick}
-        actionButtons={[]}
+        actionButtons={actionButtons}
         secondaryButton={
           {
             label: 'Create Bulk Product',
             onClick: () => setIsAIBulkCreateOpen(true),
+            icon: <BarChart3 size={16} />,
+
           }
         }
       />

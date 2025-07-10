@@ -1,7 +1,7 @@
 "use client"
-
 import type React from "react"
 import { useState, useEffect } from "react"
+import { type LucideIcon } from 'lucide-react'
 import { FieldInfo } from "../fileFieldInfor"
 import LoadingAnimation from "../LoadingAnimation"
 
@@ -16,7 +16,7 @@ export interface Column<T> {
 
 export interface ActionButton<T> {
   label: string
-  icon?: React.ReactNode
+  icon?: LucideIcon
   onClick: (row: T, event: React.MouseEvent) => void
   className?: string
   variant?: "primary" | "secondary" | "danger" | "success" | "warning"
@@ -27,8 +27,8 @@ export interface ActionButton<T> {
 
 export interface SecondaryButton<T> {
   label: string
-  icon?: React.ReactNode
-  onClick: (event: React.MouseEvent) => void // Changed to not depend on row
+  icon?: LucideIcon
+  onClick: (event: React.MouseEvent) => void
   className?: string
   disabled?: boolean
   hidden?: boolean
@@ -37,7 +37,7 @@ export interface SecondaryButton<T> {
 
 export interface GeneralButton<T> {
   label: string
-  icon?: React.ReactNode
+  icon?: LucideIcon
   onClick: (selectedIds: string[], selectedRows: T[], event: React.MouseEvent) => void
   className?: string
   variant?: "primary" | "secondary" | "danger" | "success" | "warning"
@@ -55,12 +55,12 @@ interface DataTableProps<T> {
   showActionsColumn?: boolean
   actionsColumnHeader?: string
   actionsColumnWidth?: string
-  showRowNumbers?: boolean // New prop to control row numbering
-  rowNumberHeader?: string // Customizable header for row numbers
-  startNumberFrom?: number // Allow starting from a different number (useful for pagination)
-  generalButtons?: GeneralButton<T>[] // New prop for bulk action buttons
-  getRowId?: (row: T) => string // Function to extract ID from row
-  showSelectAll?: boolean // Whether to show select all functionality
+  showRowNumbers?: boolean
+  rowNumberHeader?: string
+  startNumberFrom?: number
+  generalButtons?: GeneralButton<T>[]
+  getRowId?: (row: T) => string
+  showSelectAll?: boolean
 }
 
 export function DataTable<T>({
@@ -73,9 +73,9 @@ export function DataTable<T>({
   showActionsColumn = true,
   actionsColumnHeader = "Actions",
   actionsColumnWidth = "w-32",
-  showRowNumbers = true, // Default to true to show row numbers
-  rowNumberHeader = "#", // Default header for row numbers
-  startNumberFrom = 1, // Default starting number
+  showRowNumbers = true,
+  rowNumberHeader = "#",
+  startNumberFrom = 1,
   generalButtons,
   getRowId,
   showSelectAll,
@@ -119,7 +119,6 @@ export function DataTable<T>({
   const getButtonVariantClasses = (variant: ActionButton<T>["variant"] = "secondary") => {
     const baseClasses =
       "inline-flex items-center px-2 py-1 text-xs font-medium rounded border focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-
     switch (variant) {
       case "primary":
         return `${baseClasses} text-white bg-blue-600 border-blue-600 hover:bg-blue-700 focus:ring-blue-500`
@@ -140,12 +139,12 @@ export function DataTable<T>({
   }
 
   const handleActionClick = (action: ActionButton<T>, row: T, event: React.MouseEvent) => {
-    event.stopPropagation() // Prevent row click when action is clicked
+    event.stopPropagation()
     action.onClick(row, event)
   }
 
   const handleSecondaryClick = (event: React.MouseEvent) => {
-    event.stopPropagation() // Prevent any unintended row click propagation
+    event.stopPropagation()
     secondaryButton?.onClick(event)
   }
 
@@ -157,6 +156,7 @@ export function DataTable<T>({
       <div className="flex items-center space-x-1">
         {visibleActions.map((action, index) => {
           const isDisabled = action.disabled?.(row) || false
+          const IconComponent = action.icon
           return (
             <button
               key={index}
@@ -165,7 +165,12 @@ export function DataTable<T>({
               className={`${getButtonVariantClasses(action.variant)} ${action.className || ""}`}
               title={action.tooltip}
             >
-              {action.icon && <span className={action.label ? "mr-1" : ""}>{action.icon}</span>}
+              {IconComponent && (
+                <IconComponent 
+                  size={14} 
+                  className={action.label ? "mr-1" : ""} 
+                />
+              )}
               {action.label}
             </button>
           )
@@ -185,7 +190,7 @@ export function DataTable<T>({
         {generalButtons!.map((button, index) => {
           const isDisabled = !hasSelections || button.disabled
           const selectedRows = data.filter((row) => selectedIds.includes(getRowId!(row)))
-
+          const IconComponent = button.icon
           return (
             <button
               key={index}
@@ -199,7 +204,12 @@ export function DataTable<T>({
               className={`${getButtonVariantClasses(button.variant)} ${button.className || ""}`}
               title={button.tooltip}
             >
-              {button.icon && <span className={button.label ? "mr-1" : ""}>{button.icon}</span>}
+              {IconComponent && (
+                <IconComponent 
+                  size={14} 
+                  className={button.label ? "mr-1" : ""} 
+                />
+              )}
               {button.label}
             </button>
           )
@@ -241,7 +251,8 @@ export function DataTable<T>({
           {renderGeneralButtons()}
         </div>
       )}
-      {/* Render secondary button outside the table, e.g., above it */}
+
+      {/* Render secondary button outside the table */}
       {secondaryButton && !secondaryButton.hidden && (
         <div className="p-4 bg-gray-50 border-b border-gray-200">
           <button
@@ -251,7 +262,10 @@ export function DataTable<T>({
             title={secondaryButton.tooltip}
           >
             {secondaryButton.icon && (
-              <span className={secondaryButton.label ? "mr-1" : ""}>{secondaryButton.icon}</span>
+              <secondaryButton.icon 
+                size={14} 
+                className={secondaryButton.label ? "mr-1" : ""} 
+              />
             )}
             {secondaryButton.label}
           </button>
@@ -280,7 +294,6 @@ export function DataTable<T>({
                   {rowNumberHeader}
                 </th>
               )}
-
               {columns.map((column, idx) => (
                 <th
                   key={idx}
@@ -292,7 +305,6 @@ export function DataTable<T>({
                   {column.info && <FieldInfo info={column.info} displayBelow={true} />}
                 </th>
               ))}
-
               {hasActions && (
                 <th
                   className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${actionsColumnWidth}`}
@@ -302,7 +314,6 @@ export function DataTable<T>({
               )}
             </tr>
           </thead>
-
           <tbody className="bg-white divide-y divide-gray-200">
             {data.map((row, rowIndex) => (
               <tr
@@ -328,7 +339,6 @@ export function DataTable<T>({
                 {showRowNumbers && (
                   <td className="px-4 py-4 text-sm font-medium text-gray-500 w-16">{startNumberFrom + rowIndex}</td>
                 )}
-
                 {columns.map((column, colIndex) => {
                   const value =
                     typeof column.accessor === "function" ? column.accessor(row) : row[column.accessor as keyof T]
@@ -338,7 +348,6 @@ export function DataTable<T>({
                     </td>
                   )
                 })}
-
                 {hasActions && (
                   <td className={`px-6 py-4 text-sm ${actionsColumnWidth}`}>{renderActionButtons(row)}</td>
                 )}
@@ -346,9 +355,7 @@ export function DataTable<T>({
             ))}
           </tbody>
         </table>
-
         {!isLoading && data.length === 0 && <div className="text-center py-8 text-gray-500">No records found</div>}
-
         {isLoading && data.length === 0 && (
           <div className="text-center flex items-center justify-center py-8 text-gray-500">
             <LoadingAnimation text="Loading..." ringColor="#3b82f6" />
