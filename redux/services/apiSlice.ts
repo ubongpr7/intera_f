@@ -30,6 +30,7 @@ const createBaseQuery = (baseUrl: string, isFileUpload = false) => {
   return fetchBaseQuery({
     baseUrl,
     credentials: "include",
+    timeout: 600000,
     prepareHeaders: (headers, { getState }) => {
       const token = getCookie("accessToken")
       const profile = getCookie("profile")
