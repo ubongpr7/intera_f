@@ -5,7 +5,7 @@ export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
 
   // Define public paths that don't require authentication
-  const isPublicPath = path.startsWith('/accounts')|| path === '/'
+  const isPublicPath = path.startsWith('/accounts')|| path === '/' || path === '/features'
 
   // Get the token from the cookies
   const token = request.cookies.get("refreshToken")?.value || ""
