@@ -11,12 +11,23 @@ import {  useGetStockItemDataQuery } from "@/redux/features/stock/stockAPISlice"
 const inventoryColumns: Column<PurchaseOrderLineItem>[] = [
   {
     header: 'Quantity',
-    accessor: 'stock_item_name',
+    accessor: 'stock_item_details',
+    render:(value)=>value.name,
+    className: 'font-medium',
+  },
+  {
+    header: 'Batch Number',
+    accessor: 'batch_number',
     className: 'font-medium',
   },
   {
     header: 'Quantity',
-    accessor: 'quantity_w_unit',
+    accessor: 'quantity',
+    className: 'font-medium',
+  },
+  {
+    header: 'unit',
+    accessor: 'unit',
     className: 'font-medium',
   },
   {

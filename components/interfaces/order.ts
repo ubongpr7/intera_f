@@ -1,3 +1,4 @@
+import { StockItem } from "./stock";
 import { UserData } from "./User";
 
 export const PurchaseOrderStatus = {
@@ -151,5 +152,11 @@ export  interface ReturnOrderInterface extends BaseOrder, TotalPriceMixin {
     stock_item_name?: string;
     stock_item_code?: string;
     quantity_w_unit:string;
+    stock_item_details?:StockItem
+    batch_number?:string
+    unit?:string
+  
+  
+
   }
   
