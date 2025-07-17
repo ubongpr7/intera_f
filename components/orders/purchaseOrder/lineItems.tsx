@@ -52,7 +52,7 @@ function PurchaseOrderLineItems({reference}:{reference:string}) {
     
     const handleCreate = async (createdData: Partial<PurchaseOrderLineItem>) => {
     try {   
-        const response = await createLineItem(createdData);
+        const response = await createLineItem({data:createdData,purchase_order_id:reference});
         setIsCreateOpen(false);
         await refetch(); 
     }
@@ -80,7 +80,6 @@ function PurchaseOrderLineItems({reference}:{reference:string}) {
         'discount',
         'tax_amount',
         'total_price',
-        'purchase_order',
       ];
       
  return (
@@ -98,7 +97,7 @@ function PurchaseOrderLineItems({reference}:{reference:string}) {
 
         <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>
                 <CustomCreateCard
-                  defaultValues={{'quantity': 1,'purchase_order':reference, 'unit_price': 0, 'tax_rate': 0, 'discount_rate': 0, 'tax_amount': 0, 'discount': 0, 'total_price': 0}}
+                  defaultValues={{'quantity': 1, 'unit_price': 0, 'tax_rate': 0, 'discount_rate': 0, 'tax_amount': 0, 'discount': 0, 'total_price': 0}}
                   onClose={() => setIsCreateOpen(false)}
                   onSubmit={handleCreate}
                   isLoading={lineItemCreateLoading}
@@ -108,7 +107,7 @@ function PurchaseOrderLineItems({reference}:{reference:string}) {
                   interfaceKeys={interfaceKeys}
                   dateFields={[]}
                   optionalFields={[]}
-                  readOnlyFields={['total_price', 'tax_amount', 'discount','purchase_order']}
+                  readOnlyFields={['total_price', 'tax_amount', 'discount',]}
                 />
               </div>
     </div>

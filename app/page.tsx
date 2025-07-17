@@ -16,7 +16,7 @@ import {
   ArcElement
 } from 'chart.js';
 import Link from 'next/link';
-
+import Image from 'next/image'
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -191,19 +191,19 @@ export default function Home() {
             <div className="flex items-center">
               <div className="bg-white p-1 rounded-lg">
                 <div className="bg-gradient-to-r from-blue-600 to-indigo-600 w-10 h-10 rounded-md flex items-center justify-center">
-                  <span className="text-white font-bold text-xl">I</span>
+                 <Image src={'/apple-touch-icon.png'} width={40} height={40} alt='logo' />
                 </div>
               </div>
               <span className="ml-3 text-xl font-bold">INTERA</span>
             </div>
             <div className="hidden md:flex space-x-8">
-              <a href="#features" className="hover:text-blue-300 transition">Features</a>
-              <a href="#benefits" className="hover:text-blue-300 transition">Benefits</a>
-              <a href="#dashboard" className="hover:text-blue-300 transition">Dashboard</a>
-              <a href="#testimonials" className="hover:text-blue-300 transition">Testimonials</a>
+              <Link href="#features" className="hover:text-blue-300 transition">Features</Link>
+              <Link href="#benefits" className="hover:text-blue-300 transition">Benefits</Link>
+              <Link href="#dashboard" className="hover:text-blue-300 transition">Dashboard</Link>
+              <Link href="#testimonials" className="hover:text-blue-300 transition">Testimonials</Link>
             </div>
-            <div className="flex items-center space-x-4">
-              <Link href={'/accounts'} className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition duration-300">
+            <div className=" items-center flex  space-x-4">
+              <Link href={'/accounts'} className="hidden bg-blue-600 hover:bg-blue-700 md:flex   text-white font-medium py-2 px-6 rounded-lg transition duration-300">
                 Get Started
               </Link>
               <Link href={'/accounts/signin'} className="border-2 border-blue-600 bg-transparent hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition duration-300">
@@ -213,6 +213,7 @@ export default function Home() {
           </div>
         </nav>
 
+        
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <motion.div 
@@ -227,9 +228,9 @@ export default function Home() {
                 Intera's offline-first POS and inventory management system eliminates stockouts, reduces waste, and boosts profits with real-time insights and AI forecasting.
               </p>
               <div className="mt-10 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6">
-                <button className="bg-white text-blue-900 hover:bg-gray-100 font-bold py-4 px-8 rounded-lg text-lg transition duration-300 shadow-lg">
+                <Link href='/accounts' className="bg-white text-blue-900 hover:bg-gray-100 font-bold py-4 px-8 rounded-lg text-lg transition duration-300 shadow-lg">
                   Start Free Trial
-                </button>
+                </Link>
                 <button className="bg-transparent border-2 border-white text-white hover:bg-white/10 font-medium py-4 px-8 rounded-lg text-lg transition duration-300">
                   Watch Demo
                 </button>
@@ -622,9 +623,9 @@ export default function Home() {
             Join thousands of businesses optimizing their inventory with Intera's AI-powered platform
           </p>
           <div className="mt-10 flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6">
-            <button className="bg-white text-blue-900 hover:bg-gray-100 font-bold py-4 px-8 rounded-lg text-lg transition duration-300 shadow-lg">
+            <Link href='/accounts' className="bg-white text-blue-900 hover:bg-gray-100 font-bold py-4 px-8 rounded-lg text-lg transition duration-300 shadow-lg">
               Start Your Free Trial
-            </button>
+            </Link>
             <button className="bg-transparent border-2 border-white text-white hover:bg-white/10 font-medium py-4 px-8 rounded-lg text-lg transition duration-300">
               Schedule a Demo
             </button>
@@ -656,30 +657,30 @@ export default function Home() {
             <div>
               <h4 className="text-lg font-bold mb-4">Product</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="text-gray-400 hover:text-white transition">Features</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition">Solutions</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition">Pricing</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition">Demo</a></li>
+                <li><Link href="#" className="text-gray-400 hover:text-white transition">Features</Link></li>
+                <li><Link href="#" className="text-gray-400 hover:text-white transition">Solutions</Link></li>
+                <li><Link href="#" className="text-gray-400 hover:text-white transition">Pricing</Link></li>
+                <li><Link href="#" className="text-gray-400 hover:text-white transition">Demo</Link></li>
               </ul>
             </div>
             
             <div>
               <h4 className="text-lg font-bold mb-4">Resources</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="text-gray-400 hover:text-white transition">Blog</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition">Documentation</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition">Support</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition">API</a></li>
+                <li><Link href="#" className="text-gray-400 hover:text-white transition">Blog</Link></li>
+                <li><Link href="#" className="text-gray-400 hover:text-white transition">Documentation</Link></li>
+                <li><Link href="#" className="text-gray-400 hover:text-white transition">Support</Link></li>
+                <li><Link href="#" className="text-gray-400 hover:text-white transition">API</Link></li>
               </ul>
             </div>
             
             <div>
               <h4 className="text-lg font-bold mb-4">Company</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="text-gray-400 hover:text-white transition">About</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition">Careers</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition">Contact</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition">Partners</a></li>
+                <li><Link href="#" className="text-gray-400 hover:text-white transition">About</Link></li>
+                <li><Link href="#" className="text-gray-400 hover:text-white transition">Careers</Link></li>
+                <li><Link href="#" className="text-gray-400 hover:text-white transition">Contact</Link></li>
+                <li><Link href="#" className="text-gray-400 hover:text-white transition">Partners</Link></li>
               </ul>
             </div>
           </div>

@@ -39,14 +39,14 @@ export const purchaseOderApiSlice = apiSlice.injectEndpoints({
 
     getPurchseOrderLineItems: builder.query({
       query: (reference) => ({
-        url: `/${management_api}/line-item/?reference=${reference}`,
+        url: `/${management_api}/purchase-orders/${reference}/line_items/`,
         method: 'GET',
         service: service,
       }),
     }),
     createPurchaseOrderLineItem: builder.mutation({
-      query: (  data:Partial<PurchaseOrderLineItem> ) => ({
-        url: `/${management_api}/line-item/`,
+      query: ({ data, purchase_order_id }: { data: Partial<PurchaseOrderLineItem>, purchase_order_id: string }) => ({
+        url: `/${management_api}/purchase-orders/${purchase_order_id}/add_line_item/`,
         method: 'POST',
         body: data,
         service: service,
