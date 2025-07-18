@@ -38,7 +38,7 @@ const unitOptions = units.map((unit: any) => ({
   }));
 
 const categoryOptions = categories.map((cat: any) => ({
-  value: cat.id,
+  value: cat.name,
   text: cat.name,
 }));
 
