@@ -14,6 +14,7 @@ import {AIBulkCreateModal} from './AIBulkCreateModal';
 import { TableImageHover } from '../common/table-image-render';
 import { Edit, Trash2, Eye, Copy, BarChart3, Package, ShoppingCart, ToggleLeftIcon } from "lucide-react"
 import { toast } from 'react-toastify';
+import { getCurrencySymbolForProfile } from '@/lib/currency-utils';
 
   
 
@@ -53,13 +54,13 @@ const inventoryColumns: Column<ProductData>[] = [
     className: 'font-medium',
   },
   {
-    header: 'Base Cost Price',
+    header: `Base Cost Price (${getCurrencySymbolForProfile()})`,
     accessor: 'cost_price',
     render: (value) => value || '0',
     info: 'Category to which the inventory belong',
   },
   {
-    header: 'Base Price',
+    header: `Base Price (${getCurrencySymbolForProfile()})`,
     accessor: 'base_price',
     render: (value) => value || '0',
     info: 'Category to which the inventory belong',

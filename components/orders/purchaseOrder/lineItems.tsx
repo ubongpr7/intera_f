@@ -6,7 +6,16 @@ import { useState } from "react";
 import { PageHeader } from "../../inventory/PageHeader";
 import CustomCreateCard from '../../common/createCard';
 import {  useGetStockItemDataQuery } from "@/redux/features/stock/stockAPISlice";
+import { getCurrencySymbol } from "@/lib/currency-utils";
 
+function PurchaseOrderLineItems({reference,currency}:{reference:string,currency:string}) {
+    const {data:lineItems,isLoading:lineItemsLoading,refetch,error}=useGetPurchseOrderLineItemsQuery(reference)
+    const [createLineItem, { isLoading: lineItemCreateLoading }] = useCreatePurchaseOrderLineItemMutation();
+    const [isCreateOpen, setIsCreateOpen] = useState(false); // Renamed for clarity
+    const {data:stockItems,isLoading:stockItemsLoading,}=useGetStockItemDataQuery(reference)
+    
+
+    
 
 const inventoryColumns: Column<PurchaseOrderLineItem>[] = [
   {
@@ -31,7 +40,7 @@ const inventoryColumns: Column<PurchaseOrderLineItem>[] = [
     className: 'font-medium',
   },
   {
-    header: 'Unit Price',
+    header: `Unit Price (${getCurrencySymbol(currency)})`,
     accessor: 'unit_price',
     className: 'font-medium',
   },
@@ -55,12 +64,6 @@ const inventoryColumns: Column<PurchaseOrderLineItem>[] = [
   
 ];
 
-function PurchaseOrderLineItems({reference}:{reference:string}) {
-    const {data:lineItems,isLoading:lineItemsLoading,refetch,error}=useGetPurchseOrderLineItemsQuery(reference)
-    const [createLineItem, { isLoading: lineItemCreateLoading }] = useCreatePurchaseOrderLineItemMutation();
-    const [isCreateOpen, setIsCreateOpen] = useState(false); // Renamed for clarity
-    const {data:stockItems,isLoading:stockItemsLoading,}=useGetStockItemDataQuery(reference)
-    
     const handleCreate = async (createdData: Partial<PurchaseOrderLineItem>) => {
     try {   
         const response = await createLineItem({data:createdData,purchase_order_id:reference});

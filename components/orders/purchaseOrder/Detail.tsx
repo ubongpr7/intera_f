@@ -40,13 +40,14 @@ import {
 import { ActionItem as CommonActionItem } from '../../interfaces/common';
 import { toast } from 'react-toastify';
 import { getCurrencySymbol } from '@/lib/currency-utils';
+import { useEffect } from 'react';
 
 interface ActionItem extends CommonActionItem {
   icon: LucideIcon;
 }
 
 
-export default function PurchseOderDataDetail({ id }: { id: string }) {
+export default function PurchseOderDataDetail({ id,setCurrency }: { id: string,setCurrency:(currency:string)=>void }) {
   const { data: purchseOderData, isLoading,refetch  } = useGetPurchaseOderQuery(id);
   const PurchaseOrderInterface = purchseOderData as PurchaseOrderInterface;
   const [updatepurchseOderData,{isLoading:updateIsLoading}] = useUpdatePurchaseOderMutation();
@@ -72,6 +73,11 @@ const { data: staff } = useGetCompanyUsersQuery()
       text: `${getCurrencySymbol(currency.code)} ${currency.code} `
     }));
 
+    useEffect(()=>{
+      if (purchseOderData){
+        setCurrency(purchseOderData.order_currency||'USD')
+      }
+    },[purchseOderData])
   const staffUsers = staff||[]
   
   const staffOptions = staffUsers.map(staff => ({

@@ -1,7 +1,8 @@
-
-import PurchseOderDataDetail from "../../../../components/orders/purchaseOrder/Detail";
-import Tabs from '../../../../components/common/Tabs';
-import PurchaseOrderLineItems from "../../../../components/orders/purchaseOrder/lineItems";
+'use client'
+import { useState } from 'react'
+import PurchseOderDataDetail from "@/components/orders/purchaseOrder/Detail";
+import Tabs from '@/components/common/Tabs';
+import PurchaseOrderLineItems from "@/components/orders/purchaseOrder/lineItems";
 
 export default async function PurchseOderDataDetailPage({
   params,
@@ -9,27 +10,28 @@ export default async function PurchseOderDataDetailPage({
   params: Promise<{ reference: string }>;
 }) {
   const reference = (await params).reference;
+  const [currency,setCurrency] = useState('USD');
   const tabs = [
       {
         id: 'details',
         label: 'Order Details',
-        content:<PurchseOderDataDetail id={reference} />
+        content:<PurchseOderDataDetail id={reference} setCurrency={setCurrency} />
 
       },
      
       {
         id: 'items',
         label: 'Order Items',
-        content:<PurchaseOrderLineItems reference={reference} />
+        content:<PurchaseOrderLineItems reference={reference} currency={currency} />
 
       },
      
-      {
-        id: 'settings',
-        label: 'Settings',
-        content:<PurchseOderDataDetail id={reference} />
+      // {
+      //   id: 'settings',
+      //   label: 'Settings',
+      //   content:<PurchseOderDataDetail id={reference} />
 
-      },
+      // },
      
       
       
