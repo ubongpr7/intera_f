@@ -49,7 +49,7 @@ interface ActionItem extends CommonActionItem {
 interface Props {
   purchaseOrderData: PurchaseOrderInterface ;
   isLoading: boolean;
-  refetch: () => Promise<void>;
+  refetch: () => void;
 }
 
 

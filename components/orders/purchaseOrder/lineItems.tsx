@@ -13,7 +13,7 @@ interface Props {
   currency: string;
   lineItemsLoading: boolean;
   lineItems: PurchaseOrderLineItem[];
-  refetch: () => Promise<void>;
+  refetch: () => void;
 }
 
 

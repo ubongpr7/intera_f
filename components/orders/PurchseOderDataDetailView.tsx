@@ -14,14 +14,14 @@ reference}: {reference:string}) {
       {
         id: 'details',
         label: 'Order Details',
-        content:<PurchseOderDataDetail purchaseOrderData={purchaseOrderData} isLoading={isLoading} refetch={refetch}} />
+        content:<PurchseOderDataDetail purchaseOrderData={purchaseOrderData} isLoading={isLoading} refetch={refetch} />
 
       },
      
       {
         id: 'items',
         label: 'Order Items',
-        content:<PurchaseOrderLineItems  reference={reference} currency={purchaseOrderData.order_currency} lineItemsLoading={isLoading} lineItems={purchaseOrderData.line_items} refetch={refetch} />
+        content:<PurchaseOrderLineItems  reference={reference} currency={purchaseOrderData.order_currency||'USD'} lineItemsLoading={isLoading} lineItems={purchaseOrderData?.line_items||[]} refetch={refetch} />
 
       },
      
