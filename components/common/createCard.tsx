@@ -164,13 +164,15 @@ export default function CustomCreateCard<T extends Record<string, any>>({
       "alert_threshold",
       "supplier_reliability_score",
     ];
-    
+    const percentageList=['tax_rate','discount_rate',]
     const value = defaultValues[key];
     if (selectOptions?.[key]) return "select";
     if (typeof value === "boolean") return "checkbox";
 
+
     if (typeof value === "number") return "number";
     if (percentageFields.includes(keyStr)) return "percentage";
+    if (percentageList.includes(keyStr)) return "percentage";
     if (String(key).toLocaleLowerCase().startsWith('allow')) return 'checkbox';
     if (String(key).toLocaleLowerCase().endsWith('percentage')) return 'percentage';
     if (String(key).toLocaleLowerCase().endsWith('multiplier')) return 'number';
