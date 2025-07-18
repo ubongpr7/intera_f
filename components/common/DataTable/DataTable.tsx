@@ -279,7 +279,7 @@ export function DataTable<T>({
             <tr>
               {/* Selection header */}
               {hasGeneralButtons && (
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
+                <th className="px-4 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
                   <input
                     type="checkbox"
                     checked={selectAll}
@@ -290,14 +290,14 @@ export function DataTable<T>({
               )}
               {/* Row number header */}
               {showRowNumbers && (
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
+                <th className="px-4 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
                   {rowNumberHeader}
                 </th>
               )}
               {columns.map((column, idx) => (
                 <th
                   key={idx}
-                  className={`px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                  className={`px-3 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
                     column.headerClassName || ""
                   }`}
                 >
@@ -307,7 +307,7 @@ export function DataTable<T>({
               ))}
               {hasActions && (
                 <th
-                  className={`px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${actionsColumnWidth}`}
+                  className={`px-3 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${actionsColumnWidth}`}
                 >
                   {actionsColumnHeader}
                 </th>
@@ -343,7 +343,7 @@ export function DataTable<T>({
                   const value =
                     typeof column.accessor === "function" ? column.accessor(row) : row[column.accessor as keyof T]
                   return (
-                    <td key={colIndex} className={`px-3 py-2 text-sm text-gray-900 relativewhitespace-nowrap ${column.className || ""}`}>
+                    <td key={colIndex} className={`px-3 py-1 text-sm text-gray-900 relativewhitespace-nowrap ${column.className || ""}`}>
                       {column.render ? column.render(value, row) : (value as React.ReactNode)}
                     </td>
                   )
