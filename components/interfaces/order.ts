@@ -43,7 +43,7 @@ export  interface PurchaseOrderInterface extends BaseOrder, TotalPriceMixin {
     supplier: number; 
     supplier_reference?: string;
     received_by?: number;
-    status?: string; 
+    status: string; 
     issue_date?: string; 
     complete_date?: string; 
     attachments?: Attachment[];

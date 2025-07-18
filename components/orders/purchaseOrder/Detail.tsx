@@ -46,15 +46,19 @@ interface ActionItem extends CommonActionItem {
   icon: LucideIcon;
 }
 
+interface Props {
+  purchaseOrderData: PurchaseOrderInterface ;
+  isLoading: boolean;
+  refetch: () => Promise<void>;
+}
 
-export default function PurchseOderDataDetail({ id,setCurrency }: { id: string,setCurrency:(currency:string)=>void }) {
-  const { data: purchseOderData, isLoading,refetch  } = useGetPurchaseOderQuery(id);
-  const PurchaseOrderInterface = purchseOderData as PurchaseOrderInterface;
-  const [updatepurchseOderData,{isLoading:updateIsLoading}] = useUpdatePurchaseOderMutation();
+
+export default function purchaseOrderDataDetail({ purchaseOrderData, isLoading,refetch}: Props) {
+  const [updatepurchaseOrderData,{isLoading:updateIsLoading}] = useUpdatePurchaseOderMutation();
 
   
   const handleUpdate = async (updatedData: Partial<PurchaseOrderInterface>) => {
-    await updatepurchseOderData({ id: PurchaseOrderInterface.id, data: updatedData }).unwrap();
+    await updatepurchaseOrderData({ id: purchaseOrderData.id, data: updatedData }).unwrap();
     await refetch();
 
   };
@@ -73,11 +77,6 @@ const { data: staff } = useGetCompanyUsersQuery()
       text: `${getCurrencySymbol(currency.code)} ${currency.code} `
     }));
 
-    useEffect(()=>{
-      if (purchseOderData){
-        setCurrency(purchseOderData.order_currency||'USD')
-      }
-    },[purchseOderData])
   const staffUsers = staff||[]
   
   const staffOptions = staffUsers.map(staff => ({
@@ -107,7 +106,7 @@ const { data: staff } = useGetCompanyUsersQuery()
   const [issueOrder, { isLoading: issueIsLoading }] = useIssuePurchaseOderMutation();
   
   const handleApproveOrder=async () => {
-     try {await approveOrder(purchseOderData?.id).unwrap();
+     try {await approveOrder(purchaseOrderData?.id).unwrap();
      await refetch();
      }
      catch (error) {
@@ -124,7 +123,7 @@ const { data: staff } = useGetCompanyUsersQuery()
   }
   const handleCompleteOrder=async () => {
     try {
-      await completeOrder(purchseOderData?.id).unwrap();
+      await completeOrder(purchaseOrderData?.id).unwrap();
       await refetch();
     }
     catch (error) {
@@ -136,7 +135,7 @@ const { data: staff } = useGetCompanyUsersQuery()
   }
   const handleMarkReceived=async () => {
     try {
-      await receiveOrder(purchseOderData?.id).unwrap();
+      await receiveOrder(purchaseOrderData?.id).unwrap();
       await refetch();
     }
     catch (error) {
@@ -160,7 +159,7 @@ const { data: staff } = useGetCompanyUsersQuery()
   }
 
   const handleIssueOrder=async () => {
-     try {await issueOrder(purchseOderData?.id).unwrap();
+     try {await issueOrder(purchaseOrderData?.id).unwrap();
      await refetch();
      }
      catch (error) {
@@ -175,14 +174,14 @@ const { data: staff } = useGetCompanyUsersQuery()
         text: 'Approve Order',
         action: async () => handleApproveOrder(),
         helpText: 'Approve Order for Supplier Issuance',
-        disabled: purchseOderData?.status !== PurchaseOrderStatus.pending
+        disabled: purchaseOrderData?.status !== PurchaseOrderStatus.pending
       },
       {
         icon: XCircle,
         text: 'Reject Order',
         action: async () => handleRejectOrder(),
         helpText: 'Reject this purchase order',
-        disabled: purchseOderData?.status !== PurchaseOrderStatus.pending
+        disabled: purchaseOrderData?.status !== PurchaseOrderStatus.pending
       },
     
       // Issuance Flow  
@@ -191,7 +190,7 @@ const { data: staff } = useGetCompanyUsersQuery()
         text: 'Issue Order',
         action: async () => handleIssueOrder(),
         helpText: 'Issue order to Supplier',
-        disabled: purchseOderData?.status !== PurchaseOrderStatus.approved
+        disabled: purchaseOrderData?.status !== PurchaseOrderStatus.approved
       },
     
       // Receiving Flow
@@ -200,7 +199,7 @@ const { data: staff } = useGetCompanyUsersQuery()
         text: 'Mark as Received',
         action: async () => handleMarkReceived(),
         helpText: 'Confirm physical receipt of goods',
-        disabled: purchseOderData?.status !== PurchaseOrderStatus.issued
+        disabled: purchaseOrderData?.status !== PurchaseOrderStatus.issued
       },
     
       // Completion Flow
@@ -209,7 +208,7 @@ const { data: staff } = useGetCompanyUsersQuery()
         text: 'Mark Complete',
         action: async () => handleCompleteOrder(),
         helpText: 'Finalize order processing',
-        disabled: purchseOderData?.status !== PurchaseOrderStatus.received
+        disabled: purchaseOrderData?.status !== PurchaseOrderStatus.received
       },
     
       // Return Flow
@@ -221,7 +220,7 @@ const { data: staff } = useGetCompanyUsersQuery()
         disabled: ![
           PurchaseOrderStatus.received, 
           PurchaseOrderStatus.completed
-        ].includes(purchseOderData?.status)
+        ].includes(purchaseOrderData?.status)
       },
     
       // Cancellation Flow
@@ -234,7 +233,7 @@ const { data: staff } = useGetCompanyUsersQuery()
           PurchaseOrderStatus.pending,
           PurchaseOrderStatus.approved,
           PurchaseOrderStatus.issued
-        ].includes(purchseOderData?.status)
+        ].includes(purchaseOrderData?.status)
       },
     
       // Document Actions
@@ -243,14 +242,14 @@ const { data: staff } = useGetCompanyUsersQuery()
         text: 'Download Bill',
         action: async () => handleDownloadBill(),
         helpText: 'Export Purchase Order Bill as PDF',
-        disabled: purchseOderData?.status === PurchaseOrderStatus.pending
+        disabled: purchaseOrderData?.status === PurchaseOrderStatus.pending
       },
       {
         icon: Printer,
         text: 'Print Order',
         action: async () => handlePrintOrder(),
         helpText: 'Generate printable version',
-        disabled: purchseOderData?.status === PurchaseOrderStatus.pending
+        disabled: purchaseOrderData?.status === PurchaseOrderStatus.pending
       },
     
       // Supplementary Actions
@@ -275,7 +274,7 @@ const { data: staff } = useGetCompanyUsersQuery()
           PurchaseOrderStatus.pending,
           PurchaseOrderStatus.rejected,
           PurchaseOrderStatus.cancelled
-        ].includes(purchseOderData?.status)
+        ].includes(purchaseOrderData?.status)
       }
     ];
   
@@ -285,14 +284,14 @@ const { data: staff } = useGetCompanyUsersQuery()
   <LoadingAnimation text="Loading..." ringColor="#3b82f6" />
   </div>
   </div>;
-  if (!purchseOderData) return <div>Purchse Oder Data not found</div>;
+  if (!purchaseOrderData) return <div>Purchse Oder Data not found</div>;
   
   return (
     <div> 
     <DetailCard 
       interfaceKeys={PurchaseOrderInterfaceKeys}
     titleField={'reference'}
-      data={PurchaseOrderInterface}
+      data={purchaseOrderData}
       notEditableFields={notEditableFields}
       updateMutation={handleUpdate}
       excludeFields={[

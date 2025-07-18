@@ -8,8 +8,17 @@ import CustomCreateCard from '../../common/createCard';
 import {  useGetStockItemDataQuery } from "@/redux/features/stock/stockAPISlice";
 import { getCurrencySymbol } from "@/lib/currency-utils";
 
-function PurchaseOrderLineItems({reference,currency}:{reference:string,currency:string}) {
-    const {data:lineItems,isLoading:lineItemsLoading,refetch,error}=useGetPurchseOrderLineItemsQuery(reference)
+interface Props {
+  reference: string;
+  currency: string;
+  lineItemsLoading: boolean;
+  lineItems: PurchaseOrderLineItem[];
+  refetch: () => Promise<void>;
+}
+
+
+function PurchaseOrderLineItems({reference,currency,lineItemsLoading,lineItems,refetch}:Props) {
+    // const {data:lineItems,isLoading:lineItemsLoading,refetch,error}=useGetPurchseOrderLineItemsQuery(reference)
     const [createLineItem, { isLoading: lineItemCreateLoading }] = useCreatePurchaseOrderLineItemMutation();
     const [isCreateOpen, setIsCreateOpen] = useState(false); // Renamed for clarity
     const {data:stockItems,isLoading:stockItemsLoading,}=useGetStockItemDataQuery(reference)
