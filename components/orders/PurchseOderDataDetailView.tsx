@@ -21,7 +21,7 @@ reference}: {reference:string}) {
       {
         id: 'items',
         label: 'Order Items',
-        content:<PurchaseOrderLineItems  reference={reference} currency={purchaseOrderData.order_currency||'USD'} lineItemsLoading={isLoading} lineItems={purchaseOrderData?.line_items||[]} refetch={refetch} />
+        content:<PurchaseOrderLineItems  reference={reference} currency={purchaseOrderData?.order_currency||'USD'} lineItemsLoading={isLoading} lineItems={purchaseOrderData?.line_items||[]} refetch={refetch} />
 
       },
      
