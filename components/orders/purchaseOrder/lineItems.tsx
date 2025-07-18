@@ -19,7 +19,7 @@ function PurchaseOrderLineItems({reference,currency}:{reference:string,currency:
 
 const inventoryColumns: Column<PurchaseOrderLineItem>[] = [
   {
-    header: 'Quantity',
+    header: 'Product Name',
     accessor: 'stock_item_details',
     render:(value)=>value.name,
     className: 'font-medium',
@@ -45,17 +45,17 @@ const inventoryColumns: Column<PurchaseOrderLineItem>[] = [
     className: 'font-medium',
   },
   {
-    header: 'Total Tax',
-    accessor: 'tax_amount',
+    header: `Total Tax  (${getCurrencySymbol(currency)})`,
+    accessor: `tax_amount`,
     className: 'font-medium',
   },
   {
-    header: 'Total Discount',
+    header: `Total Discount  (${getCurrencySymbol(currency)})`,
     accessor: 'discount',
     className: 'font-medium',
   },
   {
-    header: 'Total Price',
+    header: `Total Price  (${getCurrencySymbol(currency)})`,
     accessor: 'total_price',
     className: 'font-medium',
   },
