@@ -31,14 +31,10 @@ const inventoryColumns: Column<PurchaseOrderLineItem>[] = [
   },
   {
     header: 'Quantity',
-    accessor: 'quantity',
+    accessor: 'quantity_w_unit',
     className: 'font-medium',
   },
-  {
-    header: 'unit',
-    accessor: 'unit',
-    className: 'font-medium',
-  },
+ 
   {
     header: `Unit Price (${getCurrencySymbol(currency)})`,
     accessor: 'unit_price',
