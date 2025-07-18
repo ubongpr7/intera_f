@@ -1,4 +1,4 @@
-import PurchseOderDataDetailView from "@/components/product/ProductDetailPage";
+import PurchseOderDataDetailView from "@/components/orders/PurchseOderDataDetailView";
 
 export default async function PurchseOderDataDetailPage({
   params,

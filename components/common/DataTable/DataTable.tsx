@@ -279,7 +279,7 @@ export function DataTable<T>({
             <tr>
               {/* Selection header */}
               {hasGeneralButtons && (
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
                   <input
                     type="checkbox"
                     checked={selectAll}
@@ -290,14 +290,14 @@ export function DataTable<T>({
               )}
               {/* Row number header */}
               {showRowNumbers && (
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
                   {rowNumberHeader}
                 </th>
               )}
               {columns.map((column, idx) => (
                 <th
                   key={idx}
-                  className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                  className={`px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
                     column.headerClassName || ""
                   }`}
                 >
@@ -307,7 +307,7 @@ export function DataTable<T>({
               ))}
               {hasActions && (
                 <th
-                  className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${actionsColumnWidth}`}
+                  className={`px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${actionsColumnWidth}`}
                 >
                   {actionsColumnHeader}
                 </th>
@@ -323,7 +323,7 @@ export function DataTable<T>({
               >
                 {/* Selection cell */}
                 {hasGeneralButtons && (
-                  <td className="px-4 py-4 w-12">
+                  <td className="px-4 py-4 w-12 whitespace-nowrap">
                     <input
                       type="checkbox"
                       checked={selectedIds.includes(getRowId!(row))}
@@ -337,19 +337,19 @@ export function DataTable<T>({
                 )}
                 {/* Row number cell */}
                 {showRowNumbers && (
-                  <td className="px-4 py-4 text-sm font-medium text-gray-500 w-16">{startNumberFrom + rowIndex}</td>
+                  <td className="px-4 py-4 text-sm font-medium text-gray-500 w-16 whitespace-nowrap">{startNumberFrom + rowIndex}</td>
                 )}
                 {columns.map((column, colIndex) => {
                   const value =
                     typeof column.accessor === "function" ? column.accessor(row) : row[column.accessor as keyof T]
                   return (
-                    <td key={colIndex} className={`px-6 py-4 text-sm text-gray-900 relative ${column.className || ""}`}>
+                    <td key={colIndex} className={`px-3 py-2 text-sm text-gray-900 relativewhitespace-nowrap ${column.className || ""}`}>
                       {column.render ? column.render(value, row) : (value as React.ReactNode)}
                     </td>
                   )
                 })}
                 {hasActions && (
-                  <td className={`px-6 py-4 text-sm ${actionsColumnWidth}`}>{renderActionButtons(row)}</td>
+                  <td className={`px-3 py-4 text-sm whitespace-nowrap ${actionsColumnWidth}`}>{renderActionButtons(row)}</td>
                 )}
               </tr>
             ))}
