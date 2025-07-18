@@ -1,8 +1,4 @@
-'use client'
-import { useState } from 'react'
-import PurchseOderDataDetail from "@/components/orders/purchaseOrder/Detail";
-import Tabs from '@/components/common/Tabs';
-import PurchaseOrderLineItems from "@/components/orders/purchaseOrder/lineItems";
+import PurchseOderDataDetailView from "@/components/product/ProductDetailPage";
 
 export default async function PurchseOderDataDetailPage({
   params,
@@ -10,35 +6,10 @@ export default async function PurchseOderDataDetailPage({
   params: Promise<{ reference: string }>;
 }) {
   const reference = (await params).reference;
-  const [currency,setCurrency] = useState('USD');
-  const tabs = [
-      {
-        id: 'details',
-        label: 'Order Details',
-        content:<PurchseOderDataDetail id={reference} setCurrency={setCurrency} />
-
-      },
-     
-      {
-        id: 'items',
-        label: 'Order Items',
-        content:<PurchaseOrderLineItems reference={reference} currency={currency} />
-
-      },
-     
-      // {
-      //   id: 'settings',
-      //   label: 'Settings',
-      //   content:<PurchseOderDataDetail id={reference} />
-
-      // },
-     
-      
-      
-    ];
+  
   return (
     <div>
-      <Tabs items={tabs} />
+      <PurchseOderDataDetailView reference={reference}  />
     </div>
   );
 }
