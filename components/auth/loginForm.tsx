@@ -64,13 +64,8 @@ export default function LoginForm() {
         email: verifiedEmail,
         password: data.password,
       }).unwrap();
-      setCookie('userID', userData.id);
       toast.success("Login successful. Welcome back!");
-      if (!userData.provider) {
-        router.push("/profile/create");
-      } else {
       router.push("/dashboard");
-      }
     } catch (err) {
       const error = err as LoginErrorResponse;
       const errorMessage = error.data?.detail || "Login failed.";
