@@ -11,7 +11,7 @@ import { AuthGuard } from '../users/AuthGuard';
 import { publicRoutes } from '../../redux/features/users/useAuth';
 import NextTopLoader from 'nextjs-toploader';
 import { useRefreshMutation } from '@/redux/features/authApiSlice';
-
+import ChatWidget from '../agents/chatAgents';
 const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
 
   const SidebarCollapsed = useAppSelector((state) => state.global.isSidebarCollapsed);
@@ -42,6 +42,7 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
     {!shouldHideDashboardUI(pathname) &&  <Navbar user={user} />}
     
     {children}
+    <ChatWidget/>
     </main>
     </div>
   )
