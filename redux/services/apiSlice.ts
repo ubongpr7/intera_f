@@ -141,6 +141,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
         api_key:string
         provider:string
         tavily_api_key:string
+        agent_name:string
 
       }
       setCookie("accessToken", response.access, { maxAge:  accessAge, path: "/" })
@@ -148,6 +149,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
       setCookie("api_key", response.api_key, { maxAge:  accessAge, path: "/" })
       setCookie("provider", response.provider, { maxAge:  accessAge, path: "/" })
       setCookie("tavily_api_key", response.tavily_api_key, { maxAge:  accessAge, path: "/" })
+      setCookie("agent_name", response.agent_name, { maxAge:  accessAge, path: "/" })
       setCookie("refreshToken", response.refresh, { maxAge:refreshAge, path: "/" })
       setCookie("userID", response.id, { maxAge: refreshAge, path: "/" })
       setCookie("profile", response.profile, { maxAge: refreshAge, path: "/" })
@@ -160,6 +162,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
       deleteCookie('api_key')
       deleteCookie('provider')
       deleteCookie('tavily_api_key')
+      deleteCookie('agent_name')
       deleteCookie("userID")
       deleteCookie("profile")
       deleteCookie("currency")
