@@ -12,6 +12,7 @@ import { publicRoutes } from '../../redux/features/users/useAuth';
 import NextTopLoader from 'nextjs-toploader';
 import { useRefreshMutation } from '@/redux/features/authApiSlice';
 import ChatWidget from '../agents/chatAgents';
+import { getCookie } from 'cookies-next';
 const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
 
   const SidebarCollapsed = useAppSelector((state) => state.global.isSidebarCollapsed);
@@ -42,7 +43,10 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
     {!shouldHideDashboardUI(pathname) &&  <Navbar user={user} />}
     
     {children}
-    <ChatWidget/>
+    {getCookie('api_key') &&(
+      <ChatWidget/>
+      
+    )}
     </main>
     </div>
   )

@@ -4,6 +4,7 @@ import { setAuth, logout } from "../features/authSlice"
 import { Mutex } from "async-mutex"
 import { setCookie, getCookie, deleteCookie } from "cookies-next"
 import env from "../../env_file"
+import { set } from "nprogress"
 
 export type serviceType = "users" | "inventory"| "common"|"product"|'pos'
 const accessAge = 60*60*24
@@ -136,8 +137,17 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
         id: string
         profile: string
         currency:string
+        model_name:string
+        api_key:string
+        provider:string
+        tavily_api_key:string
+
       }
       setCookie("accessToken", response.access, { maxAge:  accessAge, path: "/" })
+      setCookie("model_name", response.model_name, { maxAge:  accessAge, path: "/" })
+      setCookie("api_key", response.api_key, { maxAge:  accessAge, path: "/" })
+      setCookie("provider", response.provider, { maxAge:  accessAge, path: "/" })
+      setCookie("tavily_api_key", response.tavily_api_key, { maxAge:  accessAge, path: "/" })
       setCookie("refreshToken", response.refresh, { maxAge:refreshAge, path: "/" })
       setCookie("userID", response.id, { maxAge: refreshAge, path: "/" })
       setCookie("profile", response.profile, { maxAge: refreshAge, path: "/" })
@@ -146,6 +156,10 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
     } else if (url === "/api/v1/accounts/logout/") {
       deleteCookie("accessToken")
       deleteCookie("refreshToken")
+      deleteCookie('model_name')
+      deleteCookie('api_key')
+      deleteCookie('provider')
+      deleteCookie('tavily_api_key')
       deleteCookie("userID")
       deleteCookie("profile")
       deleteCookie("currency")
