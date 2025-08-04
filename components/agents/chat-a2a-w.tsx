@@ -2,9 +2,8 @@
 
 import type React from "react"
 
-import { getCookie } from "cookies-next"
-import { useState, useRef, useEffect } from "react"
-import { Bot, Send, Maximize, Minimize, X } from "lucide-react" // Added Maximize, Minimize, X
+import { useRef, useEffect } from "react" // Keep useState, useRef, useEffect for internal UI logic
+import { Bot, Send, Maximize, Minimize, X } from "lucide-react"
 
 type MessageRole = "user" | "assistant"
 type Message = {
@@ -14,88 +13,35 @@ type Message = {
 
 interface AgentChatProps {
   onClose: () => void
-  isFullScreen: boolean // New prop
-  toggleFullScreen: () => void // New prop
+  isFullScreen: boolean
+  toggleFullScreen: () => void
+  // New props for chat state and actions
+  messages: Message[]
+  input: string
+  isLoading: boolean
+  setInput: (input: string) => void
+  handleSubmit: (e: React.FormEvent) => Promise<void>
 }
 
-export default function AgentChat({ onClose, isFullScreen, toggleFullScreen }: AgentChatProps) {
-  const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+export default function AgentChat({
+  onClose,
+  isFullScreen,
+  toggleFullScreen,
+  messages,
+  input,
+  isLoading,
+  setInput,
+  handleSubmit,
+}: AgentChatProps) {
   const messageEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const [sessionId, setSessionId] = useState(null) // Retaining sessionId for functionality
 
-  const getAuthHeaders = () => {
-    const token = getCookie("accessToken") // Or from your auth context
-    const profileId = getCookie("profile")
-
-    return {
-      Authorization: `Bearer ${token}`,
-      "X-Profile-ID": `${profileId}`,
-    }
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!input.trim() || isLoading) return
-
-    const userMessage: Message = {
-      role: "user",
-      content: input,
-    }
-    const newMessages = [...messages, userMessage]
-    setMessages(newMessages)
-    setInput("")
-    setIsLoading(true)
-
-    try {
-      const response = await fetch("http://localhost:8000/api/ask", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify({
-          message: userMessage.content, // Send only the current message content
-          session_id: sessionId,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error(await response.text())
-      }
-
-      const data = await response.json()
-
-      // Update session ID if this is the first message
-      if (!sessionId) {
-        setSessionId(data.session_id)
-      }
-
-      const assistantMessage: Message = {
-        role: "assistant",
-        content: data.response,
-      }
-
-      setMessages((prev) => [...prev, assistantMessage])
-    } catch (error) {
-      console.error("Error talking to agent:", error)
-      const errorMessage: Message = {
-        role: "assistant",
-        content: "Sorry, I couldn't process that request.",
-      }
-      setMessages((prev) => [...prev, errorMessage])
-      alert("Error communicating with agent. Please check console for details.")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
+  // Scroll to bottom when messages or loading state changes
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages, isLoading]) // Scroll when messages or loading state changes
+  }, [messages, isLoading])
 
+  // Focus input when not loading
   useEffect(() => {
     if (!isLoading && inputRef.current) {
       inputRef.current.focus()
@@ -175,7 +121,7 @@ export default function AgentChat({ onClose, isFullScreen, toggleFullScreen }: A
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type your message..."
-            className="flex-1 text-gray-100 border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 text-gray-800 border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={isLoading}
             aria-label="Type your message"
           />
