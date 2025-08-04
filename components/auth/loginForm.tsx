@@ -13,6 +13,7 @@ import { setCookie } from 'cookies-next';
 interface VerificationFormData {
   code: string;
 }
+
 export default function LoginForm() {
   const [currentStep, setCurrentStep] = useState<"EMAIL" | "VERIFICATION" | "PASSWORD">("EMAIL");
   const [verifiedEmail, setVerifiedEmail] = useState<string>("");

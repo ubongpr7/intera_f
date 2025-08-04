@@ -883,7 +883,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
         service: service,
       }),
     }),
-
+    
     exportPriceHistoryCsv: builder.query({
       query: (params = {}) => ({
         url: `/${product_api}/export/price-history/csv/`,

@@ -144,7 +144,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
         agent_name:string
 
       }
-      setCookie("accessToken", response.access, { maxAge:  accessAge, path: "/" })
+      setCookie("accessToken", response.access, { maxAge:  accessAge,httpOnly: false, path: "/",sameSite: 'lax' })
       setCookie("model_name", response.model_name, { maxAge:  accessAge, path: "/" })
       setCookie("api_key", response.api_key, { maxAge:  accessAge, path: "/" })
       setCookie("provider", response.provider, { maxAge:  accessAge, path: "/" })
@@ -211,7 +211,8 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
               const newAccessToken = data.access
               
               const newRefreshToken = data.refresh
-              setCookie("accessToken", newAccessToken, { maxAge:   accessAge, path: "/" })
+              setCookie("accessToken", newAccessToken, { maxAge:  accessAge,httpOnly: false, path: "/",sameSite: 'lax' })
+
               setCookie("refreshToken", newRefreshToken, { maxAge:   refreshAge, path: "/" })
               
               api.dispatch(setAuth())
