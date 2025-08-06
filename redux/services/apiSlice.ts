@@ -6,7 +6,7 @@ import { setCookie, getCookie, deleteCookie } from "cookies-next"
 import env from "../../env_file"
 import { set } from "nprogress"
 
-export type serviceType = "users" | "inventory"| "common"|"product"|'pos'
+export type serviceType = "users" | "inventory"| "common"|"product"|'pos'| "agent"
 const accessAge = 60*60*24
 const refreshAge = 60*60*24
 export const serviceMap: Record<serviceType, string> = {
@@ -15,6 +15,7 @@ export const serviceMap: Record<serviceType, string> = {
   common: env.COMMON_BACKEND_URL,
   product: env.PRODUCT_BACKEND_URL,
   pos: env.POS_BACKEND_URL,
+  agent: env.AGENT_BACKEND_URL,
 }
 
 const mutex = new Mutex()
@@ -60,6 +61,7 @@ const baseQueries = {
   common: createBaseQuery(serviceMap.common),
   product: createBaseQuery(serviceMap.product),
   pos: createBaseQuery(serviceMap.pos),
+  agent: createBaseQuery(serviceMap.agent),
 }
 
 const fileUploadQueries = {
@@ -68,6 +70,7 @@ const fileUploadQueries = {
   common: createBaseQuery(serviceMap.common, true),
   product: createBaseQuery(serviceMap.product, true),
   pos: createBaseQuery(serviceMap.pos, true),
+  agent: createBaseQuery(serviceMap.agent, true),
 }
 
 // Helper function to determine if the request is a file upload

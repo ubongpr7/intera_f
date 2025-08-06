@@ -35,8 +35,6 @@ export default function AgentChat({
 }: AgentChatProps) {
   const messageEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-
-  // Scroll to bottom when messages or loading state changes
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, isLoading])

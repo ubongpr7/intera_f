@@ -3,10 +3,11 @@
 import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
-import { MessageSquareText, X } from "lucide-react"
+import { MessageSquareText, X } from 'lucide-react'
 import AgentChat from "./chat-a2a-w"
-import { getCookie } from "cookies-next" // Import getCookie here
-import { v4 as uuidv4 } from "uuid" // Import uuid for session_id
+// import { getCookie } from "cookies-next" // No longer needed, headers handled by RTK Query
+import { v4 as uuidv4 } from "uuid"
+import { useAskAgentMutationMutation} from "../../redux/features/agent/agentAPISlice";
 
 type MessageRole = "user" | "assistant"
 type Message = {
@@ -20,11 +21,13 @@ export default function AIChatWidget() {
   const widgetRef = useRef<HTMLDivElement>(null)
   const toggleBtnRef = useRef<HTMLButtonElement>(null)
 
-  // Lifted state from AgentChat
+  // Lifted state for chat history
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
+
+  // Redux Toolkit Query mutation hook
+  const [askAgent, { isLoading }] = useAskAgentMutationMutation() // Use isLoading from the mutation
 
   const toggleChat = () => {
     setIsOpen((prev) => !prev)
@@ -70,17 +73,7 @@ export default function AIChatWidget() {
     return () => document.removeEventListener("keydown", handleKeyDown)
   }, [isOpen, isFullScreen])
 
-  // getAuthHeaders function (moved from AgentChat)
-  const getAuthHeaders = () => {
-    const token = getCookie("accessToken")
-    const profileId = getCookie("profile")
-    return {
-      Authorization: `Bearer ${token}`,
-      "X-Profile-ID": `${profileId}`,
-    }
-  }
-
-  // handleSubmit function (moved from AgentChat)
+  // handleSubmit function now uses RTK Query mutation
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!input.trim() || isLoading) return
@@ -92,35 +85,24 @@ export default function AIChatWidget() {
     const newMessages = [...messages, userMessage]
     setMessages(newMessages)
     setInput("")
-    setIsLoading(true)
 
     try {
-      const currentSessionId = sessionId || uuidv4() // Generate new session ID if not exists
+      const currentSessionId = sessionId || uuidv4()
       if (!sessionId) {
         setSessionId(currentSessionId)
       }
 
-      const response = await fetch("http://localhost:8000/api/ask", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify({
+      // Call the RTK Query mutation
+      const response = await askAgent({
+        data: {
           message: userMessage.content,
           session_id: currentSessionId,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error(await response.text())
-      }
-
-      const data = await response.json()
+        },
+      }).unwrap() // .unwrap() to get the actual response or throw an error
 
       const assistantMessage: Message = {
         role: "assistant",
-        content: data.response,
+        content: response.response, // Access response from the mutation result
       }
 
       setMessages((prev) => [...prev, assistantMessage])
@@ -132,14 +114,12 @@ export default function AIChatWidget() {
       }
       setMessages((prev) => [...prev, errorMessage])
       alert("Error communicating with agent. Please check console for details.")
-    } finally {
-      setIsLoading(false)
     }
   }
 
   const chatWindowClasses = isFullScreen
-    ? "fixed inset-0 w-full h-full rounded-none" // Full screen
-    : "absolute bottom-20 right-0 w-96 h-[500px] rounded-xl border border-gray-200" // Normal size
+    ? "fixed inset-0 w-full h-full rounded-none"
+    : "absolute bottom-20 right-0 w-96 h-[500px] rounded-xl border border-gray-200"
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
@@ -167,7 +147,7 @@ export default function AIChatWidget() {
             toggleFullScreen={toggleFullScreen}
             messages={messages}
             input={input}
-            isLoading={isLoading}
+            isLoading={isLoading} // Pass isLoading from RTK Query
             setInput={setInput}
             handleSubmit={handleSubmit}
           />
