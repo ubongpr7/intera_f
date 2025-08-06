@@ -4,7 +4,7 @@ const env = {
     INVENNTORY_BACKEND_URL: "https://dev.inventory.destinybuilders.africa/",
     PRODUCT_BACKEND_URL: "https://dev.product.destinybuilders.africa/",
     POS_BACKEND_URL: "http://localhost:8004/",
-    AGENT_BACKEND_URL: "https://dev.pos.destinybuilders.africa/",
+    AGENT_BACKEND_URL: "http://localhost:8004/",
   };
   
   
