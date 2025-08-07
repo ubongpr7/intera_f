@@ -150,7 +150,7 @@ export default function AIChatWidget() {
     const response = await askAgent({
         data: sendParams,
       }).unwrap()
-
+      console.log("Message sent successfully:", response)
       const assistantMessage: Message = {
         role: "assistant",
         content: response.response, // Access response from the mutation result
