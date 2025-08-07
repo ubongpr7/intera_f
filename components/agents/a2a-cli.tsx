@@ -5,9 +5,11 @@ import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { MessageSquareText, X } from 'lucide-react'
 import AgentChat from "./chat-a2a-w"
-// import { getCookie } from "cookies-next" // No longer needed, headers handled by RTK Query
-import { v4 as uuidv4 } from "uuid"
-import { useAskAgentMutationMutation} from "../../redux/features/agent/agentAPISlice";
+import { v4 as uuidv4 } from "uuid" // Import uuid for session_id
+import {
+  useAskAgentMutationMutation,
+  useCreateConversationMutationMutation,
+} from "@/redux/features/agent/agentAPISlice"
 
 type MessageRole = "user" | "assistant"
 type Message = {
@@ -24,10 +26,14 @@ export default function AIChatWidget() {
   // Lifted state for chat history
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
-  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [sessionId, setSessionId] = useState<string | null>(null) // This will be our conversation_id
 
-  // Redux Toolkit Query mutation hook
-  const [askAgent, { isLoading }] = useAskAgentMutationMutation() // Use isLoading from the mutation
+  // Redux Toolkit Query mutation hooks
+  const [askAgent, { isLoading: isSendingMessage }] = useAskAgentMutationMutation()
+  const [createConversation, { isLoading: isCreatingConversation }] = useCreateConversationMutationMutation()
+  // const [listMessages, { isLoading: isListingMessages }] = useListMessagesMutationMutation(); // Not used effectively
+
+  const isLoading = isSendingMessage || isCreatingConversation // Combined loading state
 
   const toggleChat = () => {
     setIsOpen((prev) => !prev)
@@ -73,30 +79,41 @@ export default function AIChatWidget() {
     return () => document.removeEventListener("keydown", handleKeyDown)
   }, [isOpen, isFullScreen])
 
+  // Effect to create a new conversation when the chat opens if no session exists
+  useEffect(() => {
+    if (isOpen && !sessionId && !isCreatingConversation) {
+      const startNewConversation = async () => {
+        try {
+          const response = await createConversation({}).unwrap()
+          setSessionId(response.result.conversation_id)
+          setMessages([]) 
+        } catch (error) {
+          console.error("Error creating new conversation:", error)
+          alert("Failed to start a new conversation. Please try again.")
+        }
+      }
+      startNewConversation()
+    }
+  }, [isOpen, sessionId, isCreatingConversation, createConversation])
+
   // handleSubmit function now uses RTK Query mutation
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!input.trim() || isLoading) return
+    if (!input.trim() || isLoading || !sessionId) return // Ensure sessionId exists before sending
 
     const userMessage: Message = {
       role: "user",
       content: input,
     }
-    const newMessages = [...messages, userMessage]
-    setMessages(newMessages)
+    setMessages((prev) => [...prev, userMessage]) // Optimistic update
     setInput("")
 
     try {
-      const currentSessionId = sessionId || uuidv4()
-      if (!sessionId) {
-        setSessionId(currentSessionId)
-      }
-
       // Call the RTK Query mutation
       const response = await askAgent({
         data: {
           message: userMessage.content,
-          session_id: currentSessionId,
+          session_id: sessionId, // Use the generated/existing sessionId
         },
       }).unwrap() // .unwrap() to get the actual response or throw an error
 
@@ -147,7 +164,7 @@ export default function AIChatWidget() {
             toggleFullScreen={toggleFullScreen}
             messages={messages}
             input={input}
-            isLoading={isLoading} // Pass isLoading from RTK Query
+            isLoading={isLoading} // Pass combined isLoading from RTK Query
             setInput={setInput}
             handleSubmit={handleSubmit}
           />
