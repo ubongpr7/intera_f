@@ -10,6 +10,7 @@ import {
   useSendMessageMutation,
   useCreateConversationMutation,
   useListMessagesMutation,
+  usePendingMessagesMutation,
 } from "@/redux/features/agent/agentAPISlice"
 import {
   AgentCard,
@@ -43,6 +44,7 @@ export default function AIChatWidget() {
   const [askAgent, { isLoading: isSendingMessage }] = useSendMessageMutation()
   const [createConversation, { isLoading: isCreatingConversation }] = useCreateConversationMutation()
   const [listMessages, { isLoading: isListingMessages }] = useListMessagesMutation();
+  const [pendingMessages, { isLoading: ispendingMessages }] = usePendingMessagesMutation();
 
   const isLoading = isSendingMessage || isCreatingConversation // Combined loading state
 
@@ -133,6 +135,28 @@ export default function AIChatWidget() {
     }
   }
 
+  const fetchPendingMessages = async () => {
+    if (!sessionId) return // Ensure sessionId exists before fetching pending messages
+    try {
+      const response = await pendingMessages({
+        data: {
+          id: uuidv4(),
+          method: "message/pending",
+          params: sessionId, 
+          jsonrpc: "2.0",
+        },
+      }).unwrap()
+      console.log("Pending messages fetched successfully:", response)
+      // const pendingMessages = response.result.messages.map((msg: A2AMessage) => ({
+      //   role: msg.role as MessageRole,
+      //   content: msg.parts.map((part: TextPart) => part.text).join(""),
+      // }))
+      // setMessages((prev) => [...prev, ...pendingMessages]) // Append pending messages to existing messages
+    } catch (error) {
+      console.error("Error fetching pending messages:", error)
+    }
+  }
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -179,7 +203,7 @@ export default function AIChatWidget() {
 
       setMessages((prev) => [...prev, assistantMessage])
       await fetchMessages() 
-
+      await fetchPendingMessages() // Fetch pending messages after sending
     } catch (error) {
       console.error("Error talking to agent:", error)
       const errorMessage: Message = {

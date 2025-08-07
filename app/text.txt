@@ -12,9 +12,105 @@
          'role': 'user'
          }}
 
+
+
+
 Received list messages request: 
 {'jsonrpc': '2.0', 
 'id': '21f1d9ec25674cd4b20e6d26025d05e3', 
 'method': 'message/list',
  'params': '27275cf1-9967-4ee8-a0d4-df9cf4b1a6f1'
- }
+ } 
+ response to /message/list
+ {jsonrpc: '2.0', id: 'eed2bbc87b6343ab9d91464755cff24f', result: Array(3), error: null}
+error
+: 
+null
+id
+: 
+"eed2bbc87b6343ab9d91464755cff24f"
+jsonrpc
+: 
+"2.0"
+result
+: 
+Array(3)
+0
+: 
+contextId
+: 
+"7a2450ee-b6f9-4209-94ef-f5d6ce9ca6a1"
+extensions
+: 
+null
+kind
+: 
+"message"
+messageId
+: 
+"c6bf3a7b-8175-4ae6-96e0-83b92f2a3924"
+metadata
+: 
+null
+parts
+: 
+[{…}]
+referenceTaskIds
+: 
+null
+role
+: 
+"user"
+taskId
+: 
+null
+[[Prototype]]
+: 
+Object
+1
+: 
+contextId
+: 
+"7a2450ee-b6f9-4209-94ef-f5d6ce9ca6a1"
+extensions
+: 
+null
+kind
+: 
+"message"
+messageId
+: 
+"24f8c133-114c-468a-9021-29311a23efcf"
+metadata
+: 
+null
+parts
+: 
+Array(1)
+0
+: 
+{kind: 'text', metadata: null, text: 'Hello! How can I assist you with your inventory today?'}
+length
+: 
+1
+[[Prototype]]
+: 
+Array(0)
+referenceTaskIds
+: 
+null
+role
+: 
+"agent"
+taskId
+: 
+null
+[[Prototype]]
+: 
+Object
+2
+: 
+{contextId: '7a2450ee-b6f9-4209-94ef-f5d6ce9ca6a1', extensions: null, kind: 'message', messageId: '01925042-5feb-4db7-b237-5543fb693ccf', metadata: null, …}
+length
+: 
+3
