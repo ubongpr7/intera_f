@@ -37,7 +37,7 @@ export default function AIChatWidget() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [sessionId, setSessionId] = useState<string | null>(null) // This will be our conversation_id
-
+  const [conversationId, setConversationId] = useState<string | null>(null) // This will be our conversation_id
   // Redux Toolkit Query mutation hooks
   const [askAgent, { isLoading: isSendingMessage }] = useSendMessageMutationMutation()
   const [createConversation, { isLoading: isCreatingConversation }] = useCreateConversationMutationMutation()
@@ -97,6 +97,7 @@ export default function AIChatWidget() {
           const response = await createConversation({}).unwrap()
           console.log("New conversation started with ID:", response.result.conversation_id, 'response: ', response)
           setSessionId(response.result.conversation_id)
+          setConversationId(response.id)
           setMessages([]) 
         } catch (error) {
           console.error("Error creating new conversation:", error)
@@ -121,9 +122,14 @@ export default function AIChatWidget() {
 
     try {
       const messageId = uuidv4();
-      const sendParams = {
-      message: {
+      const sendParams= {
+      contextId:sessionId,
+      'jsonrpc': '2.0',
+      id: conversationId,
+      method: 'message/send',
+      params: {
         messageId: messageId,
+        contextId: sessionId,
         role: "user",
         parts: [{ kind: "text", text: userMessage.content }],
         kind: "message",
@@ -132,16 +138,17 @@ export default function AIChatWidget() {
         blocking: true,
         accepted_output_modes: ["text/plain"],
       },
-      context_id:sessionId,
   
 
 
     };
-      const response = await askAgent({
-        data: {
-          params: sendParams,
-          session_id: sessionId, 
-        },
+//  'params': {'contextId': '2b820751-cf1f-4895-9f76-03047d0690e2', 
+//   'kind': 'message', 'messageId': '78e83c65-9c66-4a10-9db0-b76add7b14c4', 
+//   'parts': [{'kind': 'text', 'text': 'hi'}], 'role': 'user'}}
+
+    // {'jsonrpc': '2.0', 'id': 'db51cdc72f5240b7a013a08532a8786c', 'method': 'message/send',
+    const response = await askAgent({
+        data: sendParams,
       }).unwrap()
 
       const assistantMessage: Message = {
