@@ -17,6 +17,7 @@ import {
   TaskStatusUpdateEvent,
   TextPart,
   Message as A2AMessage,
+  MessageSendParams,
 } from "@a2a-js/sdk";
 
 
@@ -119,13 +120,29 @@ export default function AIChatWidget() {
     setInput("")
 
     try {
-      // Call the RTK Query mutation
+      const messageId = uuidv4();
+      const sendParams = {
+      message: {
+        message_id: messageId,
+        role: "user",
+        parts: [{ kind: "text", text: userMessage.content }],
+        kind: "message",
+      },
+      metadata: {
+        blocking: true,
+        accepted_output_modes: ["text/plain"],
+      },
+      context_id:sessionId,
+  
+
+
+    };
       const response = await askAgent({
         data: {
-          message: userMessage.content,
-          session_id: sessionId, // Use the generated/existing sessionId
+          params: sendParams,
+          session_id: sessionId, 
         },
-      }).unwrap() // .unwrap() to get the actual response or throw an error
+      }).unwrap()
 
       const assistantMessage: Message = {
         role: "assistant",
