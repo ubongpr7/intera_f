@@ -5,7 +5,7 @@ import { list } from 'postcss';
 export const agentApiSlice = apiSlice.injectEndpoints({
   endpoints: builder => ({
     
-    createConversationMutation: builder.mutation({
+    createConversation: builder.mutation({
       query: () => ({
         url: `conversation/create`,
         method: 'POST',
@@ -15,7 +15,7 @@ export const agentApiSlice = apiSlice.injectEndpoints({
       }),
     }),
     
-    sendMessageMutation: builder.mutation({
+    sendMessage: builder.mutation({
       query: ({data}) => ({
         url: `message/send`,
         method: 'POST',
@@ -23,7 +23,7 @@ export const agentApiSlice = apiSlice.injectEndpoints({
         service:'agent'
       }),
     }),
-    registerAgentMutation: builder.mutation({
+    registerAgent: builder.mutation({
       query: ({data}) => ({
         url: `agent/register`,
         method: 'POST',
@@ -37,7 +37,7 @@ export const agentApiSlice = apiSlice.injectEndpoints({
         service: 'agent'
       }),
     }),
-    updateAPIKeyMutation: builder.mutation({
+    updateAPIKey: builder.mutation({
       query: ({ data }) => ({
         url: `api_key/update`,
         method: 'POST',
@@ -46,7 +46,7 @@ export const agentApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    pendingMessagesMutation: builder.mutation({
+    pendingMessages: builder.mutation({
       query: () => ({
         url: `message/pending`,
         method: 'POST',
@@ -55,7 +55,7 @@ export const agentApiSlice = apiSlice.injectEndpoints({
 
       }),
     }),
-    getEventMutation: builder.mutation({
+    getEvent: builder.mutation({
       query: () => ({
         url: `events/get`,
         method: 'POST',
@@ -64,7 +64,7 @@ export const agentApiSlice = apiSlice.injectEndpoints({
 
       }),
     }),
-    listConversationsMutation: builder.mutation({
+    listConversations: builder.mutation({
       query: () => ({
         url: `conversation/list`,
         method: 'POST',
@@ -72,16 +72,16 @@ export const agentApiSlice = apiSlice.injectEndpoints({
         service:'agent'
       }),
     }),
-    listTaskMutation: builder.mutation({
-      query: () => ({
+    listTask: builder.mutation({
+      query: ({data}) => ({
         url: `task/list`,
         method: 'POST',
-        body: {},
+        body: data,
         service:'agent'
 
       }),
     }),
-    listMessagesMutation: builder.mutation({
+    listMessages: builder.mutation({
       query: () => ({
         url: `message/list`,
         method: 'POST',
@@ -90,7 +90,7 @@ export const agentApiSlice = apiSlice.injectEndpoints({
 
       }),
     }),
-    listAgentsMutation:builder.mutation({
+    listAgents:builder.mutation({
       query:()=>({
         url:'agent/list',
         method:'POST',
@@ -99,29 +99,19 @@ export const agentApiSlice = apiSlice.injectEndpoints({
       })
     }),
 
-    askAgentMutation: builder.mutation({
-      query: ({  data }) => ({
-        url: `api/ask`,
-        method: 'POST',
-        body: data,
-        service:'agent'
-
-      }),
-    }),
 
   }),
 });
 export const {
-  useCreateConversationMutationMutation,
-    useSendMessageMutationMutation,
-    useRegisterAgentMutationMutation,
+  useCreateConversationMutation,
+    useSendMessageMutation,
+    useRegisterAgentMutation,
     useGetFilesQueryQuery,
-    useUpdateAPIKeyMutationMutation,
-    usePendingMessagesMutationMutation,
-    useGetEventMutationMutation,
-    useListConversationsMutationMutation,
-    useListTaskMutationMutation,
-    useListMessagesMutationMutation,
-    useListAgentsMutationMutation,
-    useAskAgentMutationMutation,
+    useUpdateAPIKeyMutation,
+    usePendingMessagesMutation,
+    useGetEventMutation,
+    useListConversationsMutation,
+    useListTaskMutation,
+    useListMessagesMutation,
+    useListAgentsMutation,
 } = agentApiSlice;

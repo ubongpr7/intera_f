@@ -7,9 +7,9 @@ import { MessageSquareText, X } from 'lucide-react'
 import AgentChat from "./chat-a2a-w"
 import { v4 as uuidv4 } from "uuid" // Import uuid for session_id
 import {
-  useSendMessageMutationMutation,
-  useCreateConversationMutationMutation,
-  useListMessagesMutationMutation,
+  useSendMessageMutation,
+  useCreateConversationMutation,
+  useListMessagesMutation,
 } from "@/redux/features/agent/agentAPISlice"
 import {
   AgentCard,
@@ -40,9 +40,9 @@ export default function AIChatWidget() {
   const [input, setInput] = useState("")
   const [sessionId, setSessionId] = useState<string | null>(null) // This will be our conversation_id
   const [conversationId, setConversationId] = useState<string | null>(null) // This will be our conversation_id
-  const [askAgent, { isLoading: isSendingMessage }] = useSendMessageMutationMutation()
-  const [createConversation, { isLoading: isCreatingConversation }] = useCreateConversationMutationMutation()
-  const [listMessages, { isLoading: isListingMessages }] = useListMessagesMutationMutation();
+  const [askAgent, { isLoading: isSendingMessage }] = useSendMessageMutation()
+  const [createConversation, { isLoading: isCreatingConversation }] = useCreateConversationMutation()
+  const [listMessages, { isLoading: isListingMessages }] = useListMessagesMutation();
 
   const isLoading = isSendingMessage || isCreatingConversation // Combined loading state
 
@@ -109,6 +109,7 @@ export default function AIChatWidget() {
     }
   }, [isOpen, sessionId, isCreatingConversation, createConversation])
   // handleSubmit function now uses RTK Query mutation
+
   const fetchMessages = async () => {
     if (!sessionId) return // Ensure sessionId exists before fetching messages
     try {
@@ -143,7 +144,6 @@ export default function AIChatWidget() {
     }
     setMessages((prev) => [...prev, userMessage]) // Optimistic update
     setInput("")
-    await fetchMessages() 
 
     try {
       const messageId = uuidv4();
@@ -178,6 +178,8 @@ export default function AIChatWidget() {
       }
 
       setMessages((prev) => [...prev, assistantMessage])
+      await fetchMessages() 
+
     } catch (error) {
       console.error("Error talking to agent:", error)
       const errorMessage: Message = {
