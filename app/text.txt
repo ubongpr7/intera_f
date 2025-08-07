@@ -114,3 +114,9 @@ Object
 length
 : 
 3
+
+
+response from /message/pending, main is it returns the ids of the pending messages
+{jsonrpc: '2.0', id: 'b699931fa20641ebbde0b04bd442bf24', result: Array(1), error: null}error: nullid: "b699931fa20641ebbde0b04bd442bf24"jsonrpc: "2.0"result: Array(1)0: Array(2)0: "cced64de-3dbc-4d2b-a2fa-db407302fa30"1: ""length: 2[[Prototype]]: Array(0)length: 1[[Prototype]]: Array(0)[[Prototype]]: Object
+another view
+{jsonrpc: '2.0', id: 'b699931fa20641ebbde0b04bd442bf24', result: Array(1), error: null}error: nullid: "b699931fa20641ebbde0b04bd442bf24"jsonrpc: "2.0"result: Array(1)0: (2) ['cced64de-3dbc-4d2b-a2fa-db407302fa30', '']0: "cced64de-3dbc-4d2b-a2fa-db407302fa30"1: ""length: 2[[Prototype]]: Array(0)length: 1[[Prototype]]: Array(0)[[Prototype]]: Object

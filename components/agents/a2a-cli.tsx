@@ -11,6 +11,7 @@ import {
   useCreateConversationMutation,
   useListMessagesMutation,
   usePendingMessagesMutation,
+  useGetEventMutation,
 } from "@/redux/features/agent/agentAPISlice"
 import {
   AgentCard,
@@ -45,6 +46,7 @@ export default function AIChatWidget() {
   const [createConversation, { isLoading: isCreatingConversation }] = useCreateConversationMutation()
   const [listMessages, { isLoading: isListingMessages }] = useListMessagesMutation();
   const [pendingMessages, { isLoading: ispendingMessages }] = usePendingMessagesMutation();
+  const [getEvent, { isLoading: isGettingEvent }] = useGetEventMutation();
 
   const isLoading = isSendingMessage || isCreatingConversation // Combined loading state
 
@@ -124,14 +126,28 @@ export default function AIChatWidget() {
         },
       }).unwrap()
       console.log("Messages fetched successfully:", response)
-      // const fetchedMessages = response.result.messages.map((msg: A2AMessage) => ({
-      //   role: msg.role as MessageRole,
-      //   content: msg.parts.map((part: TextPart) => part.text).join(""),
-      // }))
-      // setMessages(fetchedMessages)
+      
     } catch (error) {
       console.error("Error fetching messages:", error)
       alert("Failed to fetch messages. Please try again.")
+    }
+  }
+
+  const fetchEvents = async () => {
+    if (!sessionId) return // Ensure sessionId exists before fetching events
+    try {
+      const response = await getEvent({
+        data: {
+          id: uuidv4(),
+          method: "events/get",
+          params: sessionId, 
+          jsonrpc: "2.0",
+        },
+      }).unwrap()
+      console.log("Events fetched successfully:", response)
+      // Handle events here, e.g., update tasks or messages based on the response
+    } catch (error) {
+      console.error("Error fetching events:", error)
     }
   }
 
@@ -147,11 +163,7 @@ export default function AIChatWidget() {
         },
       }).unwrap()
       console.log("Pending messages fetched successfully:", response)
-      // const pendingMessages = response.result.messages.map((msg: A2AMessage) => ({
-      //   role: msg.role as MessageRole,
-      //   content: msg.parts.map((part: TextPart) => part.text).join(""),
-      // }))
-      // setMessages((prev) => [...prev, ...pendingMessages]) // Append pending messages to existing messages
+      
     } catch (error) {
       console.error("Error fetching pending messages:", error)
     }
@@ -160,7 +172,7 @@ export default function AIChatWidget() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!input.trim() || isLoading || !sessionId) return // Ensure sessionId exists before sending
+    if (!input.trim() || isLoading || !sessionId) return 
 
     const userMessage: Message = {
       role: "user",
@@ -204,6 +216,8 @@ export default function AIChatWidget() {
       setMessages((prev) => [...prev, assistantMessage])
       await fetchMessages() 
       await fetchPendingMessages() // Fetch pending messages after sending
+      await fetchEvents() // Fetch events after sending
+      console.log("Messages and events fetched after sending message")
     } catch (error) {
       console.error("Error talking to agent:", error)
       const errorMessage: Message = {
