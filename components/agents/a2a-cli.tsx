@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from "uuid" // Import uuid for session_id
 import {
   useSendMessageMutationMutation,
   useCreateConversationMutationMutation,
+  useListMessagesMutationMutation,
 } from "@/redux/features/agent/agentAPISlice"
 import {
   AgentCard,
@@ -19,6 +20,7 @@ import {
   Message as A2AMessage,
   MessageSendParams,
 } from "@a2a-js/sdk";
+import { json } from "stream/consumers"
 
 
 type MessageRole = "user" | "assistant"
@@ -38,10 +40,9 @@ export default function AIChatWidget() {
   const [input, setInput] = useState("")
   const [sessionId, setSessionId] = useState<string | null>(null) // This will be our conversation_id
   const [conversationId, setConversationId] = useState<string | null>(null) // This will be our conversation_id
-  // Redux Toolkit Query mutation hooks
   const [askAgent, { isLoading: isSendingMessage }] = useSendMessageMutationMutation()
   const [createConversation, { isLoading: isCreatingConversation }] = useCreateConversationMutationMutation()
-  // const [listMessages, { isLoading: isListingMessages }] = useListMessagesMutationMutation(); // Not used effectively
+  const [listMessages, { isLoading: isListingMessages }] = useListMessagesMutationMutation();
 
   const isLoading = isSendingMessage || isCreatingConversation // Combined loading state
 
@@ -107,8 +108,31 @@ export default function AIChatWidget() {
       startNewConversation()
     }
   }, [isOpen, sessionId, isCreatingConversation, createConversation])
-
   // handleSubmit function now uses RTK Query mutation
+  const fetchMessages = async () => {
+    if (!sessionId) return // Ensure sessionId exists before fetching messages
+    try {
+      const response = await listMessages({
+        data: {
+          id:uuidv4(),
+          method: "message/list",
+          params: sessionId, 
+          jsonrpc: "2.0",
+        },
+      }).unwrap()
+      console.log("Messages fetched successfully:", response)
+      // const fetchedMessages = response.result.messages.map((msg: A2AMessage) => ({
+      //   role: msg.role as MessageRole,
+      //   content: msg.parts.map((part: TextPart) => part.text).join(""),
+      // }))
+      // setMessages(fetchedMessages)
+    } catch (error) {
+      console.error("Error fetching messages:", error)
+      alert("Failed to fetch messages. Please try again.")
+    }
+  }
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!input.trim() || isLoading || !sessionId) return // Ensure sessionId exists before sending
@@ -119,6 +143,7 @@ export default function AIChatWidget() {
     }
     setMessages((prev) => [...prev, userMessage]) // Optimistic update
     setInput("")
+    await fetchMessages() 
 
     try {
       const messageId = uuidv4();
@@ -142,11 +167,7 @@ export default function AIChatWidget() {
 
 
     };
-//  'params': {'contextId': '2b820751-cf1f-4895-9f76-03047d0690e2', 
-//   'kind': 'message', 'messageId': '78e83c65-9c66-4a10-9db0-b76add7b14c4', 
-//   'parts': [{'kind': 'text', 'text': 'hi'}], 'role': 'user'}}
-
-    // {'jsonrpc': '2.0', 'id': 'db51cdc72f5240b7a013a08532a8786c', 'method': 'message/send',
+    
     const response = await askAgent({
         data: sendParams,
       }).unwrap()

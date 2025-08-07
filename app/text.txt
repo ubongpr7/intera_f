@@ -1,0 +1,20 @@
+ 
+ /message/send
+ Received message: 
+ {'jsonrpc': '2.0',
+  'id': 'd521127fcd4f443491022ac69c320cb1',
+   'method': 'message/send',
+    'params': {
+        'contextId': '27275cf1-9967-4ee8-a0d4-df9cf4b1a6f1', // conversation_id 
+        'kind': 'message', 
+        'messageId': '1f654db8-2363-4319-97a5-b77df8bcfef6', // to be created
+        'parts': [{'kind': 'text', 'text': 'hi'}],
+         'role': 'user'
+         }}
+
+Received list messages request: 
+{'jsonrpc': '2.0', 
+'id': '21f1d9ec25674cd4b20e6d26025d05e3', 
+'method': 'message/list',
+ 'params': '27275cf1-9967-4ee8-a0d4-df9cf4b1a6f1'
+ }
