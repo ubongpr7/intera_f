@@ -31,6 +31,7 @@ export const agentApiSlice = apiSlice.injectEndpoints({
         service:'agent'
       }),
     }),
+    
     getFilesQuery: builder.query({
       query: (file_id) => ({
         url: `message/file/${file_id}`,
@@ -47,28 +48,28 @@ export const agentApiSlice = apiSlice.injectEndpoints({
     }),
 
     pendingMessages: builder.mutation({
-      query: () => ({
+      query: ({data}) => ({
         url: `message/pending`,
         method: 'POST',
-        body: {},
+        body: data,
         service:'agent'
 
       }),
     }),
     getEvent: builder.mutation({
-      query: () => ({
+      query: ({data}) => ({
         url: `events/get`,
         method: 'POST',
-        body: {},
+        body: data,
         service:'agent'
 
       }),
     }),
     listConversations: builder.mutation({
-      query: () => ({
+      query: ({data}) => ({
         url: `conversation/list`,
         method: 'POST',
-        body: {},
+        body: {data},
         service:'agent'
       }),
     }),
@@ -82,19 +83,20 @@ export const agentApiSlice = apiSlice.injectEndpoints({
       }),
     }),
     listMessages: builder.mutation({
-      query: () => ({
+      query: ({data}) => ({
         url: `message/list`,
         method: 'POST',
-        body: {},
+        body: data,
         service:'agent'
 
       }),
     }),
     listAgents:builder.mutation({
-      query:()=>({
+      query:({data})=>({
         url:'agent/list',
         method:'POST',
         service:'agent',
+        body:data
 
       })
     }),
