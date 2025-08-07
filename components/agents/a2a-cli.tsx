@@ -7,9 +7,18 @@ import { MessageSquareText, X } from 'lucide-react'
 import AgentChat from "./chat-a2a-w"
 import { v4 as uuidv4 } from "uuid" // Import uuid for session_id
 import {
-  useAskAgentMutationMutation,
+  useSendMessageMutationMutation,
   useCreateConversationMutationMutation,
 } from "@/redux/features/agent/agentAPISlice"
+import {
+  AgentCard,
+  Task,
+  TaskState,
+  TaskStatusUpdateEvent,
+  TextPart,
+  Message as A2AMessage,
+} from "@a2a-js/sdk";
+
 
 type MessageRole = "user" | "assistant"
 type Message = {
@@ -29,7 +38,7 @@ export default function AIChatWidget() {
   const [sessionId, setSessionId] = useState<string | null>(null) // This will be our conversation_id
 
   // Redux Toolkit Query mutation hooks
-  const [askAgent, { isLoading: isSendingMessage }] = useAskAgentMutationMutation()
+  const [askAgent, { isLoading: isSendingMessage }] = useSendMessageMutationMutation()
   const [createConversation, { isLoading: isCreatingConversation }] = useCreateConversationMutationMutation()
   // const [listMessages, { isLoading: isListingMessages }] = useListMessagesMutationMutation(); // Not used effectively
 
@@ -85,6 +94,7 @@ export default function AIChatWidget() {
       const startNewConversation = async () => {
         try {
           const response = await createConversation({}).unwrap()
+          console.log("New conversation started with ID:", response.result.conversation_id, 'response: ', response)
           setSessionId(response.result.conversation_id)
           setMessages([]) 
         } catch (error) {
