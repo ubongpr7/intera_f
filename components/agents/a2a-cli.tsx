@@ -123,7 +123,7 @@ export default function AIChatWidget() {
       const messageId = uuidv4();
       const sendParams = {
       message: {
-        message_id: messageId,
+        messageId: messageId,
         role: "user",
         parts: [{ kind: "text", text: userMessage.content }],
         kind: "message",
