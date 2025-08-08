@@ -109,15 +109,15 @@ export default function AgentChat({
           */}
           {/* Badges */}
           <div className="ml-3 flex items-center gap-2 text-xs">
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1">
+            <span className="inline-flex whitespace-nowrap items-center gap-1 rounded-full bg-white/15 px-2 py-1">
               <Radio className={`h-4 w-4 ${pendingCount > 0 ? "animate-pulse text-yellow-300" : "text-white"}`} aria-hidden strokeWidth={2.4} />
               <span>{pendingCount > 0 ? `${pendingCount} pending` : "Idle"}</span>
             </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1">
+            <span className="inline-flex whitespace-nowrap items-center gap-1 rounded-full bg-white/15 px-2 py-1">
               <ListChecks className="h-4 w-4 text-white" aria-hidden strokeWidth={2.4} />
               <span>{taskCount} tasks</span>
             </span>
-            <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1">
+            <span className="hidden whitespace-nowrap sm:inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1">
               <Clock className="h-4 w-4 text-white" aria-hidden strokeWidth={2.4} />
               <span>{eventCount} events</span>
             </span>
@@ -127,7 +127,7 @@ export default function AgentChat({
         {/* Right group */}
         <div className="flex items-center gap-2">
         
-         {/**   {lastUpdatedAt ? <span className="hidden sm:inline text-xs text-white/80">Updated {new Date(lastUpdatedAt).toLocaleTimeString()}</span> : null}*/}
+         {lastUpdatedAt ? <span className="hidden sm:inline whitespace-nowrap text-xs text-white/80">Updated {new Date(lastUpdatedAt).toLocaleTimeString()}</span> : null}
           <button
             onClick={() => {
               toggleFullScreen()
