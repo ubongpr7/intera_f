@@ -1,0 +1,272 @@
+"use client"
+
+import { useEffect, useMemo, useRef, useState } from "react"
+import { Bot, Send, Maximize, Minimize, X, Clock, Loader2, ListChecks, Radio, Mic, MicOff } from 'lucide-react'
+import type { ChatMessage } from "./ai-chat-widget"
+import dynamic from "next/dynamic"
+
+const LiveKitVoice = dynamic(() => import("../voice/livekit-voice"), { ssr: false })
+
+interface AgentChatProps {
+ onClose: () => void
+ isFullScreen: boolean
+ toggleFullScreen: () => void
+ messages: ChatMessage[]
+ onSend: (text: string) => void
+ onActivity?: () => void
+ isBusy?: boolean
+ pendingCount?: number
+ taskCount?: number
+ eventCount?: number
+ lastUpdatedAt?: number
+ sessionId?: string
+}
+
+export default function AgentChat({
+ onClose,
+ isFullScreen,
+ toggleFullScreen,
+ messages,
+ onSend,
+ onActivity,
+ isBusy = false,
+ pendingCount = 0,
+ taskCount = 0,
+ eventCount = 0,
+ lastUpdatedAt,
+ sessionId,
+}: AgentChatProps) {
+ const [input, setInput] = useState("")
+ const scrollRef = useRef<HTMLDivElement>(null)
+ const endRef = useRef<HTMLDivElement>(null)
+ const textareaRef = useRef<HTMLTextAreaElement>(null)
+ const MAX_TEXTAREA_HEIGHT = 160
+
+ // Voice toggle
+ const [voiceOpen, setVoiceOpen] = useState(false)
+ const roomName = sessionId || "default-room"
+
+ // Smart autoscroll
+ const [isAtBottom, setIsAtBottom] = useState(true)
+ const [unreadCount, setUnreadCount] = useState(0)
+ const prevLenRef = useRef<number>(0)
+ const newMessagesCount = useMemo(() => Math.max(messages.length - prevLenRef.current, 0), [messages.length])
+
+ useEffect(() => {
+   const el = scrollRef.current
+   if (!el) return
+   const onScroll = () => {
+     const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 20
+     setIsAtBottom(nearBottom)
+     if (nearBottom) setUnreadCount(0)
+   }
+   el.addEventListener("scroll", onScroll)
+   return () => el.removeEventListener("scroll", onScroll)
+ }, [])
+
+ useEffect(() => {
+   if (isAtBottom) {
+     endRef.current?.scrollIntoView({ behavior: "smooth" })
+   } else if (newMessagesCount > 0) {
+     setUnreadCount((c) => c + newMessagesCount)
+   }
+   prevLenRef.current = messages.length
+ }, [messages, isAtBottom, newMessagesCount])
+
+ function scrollToBottom() {
+   endRef.current?.scrollIntoView({ behavior: "smooth" })
+   setUnreadCount(0)
+ }
+
+ function resizeTextarea(el: HTMLTextAreaElement) {
+   el.style.height = "auto"
+   const newHeight = Math.min(el.scrollHeight, MAX_TEXTAREA_HEIGHT)
+   el.style.height = `${newHeight}px`
+   el.style.overflowY = el.scrollHeight > MAX_TEXTAREA_HEIGHT ? "auto" : "hidden"
+ }
+
+ useEffect(() => {
+   if (textareaRef.current) resizeTextarea(textareaRef.current)
+ }, [input])
+
+ const handleSubmit = (e: React.FormEvent) => {
+   e.preventDefault()
+   if (!input.trim()) return
+   onSend(input)
+   onActivity?.()
+   setInput("")
+   if (textareaRef.current) textareaRef.current.style.height = "auto"
+   requestAnimationFrame(scrollToBottom)
+ }
+
+ const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+   if (e.key === "Enter" && !e.shiftKey) {
+     e.preventDefault()
+     handleSubmit(e as unknown as React.FormEvent)
+   }
+ }
+
+ return (
+   <>
+     {/* Header */}
+     <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 flex items-center justify-between">
+       {/* Left group */}
+       <div className="flex items-center gap-2 min-w-0">
+         
+         <Bot className="h-5 w-5 text-white shrink-0" aria-hidden strokeWidth={2.2} />
+
+         {/* Badges */}
+         <div className="ml-3 flex items-center gap-2 text-xs">
+           <span className="inline-flex whitespace-nowrap items-center gap-1 rounded-full bg-white/15 px-2 py-1">
+             <Radio className={`h-4 w-4 ${pendingCount > 0 ? "animate-pulse text-yellow-300" : "text-white"}`} aria-hidden strokeWidth={2.4} />
+             <span>{pendingCount > 0 ? `${pendingCount} pending` : "Idle"}</span>
+           </span>
+           <span className="inline-flex whitespace-nowrap items-center gap-1 rounded-full bg-white/15 px-2 py-1">
+             <ListChecks className="h-4 w-4 text-white" aria-hidden strokeWidth={2.4} />
+             <span>{taskCount} tasks</span>
+           </span>
+           <span className="hidden whitespace-nowrap sm:inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1">
+             <Clock className="h-4 w-4 text-white" aria-hidden strokeWidth={2.4} />
+             <span>{eventCount} events</span>
+           </span>
+         </div>
+       </div>
+    
+       {/* Right group */}
+       <div className="flex items-center gap-2">
+       <button
+           onClick={() => {
+             toggleFullScreen()
+             onActivity?.()
+           }}
+           className="p-1 rounded-full hover:bg-white/20 transition-colors shrink-0"
+           aria-label={isFullScreen ? "Exit full screen" : "Enter full screen"}
+           title={isFullScreen ? "Exit full screen" : "Enter full screen"}
+         >
+           {isFullScreen ? (
+             <Minimize className="h-5 w-5 text-white" strokeWidth={2.2} />
+           ) : (
+             <Maximize className="h-5 w-5 text-white" strokeWidth={2.2} />
+           )}
+         </button>
+        {/* {lastUpdatedAt ? <span className="hidden sm:inline text-xs text-white/80">Updated {new Date(lastUpdatedAt).toLocaleTimeString()}</span> : null}*/} 
+         <button onClick={() => { onClose(); onActivity?.() }} className="p-1 rounded-full hover:bg-white/20 transition-colors" aria-label="Close chat" title="Close">
+           <X className="h-5 w-5 text-white" strokeWidth={2.2} />
+         </button>
+       </div>
+     </div>
+
+     {/* Optional voice bar */}
+     {voiceOpen && (
+       <div className="border-b border-gray-200 p-3 bg-white">
+         <LiveKitVoice
+           roomName={roomName}
+           tokenEndpoint="/api/livekit/token"
+           autoConnect
+           onConnectedChange={(c) => {
+             // If the session ends remotely, close the bar
+             if (!c) setVoiceOpen(false)
+           }}
+         />
+       </div>
+     )}
+
+     {/* Messages area with smart autoscroll */}
+     <div
+       ref={scrollRef}
+       className="relative flex-1 overflow-y-auto p-4 bg-gray-50 custom-scrollbar"
+       onMouseMove={onActivity}
+       onClick={onActivity}
+     >
+       {messages.length === 0 ? (
+         <div className="text-center h-full flex flex-col items-center justify-center text-gray-500">
+           <Bot className="h-12 w-12 mb-3 text-blue-500" aria-hidden strokeWidth={2.2} />
+           <p>{"How can I help you today?"}</p>
+         </div>
+       ) : (
+         messages.map((m) => (
+           <div key={m.id} className={`mb-4 flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+             <div
+               className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                 m.role === "user" ? "bg-blue-500 text-white rounded-br-none" : "bg-gray-200 text-gray-800 rounded-bl-none"
+               }`}
+             >
+               <div className="font-semibold text-xs mb-1">{m.role === "user" ? "You" : "Assistant"}</div>
+               <div className="whitespace-pre-wrap">{m.content}</div>
+             </div>
+           </div>
+         ))
+       )}
+
+       {pendingCount > 0 && (
+         <div className="flex justify-start mb-4">
+           <div className="bg-gray-200 text-gray-800 rounded-2xl rounded-bl-none px-4 py-3 max-w-[80%]">
+             <div className="flex items-center gap-2">
+               <Loader2 className="h-4 w-4 animate-spin text-gray-700" aria-hidden />
+               <span>Assistant is processing...</span>
+             </div>
+           </div>
+         </div>
+       )}
+
+       {!isAtBottom && unreadCount > 0 && (
+         <button
+           type="button"
+           onClick={() => {
+             scrollToBottom()
+             onActivity?.()
+           }}
+           className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs px-3 py-1.5 rounded-full shadow hover:bg-blue-700"
+         >
+           View {unreadCount} new message{unreadCount > 1 ? "s" : ""}
+         </button>
+       )}
+
+       <div ref={endRef} />
+     </div>
+
+     {/* Input with voice toggle */}
+     <form onSubmit={handleSubmit} className="border-t border-gray-200 p-3 bg-white">
+       <div className="flex gap-2 items-end">
+         <button
+           type="button"
+           onClick={() => {
+             setVoiceOpen((v) => !v)
+             onActivity?.()
+           }}
+           className={`p-3 rounded-full transition-colors ${voiceOpen ? "bg-red-100 text-red-600 hover:bg-red-200" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+           aria-label={voiceOpen ? "Disable voice" : "Enable voice"}
+           title={voiceOpen ? "Disable voice" : "Enable voice"}
+         >
+           {voiceOpen ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+         </button>
+
+         <textarea
+           ref={textareaRef}
+           value={input}
+           onChange={(e) => {
+             setInput(e.target.value)
+             onActivity?.()
+             if (textareaRef.current) resizeTextarea(textareaRef.current)
+           }}
+           onKeyDown={handleKeyDown}
+           rows={1}
+           placeholder="Type your message..."
+           className="flex-1 text-gray-100 border border-gray-300 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none leading-6 max-h-[160px]"
+           disabled={isBusy}
+           aria-label="Type your message"
+         />
+         <button
+           type="submit"
+           className="bg-blue-600 text-white p-3 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50"
+           disabled={isBusy || !input.trim()}
+           aria-label="Send message"
+           title="Send"
+         >
+           <Send className="h-5 w-5 text-white" strokeWidth={2.2} />
+         </button>
+       </div>
+     </form>
+   </>
+ )
+}
