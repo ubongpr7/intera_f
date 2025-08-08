@@ -212,7 +212,8 @@ export default function AIChatWidget() {
             },
           } as any).unwrap()
           const events = Array.isArray(res?.result) ? res.result : []
-          if (!cancelled) setEventCount(events.length)
+          const filteredEvents = events.filter((e: any) => e?.content?.contextId === sessionId)
+          if (!cancelled) setEventCount(filteredEvents.length)
         } catch (e) {
           console.warn("events/get poll error:", e)
         }
@@ -228,7 +229,8 @@ export default function AIChatWidget() {
             },
           } as any).unwrap()
           const tasks = Array.isArray(res?.result) ? res.result : []
-          if (!cancelled) setTaskCount(tasks.length)
+          const filteredTasks = tasks.filter((t: any) => (t?.contextId ?? t?.content?.contextId) === sessionId)
+          if (!cancelled) setTaskCount(filteredTasks.length)
         } catch (e) {
           console.warn("task/list poll error:", e)
         }
@@ -301,7 +303,7 @@ export default function AIChatWidget() {
 
   const chatWindowClasses = isFullScreen
     ? "fixed inset-0 w-full h-full rounded-none"
-    : "absolute bottom-20 right-0 w-96 h-[560px] rounded-xl border border-gray-200"
+    : "absolute bottom-20 right-0 w-96 h-[580px] rounded-xl border border-gray-200"
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
