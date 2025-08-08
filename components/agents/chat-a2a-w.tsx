@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Bot, Send, Maximize, Minimize, X, Clock, Loader2, ListChecks, Radio } from 'lucide-react'
 import type { ChatMessage } from "./a2a-cli"
 
@@ -8,10 +8,9 @@ interface AgentChatProps {
   onClose: () => void
   isFullScreen: boolean
   toggleFullScreen: () => void
-
   messages: ChatMessage[]
   onSend: (text: string) => void
-
+  onActivity?: () => void
   isBusy?: boolean
   pendingCount?: number
   taskCount?: number
@@ -19,41 +18,55 @@ interface AgentChatProps {
   lastUpdatedAt?: number
 }
 
-export default function AgentChat(props: AgentChatProps) {
-  const {
-    onClose,
-    isFullScreen,
-    toggleFullScreen,
-    messages,
-    onSend,
-    isBusy = false,
-    pendingCount = 0,
-    taskCount = 0,
-    eventCount = 0,
-    lastUpdatedAt,
-  } = props
-
+export default function AgentChat({
+  onClose,
+  isFullScreen,
+  toggleFullScreen,
+  messages,
+  onSend,
+  onActivity,
+  isBusy = false,
+  pendingCount = 0,
+  taskCount = 0,
+  eventCount = 0,
+  lastUpdatedAt,
+}: AgentChatProps) {
   const [input, setInput] = useState("")
-  const messageEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const endRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const MAX_TEXTAREA_HEIGHT = 160 // px
+  const MAX_TEXTAREA_HEIGHT = 160
 
-  // Autoscroll
+  // Smart autoscroll
+  const [isAtBottom, setIsAtBottom] = useState(true)
+  const [unreadCount, setUnreadCount] = useState(0)
+  const prevLenRef = useRef<number>(0)
+  const newMessagesCount = useMemo(() => Math.max(messages.length - prevLenRef.current, 0), [messages.length])
+
   useEffect(() => {
-    messageEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages, isBusy, pendingCount])
+    const el = scrollRef.current
+    if (!el) return
+    const onScroll = () => {
+      const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 20
+      setIsAtBottom(nearBottom)
+      if (nearBottom) setUnreadCount(0)
+    }
+    el.addEventListener("scroll", onScroll)
+    return () => el.removeEventListener("scroll", onScroll)
+  }, [])
 
-  // Autofocus
   useEffect(() => {
-    if (!isBusy && inputRef.current) inputRef.current.focus()
-  }, [isBusy])
+    if (isAtBottom) {
+      endRef.current?.scrollIntoView({ behavior: "smooth" })
+    } else if (newMessagesCount > 0) {
+      setUnreadCount((c) => c + newMessagesCount)
+    }
+    prevLenRef.current = messages.length
+  }, [messages, isAtBottom, newMessagesCount])
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    onSend(input)
-    setInput("")
-    if (textareaRef.current) textareaRef.current.style.height = "auto";
+  function scrollToBottom() {
+    endRef.current?.scrollIntoView({ behavior: "smooth" })
+    setUnreadCount(0)
   }
 
   function resizeTextarea(el: HTMLTextAreaElement) {
@@ -67,6 +80,16 @@ export default function AgentChat(props: AgentChatProps) {
     if (textareaRef.current) resizeTextarea(textareaRef.current)
   }, [input])
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!input.trim()) return
+    onSend(input)
+    onActivity?.()
+    setInput("")
+    if (textareaRef.current) textareaRef.current.style.height = "auto"
+    requestAnimationFrame(scrollToBottom)
+  }
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
@@ -78,10 +101,13 @@ export default function AgentChat(props: AgentChatProps) {
     <>
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 flex items-center justify-between">
-        {/* LEFT: Move fullscreen toggle here and ensure icons are visible */}
+        {/* Left group */}
         <div className="flex items-center gap-2 min-w-0">
           <button
-            onClick={toggleFullScreen}
+            onClick={() => {
+              toggleFullScreen()
+              onActivity?.()
+            }}
             className="p-1 rounded-full hover:bg-white/20 transition-colors shrink-0"
             aria-label={isFullScreen ? "Exit full screen" : "Enter full screen"}
             title={isFullScreen ? "Exit full screen" : "Enter full screen"}
@@ -92,27 +118,19 @@ export default function AgentChat(props: AgentChatProps) {
               <Maximize className="h-5 w-5 text-white" strokeWidth={2.2} />
             )}
           </button>
-
           <Bot className="h-5 w-5 text-white shrink-0" aria-hidden strokeWidth={2.2} />
           <h3 className="font-bold text-lg truncate">AI Assistant</h3>
 
-          {/* Status badges */}
+          {/* Badges */}
           <div className="ml-3 flex items-center gap-2 text-xs">
-            {/* Pending badge */}
             <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1">
-              <Radio
-                className={`h-4 w-4 ${pendingCount > 0 ? "animate-pulse text-yellow-300" : "text-white"}`}
-                aria-hidden
-                strokeWidth={2.4}
-              />
+              <Radio className={`h-4 w-4 ${pendingCount > 0 ? "animate-pulse text-yellow-300" : "text-white"}`} aria-hidden strokeWidth={2.4} />
               <span>{pendingCount > 0 ? `${pendingCount} pending` : "Idle"}</span>
             </span>
-            {/* Tasks badge */}
             <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1">
               <ListChecks className="h-4 w-4 text-white" aria-hidden strokeWidth={2.4} />
               <span>{taskCount} tasks</span>
             </span>
-            {/* Events badge */}
             <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1">
               <Clock className="h-4 w-4 text-white" aria-hidden strokeWidth={2.4} />
               <span>{eventCount} events</span>
@@ -120,15 +138,14 @@ export default function AgentChat(props: AgentChatProps) {
           </div>
         </div>
 
-        {/* RIGHT: Timestamp + close */}
+        {/* Right group */}
         <div className="flex items-center gap-2">
-          {lastUpdatedAt ? (
-            <span className="hidden sm:inline text-xs text-white/80">
-              Updated {new Date(lastUpdatedAt).toLocaleTimeString()}
-            </span>
-          ) : null}
+          {lastUpdatedAt ? <span className="hidden sm:inline text-xs text-white/80">Updated {new Date(lastUpdatedAt).toLocaleTimeString()}</span> : null}
           <button
-            onClick={onClose}
+            onClick={() => {
+              onClose()
+              onActivity?.()
+            }}
             className="p-1 rounded-full hover:bg-white/20 transition-colors"
             aria-label="Close chat"
             title="Close"
@@ -138,8 +155,13 @@ export default function AgentChat(props: AgentChatProps) {
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 bg-gray-50 custom-scrollbar">
+      {/* Messages area */}
+      <div
+        ref={scrollRef}
+        className="relative flex-1 overflow-y-auto p-4 bg-gray-50 custom-scrollbar"
+        onMouseMove={onActivity}
+        onClick={onActivity}
+      >
         {messages.length === 0 ? (
           <div className="text-center h-full flex flex-col items-center justify-center text-gray-500">
             <Bot className="h-12 w-12 mb-3 text-blue-500" aria-hidden strokeWidth={2.2} />
@@ -160,7 +182,6 @@ export default function AgentChat(props: AgentChatProps) {
           ))
         )}
 
-        {/* Typing / processing indicator if pending */}
         {pendingCount > 0 && (
           <div className="flex justify-start mb-4">
             <div className="bg-gray-200 text-gray-800 rounded-2xl rounded-bl-none px-4 py-3 max-w-[80%]">
@@ -172,23 +193,66 @@ export default function AgentChat(props: AgentChatProps) {
           </div>
         )}
 
-        <div ref={messageEndRef} />
+        {!isAtBottom && unreadCount > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              scrollToBottom()
+              onActivity?.()
+            }}
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs px-3 py-1.5 rounded-full shadow hover:bg-blue-700"
+          >
+            View {unreadCount} new message{unreadCount > 1 ? "s" : ""}
+          </button>
+        )}
+
+        <div ref={endRef} />
       </div>
 
       {/* Input */}
-      <form onSubmit={handleSubmit} className="border-t border-gray-200 p-3 bg-white">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (!input.trim()) return
+          onSend(input)
+          onActivity?.()
+          setInput("")
+          if (textareaRef.current) textareaRef.current.style.height = "auto"
+          requestAnimationFrame(() => {
+            endRef.current?.scrollIntoView({ behavior: "smooth" })
+          })
+        }}
+        className="border-t border-gray-200 p-3 bg-white"
+      >
         <div className="flex gap-2 items-end">
           <textarea
             ref={textareaRef}
             value={input}
             onChange={(e) => {
               setInput(e.target.value)
-              if (textareaRef.current) resizeTextarea(textareaRef.current)
+              onActivity?.()
+              if (textareaRef.current) {
+                textareaRef.current.style.height = "auto"
+                const h = Math.min(textareaRef.current.scrollHeight, MAX_TEXTAREA_HEIGHT)
+                textareaRef.current.style.height = `${h}px`
+                textareaRef.current.style.overflowY = textareaRef.current.scrollHeight > MAX_TEXTAREA_HEIGHT ? "auto" : "hidden"
+              }
             }}
-            onKeyDown={handleKeyDown}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault()
+                // submit
+                if (input.trim()) {
+                  onSend(input)
+                  onActivity?.()
+                  setInput("")
+                  if (textareaRef.current) textareaRef.current.style.height = "auto"
+                }
+              }
+            }}
             rows={1}
             placeholder="Type your message..."
-            className="flex-1 text-gray-100 border border-gray-300 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none leading-6 max-h-[160px]"
+            className="flex-1 text-gray-800 border border-gray-300 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none leading-6 max-h-[160px]"
             disabled={isBusy}
             aria-label="Type your message"
           />
@@ -198,6 +262,7 @@ export default function AgentChat(props: AgentChatProps) {
             disabled={isBusy || !input.trim()}
             aria-label="Send message"
             title="Send"
+            onClick={onActivity}
           >
             <Send className="h-5 w-5 text-white" strokeWidth={2.2} />
           </button>
