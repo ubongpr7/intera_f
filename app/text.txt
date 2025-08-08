@@ -129,3 +129,9 @@ layout-e4b1971dcbb0dcc5.js:1 Messages and events fetched after sending message
 
 
 we need to make sense of this whole thing on the frontend. 
+ task response
+Tasks fetched successfully: {jsonrpc: '2.0', id: '2fb049baeea44f7cac4cfb515ea46a0b', result: Array(0), error: null}error: nullid: "2fb049baeea44f7cac4cfb515ea46a0b"jsonrpc: "2.0"result: [][[Prototype]]: Object
+layout-80a8d6e99f669bec.js:1 Messages and events fetched after sending message
+
+
+look at response.txt to understand the kind of data that is return from the endpoints , we need to handle the states and data very well, as the various tools so far bring a very good feature to the ai agent, it is the frontend tha is left that those things be implemented.with this we can track the tasks, or messages that user is the agent is still processingthe functions       await fetchMessages()       await fetchPendingMessages() // Fetch pending messages after sending      await fetchEvents() // Fetch events after sending      await fetchTasks() // Fetch tasks after sendingare not supposed to be called in submit function, i did that to see how the responses look, now it should be called at regular interval annd their responses used to update the page effectively in a modern and user friendly manner.

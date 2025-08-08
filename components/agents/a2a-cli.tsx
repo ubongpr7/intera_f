@@ -1,35 +1,64 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useEffect, useRef } from "react"
-import { MessageSquareText, X } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from "react"
 import AgentChat from "./chat-a2a-w"
-import { v4 as uuidv4 } from "uuid" // Import uuid for session_id
+import { MessageSquareText, X } from 'lucide-react'
 import {
-  useSendMessageMutation,
   useCreateConversationMutation,
+  useSendMessageMutation,
   useListMessagesMutation,
   usePendingMessagesMutation,
   useGetEventMutation,
   useListTaskMutation,
 } from "@/redux/features/agent/agentAPISlice"
-import {
-  AgentCard,
-  Task,
-  TaskState,
-  TaskStatusUpdateEvent,
-  TextPart,
-  Message as A2AMessage,
-  MessageSendParams,
-} from "@a2a-js/sdk";
-import { json } from "stream/consumers"
+import { v4 as uuidv4 } from "uuid"
 
+type Role = "user" | "assistant"
 
-type MessageRole = "user" | "assistant"
-type Message = {
-  role: MessageRole
+export type ChatMessage = {
+  id: string
+  role: Role
   content: string
+}
+
+/**
+ * Extracts human-readable text from a message "parts" array.
+ * The backend returns parts like: [{ kind: 'text', text: 'Hello' }, ...]
+ */
+function partsToText(parts: any[] | undefined): string {
+  if (!Array.isArray(parts)) return ""
+  return parts
+    .map((p) => {
+      if (!p) return ""
+      // Some responses wrap text like {kind:'text', text:'...'}, sometimes with metadata
+      if (p.text && typeof p.text === "string") return p.text
+      if (p.kind === "text" && typeof p.text === "string") return p.text
+      return ""
+    })
+    .filter(Boolean)
+    .join("\n")
+}
+
+/**
+ * Maps server "message/list" results to our ChatMessage[]
+ * - role 'agent' -> 'assistant'
+ * - role 'user' -> 'user'
+ */
+function mapServerMessagesToClient(serverMessages: any[], sessionId: string) {
+  const filtered = serverMessages.filter((m) =>
+    // Prefer messages matching this session/context
+    typeof m?.contextId === "string" ? m.contextId === sessionId : true
+  )
+  return filtered.map((m) => {
+    const role = m?.role === "agent" ? ("assistant" as Role) : ("user" as Role)
+    const text = partsToText(m?.parts)
+    return {
+      id: m?.messageId ?? uuidv4(),
+      role,
+      content: text,
+      contextId: m?.contextId,
+    }
+  }) as (ChatMessage & { contextId?: string })[]
 }
 
 export default function AIChatWidget() {
@@ -38,41 +67,45 @@ export default function AIChatWidget() {
   const widgetRef = useRef<HTMLDivElement>(null)
   const toggleBtnRef = useRef<HTMLButtonElement>(null)
 
-  // Lifted state for chat history
-  const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput] = useState("")
-  const [sessionId, setSessionId] = useState<string | null>(null) // This will be our conversation_id
-  const [conversationId, setConversationId] = useState<string | null>(null) // This will be our conversation_id
-  const [askAgent, { isLoading: isSendingMessage }] = useSendMessageMutation()
-  const [createConversation, { isLoading: isCreatingConversation }] = useCreateConversationMutation()
-  const [listMessages, { isLoading: isListingMessages }] = useListMessagesMutation();
-  const [pendingMessages, { isLoading: ispendingMessages }] = usePendingMessagesMutation();
-  const [getEvent, { isLoading: isGettingEvent }] = useGetEventMutation();
-  const [listTask, { isLoading: isListingTask }] = useListTaskMutation();
+  // Conversation and UI state
+  const [sessionId, setSessionId] = useState<string | null>(null)
 
-  const isLoading = isSendingMessage || isCreatingConversation // Combined loading state
+  // Messages managed client-side; keep a map to dedupe by messageId
+  const [messagesMap, setMessagesMap] = useState<Map<string, ChatMessage>>(new Map())
+  const messages = useMemo(() => Array.from(messagesMap.values()), [messagesMap])
+
+  // Live status
+  const [pendingCount, setPendingCount] = useState(0)
+  const [eventCount, setEventCount] = useState(0)
+  const [taskCount, setTaskCount] = useState(0)
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(null)
+
+  // RTK Query hooks (do not modify slice; just use them)
+  const [createConversation, { isLoading: isCreatingConversation }] = useCreateConversationMutation()
+  const [sendMessage, { isLoading: isSendingMessage }] = useSendMessageMutation()
+  const [listMessages] = useListMessagesMutation()
+  const [pendingMessages] = usePendingMessagesMutation()
+  const [getEvents] = useGetEventMutation()
+  const [listTasks] = useListTaskMutation()
+
+  const combinedLoading = isCreatingConversation || isSendingMessage
 
   const toggleChat = () => {
     setIsOpen((prev) => !prev)
-    if (isFullScreen) {
-      setIsFullScreen(false)
-    }
+    if (isFullScreen) setIsFullScreen(false)
   }
-
-  const toggleFullScreen = () => {
-    setIsFullScreen((prev) => !prev)
-  }
+  const toggleFullScreen = () => setIsFullScreen((prev) => !prev)
 
   // Close chat when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (e: MouseEvent) => {
       if (
         isOpen &&
         !isFullScreen &&
         widgetRef.current &&
-        !widgetRef.current.contains(event.target as Node) &&
+        !widgetRef.current.contains(e.target as Node) &&
         toggleBtnRef.current &&
-        !toggleBtnRef.current.contains(event.target as Node)
+        !toggleBtnRef.current.contains(e.target as Node)
       ) {
         setIsOpen(false)
       }
@@ -81,179 +114,194 @@ export default function AIChatWidget() {
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [isOpen, isFullScreen])
 
-  // Handle Escape key to close or exit full screen
+  // ESC to close/exit full screen
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        if (isFullScreen) {
-          setIsFullScreen(false)
-        } else if (isOpen) {
-          setIsOpen(false)
-        }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (isFullScreen) setIsFullScreen(false)
+        else if (isOpen) setIsOpen(false)
       }
     }
-    document.addEventListener("keydown", handleKeyDown)
-    return () => document.removeEventListener("keydown", handleKeyDown)
+    document.addEventListener("keydown", onKey)
+    return () => document.removeEventListener("keydown", onKey)
   }, [isOpen, isFullScreen])
 
-  // Effect to create a new conversation when the chat opens if no session exists
+  // Start a conversation when widget opens if none exists
   useEffect(() => {
-    if (isOpen && !sessionId && !isCreatingConversation) {
-      const startNewConversation = async () => {
-        try {
-          const response = await createConversation({}).unwrap()
-          console.log("New conversation started with ID:", response.result.conversation_id, 'response: ', response)
-          setSessionId(response.result.conversation_id)
-          setConversationId(response.id)
-          setMessages([]) 
-        } catch (error) {
-          console.error("Error creating new conversation:", error)
-          alert("Failed to start a new conversation. Please try again.")
+    if (!isOpen || sessionId || isCreatingConversation) return
+    ;(async () => {
+      try {
+        const resp = await createConversation({}).unwrap()
+        // Expecting shape: { result: { conversation_id: string } }
+        const id = resp?.result?.conversation_id
+        if (typeof id === "string" && id.length > 0) {
+          setSessionId(id)
+          setMessagesMap(new Map()) // reset any old messages
         }
+      } catch (err) {
+        console.error("Failed to create conversation:", err)
       }
-      startNewConversation()
-    }
+    })()
   }, [isOpen, sessionId, isCreatingConversation, createConversation])
-  // handleSubmit function now uses RTK Query mutation
 
-  const fetchMessages = async () => {
-    if (!sessionId) return // Ensure sessionId exists before fetching messages
-    try {
-      const response = await listMessages({
-        data: {
-          id:uuidv4(),
-          method: "message/list",
-          params: sessionId, 
-          jsonrpc: "2.0",
-        },
-      }).unwrap()
-      console.log("Messages fetched successfully:", response)
-      
-    } catch (error) {
-      console.error("Error fetching messages:", error)
-      alert("Failed to fetch messages. Please try again.")
-    }
-  }
-  // Fetch events and pending messages when the component mounts or sessionId changes
-  const fetchTasks = async () => {
-    if (!sessionId) return // Ensure sessionId exists before fetching tasks
-    try {
-      const response = await listTask({
-        data: {
-          id: uuidv4(),
-          method: "task/list",
-          params: sessionId, 
-          jsonrpc: "2.0",
-        },
-      }).unwrap()
-      console.log("Tasks fetched successfully:", response)
-      // Handle tasks here, e.g., update tasks or messages based on the response
-    } catch (error) {
-      console.error("Error fetching tasks:", error)
-    }
-  }
+  // Polling: messages, pending, events, tasks
+  useEffect(() => {
+    if (!isOpen || !sessionId) return
+    let cancelled = false
 
-  const fetchEvents = async () => {
-    if (!sessionId) return // Ensure sessionId exists before fetching events
-    try {
-      const response = await getEvent({
-        data: {
-          id: uuidv4(),
-          method: "events/get",
-          params: sessionId, 
-          jsonrpc: "2.0",
-        },
-      }).unwrap()
-      console.log("Events fetched successfully:", response)
-      // Handle events here, e.g., update tasks or messages based on the response
-    } catch (error) {
-      console.error("Error fetching events:", error)
-    }
-  }
+    const poll = async () => {
+      try {
+        // 1) Messages
+        try {
+          const res = await listMessages({
+            data: {
+              id: uuidv4(),
+              jsonrpc: "2.0",
+              method: "message/list",
+              params: sessionId,
+            },
+          } as any).unwrap()
 
-  const fetchPendingMessages = async () => {
-    if (!sessionId) return // Ensure sessionId exists before fetching pending messages
-    try {
-      const response = await pendingMessages({
-        data: {
-          id: uuidv4(),
-          method: "message/pending",
-          params: sessionId, 
-          jsonrpc: "2.0",
-        },
-      }).unwrap()
-      console.log("Pending messages fetched successfully:", response)
-      
-    } catch (error) {
-      console.error("Error fetching pending messages:", error)
-    }
-  }
+          const serverMessages = Array.isArray(res?.result) ? res.result : []
+          const mapped = mapServerMessagesToClient(serverMessages, sessionId)
 
+          if (!cancelled && mapped.length) {
+            setMessagesMap((prev) => {
+              const next = new Map(prev)
+              // Only keep messages belonging to this session
+              for (const m of mapped) {
+                // Deduplicate by id; ensure we only store role/content
+                if (!next.has(m.id) && m.content?.trim().length > 0) {
+                  next.set(m.id, { id: m.id, role: m.role, content: m.content })
+                }
+              }
+              return next
+            })
+          }
+        } catch (e) {
+          // Swallow list errors to avoid breaking polling loop
+          console.warn("message/list poll error:", e)
+        }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!input.trim() || isLoading || !sessionId) return 
+        // 2) Pending
+        try {
+          const res = await pendingMessages({
+            data: {
+              id: uuidv4(),
+              jsonrpc: "2.0",
+              method: "message/pending",
+              params: sessionId,
+            },
+          } as any).unwrap()
+          const result = Array.isArray(res?.result) ? res.result : []
+          // result looks like: [ [messageId, ""] , ... ] or []
+          const count = result.length
+          if (!cancelled) setPendingCount(count)
+        } catch (e) {
+          console.warn("message/pending poll error:", e)
+        }
 
-    const userMessage: Message = {
-      role: "user",
-      content: input,
-    }
-    setMessages((prev) => [...prev, userMessage]) // Optimistic update
-    setInput("")
+        // 3) Events
+        try {
+          const res = await getEvents({
+            data: {
+              id: uuidv4(),
+              jsonrpc: "2.0",
+              method: "events/get",
+              params: sessionId,
+            },
+          } as any).unwrap()
+          const events = Array.isArray(res?.result) ? res.result : []
+          if (!cancelled) setEventCount(events.length)
+        } catch (e) {
+          console.warn("events/get poll error:", e)
+        }
 
-    try {
-      const messageId = uuidv4();
-      const sendParams= {
-      contextId:sessionId,
-      'jsonrpc': '2.0',
-      id: uuidv4(),
-      method: 'message/send',
-      params: {
-        messageId: messageId,
-        contextId: sessionId,
-        role: "user",
-        parts: [{ kind: "text", text: userMessage.content }],
-        kind: "message",
-      },
-      metadata: {
-        blocking: true,
-        accepted_output_modes: ["text/plain"],
-      },
-  
+        // 4) Tasks
+        try {
+          const res = await listTasks({
+            data: {
+              id: uuidv4(),
+              jsonrpc: "2.0",
+              method: "task/list",
+              params: sessionId,
+            },
+          } as any).unwrap()
+          const tasks = Array.isArray(res?.result) ? res.result : []
+          if (!cancelled) setTaskCount(tasks.length)
+        } catch (e) {
+          console.warn("task/list poll error:", e)
+        }
 
-
-    };
-    
-    const response = await askAgent({
-        data: sendParams,
-      }).unwrap()
-      console.log("Message sent successfully:", response)
-      const assistantMessage: Message = {
-        role: "assistant",
-        content: response.response, // Access response from the mutation result
+        if (!cancelled) setLastUpdatedAt(Date.now())
+      } catch (e) {
+        console.warn("Polling error:", e)
       }
+    }
 
-      setMessages((prev) => [...prev, assistantMessage])
-      
-      await fetchMessages() 
-      await fetchPendingMessages() // Fetch pending messages after sending
-      await fetchEvents() // Fetch events after sending
-      await fetchTasks() // Fetch tasks after sending
-      console.log("Messages and events fetched after sending message")
-    } catch (error) {
-      console.error("Error talking to agent:", error)
-      const errorMessage: Message = {
-        role: "assistant",
-        content: "Sorry, I couldn't process that request.",
-      }
-      setMessages((prev) => [...prev, errorMessage])
-      alert("Error communicating with agent. Please check console for details.")
+    // Initial poll immediately, then at interval
+    poll()
+    const interval = setInterval(poll, 2500)
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+    }
+  }, [isOpen, sessionId, listMessages, pendingMessages, getEvents, listTasks])
+
+  // Send user message
+  const handleSend = async (text: string) => {
+    if (!text.trim() || combinedLoading || !sessionId) return
+    const messageId = uuidv4()
+    // Optimistic add
+    setMessagesMap((prev) => {
+      const next = new Map(prev)
+      next.set(messageId, { id: messageId, role: "user", content: text })
+      return next
+    })
+
+    try {
+      const payload = {
+        data: {
+          jsonrpc: "2.0",
+          id: uuidv4(),
+          method: "message/send",
+          params: {
+            messageId,
+            contextId: sessionId,
+            role: "user",
+            parts: [{ kind: "text", text }],
+            kind: "message",
+          },
+          metadata: {
+            blocking: true,
+            accepted_output_modes: ["text/plain"],
+          },
+        },
+      } as any
+
+      await sendMessage(payload).unwrap()
+      // Do not manually fetch; polling will hydrate assistant response and pending status
+    } catch (err) {
+      console.error("send message error:", err)
+      // Rollback optimistic item or mark as failed (simple rollback here)
+      setMessagesMap((prev) => {
+        const next = new Map(prev)
+        next.delete(messageId)
+        // Append an error bubble
+        const errId = uuidv4()
+        next.set(errId, {
+          id: errId,
+          role: "assistant",
+          content: "Sorry, I couldn't process that request.",
+        })
+        return next
+      })
     }
   }
 
   const chatWindowClasses = isFullScreen
     ? "fixed inset-0 w-full h-full rounded-none"
-    : "absolute bottom-20 right-0 w-96 h-[500px] rounded-xl border border-gray-200"
+    : "absolute bottom-20 right-0 w-96 h-[560px] rounded-xl border border-gray-200"
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
@@ -280,10 +328,12 @@ export default function AIChatWidget() {
             isFullScreen={isFullScreen}
             toggleFullScreen={toggleFullScreen}
             messages={messages}
-            input={input}
-            isLoading={isLoading} // Pass combined isLoading from RTK Query
-            setInput={setInput}
-            handleSubmit={handleSubmit}
+            onSend={handleSend}
+            isBusy={combinedLoading}
+            pendingCount={pendingCount}
+            taskCount={taskCount}
+            eventCount={eventCount}
+            lastUpdatedAt={lastUpdatedAt ?? undefined}
           />
         </div>
       )}
