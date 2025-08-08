@@ -148,7 +148,7 @@ export default function AgentChat({
               onClose()
               onActivity?.()
             }}
-            className="p-1 rounded-full hover:bg-white/20 transition-colors"
+            className="p-1  rounded-full hover:bg-white/20 transition-colors"
             aria-label="Close chat"
             title="Close"
           >
