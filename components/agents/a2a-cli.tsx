@@ -339,7 +339,7 @@ export default function AIChatWidget() {
 
   const chatWindowClasses = isFullScreen
     ? "fixed inset-0 w-full h-full rounded-none"
-    : "absolute bottom-20 right-0 w-[450px]  h-[450px] rounded-xl border border-gray-200"
+    : "absolute bottom-20 right-0 max-w-[400px]   h-[450px] rounded-xl border border-gray-200"
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
@@ -359,7 +359,7 @@ export default function AIChatWidget() {
         <div
           id="chat-widget"
           ref={widgetRef}
-          className={`shadow-2xl flex flex-col overflow-hidden bg-white ${chatWindowClasses}`}
+          className={`shadow-2xl flex flex-col overflow-hidden  bg-white ${chatWindowClasses}`}
         >
           <AgentChat
             onClose={() => {
