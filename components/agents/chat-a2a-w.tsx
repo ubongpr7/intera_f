@@ -119,8 +119,8 @@ export default function AgentChat({
             )}
           </button>
           <Bot className="h-5 w-5 text-white shrink-0" aria-hidden strokeWidth={2.2} />
-          <h3 className="font-bold text-lg truncate">AI Assistant</h3>
-
+         {/**  <h3 className="font-bold text-lg truncate">AI Assistant</h3>
+          */}
           {/* Badges */}
           <div className="ml-3 flex items-center gap-2 text-xs">
             <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1">
@@ -252,7 +252,7 @@ export default function AgentChat({
             }}
             rows={1}
             placeholder="Type your message..."
-            className="flex-1 text-gray-800 border border-gray-300 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none leading-6 max-h-[160px]"
+            className="flex-1 text-gray-100 border border-gray-300 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none leading-6 max-h-[160px]"
             disabled={isBusy}
             aria-label="Type your message"
           />
