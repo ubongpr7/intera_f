@@ -303,7 +303,7 @@ export default function AIChatWidget() {
 
   const chatWindowClasses = isFullScreen
     ? "fixed inset-0 w-full h-full rounded-none"
-    : "absolute bottom-20 right-0 w-96 h-[580px] rounded-xl border border-gray-200"
+    : "absolute bottom-20 right-0 w-96 h-[400px] rounded-xl border border-gray-200"
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
