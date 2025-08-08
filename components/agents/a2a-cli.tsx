@@ -295,10 +295,7 @@ export default function AIChatWidget() {
   const handleSend = async (text: string) => {
     if (!text.trim() || combinedLoading || !sessionId) return
     const messageId = uuidv4()
-    text = `${text}
-    Profile ID: ${getCookie("profile") ?? "unknown"}, email: ${getCookie("email") ?? "unknown"}
-
-    `
+    
     setMessagesMap((prev) => {
       const next = new Map(prev)
       next.set(messageId, { id: messageId, role: "user", content: text })
