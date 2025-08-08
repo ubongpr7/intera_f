@@ -126,7 +126,23 @@ export default function AgentChat({
 
         {/* Right group */}
         <div className="flex items-center gap-2">
-          {lastUpdatedAt ? <span className="hidden sm:inline text-xs text-white/80">Updated {new Date(lastUpdatedAt).toLocaleTimeString()}</span> : null}
+        
+         {/**   {lastUpdatedAt ? <span className="hidden sm:inline text-xs text-white/80">Updated {new Date(lastUpdatedAt).toLocaleTimeString()}</span> : null}*/}
+          <button
+            onClick={() => {
+              toggleFullScreen()
+              onActivity?.()
+            }}
+            className="p-1  rounded-full hover:bg-white/20 transition-colors shrink-0"
+            aria-label={isFullScreen ? "Exit full screen" : "Enter full screen"}
+            title={isFullScreen ? "Exit full screen" : "Enter full screen"}
+          >
+            {isFullScreen ? (
+              <Minimize className="h-5 w-5 text-white" strokeWidth={2.2} />
+            ) : (
+              <Maximize className="h-5 w-5 text-white" strokeWidth={2.2} />
+            )}
+          </button>
           <button
             onClick={() => {
               onClose()
@@ -138,21 +154,7 @@ export default function AgentChat({
           >
             <X className="h-5 w-5 text-white" strokeWidth={2.2} />
           </button>
-           <button
-            onClick={() => {
-              toggleFullScreen()
-              onActivity?.()
-            }}
-            className="p-1 rounded-full hover:bg-white/20 transition-colors shrink-0"
-            aria-label={isFullScreen ? "Exit full screen" : "Enter full screen"}
-            title={isFullScreen ? "Exit full screen" : "Enter full screen"}
-          >
-            {isFullScreen ? (
-              <Minimize className="h-5 w-5 text-white" strokeWidth={2.2} />
-            ) : (
-              <Maximize className="h-5 w-5 text-white" strokeWidth={2.2} />
-            )}
-          </button>
+           
         </div>
       </div>
 
