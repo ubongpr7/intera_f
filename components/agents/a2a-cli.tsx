@@ -12,6 +12,7 @@ import {
   useListMessagesMutation,
   usePendingMessagesMutation,
   useGetEventMutation,
+  useListTaskMutation,
 } from "@/redux/features/agent/agentAPISlice"
 import {
   AgentCard,
@@ -47,6 +48,7 @@ export default function AIChatWidget() {
   const [listMessages, { isLoading: isListingMessages }] = useListMessagesMutation();
   const [pendingMessages, { isLoading: ispendingMessages }] = usePendingMessagesMutation();
   const [getEvent, { isLoading: isGettingEvent }] = useGetEventMutation();
+  const [listTask, { isLoading: isListingTask }] = useListTaskMutation();
 
   const isLoading = isSendingMessage || isCreatingConversation // Combined loading state
 
@@ -132,6 +134,24 @@ export default function AIChatWidget() {
       alert("Failed to fetch messages. Please try again.")
     }
   }
+  // Fetch events and pending messages when the component mounts or sessionId changes
+  const fetchTasks = async () => {
+    if (!sessionId) return // Ensure sessionId exists before fetching tasks
+    try {
+      const response = await listTask({
+        data: {
+          id: uuidv4(),
+          method: "task/list",
+          params: sessionId, 
+          jsonrpc: "2.0",
+        },
+      }).unwrap()
+      console.log("Tasks fetched successfully:", response)
+      // Handle tasks here, e.g., update tasks or messages based on the response
+    } catch (error) {
+      console.error("Error fetching tasks:", error)
+    }
+  }
 
   const fetchEvents = async () => {
     if (!sessionId) return // Ensure sessionId exists before fetching events
@@ -186,7 +206,7 @@ export default function AIChatWidget() {
       const sendParams= {
       contextId:sessionId,
       'jsonrpc': '2.0',
-      id: conversationId,
+      id: uuidv4(),
       method: 'message/send',
       params: {
         messageId: messageId,
@@ -214,9 +234,11 @@ export default function AIChatWidget() {
       }
 
       setMessages((prev) => [...prev, assistantMessage])
+      
       await fetchMessages() 
       await fetchPendingMessages() // Fetch pending messages after sending
       await fetchEvents() // Fetch events after sending
+      await fetchTasks() // Fetch tasks after sending
       console.log("Messages and events fetched after sending message")
     } catch (error) {
       console.error("Error talking to agent:", error)
