@@ -103,21 +103,7 @@ export default function AgentChat({
       <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 flex items-center justify-between">
         {/* Left group */}
         <div className="flex items-center gap-2 min-w-0">
-          <button
-            onClick={() => {
-              toggleFullScreen()
-              onActivity?.()
-            }}
-            className="p-1 rounded-full hover:bg-white/20 transition-colors shrink-0"
-            aria-label={isFullScreen ? "Exit full screen" : "Enter full screen"}
-            title={isFullScreen ? "Exit full screen" : "Enter full screen"}
-          >
-            {isFullScreen ? (
-              <Minimize className="h-5 w-5 text-white" strokeWidth={2.2} />
-            ) : (
-              <Maximize className="h-5 w-5 text-white" strokeWidth={2.2} />
-            )}
-          </button>
+         
           <Bot className="h-5 w-5 text-white shrink-0" aria-hidden strokeWidth={2.2} />
          {/**  <h3 className="font-bold text-lg truncate">AI Assistant</h3>
           */}
@@ -151,6 +137,21 @@ export default function AgentChat({
             title="Close"
           >
             <X className="h-5 w-5 text-white" strokeWidth={2.2} />
+          </button>
+           <button
+            onClick={() => {
+              toggleFullScreen()
+              onActivity?.()
+            }}
+            className="p-1 rounded-full hover:bg-white/20 transition-colors shrink-0"
+            aria-label={isFullScreen ? "Exit full screen" : "Enter full screen"}
+            title={isFullScreen ? "Exit full screen" : "Enter full screen"}
+          >
+            {isFullScreen ? (
+              <Minimize className="h-5 w-5 text-white" strokeWidth={2.2} />
+            ) : (
+              <Maximize className="h-5 w-5 text-white" strokeWidth={2.2} />
+            )}
           </button>
         </div>
       </div>
