@@ -12,6 +12,7 @@ import {
   useListTaskMutation,
 } from "@/redux/features/agent/agentAPISlice"
 import { v4 as uuidv4 } from "uuid"
+import { toast } from "react-toastify"
 
 type Role = "user" | "assistant"
 
@@ -70,8 +71,6 @@ export default function AIChatWidget() {
   const [lastActivityAt, setLastActivityAt] = useState<number | null>(null)
   const prevSnapshotRef = useRef({ msgSize: 0, pending: 0, events: 0, tasks: 0 })
 
-  // Toast
-  const { toast } = useToast()
 
   // RTK Query hooks
   const [createConversation, { isLoading: isCreatingConversation }] = useCreateConversationMutation()
@@ -284,14 +283,12 @@ export default function AIChatWidget() {
       const hasWork = pendingCount > 0 || taskCount > 0
       if (!hasWork && idleFor >= INACTIVITY_MS) {
         setIsOpen(false)
-        toast({
-          description: "Assistant closed after 3 minutes of inactivity.",
-        })
+        toast.info("AI Assistant closed due to inactivity.")
       }
     }, 10000) // check every 10s
 
     return () => clearInterval(ticker)
-  }, [isOpen, lastActivityAt, pendingCount, taskCount, toast])
+  }, [isOpen, lastActivityAt, pendingCount, taskCount])
 
   // Send user message
   const handleSend = async (text: string) => {
