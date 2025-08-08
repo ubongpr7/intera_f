@@ -127,7 +127,7 @@ export default function AgentChat({
         {/* Right group */}
         <div className="flex items-center gap-2">
         
-         {lastUpdatedAt ? <span className="hidden sm:inline whitespace-nowrap text-xs text-white/80">Updated {new Date(lastUpdatedAt).toLocaleTimeString()}</span> : null}
+         {/*   {lastUpdatedAt ? <span className="hidden sm:inline whitespace-nowrap text-xs text-white/80">Updated {new Date(lastUpdatedAt).toLocaleTimeString()}</span> : null}*/}
           <button
             onClick={() => {
               toggleFullScreen()
