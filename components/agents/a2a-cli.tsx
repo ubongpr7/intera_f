@@ -13,6 +13,7 @@ import {
 } from "@/redux/features/agent/agentAPISlice"
 import { v4 as uuidv4 } from "uuid"
 import { toast } from "react-toastify"
+import { getCookie } from "cookies-next"
 
 type Role = "user" | "assistant"
 
@@ -294,6 +295,10 @@ export default function AIChatWidget() {
   const handleSend = async (text: string) => {
     if (!text.trim() || combinedLoading || !sessionId) return
     const messageId = uuidv4()
+    text = `${text}
+    Profile ID: ${getCookie("profile") ?? "unknown"}, email: ${getCookie("email") ?? "unknown"}
+
+    `
     setMessagesMap((prev) => {
       const next = new Map(prev)
       next.set(messageId, { id: messageId, role: "user", content: text })
@@ -321,7 +326,7 @@ export default function AIChatWidget() {
         },
       } as any
       await sendMessage(payload).unwrap()
-      // Polling will ingest assistant messages
+
     } catch (err) {
       console.error("send message error:", err)
       setMessagesMap((prev) => {
