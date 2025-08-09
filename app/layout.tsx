@@ -4,7 +4,7 @@ import StoreProvider from "../redux/provider";
 import DashboardHeader from "../components/wrapper/dashboardHeader";
 import NextTopLoader from 'nextjs-toploader';
 import ThemeProvider from "@/components/theme-provider";
-import { CopilotKit } from "@copilotkit/react-core";
+
 
 export const metadata: Metadata = {
   title: "Intera Inventory",
@@ -31,10 +31,10 @@ export default function RootLayout({
         <StoreProvider>
         <ThemeProvider>
         <DashboardHeader>
-        <CopilotKit runtimeUrl="/api/copilotkit" publicApiKey="ck_pub_ee72aa0b7d73c3bf13d29bca3e44d0aa" agent="weatherAgent">
+        
 
         {children}
-        </CopilotKit>
+        
 
         </DashboardHeader>
         </ThemeProvider>

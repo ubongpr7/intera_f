@@ -7,23 +7,24 @@ import { Memory } from "@mastra/memory";
 import { LlmAgent, RunConfig } from '@waldzellai/adk-typescript';
 import { Runner } from '@waldzellai/adk-typescript';
 import { GoogleGenAI } from "@google/genai";
-
+import { google } from "@ai-sdk/google";
 export const AgentState = z.object({
   proverbs: z.array(z.string()).default([]),
 });
 
-const agent = new LlmAgent({
-  name: 'myagent',
-  description: 'A helpful assistant',
-  model: 'gemini-1.5-pro',
-  instruction: 'You are a helpful assistant.'
-});
+// const agent = new LlmAgent({
+//   name: 'myagent',
+//   description: 'A helpful assistant',
+//   model: 'gemini-1.5-pro',
+//   instruction: 'You are a helpful assistant.'
+// });
 
 export const weatherAgent = new Agent({
   name: "Weather Agent",
   tools: { weatherTool },
-  model: agent,
+  model: google("gemini-2.0-flash-001"),
   instructions: "You are a helpful assistant.",
+
   memory: new Memory({
     storage: new LibSQLStore({ url: "file::memory:" }),
     options: {
