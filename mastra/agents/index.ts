@@ -13,7 +13,7 @@ export const AgentState = z.object({
 });
 
 const agent = new LlmAgent({
-  name: 'my-agent',
+  name: 'myagent',
   description: 'A helpful assistant',
   model: 'gemini-1.5-pro',
   instruction: 'You are a helpful assistant.'
