@@ -103,7 +103,30 @@ export default function AgentChat({
       <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 flex items-center justify-between">
         {/* Left group */}
         <div className="flex items-center gap-2 min-w-0">
-          <button
+         
+          <Bot className="h-5 w-5 text-white shrink-0" aria-hidden strokeWidth={2.2} />
+          <h3 className="font-bold text-lg truncate">AI Assistant</h3>
+
+          {/* Badges */}
+          <div className="ml-3 flex items-center gap-2 text-xs">
+            <span className="inline-flex whitespace-nowrap items-center gap-1 rounded-full bg-white/15 px-2 py-1">
+              <Radio className={`h-4 w-4 ${pendingCount > 0 ? "animate-pulse text-yellow-300" : "text-white"}`} aria-hidden strokeWidth={2.4} />
+              <span>{pendingCount > 0 ? `${pendingCount} pending` : "Idle"}</span>
+            </span>
+            <span className="inline-flex whitespace-nowrap  items-center gap-1 rounded-full bg-white/15 px-2 py-1">
+              <ListChecks className="h-4 w-4 text-white" aria-hidden strokeWidth={2.4} />
+              <span>{taskCount} tasks</span>
+            </span>
+            <span className="hidden whitespace-nowrap sm:inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1">
+              <Clock className="h-4 w-4 text-white" aria-hidden strokeWidth={2.4} />
+              <span>{eventCount} events</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Right group */}
+        <div className="flex items-center gap-2">
+         <button
             onClick={() => {
               toggleFullScreen()
               onActivity?.()
@@ -118,28 +141,6 @@ export default function AgentChat({
               <Maximize className="h-5 w-5 text-white" strokeWidth={2.2} />
             )}
           </button>
-          <Bot className="h-5 w-5 text-white shrink-0" aria-hidden strokeWidth={2.2} />
-          <h3 className="font-bold text-lg truncate">AI Assistant</h3>
-
-          {/* Badges */}
-          <div className="ml-3 flex items-center gap-2 text-xs">
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1">
-              <Radio className={`h-4 w-4 ${pendingCount > 0 ? "animate-pulse text-yellow-300" : "text-white"}`} aria-hidden strokeWidth={2.4} />
-              <span>{pendingCount > 0 ? `${pendingCount} pending` : "Idle"}</span>
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1">
-              <ListChecks className="h-4 w-4 text-white" aria-hidden strokeWidth={2.4} />
-              <span>{taskCount} tasks</span>
-            </span>
-            <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1">
-              <Clock className="h-4 w-4 text-white" aria-hidden strokeWidth={2.4} />
-              <span>{eventCount} events</span>
-            </span>
-          </div>
-        </div>
-
-        {/* Right group */}
-        <div className="flex items-center gap-2">
           {lastUpdatedAt ? <span className="hidden sm:inline text-xs text-white/80">Updated {new Date(lastUpdatedAt).toLocaleTimeString()}</span> : null}
           <button
             onClick={() => {
@@ -252,7 +253,7 @@ export default function AgentChat({
             }}
             rows={1}
             placeholder="Type your message..."
-            className="flex-1 text-gray-800 border border-gray-300 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none leading-6 max-h-[160px]"
+            className="flex-1 text-gray-100 border border-gray-300 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none leading-6 max-h-[160px]"
             disabled={isBusy}
             aria-label="Type your message"
           />
