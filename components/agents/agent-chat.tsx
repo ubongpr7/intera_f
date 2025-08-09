@@ -105,7 +105,6 @@ export default function AgentChat({
         <div className="flex items-center gap-2 min-w-0">
          
           <Bot className="h-5 w-5 text-white shrink-0" aria-hidden strokeWidth={2.2} />
-          <h3 className="font-bold text-lg truncate">AI Assistant</h3>
 
           {/* Badges */}
           <div className="ml-3 flex items-center gap-2 text-xs">
@@ -126,7 +125,9 @@ export default function AgentChat({
 
         {/* Right group */}
         <div className="flex items-center gap-2">
-         <button
+        
+          {lastUpdatedAt ? <span className="hidden sm:inline text-xs text-white/80">Updated {new Date(lastUpdatedAt).toLocaleTimeString()}</span> : null}
+           <button
             onClick={() => {
               toggleFullScreen()
               onActivity?.()
@@ -141,7 +142,6 @@ export default function AgentChat({
               <Maximize className="h-5 w-5 text-white" strokeWidth={2.2} />
             )}
           </button>
-          {lastUpdatedAt ? <span className="hidden sm:inline text-xs text-white/80">Updated {new Date(lastUpdatedAt).toLocaleTimeString()}</span> : null}
           <button
             onClick={() => {
               onClose()
