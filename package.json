@@ -23,6 +23,7 @@
     "@emotion/styled": "^11.14.0",
     "@google/genai": "^1.13.0",
     "@headlessui/react": "^2.2.0",
+    "@hookform/resolvers": "^5.2.1",
     "@langchain/anthropic": "^0.3.24",
     "@langchain/community": "^0.3.49",
     "@langchain/core": "^0.3.66",
