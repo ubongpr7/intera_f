@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server"
 export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
 
-  const isPublicPath = path.startsWith('/accounts')|| path === '/' || path === '/features'|| path === '/pricing' || path === '/about' || path === '/contact' || path === '/blog' || path.startsWith('/blog/') || path.startsWith('/docs') || path.startsWith('/docs/') || path.startsWith('/api') || path.startsWith('/_next/static') || path.startsWith('/_next/image') || path === '/copilot'
+  const isPublicPath = path.startsWith('/accounts')|| path === '/' || path === '/features'|| path === '/pricing' || path === '/about' || path === '/contact' || path === '/blog' || path.startsWith('/blog/') || path.startsWith('/docs') || path.startsWith('/docs/') || path.startsWith('/api') || path.startsWith('/_next/static') || path.startsWith('/_next/image') 
 
   const token = request.cookies.get("refreshToken")?.value || ""
 
