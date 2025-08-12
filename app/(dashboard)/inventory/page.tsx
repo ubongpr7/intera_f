@@ -1,9 +1,9 @@
 'use client'
 import { Folder, MapPin, Warehouse } from 'lucide-react';
-import Tabs from '../../components/common/Tabs';
-import InventoryCategoryView from '../../components/inventory/InventoryCategory';
-import InventoryView from '../../components/inventory/InventoryView';
-import StockLocations from '../../components/stock/stockLoation';
+import Tabs from '@/components/common/Tabs';
+import InventoryCategoryView from '@/components/inventory/InventoryCategory';
+import InventoryView from '@/components/inventory/InventoryView';
+import StockLocations from '@/components/stock/stockLoation';
 import { useState } from 'react';
 const InventoryPage = () => {
   const  [refetchData, setRefetchData] = useState(false)

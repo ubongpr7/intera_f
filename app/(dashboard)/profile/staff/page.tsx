@@ -1,8 +1,8 @@
 'use client'
-import StaffRole from '../../../components/management/roles';
-import Tabs from '../../../components/common/Tabs';
-import StaffCreateCard from '../../../components/management/Staff';
-import StaffGroup from '../../../components/management/groups';
+import StaffRole from '@/components/management/roles';
+import Tabs from '@/components/common/Tabs';
+import StaffCreateCard from '@/components/management/Staff';
+import StaffGroup from '@/components/management/groups';
 import {useState} from 'react'
 const StaffPage = () => {
   const [refetchData,setRefetchData] = useState(false)

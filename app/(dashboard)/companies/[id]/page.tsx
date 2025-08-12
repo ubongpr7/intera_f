@@ -1,7 +1,7 @@
-import CompanyDetail from "../../../components/company/Details";
-import CompanyAddressView from "../../../components/company/contactAdress";
-import Tabs from '../../../components/common/Tabs';
-import ContactPersonView from "../../../components/company/Contact";
+import CompanyDetail from "@/components/company/Details";
+import CompanyAddressView from "@/components/company/contactAdress";
+import Tabs from '@/components/common/Tabs';
+import ContactPersonView from "@/components/company/Contact";
 
 
 

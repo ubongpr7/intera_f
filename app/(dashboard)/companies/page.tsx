@@ -1,5 +1,5 @@
-import Tabs from '../../components/common/Tabs';
-import CompanyView from '../../components/company/companyView';
+import Tabs from '@/components/common/Tabs';
+import CompanyView from '@/components/company/companyView';
 const CompaniesPage = () => {
   const tabs = [
     {

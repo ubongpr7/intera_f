@@ -30,13 +30,7 @@ export default function RootLayout({
       <NextTopLoader />
         <StoreProvider>
         <ThemeProvider>
-        <DashboardHeader>
-        
-
         {children}
-        
-
-        </DashboardHeader>
         </ThemeProvider>
         </StoreProvider>
         

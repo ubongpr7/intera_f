@@ -1,6 +1,6 @@
 // app/inventory/page.tsx
-import Tabs from '../../../components/common/Tabs';
-import PurchaseOrderView from '../../../components/orders/purchaseOrder/PurchaseOrderView';
+import Tabs from '@/components/common/Tabs';
+import PurchaseOrderView from '@/components/orders/purchaseOrder/PurchaseOrderView';
 
 const InventoryPage = () => {
   const tabs = [

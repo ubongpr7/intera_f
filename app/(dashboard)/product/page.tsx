@@ -1,6 +1,6 @@
 // app/inventory/page.tsx
-import Tabs from '../../components/common/Tabs';
-import ProductCategoryView from '../../components/product/productCategory';
+import Tabs from '@/components/common/Tabs';
+import ProductCategoryView from '@/components/product/productCategory';
 import ProductView from '@/components/product/productView';
 const ProductPage = () => {
   const tabs = [

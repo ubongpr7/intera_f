@@ -1,6 +1,6 @@
-import InventoryDetail from "../../../components/inventory/Detail";
-import Tabs from '../../../components/common/Tabs';
-import StockItems from "../../../components/stock/CreateStockItems";
+import InventoryDetail from "@/components/inventory/Detail";
+import Tabs from '@/components/common/Tabs';
+import StockItems from "@/components/stock/CreateStockItems";
 
 
 export default async function InventoryDetailPage({
