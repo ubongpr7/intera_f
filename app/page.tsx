@@ -1,695 +1,733 @@
-// app/page.tsx
-'use client';
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Bar, Line, Pie } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement
-} from 'chart.js';
-import Link from 'next/link';
-import Image from 'next/image'
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement
-);
+"use client"
+import { useState, useEffect, useRef } from "react"
+import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion"
+import { Canvas, useFrame } from "@react-three/fiber"
+import { OrbitControls, Sphere, MeshDistortMaterial, Float, Environment } from "@react-three/drei"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 
-export default function Home() {
-  const [isVisible, setIsVisible] = useState(false);
+function AnimatedSphere() {
+  const meshRef = useRef()
 
-  useEffect(() => {
-    setIsVisible(true);
-  }, []);
-
-  // Chart data
-  const inventoryData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    datasets: [
-      {
-        label: 'With Intera',
-        data: [65, 59, 80, 81, 76, 90],
-        backgroundColor: 'rgba(54, 162, 235, 0.2)',
-        borderColor: 'rgba(54, 162, 235, 1)',
-        borderWidth: 2,
-        tension: 0.3,
-      },
-      {
-        label: 'Without Intera',
-        data: [28, 48, 40, 19, 46, 27],
-        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-        borderColor: 'rgba(255, 99, 132, 1)',
-        borderWidth: 2,
-        tension: 0.3,
-      }
-    ]
-  };
-
-  const salesData = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    datasets: [
-      {
-        label: 'Sales ($)',
-        data: [1200, 1900, 1500, 1800, 2200, 3000, 2800],
-        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-        borderColor: 'rgba(75, 192, 192, 1)',
-        borderWidth: 2,
-      }
-    ]
-  };
-
-  const categoryData = {
-    labels: ['Electronics', 'Clothing', 'Groceries', 'Home Goods', 'Toys'],
-    datasets: [
-      {
-        label: 'Inventory Distribution',
-        data: [12, 19, 15, 28, 26],
-        backgroundColor: [
-          'rgba(255, 99, 132, 0.7)',
-          'rgba(54, 162, 235, 0.7)',
-          'rgba(255, 206, 86, 0.7)',
-          'rgba(75, 192, 192, 0.7)',
-          'rgba(153, 102, 255, 0.7)',
-        ],
-        borderColor: [
-          'rgba(255, 99, 132, 1)',
-          'rgba(54, 162, 235, 1)',
-          'rgba(255, 206, 86, 1)',
-          'rgba(75, 192, 192, 1)',
-          'rgba(153, 102, 255, 1)',
-        ],
-        borderWidth: 1,
-      },
-    ],
-  };
-
-  // Features data
-  const features = [
-    {
-      title: "Offline-First POS",
-      description: "Process transactions even without internet connectivity. All data syncs automatically when connection is restored.",
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-        </svg>
-      )
-    },
-    {
-      title: "Real-Time Inventory Tracking",
-      description: "Monitor stock levels across multiple locations with live updates and automated alerts.",
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-        </svg>
-      )
-    },
-    {
-      title: "AI-Powered Forecasting",
-      description: "Predict demand with 90% accuracy using machine learning algorithms to optimize stock levels.",
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-        </svg>
-      )
-    },
-    {
-      title: "Batch & Expiry Tracking",
-      description: "Manage perishables and track batches with automated expiry alerts to minimize waste.",
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      )
-    },
-    {
-      title: "Multi-Location Sync",
-      description: "Seamlessly manage inventory across warehouses, stores, and online channels from one platform.",
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      )
-    },
-    {
-      title: "Advanced Reporting",
-      description: "Generate insightful reports on sales, inventory turnover, profitability, and more.",
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-        </svg>
-      )
+  useFrame((state) => {
+    if (meshRef.current) {
+      meshRef.current.rotation.x = state.clock.elapsedTime * 0.2
+      meshRef.current.rotation.y = state.clock.elapsedTime * 0.3
     }
-  ];
-
-  const testimonials = [
-    {
-      name: "Sarah Johnson",
-      role: "Retail Store Owner",
-      content: "Intera reduced our stockouts by 85% and improved inventory accuracy to 99.7%. The offline POS saved us during an internet outage!"
-    },
-    {
-      name: "Michael Chen",
-      role: "E-commerce Manager",
-      content: "The AI forecasting predicted our holiday demand perfectly. We increased sales by 30% without overstocking."
-    },
-    {
-      name: "David Rodriguez",
-      role: "Restaurant Chain Owner",
-      content: "Food waste decreased by 45% thanks to Intera's expiry tracking. Our inventory costs are now perfectly optimized."
-    }
-  ];
+  })
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-      {/* Hero Section */}
-      <header className="relative bg-gradient-to-r from-blue-900 to-indigo-900 text-white overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-blue-900/20 to-indigo-900/80"></div>
-          <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-blue-500/10 to-transparent"></div>
-          <div className="absolute top-1/3 left-1/4 w-64 h-64 bg-blue-400 rounded-full mix-blend-soft-light filter blur-3xl opacity-70 animate-blob"></div>
-          <div className="absolute top-1/2 right-1/4 w-72 h-72 bg-purple-400 rounded-full mix-blend-soft-light filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
-          <div className="absolute bottom-0 left-1/2 w-80 h-80 bg-indigo-500 rounded-full mix-blend-soft-light filter blur-3xl opacity-70 animate-blob animation-delay-4000"></div>
-        </div>
+    <Float speed={2} rotationIntensity={1} floatIntensity={2}>
+      <Sphere ref={meshRef} args={[1, 100, 200]} scale={2}>
+        <MeshDistortMaterial
+          color="#a855f7"
+          attach="material"
+          distort={0.3}
+          speed={2}
+          roughness={0.2}
+          metalness={0.8}
+        />
+      </Sphere>
+    </Float>
+  )
+}
 
-        <nav className="relative z-10 py-6 px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center">
-              <div className="bg-white p-1 rounded-lg">
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 w-10 h-10 rounded-md flex items-center justify-center">
-                 <Image src={'/apple-touch-icon.png'} width={40} height={40} alt='logo' />
+function ConversationBubble({ message, isAI, delay = 0 }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20, scale: 0.8 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ delay, duration: 0.5 }}
+      className={`flex ${isAI ? "justify-start" : "justify-end"} mb-4`}
+    >
+      <div
+        className={`max-w-xs px-4 py-2 rounded-2xl glass-effect ${
+          isAI ? "bg-purple-800/20 text-purple-100" : "bg-violet-600/30 text-white"
+        }`}
+      >
+        <p className="text-sm font-sans">{message}</p>
+      </div>
+    </motion.div>
+  )
+}
+
+function PricingCube({ plan, isPopular = false }) {
+  const [isHovered, setIsHovered] = useState(false)
+
+  return (
+    <motion.div
+      className="perspective-1000 h-80 w-full"
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      whileHover={{ scale: 1.05 }}
+    >
+      <motion.div
+        className={`transform-3d w-full h-full relative cursor-pointer ${isPopular ? "animate-pulse-glow" : ""}`}
+        animate={{
+          rotateY: isHovered ? 180 : 0,
+        }}
+        transition={{ duration: 0.8 }}
+      >
+        {/* Front Face */}
+        <div className="absolute inset-0 w-full h-full backface-hidden">
+          <Card
+            className={`h-full glass-effect border-2 ${
+              isPopular
+                ? "border-violet-400 bg-gradient-to-br from-purple-900/50 to-violet-800/30"
+                : "border-purple-700/50 bg-purple-900/20"
+            }`}
+          >
+            <CardContent className="p-8 h-full flex flex-col justify-between">
+              {isPopular && (
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-gradient-to-r from-violet-500 to-purple-600 text-white px-4 py-1 rounded-full text-sm font-serif font-bold">
+                    Most Popular
+                  </span>
+                </div>
+              )}
+              <div>
+                <h3 className="text-2xl font-serif font-bold text-white mb-2">{plan.name}</h3>
+                <p className="text-purple-200 font-sans mb-4">{plan.tagline}</p>
+                <div className="text-4xl font-serif font-bold text-violet-400 mb-2">
+                  ${plan.price}
+                  <span className="text-lg text-purple-300">/month</span>
                 </div>
               </div>
-              <span className="ml-3 text-xl font-bold">INTERA</span>
+              <Button
+                className={`w-full ${
+                  isPopular
+                    ? "bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700"
+                    : "bg-purple-700 hover:bg-purple-600"
+                } text-white font-sans`}
+              >
+                Start {plan.name}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Back Face */}
+        <div className="absolute inset-0 w-full h-full backface-hidden" style={{ transform: "rotateY(180deg)" }}>
+          <Card className="h-full glass-effect border-2 border-purple-700/50 bg-purple-900/20">
+            <CardContent className="p-6 h-full">
+              <h4 className="text-lg font-serif font-bold text-white mb-4">Key Features</h4>
+              <ul className="space-y-3">
+                {plan.features.map((feature, index) => (
+                  <motion.li
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="flex items-center text-purple-200 font-sans text-sm"
+                  >
+                    <div className="w-2 h-2 bg-violet-400 rounded-full mr-3 flex-shrink-0"></div>
+                    {feature}
+                  </motion.li>
+                ))}
+              </ul>
+              <div className="mt-6 p-4 bg-gradient-to-r from-violet-600/20 to-purple-600/20 rounded-lg">
+                <p className="text-violet-300 font-sans text-sm">
+                  Projected savings: <span className="font-bold text-violet-400">${plan.savings}/month</span>
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+export default function Home() {
+  const [currentConversation, setCurrentConversation] = useState(0)
+  const { scrollYProgress } = useScroll()
+  const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"])
+
+  const conversations = [
+    [
+      { message: "Show me items running low on stock", isAI: false },
+      {
+        message: "Found 12 items below reorder point. Top priority: Wireless Headphones (3 left), Phone Cases (7 left)",
+        isAI: true,
+      },
+      { message: "Reorder the headphones from our usual supplier", isAI: false },
+      { message: "Order placed with TechSupply Co. 500 units, delivery in 3 days. Cost: $12,450", isAI: true },
+    ],
+    [
+      { message: "What's our best selling category this month?", isAI: false },
+      { message: "Electronics leads with 34% of sales ($89,340). Growth of 23% vs last month", isAI: true },
+      { message: "Predict next month's demand for electronics", isAI: false },
+      { message: "Based on trends, expecting 28% increase. Recommend increasing stock by 400 units", isAI: true },
+    ],
+  ]
+
+  const pricingPlans = [
+    {
+      name: "Starter",
+      tagline: "Essential inventory management",
+      price: 49,
+      savings: 1200,
+      features: [
+        "Multi-location inventory",
+        "POS integration (offline-first)",
+        "Basic reporting & analytics",
+        "Barcode scanning",
+        "Low stock alerts",
+        "5 user accounts",
+        "Add-on: 1 AI Agent (+$20/mo)",
+      ],
+    },
+    {
+      name: "Professional",
+      tagline: "Advanced features + AI assistance",
+      price: 149,
+      savings: 4500,
+      features: [
+        "Everything in Starter",
+        "Advanced reporting suite",
+        "Supplier management",
+        "Purchase order automation",
+        "Multi-warehouse tracking",
+        "Unlimited users",
+        "Included: 3 AI Agents",
+        "API access",
+      ],
+    },
+    {
+      name: "Enterprise",
+      tagline: "Full-scale operations + AI workforce",
+      price: 399,
+      savings: 12000,
+      features: [
+        "Everything in Professional",
+        "Custom integrations",
+        "White-label options",
+        "Advanced forecasting",
+        "Multi-company support",
+        "Dedicated support",
+        "Unlimited AI Agents",
+        "Custom AI training",
+      ],
+    },
+  ]
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentConversation((prev) => (prev + 1) % conversations.length)
+    }, 8000)
+    return () => clearInterval(interval)
+  }, [])
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-purple-950 via-purple-900 to-slate-900 text-white overflow-hidden">
+      {/* Hero Section */}
+      <header className="relative min-h-screen flex items-center justify-center gradient-mesh">
+        <div className="absolute inset-0 z-0">
+          <Canvas camera={{ position: [0, 0, 5] }}>
+            <ambientLight intensity={0.5} />
+            <pointLight position={[10, 10, 10]} />
+            <AnimatedSphere />
+            <Environment preset="night" />
+            <OrbitControls enableZoom={false} enablePan={false} />
+          </Canvas>
+        </div>
+
+        <nav className="absolute top-0 left-0 right-0 z-20 py-6 px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center max-w-7xl mx-auto">
+            <div className="flex items-center">
+              <div className="bg-white p-1 rounded-lg">
+                <div className="bg-gradient-to-r from-purple-600 to-violet-600 w-10 h-10 rounded-md flex items-center justify-center">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-white">
+                    <circle cx="12" cy="12" r="2" fill="currentColor" />
+                    <circle cx="6" cy="6" r="1.5" fill="currentColor" opacity="0.8" />
+                    <circle cx="18" cy="6" r="1.5" fill="currentColor" opacity="0.8" />
+                    <circle cx="6" cy="18" r="1.5" fill="currentColor" opacity="0.8" />
+                    <circle cx="18" cy="18" r="1.5" fill="currentColor" opacity="0.8" />
+                    <line x1="12" y1="12" x2="6" y2="6" stroke="currentColor" strokeWidth="1" opacity="0.6" />
+                    <line x1="12" y1="12" x2="18" y2="6" stroke="currentColor" strokeWidth="1" opacity="0.6" />
+                    <line x1="12" y1="12" x2="6" y2="18" stroke="currentColor" strokeWidth="1" opacity="0.6" />
+                    <line x1="12" y1="12" x2="18" y2="18" stroke="currentColor" strokeWidth="1" opacity="0.6" />
+                  </svg>
+                </div>
+              </div>
+              <span className="ml-3 text-xl font-serif font-bold">INTERA</span>
             </div>
-            <div className="hidden md:flex space-x-8">
-              <Link href="#features" className="hover:text-blue-300 transition">Features</Link>
-              <Link href="#benefits" className="hover:text-blue-300 transition">Benefits</Link>
-              <Link href="#dashboard" className="hover:text-blue-300 transition">Dashboard</Link>
-              <Link href="#testimonials" className="hover:text-blue-300 transition">Testimonials</Link>
+            <div className="hidden md:flex space-x-8 font-sans">
+              <Link href="#features" className="hover:text-violet-300 transition">
+                Features
+              </Link>
+              <Link href="#conversation" className="hover:text-violet-300 transition">
+                AI Demo
+              </Link>
+              <Link href="#pricing" className="hover:text-violet-300 transition">
+                Pricing
+              </Link>
+              <Link href="#testimonials" className="hover:text-violet-300 transition">
+                Reviews
+              </Link>
             </div>
-            <div className=" items-center flex  space-x-4">
-              <Link href={'/accounts'} className="hidden bg-blue-600 hover:bg-blue-700 md:flex   text-white font-medium py-2 px-6 rounded-lg transition duration-300">
-                Get Started
-              </Link>
-              <Link href={'/accounts/signin'} className="border-2 border-blue-600 bg-transparent hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition duration-300">
-                Signin
-              </Link>
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="outline"
+                className="border-violet-400 text-violet-400 hover:bg-violet-400 hover:text-white font-sans bg-transparent"
+              >
+                Sign In
+              </Button>
+              <Button className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 font-sans">
+                Start Free Trial
+              </Button>
             </div>
           </div>
         </nav>
 
-        
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight">
-                Revolutionize Your Inventory with <span className="text-blue-400">AI-Powered</span> Precision
-              </h1>
-              <p className="mt-6 text-xl text-blue-100 max-w-2xl">
-                Intera's offline-first POS and inventory management system eliminates stockouts, reduces waste, and boosts profits with real-time insights and AI forecasting.
-              </p>
-              <div className="mt-10 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6">
-                <Link href='/accounts' className="bg-white text-blue-900 hover:bg-gray-100 font-bold py-4 px-8 rounded-lg text-lg transition duration-300 shadow-lg">
-                  Start Free Trial
-                </Link>
-                <button className="bg-transparent border-2 border-white text-white hover:bg-white/10 font-medium py-4 px-8 rounded-lg text-lg transition duration-300">
-                  Watch Demo
-                </button>
-              </div>
-              <div className="mt-8 flex items-center">
-                <div className="flex -space-x-2">
-                  {[1, 2, 3, 4].map((item) => (
-                    <div key={item} className="w-10 h-10 rounded-full bg-blue-500 border-2 border-blue-800"></div>
-                  ))}
-                </div>
-                <p className="ml-4 text-blue-200">Join 2,500+ businesses optimizing inventory with Intera</p>
-              </div>
-            </motion.div>
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="relative"
-            >
-              <div className="relative bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 shadow-2xl border border-gray-700">
-                <div className="absolute -inset-2 bg-blue-500 rounded-2xl blur opacity-20"></div>
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex space-x-2">
-                      <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                      <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                    </div>
-                    <div className="text-sm text-gray-300">POS Terminal - Online</div>
-                  </div>
-                  
-                  <div className="bg-gray-900 rounded-xl p-4">
-                    <div className="flex justify-between items-center mb-4">
-                      <div className="text-white font-medium">Order #1425</div>
-                      <div className="text-green-500 text-sm font-medium flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        Synced
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <div className="text-gray-400">Wireless Headphones</div>
-                        <div className="text-white">$129.99</div>
-                      </div>
-                      <div className="flex justify-between">
-                        <div className="text-gray-400">Phone Case</div>
-                        <div className="text-white">$24.99</div>
-                      </div>
-                      <div className="flex justify-between">
-                        <div className="text-gray-400">Screen Protector</div>
-                        <div className="text-white">$9.99</div>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-4 pt-4 border-t border-gray-800 flex justify-between">
-                      <div className="text-gray-400">Total</div>
-                      <div className="text-white font-bold">$164.97</div>
-                    </div>
-                    
-                    <div className="mt-6 flex justify-between">
-                      <button className="bg-gray-700 text-gray-300 hover:bg-gray-600 px-4 py-2 rounded-lg text-sm transition">
-                        Cancel
-                      </button>
-                      <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition">
-                        Process Payment
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="absolute -bottom-8 -right-8 bg-gray-800/50 backdrop-blur-sm rounded-2xl p-4 w-64 shadow-lg border border-gray-700">
-                <div className="text-white text-sm mb-2">Offline Mode Active</div>
-                <div className="flex items-center text-yellow-400 text-xs">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  Processing offline - will sync when connection restored
-                </div>
-              </div>
-            </motion.div>
-          </div>
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+            <h1 className="text-5xl md:text-7xl font-serif font-bold leading-tight mb-8">
+              Complete Inventory
+              <span className="block bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">
+                Management System
+              </span>
+            </h1>
+            <p className="text-xl md:text-2xl text-purple-200 max-w-3xl mx-auto mb-12 font-sans">
+              Full-featured inventory management with offline-first POS, multi-location tracking, and optional AI agents
+              that enhance your operations through natural conversation.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-lg px-8 py-4 font-sans"
+              >
+                Start Free Trial
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-violet-400 text-violet-400 hover:bg-violet-400 hover:text-white text-lg px-8 py-4 font-sans bg-transparent"
+              >
+                View Demo
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Floating Data Points */}
+        <div className="absolute inset-0 z-5">
+          {[...Array(6)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-4 h-4 bg-violet-400 rounded-full opacity-60"
+              style={{
+                left: `${20 + i * 15}%`,
+                top: `${30 + (i % 2) * 40}%`,
+              }}
+              animate={{
+                y: [0, -20, 0],
+                opacity: [0.6, 1, 0.6],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Number.POSITIVE_INFINITY,
+                delay: i * 0.5,
+              }}
+            />
+          ))}
         </div>
       </header>
 
-      {/* Stats Section */}
-      <section className="py-16 bg-white">
+      {/* Core Features Section */}
+      <section id="features" className="py-20 bg-gradient-to-b from-transparent to-purple-950/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="text-4xl font-bold text-blue-900">98%</div>
-              <div className="mt-2 text-gray-600">Reduction in stockouts</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-blue-900">45%</div>
-              <div className="mt-2 text-gray-600">Less inventory waste</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-blue-900">30%</div>
-              <div className="mt-2 text-gray-600">Increase in sales</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-blue-900">99.7%</div>
-              <div className="mt-2 text-gray-600">Inventory accuracy</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="features" className="py-20 bg-gradient-to-b from-white to-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
-              Powerful Features for <span className="text-blue-600">Seamless Inventory Control</span>
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6">
+              Complete <span className="text-violet-400">IMS Features</span>
             </h2>
-            <p className="mt-4 text-xl text-gray-600">
-              Everything you need to optimize stock levels, reduce costs, and boost profitability
+            <p className="text-xl text-purple-200 max-w-3xl mx-auto font-sans">
+              Everything you need to manage inventory across multiple locations with optional AI enhancement
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {features.map((feature, index) => (
-              <motion.div 
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              {
+                title: "Multi-Location Tracking",
+                description: "Track inventory across warehouses, stores, and distribution centers in real-time.",
+                icon: "🏢",
+              },
+              {
+                title: "Offline-First POS",
+                description: "Point-of-sale system that works without internet, syncs when connected.",
+                icon: "💳",
+              },
+              {
+                title: "Barcode & QR Scanning",
+                description: "Fast product identification with mobile scanning and label printing.",
+                icon: "📱",
+              },
+              {
+                title: "Purchase Order Management",
+                description: "Create, track, and manage purchase orders with supplier integration.",
+                icon: "📋",
+              },
+              {
+                title: "Advanced Reporting",
+                description: "Comprehensive analytics, stock reports, and business intelligence dashboards.",
+                icon: "📊",
+              },
+              {
+                title: "Low Stock Alerts",
+                description: "Automated notifications when inventory levels reach reorder points.",
+                icon: "🔔",
+              },
+            ].map((feature, index) => (
+              <motion.div
                 key={index}
+                className="glass-effect rounded-2xl p-8 border border-purple-700/50 hover:border-violet-400/50 transition-all duration-300"
                 initial={{ opacity: 0, y: 20 }}
-                animate={isVisible ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="bg-white rounded-xl p-8 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow"
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ scale: 1.05 }}
               >
-                <div className="flex justify-center">
-                  {feature.icon}
-                </div>
-                <h3 className="mt-6 text-xl font-bold text-center text-gray-900">{feature.title}</h3>
-                <p className="mt-4 text-gray-600 text-center">{feature.description}</p>
+                <div className="text-4xl mb-4">{feature.icon}</div>
+                <h3 className="text-xl font-serif font-bold text-white mb-3">{feature.title}</h3>
+                <p className="text-purple-200 font-sans">{feature.description}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Dashboard Preview */}
-      <section id="dashboard" className="py-20 bg-gradient-to-b from-gray-100 to-white">
+      {/* AI Enhancement Section */}
+      <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
-              <span className="text-blue-600">Real-Time Insights</span> at Your Fingertips
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6">
+              Enhanced with <span className="text-violet-400">AI Agents</span>
             </h2>
-            <p className="mt-4 text-xl text-gray-600">
-              Our intuitive dashboard gives you complete visibility into your inventory performance
+            <p className="text-xl text-purple-200 max-w-3xl mx-auto font-sans">
+              Optional AI agents that work alongside your team to automate tasks and provide intelligent insights
             </p>
           </div>
 
-          <div className="bg-gray-900 rounded-3xl overflow-hidden shadow-2xl">
-            <div className="bg-gray-800 py-3 px-6 flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              {
+                title: "Conversational Interface",
+                description: "Ask questions in natural language: 'How much iPhone stock do we have in NYC?'",
+                icon: "💬",
+              },
+              {
+                title: "Predictive Reordering",
+                description: "AI analyzes trends and automatically suggests optimal reorder quantities.",
+                icon: "🔮",
+              },
+              {
+                title: "Smart Supplier Matching",
+                description: "AI finds the best suppliers based on price, quality, and delivery time.",
+                icon: "🤝",
+              },
+              {
+                title: "Anomaly Detection",
+                description: "Automatically detect unusual patterns that might indicate theft or errors.",
+                icon: "🛡️",
+              },
+              {
+                title: "Demand Forecasting",
+                description: "Predict future demand based on historical data and market trends.",
+                icon: "📈",
+              },
+              {
+                title: "Automated Workflows",
+                description: "Set up AI agents to handle routine tasks like reordering and reporting.",
+                icon: "⚙️",
+              },
+            ].map((feature, index) => (
+              <motion.div
+                key={index}
+                className="glass-effect rounded-2xl p-8 border border-purple-700/50 hover:border-violet-400/50 transition-all duration-300"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ scale: 1.05 }}
+              >
+                <div className="text-4xl mb-4">{feature.icon}</div>
+                <h3 className="text-xl font-serif font-bold text-white mb-3">{feature.title}</h3>
+                <p className="text-purple-200 font-sans">{feature.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Conversation Demo Section */}
+      <section id="conversation" className="py-20 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6">
+              See AI Enhancement in <span className="text-violet-400">Action</span>
+            </h2>
+            <p className="text-xl text-purple-200 max-w-3xl mx-auto font-sans">
+              Watch how AI agents enhance your existing inventory workflows through natural conversation
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div className="glass-effect rounded-3xl p-8 border border-purple-700/50">
+              <div className="flex items-center mb-6">
+                <div className="w-3 h-3 bg-green-400 rounded-full mr-2"></div>
+                <span className="text-purple-200 font-sans">AI Agent Online</span>
               </div>
-              <div className="text-gray-300 text-sm">dashboard.intera.app</div>
-              <div className="w-24"></div>
+
+              <div className="h-80 overflow-hidden">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentConversation}
+                    initial={{ opacity: 0, x: 50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -50 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    {conversations[currentConversation].map((msg, index) => (
+                      <ConversationBubble key={index} message={msg.message} isAI={msg.isAI} delay={index * 1.5} />
+                    ))}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
             </div>
-            
-            <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="bg-gray-800 rounded-xl p-6">
-                <h3 className="text-gray-300 font-medium mb-4">Inventory Performance</h3>
-                <div className="h-80">
-                  <Line 
-                    data={inventoryData} 
-                    options={{ 
-                      responsive: true,
-                      plugins: {
-                        legend: {
-                          position: 'top',
-                          labels: {
-                            color: '#e2e8f0'
-                          }
-                        },
-                        title: {
-                          display: false
-                        }
-                      },
-                      scales: {
-                        x: {
-                          grid: {
-                            color: 'rgba(255, 255, 255, 0.1)'
-                          },
-                          ticks: {
-                            color: '#94a3b8'
-                          }
-                        },
-                        y: {
-                          grid: {
-                            color: 'rgba(255, 255, 255, 0.1)'
-                          },
-                          ticks: {
-                            color: '#94a3b8'
-                          }
-                        }
-                      }
-                    }} 
-                  />
-                </div>
-              </div>
-              
-              <div className="bg-gray-800 rounded-xl p-6">
-                <h3 className="text-gray-300 font-medium mb-4">Sales Analytics</h3>
-                <div className="h-80">
-                  <Bar 
-                    data={salesData} 
-                    options={{ 
-                      responsive: true,
-                      plugins: {
-                        legend: {
-                          position: 'top',
-                          labels: {
-                            color: '#e2e8f0'
-                          }
-                        },
-                        title: {
-                          display: false
-                        }
-                      },
-                      scales: {
-                        x: {
-                          grid: {
-                            color: 'rgba(255, 255, 255, 0.1)'
-                          },
-                          ticks: {
-                            color: '#94a3b8'
-                          }
-                        },
-                        y: {
-                          grid: {
-                            color: 'rgba(255, 255, 255, 0.1)'
-                          },
-                          ticks: {
-                            color: '#94a3b8'
-                          }
-                        }
-                      }
-                    }} 
-                  />
-                </div>
-              </div>
-              
-              <div className="lg:col-span-2 bg-gray-800 rounded-xl p-6">
-                <h3 className="text-gray-300 font-medium mb-4">Inventory Distribution</h3>
-                <div className="h-80">
-                  <Pie 
-                    data={categoryData} 
-                    options={{ 
-                      responsive: true,
-                      plugins: {
-                        legend: {
-                          position: 'right',
-                          labels: {
-                            color: '#e2e8f0'
-                          }
-                        }
-                      }
-                    }} 
-                  />
-                </div>
-              </div>
+
+            <div className="space-y-8">
+              <motion.div
+                className="glass-effect rounded-2xl p-6 border border-purple-700/50"
+                whileHover={{ scale: 1.02 }}
+              >
+                <h3 className="text-xl font-serif font-bold text-violet-400 mb-3">Natural Language Queries</h3>
+                <p className="text-purple-200 font-sans">
+                  Ask complex questions about your inventory using everyday language instead of navigating dashboards.
+                </p>
+              </motion.div>
+
+              <motion.div
+                className="glass-effect rounded-2xl p-6 border border-purple-700/50"
+                whileHover={{ scale: 1.02 }}
+              >
+                <h3 className="text-xl font-serif font-bold text-violet-400 mb-3">Intelligent Automation</h3>
+                <p className="text-purple-200 font-sans">
+                  AI agents handle routine tasks while you focus on strategic decisions and customer service.
+                </p>
+              </motion.div>
+
+              <motion.div
+                className="glass-effect rounded-2xl p-6 border border-purple-700/50"
+                whileHover={{ scale: 1.02 }}
+              >
+                <h3 className="text-xl font-serif font-bold text-violet-400 mb-3">Proactive Insights</h3>
+                <p className="text-purple-200 font-sans">
+                  Get alerts and recommendations before problems occur, not after they impact your business.
+                </p>
+              </motion.div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Benefits Section */}
-      <section id="benefits" className="py-20 bg-gradient-to-b from-white to-gray-100">
+      {/* Pricing Section */}
+      <section id="pricing" className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
-              Transform Your Business with <span className="text-blue-600">Intera</span>
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6">
+              Choose Your <span className="text-violet-400">IMS Plan</span>
             </h2>
-            <p className="mt-4 text-xl text-gray-600">
-              Discover how our solution helps businesses across industries optimize their operations
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            <div>
-              <div className="bg-white rounded-xl p-8 shadow-lg">
-                <h3 className="text-2xl font-bold text-gray-900">Key Benefits</h3>
-                
-                <div className="mt-8 space-y-6">
-                  {[
-                    "Prevent stockouts and lost sales with AI-driven demand forecasting",
-                    "Reduce excess inventory costs by up to 45%",
-                    "Eliminate manual errors with automated inventory tracking",
-                    "Optimize warehouse space with intelligent organization tools",
-                    "Improve cash flow with better inventory turnover"
-                  ].map((benefit, index) => (
-                    <div key={index} className="flex items-start">
-                      <div className="flex-shrink-0 mt-1">
-                        <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                      </div>
-                      <p className="ml-4 text-gray-700">{benefit}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <div className="bg-white rounded-xl p-8 shadow-lg">
-                <h3 className="text-2xl font-bold text-gray-900">Industry Solutions</h3>
-                
-                <div className="mt-8 space-y-6">
-                  {[
-                    { industry: "E-commerce", solution: "Global inventory tracking & 24/7 order processing" },
-                    { industry: "Food Service", solution: "Expiry tracking & waste reduction" },
-                    { industry: "Retail", solution: "Multi-store inventory synchronization" },
-                    { industry: "Electronics", solution: "High-value item tracking & serial number management" },
-                    { industry: "Pharmaceuticals", solution: "Compliance & batch tracking" }
-                  ].map((item, index) => (
-                    <div key={index} className="border-l-4 border-blue-500 pl-4 py-1">
-                      <h4 className="font-bold text-gray-900">{item.industry}</h4>
-                      <p className="text-gray-600">{item.solution}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section id="testimonials" className="py-20 bg-gradient-to-b from-gray-100 to-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
-              Trusted by <span className="text-blue-600">Industry Leaders</span>
-            </h2>
-            <p className="mt-4 text-xl text-gray-600">
-              See what our customers say about transforming their inventory management
+            <p className="text-xl text-purple-200 max-w-3xl mx-auto font-sans">
+              Complete inventory management with optional AI enhancement. Start with core features, add AI when ready.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <motion.div 
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={isVisible ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.5, delay: index * 0.2 }}
-                className="bg-white rounded-xl p-8 shadow-lg"
-              >
-                <div className="flex items-center mb-6">
-                  <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center text-lg font-bold text-white">
-                    {testimonial.name.charAt(0)}
-                  </div>
-                  <div className="ml-4">
-                    <h4 className="font-bold text-gray-900">{testimonial.name}</h4>
-                    <p className="text-blue-600">{testimonial.role}</p>
-                  </div>
-                </div>
-                <p className="text-gray-600 italic">"{testimonial.content}"</p>
-                <div className="mt-6 flex text-yellow-400">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <svg key={star} xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                </div>
-              </motion.div>
+            {pricingPlans.map((plan, index) => (
+              <PricingCube key={index} plan={plan} isPopular={index === 1} />
             ))}
+          </div>
+
+          <div className="text-center mt-12">
+            <p className="text-purple-200 font-sans mb-6">
+              All plans include 14-day free trial • No setup fees • Cancel anytime
+            </p>
+            <Button
+              size="lg"
+              className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 font-sans"
+            >
+              Start Free Trial
+            </Button>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-900 to-indigo-900 text-white">
+      {/* Social Proof */}
+      <section className="py-20 bg-gradient-to-b from-purple-950/50 to-transparent">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold max-w-3xl mx-auto">
-            Ready to Transform Your Inventory Management?
-          </h2>
-          <p className="mt-6 text-xl text-blue-100 max-w-2xl mx-auto">
-            Join thousands of businesses optimizing their inventory with Intera's AI-powered platform
-          </p>
-          <div className="mt-10 flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6">
-            <Link href='/accounts' className="bg-white text-blue-900 hover:bg-gray-100 font-bold py-4 px-8 rounded-lg text-lg transition duration-300 shadow-lg">
-              Start Your Free Trial
-            </Link>
-            <button className="bg-transparent border-2 border-white text-white hover:bg-white/10 font-medium py-4 px-8 rounded-lg text-lg transition duration-300">
-              Schedule a Demo
-            </button>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
+            <div>
+              <div className="text-4xl font-serif font-bold text-violet-400">98%</div>
+              <div className="text-purple-200 font-sans">Accuracy Rate</div>
+            </div>
+            <div>
+              <div className="text-4xl font-serif font-bold text-violet-400">$2.3M</div>
+              <div className="text-purple-200 font-sans">Saved Monthly</div>
+            </div>
+            <div>
+              <div className="text-4xl font-serif font-bold text-violet-400">45%</div>
+              <div className="text-purple-200 font-sans">Cost Reduction</div>
+            </div>
+            <div>
+              <div className="text-4xl font-serif font-bold text-violet-400">24/7</div>
+              <div className="text-purple-200 font-sans">AI Monitoring</div>
+            </div>
           </div>
-          <p className="mt-8 text-blue-200">
-            No credit card required • 14-day free trial • Cancel anytime
-          </p>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="py-20 gradient-mesh">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+            <h2 className="text-4xl md:text-5xl font-serif font-bold mb-8">
+              Ready to Meet Your <span className="text-violet-400">AI Inventory Team?</span>
+            </h2>
+            <p className="text-xl text-purple-200 mb-12 font-sans">
+              Join the inventory revolution. Your AI agents are waiting to transform your business.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-6 justify-center">
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-lg px-12 py-4 font-sans animate-pulse-glow"
+              >
+                Start Your AI Agent Now
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-violet-400 text-violet-400 hover:bg-violet-400 hover:text-white text-lg px-12 py-4 font-sans bg-transparent"
+              >
+                Schedule Demo
+              </Button>
+            </div>
+            <p className="text-purple-300 mt-8 font-sans">
+              No credit card required • AI agents activate instantly • 14-day free trial
+            </p>
+          </motion.div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
+      <footer className="bg-purple-950/80 border-t border-purple-800/50 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <div className="flex items-center">
+              <div className="flex items-center mb-4">
                 <div className="bg-white p-1 rounded-lg">
-                  <div className="bg-gradient-to-r from-blue-600 to-indigo-600 w-8 h-8 rounded-md flex items-center justify-center">
-                    <span className="text-white font-bold">I</span>
+                  <div className="bg-gradient-to-r from-purple-600 to-violet-600 w-8 h-8 rounded-md flex items-center justify-center">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-white">
+                      <circle cx="12" cy="12" r="2" fill="currentColor" />
+                      <circle cx="6" cy="6" r="1.5" fill="currentColor" opacity="0.8" />
+                      <circle cx="18" cy="6" r="1.5" fill="currentColor" opacity="0.8" />
+                      <circle cx="6" cy="18" r="1.5" fill="currentColor" opacity="0.8" />
+                      <circle cx="18" cy="18" r="1.5" fill="currentColor" opacity="0.8" />
+                      <line x1="12" y1="12" x2="6" y2="6" stroke="currentColor" strokeWidth="1" opacity="0.6" />
+                      <line x1="12" y1="12" x2="18" y2="6" stroke="currentColor" strokeWidth="1" opacity="0.6" />
+                      <line x1="12" y1="12" x2="6" y2="18" stroke="currentColor" strokeWidth="1" opacity="0.6" />
+                      <line x1="12" y1="12" x2="18" y2="18" stroke="currentColor" strokeWidth="1" opacity="0.6" />
+                    </svg>
                   </div>
                 </div>
-                <span className="ml-3 text-xl font-bold">INTERA</span>
+                <span className="ml-3 text-xl font-serif font-bold">INTERA</span>
               </div>
-              <p className="mt-4 text-gray-400">
-                Revolutionizing inventory management with AI-powered precision and offline-first reliability.
-              </p>
+              <p className="text-purple-300 font-sans">The central hub for intelligent inventory and POS management.</p>
             </div>
-            
+
             <div>
-              <h4 className="text-lg font-bold mb-4">Product</h4>
-              <ul className="space-y-2">
-                <li><Link href="#" className="text-gray-400 hover:text-white transition">Features</Link></li>
-                <li><Link href="#" className="text-gray-400 hover:text-white transition">Solutions</Link></li>
-                <li><Link href="#" className="text-gray-400 hover:text-white transition">Pricing</Link></li>
-                <li><Link href="#" className="text-gray-400 hover:text-white transition">Demo</Link></li>
+              <h4 className="text-lg font-serif font-bold mb-4 text-white">Product</h4>
+              <ul className="space-y-2 font-sans">
+                <li>
+                  <Link href="#" className="text-purple-300 hover:text-violet-400 transition">
+                    AI Agents
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="text-purple-300 hover:text-violet-400 transition">
+                    Voice Interface
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="text-purple-300 hover:text-violet-400 transition">
+                    Integrations
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="text-purple-300 hover:text-violet-400 transition">
+                    API
+                  </Link>
+                </li>
               </ul>
             </div>
-            
+
             <div>
-              <h4 className="text-lg font-bold mb-4">Resources</h4>
-              <ul className="space-y-2">
-                <li><Link href="#" className="text-gray-400 hover:text-white transition">Blog</Link></li>
-                <li><Link href="#" className="text-gray-400 hover:text-white transition">Documentation</Link></li>
-                <li><Link href="#" className="text-gray-400 hover:text-white transition">Support</Link></li>
-                <li><Link href="#" className="text-gray-400 hover:text-white transition">API</Link></li>
+              <h4 className="text-lg font-serif font-bold mb-4 text-white">Resources</h4>
+              <ul className="space-y-2 font-sans">
+                <li>
+                  <Link href="#" className="text-purple-300 hover:text-violet-400 transition">
+                    Documentation
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="text-purple-300 hover:text-violet-400 transition">
+                    AI Training
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="text-purple-300 hover:text-violet-400 transition">
+                    Support
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="text-purple-300 hover:text-violet-400 transition">
+                    Community
+                  </Link>
+                </li>
               </ul>
             </div>
-            
+
             <div>
-              <h4 className="text-lg font-bold mb-4">Company</h4>
-              <ul className="space-y-2">
-                <li><Link href="#" className="text-gray-400 hover:text-white transition">About</Link></li>
-                <li><Link href="#" className="text-gray-400 hover:text-white transition">Careers</Link></li>
-                <li><Link href="#" className="text-gray-400 hover:text-white transition">Contact</Link></li>
-                <li><Link href="#" className="text-gray-400 hover:text-white transition">Partners</Link></li>
+              <h4 className="text-lg font-serif font-bold mb-4 text-white">Company</h4>
+              <ul className="space-y-2 font-sans">
+                <li>
+                  <Link href="#" className="text-purple-300 hover:text-violet-400 transition">
+                    About
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="text-purple-300 hover:text-violet-400 transition">
+                    Careers
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="text-purple-300 hover:text-violet-400 transition">
+                    Contact
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="text-purple-300 hover:text-violet-400 transition">
+                    Privacy
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>
-          
-          <div className="mt-12 pt-8 border-t border-gray-800 text-center text-gray-400">
-            <p>© {new Date().getFullYear()} Intera. All rights reserved.</p>
+
+          <div className="mt-12 pt-8 border-t border-purple-800/50 text-center">
+            <p className="text-purple-400 font-sans">© 2025 INTERA. All rights reserved. Built with AI.</p>
           </div>
         </div>
       </footer>
     </div>
-  );
+  )
 }
