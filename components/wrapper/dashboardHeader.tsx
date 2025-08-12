@@ -7,13 +7,13 @@ import { usePathname } from 'next/navigation';
 import { toast } from "react-toastify"
 import { ToastContainer } from "react-toastify";
 import { useGetLoggedInUserQuery } from '../../redux/features/users/userApiSlice';
-import { AuthGuard } from '../users/AuthGuard';
 import { publicRoutes } from '../../redux/features/users/useAuth';
 import NextTopLoader from 'nextjs-toploader';
 import { useRefreshMutation } from '@/redux/features/authApiSlice';
 
 import { getCookie } from 'cookies-next';
 import A2AChat from '../agents/ai-chat-widget';
+
 const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
 
   const SidebarCollapsed = useAppSelector((state) => state.global.isSidebarCollapsed);
