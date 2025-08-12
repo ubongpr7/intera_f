@@ -70,7 +70,7 @@
   --sidebar-ring: oklch(0.439 0 0);
 }
 
-@theme inline {
+:root {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -111,15 +111,6 @@
   /* Adding custom font families */
   --font-sans: var(--font-dm-sans);
   --font-serif: var(--font-space-grotesk);
-}
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
 }
 
 /* Adding custom animations and 3D effects */

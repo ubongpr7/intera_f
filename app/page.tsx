@@ -1,5 +1,5 @@
 "use client"
-import './home.css';
+import "./home.css";
 import { useState, useEffect, useRef } from "react"
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion"
 import { Canvas, useFrame } from "@react-three/fiber"
