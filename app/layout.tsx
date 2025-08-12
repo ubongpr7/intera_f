@@ -26,7 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       
-      <body className={`flex bg-gray-50 text-gray-900 w-full min-h-screen`} suppressHydrationWarning>
+      <body  suppressHydrationWarning>
       <NextTopLoader />
         <StoreProvider>
         <ThemeProvider>
