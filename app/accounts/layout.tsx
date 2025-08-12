@@ -12,7 +12,7 @@ export default function AccountLayout({
 
   return (
         
-<div>
+<div className={`flex-col w-full h-full`}>
     <ToastContainer position="top-right" autoClose={3000} />
 
 {children}
