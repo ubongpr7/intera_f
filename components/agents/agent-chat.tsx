@@ -1,7 +1,10 @@
 "use client"
 
+import type React from "react"
+
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Bot, Send, Maximize, Minimize, X, Clock, Loader2, ListChecks, Radio } from 'lucide-react'
+import { Bot, Send, Maximize, Minimize, X, Clock, Loader2, ListChecks, Radio } from "lucide-react"
+import MessageContent from "@/components/message-content"
 import type { ChatMessage } from "./ai-chat-widget"
 
 interface AgentChatProps {
@@ -103,13 +106,16 @@ export default function AgentChat({
       <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 flex items-center justify-between">
         {/* Left group */}
         <div className="flex items-center gap-2 min-w-0">
-         
           <Bot className="h-5 w-5 text-white shrink-0" aria-hidden strokeWidth={2.2} />
 
           {/* Badges */}
           <div className="ml-3 flex items-center gap-2 text-xs">
             <span className="inline-flex whitespace-nowrap items-center gap-1 rounded-full bg-white/15 px-2 py-1">
-              <Radio className={`h-4 w-4 ${pendingCount > 0 ? "animate-pulse text-yellow-300" : "text-white"}`} aria-hidden strokeWidth={2.4} />
+              <Radio
+                className={`h-4 w-4 ${pendingCount > 0 ? "animate-pulse text-yellow-300" : "text-white"}`}
+                aria-hidden
+                strokeWidth={2.4}
+              />
               <span>{pendingCount > 0 ? `${pendingCount} pending` : "Idle"}</span>
             </span>
             <span className="inline-flex whitespace-nowrap  items-center gap-1 rounded-full bg-white/15 px-2 py-1">
@@ -125,9 +131,8 @@ export default function AgentChat({
 
         {/* Right group */}
         <div className="flex items-center gap-2">
-        
-        {/*  {lastUpdatedAt ? <span className="hidden sm:inline text-xs text-white/80">Updated {new Date(lastUpdatedAt).toLocaleTimeString()}</span> : null} */}
-           <button
+          {/*  {lastUpdatedAt ? <span className="hidden sm:inline text-xs text-white/80">Updated {new Date(lastUpdatedAt).toLocaleTimeString()}</span> : null} */}
+          <button
             onClick={() => {
               toggleFullScreen()
               onActivity?.()
@@ -170,14 +175,18 @@ export default function AgentChat({
           </div>
         ) : (
           messages.map((m) => (
-            <div key={m.id} className={`mb-4 flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+            <div key={m.id} className={`mb-6 flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
               <div
-                className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                  m.role === "user" ? "bg-blue-500 text-white rounded-br-none" : "bg-gray-200 text-gray-800 rounded-bl-none"
+                className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                  m.role === "user"
+                    ? "bg-blue-500 text-white rounded-br-none"
+                    : "bg-white text-gray-800 rounded-bl-none shadow-sm border border-gray-100"
                 }`}
               >
-                <div className="font-semibold text-xs mb-1">{m.role === "user" ? "You" : "Assistant"}</div>
-                <div className="whitespace-pre-wrap">{m.content}</div>
+                <div className={`font-semibold text-xs mb-2 ${m.role === "user" ? "text-blue-100" : "text-gray-500"}`}>
+                  {m.role === "user" ? "You" : "Assistant"}
+                </div>
+                <MessageContent content={m.content} role={m.role} />
               </div>
             </div>
           ))
@@ -185,7 +194,7 @@ export default function AgentChat({
 
         {pendingCount > 0 && (
           <div className="flex justify-start mb-4">
-            <div className="bg-gray-200 text-gray-800 rounded-2xl rounded-bl-none px-4 py-3 max-w-[80%]">
+            <div className="bg-white text-gray-800 rounded-2xl rounded-bl-none px-4 py-3 max-w-[80%] shadow-sm border border-gray-100">
               <div className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin text-gray-700" aria-hidden />
                 <span>Assistant is processing...</span>
@@ -236,7 +245,8 @@ export default function AgentChat({
                 textareaRef.current.style.height = "auto"
                 const h = Math.min(textareaRef.current.scrollHeight, MAX_TEXTAREA_HEIGHT)
                 textareaRef.current.style.height = `${h}px`
-                textareaRef.current.style.overflowY = textareaRef.current.scrollHeight > MAX_TEXTAREA_HEIGHT ? "auto" : "hidden"
+                textareaRef.current.style.overflowY =
+                  textareaRef.current.scrollHeight > MAX_TEXTAREA_HEIGHT ? "auto" : "hidden"
               }
             }}
             onKeyDown={(e) => {
@@ -253,7 +263,7 @@ export default function AgentChat({
             }}
             rows={1}
             placeholder="Type your message..."
-            className="flex-1 text-gray-100 border border-gray-300 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none leading-6 max-h-[160px]"
+            className="flex-1 text-gray-800 border border-gray-300 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none leading-6 max-h-[160px]"
             disabled={isBusy}
             aria-label="Type your message"
           />
