@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Bot, Send, Maximize, Minimize, X, Clock, Loader2, ListChecks, Radio } from "lucide-react"
+import { Bot, Send, Maximize, Minimize, X, Clock, Loader2, ListChecks, Radio, Check } from "lucide-react"
 import MessageContent from "@/components/message-content"
 import type { ChatMessage } from "./ai-chat-widget"
 
@@ -35,6 +35,7 @@ export default function AgentChat({
   lastUpdatedAt,
 }: AgentChatProps) {
   const [input, setInput] = useState("")
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -100,6 +101,28 @@ export default function AgentChat({
     }
   }
 
+  const handleCopyMessage = async (messageId: string, content: string) => {
+    try {
+      await navigator.clipboard.writeText(content)
+      setCopiedMessageId(messageId)
+      setTimeout(() => setCopiedMessageId(null), 2000)
+    } catch (err) {
+      console.error("Failed to copy message:", err)
+    }
+  }
+
+  const handleExportMessage = (content: string) => {
+    const blob = new Blob([content], { type: "text/plain" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `ai-message-${Date.now()}.txt`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <>
       {/* Header */}
@@ -131,7 +154,6 @@ export default function AgentChat({
 
         {/* Right group */}
         <div className="flex items-center gap-2">
-          {/*  {lastUpdatedAt ? <span className="hidden sm:inline text-xs text-white/80">Updated {new Date(lastUpdatedAt).toLocaleTimeString()}</span> : null} */}
           <button
             onClick={() => {
               toggleFullScreen()
@@ -175,18 +197,29 @@ export default function AgentChat({
           </div>
         ) : (
           messages.map((m) => (
-            <div key={m.id} className={`mb-6 flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+            <div key={m.id} className={`mb-8 flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
               <div
-                className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                className={`max-w-[85%] rounded-2xl px-5 py-4 ${
                   m.role === "user"
                     ? "bg-blue-500 text-white rounded-br-none"
-                    : "bg-white text-gray-800 rounded-bl-none shadow-sm border border-gray-100"
+                    : "bg-white text-gray-800 rounded-bl-none shadow-lg border border-gray-100"
                 }`}
               >
-                <div className={`font-semibold text-xs mb-2 ${m.role === "user" ? "text-blue-100" : "text-gray-500"}`}>
+                <div className={`font-semibold text-xs mb-3 ${m.role === "user" ? "text-blue-100" : "text-gray-500"}`}>
                   {m.role === "user" ? "You" : "Assistant"}
+                  {copiedMessageId === m.id && (
+                    <span className="ml-2 inline-flex items-center gap-1 text-green-600">
+                      <Check className="h-3 w-3" />
+                      <span className="text-xs">Copied!</span>
+                    </span>
+                  )}
                 </div>
-                <MessageContent content={m.content} role={m.role} />
+                <MessageContent
+                  content={m.content}
+                  role={m.role}
+                  onCopy={() => handleCopyMessage(m.id, m.content)}
+                  onExport={() => handleExportMessage(m.content)}
+                />
               </div>
             </div>
           ))
