@@ -11,7 +11,7 @@ interface MessageContentProps {
 }
 
 // Enhanced syntax highlighting for different languages
-function highlightCode(code: string, language: string): string {
+function highlightCode(code: string, language: string) {
   const keywords: Record<string, string[]> = {
     javascript: [
       "function",
@@ -98,84 +98,59 @@ function highlightCode(code: string, language: string): string {
       "LIMIT",
       "OFFSET",
     ],
-    html: [
-      "html",
-      "head",
-      "body",
-      "div",
-      "span",
-      "p",
-      "a",
-      "img",
-      "ul",
-      "ol",
-      "li",
-      "table",
-      "tr",
-      "td",
-      "th",
-      "form",
-      "input",
-      "button",
-      "script",
-      "style",
-      "link",
-      "meta",
-    ],
-    css: [
-      "color",
-      "background",
-      "margin",
-      "padding",
-      "border",
-      "width",
-      "height",
-      "display",
-      "position",
-      "top",
-      "left",
-      "right",
-      "bottom",
-      "font",
-      "text",
-      "flex",
-      "grid",
-    ],
   }
 
-  let highlighted = code
   const langKeywords = keywords[language.toLowerCase()] || []
+  const tokens: Array<{ text: string; type: string }> = []
 
-  // Highlight strings (single and double quotes)
-  highlighted = highlighted.replace(/(["'])((?:\\.|(?!\1)[^\\])*?)\1/g, '<span class="text-green-400">$1$2$1</span>')
+  // Simple tokenization - split by spaces and special characters while preserving them
+  const tokenRegex =
+    /(\s+|[{}[\]().,;:=+\-*/%<>!&|^~"'`]|[a-zA-Z_][a-zA-Z0-9_]*|\d+\.?\d*|#.*$|\/\/.*$|\/\*[\s\S]*?\*\/)/g
+  const matches = code.match(tokenRegex) || []
 
-  // Highlight numbers
-  highlighted = highlighted.replace(/\b(\d+\.?\d*)\b/g, '<span class="text-blue-300">$1</span>')
+  const remaining = code
+  let currentIndex = 0
 
-  // Highlight comments
-  if (language === "python") {
-    highlighted = highlighted.replace(/(#.*$)/gm, '<span class="text-gray-500 italic">$1</span>')
-  } else if (["javascript", "java", "c", "cpp"].includes(language)) {
-    highlighted = highlighted.replace(/(\/\/.*$)/gm, '<span class="text-gray-500 italic">$1</span>')
-    highlighted = highlighted.replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="text-gray-500 italic">$1</span>')
-  }
+  matches.forEach((match) => {
+    const matchIndex = remaining.indexOf(match, currentIndex - (code.length - remaining.length))
 
-  // Highlight keywords
-  langKeywords.forEach((keyword) => {
-    const regex = new RegExp(`\\b(${keyword})\\b`, "g")
-    highlighted = highlighted.replace(regex, '<span class="text-purple-400 font-semibold">$1</span>')
+    // Add any text before this match
+    if (matchIndex > currentIndex - (code.length - remaining.length)) {
+      const beforeText = code.slice(currentIndex, matchIndex + (code.length - remaining.length))
+      if (beforeText) {
+        tokens.push({ text: beforeText, type: "text" })
+      }
+    }
+
+    // Determine token type
+    let type = "text"
+
+    if (langKeywords.includes(match)) {
+      type = "keyword"
+    } else if (/^["'].*["']$/.test(match)) {
+      type = "string"
+    } else if (/^\d+\.?\d*$/.test(match)) {
+      type = "number"
+    } else if (/^(#.*|\/\/.*|\/\*[\s\S]*\*\/)$/.test(match)) {
+      type = "comment"
+    } else if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(match) && code.charAt(code.indexOf(match) + match.length) === "(") {
+      type = "function"
+    } else if (/^[+\-*/%=<>!&|^~]$/.test(match)) {
+      type = "operator"
+    }
+
+    tokens.push({ text: match, type })
+    currentIndex = matchIndex + match.length + (code.length - remaining.length)
   })
 
-  // Highlight function calls
-  highlighted = highlighted.replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g, '<span class="text-yellow-300">$1</span>(')
+  // Add any remaining text
+  if (currentIndex < code.length) {
+    tokens.push({ text: code.slice(currentIndex), type: "text" })
+  }
 
-  // Highlight operators
-  highlighted = highlighted.replace(/([+\-*/%=<>!&|^~])/g, '<span class="text-red-400">$1</span>')
-
-  return highlighted
+  return tokens
 }
 
-// Simple code block detection - looks for triple backticks or indented code
 function parseMessageContent(content: string) {
   // Handle undefined or null content
   if (!content || typeof content !== "string") {
@@ -194,7 +169,9 @@ function parseMessageContent(content: string) {
     if (match.index > lastIndex) {
       const textBefore = content.slice(lastIndex, match.index)
       if (textBefore.trim()) {
-        parts.push({ type: "text", content: textBefore })
+        // Check if the text before contains auto-detectable code
+        const processedTextParts = autoDetectCode(textBefore)
+        parts.push(...processedTextParts)
       }
     }
 
@@ -212,16 +189,95 @@ function parseMessageContent(content: string) {
   if (lastIndex < content.length) {
     const remainingText = content.slice(lastIndex)
     if (remainingText.trim()) {
-      parts.push({ type: "text", content: remainingText })
+      // Check if the remaining text contains auto-detectable code
+      const processedTextParts = autoDetectCode(remainingText)
+      parts.push(...processedTextParts)
     }
   }
 
-  // If no code blocks found, check for inline code or return as single text block
+  // If no code blocks found, check for auto-detectable code patterns
   if (parts.length === 0) {
-    parts.push({ type: "text", content })
+    const processedParts = autoDetectCode(content)
+    parts.push(...processedParts)
   }
 
   return parts
+}
+
+function autoDetectCode(text: string): Array<{ type: "text" | "code"; content: string; language?: string }> {
+  const parts: Array<{ type: "text" | "code"; content: string; language?: string }> = []
+
+  // Trim the text to check patterns
+  const trimmedText = text.trim()
+
+  // Check if the entire text is JSON
+  if (isJSON(trimmedText)) {
+    parts.push({ type: "code", content: trimmedText, language: "json" })
+    return parts
+  }
+
+  // Check if the entire text is SQL
+  if (isSQL(trimmedText)) {
+    parts.push({ type: "code", content: trimmedText, language: "sql" })
+    return parts
+  }
+
+  // Check if the entire text is Python code
+  if (isPython(trimmedText)) {
+    parts.push({ type: "code", content: trimmedText, language: "python" })
+    return parts
+  }
+
+  // Check if the entire text is JavaScript code
+  if (isJavaScript(trimmedText)) {
+    parts.push({ type: "code", content: trimmedText, language: "javascript" })
+    return parts
+  }
+
+  // If no code pattern detected, treat as regular text
+  parts.push({ type: "text", content: text })
+  return parts
+}
+
+function isJSON(text: string): boolean {
+  try {
+    const trimmed = text.trim()
+    if ((trimmed.startsWith("{") && trimmed.endsWith("}")) || (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
+      JSON.parse(trimmed)
+      return true
+    }
+  } catch {
+    // Not valid JSON
+  }
+  return false
+}
+
+function isSQL(text: string): boolean {
+  const sqlKeywords = /^\s*(SELECT|INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|SHOW|DESCRIBE)\s+/i
+  return sqlKeywords.test(text.trim())
+}
+
+function isPython(text: string): boolean {
+  const pythonPatterns = [
+    /^\s*def\s+\w+\s*\(/m, // function definition
+    /^\s*class\s+\w+/m, // class definition
+    /^\s*import\s+\w+/m, // import statement
+    /^\s*from\s+\w+\s+import/m, // from import statement
+    /^\s*if\s+__name__\s*==\s*['"']__main__['"']/m, // main guard
+  ]
+  return pythonPatterns.some((pattern) => pattern.test(text))
+}
+
+function isJavaScript(text: string): boolean {
+  const jsPatterns = [
+    /^\s*function\s+\w+\s*\(/m, // function declaration
+    /^\s*const\s+\w+\s*=/m, // const declaration
+    /^\s*let\s+\w+\s*=/m, // let declaration
+    /^\s*var\s+\w+\s*=/m, // var declaration
+    /^\s*import\s+.*from/m, // ES6 import
+    /^\s*export\s+(default\s+)?/m, // ES6 export
+  ]
+  return jsPatterns.some((pattern) => pattern.test(text))
 }
 
 function CodeBlock({ content, language }: { content: string; language?: string }) {
@@ -237,7 +293,26 @@ function CodeBlock({ content, language }: { content: string; language?: string }
     }
   }
 
-  const highlightedCode = highlightCode(content, language || "text")
+  const tokens = highlightCode(content, language || "text")
+
+  const getTokenClassName = (type: string) => {
+    switch (type) {
+      case "keyword":
+        return "text-purple-400 font-semibold"
+      case "string":
+        return "text-green-400"
+      case "number":
+        return "text-blue-300"
+      case "comment":
+        return "text-gray-500 italic"
+      case "function":
+        return "text-yellow-300"
+      case "operator":
+        return "text-red-400"
+      default:
+        return "text-gray-100"
+    }
+  }
 
   return (
     <div className="relative group my-4">
@@ -270,7 +345,13 @@ function CodeBlock({ content, language }: { content: string; language?: string }
         </button>
       </div>
       <pre className="bg-gray-900 text-gray-100 p-4 rounded-b-lg overflow-x-auto text-sm leading-relaxed border-l-4 border-blue-500">
-        <code className="font-mono" dangerouslySetInnerHTML={{ __html: highlightedCode }} />
+        <code className="font-mono">
+          {tokens.map((token, index) => (
+            <span key={index} className={getTokenClassName(token.type)}>
+              {token.text}
+            </span>
+          ))}
+        </code>
       </pre>
     </div>
   )
