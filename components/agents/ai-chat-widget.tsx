@@ -10,6 +10,7 @@ import {
   usePendingMessagesMutation,
   useGetEventMutation,
   useListTaskMutation,
+  useLoadToolsMutation,
 } from "@/redux/features/agent/agentAPISlice"
 import { v4 as uuidv4 } from "uuid"
 import { toast } from "react-toastify"
@@ -71,6 +72,7 @@ export default function AIChatWidget() {
   // Activity tracking (for auto-close)
   const [lastActivityAt, setLastActivityAt] = useState<number | null>(null)
   const prevSnapshotRef = useRef({ msgSize: 0, pending: 0, events: 0, tasks: 0 })
+const [loadTools]=useLoadToolsMutation()
 
 
   // RTK Query hooks
@@ -125,7 +127,6 @@ export default function AIChatWidget() {
     document.addEventListener("keydown", onKey)
     return () => document.removeEventListener("keydown", onKey)
   }, [isOpen, isFullScreen])
-
   // Create conversation on open
   useEffect(() => {
     if (!isOpen || sessionId || isCreatingConversation) return
@@ -137,6 +138,10 @@ export default function AIChatWidget() {
           setSessionId(id)
           setMessagesMap(new Map())
           setLastActivityAt(Date.now())
+          await loadTools({
+            data: { id: uuidv4(), jsonrpc: "2.0", method: "load_tools", params: sessionId },
+        
+          }).unwrap()
         }
       } catch (err) {
         console.error("Failed to create conversation:", err)

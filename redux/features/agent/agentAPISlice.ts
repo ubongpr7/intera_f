@@ -100,6 +100,15 @@ export const agentApiSlice = apiSlice.injectEndpoints({
 
       })
     }),
+    loadTools:builder.mutation({
+      query:({data})=>({
+        url:'load_tools',
+        method:'POST',
+        service:'agent',
+        body:data
+
+      })
+    }),
 
 
   }),
@@ -116,4 +125,5 @@ export const {
     useListTaskMutation,
     useListMessagesMutation,
     useListAgentsMutation,
+    useLoadToolsMutation
 } = agentApiSlice;
