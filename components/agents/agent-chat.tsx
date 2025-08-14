@@ -5,6 +5,26 @@ import type React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Bot, Send, Maximize, Minimize, X, Clock, Loader2, ListChecks, Radio, Check } from "lucide-react"
 import MessageContent from "@/components/message-content"
+import ConfirmationDialog from "@/components/confirmation-dialog"
+import {
+  MultipleChoiceHandler,
+  FileUploadHandler,
+  ProgressTrackerHandler,
+  DataTableHandler,
+  DynamicFormHandler,
+  DateTimePickerHandler,
+  SliderInputHandler,
+  PriorityRankingHandler,
+  CodeReviewHandler,
+  ImageAnnotationHandler,
+} from "@/components/interaction-handlers"
+import {
+  SearchableSelectionHandler,
+  HierarchicalSelectionHandler,
+  AutocompleteSelectionHandler,
+  ComparisonViewHandler,
+  BulkActionSelectorHandler,
+} from "@/components/advanced-interaction-handlers"
 import type { ChatMessage } from "./ai-chat-widget"
 
 interface AgentChatProps {
@@ -36,6 +56,8 @@ export default function AgentChat({
 }: AgentChatProps) {
   const [input, setInput] = useState("")
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
+  const [confirmationDialog, setConfirmationDialog] = useState<any>(null)
+  const [activeInteraction, setActiveInteraction] = useState<{ type: string; data: any } | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -123,6 +145,126 @@ export default function AgentChat({
     URL.revokeObjectURL(url)
   }
 
+  const detectInteractionRequest = (content: string) => {
+    try {
+      const parsed = JSON.parse(content)
+
+      // Check for confirmation request
+      if (parsed.type === "AGENT_CONFIRMATION_REQUEST") {
+        return { type: "confirmation", data: parsed }
+      }
+
+      // Check for interaction types based on interaction_type field
+      if (parsed.interaction_type) {
+        return {
+          type: parsed.interaction_type,
+          data: parsed,
+        }
+      }
+
+      // Check for legacy interaction types (backward compatibility)
+      const interactionTypes = [
+        "AGENT_MULTIPLE_CHOICE",
+        "AGENT_FILE_UPLOAD",
+        "AGENT_PROGRESS_TRACKER",
+        "AGENT_DATA_TABLE",
+        "AGENT_DYNAMIC_FORM",
+        "AGENT_DATE_TIME_PICKER",
+        "AGENT_SLIDER_INPUT",
+        "AGENT_PRIORITY_RANKING",
+        "AGENT_CODE_REVIEW",
+        "AGENT_IMAGE_ANNOTATION",
+      ]
+
+      if (interactionTypes.includes(parsed.type)) {
+        return {
+          type: parsed.type.replace("AGENT_", "").toLowerCase(),
+          data: parsed,
+        }
+      }
+    } catch {
+      // Not a JSON interaction request
+    }
+    return null
+  }
+
+  const getInteractionStyle = (type: string) => {
+    const styles = {
+      confirmation: { color: "bg-amber-50 border-amber-200", textColor: "text-amber-700", icon: "⚠️" },
+      multiple_choice: { color: "bg-blue-50 border-blue-200", textColor: "text-blue-700", icon: "❓" },
+      file_upload: { color: "bg-green-50 border-green-200", textColor: "text-green-700", icon: "📁" },
+      progress_tracker: { color: "bg-purple-50 border-purple-200", textColor: "text-purple-700", icon: "⏳" },
+      data_table: { color: "bg-indigo-50 border-indigo-200", textColor: "text-indigo-700", icon: "📊" },
+      dynamic_form: { color: "bg-pink-50 border-pink-200", textColor: "text-pink-700", icon: "📝" },
+      date_time_picker: { color: "bg-teal-50 border-teal-200", textColor: "text-teal-700", icon: "📅" },
+      slider_input: { color: "bg-orange-50 border-orange-200", textColor: "text-orange-700", icon: "🎚️" },
+      priority_ranking: { color: "bg-red-50 border-red-200", textColor: "text-red-700", icon: "📋" },
+      code_review: { color: "bg-gray-50 border-gray-200", textColor: "text-gray-700", icon: "💻" },
+      image_annotation: { color: "bg-yellow-50 border-yellow-200", textColor: "text-yellow-700", icon: "🖼️" },
+      searchable_selection: { color: "bg-cyan-50 border-cyan-200", textColor: "text-cyan-700", icon: "🔍" },
+      hierarchical_selection: { color: "bg-emerald-50 border-emerald-200", textColor: "text-emerald-700", icon: "🌳" },
+      autocomplete_selection: { color: "bg-violet-50 border-violet-200", textColor: "text-violet-700", icon: "⚡" },
+      comparison_view: { color: "bg-rose-50 border-rose-200", textColor: "text-rose-700", icon: "⚖️" },
+      bulk_action_selector: { color: "bg-slate-50 border-slate-200", textColor: "text-slate-700", icon: "⚡" },
+    }
+    return styles[type as keyof typeof styles] || styles.confirmation
+  }
+
+  const renderInteractionHandler = () => {
+    if (!activeInteraction) return null
+
+    const { type, data } = activeInteraction
+    const commonProps = {
+      data,
+      onResponse: () => {}, // Placeholder for handleInteractionResponse
+    }
+
+    switch (type) {
+      case "multiple_choice":
+        return <MultipleChoiceHandler {...commonProps} />
+      case "file_upload":
+        return <FileUploadHandler {...commonProps} />
+      case "progress_tracker":
+        return <ProgressTrackerHandler {...commonProps} />
+      case "data_table":
+        return <DataTableHandler {...commonProps} />
+      case "dynamic_form":
+        return <DynamicFormHandler {...commonProps} />
+      case "date_time_picker":
+        return <DateTimePickerHandler {...commonProps} />
+      case "slider_input":
+        return <SliderInputHandler {...commonProps} />
+      case "priority_ranking":
+        return <PriorityRankingHandler {...commonProps} />
+      case "code_review":
+        return <CodeReviewHandler {...commonProps} />
+      case "image_annotation":
+        return <ImageAnnotationHandler {...commonProps} />
+      case "searchable_selection":
+        return <SearchableSelectionHandler {...commonProps} />
+      case "hierarchical_selection":
+        return <HierarchicalSelectionHandler {...commonProps} />
+      case "autocomplete_selection":
+        return <AutocompleteSelectionHandler {...commonProps} />
+      case "comparison_view":
+        return <ComparisonViewHandler {...commonProps} />
+      case "bulk_action_selector":
+        return <BulkActionSelectorHandler {...commonProps} />
+      default:
+        return null
+    }
+  }
+
+  const handleInteractionResponse = (response: any) => {
+    // Placeholder implementation for handleInteractionResponse
+    console.log("Interaction response received:", response)
+  }
+
+  const handleConfirmationResponse = (response: any) => {
+    // Placeholder implementation for handleConfirmationResponse
+    console.log("Confirmation response received:", response)
+  }
+
   return (
     <>
       {/* Header */}
@@ -141,7 +283,7 @@ export default function AgentChat({
               />
               <span>{pendingCount > 0 ? `${pendingCount} pending` : "Idle"}</span>
             </span>
-            <span className="inline-flex whitespace-nowrap  items-center gap-1 rounded-full bg-white/15 px-2 py-1">
+            <span className="inline-flex whitespace-nowrap items-center gap-1 rounded-full bg-white/15 px-2 py-1">
               <ListChecks className="h-4 w-4 text-white" aria-hidden strokeWidth={2.4} />
               <span>{taskCount} tasks</span>
             </span>
@@ -196,33 +338,98 @@ export default function AgentChat({
             <p>{"How can I help you today?"}</p>
           </div>
         ) : (
-          messages.map((m) => (
-            <div key={m.id} className={`mb-8 flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div
-                className={`max-w-[85%] rounded-2xl px-5 py-4 ${
-                  m.role === "user"
-                    ? "bg-blue-500 text-white rounded-br-none"
-                    : "bg-white text-gray-800 rounded-bl-none shadow-lg border border-gray-100"
-                }`}
-              >
-                <div className={`font-semibold text-xs mb-3 ${m.role === "user" ? "text-blue-100" : "text-gray-500"}`}>
-                  {m.role === "user" ? "You" : "Assistant"}
-                  {copiedMessageId === m.id && (
-                    <span className="ml-2 inline-flex items-center gap-1 text-green-600">
-                      <Check className="h-3 w-3" />
-                      <span className="text-xs">Copied!</span>
-                    </span>
-                  )}
+          messages.map((m) => {
+            const interactionData = m.role === "assistant" ? detectInteractionRequest(m.content) : null
+
+            if (interactionData) {
+              const { type, data } = interactionData
+              const style = getInteractionStyle(type)
+
+              // Handle confirmation separately for backward compatibility
+              if (type === "confirmation") {
+                return (
+                  <div key={m.id} className="mb-8 flex justify-start">
+                    <div
+                      className={`max-w-[85%] ${style.color} border text-gray-800 rounded-2xl rounded-bl-none shadow-lg px-5 py-4`}
+                    >
+                      <div className={`font-semibold text-xs mb-3 ${style.textColor} flex items-center gap-2`}>
+                        <Clock className="h-3 w-3" />
+                        Assistant - Awaiting Confirmation
+                      </div>
+                      <div className="space-y-3">
+                        <p className="font-medium text-gray-900">{data.description}</p>
+                        {data.details && (
+                          <p className="text-sm text-gray-600 bg-white/50 p-3 rounded-lg">{data.details}</p>
+                        )}
+                        <button
+                          onClick={() => setConfirmationDialog(data)}
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
+                        >
+                          Review & Respond
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+
+              // Handle other interaction types
+              return (
+                <div key={m.id} className="mb-8 flex justify-start">
+                  <div
+                    className={`max-w-[85%] ${style.color} border text-gray-800 rounded-2xl rounded-bl-none shadow-lg px-5 py-4`}
+                  >
+                    <div className={`font-semibold text-xs mb-3 ${style.textColor} flex items-center gap-2`}>
+                      <span>{style.icon}</span>
+                      Assistant - {type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())} Request
+                    </div>
+                    <div className="space-y-3">
+                      <p className="font-medium text-gray-900">{data.title}</p>
+                      {data.description && (
+                        <p className="text-sm text-gray-600 bg-white/50 p-3 rounded-lg">{data.description}</p>
+                      )}
+                      <button
+                        onClick={() => setActiveInteraction({ type, data })}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
+                      >
+                        Open {type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <MessageContent
-                  content={m.content}
-                  role={m.role}
-                  onCopy={() => handleCopyMessage(m.id, m.content)}
-                  onExport={() => handleExportMessage(m.content)}
-                />
+              )
+            }
+
+            return (
+              <div key={m.id} className={`mb-8 flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                <div
+                  className={`max-w-[85%] rounded-2xl px-5 py-4 ${
+                    m.role === "user"
+                      ? "bg-blue-500 text-white rounded-br-none"
+                      : "bg-white text-gray-800 rounded-bl-none shadow-lg border border-gray-100"
+                  }`}
+                >
+                  <div
+                    className={`font-semibold text-xs mb-3 ${m.role === "user" ? "text-blue-100" : "text-gray-500"}`}
+                  >
+                    {m.role === "user" ? "You" : "Assistant"}
+                    {copiedMessageId === m.id && (
+                      <span className="ml-2 inline-flex items-center gap-1 text-green-600">
+                        <Check className="h-3 w-3" />
+                        <span className="text-xs">Copied!</span>
+                      </span>
+                    )}
+                  </div>
+                  <MessageContent
+                    content={m.content}
+                    role={m.role}
+                    onCopy={() => handleCopyMessage(m.id, m.content)}
+                    onExport={() => handleExportMessage(m.content)}
+                  />
+                </div>
               </div>
-            </div>
-          ))
+            )
+          })
         )}
 
         {pendingCount > 0 && (
@@ -265,7 +472,7 @@ export default function AgentChat({
             endRef.current?.scrollIntoView({ behavior: "smooth" })
           })
         }}
-        className="border-t border-gray-200 p-3 bg-white"
+        className="border-t  border-gray-200 p-3 bg-white"
       >
         <div className="flex gap-2 items-end">
           <textarea
@@ -296,7 +503,7 @@ export default function AgentChat({
             }}
             rows={1}
             placeholder="Type your message..."
-            className="flex-1 text-gray-800 bg-gray-200/70 border border-gray-300 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none leading-6 max-h-[160px]"
+            className="flex-1 text-gray-800 bg-gray-100/70 border border-gray-300 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none leading-6 max-h-[160px]"
             disabled={isBusy}
             aria-label="Type your message"
           />
@@ -312,6 +519,31 @@ export default function AgentChat({
           </button>
         </div>
       </form>
+
+      {/* Confirmation Dialog */}
+      {confirmationDialog && (
+        <ConfirmationDialog
+          data={confirmationDialog}
+          onResponse={handleConfirmationResponse}
+          onClose={() => setConfirmationDialog(null)}
+        />
+      )}
+
+      {activeInteraction && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b px-4 py-3 flex items-center justify-between">
+              <h2 className="text-lg font-semibold">
+                {activeInteraction.type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+              </h2>
+              <button onClick={() => setActiveInteraction(null)} className="p-1 hover:bg-gray-100 rounded-full">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-4">{renderInteractionHandler()}</div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
