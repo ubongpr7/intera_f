@@ -71,6 +71,7 @@
     "radix-ui": "^1.4.2",
     "react": "19.0.0-rc-66855b96-20241106",
     "react-chartjs-2": "^5.3.0",
+    "react-day-picker": "^9.8.1",
     "react-dom": "19.0.0-rc-66855b96-20241106",
     "react-dropzone": "^14.3.8",
     "react-facebook-pixel": "^1.0.4",
