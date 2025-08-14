@@ -57,7 +57,6 @@ export default function AgentChat({
   const [input, setInput] = useState("")
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const [confirmationDialog, setConfirmationDialog] = useState<any>(null)
-  const [activeInteraction, setActiveInteraction] = useState<{ type: string; data: any } | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -210,13 +209,11 @@ export default function AgentChat({
     return styles[type as keyof typeof styles] || styles.confirmation
   }
 
-  const renderInteractionHandler = () => {
-    if (!activeInteraction) return null
-
-    const { type, data } = activeInteraction
+  const renderInlineInteraction = (type: string, data: any) => {
     const commonProps = {
       data,
-      onResponse: () => {}, // Placeholder for handleInteractionResponse
+      onResponse: handleInteractionResponse,
+      compact: true, // Add compact mode for inline display
     }
 
     switch (type) {
@@ -256,13 +253,18 @@ export default function AgentChat({
   }
 
   const handleInteractionResponse = (response: any) => {
-    // Placeholder implementation for handleInteractionResponse
-    console.log("Interaction response received:", response)
+    // Send the response back to the agent as a regular message
+    const responseText = typeof response === "string" ? response : JSON.stringify(response)
+    onSend(responseText)
+    onActivity?.()
   }
 
   const handleConfirmationResponse = (response: any) => {
-    // Placeholder implementation for handleConfirmationResponse
-    console.log("Confirmation response received:", response)
+    // Send the response back to the agent as a regular message
+    const responseText = typeof response === "string" ? response : JSON.stringify(response)
+    onSend(responseText)
+    onActivity?.()
+    setConfirmationDialog(null)
   }
 
   return (
@@ -350,20 +352,20 @@ export default function AgentChat({
                 return (
                   <div key={m.id} className="mb-8 flex justify-start">
                     <div
-                      className={`max-w-[85%] ${style.color} border text-gray-800 rounded-2xl rounded-bl-none shadow-lg px-5 py-4`}
+                      className={`max-w-[95%] ${style.color} border text-gray-800 rounded-2xl rounded-bl-none shadow-lg px-4 py-4`}
                     >
                       <div className={`font-semibold text-xs mb-3 ${style.textColor} flex items-center gap-2`}>
                         <Clock className="h-3 w-3" />
                         Assistant - Awaiting Confirmation
                       </div>
                       <div className="space-y-3">
-                        <p className="font-medium text-gray-900">{data.description}</p>
+                        <p className="font-medium text-gray-900 text-sm">{data.description}</p>
                         {data.details && (
-                          <p className="text-sm text-gray-600 bg-white/50 p-3 rounded-lg">{data.details}</p>
+                          <p className="text-xs text-gray-600 bg-white/50 p-2 rounded-lg">{data.details}</p>
                         )}
                         <button
                           onClick={() => setConfirmationDialog(data)}
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors"
                         >
                           Review & Respond
                         </button>
@@ -373,27 +375,17 @@ export default function AgentChat({
                 )
               }
 
-              // Handle other interaction types
               return (
                 <div key={m.id} className="mb-8 flex justify-start">
                   <div
-                    className={`max-w-[85%] ${style.color} border text-gray-800 rounded-2xl rounded-bl-none shadow-lg px-5 py-4`}
+                    className={`max-w-[95%] ${style.color} border text-gray-800 rounded-2xl rounded-bl-none shadow-lg px-4 py-4`}
                   >
                     <div className={`font-semibold text-xs mb-3 ${style.textColor} flex items-center gap-2`}>
                       <span>{style.icon}</span>
-                      Assistant - {type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())} Request
+                      Assistant - {type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
                     </div>
                     <div className="space-y-3">
-                      <p className="font-medium text-gray-900">{data.title}</p>
-                      {data.description && (
-                        <p className="text-sm text-gray-600 bg-white/50 p-3 rounded-lg">{data.description}</p>
-                      )}
-                      <button
-                        onClick={() => setActiveInteraction({ type, data })}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
-                      >
-                        Open {type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-                      </button>
+                      <div className="text-sm">{renderInlineInteraction(type, data)}</div>
                     </div>
                   </div>
                 </div>
@@ -472,7 +464,7 @@ export default function AgentChat({
             endRef.current?.scrollIntoView({ behavior: "smooth" })
           })
         }}
-        className="border-t  border-gray-200 p-3 bg-white"
+        className="border-t border-gray-200 p-3 bg-white"
       >
         <div className="flex gap-2 items-end">
           <textarea
@@ -503,7 +495,7 @@ export default function AgentChat({
             }}
             rows={1}
             placeholder="Type your message..."
-            className="flex-1 text-gray-800 bg-gray-100/70 border border-gray-300 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none leading-6 max-h-[160px]"
+            className="flex-1 text-gray-800 bg-gray-200/70 border border-gray-300 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none leading-6 max-h-[160px]"
             disabled={isBusy}
             aria-label="Type your message"
           />
@@ -527,22 +519,6 @@ export default function AgentChat({
           onResponse={handleConfirmationResponse}
           onClose={() => setConfirmationDialog(null)}
         />
-      )}
-
-      {activeInteraction && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b px-4 py-3 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">
-                {activeInteraction.type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-              </h2>
-              <button onClick={() => setActiveInteraction(null)} className="p-1 hover:bg-gray-100 rounded-full">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="p-4">{renderInteractionHandler()}</div>
-          </div>
-        </div>
       )}
     </>
   )

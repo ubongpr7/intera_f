@@ -171,7 +171,6 @@ const [loadTools]=useLoadToolsMutation()
           if (newOnes.length > 0) {
             setMessagesMap((prev) => {
               const next = new Map(prev)
-              console.log(next)
               for (const m of newOnes) next.set(m.id, m)
               return next
             })

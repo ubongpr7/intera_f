@@ -30,9 +30,10 @@ import {
 interface InteractionHandlerProps {
   data: any
   onResponse: (response: any) => void
+  compact?: boolean
 }
 
-export function MultipleChoiceHandler({ data, onResponse }: InteractionHandlerProps) {
+export function MultipleChoiceHandler({ data, onResponse, compact = false }: InteractionHandlerProps) {
   const [selectedOptions, setSelectedOptions] = useState<string[]>([])
   const [additionalInput, setAdditionalInput] = useState("")
 
@@ -50,6 +51,54 @@ export function MultipleChoiceHandler({ data, onResponse }: InteractionHandlerPr
       selected: data.multiple ? selectedOptions : selectedOptions[0],
       additional_input: additionalInput || null,
     })
+  }
+
+  if (compact) {
+    return (
+      <div className="space-y-3">
+        <div className="space-y-2">
+          <h4 className="font-medium text-sm">{data.title}</h4>
+          {data.description && <p className="text-xs text-gray-600">{data.description}</p>}
+        </div>
+
+        <div className="space-y-2">
+          {data.options.map((option: any, index: number) => (
+            <div
+              key={index}
+              className={`p-2 border rounded cursor-pointer transition-colors text-sm ${
+                selectedOptions.includes(option.value)
+                  ? "border-blue-500 bg-blue-50"
+                  : "border-gray-200 hover:border-gray-300"
+              }`}
+              onClick={() => handleOptionToggle(option.value)}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-medium">{option.label}</span>
+                {selectedOptions.includes(option.value) && <CheckCircle className="h-3 w-3 text-blue-500" />}
+              </div>
+              {option.description && <p className="text-xs text-gray-600 mt-1">{option.description}</p>}
+            </div>
+          ))}
+        </div>
+
+        {data.allow_additional_input && (
+          <div>
+            <label className="block text-xs font-medium mb-1">Additional Instructions (Optional)</label>
+            <Textarea
+              value={additionalInput}
+              onChange={(e) => setAdditionalInput(e.target.value)}
+              placeholder="Add any additional context..."
+              rows={2}
+              className="text-sm"
+            />
+          </div>
+        )}
+
+        <Button onClick={handleSubmit} disabled={selectedOptions.length === 0} size="sm" className="w-full">
+          Submit Selection
+        </Button>
+      </div>
+    )
   }
 
   return (
@@ -104,7 +153,7 @@ export function MultipleChoiceHandler({ data, onResponse }: InteractionHandlerPr
   )
 }
 
-export function FileUploadHandler({ data, onResponse }: InteractionHandlerProps) {
+export function FileUploadHandler({ data, onResponse, compact = false }: InteractionHandlerProps) {
   const [files, setFiles] = useState<File[]>([])
   const [dragOver, setDragOver] = useState(false)
 
@@ -137,6 +186,71 @@ export function FileUploadHandler({ data, onResponse }: InteractionHandlerProps)
       files: files.map((f) => ({ name: f.name, size: f.size, type: f.type })),
       message: "Files selected for upload",
     })
+  }
+
+  if (compact) {
+    return (
+      <div className="space-y-3">
+        <div className="space-y-1">
+          <h4 className="font-medium text-sm">{data.title}</h4>
+          {data.description && <p className="text-xs text-gray-600">{data.description}</p>}
+        </div>
+
+        <div
+          className={`border-2 border-dashed rounded p-4 text-center transition-colors ${
+            dragOver ? "border-blue-500 bg-blue-50" : "border-gray-300"
+          }`}
+          onDragOver={(e) => {
+            e.preventDefault()
+            setDragOver(true)
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={handleDrop}
+        >
+          <UploadIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+          <p className="text-sm font-medium mb-1">Drop files or click to browse</p>
+          <p className="text-xs text-gray-600 mb-2">
+            {data.accepted_types ? `${data.accepted_types.join(", ")}` : "All types"}
+          </p>
+          <input
+            type="file"
+            multiple={data.max_files !== 1}
+            accept={data.accepted_types?.join(",")}
+            onChange={(e) => handleFileSelect(e.target.files)}
+            className="hidden"
+            id="file-input-compact"
+          />
+          <Button asChild variant="outline" size="sm">
+            <label htmlFor="file-input-compact" className="cursor-pointer">
+              Browse
+            </label>
+          </Button>
+        </div>
+
+        {files.length > 0 && (
+          <div className="space-y-1">
+            <h5 className="text-xs font-medium">Selected Files:</h5>
+            {files.map((file, index) => (
+              <div key={index} className="flex items-center justify-between p-1 bg-gray-50 rounded text-xs">
+                <span className="truncate">{file.name}</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setFiles((prev) => prev.filter((_, i) => i !== index))}
+                  className="h-6 w-6 p-0"
+                >
+                  ×
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <Button onClick={handleSubmit} disabled={files.length === 0} size="sm" className="w-full">
+          Upload {files.length} File{files.length !== 1 ? "s" : ""}
+        </Button>
+      </div>
+    )
   }
 
   return (
@@ -206,13 +320,43 @@ export function FileUploadHandler({ data, onResponse }: InteractionHandlerProps)
   )
 }
 
-export function ProgressTrackerHandler({ data, onResponse }: InteractionHandlerProps) {
+export function ProgressTrackerHandler({ data, onResponse, compact = false }: InteractionHandlerProps) {
   const handleCancel = () => {
     onResponse({
       type: "progress_response",
       action: "cancel",
       message: "Operation cancelled by user",
     })
+  }
+
+  if (compact) {
+    return (
+      <div className="space-y-3">
+        <div className="space-y-1">
+          <h4 className="font-medium text-sm">{data.title}</h4>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex justify-between text-xs">
+            <span>{data.current_step || "Processing..."}</span>
+            <span>
+              {data.current}/{data.total}
+            </span>
+          </div>
+          <Progress value={(data.current / data.total) * 100} className="w-full h-2" />
+          <div className="flex justify-between text-xs text-gray-600">
+            <span>{Math.round((data.current / data.total) * 100)}% complete</span>
+            {data.estimated_time && <span>~{data.estimated_time}</span>}
+          </div>
+        </div>
+
+        {data.allow_cancel && (
+          <Button variant="outline" onClick={handleCancel} size="sm" className="w-full bg-transparent">
+            Cancel
+          </Button>
+        )}
+      </div>
+    )
   }
 
   return (
@@ -248,7 +392,7 @@ export function ProgressTrackerHandler({ data, onResponse }: InteractionHandlerP
   )
 }
 
-export function DataTableHandler({ data, onResponse }: InteractionHandlerProps) {
+export function DataTableHandler({ data, onResponse, compact = false }: InteractionHandlerProps) {
   const [tableData, setTableData] = useState(data.rows)
   const [editingCell, setEditingCell] = useState<{ row: number; col: number } | null>(null)
 
@@ -266,6 +410,73 @@ export function DataTableHandler({ data, onResponse }: InteractionHandlerProps) 
       data: action === "approve" ? tableData : data.rows,
       message: `Data ${action}d by user`,
     })
+  }
+
+  if (compact) {
+    return (
+      <div className="space-y-3">
+        <div className="space-y-1">
+          <h4 className="font-medium text-sm">{data.title}</h4>
+          {data.description && <p className="text-xs text-gray-600">{data.description}</p>}
+        </div>
+
+        <div className="overflow-x-auto max-h-48">
+          <table className="w-full border-collapse border border-gray-300 text-xs">
+            <thead>
+              <tr className="bg-gray-50">
+                {data.headers.map((header: string, index: number) => (
+                  <th key={index} className="border border-gray-300 p-1 text-left font-medium">
+                    {header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {tableData.map((row: any[], rowIndex: number) => (
+                <tr key={rowIndex}>
+                  {row.map((cell: any, colIndex: number) => (
+                    <td key={colIndex} className="border border-gray-300 p-1">
+                      {data.editable_columns?.includes(colIndex) ? (
+                        editingCell?.row === rowIndex && editingCell?.col === colIndex ? (
+                          <Input
+                            value={cell}
+                            onChange={(e) => handleCellEdit(rowIndex, colIndex, e.target.value)}
+                            onBlur={() => setEditingCell(null)}
+                            onKeyDown={(e) => e.key === "Enter" && setEditingCell(null)}
+                            autoFocus
+                            className="h-6 text-xs"
+                          />
+                        ) : (
+                          <div
+                            className="cursor-pointer hover:bg-gray-100 p-1 rounded"
+                            onClick={() => setEditingCell({ row: rowIndex, col: colIndex })}
+                          >
+                            {cell}
+                          </div>
+                        )
+                      ) : (
+                        cell
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="flex gap-2">
+          <Button onClick={() => handleSubmit("approve")} size="sm" className="flex-1">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Approve
+          </Button>
+          <Button variant="outline" onClick={() => handleSubmit("reject")} size="sm" className="flex-1">
+            <XCircle className="h-3 w-3 mr-1" />
+            Reject
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -337,7 +548,7 @@ export function DataTableHandler({ data, onResponse }: InteractionHandlerProps) 
   )
 }
 
-export function DynamicFormHandler({ data, onResponse }: InteractionHandlerProps) {
+export function DynamicFormHandler({ data, onResponse, compact = false }: InteractionHandlerProps) {
   const [formData, setFormData] = useState<Record<string, any>>({})
 
   const handleSubmit = () => {
@@ -350,6 +561,80 @@ export function DynamicFormHandler({ data, onResponse }: InteractionHandlerProps
 
   const updateField = (name: string, value: any) => {
     setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  if (compact) {
+    return (
+      <div className="space-y-3">
+        <div className="space-y-1">
+          <h4 className="font-medium text-sm">{data.title}</h4>
+          {data.description && <p className="text-xs text-gray-600">{data.description}</p>}
+        </div>
+
+        {data.fields.map((field: any, index: number) => (
+          <div key={index} className="space-y-1">
+            <label className="block text-xs font-medium">
+              {field.label}
+              {field.required && <span className="text-red-500 ml-1">*</span>}
+            </label>
+
+            {field.type === "text" && (
+              <Input
+                value={formData[field.name] || ""}
+                onChange={(e) => updateField(field.name, e.target.value)}
+                placeholder={field.placeholder}
+                required={field.required}
+                className="h-8 text-sm"
+              />
+            )}
+
+            {field.type === "textarea" && (
+              <Textarea
+                value={formData[field.name] || ""}
+                onChange={(e) => updateField(field.name, e.target.value)}
+                placeholder={field.placeholder}
+                required={field.required}
+                rows={2}
+                className="text-sm"
+              />
+            )}
+
+            {field.type === "number" && (
+              <Input
+                type="number"
+                value={formData[field.name] || ""}
+                onChange={(e) => updateField(field.name, Number.parseFloat(e.target.value))}
+                placeholder={field.placeholder}
+                required={field.required}
+                min={field.min}
+                max={field.max}
+                className="h-8 text-sm"
+              />
+            )}
+
+            {field.type === "select" && (
+              <select
+                value={formData[field.name] || ""}
+                onChange={(e) => updateField(field.name, e.target.value)}
+                className="w-full p-1 border border-gray-300 rounded-md text-sm h-8"
+                required={field.required}
+              >
+                <option value="">Select...</option>
+                {field.options?.map((option: any, optIndex: number) => (
+                  <option key={optIndex} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+        ))}
+
+        <Button onClick={handleSubmit} size="sm" className="w-full">
+          Submit Form
+        </Button>
+      </div>
+    )
   }
 
   return (
@@ -426,7 +711,7 @@ export function DynamicFormHandler({ data, onResponse }: InteractionHandlerProps
   )
 }
 
-export function DateTimePickerHandler({ data, onResponse }: InteractionHandlerProps) {
+export function DateTimePickerHandler({ data, onResponse, compact = false }: InteractionHandlerProps) {
   const [selectedDate, setSelectedDate] = useState<Date>()
   const [selectedTime, setSelectedTime] = useState("")
 
@@ -443,6 +728,47 @@ export function DateTimePickerHandler({ data, onResponse }: InteractionHandlerPr
       selected_date: result?.toISOString(),
       message: `Selected: ${result?.toLocaleString()}`,
     })
+  }
+
+  if (compact) {
+    return (
+      <div className="space-y-3">
+        <div className="space-y-1">
+          <h4 className="font-medium text-sm">{data.title}</h4>
+          {data.description && <p className="text-xs text-gray-600">{data.description}</p>}
+        </div>
+
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="w-full justify-start text-left font-normal bg-transparent">
+              <CalendarIcon className="mr-2 h-3 w-3" />
+              <span className="text-sm">{selectedDate ? format(selectedDate, "PPP") : "Pick a date"}</span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} initialFocus />
+          </PopoverContent>
+        </Popover>
+
+        {data.type === "datetime" && (
+          <Input
+            type="time"
+            value={selectedTime}
+            onChange={(e) => setSelectedTime(e.target.value)}
+            className="w-full h-8 text-sm"
+          />
+        )}
+
+        <Button
+          onClick={handleSubmit}
+          disabled={!selectedDate || (data.type === "datetime" && !selectedTime)}
+          size="sm"
+          className="w-full"
+        >
+          Confirm
+        </Button>
+      </div>
+    )
   }
 
   return (
@@ -488,7 +814,7 @@ export function DateTimePickerHandler({ data, onResponse }: InteractionHandlerPr
   )
 }
 
-export function SliderInputHandler({ data, onResponse }: InteractionHandlerProps) {
+export function SliderInputHandler({ data, onResponse, compact = false }: InteractionHandlerProps) {
   const [value, setValue] = useState([data.default_value || data.min])
 
   const handleSubmit = () => {
@@ -497,6 +823,46 @@ export function SliderInputHandler({ data, onResponse }: InteractionHandlerProps
       value: value[0],
       message: `Selected value: ${value[0]}${data.unit || ""}`,
     })
+  }
+
+  if (compact) {
+    return (
+      <div className="space-y-3">
+        <div className="space-y-1">
+          <h4 className="font-medium text-sm">{data.title}</h4>
+          {data.description && <p className="text-xs text-gray-600">{data.description}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex justify-between text-xs text-gray-600">
+            <span>
+              {data.min}
+              {data.unit}
+            </span>
+            <span className="font-medium text-sm">
+              {value[0]}
+              {data.unit}
+            </span>
+            <span>
+              {data.max}
+              {data.unit}
+            </span>
+          </div>
+          <Slider
+            value={value}
+            onValueChange={setValue}
+            min={data.min}
+            max={data.max}
+            step={data.step || 1}
+            className="w-full"
+          />
+        </div>
+
+        <Button onClick={handleSubmit} size="sm" className="w-full">
+          Confirm Value
+        </Button>
+      </div>
+    )
   }
 
   return (
@@ -542,7 +908,7 @@ export function SliderInputHandler({ data, onResponse }: InteractionHandlerProps
   )
 }
 
-export function PriorityRankingHandler({ data, onResponse }: InteractionHandlerProps) {
+export function PriorityRankingHandler({ data, onResponse, compact = false }: InteractionHandlerProps) {
   const [items, setItems] = useState(data.items)
   const [draggedItem, setDraggedItem] = useState<number | null>(null)
 
@@ -572,6 +938,39 @@ export function PriorityRankingHandler({ data, onResponse }: InteractionHandlerP
       })),
       message: "Items ranked successfully",
     })
+  }
+
+  if (compact) {
+    return (
+      <div className="space-y-3">
+        <div className="space-y-1">
+          <h4 className="font-medium text-sm">{data.title}</h4>
+          {data.description && <p className="text-xs text-gray-600">{data.description}</p>}
+        </div>
+
+        <div className="space-y-1 max-h-48 overflow-y-auto">
+          {items.map((item: any, index: number) => (
+            <div
+              key={item.id}
+              draggable
+              onDragStart={() => handleDragStart(index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              className="flex items-center gap-2 p-2 border rounded cursor-move hover:bg-gray-50 text-sm"
+            >
+              <Badge variant="outline" className="min-w-[1.5rem] h-5 text-xs justify-center">
+                {index + 1}
+              </Badge>
+              <span className="flex-1 text-sm">{item.label}</span>
+              <div className="text-gray-400 text-xs">⋮⋮</div>
+            </div>
+          ))}
+        </div>
+
+        <Button onClick={handleSubmit} size="sm" className="w-full">
+          Submit Ranking
+        </Button>
+      </div>
+    )
   }
 
   return (
@@ -610,7 +1009,7 @@ export function PriorityRankingHandler({ data, onResponse }: InteractionHandlerP
   )
 }
 
-export function CodeReviewHandler({ data, onResponse }: InteractionHandlerProps) {
+export function CodeReviewHandler({ data, onResponse, compact = false }: InteractionHandlerProps) {
   const [comments, setComments] = useState<Record<string, string>>({})
 
   const handleSubmit = (action: "approve" | "reject" | "request_changes") => {
@@ -620,6 +1019,71 @@ export function CodeReviewHandler({ data, onResponse }: InteractionHandlerProps)
       comments,
       message: `Code review ${action}d`,
     })
+  }
+
+  if (compact) {
+    return (
+      <div className="space-y-3">
+        <div className="space-y-1">
+          <h4 className="font-medium text-sm">{data.title}</h4>
+          {data.description && <p className="text-xs text-gray-600">{data.description}</p>}
+        </div>
+
+        <div className="space-y-2 max-h-64 overflow-y-auto">
+          {data.changes.map((change: any, index: number) => (
+            <div key={index} className="border rounded p-2 space-y-2">
+              <div className="flex items-center justify-between">
+                <h5 className="font-medium text-xs">{change.file}</h5>
+                <Badge variant={change.change_type === "addition" ? "default" : "secondary"} className="text-xs">
+                  {change.change_type}
+                </Badge>
+              </div>
+
+              <div className="space-y-1">
+                {change.old_code && (
+                  <div>
+                    <h6 className="text-xs font-medium text-red-600">Before:</h6>
+                    <pre className="bg-red-50 p-2 rounded text-xs overflow-x-auto">
+                      <code>{change.old_code}</code>
+                    </pre>
+                  </div>
+                )}
+
+                <div>
+                  <h6 className="text-xs font-medium text-green-600">After:</h6>
+                  <pre className="bg-green-50 p-2 rounded text-xs overflow-x-auto">
+                    <code>{change.new_code}</code>
+                  </pre>
+                </div>
+              </div>
+
+              <Textarea
+                placeholder="Comments..."
+                value={comments[change.file] || ""}
+                onChange={(e) => setComments((prev) => ({ ...prev, [change.file]: e.target.value }))}
+                rows={1}
+                className="text-xs"
+              />
+            </div>
+          ))}
+        </div>
+
+        <div className="flex gap-1">
+          <Button onClick={() => handleSubmit("approve")} size="sm" className="flex-1">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Approve
+          </Button>
+          <Button variant="outline" onClick={() => handleSubmit("request_changes")} size="sm" className="flex-1">
+            <AlertTriangle className="h-3 w-3 mr-1" />
+            Changes
+          </Button>
+          <Button variant="destructive" onClick={() => handleSubmit("reject")} size="sm" className="flex-1">
+            <XCircle className="h-3 w-3 mr-1" />
+            Reject
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -685,7 +1149,7 @@ export function CodeReviewHandler({ data, onResponse }: InteractionHandlerProps)
   )
 }
 
-export function ImageAnnotationHandler({ data, onResponse }: InteractionHandlerProps) {
+export function ImageAnnotationHandler({ data, onResponse, compact = false }: InteractionHandlerProps) {
   const [annotations, setAnnotations] = useState<any[]>([])
   const [selectedTool, setSelectedTool] = useState(data.tools[0])
 
@@ -695,6 +1159,43 @@ export function ImageAnnotationHandler({ data, onResponse }: InteractionHandlerP
       annotations,
       message: `Added ${annotations.length} annotations`,
     })
+  }
+
+  if (compact) {
+    return (
+      <div className="space-y-3">
+        <div className="space-y-1">
+          <h4 className="font-medium text-sm">{data.title}</h4>
+          {data.description && <p className="text-xs text-gray-600">{data.description}</p>}
+        </div>
+
+        <div className="flex gap-1">
+          {data.tools.map((tool: string) => (
+            <Button
+              key={tool}
+              variant={selectedTool === tool ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSelectedTool(tool)}
+              className="text-xs"
+            >
+              {tool}
+            </Button>
+          ))}
+        </div>
+
+        <div className="border rounded p-3 bg-gray-50 min-h-[150px] flex items-center justify-center">
+          <div className="text-center text-gray-500">
+            <ImageIcon className="h-8 w-8 mx-auto mb-1" />
+            <p className="text-xs">Image annotation interface</p>
+            <p className="text-xs">Tool: {selectedTool}</p>
+          </div>
+        </div>
+
+        <Button onClick={handleSubmit} size="sm" className="w-full">
+          Submit ({annotations.length})
+        </Button>
+      </div>
+    )
   }
 
   return (
