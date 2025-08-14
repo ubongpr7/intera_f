@@ -146,23 +146,62 @@ export default function AgentChat({
   }
 
   const detectInteractionRequest = (content: string) => {
-    const jsonCodeBlockRegex = /```json\s*([\s\S]*?)\s*```/i
-    const codeBlockMatch = content.match(jsonCodeBlockRegex)
+    const jsonCodeBlockRegex = /```json\s*([\s\S]*?)\s*```/gi
+    const codeBlockMatches = [...content.matchAll(jsonCodeBlockRegex)]
 
-    let jsonContent = content
-    if (codeBlockMatch) {
-      jsonContent = codeBlockMatch[1].trim()
+    // Try each JSON code block found
+    for (const match of codeBlockMatches) {
+      const jsonContent = match[1].trim()
+      try {
+        const parsed = JSON.parse(jsonContent)
+
+        // Check for confirmation request
+        if (parsed.type === "AGENT_CONFIRMATION_REQUEST") {
+          return { type: "confirmation", data: parsed }
+        }
+
+        // Check for interaction types based on interaction_type field
+        if (parsed.interaction_type) {
+          return {
+            type: parsed.interaction_type,
+            data: parsed,
+          }
+        }
+
+        // Check for legacy interaction types (backward compatibility)
+        const interactionTypes = [
+          "AGENT_MULTIPLE_CHOICE",
+          "AGENT_FILE_UPLOAD",
+          "AGENT_PROGRESS_TRACKER",
+          "AGENT_DATA_TABLE",
+          "AGENT_DYNAMIC_FORM",
+          "AGENT_DATE_TIME_PICKER",
+          "AGENT_SLIDER_INPUT",
+          "AGENT_PRIORITY_RANKING",
+          "AGENT_CODE_REVIEW",
+          "AGENT_IMAGE_ANNOTATION",
+        ]
+
+        if (interactionTypes.includes(parsed.type)) {
+          return {
+            type: parsed.type.replace("AGENT_", "").toLowerCase(),
+            data: parsed,
+          }
+        }
+      } catch (error) {
+        console.log("Failed to parse JSON block:", error)
+        continue
+      }
     }
 
+    // If no code blocks found, try parsing the entire content as JSON (fallback)
     try {
-      const parsed = JSON.parse(jsonContent)
+      const parsed = JSON.parse(content.trim())
 
-      // Check for confirmation request
       if (parsed.type === "AGENT_CONFIRMATION_REQUEST") {
         return { type: "confirmation", data: parsed }
       }
 
-      // Check for interaction types based on interaction_type field
       if (parsed.interaction_type) {
         return {
           type: parsed.interaction_type,
@@ -170,7 +209,6 @@ export default function AgentChat({
         }
       }
 
-      // Check for legacy interaction types (backward compatibility)
       const interactionTypes = [
         "AGENT_MULTIPLE_CHOICE",
         "AGENT_FILE_UPLOAD",
@@ -193,6 +231,7 @@ export default function AgentChat({
     } catch {
       // Not a JSON interaction request
     }
+
     return null
   }
 
