@@ -4,22 +4,21 @@ import { useState } from "react"
 import { AlertTriangle, CheckCircle, Info } from "lucide-react"
 
 interface ConfirmationData {
-  type: string
-  action: string
+  interaction_type: string
+  title: string
   description: string
+  action_type: string
   details?: string
-  confirmation_id: string
-  allow_input: boolean
-  input_placeholder: string
   approve_text: string
   deny_text: string
+  allow_input: boolean
 }
 
 interface ConfirmationDialogProps {
   data: ConfirmationData
   onResponse: (response: {
     approved: boolean
-    confirmation_id: string
+    action_type: string
     additional_instructions: string
   }) => void
   onClose: () => void
@@ -34,7 +33,7 @@ export default function ConfirmationDialog({ data, onResponse, onClose }: Confir
 
     const response = {
       approved,
-      confirmation_id: data.confirmation_id,
+      action_type: data.action_type,
       additional_instructions: additionalInstructions.trim(),
     }
 
@@ -44,7 +43,7 @@ export default function ConfirmationDialog({ data, onResponse, onClose }: Confir
   }
 
   const getActionIcon = () => {
-    const action = data.action.toLowerCase()
+    const action = data.action_type.toLowerCase()
     if (action.includes("delete") || action.includes("remove")) {
       return <AlertTriangle className="h-6 w-6 text-red-500" />
     }
@@ -62,8 +61,8 @@ export default function ConfirmationDialog({ data, onResponse, onClose }: Confir
           <div className="flex items-center gap-3">
             {getActionIcon()}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Confirmation Required</h3>
-              <p className="text-sm text-gray-500 mt-1">Action: {data.action.replace(/_/g, " ")}</p>
+              <h3 className="text-lg font-semibold text-gray-900">{data.title}</h3>
+              <p className="text-sm text-gray-500 mt-1">Action: {data.action_type.replace(/_/g, " ")}</p>
             </div>
           </div>
         </div>
@@ -89,7 +88,7 @@ export default function ConfirmationDialog({ data, onResponse, onClose }: Confir
                 id="additional-instructions"
                 value={additionalInstructions}
                 onChange={(e) => setAdditionalInstructions(e.target.value)}
-                placeholder={data.input_placeholder}
+                placeholder="Add any specific instructions or notes..."
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                 disabled={isSubmitting}

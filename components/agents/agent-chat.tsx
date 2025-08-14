@@ -155,7 +155,11 @@ export default function AgentChat({
       try {
         const parsed = JSON.parse(jsonContent)
 
-        // Check for confirmation request
+        if (parsed.interaction_type === "confirmation_request") {
+          return { type: "confirmation", data: parsed }
+        }
+
+        // Check for legacy confirmation request
         if (parsed.type === "AGENT_CONFIRMATION_REQUEST") {
           return { type: "confirmation", data: parsed }
         }
@@ -197,6 +201,10 @@ export default function AgentChat({
     // If no code blocks found, try parsing the entire content as JSON (fallback)
     try {
       const parsed = JSON.parse(content.trim())
+
+      if (parsed.interaction_type === "confirmation_request") {
+        return { type: "confirmation", data: parsed }
+      }
 
       if (parsed.type === "AGENT_CONFIRMATION_REQUEST") {
         return { type: "confirmation", data: parsed }
