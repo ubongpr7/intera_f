@@ -27,6 +27,14 @@ import {
   ComparisonViewHandler,
   BulkActionSelectorHandler,
 } from "@/components/advanced-interaction-handlers"
+import {
+  DashboardBuilderHandler,
+  MasterDetailTableHandler,
+  AlertManagerHandler,
+  TaskAssignmentHandler,
+  CommentThreadHandler,
+  ApprovalWorkflowHandler,
+} from "@/components/extra-collab-handlers"
 import type { ChatMessage } from "./ai-chat-widget"
 
 interface AgentChatProps {
@@ -195,6 +203,12 @@ export default function AgentChat({
           "AGENT_PRIORITY_RANKING",
           "AGENT_CODE_REVIEW",
           "AGENT_IMAGE_ANNOTATION",
+          "AGENT_DASHBOARD_BUILDER",
+          "AGENT_MASTER_DETAIL_TABLE",
+          "AGENT_ALERT_MANAGER",
+          "AGENT_TASK_ASSIGNMENT",
+          "AGENT_COMMENT_THREAD",
+          "AGENT_APPROVAL_WORKFLOW",
         ]
 
         if (interactionTypes.includes(parsed.type)) {
@@ -242,6 +256,12 @@ export default function AgentChat({
         "AGENT_PRIORITY_RANKING",
         "AGENT_CODE_REVIEW",
         "AGENT_IMAGE_ANNOTATION",
+        "AGENT_DASHBOARD_BUILDER",
+        "AGENT_MASTER_DETAIL_TABLE",
+        "AGENT_ALERT_MANAGER",
+        "AGENT_TASK_ASSIGNMENT",
+        "AGENT_COMMENT_THREAD",
+        "AGENT_APPROVAL_WORKFLOW",
       ]
 
       if (interactionTypes.includes(parsed.type)) {
@@ -277,6 +297,16 @@ export default function AgentChat({
       autocomplete_selection: { color: "bg-violet-50 border-violet-200", textColor: "text-violet-700", icon: "⚡" },
       comparison_view: { color: "bg-rose-50 border-rose-200", textColor: "text-rose-700", icon: "⚖️" },
       bulk_action_selector: { color: "bg-slate-50 border-slate-200", textColor: "text-slate-700", icon: "⚡" },
+      dashboard_builder: { color: "bg-blue-50 border-blue-200", textColor: "text-blue-700", icon: "📊" },
+      master_detail_table: { color: "bg-indigo-50 border-indigo-200", textColor: "text-indigo-700", icon: "📋" },
+      alert_manager: { color: "bg-yellow-50 border-yellow-200", textColor: "text-yellow-700", icon: "🔔" },
+      task_assignment: { color: "bg-green-50 border-green-200", textColor: "text-green-700", icon: "👥" },
+      comment_thread: { color: "bg-purple-50 border-purple-200", textColor: "text-purple-700", icon: "💬" },
+      report_builder: { color: "bg-orange-50 border-orange-200", textColor: "text-orange-700", icon: "📈" },
+      data_visualization: { color: "bg-teal-50 border-teal-200", textColor: "text-teal-700", icon: "📊" },
+      timeline_activity: { color: "bg-gray-50 border-gray-200", textColor: "text-gray-700", icon: "⏰" },
+      kanban_board: { color: "bg-pink-50 border-pink-200", textColor: "text-pink-700", icon: "📌" },
+      approval_workflow: { color: "bg-emerald-50 border-emerald-200", textColor: "text-emerald-700", icon: "✅" },
     }
     return styles[type as keyof typeof styles] || styles.confirmation
   }
@@ -330,6 +360,26 @@ export default function AgentChat({
         return <ComparisonViewHandler {...commonProps} />
       case "bulk_action_selector":
         return <BulkActionSelectorHandler {...commonProps} />
+      case "dashboard_builder":
+        return <DashboardBuilderHandler {...commonProps} />
+      case "master_detail_table":
+        return <MasterDetailTableHandler {...commonProps} />
+      case "alert_manager":
+        return <AlertManagerHandler {...commonProps} />
+      case "task_assignment":
+        return <TaskAssignmentHandler {...commonProps} />
+      case "comment_thread":
+        return <CommentThreadHandler {...commonProps} />
+      case "approval_workflow":
+        return <ApprovalWorkflowHandler {...commonProps} />
+      case "report_builder":
+        return <div className="p-4 text-center text-gray-500">Report Builder - Coming Soon</div>
+      case "data_visualization":
+        return <div className="p-4 text-center text-gray-500">Data Visualization - Coming Soon</div>
+      case "timeline_activity":
+        return <div className="p-4 text-center text-gray-500">Timeline Activity - Coming Soon</div>
+      case "kanban_board":
+        return <div className="p-4 text-center text-gray-500">Kanban Board - Coming Soon</div>
       default:
         console.log("Unknown interaction type:", type)
         return null
@@ -494,7 +544,7 @@ export default function AgentChat({
                       {isInteractionDisabled && (
                         <span className="ml-auto text-green-600 flex items-center gap-1">
                           <Check className="h-3 w-3" />
-                          Response Sent
+                          <span className="text-xs">Response Sent</span>
                         </span>
                       )}
                     </div>
