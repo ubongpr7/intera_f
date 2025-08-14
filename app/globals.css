@@ -95,7 +95,9 @@ select {
   @apply bg-white text-black border border-gray-300 rounded-md p-2;
   appearance: none;
 }
-
+input,textarea{
+  @apply bg-gray-200/70 text-gray-800
+}
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px; 

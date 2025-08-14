@@ -9,9 +9,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { Badge } from "./ui/badge"
 import { Progress } from "./ui/progress"
 import { Slider } from "./ui/slider"
-import { Calendar } from "./ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
-import { format } from "date-fns"
 import {
   CalendarIcon,
   UploadIcon,
@@ -25,12 +22,17 @@ import {
   ImageIcon,
   AlertTriangle,
   HelpCircle,
+  Table,
+  Edit,
 } from "lucide-react"
+import { Checkbox } from "./ui/checkbox"
+import classNames from "classnames"
 
 interface InteractionHandlerProps {
   data: any
   onResponse: (response: any) => void
   compact?: boolean
+  disabled?: boolean
 }
 
 export function MultipleChoiceHandler({ data, onResponse, compact = false }: InteractionHandlerProps) {
@@ -89,7 +91,7 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
               onChange={(e) => setAdditionalInput(e.target.value)}
               placeholder="Add any additional context..."
               rows={2}
-              className="text-sm"
+              className="text-sm bg-gray-200/70 text-gray-800"
             />
           </div>
         )}
@@ -133,12 +135,13 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
 
         {data.allow_additional_input && (
           <div>
-            <label className="block text-sm font-medium mb-2">Additional Instructions (Optional)</label>
+            <label className="block text-sm bg-gray-200/70 text-gray-800 font-medium mb-2">Additional Instructions (Optional)</label>
             <Textarea
               value={additionalInput}
               onChange={(e) => setAdditionalInput(e.target.value)}
               placeholder="Add any additional context or instructions..."
               rows={3}
+              className="text-sm bg-gray-200/70 text-gray-800"
             />
           </div>
         )}
@@ -548,7 +551,7 @@ export function DataTableHandler({ data, onResponse, compact = false }: Interact
   )
 }
 
-export function DynamicFormHandler({ data, onResponse, compact = false }: InteractionHandlerProps) {
+export function DynamicFormHandler({ data, onResponse, compact = false, disabled = false }: InteractionHandlerProps) {
   const [formData, setFormData] = useState<Record<string, any>>({})
 
   const handleSubmit = () => {
@@ -563,6 +566,99 @@ export function DynamicFormHandler({ data, onResponse, compact = false }: Intera
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
+  const renderField = (field: any, index: number) => {
+    const fieldValue = formData[field.name] || ""
+
+    switch (field.type) {
+      case "text":
+        return (
+          <Input
+            value={fieldValue}
+            onChange={(e) => updateField(field.name, e.target.value)}
+            placeholder={field.placeholder}
+            required={field.required}
+            className={compact ? "h-8 text-sm" : ""}
+            disabled={disabled}
+          />
+        )
+
+      case "textarea":
+        return (
+          <Textarea
+            value={fieldValue}
+            onChange={(e) => updateField(field.name, e.target.value)}
+            placeholder={field.placeholder}
+            required={field.required}
+            rows={compact ? 2 : 3}
+            className={compact ? "text-sm bg-gray-200/70 text-gray-800" : "bg-gray-200/70 text-gray-800"}
+              
+
+            disabled={disabled}
+          />
+        )
+
+      case "number":
+        return (
+          <Input
+            type="number"
+            value={fieldValue}
+            onChange={(e) => updateField(field.name, Number.parseFloat(e.target.value))}
+            placeholder={field.placeholder}
+            required={field.required}
+            min={field.min}
+            max={field.max}
+            className={compact ? "h-8 text-sm" : ""}
+            disabled={disabled}
+          />
+        )
+
+      case "select":
+        return (
+          <select
+            value={fieldValue}
+            onChange={(e) => updateField(field.name, e.target.value)}
+            className={`w-full p-2 border border-gray-300 rounded-md ${compact ? "h-8 text-sm p-1" : ""}`}
+            required={field.required}
+            disabled={disabled}
+          >
+            <option value="">Select...</option>
+            {field.options?.map((option: any, optIndex: number) => (
+              <option key={optIndex} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        )
+
+      case "boolean":
+        return (
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id={`${field.name}-${index}`}
+              checked={fieldValue === true}
+              onCheckedChange={(checked) => updateField(field.name, checked)}
+              disabled={disabled}
+            />
+            <label htmlFor={`${field.name}-${index}`} className={`${compact ? "text-sm" : ""}`}>
+              {field.label}
+            </label>
+          </div>
+        )
+
+      default:
+        return (
+          <Input
+            value={fieldValue}
+            onChange={(e) => updateField(field.name, e.target.value)}
+            placeholder={field.placeholder}
+            required={field.required}
+            className={compact ? "h-8 text-sm" : ""}
+            disabled={disabled}
+          />
+        )
+    }
+  }
+
   if (compact) {
     return (
       <div className="space-y-3">
@@ -573,64 +669,17 @@ export function DynamicFormHandler({ data, onResponse, compact = false }: Intera
 
         {data.fields.map((field: any, index: number) => (
           <div key={index} className="space-y-1">
-            <label className="block text-xs font-medium">
-              {field.label}
-              {field.required && <span className="text-red-500 ml-1">*</span>}
-            </label>
-
-            {field.type === "text" && (
-              <Input
-                value={formData[field.name] || ""}
-                onChange={(e) => updateField(field.name, e.target.value)}
-                placeholder={field.placeholder}
-                required={field.required}
-                className="h-8 text-sm"
-              />
+            {field.type !== "boolean" && (
+              <label className="block text-xs font-medium">
+                {field.label}
+                {field.required && <span className="text-red-500 ml-1">*</span>}
+              </label>
             )}
-
-            {field.type === "textarea" && (
-              <Textarea
-                value={formData[field.name] || ""}
-                onChange={(e) => updateField(field.name, e.target.value)}
-                placeholder={field.placeholder}
-                required={field.required}
-                rows={2}
-                className="text-sm"
-              />
-            )}
-
-            {field.type === "number" && (
-              <Input
-                type="number"
-                value={formData[field.name] || ""}
-                onChange={(e) => updateField(field.name, Number.parseFloat(e.target.value))}
-                placeholder={field.placeholder}
-                required={field.required}
-                min={field.min}
-                max={field.max}
-                className="h-8 text-sm"
-              />
-            )}
-
-            {field.type === "select" && (
-              <select
-                value={formData[field.name] || ""}
-                onChange={(e) => updateField(field.name, e.target.value)}
-                className="w-full p-1 border border-gray-300 rounded-md text-sm h-8"
-                required={field.required}
-              >
-                <option value="">Select...</option>
-                {field.options?.map((option: any, optIndex: number) => (
-                  <option key={optIndex} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            )}
+            {renderField(field, index)}
           </div>
         ))}
 
-        <Button onClick={handleSubmit} size="sm" className="w-full">
+        <Button onClick={handleSubmit} size="sm" className="w-full" disabled={disabled}>
           Submit Form
         </Button>
       </div>
@@ -649,61 +698,17 @@ export function DynamicFormHandler({ data, onResponse, compact = false }: Intera
       <CardContent className="space-y-4">
         {data.fields.map((field: any, index: number) => (
           <div key={index} className="space-y-2">
-            <label className="block text-sm font-medium">
-              {field.label}
-              {field.required && <span className="text-red-500 ml-1">*</span>}
-            </label>
-
-            {field.type === "text" && (
-              <Input
-                value={formData[field.name] || ""}
-                onChange={(e) => updateField(field.name, e.target.value)}
-                placeholder={field.placeholder}
-                required={field.required}
-              />
+            {field.type !== "boolean" && (
+              <label className="block text-sm font-medium">
+                {field.label}
+                {field.required && <span className="text-red-500 ml-1">*</span>}
+              </label>
             )}
-
-            {field.type === "textarea" && (
-              <Textarea
-                value={formData[field.name] || ""}
-                onChange={(e) => updateField(field.name, e.target.value)}
-                placeholder={field.placeholder}
-                required={field.required}
-                rows={3}
-              />
-            )}
-
-            {field.type === "number" && (
-              <Input
-                type="number"
-                value={formData[field.name] || ""}
-                onChange={(e) => updateField(field.name, Number.parseFloat(e.target.value))}
-                placeholder={field.placeholder}
-                required={field.required}
-                min={field.min}
-                max={field.max}
-              />
-            )}
-
-            {field.type === "select" && (
-              <select
-                value={formData[field.name] || ""}
-                onChange={(e) => updateField(field.name, e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md"
-                required={field.required}
-              >
-                <option value="">Select an option</option>
-                {field.options?.map((option: any, optIndex: number) => (
-                  <option key={optIndex} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            )}
+            {renderField(field, index)}
           </div>
         ))}
 
-        <Button onClick={handleSubmit} className="w-full">
+        <Button onClick={handleSubmit} className="w-full" disabled={disabled}>
           Submit Form
         </Button>
       </CardContent>
@@ -711,24 +716,23 @@ export function DynamicFormHandler({ data, onResponse, compact = false }: Intera
   )
 }
 
-export function DateTimePickerHandler({ data, onResponse, compact = false }: InteractionHandlerProps) {
-  const [selectedDate, setSelectedDate] = useState<Date>()
-  const [selectedTime, setSelectedTime] = useState("")
+export function DateTimePickerHandler({
+  data,
+  onResponse,
+  compact = false,
+  disabled = false,
+}: InteractionHandlerProps) {
+  const [selectedDateTime, setSelectedDateTime] = useState("")
 
   const handleSubmit = () => {
-    let result = selectedDate
-    if (data.type === "datetime" && selectedTime) {
-      const [hours, minutes] = selectedTime.split(":")
-      result = new Date(selectedDate!)
-      result.setHours(Number.parseInt(hours), Number.parseInt(minutes))
-    }
-
     onResponse({
       type: "datetime_response",
-      selected_date: result?.toISOString(),
-      message: `Selected: ${result?.toLocaleString()}`,
+      selected_date: selectedDateTime,
+      message: `Selected: ${new Date(selectedDateTime).toLocaleString()}`,
     })
   }
+
+  const inputType = data.type === "datetime" ? "datetime-local" : data.type === "time" ? "time" : "date"
 
   if (compact) {
     return (
@@ -738,33 +742,17 @@ export function DateTimePickerHandler({ data, onResponse, compact = false }: Int
           {data.description && <p className="text-xs text-gray-600">{data.description}</p>}
         </div>
 
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="w-full justify-start text-left font-normal bg-transparent">
-              <CalendarIcon className="mr-2 h-3 w-3" />
-              <span className="text-sm">{selectedDate ? format(selectedDate, "PPP") : "Pick a date"}</span>
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0">
-            <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} initialFocus />
-          </PopoverContent>
-        </Popover>
+        <Input
+          type={inputType}
+          value={selectedDateTime}
+          onChange={(e) => setSelectedDateTime(e.target.value)}
+          min={data.min_date}
+          max={data.max_date}
+          className="h-8 text-sm"
+          disabled={disabled}
+        />
 
-        {data.type === "datetime" && (
-          <Input
-            type="time"
-            value={selectedTime}
-            onChange={(e) => setSelectedTime(e.target.value)}
-            className="w-full h-8 text-sm"
-          />
-        )}
-
-        <Button
-          onClick={handleSubmit}
-          disabled={!selectedDate || (data.type === "datetime" && !selectedTime)}
-          size="sm"
-          className="w-full"
-        >
+        <Button onClick={handleSubmit} disabled={!selectedDateTime || disabled} size="sm" className="w-full">
           Confirm
         </Button>
       </div>
@@ -781,32 +769,17 @@ export function DateTimePickerHandler({ data, onResponse, compact = false }: Int
         <CardDescription>{data.description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className="w-full justify-start text-left font-normal bg-transparent">
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0">
-            <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} initialFocus />
-          </PopoverContent>
-        </Popover>
-
-        {data.type === "datetime" && (
-          <Input
-            type="time"
-            value={selectedTime}
-            onChange={(e) => setSelectedTime(e.target.value)}
-            className="w-full"
-          />
-        )}
-
-        <Button
-          onClick={handleSubmit}
-          disabled={!selectedDate || (data.type === "datetime" && !selectedTime)}
+        <Input
+          type={inputType}
+          value={selectedDateTime}
+          onChange={(e) => setSelectedDateTime(e.target.value)}
+          min={data.min_date}
+          max={data.max_date}
           className="w-full"
-        >
+          disabled={disabled}
+        />
+
+        <Button onClick={handleSubmit} disabled={!selectedDateTime || disabled} className="w-full">
           Confirm Selection
         </Button>
       </CardContent>
@@ -814,8 +787,8 @@ export function DateTimePickerHandler({ data, onResponse, compact = false }: Int
   )
 }
 
-export function SliderInputHandler({ data, onResponse, compact = false }: InteractionHandlerProps) {
-  const [value, setValue] = useState([data.default_value || data.min])
+export function SliderInputHandler({ data, onResponse, compact = false, disabled = false }: InteractionHandlerProps) {
+  const [value, setValue] = useState([data.default_value || data.min || 0])
 
   const handleSubmit = () => {
     onResponse({
@@ -851,14 +824,15 @@ export function SliderInputHandler({ data, onResponse, compact = false }: Intera
           <Slider
             value={value}
             onValueChange={setValue}
-            min={data.min}
-            max={data.max}
+            min={data.min || 0}
+            max={data.max || 100}
             step={data.step || 1}
             className="w-full"
+            disabled={disabled}
           />
         </div>
 
-        <Button onClick={handleSubmit} size="sm" className="w-full">
+        <Button onClick={handleSubmit} size="sm" className="w-full" disabled={disabled}>
           Confirm Value
         </Button>
       </div>
@@ -893,14 +867,15 @@ export function SliderInputHandler({ data, onResponse, compact = false }: Intera
           <Slider
             value={value}
             onValueChange={setValue}
-            min={data.min}
-            max={data.max}
+            min={data.min || 0}
+            max={data.max || 100}
             step={data.step || 1}
             className="w-full"
+            disabled={disabled}
           />
         </div>
 
-        <Button onClick={handleSubmit} className="w-full">
+        <Button onClick={handleSubmit} className="w-full" disabled={disabled}>
           Confirm Value
         </Button>
       </CardContent>
@@ -1062,7 +1037,7 @@ export function CodeReviewHandler({ data, onResponse, compact = false }: Interac
                 value={comments[change.file] || ""}
                 onChange={(e) => setComments((prev) => ({ ...prev, [change.file]: e.target.value }))}
                 rows={1}
-                className="text-xs"
+                className="text-xs bg-gray-200/70 text-gray-800"
               />
             </div>
           ))}
@@ -1126,6 +1101,7 @@ export function CodeReviewHandler({ data, onResponse, compact = false }: Interac
               value={comments[change.file] || ""}
               onChange={(e) => setComments((prev) => ({ ...prev, [change.file]: e.target.value }))}
               rows={2}
+              className="text-sm bg-gray-200/70 text-gray-800"
             />
           </div>
         ))}
@@ -1149,9 +1125,14 @@ export function CodeReviewHandler({ data, onResponse, compact = false }: Interac
   )
 }
 
-export function ImageAnnotationHandler({ data, onResponse, compact = false }: InteractionHandlerProps) {
+export function ImageAnnotationHandler({
+  data,
+  onResponse,
+  compact = false,
+  disabled = false,
+}: InteractionHandlerProps) {
   const [annotations, setAnnotations] = useState<any[]>([])
-  const [selectedTool, setSelectedTool] = useState(data.tools[0])
+  const [selectedTool, setSelectedTool] = useState(data.tools?.[0] || "rectangle")
 
   const handleSubmit = () => {
     onResponse({
@@ -1160,6 +1141,8 @@ export function ImageAnnotationHandler({ data, onResponse, compact = false }: In
       message: `Added ${annotations.length} annotations`,
     })
   }
+
+  const tools = data.tools || ["rectangle", "circle", "arrow"]
 
   if (compact) {
     return (
@@ -1170,13 +1153,14 @@ export function ImageAnnotationHandler({ data, onResponse, compact = false }: In
         </div>
 
         <div className="flex gap-1">
-          {data.tools.map((tool: string) => (
+          {tools.map((tool: string) => (
             <Button
               key={tool}
               variant={selectedTool === tool ? "default" : "outline"}
               size="sm"
               onClick={() => setSelectedTool(tool)}
               className="text-xs"
+              disabled={disabled}
             >
               {tool}
             </Button>
@@ -1184,14 +1168,22 @@ export function ImageAnnotationHandler({ data, onResponse, compact = false }: In
         </div>
 
         <div className="border rounded p-3 bg-gray-50 min-h-[150px] flex items-center justify-center">
-          <div className="text-center text-gray-500">
-            <ImageIcon className="h-8 w-8 mx-auto mb-1" />
-            <p className="text-xs">Image annotation interface</p>
-            <p className="text-xs">Tool: {selectedTool}</p>
-          </div>
+          {data.image_url ? (
+            <img
+              src={data.image_url || "/placeholder.svg"}
+              alt="Annotation target"
+              className="max-w-full max-h-[140px] object-contain"
+            />
+          ) : (
+            <div className="text-center text-gray-500">
+              <ImageIcon className="h-8 w-8 mx-auto mb-1" />
+              <p className="text-xs">Image annotation interface</p>
+              <p className="text-xs">Tool: {selectedTool}</p>
+            </div>
+          )}
         </div>
 
-        <Button onClick={handleSubmit} size="sm" className="w-full">
+        <Button onClick={handleSubmit} size="sm" className="w-full" disabled={disabled}>
           Submit ({annotations.length})
         </Button>
       </div>
@@ -1209,12 +1201,13 @@ export function ImageAnnotationHandler({ data, onResponse, compact = false }: In
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex gap-2">
-          {data.tools.map((tool: string) => (
+          {tools.map((tool: string) => (
             <Button
               key={tool}
               variant={selectedTool === tool ? "default" : "outline"}
               size="sm"
               onClick={() => setSelectedTool(tool)}
+              disabled={disabled}
             >
               {tool}
             </Button>
@@ -1222,15 +1215,344 @@ export function ImageAnnotationHandler({ data, onResponse, compact = false }: In
         </div>
 
         <div className="border rounded-lg p-4 bg-gray-50 min-h-[300px] flex items-center justify-center">
-          <div className="text-center text-gray-500">
-            <ImageIcon className="h-12 w-12 mx-auto mb-2" />
-            <p>Image annotation interface would be implemented here</p>
-            <p className="text-sm">Selected tool: {selectedTool}</p>
-          </div>
+          {data.image_url ? (
+            <img
+              src={data.image_url || "/placeholder.svg"}
+              alt="Annotation target"
+              className="max-w-full max-h-[280px] object-contain"
+            />
+          ) : (
+            <div className="text-center text-gray-500">
+              <ImageIcon className="h-12 w-12 mx-auto mb-2" />
+              <p>Image annotation interface would be implemented here</p>
+              <p className="text-sm">Selected tool: {selectedTool}</p>
+            </div>
+          )}
         </div>
 
-        <Button onClick={handleSubmit} className="w-full">
+        <Button onClick={handleSubmit} className="w-full" disabled={disabled}>
           Submit Annotations ({annotations.length})
+        </Button>
+      </CardContent>
+    </Card>
+  )
+}
+
+export function DataTableReviewHandler({
+  data,
+  onResponse,
+  compact = false,
+  disabled = false,
+}: InteractionHandlerProps) {
+  const [editedData, setEditedData] = useState<any[]>(data.rows || [])
+  const [selectedRows, setSelectedRows] = useState<number[]>([])
+
+  const handleCellEdit = (rowIndex: number, columnIndex: number, value: any) => {
+    if (disabled || !data.editable_columns?.includes(columnIndex)) return
+
+    const newData = [...editedData]
+    newData[rowIndex] = [...newData[rowIndex]]
+    newData[rowIndex][columnIndex] = value
+    setEditedData(newData)
+  }
+
+  const handleRowSelect = (rowIndex: number) => {
+    if (disabled) return
+    setSelectedRows((prev) => (prev.includes(rowIndex) ? prev.filter((i) => i !== rowIndex) : [...prev, rowIndex]))
+  }
+
+  const handleSubmit = () => {
+    onResponse({
+      type: "data_table_response",
+      edited_data: editedData,
+      selected_rows: selectedRows,
+      message: `Reviewed ${editedData.length} rows, ${selectedRows.length} selected`,
+    })
+  }
+
+  if (compact) {
+    return (
+      <div className="space-y-3">
+        <div className="space-y-1">
+          <h4 className="font-medium text-sm">{data.title}</h4>
+          {data.description && <p className="text-xs text-gray-600">{data.description}</p>}
+        </div>
+
+        <div className="overflow-x-auto max-h-48">
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr>
+                {data.allow_selection && <th className="border p-1"></th>}
+                {data.columns?.map((col: string, i: number) => (
+                  <th key={i} className="border p-1 font-medium text-left">
+                    {col}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {editedData.map((row: any[], rowIndex: number) => (
+                <tr key={rowIndex}>
+                  {data.allow_selection && (
+                    <td className="border p-1">
+                      <Checkbox
+                        checked={selectedRows.includes(rowIndex)}
+                        onCheckedChange={() => handleRowSelect(rowIndex)}
+                        disabled={disabled}
+                      />
+                    </td>
+                  )}
+                  {row.map((cell: any, colIndex: number) => (
+                    <td key={colIndex} className="border p-1">
+                      {data.editable_columns?.includes(colIndex) ? (
+                        <Input
+                          value={cell}
+                          onChange={(e) => handleCellEdit(rowIndex, colIndex, e.target.value)}
+                          className="h-6 text-xs border-0 p-1"
+                          disabled={disabled}
+                        />
+                      ) : (
+                        <span>{cell}</span>
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <Button onClick={handleSubmit} size="sm" className="w-full" disabled={disabled}>
+          Submit Review
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <Card className="w-full max-w-6xl">
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <Table className="h-5 w-5 text-indigo-500" />
+          <CardTitle>{data.title}</CardTitle>
+        </div>
+        <CardDescription>{data.description}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="overflow-x-auto max-h-96">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr>
+                {data.allow_selection && <th className="border p-2"></th>}
+                {data.columns?.map((col: string, i: number) => (
+                  <th key={i} className="border p-2 font-medium text-left bg-gray-50">
+                    {col}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {editedData.map((row: any[], rowIndex: number) => (
+                <tr key={rowIndex} className="hover:bg-gray-50">
+                  {data.allow_selection && (
+                    <td className="border p-2">
+                      <Checkbox
+                        checked={selectedRows.includes(rowIndex)}
+                        onCheckedChange={() => handleRowSelect(rowIndex)}
+                        disabled={disabled}
+                      />
+                    </td>
+                  )}
+                  {row.map((cell: any, colIndex: number) => (
+                    <td key={colIndex} className="border p-2">
+                      {data.editable_columns?.includes(colIndex) ? (
+                        <Input
+                          value={cell}
+                          onChange={(e) => handleCellEdit(rowIndex, colIndex, e.target.value)}
+                          className="border-0 p-1"
+                          disabled={disabled}
+                        />
+                      ) : (
+                        <span>{cell}</span>
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <Button onClick={handleSubmit} className="w-full" disabled={disabled}>
+          Submit Review ({selectedRows.length} selected)
+        </Button>
+      </CardContent>
+    </Card>
+  )
+}
+
+export function UpdateFormHandler({ data, onResponse, compact = false, disabled = false }: InteractionHandlerProps) {
+  const [formData, setFormData] = useState<Record<string, any>>(data.current_values || {})
+
+  const handleSubmit = () => {
+    onResponse({
+      type: "update_form_response",
+      data: formData,
+      item_id: data.item_id,
+      message: "Item updated successfully",
+    })
+  }
+
+  const updateField = (name: string, value: any) => {
+    setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const renderField = (field: any, index: number) => {
+    const fieldValue = formData[field.name] || ""
+
+    switch (field.type) {
+      case "text":
+        return (
+          <Input
+            value={fieldValue}
+            onChange={(e) => updateField(field.name, e.target.value)}
+            placeholder={field.placeholder}
+            required={field.required}
+            className={compact ? "h-8 text-sm" : ""}
+            disabled={disabled}
+          />
+        )
+
+      case "textarea":
+        return (
+          <Textarea
+            value={fieldValue}
+            onChange={(e) => updateField(field.name, e.target.value)}
+            placeholder={field.placeholder}
+            required={field.required}
+            rows={compact ? 2 : 3}
+            className={compact ? "text-sm bg-gray-200/70 text-gray-800" : "bg-gray-200/70 text-gray-800"}
+            disabled={disabled}
+          />
+        )
+
+      case "number":
+        return (
+          <Input
+            type="number"
+            value={fieldValue}
+            onChange={(e) => updateField(field.name, Number.parseFloat(e.target.value))}
+            placeholder={field.placeholder}
+            required={field.required}
+            min={field.min}
+            max={field.max}
+            className={compact ? "h-8 text-sm bg-gray-200/70 text-gray-800" : "bg-gray-200/70 text-gray-800" }
+            disabled={disabled}
+          />
+        )
+
+      case "select":
+        return (
+          <select
+            value={fieldValue}
+            onChange={(e) => updateField(field.name, e.target.value)}
+            className={`w-full p-2 border border-gray-300 rounded-md ${compact ? "h-8 text-sm p-1" : ""}`}
+            required={field.required}
+            disabled={disabled}
+          >
+            <option value="">Select...</option>
+            {field.options?.map((option: any, optIndex: number) => (
+              <option key={optIndex} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        )
+
+      case "boolean":
+        return (
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id={`${field.name}-${index}`}
+              checked={fieldValue === true}
+              onCheckedChange={(checked) => updateField(field.name, checked)}
+              disabled={disabled}
+            />
+            <label htmlFor={`${field.name}-${index}`} className={`${compact ? "text-sm" : ""}`}>
+              {field.label}
+            </label>
+          </div>
+        )
+
+      default:
+        return (
+          <Input
+            value={fieldValue}
+            onChange={(e) => updateField(field.name, e.target.value)}
+            placeholder={field.placeholder}
+            required={field.required}
+            className={compact ? "h-8 text-sm" : ""}
+            disabled={disabled}
+          />
+        )
+    }
+  }
+
+  if (compact) {
+    return (
+      <div className="space-y-3">
+        <div className="space-y-1">
+          <h4 className="font-medium text-sm">{data.title}</h4>
+          {data.description && <p className="text-xs text-gray-600">{data.description}</p>}
+          {data.item_name && <p className="text-xs text-blue-600">Updating: {data.item_name}</p>}
+        </div>
+
+        {data.fields.map((field: any, index: number) => (
+          <div key={index} className="space-y-1">
+            {field.type !== "boolean" && (
+              <label className="block text-xs font-medium">
+                {field.label}
+                {field.required && <span className="text-red-500 ml-1">*</span>}
+              </label>
+            )}
+            {renderField(field, index)}
+          </div>
+        ))}
+
+        <Button onClick={handleSubmit} size="sm" className="w-full" disabled={disabled}>
+          Update Item
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <Card className="w-full max-w-2xl">
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <Edit className="h-5 w-5 text-blue-500" />
+          <CardTitle>{data.title}</CardTitle>
+        </div>
+        <CardDescription>
+          {data.description}
+          {data.item_name && <span className="block text-blue-600 mt-1">Updating: {data.item_name}</span>}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {data.fields.map((field: any, index: number) => (
+          <div key={index} className="space-y-2">
+            {field.type !== "boolean" && (
+              <label className="block text-sm font-medium">
+                {field.label}
+                {field.required && <span className="text-red-500 ml-1">*</span>}
+              </label>
+            )}
+            {renderField(field, index)}
+          </div>
+        ))}
+
+        <Button onClick={handleSubmit} className="w-full" disabled={disabled}>
+          Update Item
         </Button>
       </CardContent>
     </Card>

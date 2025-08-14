@@ -17,6 +17,8 @@ import {
   PriorityRankingHandler,
   CodeReviewHandler,
   ImageAnnotationHandler,
+  DataTableReviewHandler,
+  UpdateFormHandler,
 } from "@/components/interaction-handlers"
 import {
   SearchableSelectionHandler,
@@ -262,7 +264,9 @@ export default function AgentChat({
       file_upload: { color: "bg-green-50 border-green-200", textColor: "text-green-700", icon: "📁" },
       progress_tracker: { color: "bg-purple-50 border-purple-200", textColor: "text-purple-700", icon: "⏳" },
       data_table: { color: "bg-indigo-50 border-indigo-200", textColor: "text-indigo-700", icon: "📊" },
+      data_table_review: { color: "bg-indigo-50 border-indigo-200", textColor: "text-indigo-700", icon: "📋" },
       dynamic_form: { color: "bg-pink-50 border-pink-200", textColor: "text-pink-700", icon: "📝" },
+      update_form: { color: "bg-blue-50 border-blue-200", textColor: "text-blue-700", icon: "✏️" },
       date_time_picker: { color: "bg-teal-50 border-teal-200", textColor: "text-teal-700", icon: "📅" },
       slider_input: { color: "bg-orange-50 border-orange-200", textColor: "text-orange-700", icon: "🎚️" },
       priority_ranking: { color: "bg-red-50 border-red-200", textColor: "text-red-700", icon: "📋" },
@@ -299,8 +303,12 @@ export default function AgentChat({
         return <ProgressTrackerHandler {...commonProps} />
       case "data_table":
         return <DataTableHandler {...commonProps} />
+      case "data_table_review":
+        return <DataTableReviewHandler {...commonProps} />
       case "dynamic_form":
         return <DynamicFormHandler {...commonProps} />
+      case "update_form":
+        return <UpdateFormHandler {...commonProps} />
       case "date_time_picker":
         return <DateTimePickerHandler {...commonProps} />
       case "slider_input":

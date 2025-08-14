@@ -90,7 +90,7 @@ export default function ConfirmationDialog({ data, onResponse, onClose }: Confir
                 onChange={(e) => setAdditionalInstructions(e.target.value)}
                 placeholder="Add any specific instructions or notes..."
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                className="w-full px-3 bg-gray-200/70 text-gray-800 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                 disabled={isSubmitting}
               />
             </div>
