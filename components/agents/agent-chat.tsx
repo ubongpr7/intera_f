@@ -57,6 +57,7 @@ export default function AgentChat({
   const [input, setInput] = useState("")
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const [confirmationDialog, setConfirmationDialog] = useState<any>(null)
+  const [respondedInteractions, setRespondedInteractions] = useState<Set<string>>(new Set())
   const scrollRef = useRef<HTMLDivElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -217,11 +218,14 @@ export default function AgentChat({
     return styles[type as keyof typeof styles] || styles.confirmation
   }
 
-  const renderInlineInteraction = (type: string, data: any) => {
+  const renderInlineInteraction = (type: string, data: any, messageId: string) => {
+    const isDisabled = respondedInteractions.has(messageId)
+
     const commonProps = {
       data,
-      onResponse: handleInteractionResponse,
-      compact: true, // Add compact mode for inline display
+      onResponse: (response: any) => handleInteractionResponse(response, messageId),
+      compact: true,
+      disabled: isDisabled, // Pass disabled state to handlers
     }
 
     switch (type) {
@@ -260,7 +264,10 @@ export default function AgentChat({
     }
   }
 
-  const handleInteractionResponse = (response: any) => {
+  const handleInteractionResponse = (response: any, messageId: string) => {
+    // Mark this interaction as responded to
+    setRespondedInteractions((prev) => new Set(prev).add(messageId))
+
     // Send the response back to the agent as a regular message
     const responseText = typeof response === "string" ? response : JSON.stringify(response)
     onSend(responseText)
@@ -268,6 +275,11 @@ export default function AgentChat({
   }
 
   const handleConfirmationResponse = (response: any) => {
+    // Mark the confirmation as responded to if it has an ID
+    if (confirmationDialog?.confirmation_id) {
+      setRespondedInteractions((prev) => new Set(prev).add(confirmationDialog.confirmation_id))
+    }
+
     // Send the response back to the agent as a regular message
     const responseText = typeof response === "string" ? response : JSON.stringify(response)
     onSend(responseText)
@@ -350,6 +362,7 @@ export default function AgentChat({
         ) : (
           messages.map((m) => {
             const interactionData = m.role === "assistant" ? detectInteractionRequest(m.content) : null
+            const isInteractionDisabled = respondedInteractions.has(m.id)
 
             if (interactionData) {
               const { type, data } = interactionData
@@ -360,23 +373,36 @@ export default function AgentChat({
                 return (
                   <div key={m.id} className="mb-8 flex justify-start">
                     <div
-                      className={`max-w-[95%] ${style.color} border text-gray-800 rounded-2xl rounded-bl-none shadow-lg px-4 py-4`}
+                      className={`max-w-[95%] ${style.color} border text-gray-800 rounded-2xl rounded-bl-none shadow-lg px-4 py-4 ${
+                        isInteractionDisabled ? "opacity-60" : ""
+                      }`}
                     >
                       <div className={`font-semibold text-xs mb-3 ${style.textColor} flex items-center gap-2`}>
-                        <Clock className="h-3 w-3" />
-                        Assistant - Awaiting Confirmation
+                        {isInteractionDisabled ? (
+                          <Check className="h-3 w-3 text-green-600" />
+                        ) : (
+                          <Clock className="h-3 w-3" />
+                        )}
+                        Assistant - {isInteractionDisabled ? "Response Sent" : "Awaiting Confirmation"}
                       </div>
                       <div className="space-y-3">
                         <p className="font-medium text-gray-900 text-sm">{data.description}</p>
                         {data.details && (
                           <p className="text-xs text-gray-600 bg-white/50 p-2 rounded-lg">{data.details}</p>
                         )}
-                        <button
-                          onClick={() => setConfirmationDialog(data)}
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors"
-                        >
-                          Review & Respond
-                        </button>
+                        {!isInteractionDisabled && (
+                          <button
+                            onClick={() => setConfirmationDialog(data)}
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors"
+                          >
+                            Review & Respond
+                          </button>
+                        )}
+                        {isInteractionDisabled && (
+                          <div className="w-full bg-green-100 text-green-700 py-2 px-3 rounded-lg text-sm font-medium text-center">
+                            ✓ Response Sent
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -386,14 +412,22 @@ export default function AgentChat({
               return (
                 <div key={m.id} className="mb-8 flex justify-start">
                   <div
-                    className={`max-w-[95%] ${style.color} border text-gray-800 rounded-2xl rounded-bl-none shadow-lg px-4 py-4`}
+                    className={`max-w-[95%] ${style.color} border text-gray-800 rounded-2xl rounded-bl-none shadow-lg px-4 py-4 ${
+                      isInteractionDisabled ? "opacity-60" : ""
+                    }`}
                   >
                     <div className={`font-semibold text-xs mb-3 ${style.textColor} flex items-center gap-2`}>
                       <span>{style.icon}</span>
                       Assistant - {type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                      {isInteractionDisabled && (
+                        <span className="ml-auto text-green-600 flex items-center gap-1">
+                          <Check className="h-3 w-3" />
+                          Response Sent
+                        </span>
+                      )}
                     </div>
                     <div className="space-y-3">
-                      <div className="text-sm">{renderInlineInteraction(type, data)}</div>
+                      <div className="text-sm">{renderInlineInteraction(type, data, m.id)}</div>
                     </div>
                   </div>
                 </div>
@@ -503,7 +537,7 @@ export default function AgentChat({
             }}
             rows={1}
             placeholder="Type your message..."
-            className="flex-1 text-gray-800 bg-gray-200/70 border border-gray-300 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none leading-6 max-h-[160px]"
+            className="flex-1 text-gray-800 border border-gray-300 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none leading-6 max-h-[160px]"
             disabled={isBusy}
             aria-label="Type your message"
           />
