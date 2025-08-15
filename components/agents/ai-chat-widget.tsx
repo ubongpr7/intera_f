@@ -139,7 +139,7 @@ const [loadTools]=useLoadToolsMutation()
           setMessagesMap(new Map())
           setLastActivityAt(Date.now())
           await loadTools({
-            data: { id: uuidv4(), jsonrpc: "2.0", method: "load_tools", params: sessionId },
+            data: { id: uuidv4(), jsonrpc: "2.0", method: "load_tools", params: id },
         
           }).unwrap()
         }
