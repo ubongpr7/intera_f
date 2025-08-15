@@ -125,8 +125,9 @@ export function MasterDetailTableHandler({ data, onResponse, compact = false, di
     })
   }
 
-  const getNestedValue = (obj: any, path: string) => {
-    return path.split(".").reduce((current, key) => current?.[key], obj)
+  const getNestedValue = (obj: any, keyPath: string) => {
+    if (!keyPath || !obj) return "N/A"
+    return keyPath.split(".").reduce((current, key) => current?.[key], obj) || "N/A"
   }
 
   return (
@@ -159,9 +160,9 @@ export function MasterDetailTableHandler({ data, onResponse, compact = false, di
                 <div className="flex-1 grid grid-cols-4 gap-4">
                   {data.master_columns.map((col: any, colIndex: number) => (
                     <div key={colIndex}>
-                      <div className={`text-xs text-gray-500 ${compact ? "text-xs" : "text-sm"}`}>{col.header}</div>
+                      <div className={`text-xs text-gray-500 ${compact ? "text-xs" : "text-sm"}`}>{col.label}</div>
                       <span className={`font-medium ${compact ? "text-xs" : "text-sm"}`}>
-                        {getNestedValue(row, col.data_key) || "N/A"}
+                        {getNestedValue(row, col.name)}
                       </span>
                     </div>
                   ))}
@@ -176,7 +177,7 @@ export function MasterDetailTableHandler({ data, onResponse, compact = false, di
                         {data.detail_columns.map((col: any, colIndex: number) => (
                           <div key={colIndex}>
                             <span className={`text-gray-600 ${compact ? "text-xs" : "text-sm"}`}>
-                              {col.header}: {getNestedValue(detail, col.data_key) || "N/A"}
+                              {col.label}: {getNestedValue(detail, col.name)}
                             </span>
                           </div>
                         ))}
@@ -487,7 +488,7 @@ export function ApprovalWorkflowHandler({ data, onResponse, compact = false, dis
       <CardContent className={compact ? "pt-0" : ""}>
         <div className="space-y-4">
           <div className="p-3 bg-gray-50 rounded">
-            <h4 className={`font-medium ${compact ? "text-xs" : "text-sm"}`}>
+            <h4 className={`font-medium mb-2 ${compact ? "text-xs" : "text-sm"}`}>
               {data.workflow_item.type}: {data.workflow_item.title}
             </h4>
             <p className={`text-gray-600 ${compact ? "text-xs" : "text-sm"}`}>{data.workflow_item.description}</p>
