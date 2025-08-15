@@ -125,6 +125,10 @@ export function MasterDetailTableHandler({ data, onResponse, compact = false, di
     })
   }
 
+  const getNestedValue = (obj: any, path: string) => {
+    return path.split(".").reduce((current, key) => current?.[key], obj)
+  }
+
   return (
     <Card className={`${compact ? "text-sm" : ""} ${disabled ? "opacity-50 pointer-events-none" : ""}`}>
       <CardHeader className={compact ? "pb-2" : ""}>
@@ -153,9 +157,12 @@ export function MasterDetailTableHandler({ data, onResponse, compact = false, di
                   )}
                 </Button>
                 <div className="flex-1 grid grid-cols-4 gap-4">
-                  {data.master_columns.map((col: any) => (
-                    <div key={col.key}>
-                      <span className={`font-medium ${compact ? "text-xs" : "text-sm"}`}>{row[col.key]}</span>
+                  {data.master_columns.map((col: any, colIndex: number) => (
+                    <div key={colIndex}>
+                      <div className={`text-xs text-gray-500 ${compact ? "text-xs" : "text-sm"}`}>{col.header}</div>
+                      <span className={`font-medium ${compact ? "text-xs" : "text-sm"}`}>
+                        {getNestedValue(row, col.data_key) || "N/A"}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -166,10 +173,10 @@ export function MasterDetailTableHandler({ data, onResponse, compact = false, di
                   <div className="space-y-2">
                     {row[data.detail_key].map((detail: any, detailIndex: number) => (
                       <div key={detailIndex} className="grid grid-cols-3 gap-4 p-2 bg-white rounded border">
-                        {data.detail_columns.map((col: any) => (
-                          <div key={col.key}>
+                        {data.detail_columns.map((col: any, colIndex: number) => (
+                          <div key={colIndex}>
                             <span className={`text-gray-600 ${compact ? "text-xs" : "text-sm"}`}>
-                              {col.label}: {detail[col.key]}
+                              {col.header}: {getNestedValue(detail, col.data_key) || "N/A"}
                             </span>
                           </div>
                         ))}
