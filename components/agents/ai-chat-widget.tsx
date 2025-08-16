@@ -72,7 +72,7 @@ export default function AIChatWidget() {
   // Activity tracking (for auto-close)
   const [lastActivityAt, setLastActivityAt] = useState<number | null>(null)
   const prevSnapshotRef = useRef({ msgSize: 0, pending: 0, events: 0, tasks: 0 })
-const [loadTools]=useLoadToolsMutation()
+const [loadTools,{isLoading:isLoadingTools}]=useLoadToolsMutation()
 
 
   // RTK Query hooks
@@ -83,7 +83,7 @@ const [loadTools]=useLoadToolsMutation()
   const [getEvents] = useGetEventMutation()
   const [listTasks] = useListTaskMutation()
 
-  const combinedLoading = isCreatingConversation || isSendingMessage
+  const combinedLoading = isCreatingConversation || isSendingMessage||isLoadingTools
 
   const toggleChat = () => {
     setIsOpen((prev) => !prev)
