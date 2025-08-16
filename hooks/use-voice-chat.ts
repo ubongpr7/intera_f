@@ -41,39 +41,13 @@ interface UseVoiceChatReturn {
   setVolume: (volume: number) => void
   autoSubmitEnabled: boolean
   setAutoSubmitEnabled: (enabled: boolean) => void
-  language: string
-  setLanguage: (language: string) => void
-  availableLanguages: Array<{ value: string; label: string }>
 }
-
-const AVAILABLE_LANGUAGES = [
-  { value: "en-US", label: "English (US)" },
-  { value: "en-GB", label: "English (UK)" },
-  { value: "es-ES", label: "Spanish (Spain)" },
-  { value: "es-US", label: "Spanish (US)" },
-  { value: "fr-FR", label: "French" },
-  { value: "de-DE", label: "German" },
-  { value: "it-IT", label: "Italian" },
-  { value: "pt-BR", label: "Portuguese (Brazil)" },
-  { value: "ru-RU", label: "Russian" },
-  { value: "ja-JP", label: "Japanese" },
-  { value: "ko-KR", label: "Korean" },
-  { value: "zh-CN", label: "Chinese (Simplified)" },
-  { value: "zh-TW", label: "Chinese (Traditional)" },
-  { value: "hi-IN", label: "Hindi" },
-  { value: "ar-SA", label: "Arabic" },
-  { value: "nl-NL", label: "Dutch" },
-  { value: "pl-PL", label: "Polish" },
-  { value: "sv-SE", label: "Swedish" },
-  { value: "da-DK", label: "Danish" },
-  { value: "no-NO", label: "Norwegian" },
-]
 
 export function useVoiceChat({
   onTranscript,
   onAutoSend,
   autoSendDelay = 6000,
-  language: initialLanguage = "en-US",
+  language = "en-US",
   onInputMethodChange,
   onVoiceInterruption,
   selectedVoice: initialSelectedVoice = null,
@@ -89,7 +63,6 @@ export function useVoiceChat({
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(initialSelectedVoice)
   const [volume, setVolume] = useState(initialVolume)
   const [autoSubmitEnabled, setAutoSubmitEnabled] = useState(initialAutoSubmitEnabled)
-  const [language, setLanguage] = useState(initialLanguage)
 
   const recognitionRef = useRef<any>(null)
   const speechSynthesisRef = useRef<SpeechSynthesis | null>(null)
@@ -119,12 +92,9 @@ export function useVoiceChat({
 
           if (!selectedVoice && voices.length > 0) {
             const preferredVoice =
-              voices.find((voice) => voice.name.includes("Google") && voice.lang.startsWith(language.split("-")[0])) ||
-              voices.find(
-                (voice) => voice.lang.startsWith(language.split("-")[0]) && !voice.name.includes("Microsoft"),
-              ) ||
-              voices.find((voice) => voice.lang.startsWith(language.split("-")[0])) ||
               voices.find((voice) => voice.name.includes("Google") && voice.lang.startsWith("en")) ||
+              voices.find((voice) => voice.lang.startsWith("en") && !voice.name.includes("Microsoft")) ||
+              voices.find((voice) => voice.lang.startsWith("en")) ||
               voices[0]
             setSelectedVoice(preferredVoice)
           }
@@ -134,10 +104,6 @@ export function useVoiceChat({
           loadVoices()
         } else {
           speechSynthesisRef.current.addEventListener("voiceschanged", loadVoices)
-        }
-
-        if (recognitionRef.current) {
-          recognitionRef.current.stop()
         }
 
         const recognition = new SpeechRecognitionAPI()
@@ -420,8 +386,5 @@ export function useVoiceChat({
     setVolume,
     autoSubmitEnabled,
     setAutoSubmitEnabled,
-    language,
-    setLanguage,
-    availableLanguages: AVAILABLE_LANGUAGES,
   }
 }
