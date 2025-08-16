@@ -153,7 +153,12 @@ export function useVoiceChat({
   }, [isListening])
 
   const speak = useCallback((text: string) => {
-    if (!speechSynthesisRef.current || !text.trim()) return
+    if (!speechSynthesisRef.current || !text.trim()) {
+      console.log("[v0] Cannot speak: missing synthesis or empty text")
+      return
+    }
+
+    console.log("[v0] Attempting to speak:", text.substring(0, 50) + "...")
 
     // Cancel any ongoing speech
     speechSynthesisRef.current.cancel()
@@ -167,7 +172,12 @@ export function useVoiceChat({
       .replace(/\n+/g, " ")
       .trim()
 
-    if (!cleanText) return
+    if (!cleanText) {
+      console.log("[v0] No clean text to speak after processing")
+      return
+    }
+
+    console.log("[v0] Clean text to speak:", cleanText.substring(0, 100) + "...")
 
     const utterance = new SpeechSynthesisUtterance(cleanText)
 
@@ -177,11 +187,16 @@ export function useVoiceChat({
 
     if (englishVoice) {
       utterance.voice = englishVoice
+      console.log("[v0] Using voice:", englishVoice.name, englishVoice.lang)
+    } else {
+      console.log("[v0] No voice selected, using default")
     }
 
     utterance.rate = 0.9
     utterance.pitch = 1
-    utterance.volume = 0.8
+    utterance.volume = 1.0 // Increased volume from 0.8 to 1.0
+
+    console.log("[v0] Speech settings - Rate:", utterance.rate, "Pitch:", utterance.pitch, "Volume:", utterance.volume)
 
     utterance.onstart = () => {
       console.log("[v0] Started speaking")
@@ -200,8 +215,31 @@ export function useVoiceChat({
       currentUtteranceRef.current = null
     }
 
+    utterance.onboundary = (event) => {
+      console.log("[v0] Speech boundary event:", event.name, "at", event.charIndex)
+    }
+
     currentUtteranceRef.current = utterance
-    speechSynthesisRef.current.speak(utterance)
+
+    try {
+      console.log("[v0] Calling speechSynthesis.speak()")
+      speechSynthesisRef.current.speak(utterance)
+
+      setTimeout(() => {
+        if (speechSynthesisRef.current) {
+          console.log(
+            "[v0] Speech synthesis status - speaking:",
+            speechSynthesisRef.current.speaking,
+            "pending:",
+            speechSynthesisRef.current.pending,
+          )
+        }
+      }, 100)
+    } catch (error) {
+      console.error("[v0] Error calling speak():", error)
+      setIsSpeaking(false)
+      currentUtteranceRef.current = null
+    }
   }, [])
 
   const stopSpeaking = useCallback(() => {
