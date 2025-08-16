@@ -126,9 +126,23 @@ export function MasterDetailTableHandler({ data, onResponse, compact = false, di
   }
 
   const getNestedValue = (obj: any, keyPath: string) => {
-    if (!keyPath || !obj) return "N/A"
-    return keyPath.split(".").reduce((current, key) => current?.[key], obj) || "N/A"
+    console.log("[v0] getNestedValue called with:", { obj, keyPath })
+    if (!keyPath || !obj) {
+      console.log("[v0] Missing keyPath or obj, returning N/A")
+      return "N/A"
+    }
+    const result =
+      keyPath.split(".").reduce((current, key) => {
+        console.log("[v0] Accessing key:", key, "in:", current)
+        return current?.[key]
+      }, obj) || "N/A"
+    console.log("[v0] Final result:", result)
+    return result
   }
+
+  console.log("[v0] MasterDetailTableHandler data:", data)
+  console.log("[v0] Master columns:", data.master_columns)
+  console.log("[v0] Master data:", data.master_data)
 
   return (
     <Card className={`${compact ? "text-sm" : ""} ${disabled ? "opacity-50 pointer-events-none" : ""}`}>
@@ -141,53 +155,58 @@ export function MasterDetailTableHandler({ data, onResponse, compact = false, di
       </CardHeader>
       <CardContent className={compact ? "pt-0" : ""}>
         <div className="space-y-2">
-          {data.master_data.map((row: any, index: number) => (
-            <div key={row.id || index} className="border rounded-lg">
-              <div className="flex items-center p-3 bg-gray-50">
-                <input
-                  type="checkbox"
-                  checked={selectedRows.includes(row.id)}
-                  onChange={() => handleRowSelect(row.id)}
-                  className="mr-3"
-                />
-                <Button variant="ghost" size="sm" onClick={() => toggleRow(row.id)} className="mr-2 p-0">
-                  {expandedRows.has(row.id) ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  )}
-                </Button>
-                <div className="flex-1 grid grid-cols-4 gap-4">
-                  {data.master_columns.map((col: any, colIndex: number) => (
-                    <div key={colIndex}>
-                      <div className={`text-xs text-gray-500 ${compact ? "text-xs" : "text-sm"}`}>{col.label}</div>
-                      <span className={`font-medium ${compact ? "text-xs" : "text-sm"}`}>
-                        {getNestedValue(row, col.name)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {expandedRows.has(row.id) && row[data.detail_key] && (
-                <div className="p-3 border-t">
-                  <div className="space-y-2">
-                    {row[data.detail_key].map((detail: any, detailIndex: number) => (
-                      <div key={detailIndex} className="grid grid-cols-3 gap-4 p-2 bg-white rounded border">
-                        {data.detail_columns.map((col: any, colIndex: number) => (
-                          <div key={colIndex}>
-                            <span className={`text-gray-600 ${compact ? "text-xs" : "text-sm"}`}>
-                              {col.label}: {getNestedValue(detail, col.name)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    ))}
+          {data.master_data.map((row: any, index: number) => {
+            console.log("[v0] Processing row:", row)
+            return (
+              <div key={row.id || index} className="border rounded-lg">
+                <div className="flex items-center p-3 bg-gray-50">
+                  <input
+                    type="checkbox"
+                    checked={selectedRows.includes(row.id)}
+                    onChange={() => handleRowSelect(row.id)}
+                    className="mr-3"
+                  />
+                  <Button variant="ghost" size="sm" onClick={() => toggleRow(row.id)} className="mr-2 p-0">
+                    {expandedRows.has(row.id) ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <div className="flex-1 grid grid-cols-4 gap-4">
+                    {data.master_columns.map((col: any, colIndex: number) => {
+                      console.log("[v0] Processing column:", col)
+                      const value = getNestedValue(row, col.name)
+                      return (
+                        <div key={colIndex}>
+                          <div className={`text-xs text-gray-500 ${compact ? "text-xs" : "text-sm"}`}>{col.label}</div>
+                          <span className={`font-medium ${compact ? "text-xs" : "text-sm"}`}>{value}</span>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
-              )}
-            </div>
-          ))}
+
+                {expandedRows.has(row.id) && row[data.detail_key] && (
+                  <div className="p-3 border-t">
+                    <div className="space-y-2">
+                      {row[data.detail_key].map((detail: any, detailIndex: number) => (
+                        <div key={detailIndex} className="grid grid-cols-3 gap-4 p-2 bg-white rounded border">
+                          {data.detail_columns.map((col: any, colIndex: number) => (
+                            <div key={colIndex}>
+                              <span className={`text-gray-600 ${compact ? "text-xs" : "text-sm"}`}>
+                                {col.label}: {getNestedValue(detail, col.name)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
 
         {selectedRows.length > 0 && (
@@ -426,7 +445,7 @@ export function CommentThreadHandler({ data, onResponse, compact = false, disabl
       <CardContent className={compact ? "pt-0" : ""}>
         <div className="space-y-3">
           <div className="p-3 bg-gray-50 rounded">
-            <h4 className={`font-medium ${compact ? "text-xs" : "text-sm"}`}>
+            <h4 className={`font-medium mb-2 ${compact ? "text-xs" : "text-sm"}`}>
               {data.context_object.type}: {data.context_object.name}
             </h4>
             <p className={`text-gray-600 ${compact ? "text-xs" : "text-sm"}`}>{data.context_object.description}</p>
@@ -552,6 +571,192 @@ export function ApprovalWorkflowHandler({ data, onResponse, compact = false, dis
               size={compact ? "sm" : "default"}
             >
               Reject
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+export function WizardFlowHandler({ data, onResponse, compact = false, disabled = false }: ExtraCollabProps) {
+  const [currentStep, setCurrentStep] = useState(data.current_step || 0)
+  const [responses, setResponses] = useState<Record<string, any>>(data.existing_responses || {})
+  const [currentStepData, setCurrentStepData] = useState<Record<string, any>>({})
+
+  const handleFieldChange = (fieldName: string, value: any) => {
+    setCurrentStepData((prev) => ({
+      ...prev,
+      [fieldName]: value,
+    }))
+  }
+
+  const handleNext = () => {
+    // Save current step data
+    const updatedResponses = {
+      ...responses,
+      [`step_${currentStep}`]: currentStepData,
+    }
+    setResponses(updatedResponses)
+
+    if (currentStep < data.steps.length - 1) {
+      setCurrentStep(currentStep + 1)
+      setCurrentStepData({})
+    } else {
+      // Final step - submit all responses
+      onResponse({
+        type: "wizard_flow_response",
+        completed: true,
+        all_responses: updatedResponses,
+        final_step_data: currentStepData,
+      })
+    }
+  }
+
+  const handlePrevious = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1)
+      // Load previous step data
+      setCurrentStepData(responses[`step_${currentStep - 1}`] || {})
+    }
+  }
+
+  const handleSkip = () => {
+    onResponse({
+      type: "wizard_flow_response",
+      skipped: true,
+      current_step: currentStep,
+      partial_responses: responses,
+    })
+  }
+
+  const currentStepInfo = data.steps[currentStep]
+  const isLastStep = currentStep === data.steps.length - 1
+
+  return (
+    <Card className={`${compact ? "text-sm" : ""} ${disabled ? "opacity-50 pointer-events-none" : ""}`}>
+      <CardHeader className={compact ? "pb-2" : ""}>
+        <CardTitle className={`flex items-center gap-2 ${compact ? "text-sm" : ""}`}>
+          <CheckCircle className={compact ? "h-4 w-4" : "h-5 w-5"} />
+          {data.title}
+        </CardTitle>
+        <p className={`text-gray-600 ${compact ? "text-xs" : "text-sm"}`}>{data.description}</p>
+      </CardHeader>
+      <CardContent className={compact ? "pt-0" : ""}>
+        <div className="space-y-4">
+          {/* Progress indicator */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              {data.steps.map((_: any, index: number) => (
+                <div key={index} className="flex items-center">
+                  <div
+                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
+                      index < currentStep
+                        ? "bg-green-500 text-white"
+                        : index === currentStep
+                          ? "bg-blue-500 text-white"
+                          : "bg-gray-300 text-gray-600"
+                    }`}
+                  >
+                    {index < currentStep ? "✓" : index + 1}
+                  </div>
+                  {index < data.steps.length - 1 && (
+                    <div className={`w-4 h-0.5 ${index < currentStep ? "bg-green-500" : "bg-gray-300"}`} />
+                  )}
+                </div>
+              ))}
+            </div>
+            <span className={`text-xs text-gray-500 ${compact ? "text-xs" : "text-sm"}`}>
+              Step {currentStep + 1} of {data.steps.length}
+            </span>
+          </div>
+
+          {/* Current step content */}
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <h3 className={`font-medium mb-2 ${compact ? "text-sm" : "text-base"}`}>{currentStepInfo.title}</h3>
+            <p className={`text-gray-600 mb-4 ${compact ? "text-xs" : "text-sm"}`}>{currentStepInfo.description}</p>
+
+            {/* Render step fields */}
+            <div className="space-y-3">
+              {currentStepInfo.fields.map((field: any, index: number) => (
+                <div key={index}>
+                  <label className={`block font-medium mb-1 ${compact ? "text-xs" : "text-sm"}`}>
+                    {field.label}
+                    {field.required && <span className="text-red-500 ml-1">*</span>}
+                  </label>
+
+                  {field.type === "text" && (
+                    <Input
+                      value={currentStepData[field.name] || ""}
+                      onChange={(e) => handleFieldChange(field.name, e.target.value)}
+                      placeholder={field.placeholder}
+                      size={compact ? "sm" : "default"}
+                    />
+                  )}
+
+                  {field.type === "textarea" && (
+                    <Textarea
+                      value={currentStepData[field.name] || ""}
+                      onChange={(e) => handleFieldChange(field.name, e.target.value)}
+                      placeholder={field.placeholder}
+                      rows={compact ? 2 : 3}
+                      className={compact ? "text-xs" : "text-sm"}
+                    />
+                  )}
+
+                  {field.type === "select" && (
+                    <select
+                      value={currentStepData[field.name] || ""}
+                      onChange={(e) => handleFieldChange(field.name, e.target.value)}
+                      className={`w-full border rounded px-3 py-2 ${compact ? "text-xs" : "text-sm"}`}
+                    >
+                      <option value="">Select {field.label}</option>
+                      {field.options.map((option: any, optIndex: number) => (
+                        <option key={optIndex} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+
+                  {field.type === "checkbox" && (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={currentStepData[field.name] || false}
+                        onChange={(e) => handleFieldChange(field.name, e.target.checked)}
+                        className="rounded"
+                      />
+                      <span className={compact ? "text-xs" : "text-sm"}>{field.label}</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Navigation buttons */}
+          <div className="flex justify-between">
+            <div className="flex gap-2">
+              {currentStep > 0 && (
+                <Button onClick={handlePrevious} variant="outline" size={compact ? "sm" : "default"}>
+                  Previous
+                </Button>
+              )}
+              {data.allow_skip && (
+                <Button
+                  onClick={handleSkip}
+                  variant="ghost"
+                  size={compact ? "sm" : "default"}
+                  className="text-gray-500"
+                >
+                  Skip Wizard
+                </Button>
+              )}
+            </div>
+
+            <Button onClick={handleNext} size={compact ? "sm" : "default"} className="bg-blue-600 hover:bg-blue-700">
+              {isLastStep ? "Complete" : "Next"}
             </Button>
           </div>
         </div>

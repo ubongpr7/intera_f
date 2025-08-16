@@ -1,0 +1,5 @@
+in order for you to server users better what are the initial questions you will ask them, so you can store info in the knowledge graph, lets say if your knowldge graph was empty. U want to serve users to the highest possible efficiency level. with the tools you currently have and more that you will be given in te future.
+
+Consider all the possible questions you will need to know about users to serve them better and in a more personalised manner and remember you are asking these questions against the profile id.
+
+the way we are building the system is that each agent profile(tenant) will have a separate knowledge graph that agents use to interact with them, what will onboarding of users be like for you?

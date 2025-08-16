@@ -34,6 +34,7 @@ import {
   TaskAssignmentHandler,
   CommentThreadHandler,
   ApprovalWorkflowHandler,
+  WizardFlowHandler,
 } from "@/components/extra-collab-handlers"
 import type { ChatMessage } from "./ai-chat-widget"
 
@@ -307,6 +308,7 @@ export default function AgentChat({
       timeline_activity: { color: "bg-gray-50 border-gray-200", textColor: "text-gray-700", icon: "⏰" },
       kanban_board: { color: "bg-pink-50 border-pink-200", textColor: "text-pink-700", icon: "📌" },
       approval_workflow: { color: "bg-emerald-50 border-emerald-200", textColor: "text-emerald-700", icon: "✅" },
+      wizard_flow: { color: "bg-purple-50 border-purple-200", textColor: "text-purple-700", icon: "🧙" },
     }
     return styles[type as keyof typeof styles] || styles.confirmation
   }
@@ -372,6 +374,8 @@ export default function AgentChat({
         return <CommentThreadHandler {...commonProps} />
       case "approval_workflow":
         return <ApprovalWorkflowHandler {...commonProps} />
+      case "wizard_flow":
+        return <WizardFlowHandler {...commonProps} />
       case "report_builder":
         return <div className="p-4 text-center text-gray-500">Report Builder - Coming Soon</div>
       case "data_visualization":
