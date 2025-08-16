@@ -87,6 +87,7 @@ export default function AgentChat({
   const [hasActiveInteraction, setHasActiveInteraction] = useState(false)
   const [isAtBottom, setIsAtBottom] = useState(true)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [voiceMessageIds, setVoiceMessageIds] = useState<Set<string>>(new Set())
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
@@ -103,6 +104,9 @@ export default function AgentChat({
     },
     onAutoSend: (text: string) => {
       if (text.trim() && !hasActiveInteraction) {
+        const messageId = `voice-${Date.now()}`
+        setVoiceMessageIds((prev) => new Set(prev).add(messageId))
+
         onSend(text)
         onActivity?.()
         setInput("")
@@ -111,6 +115,13 @@ export default function AgentChat({
       }
     },
     autoSendDelay: 6000,
+    onInputMethodChange: (method) => {
+      console.log("[v0] Input method changed to:", method)
+    },
+    onVoiceInterruption: () => {
+      console.log("[v0] Voice interruption detected")
+      onActivity?.()
+    },
   })
 
   useEffect(() => {
@@ -140,6 +151,33 @@ export default function AgentChat({
     }
   }, [hasActiveInteraction, voiceChat])
 
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1]
+    if (lastMessage && lastMessage.role === "assistant" && voiceMessageIds.has(lastMessage.id)) {
+      setTimeout(() => {
+        if (!hasActiveInteraction && voiceChat.isSupported) {
+          console.log("[v0] Auto-reading response to voice message")
+          voiceChat.speak(lastMessage.content, true)
+        }
+      }, 500)
+    }
+  }, [messages, voiceMessageIds, hasActiveInteraction, voiceChat])
+
+  useEffect(() => {
+    const hasInteraction = messages.some((m) => {
+      if (m.role !== "assistant") return false
+      const interactionData = detectInteractionRequest(m.content)
+      return interactionData && !respondedInteractions.has(m.id)
+    })
+
+    setHasActiveInteraction(hasInteraction)
+
+    if (hasInteraction && voiceChat.isSpeaking) {
+      console.log("[v0] Stopping TTS due to active interaction")
+      voiceChat.stopSpeaking()
+    }
+  }, [messages, respondedInteractions, voiceChat])
+
   function scrollToBottom() {
     endRef.current?.scrollIntoView({ behavior: "smooth" })
     setUnreadCount(0)
@@ -164,6 +202,7 @@ export default function AgentChat({
       voiceChat.stopListening()
       voiceChat.stopSpeaking()
       voiceChat.clearTranscript()
+      voiceChat.cancelAutoSend()
     }
 
     onSend(input)
@@ -460,7 +499,9 @@ export default function AgentChat({
     setIsVoiceModeEnabled(newVoiceMode)
 
     if (newVoiceMode) {
-      voiceChat.startListening()
+      if (!voiceChat.isSpeaking) {
+        voiceChat.startListening()
+      }
     } else {
       voiceChat.stopListening()
       voiceChat.stopSpeaking()
@@ -471,14 +512,23 @@ export default function AgentChat({
   }
 
   const handleUserInterruption = () => {
-    if (isVoiceModeEnabled && voiceChat.isSpeaking) {
+    if (voiceChat.isSpeaking && isVoiceModeEnabled) {
+      console.log("[v0] User interruption detected, stopping TTS and starting STT")
       voiceChat.stopSpeaking()
+      setTimeout(() => {
+        if (isVoiceModeEnabled && !voiceChat.isListening) {
+          voiceChat.startListening()
+        }
+      }, 100)
     }
     onActivity?.()
   }
 
   const speakMessage = (content: string, messageId: string) => {
     console.log("[v0] Speaking message:", messageId, content.substring(0, 50) + "...")
+    if (voiceChat.isListening) {
+      voiceChat.stopListening()
+    }
     voiceChat.speak(content)
     onActivity?.()
   }
@@ -710,6 +760,9 @@ export default function AgentChat({
               value={input}
               onChange={(e) => {
                 setInput(e.target.value)
+                if (e.target.value !== voiceChat.transcript) {
+                  voiceChat.setInputMethod("text")
+                }
                 onActivity?.()
                 if (textareaRef.current) {
                   textareaRef.current.style.height = "auto"
@@ -725,12 +778,14 @@ export default function AgentChat({
                 isVoiceModeEnabled
                   ? voiceChat.isListening
                     ? "Listening... (speak now or type)"
-                    : "Voice mode active (click mic or type)"
+                    : voiceChat.isSpeaking
+                      ? "Speaking... (interrupt to talk)"
+                      : "Voice mode active (click mic or type)"
                   : "Type your message..."
               }
               className={`w-full text-gray-800 bg-gray-200/70 border border-gray-300 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none leading-6 max-h-[160px] ${
                 isVoiceModeEnabled && voiceChat.isListening ? "ring-2 ring-green-400" : ""
-              }`}
+              } ${isVoiceModeEnabled && voiceChat.isSpeaking ? "ring-2 ring-blue-400" : ""}`}
               disabled={isBusy}
               aria-label="Type your message"
             />
@@ -766,12 +821,12 @@ export default function AgentChat({
               >
                 {isVoiceModeEnabled ? (
                   voiceChat.isListening ? (
-                    <Mic className="h-5 w-5 text-green-600 animate-pulse" strokeWidth={2.2} />
+                    <Mic className="h-4 w-4 text-green-600 animate-pulse" strokeWidth={2.2} />
                   ) : (
-                    <MicOff className="h-5 w-5 text-gray-600" strokeWidth={2.2} />
+                    <MicOff className="h-4 w-4 text-gray-600" strokeWidth={2.2} />
                   )
                 ) : (
-                  <Mic className="h-5 w-5 text-gray-600" strokeWidth={2.2} />
+                  <Mic className="h-4 w-4 text-gray-600" strokeWidth={2.2} />
                 )}
               </button>
             </div>
@@ -794,6 +849,7 @@ export default function AgentChat({
             <div className="flex items-center gap-2">
               <span>Voice mode active</span>
               {hasActiveInteraction && <span className="text-amber-600">• Interaction detected - voice paused</span>}
+              {voiceChat.isSpeaking && <span className="text-blue-600">• Speaking (interrupt to talk)</span>}
             </div>
             <div className="flex items-center gap-2">
               <span>Auto-send after 6s silence</span>
@@ -801,6 +857,7 @@ export default function AgentChat({
                 type="button"
                 onClick={() => {
                   voiceChat.clearTranscript()
+                  voiceChat.cancelAutoSend()
                   setInput("")
                 }}
                 className="text-blue-600 hover:text-blue-700"
