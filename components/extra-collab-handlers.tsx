@@ -680,10 +680,12 @@ export function WizardFlowHandler({ data, onResponse, compact = false, disabled 
             <div className="space-y-3">
               {currentStepInfo.fields.map((field: any, index: number) => (
                 <div key={index}>
-                  <label className={`block font-medium mb-1 ${compact ? "text-xs" : "text-sm"}`}>
-                    {field.label}
-                    {field.required && <span className="text-red-500 ml-1">*</span>}
-                  </label>
+                  {field.type !== "checkbox" && field.type !== "boolean" && (
+                    <label className={`block font-medium mb-1 ${compact ? "text-xs" : "text-sm"}`}>
+                      {field.label}
+                      {field.required && <span className="text-red-500 ml-1">*</span>}
+                    </label>
+                  )}
 
                   {field.type === "text" && (
                     <Input
@@ -719,15 +721,22 @@ export function WizardFlowHandler({ data, onResponse, compact = false, disabled 
                     </select>
                   )}
 
-                  {field.type === "checkbox" && (
-                    <div className="flex items-center gap-2">
+                  {(field.type === "checkbox" || field.type === "boolean") && (
+                    <div className="flex items-center gap-3 p-2 border rounded-lg bg-white">
                       <input
                         type="checkbox"
+                        id={`field-${field.name}`}
                         checked={currentStepData[field.name] || false}
                         onChange={(e) => handleFieldChange(field.name, e.target.checked)}
-                        className="rounded"
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                       />
-                      <span className={compact ? "text-xs" : "text-sm"}>{field.label}</span>
+                      <label
+                        htmlFor={`field-${field.name}`}
+                        className={`font-medium cursor-pointer ${compact ? "text-xs" : "text-sm"}`}
+                      >
+                        {field.label}
+                        {field.required && <span className="text-red-500 ml-1">*</span>}
+                      </label>
                     </div>
                   )}
                 </div>
