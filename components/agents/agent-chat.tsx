@@ -15,7 +15,9 @@ import {
   Mic,
   MicOff,
   Volume2,
+  VolumeX,
 } from "lucide-react"
+import Select from "react-select"
 import MessageContent from "@/components/message-content"
 import ConfirmationDialog from "@/components/confirmation-dialog"
 import {
@@ -87,6 +89,7 @@ export default function AgentChat({
   const [hasActiveInteraction, setHasActiveInteraction] = useState(false)
   const [isAtBottom, setIsAtBottom] = useState(true)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [voiceMessageIds, setVoiceMessageIds] = useState<Set<string>>(new Set())
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
@@ -103,6 +106,9 @@ export default function AgentChat({
     },
     onAutoSend: (text: string) => {
       if (text.trim() && !hasActiveInteraction) {
+        const messageId = `voice-${Date.now()}`
+        setVoiceMessageIds((prev) => new Set(prev).add(messageId))
+
         onSend(text)
         onActivity?.()
         setInput("")
@@ -111,6 +117,13 @@ export default function AgentChat({
       }
     },
     autoSendDelay: 6000,
+    onInputMethodChange: (method) => {
+      console.log("[v0] Input method changed to:", method)
+    },
+    onVoiceInterruption: () => {
+      console.log("[v0] Voice interruption detected")
+      onActivity?.()
+    },
   })
 
   useEffect(() => {
@@ -140,6 +153,33 @@ export default function AgentChat({
     }
   }, [hasActiveInteraction, voiceChat])
 
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1]
+    if (lastMessage && lastMessage.role === "assistant" && voiceMessageIds.has(lastMessage.id)) {
+      setTimeout(() => {
+        if (!hasActiveInteraction && voiceChat.isSupported) {
+          console.log("[v0] Auto-reading response to voice message")
+          voiceChat.speak(lastMessage.content, true)
+        }
+      }, 500)
+    }
+  }, [messages, voiceMessageIds, hasActiveInteraction, voiceChat])
+
+  useEffect(() => {
+    const hasInteraction = messages.some((m) => {
+      if (m.role !== "assistant") return false
+      const interactionData = detectInteractionRequest(m.content)
+      return interactionData && !respondedInteractions.has(m.id)
+    })
+
+    setHasActiveInteraction(hasInteraction)
+
+    if (hasInteraction && voiceChat.isSpeaking) {
+      console.log("[v0] Stopping TTS due to active interaction")
+      voiceChat.stopSpeaking()
+    }
+  }, [messages, respondedInteractions, voiceChat])
+
   function scrollToBottom() {
     endRef.current?.scrollIntoView({ behavior: "smooth" })
     setUnreadCount(0)
@@ -164,6 +204,7 @@ export default function AgentChat({
       voiceChat.stopListening()
       voiceChat.stopSpeaking()
       voiceChat.clearTranscript()
+      voiceChat.cancelAutoSend()
     }
 
     onSend(input)
@@ -471,17 +512,38 @@ export default function AgentChat({
   }
 
   const handleUserInterruption = () => {
-    if (isVoiceModeEnabled && voiceChat.isSpeaking) {
+    if (voiceChat.isSpeaking && isVoiceModeEnabled) {
+      console.log("[v0] User interruption detected, stopping TTS and starting STT")
       voiceChat.stopSpeaking()
+      setTimeout(() => {
+        if (isVoiceModeEnabled && !voiceChat.isListening) {
+          voiceChat.startListening()
+        }
+      }, 100)
     }
     onActivity?.()
   }
 
   const speakMessage = (content: string, messageId: string) => {
     console.log("[v0] Speaking message:", messageId, content.substring(0, 50) + "...")
+    if (voiceChat.isListening) {
+      voiceChat.stopListening()
+    }
     voiceChat.speak(content)
     onActivity?.()
   }
+
+  const voiceOptions = voiceChat.availableVoices.map((voice) => ({
+    value: voice,
+    label: `${voice.name} (${voice.lang})`,
+  }))
+
+  const selectedVoiceOption = voiceChat.selectedVoice
+    ? {
+        value: voiceChat.selectedVoice,
+        label: `${voiceChat.selectedVoice.name} (${voiceChat.selectedVoice.lang})`,
+      }
+    : null
 
   return (
     <>
@@ -703,83 +765,149 @@ export default function AgentChat({
 
       {/* Input */}
       <form onSubmit={handleSubmit} className="border-t border-gray-200 p-3 bg-white">
-        <div className="flex gap-2 items-end">
-          <div className="flex-1 relative">
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => {
-                setInput(e.target.value)
-                onActivity?.()
-                if (textareaRef.current) {
-                  textareaRef.current.style.height = "auto"
-                  const h = Math.min(textareaRef.current.scrollHeight, MAX_TEXTAREA_HEIGHT)
-                  textareaRef.current.style.height = `${h}px`
-                  textareaRef.current.style.overflowY =
-                    textareaRef.current.scrollHeight > MAX_TEXTAREA_HEIGHT ? "auto" : "hidden"
-                }
-              }}
-              onKeyDown={handleKeyDown}
-              rows={1}
-              placeholder={
-                isVoiceModeEnabled
-                  ? voiceChat.isListening
-                    ? "Listening... (speak now or type)"
-                    : "Voice mode active (click mic or type)"
-                  : "Type your message..."
+        <div className="mb-3">
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => {
+              setInput(e.target.value)
+              if (e.target.value !== voiceChat.transcript) {
+                voiceChat.setInputMethod("text")
               }
-              className={`w-full text-gray-800 bg-gray-200/70 border border-gray-300 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none leading-6 max-h-[160px] ${
-                isVoiceModeEnabled && voiceChat.isListening ? "ring-2 ring-green-400" : ""
-              }`}
-              disabled={isBusy}
-              aria-label="Type your message"
-            />
+              onActivity?.()
+              if (textareaRef.current) {
+                textareaRef.current.style.height = "auto"
+                const h = Math.min(textareaRef.current.scrollHeight, MAX_TEXTAREA_HEIGHT)
+                textareaRef.current.style.height = `${h}px`
+                textareaRef.current.style.overflowY =
+                  textareaRef.current.scrollHeight > MAX_TEXTAREA_HEIGHT ? "auto" : "hidden"
+              }
+            }}
+            onKeyDown={handleKeyDown}
+            rows={1}
+            placeholder={
+              isVoiceModeEnabled
+                ? voiceChat.isListening
+                  ? "Listening... (speak now or type)"
+                  : voiceChat.isSpeaking
+                    ? "Speaking... (interrupt to talk)"
+                    : "Voice mode active (click mic or type)"
+                : "Type your message..."
+            }
+            className={`w-full text-gray-800 bg-gray-200/70 border border-gray-300 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none leading-6 max-h-[160px] ${
+              isVoiceModeEnabled && voiceChat.isListening ? "ring-2 ring-green-400" : ""
+            } ${isVoiceModeEnabled && voiceChat.isSpeaking ? "ring-2 ring-blue-400" : ""}`}
+            disabled={isBusy}
+            aria-label="Type your message"
+          />
 
-            {isVoiceModeEnabled && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                {voiceChat.isListening && (
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-xs text-green-600 font-medium">Listening</span>
-                  </div>
-                )}
-                {voiceChat.isSpeaking && (
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                    <span className="text-xs text-blue-600 font-medium">Speaking</span>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          {isVoiceModeEnabled && (
+            <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-1 pointer-events-none">
+              {voiceChat.isListening && (
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-xs text-green-600 font-medium">Listening</span>
+                </div>
+              )}
+              {voiceChat.isSpeaking && (
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                  <span className="text-xs text-blue-600 font-medium">Speaking</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
-          {voiceChat.isSupported && (
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={toggleVoiceMode}
-                className={`p-2 rounded-full transition-colors shrink-0 ${
-                  isVoiceModeEnabled ? "bg-green-100 hover:bg-green-200" : "bg-gray-100 hover:bg-gray-200"
-                }`}
-                aria-label={isVoiceModeEnabled ? "Disable voice mode" : "Enable voice mode"}
-                title={isVoiceModeEnabled ? "Disable voice mode" : "Enable voice mode"}
-              >
-                {isVoiceModeEnabled ? (
-                  voiceChat.isListening ? (
-                    <Mic className="h-5 w-5 text-green-600 animate-pulse" strokeWidth={2.2} />
-                  ) : (
-                    <MicOff className="h-5 w-5 text-gray-600" strokeWidth={2.2} />
-                  )
-                ) : (
-                  <Mic className="h-5 w-5 text-gray-600" strokeWidth={2.2} />
-                )}
-              </button>
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Voice selection */}
+          {voiceChat.isSupported && voiceOptions.length > 0 && (
+            <div className="flex-1 min-w-[200px]">
+              <Select
+                value={selectedVoiceOption}
+                onChange={(option) => voiceChat.setSelectedVoice(option?.value || null)}
+                options={voiceOptions}
+                placeholder="Select voice..."
+                className="text-sm"
+                classNamePrefix="react-select"
+                isSearchable
+                isClearable
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    minHeight: "32px",
+                    fontSize: "14px",
+                  }),
+                  menu: (base) => ({
+                    ...base,
+                    fontSize: "14px",
+                  }),
+                }}
+              />
             </div>
           )}
 
+          {/* Volume control */}
+          {voiceChat.isSupported && (
+            <div className="flex items-center gap-2 min-w-[120px]">
+              <VolumeX className="h-4 w-4 text-gray-500" />
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={voiceChat.volume}
+                onChange={(e) => voiceChat.setVolume(Number.parseFloat(e.target.value))}
+                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                style={{
+                  background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${voiceChat.volume * 100}%, #e5e7eb ${voiceChat.volume * 100}%, #e5e7eb 100%)`,
+                }}
+              />
+              <Volume2 className="h-4 w-4 text-gray-500" />
+              <span className="text-xs text-gray-600 min-w-[30px]">{Math.round(voiceChat.volume * 100)}%</span>
+            </div>
+          )}
+
+          {/* Auto-submit toggle */}
+          {voiceChat.isSupported && (
+            <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={voiceChat.autoSubmitEnabled}
+                onChange={(e) => voiceChat.setAutoSubmitEnabled(e.target.checked)}
+                className="rounded"
+              />
+              Auto-submit
+            </label>
+          )}
+
+          {/* Voice mode toggle */}
+          {voiceChat.isSupported && (
+            <button
+              type="button"
+              onClick={toggleVoiceMode}
+              className={`p-2 rounded-full transition-colors shrink-0 ${
+                isVoiceModeEnabled ? "bg-green-100 hover:bg-green-200" : "bg-gray-100 hover:bg-gray-200"
+              }`}
+              aria-label={isVoiceModeEnabled ? "Disable voice mode" : "Enable voice mode"}
+              title={isVoiceModeEnabled ? "Disable voice mode" : "Enable voice mode"}
+            >
+              {isVoiceModeEnabled ? (
+                voiceChat.isListening ? (
+                  <Mic className="h-4 w-4 text-green-600 animate-pulse" strokeWidth={2.2} />
+                ) : (
+                  <MicOff className="h-4 w-4 text-gray-600" strokeWidth={2.2} />
+                )
+              ) : (
+                <Mic className="h-4 w-4 text-gray-600" strokeWidth={2.2} />
+              )}
+            </button>
+          )}
+
+          {/* Send button */}
           <button
             type="submit"
-            className="bg-blue-600 text-white p-3 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="bg-blue-600 text-white p-3 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50 shrink-0"
             disabled={isBusy || !input.trim()}
             aria-label="Send message"
             title="Send"
@@ -789,18 +917,21 @@ export default function AgentChat({
           </button>
         </div>
 
+        {/* Voice mode status */}
         {isVoiceModeEnabled && (
           <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
             <div className="flex items-center gap-2">
               <span>Voice mode active</span>
               {hasActiveInteraction && <span className="text-amber-600">• Interaction detected - voice paused</span>}
+              {voiceChat.isSpeaking && <span className="text-blue-600">• Speaking (interrupt to talk)</span>}
             </div>
             <div className="flex items-center gap-2">
-              <span>Auto-send after 6s silence</span>
+              {voiceChat.autoSubmitEnabled && <span>Auto-send after 6s silence</span>}
               <button
                 type="button"
                 onClick={() => {
                   voiceChat.clearTranscript()
+                  voiceChat.cancelAutoSend()
                   setInput("")
                 }}
                 className="text-blue-600 hover:text-blue-700"
@@ -820,6 +951,29 @@ export default function AgentChat({
           onClose={() => setConfirmationDialog(null)}
         />
       )}
+
+      <style jsx>{`
+        .slider::-webkit-slider-thumb {
+          appearance: none;
+          height: 16px;
+          width: 16px;
+          border-radius: 50%;
+          background: #3b82f6;
+          cursor: pointer;
+          border: 2px solid #ffffff;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .slider::-moz-range-thumb {
+          height: 16px;
+          width: 16px;
+          border-radius: 50%;
+          background: #3b82f6;
+          cursor: pointer;
+          border: 2px solid #ffffff;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+      `}</style>
     </>
   )
 }
