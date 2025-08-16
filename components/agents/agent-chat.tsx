@@ -15,7 +15,6 @@ import {
   Mic,
   MicOff,
   Volume2,
-  VolumeX,
 } from "lucide-react"
 import MessageContent from "@/components/message-content"
 import ConfirmationDialog from "@/components/confirmation-dialog"
@@ -134,26 +133,6 @@ export default function AgentChat({
     }
     prevLenRef.current = messages.length
   }, [messages, isAtBottom, newMessagesCount])
-
-  useEffect(() => {
-    if (!isVoiceModeEnabled || !voiceChat.isSupported) return
-
-    const lastMessage = messages[messages.length - 1]
-    if (!lastMessage || lastMessage.role !== "assistant") return
-
-    const interactionData = detectInteractionRequest(lastMessage.content)
-    if (interactionData) {
-      setHasActiveInteraction(true)
-      voiceChat.stopSpeaking()
-      return
-    }
-
-    setHasActiveInteraction(false)
-
-    if (lastMessage.content.trim()) {
-      voiceChat.speak(lastMessage.content)
-    }
-  }, [messages, isVoiceModeEnabled, voiceChat])
 
   useEffect(() => {
     if (hasActiveInteraction && voiceChat.isSpeaking) {
@@ -498,6 +477,12 @@ export default function AgentChat({
     onActivity?.()
   }
 
+  const speakMessage = (content: string, messageId: string) => {
+    console.log("[v0] Speaking message:", messageId, content.substring(0, 50) + "...")
+    voiceChat.speak(content)
+    onActivity?.()
+  }
+
   return (
     <>
       {/* Header */}
@@ -654,14 +639,27 @@ export default function AgentChat({
                   }`}
                 >
                   <div
-                    className={`font-semibold text-xs mb-3 ${m.role === "user" ? "text-blue-100" : "text-gray-500"}`}
+                    className={`font-semibold text-xs mb-3 flex items-center justify-between ${m.role === "user" ? "text-blue-100" : "text-gray-500"}`}
                   >
-                    {m.role === "user" ? "You" : "Assistant"}
-                    {copiedMessageId === m.id && (
-                      <span className="ml-2 inline-flex items-center gap-1 text-green-600">
-                        <Check className="h-3 w-3" />
-                        <span className="text-xs">Copied!</span>
-                      </span>
+                    <div className="flex items-center gap-2">
+                      <span>{m.role === "user" ? "You" : "Assistant"}</span>
+                      {copiedMessageId === m.id && (
+                        <span className="inline-flex items-center gap-1 text-green-600">
+                          <Check className="h-3 w-3" />
+                          <span className="text-xs">Copied!</span>
+                        </span>
+                      )}
+                    </div>
+
+                    {m.role === "assistant" && voiceChat.isSupported && (
+                      <button
+                        onClick={() => speakMessage(m.content, m.id)}
+                        className="p-1 rounded-full hover:bg-gray-100 transition-colors shrink-0"
+                        aria-label="Listen to this message"
+                        title="Listen to this message"
+                      >
+                        <Volume2 className="h-3 w-3 text-gray-500 hover:text-blue-600" strokeWidth={2.2} />
+                      </button>
                     )}
                   </div>
                   <MessageContent
@@ -768,40 +766,14 @@ export default function AgentChat({
               >
                 {isVoiceModeEnabled ? (
                   voiceChat.isListening ? (
-                    <Mic className="h-4 w-4 text-green-600 animate-pulse" strokeWidth={2.2} />
+                    <Mic className="h-5 w-5 text-green-600 animate-pulse" strokeWidth={2.2} />
                   ) : (
-                    <MicOff className="h-4 w-4 text-gray-600" strokeWidth={2.2} />
+                    <MicOff className="h-5 w-5 text-gray-600" strokeWidth={2.2} />
                   )
                 ) : (
-                  <Mic className="h-4 w-4 text-gray-600" strokeWidth={2.2} />
+                  <Mic className="h-5 w-5 text-gray-600" strokeWidth={2.2} />
                 )}
               </button>
-
-              {isVoiceModeEnabled && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (voiceChat.isSpeaking) {
-                      voiceChat.stopSpeaking()
-                    } else if (messages.length > 0) {
-                      const lastAssistantMessage = [...messages].reverse().find((m) => m.role === "assistant")
-                      if (lastAssistantMessage && !detectInteractionRequest(lastAssistantMessage.content)) {
-                        voiceChat.speak(lastAssistantMessage.content)
-                      }
-                    }
-                    onActivity?.()
-                  }}
-                  className="p-2 rounded-full bg-blue-100 hover:bg-blue-200 transition-colors shrink-0"
-                  aria-label={voiceChat.isSpeaking ? "Stop speaking" : "Repeat last message"}
-                  title={voiceChat.isSpeaking ? "Stop speaking" : "Repeat last message"}
-                >
-                  {voiceChat.isSpeaking ? (
-                    <VolumeX className="h-4 w-4 text-red-600" strokeWidth={2.2} />
-                  ) : (
-                    <Volume2 className="h-4 w-4 text-blue-600" strokeWidth={2.2} />
-                  )}
-                </button>
-              )}
             </div>
           )}
 
