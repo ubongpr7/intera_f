@@ -111,7 +111,7 @@ export default function AgentChat({
         requestAnimationFrame(scrollToBottom)
       }
     },
-    autoSendDelay: 3000,
+    autoSendDelay: 6000,
   })
 
   useEffect(() => {
@@ -529,52 +529,6 @@ export default function AgentChat({
 
         {/* Right group */}
         <div className="flex items-center gap-2">
-          {voiceChat.isSupported && (
-            <button
-              onClick={toggleVoiceMode}
-              className={`p-1 rounded-full transition-colors shrink-0 ${
-                isVoiceModeEnabled ? "bg-green-500/20 hover:bg-green-500/30" : "hover:bg-white/20"
-              }`}
-              aria-label={isVoiceModeEnabled ? "Disable voice mode" : "Enable voice mode"}
-              title={isVoiceModeEnabled ? "Disable voice mode" : "Enable voice mode"}
-            >
-              {isVoiceModeEnabled ? (
-                voiceChat.isListening ? (
-                  <Mic className="h-5 w-5 text-green-300 animate-pulse" strokeWidth={2.2} />
-                ) : (
-                  <MicOff className="h-5 w-5 text-white" strokeWidth={2.2} />
-                )
-              ) : (
-                <Mic className="h-5 w-5 text-white" strokeWidth={2.2} />
-              )}
-            </button>
-          )}
-
-          {isVoiceModeEnabled && (
-            <button
-              onClick={() => {
-                if (voiceChat.isSpeaking) {
-                  voiceChat.stopSpeaking()
-                } else if (messages.length > 0) {
-                  const lastAssistantMessage = [...messages].reverse().find((m) => m.role === "assistant")
-                  if (lastAssistantMessage && !detectInteractionRequest(lastAssistantMessage.content)) {
-                    voiceChat.speak(lastAssistantMessage.content)
-                  }
-                }
-                onActivity?.()
-              }}
-              className="p-1 rounded-full hover:bg-white/20 transition-colors shrink-0"
-              aria-label={voiceChat.isSpeaking ? "Stop speaking" : "Repeat last message"}
-              title={voiceChat.isSpeaking ? "Stop speaking" : "Repeat last message"}
-            >
-              {voiceChat.isSpeaking ? (
-                <VolumeX className="h-5 w-5 text-red-300" strokeWidth={2.2} />
-              ) : (
-                <Volume2 className="h-5 w-5 text-white" strokeWidth={2.2} />
-              )}
-            </button>
-          )}
-
           <button
             onClick={() => {
               toggleFullScreen()
@@ -801,6 +755,56 @@ export default function AgentChat({
             )}
           </div>
 
+          {voiceChat.isSupported && (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={toggleVoiceMode}
+                className={`p-2 rounded-full transition-colors shrink-0 ${
+                  isVoiceModeEnabled ? "bg-green-100 hover:bg-green-200" : "bg-gray-100 hover:bg-gray-200"
+                }`}
+                aria-label={isVoiceModeEnabled ? "Disable voice mode" : "Enable voice mode"}
+                title={isVoiceModeEnabled ? "Disable voice mode" : "Enable voice mode"}
+              >
+                {isVoiceModeEnabled ? (
+                  voiceChat.isListening ? (
+                    <Mic className="h-4 w-4 text-green-600 animate-pulse" strokeWidth={2.2} />
+                  ) : (
+                    <MicOff className="h-4 w-4 text-gray-600" strokeWidth={2.2} />
+                  )
+                ) : (
+                  <Mic className="h-4 w-4 text-gray-600" strokeWidth={2.2} />
+                )}
+              </button>
+
+              {isVoiceModeEnabled && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (voiceChat.isSpeaking) {
+                      voiceChat.stopSpeaking()
+                    } else if (messages.length > 0) {
+                      const lastAssistantMessage = [...messages].reverse().find((m) => m.role === "assistant")
+                      if (lastAssistantMessage && !detectInteractionRequest(lastAssistantMessage.content)) {
+                        voiceChat.speak(lastAssistantMessage.content)
+                      }
+                    }
+                    onActivity?.()
+                  }}
+                  className="p-2 rounded-full bg-blue-100 hover:bg-blue-200 transition-colors shrink-0"
+                  aria-label={voiceChat.isSpeaking ? "Stop speaking" : "Repeat last message"}
+                  title={voiceChat.isSpeaking ? "Stop speaking" : "Repeat last message"}
+                >
+                  {voiceChat.isSpeaking ? (
+                    <VolumeX className="h-4 w-4 text-red-600" strokeWidth={2.2} />
+                  ) : (
+                    <Volume2 className="h-4 w-4 text-blue-600" strokeWidth={2.2} />
+                  )}
+                </button>
+              )}
+            </div>
+          )}
+
           <button
             type="submit"
             className="bg-blue-600 text-white p-3 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50"
@@ -820,7 +824,7 @@ export default function AgentChat({
               {hasActiveInteraction && <span className="text-amber-600">• Interaction detected - voice paused</span>}
             </div>
             <div className="flex items-center gap-2">
-              <span>Auto-send after 3s silence</span>
+              <span>Auto-send after 6s silence</span>
               <button
                 type="button"
                 onClick={() => {

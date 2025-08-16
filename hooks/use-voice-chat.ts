@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import SpeakTTS from "speak-tts"
 
 declare global {
   interface Window {
@@ -32,7 +31,7 @@ interface UseVoiceChatReturn {
 export function useVoiceChat({
   onTranscript,
   onAutoSend,
-  autoSendDelay = 3000,
+  autoSendDelay = 6000,
   language = "en-US",
 }: UseVoiceChatOptions): UseVoiceChatReturn {
   const [isListening, setIsListening] = useState(false)
@@ -41,7 +40,8 @@ export function useVoiceChat({
   const [transcript, setTranscript] = useState("")
 
   const recognitionRef = useRef<any>(null)
-  const speakTTSRef = useRef<SpeakTTS | null>(null)
+  const speechSynthesisRef = useRef<SpeechSynthesis | null>(null)
+  const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
   const autoSendTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const lastTranscriptRef = useRef("")
 
@@ -49,31 +49,26 @@ export function useVoiceChat({
     if (typeof window !== "undefined") {
       const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition
 
-      if (SpeechRecognitionAPI) {
+      if (SpeechRecognitionAPI && window.speechSynthesis) {
         setIsSupported(true)
 
-        const speakTTS = new SpeakTTS()
-        speakTTS
-          .init({
-            volume: 0.8,
-            lang: language.split("-")[0],
-            rate: 0.9,
-            pitch: 1,
-            voice: null,
-            splitSentences: true,
-            listeners: {
-              onvoiceschanged: (voices: any) => {
-                console.log("[v0] Available voices:", voices)
-              },
-            },
-          })
-          .then((data: any) => {
-            console.log("[v0] SpeakTTS initialized:", data)
-            speakTTSRef.current = speakTTS
-          })
-          .catch((error: any) => {
-            console.error("[v0] SpeakTTS initialization failed:", error)
-          })
+        speechSynthesisRef.current = window.speechSynthesis
+
+        // Wait for voices to load
+        const loadVoices = () => {
+          const voices = speechSynthesisRef.current?.getVoices() || []
+          console.log(
+            "[v0] Available voices:",
+            voices.length,
+            voices.map((v) => ({ name: v.name, lang: v.lang })),
+          )
+        }
+
+        if (speechSynthesisRef.current.getVoices().length > 0) {
+          loadVoices()
+        } else {
+          speechSynthesisRef.current.addEventListener("voiceschanged", loadVoices)
+        }
 
         const recognition = new SpeechRecognitionAPI()
         recognition.continuous = true
@@ -131,7 +126,7 @@ export function useVoiceChat({
 
         recognitionRef.current = recognition
       } else {
-        console.warn("[v0] Speech recognition not supported in this browser")
+        console.warn("[v0] Speech recognition or synthesis not supported in this browser")
       }
     }
   }, [language, onTranscript, onAutoSend, autoSendDelay])
@@ -158,9 +153,10 @@ export function useVoiceChat({
   }, [isListening])
 
   const speak = useCallback((text: string) => {
-    if (!speakTTSRef.current || !text.trim()) return
+    if (!speechSynthesisRef.current || !text.trim()) return
 
-    speakTTSRef.current.cancel()
+    // Cancel any ongoing speech
+    speechSynthesisRef.current.cancel()
 
     const cleanText = text
       .replace(/```[\s\S]*?```/g, " code block ")
@@ -173,36 +169,46 @@ export function useVoiceChat({
 
     if (!cleanText) return
 
-    setIsSpeaking(true)
+    const utterance = new SpeechSynthesisUtterance(cleanText)
 
-    speakTTSRef.current
-      .speak({
-        text: cleanText,
-        listeners: {
-          onstart: () => {
-            console.log("[v0] Started speaking")
-            setIsSpeaking(true)
-          },
-          onend: () => {
-            console.log("[v0] Finished speaking")
-            setIsSpeaking(false)
-          },
-          onerror: (error: any) => {
-            console.error("[v0] Speech synthesis error:", error)
-            setIsSpeaking(false)
-          },
-        },
-      })
-      .catch((error: any) => {
-        console.error("[v0] Speak error:", error)
-        setIsSpeaking(false)
-      })
+    // Get available voices and prefer English ones
+    const voices = speechSynthesisRef.current.getVoices()
+    const englishVoice = voices.find((voice) => voice.lang.startsWith("en")) || voices[0]
+
+    if (englishVoice) {
+      utterance.voice = englishVoice
+    }
+
+    utterance.rate = 0.9
+    utterance.pitch = 1
+    utterance.volume = 0.8
+
+    utterance.onstart = () => {
+      console.log("[v0] Started speaking")
+      setIsSpeaking(true)
+    }
+
+    utterance.onend = () => {
+      console.log("[v0] Finished speaking")
+      setIsSpeaking(false)
+      currentUtteranceRef.current = null
+    }
+
+    utterance.onerror = (error) => {
+      console.error("[v0] Speech synthesis error:", error)
+      setIsSpeaking(false)
+      currentUtteranceRef.current = null
+    }
+
+    currentUtteranceRef.current = utterance
+    speechSynthesisRef.current.speak(utterance)
   }, [])
 
   const stopSpeaking = useCallback(() => {
-    if (speakTTSRef.current) {
-      speakTTSRef.current.cancel()
+    if (speechSynthesisRef.current) {
+      speechSynthesisRef.current.cancel()
       setIsSpeaking(false)
+      currentUtteranceRef.current = null
     }
   }, [])
 
@@ -221,8 +227,8 @@ export function useVoiceChat({
       if (autoSendTimeoutRef.current) {
         clearTimeout(autoSendTimeoutRef.current)
       }
-      if (speakTTSRef.current) {
-        speakTTSRef.current.cancel()
+      if (speechSynthesisRef.current) {
+        speechSynthesisRef.current.cancel()
       }
       if (recognitionRef.current && isListening) {
         recognitionRef.current.stop()
