@@ -15,7 +15,9 @@ import {
   Mic,
   MicOff,
   Volume2,
+  VolumeX,
 } from "lucide-react"
+import Select from "react-select"
 import MessageContent from "@/components/message-content"
 import ConfirmationDialog from "@/components/confirmation-dialog"
 import {
@@ -111,6 +113,7 @@ export default function AgentChat({
       }
     },
     autoSendDelay: 6000,
+    autoSubmitEnabled: false, // Default to false as requested
   })
 
   useEffect(() => {
@@ -754,26 +757,150 @@ export default function AgentChat({
           </div>
 
           {voiceChat.isSupported && (
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={toggleVoiceMode}
-                className={`p-2 rounded-full transition-colors shrink-0 ${
-                  isVoiceModeEnabled ? "bg-green-100 hover:bg-green-200" : "bg-gray-100 hover:bg-gray-200"
-                }`}
-                aria-label={isVoiceModeEnabled ? "Disable voice mode" : "Enable voice mode"}
-                title={isVoiceModeEnabled ? "Disable voice mode" : "Enable voice mode"}
-              >
-                {isVoiceModeEnabled ? (
-                  voiceChat.isListening ? (
-                    <Mic className="h-5 w-5 text-green-600 animate-pulse" strokeWidth={2.2} />
-                  ) : (
-                    <MicOff className="h-5 w-5 text-gray-600" strokeWidth={2.2} />
-                  )
-                ) : (
-                  <Mic className="h-5 w-5 text-gray-600" strokeWidth={2.2} />
+            <div className="mt-3 flex items-center justify-between gap-3 text-sm">
+              <div className="flex items-center gap-3">
+                {/* Language Selection */}
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={voiceChat.availableLanguages.find((lang) => lang.value === voiceChat.language)}
+                    onChange={(selectedOption) => {
+                      if (selectedOption) {
+                        voiceChat.setLanguage(selectedOption.value)
+                      }
+                    }}
+                    options={voiceChat.availableLanguages}
+                    className="min-w-[180px]"
+                    classNamePrefix="react-select"
+                    placeholder="Select language..."
+                    isSearchable
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        minHeight: "32px",
+                        fontSize: "12px",
+                        borderColor: "#d1d5db",
+                      }),
+                      option: (base) => ({
+                        ...base,
+                        fontSize: "12px",
+                      }),
+                      singleValue: (base) => ({
+                        ...base,
+                        fontSize: "12px",
+                      }),
+                    }}
+                  />
+                </div>
+
+                {/* Volume Control */}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => voiceChat.setVolume(voiceChat.volume > 0 ? 0 : 0.8)}
+                    className="p-1 rounded hover:bg-gray-100"
+                    title={voiceChat.volume > 0 ? "Mute" : "Unmute"}
+                  >
+                    {voiceChat.volume > 0 ? (
+                      <Volume2 className="h-4 w-4 text-gray-600" />
+                    ) : (
+                      <VolumeX className="h-4 w-4 text-gray-600" />
+                    )}
+                  </button>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={voiceChat.volume}
+                    onChange={(e) => voiceChat.setVolume(Number.parseFloat(e.target.value))}
+                    className="w-16 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    title={`Volume: ${Math.round(voiceChat.volume * 100)}%`}
+                  />
+                  <span className="text-xs text-gray-500 min-w-[35px]">{Math.round(voiceChat.volume * 100)}%</span>
+                </div>
+
+                {/* Auto-submit Toggle */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="auto-submit"
+                    checked={voiceChat.autoSubmitEnabled}
+                    onChange={(e) => voiceChat.setAutoSubmitEnabled(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="auto-submit" className="text-xs text-gray-600 cursor-pointer">
+                    Auto-submit
+                  </label>
+                </div>
+              </div>
+
+              {/* Voice Controls */}
+              <div className="flex items-center gap-2">
+                {/* Voice Selection */}
+                {voiceChat.availableVoices.length > 0 && (
+                  <Select
+                    value={
+                      voiceChat.selectedVoice
+                        ? {
+                            value: voiceChat.selectedVoice.name,
+                            label: voiceChat.selectedVoice.name,
+                          }
+                        : null
+                    }
+                    onChange={(selectedOption) => {
+                      if (selectedOption) {
+                        const voice = voiceChat.availableVoices.find((v) => v.name === selectedOption.value)
+                        voiceChat.setSelectedVoice(voice || null)
+                      }
+                    }}
+                    options={voiceChat.availableVoices.map((voice) => ({
+                      value: voice.name,
+                      label: voice.name,
+                    }))}
+                    className="min-w-[200px]"
+                    classNamePrefix="react-select"
+                    placeholder="Select voice..."
+                    isSearchable
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        minHeight: "32px",
+                        fontSize: "12px",
+                        borderColor: "#d1d5db",
+                      }),
+                      option: (base) => ({
+                        ...base,
+                        fontSize: "12px",
+                      }),
+                      singleValue: (base) => ({
+                        ...base,
+                        fontSize: "12px",
+                      }),
+                    }}
+                  />
                 )}
-              </button>
+
+                {/* Microphone Button */}
+                <button
+                  type="button"
+                  onClick={toggleVoiceMode}
+                  className={`p-2 rounded-full transition-colors shrink-0 ${
+                    isVoiceModeEnabled ? "bg-green-100 hover:bg-green-200" : "bg-gray-100 hover:bg-gray-200"
+                  }`}
+                  aria-label={isVoiceModeEnabled ? "Disable voice mode" : "Enable voice mode"}
+                  title={isVoiceModeEnabled ? "Disable voice mode" : "Enable voice mode"}
+                >
+                  {isVoiceModeEnabled ? (
+                    voiceChat.isListening ? (
+                      <Mic className="h-5 w-5 text-green-600 animate-pulse" strokeWidth={2.2} />
+                    ) : (
+                      <MicOff className="h-5 w-5 text-gray-600" strokeWidth={2.2} />
+                    )
+                  ) : (
+                    <Mic className="h-5 w-5 text-gray-600" strokeWidth={2.2} />
+                  )}
+                </button>
+              </div>
             </div>
           )}
 
@@ -789,14 +916,18 @@ export default function AgentChat({
           </button>
         </div>
 
+        {/* Voice Status */}
         {isVoiceModeEnabled && (
           <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
             <div className="flex items-center gap-2">
               <span>Voice mode active</span>
-              {hasActiveInteraction && <span className="text-amber-600">• Interaction detected - voice paused</span>}
+              {hasActiveInteraction && <span className="text-amber-600">• Interaction detected</span>}
+              {voiceChat.isSpeaking && voiceChat.isListening && (
+                <span className="text-blue-600">• Speaking & Recording</span>
+              )}
             </div>
             <div className="flex items-center gap-2">
-              <span>Auto-send after 6s silence</span>
+              {voiceChat.autoSubmitEnabled && <span>Auto-send after 6s silence</span>}
               <button
                 type="button"
                 onClick={() => {
