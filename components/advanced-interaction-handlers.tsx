@@ -95,7 +95,7 @@ export function SearchableSelectionHandler({ data, onResponse }: AdvancedInterac
               onClick={() => handleItemToggle(item.id)}
             >
               <div className="flex items-start gap-3">
-                {data.show_images && item.image && (
+                { item.image && (
                   <img
                     src={item.image || "/placeholder.svg"}
                     alt={item.name}
