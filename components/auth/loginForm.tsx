@@ -146,9 +146,9 @@ export default function LoginForm() {
               {...passwordForm.register('password', { required: 'Password is required' })}
               type={showPassWord?"text":"password"}
               placeholder='Password'
-              className="mt-1 block w-full bg-gray-50 rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+              className="mt-1 block w-full bg-gray-50 rounded-md border border-gray-300 px-4 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
             />
-            <span className='absolute  right-2 translate-y-1/2 m-2 text-red-400' onClick={()=>setShowPassword(!showPassWord)}>
+            <span className='absolute  right-2 translate-y-1/2  top-0.5 text-red-400' onClick={()=>setShowPassword(!showPassWord)}>
             {!showPassWord ?(<Eye  className="w-4 h-4"/>):(<EyeOff className="w-4 h-4 "/>)}
             </span>
             </div>
