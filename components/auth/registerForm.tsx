@@ -9,6 +9,7 @@ import Link from "next/link";
 import { ErrorResponse, RegisterResponse } from '../types/authResponse';
 import { RegisterFormInputs } from '../types/authForms';
 import { useRouter } from 'nextjs-toploader/app'
+import { Eye, EyeOff } from 'lucide-react';
 
 const PasswordStrengthIndicator = ({ password }: { password: string }) => {
   const strength = useMemo(() => {
@@ -50,7 +51,7 @@ export default function RegisterForm() {
   const [registerUser, { isLoading }] = useRegisterMutation();
   const router = useRouter();
   const [password, setPassword] = useState('');
-  
+  const [showPassWord,setShowPassword]=useState(false)
   const { 
     register, 
     handleSubmit, 
@@ -62,7 +63,6 @@ export default function RegisterForm() {
     try {
       const userData = await registerUser(formData).unwrap() as RegisterResponse;
       toast.success("Registration successful! Redirecting...");
-      setCookie("userID", userData.id);
       router.push("/accounts/signin");
     } catch (error) {
       const apiError = error as ErrorResponse;
@@ -123,11 +123,12 @@ export default function RegisterForm() {
       </div>
 
       {/* Password Field */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Password
-        </label>
-        <input
+      <div >
+      <label className="block text-sm font-medium text-gray-700">
+      Password
+      </label>
+      <div className='relative flex'>
+      <input
           {...register('password', { 
             required: 'Password is required',
             minLength: {
@@ -138,12 +139,16 @@ export default function RegisterForm() {
               /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{10,}$/.test(value) ||
               'Password must contain at least one lowercase, uppercase, number, and special character'
           })}
-          type="password"
+          type={showPassWord?"text":'password'}
           placeholder="••••••••••"
           onChange={(e) => setPassword(e.target.value)}
-          className={`mt-1 block w-full rounded-md border border-gray-300 bg-gray-50  px-3 py-2 shadow-sm 
+          className={`mt-1 block w-full rounded-md border border-gray-300 bg-gray-50  px-4 py-2 shadow-sm 
             focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm`}
         />
+        <span className='absolute right-2 translate-y-1/2 m-2 text-red-400' onClick={()=>setShowPassword(!showPassWord)}>
+        {!showPassWord ?(<Eye  className="w-4 h-4"/>):(<EyeOff className="w-4 h-4 "/>)}
+        </span>
+        </div>
         <PasswordStrengthIndicator password={password} />
         {errors.password && (
           <p className="mt-1 text-sm text-red-600">
@@ -162,6 +167,7 @@ export default function RegisterForm() {
           </ul>
         </p>
         */}
+
       </div>
 
       {/* Confirm Password Field */}
@@ -175,7 +181,7 @@ export default function RegisterForm() {
             validate: (value) => 
               value === watch('password') || 'Passwords do not match'
           })}
-          type="password"
+          type={showPassWord?'text':"password"}
           placeholder="••••••••••"
           className={`mt-1 block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 shadow-sm 
             focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm`}

@@ -10,6 +10,8 @@ import { useRouter } from 'next/navigation';
 import { LoginErrorResponse, LoginResponse } from '../types/authResponse';
 import { LoginFormData } from '../types/authForms';
 import { setCookie } from 'cookies-next';
+import {Eye, EyeOff,} from 'lucide-react'
+
 interface VerificationFormData {
   code: string;
 }
@@ -18,6 +20,7 @@ export default function LoginForm() {
   const [currentStep, setCurrentStep] = useState<"EMAIL" | "VERIFICATION" | "PASSWORD">("EMAIL");
   const [verifiedEmail, setVerifiedEmail] = useState<string>("");
   const router = useRouter();
+  const [showPassWord,setShowPassword]=useState(false)
 
   // API mutations
   const [login, { isLoading }] = useLoginMutation();
@@ -119,6 +122,7 @@ export default function LoginForm() {
               placeholder="123456"
               className="mt-1 block w-full bg-gray-50 rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
             />
+
             {verificationForm.formState.errors.code && <p className="mt-1 text-sm text-red-600">{verificationForm.formState.errors.code.message}</p>}
           </div>
 
@@ -137,12 +141,17 @@ export default function LoginForm() {
         <form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit)} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">Password</label>
+            <div className="relative">
             <input
               {...passwordForm.register('password', { required: 'Password is required' })}
-              type="password"
+              type={showPassWord?"text":"password"}
               placeholder='Password'
               className="mt-1 block w-full bg-gray-50 rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
             />
+            <span className='absolute  right-2 translate-y-1/2 m-2 text-red-400' onClick={()=>setShowPassword(!showPassWord)}>
+            {!showPassWord ?(<Eye  className="w-4 h-4"/>):(<EyeOff className="w-4 h-4 "/>)}
+            </span>
+            </div>
             {passwordForm.formState.errors.password && <p className="mt-1 text-sm text-red-600">{passwordForm.formState.errors.password.message}</p>}
           </div>
 
