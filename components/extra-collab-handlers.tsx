@@ -99,6 +99,7 @@ export function DashboardBuilderHandler({ data, onResponse, compact = false, dis
   )
 }
 
+
 export function MasterDetailTableHandler({ data, onResponse, compact = false, disabled = false }: ExtraCollabProps) {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
   const [selectedRows, setSelectedRows] = useState<string[]>([])
@@ -125,24 +126,22 @@ export function MasterDetailTableHandler({ data, onResponse, compact = false, di
     })
   }
 
+  // Improved nested value accessor
   const getNestedValue = (obj: any, keyPath: string) => {
-    console.log("[v0] getNestedValue called with:", { obj, keyPath })
-    if (!keyPath || !obj) {
-      console.log("[v0] Missing keyPath or obj, returning N/A")
+    if (!keyPath || !obj) return "N/A"
+    
+    try {
+      const result = keyPath.split('.').reduce((current, key) => {
+        if (current === null || current === undefined) return undefined
+        return current[key]
+      }, obj)
+      
+      // Return actual value even if it's falsy (0, false, empty string)
+      return result === undefined || result === null ? "N/A" : result
+    } catch (e) {
       return "N/A"
     }
-    const result =
-      keyPath.split(".").reduce((current, key) => {
-        console.log("[v0] Accessing key:", key, "in:", current)
-        return current?.[key]
-      }, obj) || "N/A"
-    console.log("[v0] Final result:", result)
-    return result
   }
-
-  console.log("[v0] MasterDetailTableHandler data:", data)
-  console.log("[v0] Master columns:", data.master_columns)
-  console.log("[v0] Master data:", data.master_data)
 
   return (
     <Card className={`${compact ? "text-sm" : ""} ${disabled ? "opacity-50 pointer-events-none" : ""}`}>
@@ -155,58 +154,63 @@ export function MasterDetailTableHandler({ data, onResponse, compact = false, di
       </CardHeader>
       <CardContent className={compact ? "pt-0" : ""}>
         <div className="space-y-2">
-          {data.master_data.map((row: any, index: number) => {
-            console.log("[v0] Processing row:", row)
-            return (
-              <div key={row.id || index} className="border rounded-lg">
-                <div className="flex items-center p-3 bg-gray-50">
-                  <input
-                    type="checkbox"
-                    checked={selectedRows.includes(row.id)}
-                    onChange={() => handleRowSelect(row.id)}
-                    className="mr-3"
-                  />
-                  <Button variant="ghost" size="sm" onClick={() => toggleRow(row.id)} className="mr-2 p-0">
-                    {expandedRows.has(row.id) ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4" />
-                    )}
-                  </Button>
-                  <div className="flex-1 grid grid-cols-4 gap-4">
-                    {data.master_columns.map((col: any, colIndex: number) => {
-                      console.log("[v0] Processing column:", col)
-                      const value = getNestedValue(row, col.name)
-                      return (
-                        <div key={colIndex}>
-                          <div className={`text-xs text-gray-500 ${compact ? "text-xs" : "text-sm"}`}>{col.label}</div>
-                          <span className={`font-medium ${compact ? "text-xs" : "text-sm"}`}>{value}</span>
-                        </div>
-                      )
-                    })}
+          {data.master_data.map((row: any, index: number) => (
+            <div key={row.id || index} className="border rounded-lg">
+              <div className="flex items-center p-3 bg-gray-50">
+                <input
+                  type="checkbox"
+                  checked={selectedRows.includes(row.id)}
+                  onChange={() => handleRowSelect(row.id)}
+                  className="mr-3"
+                />
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => toggleRow(row.id)} 
+                  className="mr-2 p-0"
+                >
+                  {expandedRows.has(row.id) ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                </Button>
+                <div className="flex-1 grid grid-cols-4 gap-4">
+                  {data.master_columns.map((col: any) => (
+                    <div key={col.id}>
+                      <div className={`text-xs text-gray-500 ${compact ? "text-xs" : "text-sm"}`}>
+                        {col.name} {/* Changed from col.label */}
+                      </div>
+                      <span className={`font-medium ${compact ? "text-xs" : "text-sm"}`}>
+                        {getNestedValue(row, col.id)} {/* Changed from col.name to col.id */}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {expandedRows.has(row.id) && row[data.detail_key] && (
+                <div className="p-3 border-t">
+                  <div className="space-y-2">
+                    {row[data.detail_key].map((detail: any, detailIndex: number) => (
+                      <div 
+                        key={detailIndex} 
+                        className="grid grid-cols-3 gap-4 p-2 bg-white rounded border"
+                      >
+                        {data.detail_columns.map((col: any) => (
+                          <div key={col.id}>
+                            <span className={`text-gray-600 ${compact ? "text-xs" : "text-sm"}`}>
+                              {col.name}: {getNestedValue(detail, col.id)} {/* Changed from col.name to col.id */}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
                   </div>
                 </div>
-
-                {expandedRows.has(row.id) && row[data.detail_key] && (
-                  <div className="p-3 border-t">
-                    <div className="space-y-2">
-                      {row[data.detail_key].map((detail: any, detailIndex: number) => (
-                        <div key={detailIndex} className="grid grid-cols-3 gap-4 p-2 bg-white rounded border">
-                          {data.detail_columns.map((col: any, colIndex: number) => (
-                            <div key={colIndex}>
-                              <span className={`text-gray-600 ${compact ? "text-xs" : "text-sm"}`}>
-                                {col.label}: {getNestedValue(detail, col.name)}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )
-          })}
+              )}
+            </div>
+          ))}
         </div>
 
         {selectedRows.length > 0 && (
@@ -218,7 +222,6 @@ export function MasterDetailTableHandler({ data, onResponse, compact = false, di
     </Card>
   )
 }
-
 export function AlertManagerHandler({ data, onResponse, compact = false, disabled = false }: ExtraCollabProps) {
   const [newAlert, setNewAlert] = useState({
     trigger: "",

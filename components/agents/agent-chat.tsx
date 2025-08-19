@@ -39,6 +39,7 @@ import {
   ComparisonViewHandler,
   BulkActionSelectorHandler,
 } from "@/components/advanced-interaction-handlers"
+import { ConditionalFormHandler } from "../user-agents-interaction/conditional-form" 
 import {
   DashboardBuilderHandler,
   MasterDetailTableHandler,
@@ -350,6 +351,7 @@ export default function AgentChat({
       kanban_board: { color: "bg-pink-50 border-pink-200", textColor: "text-pink-700", icon: "📌" },
       approval_workflow: { color: "bg-emerald-50 border-emerald-200", textColor: "text-emerald-700", icon: "✅" },
       wizard_flow: { color: "bg-purple-50 border-purple-200", textColor: "text-purple-700", icon: "🧙" },
+      conditional_form: { color: "bg-purple-50 border-purple-200", textColor: "text-purple-700", icon: "🧙" },
     }
     return styles[type as keyof typeof styles] || styles.confirmation
   }
@@ -417,6 +419,8 @@ export default function AgentChat({
         return <ApprovalWorkflowHandler {...commonProps} />
       case "wizard_flow":
         return <WizardFlowHandler {...commonProps} />
+      case "conditional_form":
+        return <ConditionalFormHandler {...commonProps} />
       case "report_builder":
         return <div className="p-4 text-center text-gray-500">Report Builder - Coming Soon</div>
       case "data_visualization":
