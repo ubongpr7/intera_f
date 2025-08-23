@@ -25,6 +25,7 @@ interface SubscriptionPlan {
   features: string[]
   created_at: string
   updated_at: string
+  application_name?: string
 }
 
 export function SubscriptionPlansTab() {
@@ -59,6 +60,10 @@ export function SubscriptionPlansTab() {
     {
       accessorKey: "name",
       header: "Plan Name",
+    },
+    {
+      accessorKey: "application_name",
+      header: "Application",
     },
     {
       accessorKey: "price",
