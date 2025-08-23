@@ -71,6 +71,11 @@ export function SubscriptionPlansTab() {
       cell: ({ row }) => `$${row.getValue("price")}`,
     },
     {
+      accessorKey: "features",
+      header: "Features",
+      cell: ({ row }) => `${((row.getValue("features") as string[]) ?? []).length}`,
+    },
+    {
       accessorKey: "billing_cycle",
       header: "Billing Cycle",
       cell: ({ row }) => <Badge variant="outline">{row.getValue("billing_cycle")}</Badge>,
