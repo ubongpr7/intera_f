@@ -1,18 +1,17 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Edit, Trash2 } from "lucide-react"
+import { Plus, Edit, Trash2, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { DataTable } from "@/components/ui/data-table"
 import { SubscriptionPlanDialog } from "./SubscriptionPlanDialog"
+import { FeatureManagementDialog } from "./FeatureManagementDialog"
 import {
   useGetSubscriptionPlansQuery,
   useDeleteSubscriptionPlanMutation,
 } from "@/redux/features/payment/paymentAPISlice"
 import { toast } from "react-toastify"
-import type { ColumnDef } from "@tanstack/react-table"
 
 interface SubscriptionPlan {
   id: string
@@ -31,7 +30,9 @@ interface SubscriptionPlan {
 
 export function SubscriptionPlansTab() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isFeatureDialogOpen, setIsFeatureDialogOpen] = useState(false)
   const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null)
+  const [managingFeaturesPlan, setManagingFeaturesPlan] = useState<SubscriptionPlan | null>(null)
 
   const { data: plans = [], isLoading, error, refetch } = useGetSubscriptionPlansQuery({})
   const [deletePlan] = useDeleteSubscriptionPlanMutation()
@@ -45,6 +46,11 @@ export function SubscriptionPlansTab() {
     setIsDialogOpen(true)
   }
 
+  const handleManageFeatures = (plan: SubscriptionPlan) => {
+    setManagingFeaturesPlan(plan)
+    setIsFeatureDialogOpen(true)
+  }
+
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this subscription plan?")) {
       try {
@@ -56,60 +62,6 @@ export function SubscriptionPlansTab() {
       }
     }
   }
-
-  const columns: ColumnDef<SubscriptionPlan>[] = [
-    {
-      accessorKey: "name",
-      header: "Plan Name",
-    },
-    {
-      accessorKey: "application_name",
-      header: "Application",
-    },
-    {
-      accessorKey: "price",
-      header: "Price",
-      cell: ({ row }) => `$${row.getValue("price")}`,
-    },
-    {
-      accessorKey: "intera_coins_reward",
-      header: "Intera Coins",
-      cell: ({ row }) => `${row.getValue("intera_coins_reward")}`,
-    },
-    {
-      accessorKey: "features",
-      header: "Features",
-      cell: ({ row }) => `${((row.getValue("features") as string[]) ?? []).length}`,
-    },
-    {
-      accessorKey: "billing_cycle",
-      header: "Billing Cycle",
-      cell: ({ row }) => <Badge variant="outline">{row.getValue("billing_cycle")}</Badge>,
-    },
-    {
-      accessorKey: "is_active",
-      header: "Status",
-      cell: ({ row }) => (
-        <Badge variant={row.getValue("is_active") ? "default" : "secondary"}>
-          {row.getValue("is_active") ? "Active" : "Inactive"}
-        </Badge>
-      ),
-    },
-    {
-      id: "actions",
-      header: "Actions",
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => handleEdit(row.original)}>
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => handleDelete(row.original.id)}>
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      ),
-    },
-  ]
 
   if (error) {
     return (
@@ -197,7 +149,61 @@ export function SubscriptionPlansTab() {
               </div>
             </div>
           ) : (
-            <DataTable columns={columns} data={plans} loading={isLoading} />
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {plans.map((plan: SubscriptionPlan) => (
+                <Card key={plan.id} className="relative">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-lg">{plan.name}</CardTitle>
+                        <CardDescription className="text-sm">{plan.application_name}</CardDescription>
+                      </div>
+                      <Badge variant={plan.is_active ? "default" : "secondary"}>
+                        {plan.is_active ? "Active" : "Inactive"}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">{plan.description}</p>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-bold">${plan.price}</span>
+                        <span className="text-sm text-muted-foreground">/{plan.billing_cycle}</span>
+                      </div>
+                      {plan.intera_coins_reward && (
+                        <p className="text-sm text-muted-foreground mt-1">{plan.intera_coins_reward} Intera Coins</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-medium mb-2">Features</p>
+                      <Badge variant="outline" className="text-xs">
+                        {plan.features?.length || 0} features
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-2">
+                      <Button variant="outline" size="sm" onClick={() => handleEdit(plan)} className="flex-1">
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleManageFeatures(plan)} className="flex-1">
+                        <Settings className="h-4 w-4 mr-1" />
+                        Features
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(plan.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>
@@ -215,6 +221,20 @@ export function SubscriptionPlansTab() {
           refetch()
           setIsDialogOpen(false)
           setEditingPlan(null)
+        }}
+      />
+
+      <FeatureManagementDialog
+        open={isFeatureDialogOpen}
+        onOpenChange={(open) => {
+          setIsFeatureDialogOpen(open)
+          if (!open) {
+            setManagingFeaturesPlan(null)
+          }
+        }}
+        plan={managingFeaturesPlan}
+        onSuccess={() => {
+          refetch()
         }}
       />
     </div>

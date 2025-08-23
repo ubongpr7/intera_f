@@ -200,6 +200,48 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
         service: "payment",
       }),
     }),
+
+getFeatures: builder.query({
+      query: (params = {}) => ({
+        url: `features/?${new URLSearchParams(params).toString()}`,
+        service: "payment",
+      }),
+    }),
+    
+
+    getFeaturesByApp: builder.query({
+      query: (appId) => ({
+        url: `features/?application=${appId}`,
+        service: "payment",
+      }),
+    }),
+
+    // Plan Features Management
+    addFeatureToPlan: builder.mutation({
+      query: ({ planId, featureId }) => ({
+        url: `subscriptions/${planId}/add-feature/`,
+        method: "POST",
+        body: { feature_id: featureId },
+        service: "payment",
+      }),
+    }),
+
+    removeFeatureFromPlan: builder.mutation({
+      query: ({ planId, featureId }) => ({
+        url: `subscriptions/${planId}/remove-feature/`,
+        method: "POST",
+        body: { feature_id: featureId },
+        service: "payment",
+      }),
+    }),
+
+    getPlanFeatures: builder.query({
+      query: (planId) => ({
+        url: `subscriptions/${planId}/features/`,
+        service: "payment",
+      }),
+    }),
+
   }),
 })
 
@@ -239,4 +281,11 @@ export const {
   useGetWebhookLogsQuery,
   useGetPaymentAnalyticsQuery,
   useGetSubscriptionAnalyticsQuery,
+
+  // Features
+  useGetFeaturesQuery,
+  useGetFeaturesByAppQuery,
+  useAddFeatureToPlanMutation,
+  useRemoveFeatureFromPlanMutation,
+  useGetPlanFeaturesQuery,
 } = paymentApiSlice
