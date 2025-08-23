@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import Select from "react-select"
+import { ReactSelectField } from "@/components/ui/react-select-field" // Import the custom component
 import {
   useGetFeaturesQuery,
   useGetFeaturesByAppQuery,
@@ -61,7 +61,6 @@ export function FeatureManagementDialog({ open, onOpenChange, plan, onSuccess }:
   const [selectedFeatures, setSelectedFeatures] = useState<SelectOption[]>([])
 
   // API hooks
-  const { data: allFeatures = [] } = useGetFeaturesQuery({})
   const { data: appFeatures = [] } = useGetFeaturesByAppQuery(plan?.application || "", {
     skip: !plan?.application,
   })
@@ -147,34 +146,6 @@ export function FeatureManagementDialog({ open, onOpenChange, plan, onSuccess }:
     }
   }
 
-  const customSelectStyles = {
-    control: (provided: any) => ({
-      ...provided,
-      minHeight: "40px",
-      borderColor: "hsl(var(--border))",
-      "&:hover": {
-        borderColor: "hsl(var(--border))",
-      },
-    }),
-    option: (provided: any, state: any) => ({
-      ...provided,
-      backgroundColor: state.isSelected
-        ? "hsl(var(--primary))"
-        : state.isFocused
-          ? "hsl(var(--accent))"
-          : "transparent",
-      color: state.isSelected ? "hsl(var(--primary-foreground))" : "hsl(var(--foreground))",
-    }),
-    multiValue: (provided: any) => ({
-      ...provided,
-      backgroundColor: "hsl(var(--accent))",
-    }),
-    multiValueLabel: (provided: any) => ({
-      ...provided,
-      color: "hsl(var(--accent-foreground))",
-    }),
-  }
-
   if (!plan) return null
 
   return (
@@ -200,16 +171,13 @@ export function FeatureManagementDialog({ open, onOpenChange, plan, onSuccess }:
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="text-sm font-medium mb-2 block">Available Features</label>
-                <Select
+                <ReactSelectField
                   isMulti
                   value={selectedFeatures}
                   onChange={(selected) => setSelectedFeatures(selected as SelectOption[])}
                   options={availableFeatureOptions}
                   placeholder="Select features to add..."
-                  styles={customSelectStyles}
-                  className="react-select-container"
-                  classNamePrefix="react-select"
+                  label="Available Features"
                   isDisabled={availableFeatureOptions.length === 0}
                   noOptionsMessage={() => "No more features available for this app"}
                 />
