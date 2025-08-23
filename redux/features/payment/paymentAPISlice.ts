@@ -5,14 +5,14 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
     // Payment Providers
     getPaymentProviders: builder.query({
       query: () => ({
-        url: "payment-providers/",
+        url: "providers/",
         service: "payment",
       }),
     }),
 
     createPaymentProvider: builder.mutation({
       query: (data) => ({
-        url: "payment-providers/",
+        url: "providers/",
         method: "POST",
         body: data,
         service: "payment",
@@ -21,7 +21,7 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
 
     updatePaymentProvider: builder.mutation({
       query: ({ id, ...data }) => ({
-        url: `payment-providers/${id}/`,
+        url: `providers/${id}/`,
         method: "PATCH",
         body: data,
         service: "payment",
@@ -30,7 +30,7 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
 
     deletePaymentProvider: builder.mutation({
       query: (id) => ({
-        url: `payment-providers/${id}/`,
+        url: `providers/${id}/`,
         method: "DELETE",
         service: "payment",
       }),
@@ -39,14 +39,14 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
     // Payment Apps
     getPaymentApps: builder.query({
       query: () => ({
-        url: "payment-apps/",
+        url: "apps/",
         service: "payment",
       }),
     }),
 
     createPaymentApp: builder.mutation({
       query: (data) => ({
-        url: "payment-apps/",
+        url: "apps/",
         method: "POST",
         body: data,
         service: "payment",
@@ -55,7 +55,7 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
 
     updatePaymentApp: builder.mutation({
       query: ({ id, ...data }) => ({
-        url: `payment-apps/${id}/`,
+        url: `apps/${id}/`,
         method: "PATCH",
         body: data,
         service: "payment",
@@ -64,7 +64,7 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
 
     deletePaymentApp: builder.mutation({
       query: (id) => ({
-        url: `payment-apps/${id}/`,
+        url: `apps/${id}/`,
         method: "DELETE",
         service: "payment",
       }),
@@ -73,14 +73,14 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
     // Subscription Plans
     getSubscriptionPlans: builder.query({
       query: () => ({
-        url: "subscription-plans/",
+        url: "subscriptions/",
         service: "payment",
       }),
     }),
 
     createSubscriptionPlan: builder.mutation({
       query: (data) => ({
-        url: "subscription-plans/",
+        url: "subscriptions/",
         method: "POST",
         body: data,
         service: "payment",
@@ -89,7 +89,7 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
 
     updateSubscriptionPlan: builder.mutation({
       query: ({ id, ...data }) => ({
-        url: `subscription-plans/${id}/`,
+        url: `subscriptions/${id}/`,
         method: "PATCH",
         body: data,
         service: "payment",
@@ -98,7 +98,7 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
 
     deleteSubscriptionPlan: builder.mutation({
       query: (id) => ({
-        url: `subscription-plans/${id}/`,
+        url: `subscriptions/${id}/`,
         method: "DELETE",
         service: "payment",
       }),
