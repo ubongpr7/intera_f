@@ -26,10 +26,10 @@ export function PaymentAppsTab() {
     if (confirm("Are you sure you want to delete this payment app?")) {
       try {
         await deleteApp(id).unwrap()
-        toast.success("Payment app deleted successfully")
+        toast.success('Payment App Deleted Successfully')
         refetch()
       } catch (error) {
-        toast.error("Failed to delete payment app")
+        toast.error('Could Not Delete Payment App')
       }
     }
   }
