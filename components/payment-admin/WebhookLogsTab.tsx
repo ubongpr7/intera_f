@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
 import { useGetWebhookLogsQuery } from "@/redux/features/payment/paymentAPISlice"
+  import type { Row } from "@tanstack/react-table" // Adjust import path/type as needed
 
 interface WebhookProvider {
   name: string
@@ -37,11 +38,9 @@ export function WebhookLogsTab() {
       failed: "destructive",
       pending: "secondary",
     }
-    return <Badge variant={variants[status] || "secondary"}>{status}</Badge>
-  }
+  return <Badge variant={variants[status] || "secondary"}>{status}</Badge>
 }
 
-  import type { Row } from "@tanstack/react-table" // Adjust import path/type as needed
 
   const columns = [
     {
