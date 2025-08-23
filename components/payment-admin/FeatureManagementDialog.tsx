@@ -40,6 +40,8 @@ interface SubscriptionPlan {
   created_at: string
   updated_at: string
   application_name?: string
+  application: string
+  intera_coins_reward?: string
 }
 
 interface FeatureManagementDialogProps {
@@ -60,8 +62,8 @@ export function FeatureManagementDialog({ open, onOpenChange, plan, onSuccess }:
 
   // API hooks
   const { data: allFeatures = [] } = useGetFeaturesQuery({})
-  const { data: appFeatures = [] } = useGetFeaturesByAppQuery(plan?.app || "", {
-    skip: !plan?.app,
+  const { data: appFeatures = [] } = useGetFeaturesByAppQuery(plan?.application || "", {
+    skip: !plan?.application,
   })
   const { data: planFeatures = [], refetch: refetchPlanFeatures } = useGetPlanFeaturesQuery(plan?.id || "", {
     skip: !plan?.id,

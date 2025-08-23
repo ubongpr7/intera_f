@@ -24,6 +24,7 @@ interface SubscriptionPlan {
   features: string[]
   created_at: string
   updated_at: string
+  application: string
   application_name?: string
   intera_coins_reward?: string
 }
