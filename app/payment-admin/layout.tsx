@@ -4,7 +4,7 @@ import type React from "react"
 import { ToastContainer } from "react-toastify";
 
 
-export default function AccountLayout({
+export default function PaymentLayout({
   children,
 }: {
   children: React.ReactNode
