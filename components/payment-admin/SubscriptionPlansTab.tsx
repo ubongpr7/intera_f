@@ -73,8 +73,8 @@ export function SubscriptionPlansTab() {
     },
     {
       accessorKey: "intera_coins_reward",
-      header: "Coins Reward",
-      cell: ({ row }) => `$${row.getValue("intera_coins_reward")}`,
+      header: "Intera Coins",
+      cell: ({ row }) => `${row.getValue("intera_coins_reward")}`,
     },
     {
       accessorKey: "features",
