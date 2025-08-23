@@ -26,6 +26,7 @@ interface SubscriptionPlan {
   created_at: string
   updated_at: string
   application_name?: string
+  intera_coins_reward?: string
 }
 
 export function SubscriptionPlansTab() {
@@ -69,6 +70,11 @@ export function SubscriptionPlansTab() {
       accessorKey: "price",
       header: "Price",
       cell: ({ row }) => `$${row.getValue("price")}`,
+    },
+    {
+      accessorKey: "intera_coins_reward",
+      header: "Coins Reward",
+      cell: ({ row }) => `$${row.getValue("intera_coins_reward")}`,
     },
     {
       accessorKey: "features",
