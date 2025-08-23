@@ -8,16 +8,15 @@ import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
 import { PaymentProviderDialog } from "./PaymentProviderDialog"
 import { useGetPaymentProvidersQuery, useDeletePaymentProviderMutation } from "@/redux/features/payment/paymentAPISlice"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "react-toastify"
 
 export function PaymentProvidersTab() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingProvider, setEditingProvider] = useState(null)
   const [showSecrets, setShowSecrets] = useState({})
 
-  const { data: providers = [], isLoading, refetch } = useGetPaymentProvidersQuery()
+  const { data: providers = [], isLoading, refetch } = useGetPaymentProvidersQuery({})
   const [deleteProvider] = useDeletePaymentProviderMutation()
-  const { toast } = useToast()
 
   const handleEdit = (provider) => {
     setEditingProvider(provider)
@@ -28,17 +27,10 @@ export function PaymentProvidersTab() {
     if (confirm("Are you sure you want to delete this payment provider?")) {
       try {
         await deleteProvider(id).unwrap()
-        toast({
-          title: "Success",
-          description: "Payment provider deleted successfully",
-        })
+        toast.success("Payment provider deleted successfully")
         refetch()
       } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to delete payment provider",
-          variant: "destructive",
-        })
+        toast.error("Failed to delete payment provider")
       }
     }
   }

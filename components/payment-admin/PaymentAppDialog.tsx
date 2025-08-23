@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { useCreatePaymentAppMutation, useUpdatePaymentAppMutation } from "@/redux/features/payment/paymentAPISlice"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "react-toastify"
 
 const formSchema = z.object({
   name: z.string().min(1, "App name is required"),
@@ -37,7 +37,6 @@ interface PaymentAppDialogProps {
 export function PaymentAppDialog({ open, onOpenChange, app, onSuccess }: PaymentAppDialogProps) {
   const [createApp, { isLoading: isCreating }] = useCreatePaymentAppMutation()
   const [updateApp, { isLoading: isUpdating }] = useUpdatePaymentAppMutation()
-  const { toast } = useToast()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -71,24 +70,16 @@ export function PaymentAppDialog({ open, onOpenChange, app, onSuccess }: Payment
     try {
       if (app) {
         await updateApp({ id: app.id, ...values }).unwrap()
-        toast({
-          title: "Success",
-          description: "Payment app updated successfully",
-        })
+        toast.success("Payment app updated successfully")
+        
       } else {
         await createApp(values).unwrap()
-        toast({
-          title: "Success",
-          description: "Payment app created successfully",
-        })
+        toast.success("Payment app created successfully")
+          
       }
       onSuccess()
     } catch (error) {
-      toast({
-        title: "Error",
-        description: `Failed to ${app ? "update" : "create"} payment app`,
-        variant: "destructive",
-      })
+      toast.error("Failed to create payment app")
     }
   }
 

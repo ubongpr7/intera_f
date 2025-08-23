@@ -22,7 +22,7 @@ import {
   useCreateSubscriptionPlanMutation,
   useUpdateSubscriptionPlanMutation,
 } from "@/redux/features/payment/paymentAPISlice"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "react-toastify"
 
 const formSchema = z.object({
   name: z.string().min(1, "Plan name is required"),
@@ -50,7 +50,6 @@ interface SubscriptionPlanDialogProps {
 export function SubscriptionPlanDialog({ open, onOpenChange, plan, onSuccess }: SubscriptionPlanDialogProps) {
   const [createPlan, { isLoading: isCreating }] = useCreateSubscriptionPlanMutation()
   const [updatePlan, { isLoading: isUpdating }] = useUpdateSubscriptionPlanMutation()
-  const { toast } = useToast()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -90,24 +89,14 @@ export function SubscriptionPlanDialog({ open, onOpenChange, plan, onSuccess }: 
     try {
       if (plan) {
         await updatePlan({ id: plan.id, ...values }).unwrap()
-        toast({
-          title: "Success",
-          description: "Subscription plan updated successfully",
-        })
+        toast.success("Subscription plan updated successfully")
       } else {
         await createPlan(values).unwrap()
-        toast({
-          title: "Success",
-          description: "Subscription plan created successfully",
-        })
+        toast.success("Subscription plan created successfully")
       }
       onSuccess()
     } catch (error) {
-      toast({
-        title: "Error",
-        description: `Failed to ${plan ? "update" : "create"} subscription plan`,
-        variant: "destructive",
-      })
+      toast.error("Failed to create subscription plan")
     }
   }
 

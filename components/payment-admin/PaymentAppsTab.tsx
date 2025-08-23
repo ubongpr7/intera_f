@@ -8,15 +8,14 @@ import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
 import { PaymentAppDialog } from "./PaymentAppDialog"
 import { useGetPaymentAppsQuery, useDeletePaymentAppMutation } from "@/redux/features/payment/paymentAPISlice"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "react-toastify"
 
 export function PaymentAppsTab() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingApp, setEditingApp] = useState(null)
 
-  const { data: apps = [], isLoading, refetch } = useGetPaymentAppsQuery()
+  const { data: apps = [], isLoading, refetch } = useGetPaymentAppsQuery({})
   const [deleteApp] = useDeletePaymentAppMutation()
-  const { toast } = useToast()
 
   const handleEdit = (app) => {
     setEditingApp(app)
@@ -27,17 +26,10 @@ export function PaymentAppsTab() {
     if (confirm("Are you sure you want to delete this payment app?")) {
       try {
         await deleteApp(id).unwrap()
-        toast({
-          title: "Success",
-          description: "Payment app deleted successfully",
-        })
+        toast.success("Payment app deleted successfully")
         refetch()
       } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to delete payment app",
-          variant: "destructive",
-        })
+        toast.error("Failed to delete payment app")
       }
     }
   }

@@ -7,29 +7,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
 import { useGetSubscriptionsQuery, useCancelSubscriptionMutation } from "@/redux/features/payment/paymentAPISlice"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "react-toastify"
 
 export function SubscriptionsTab() {
   const [filters, setFilters] = useState({})
   const { data: subscriptions = [], isLoading, refetch } = useGetSubscriptionsQuery(filters)
   const [cancelSubscription] = useCancelSubscriptionMutation()
-  const { toast } = useToast()
 
   const handleCancel = async (id) => {
     if (confirm("Are you sure you want to cancel this subscription?")) {
       try {
         await cancelSubscription(id).unwrap()
-        toast({
-          title: "Success",
-          description: "Subscription cancelled successfully",
-        })
+        toast.success("Subscription cancelled successfully")
         refetch()
       } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to cancel subscription",
-          variant: "destructive",
-        })
+        toast.error("Failed to cancel subscription")
       }
     }
   }

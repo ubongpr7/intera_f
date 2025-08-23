@@ -22,7 +22,7 @@ import {
   useCreatePaymentProviderMutation,
   useUpdatePaymentProviderMutation,
 } from "@/redux/features/payment/paymentAPISlice"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "react-toastify"
 
 const formSchema = z.object({
   name: z.string().min(1, "Provider name is required"),
@@ -50,7 +50,6 @@ interface PaymentProviderDialogProps {
 export function PaymentProviderDialog({ open, onOpenChange, provider, onSuccess }: PaymentProviderDialogProps) {
   const [createProvider, { isLoading: isCreating }] = useCreatePaymentProviderMutation()
   const [updateProvider, { isLoading: isUpdating }] = useUpdatePaymentProviderMutation()
-  const { toast } = useToast()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -87,24 +86,14 @@ export function PaymentProviderDialog({ open, onOpenChange, provider, onSuccess 
     try {
       if (provider) {
         await updateProvider({ id: provider.id, ...values }).unwrap()
-        toast({
-          title: "Success",
-          description: "Payment provider updated successfully",
-        })
+        toast.success("Payment provider updated successfully")
       } else {
         await createProvider(values).unwrap()
-        toast({
-          title: "Success",
-          description: "Payment provider created successfully",
-        })
+        toast.success("Payment provider created successfully")
       }
       onSuccess()
     } catch (error) {
-      toast({
-        title: "Error",
-        description: `Failed to ${provider ? "update" : "create"} payment provider`,
-        variant: "destructive",
-      })
+      toast.error("Failed to create payment provider")
     }
   }
 
