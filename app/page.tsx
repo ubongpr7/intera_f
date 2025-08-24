@@ -16,6 +16,9 @@ import {
   Menu,
   X,
 } from "lucide-react"
+import { useGetSubscriptionPlansQuery } from "@/redux/features/payment/paymentAPISlice"
+import { SubscriptionPlan } from "@/components/interfaces/payment"
+import { Skeleton } from "@/components/ui/skeleton"
 
 // Conversation Bubble Component
 function ConversationBubble({ message, isAI, delay = 0 }) {
@@ -38,7 +41,7 @@ function ConversationBubble({ message, isAI, delay = 0 }) {
 }
 
 // 3D Pricing Cube Component
-function PricingCube({ plan, isPopular = false }) {
+function PricingCube({ plan, isPopular = false }: { plan: SubscriptionPlan; isPopular?: boolean }) {
   const [isFlipped, setIsFlipped] = useState(false)
 
   return (
@@ -74,7 +77,7 @@ function PricingCube({ plan, isPopular = false }) {
 
           <div className="text-center mb-4">
             <h3 className="text-2xl font-serif font-bold text-gray-900 mb-2">{plan.name}</h3>
-            <p className="text-gray-600 font-sans text-sm mb-4">{plan.tagline}</p>
+            <p className="text-gray-600 font-sans text-sm mb-4">{plan.description}</p>
             {plan.name === "Enterprise" ? (
               <div className="mb-4">
                 <span className="text-2xl font-serif font-bold text-gray-800">Contact Us</span>
@@ -83,7 +86,7 @@ function PricingCube({ plan, isPopular = false }) {
             ) : (
               <div className="mb-4">
                 <span className="text-4xl font-serif font-bold text-gray-800">${plan.price}</span>
-                <span className="text-gray-600 font-sans">/month</span>
+                <span className="text-gray-600 font-sans">/{plan.billing_cycle.toLocaleLowerCase()}</span>
               </div>
             )}
           </div>
@@ -93,7 +96,7 @@ function PricingCube({ plan, isPopular = false }) {
             {plan.features.slice(0, 4).map((feature, index) => (
               <li key={index} className="flex items-start text-gray-700">
                 <span className="text-gray-500 mr-2">✓</span>
-                {feature}
+                {feature.name}
               </li>
             ))}
             {plan.features.length > 4 && <li className="text-gray-500 text-xs italic">Hover to see all features...</li>}
@@ -129,13 +132,13 @@ function PricingCube({ plan, isPopular = false }) {
               {plan.features.map((feature, index) => (
                 <li key={index} className="flex items-start text-gray-700">
                   <span className="text-gray-500 mr-2">✓</span>
-                  {feature}
+                  {feature.name}
                 </li>
               ))}
             </ul>
-            {plan.savings && (
+            {plan.intera_coins_reward && (
               <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg text-center">
-                <p className="text-green-700 font-sans text-sm">Save ${plan.savings.toLocaleString()}/year</p>
+                <p className="text-green-700 font-sans text-sm">Earn {plan.intera_coins_reward.toLocaleString()} Intera Coins</p>
               </div>
             )}
           </div>
@@ -148,6 +151,8 @@ function PricingCube({ plan, isPopular = false }) {
 export default function HomePage() {
   const [activeDemo, setActiveDemo] = useState(0)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  const { data: pricingPlans, isLoading, error } = useGetSubscriptionPlansQuery({})
 
   const conversations = [
     [
@@ -165,76 +170,6 @@ export default function HomePage() {
       { message: "Predict next month's demand for electronics", isAI: false },
       { message: "Based on trends, expecting 28% increase. Recommend increasing stock by 400 units", isAI: true },
     ],
-  ]
-
-  const pricingPlans = [
-    {
-      name: "Starter",
-      tagline: "Essential inventory management",
-      price: 15,
-      savings: 600,
-      features: [
-        "Single location inventory",
-        "Basic POS integration",
-        "Essential reporting",
-        "Barcode scanning",
-        "Low stock alerts",
-        "Up to 3 users",
-        "Email support",
-        "Mobile app access",
-      ],
-    },
-    {
-      name: "Professional",
-      tagline: "Advanced features for growing businesses",
-      price: 40,
-      savings: 1800,
-      features: [
-        "Multi-location inventory",
-        "Offline-first POS system",
-        "Advanced reporting & analytics",
-        "Supplier management",
-        "Purchase order automation",
-        "Up to 15 users",
-        "Priority support",
-        "API access",
-        "Add-on: AI Agents (+$20/mo each)",
-      ],
-    },
-    {
-      name: "Business",
-      tagline: "Complete solution with AI assistance",
-      price: 100,
-      savings: 4500,
-      features: [
-        "Everything in Professional",
-        "Multi-warehouse tracking",
-        "Advanced forecasting",
-        "Custom integrations",
-        "Unlimited users",
-        "Included: 3 AI Agents",
-        "Phone & chat support",
-        "Custom training",
-        "White-label options",
-      ],
-    },
-    {
-      name: "Enterprise",
-      tagline: "Full-scale operations with unlimited AI",
-      price: null,
-      savings: null,
-      features: [
-        "Everything in Business",
-        "Multi-company support",
-        "Unlimited AI Agents",
-        "Custom AI training",
-        "Dedicated account manager",
-        "24/7 priority support",
-        "On-premise deployment",
-        "Custom SLA",
-        "Advanced security features",
-      ],
-    },
   ]
 
   useEffect(() => {
@@ -575,8 +510,15 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {pricingPlans.map((plan, index) => (
-              <PricingCube key={index} plan={plan} isPopular={index === 1} />
+            {isLoading &&
+              Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="relative h-96">
+                  <Skeleton className="w-full h-full rounded-2xl" />
+                </div>
+              ))}
+            {error && <p>Error loading plans</p>}
+            {pricingPlans?.map((plan, index) => (
+              <PricingCube key={plan.id} plan={plan} isPopular={index === 1} />
             ))}
           </div>
 
