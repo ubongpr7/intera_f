@@ -17,7 +17,7 @@ import {
   X,
 } from "lucide-react"
 import { useGetSubscriptionPlansQuery } from "@/redux/features/payment/paymentAPISlice"
-import { SubscriptionPlan } from "@/components/interfaces/payment"
+import { SubscriptionPlan, Feature } from "@/components/interfaces/payment"
 import { Skeleton } from "@/components/ui/skeleton"
 
 // Conversation Bubble Component
@@ -40,110 +40,77 @@ function ConversationBubble({ message, isAI, delay = 0 }) {
   )
 }
 
-// 3D Pricing Cube Component
-function PricingCube({ plan, isPopular = false }: { plan: SubscriptionPlan; isPopular?: boolean }) {
-  const [isFlipped, setIsFlipped] = useState(false)
+// Pricing Card Component
+function PricingCard({ plan, isPopular = false }: { plan: SubscriptionPlan; isPopular?: boolean }) {
+  const [showAllFeatures, setShowAllFeatures] = useState(false)
+
+  const features: (Feature | { name: string })[] = [...plan.features]
+  if (plan.intera_coins_reward) {
+    features.unshift({ name: `${plan.intera_coins_reward} Intera Coins for agentic conversation` })
+  }
+
+  const displayedFeatures = showAllFeatures ? features : features.slice(0, 10)
 
   return (
     <motion.div
-      className="relative h-96"
-      onHoverStart={() => setIsFlipped(true)}
-      onHoverEnd={() => setIsFlipped(false)}
+      className={`relative h-auto rounded-2xl p-6 border-2 flex flex-col ${
+        isPopular ? "bg-gray-50 border-gray-300 shadow-lg" : "bg-white border-gray-200 shadow-md"
+      }`}
+      onFocus={() => setShowAllFeatures(true)}
+      onBlur={() => setShowAllFeatures(false)}
+      onMouseEnter={() => setShowAllFeatures(true)}
+      onMouseLeave={() => setShowAllFeatures(false)}
       whileHover={{ scale: 1.05 }}
-      style={{ perspective: "1000px" }}
+      tabIndex={0}
     >
-      <motion.div
-        className="relative w-full h-full"
-        animate={{ rotateY: isFlipped ? 180 : 0 }}
-        style={{
-          transformStyle: "preserve-3d",
-          transition: "transform 0.7s",
-        }}
+      {isPopular && (
+        <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+          <span className="bg-gray-800 text-white px-4 py-1 rounded-full text-sm font-sans font-medium">
+            Most Popular
+          </span>
+        </div>
+      )}
+
+      <div className="text-center mb-4">
+        <h3 className="text-2xl font-serif font-bold text-gray-900 mb-2">{plan.name}</h3>
+        <p className="text-gray-600 font-sans text-sm mb-4">{plan.description}</p>
+        {plan.name === "Enterprise" ? (
+          <div className="mb-4">
+            <span className="text-2xl font-serif font-bold text-gray-800">Contact Us</span>
+            <p className="text-gray-600 font-sans text-sm">Custom pricing</p>
+          </div>
+        ) : (
+          <div className="mb-4">
+            <span className="text-4xl font-serif font-bold text-gray-800">${plan.price}</span>
+            <span className="text-gray-600 font-sans">/{plan.billing_cycle.toLowerCase()}</span>
+          </div>
+        )}
+      </div>
+
+      <ul className="space-y-2 text-sm font-sans mb-4 flex-grow">
+        {displayedFeatures.map((feature, index) => (
+          <li key={index} className="flex items-start text-gray-700">
+            <span className="text-gray-500 mr-2">✓</span>
+            {feature.name}
+          </li>
+        ))}
+        {features.length > 10 && !showAllFeatures && (
+          <li className="text-gray-500 text-xs italic mt-2">Focus to see all features...</li>
+        )}
+      </ul>
+
+      <Button
+        asChild
+        className={`w-full mt-auto font-sans ${
+          isPopular ? "bg-gray-800 hover:bg-gray-900 text-white" : "bg-gray-600 hover:bg-gray-700 text-white"
+        }`}
       >
-        {/* Front Face - Pricing with some features */}
-        <div
-          className={`absolute inset-0 w-full h-full rounded-2xl p-6 border-2 ${
-            isPopular ? "bg-gray-50 border-gray-300 shadow-lg" : "bg-white border-gray-200 shadow-md"
-          }`}
-          style={{ backfaceVisibility: "hidden" }}
-        >
-          {isPopular && (
-            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-              <span className="bg-gray-800 text-white px-4 py-1 rounded-full text-sm font-sans font-medium">
-                Most Popular
-              </span>
-            </div>
-          )}
-
-          <div className="text-center mb-4">
-            <h3 className="text-2xl font-serif font-bold text-gray-900 mb-2">{plan.name}</h3>
-            <p className="text-gray-600 font-sans text-sm mb-4">{plan.description}</p>
-            {plan.name === "Enterprise" ? (
-              <div className="mb-4">
-                <span className="text-2xl font-serif font-bold text-gray-800">Contact Us</span>
-                <p className="text-gray-600 font-sans text-sm">Custom pricing</p>
-              </div>
-            ) : (
-              <div className="mb-4">
-                <span className="text-4xl font-serif font-bold text-gray-800">${plan.price}</span>
-                <span className="text-gray-600 font-sans">/{plan.billing_cycle.toLocaleLowerCase()}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Show some key features */}
-          <ul className="space-y-2 text-sm font-sans mb-4">
-            {plan.features.slice(0, 4).map((feature, index) => (
-              <li key={index} className="flex items-start text-gray-700">
-                <span className="text-gray-500 mr-2">✓</span>
-                {feature.name}
-              </li>
-            ))}
-            {plan.features.length > 4 && <li className="text-gray-500 text-xs italic">Hover to see all features...</li>}
-          </ul>
-
-          <Button
-            asChild
-            className={`w-full mb-2 font-sans ${
-              isPopular ? "bg-gray-800 hover:bg-gray-900 text-white" : "bg-gray-600 hover:bg-gray-700 text-white"
-            }`}
-          >
-            {plan.name === "Enterprise" ? (
-              <Link href="/contact">Contact Sales</Link>
-            ) : (
-              <Link href="/accounts">Start Free Trial</Link>
-            )}
-          </Button>
-        </div>
-
-        {/* Back Face - All Features */}
-        <div
-          className={`absolute inset-0 w-full h-full rounded-2xl p-6 border-2 ${
-            isPopular ? "bg-gray-50 border-gray-300 shadow-lg" : "bg-white border-gray-200 shadow-md"
-          }`}
-          style={{
-            backfaceVisibility: "hidden",
-            transform: "rotateY(180deg)",
-          }}
-        >
-          <div className="h-full flex flex-col">
-            <h4 className="text-lg font-serif font-bold text-gray-900 mb-4 text-center">{plan.name} Features</h4>
-            <ul className="space-y-2 flex-1 text-sm font-sans overflow-y-auto">
-              {plan.features.map((feature, index) => (
-                <li key={index} className="flex items-start text-gray-700">
-                  <span className="text-gray-500 mr-2">✓</span>
-                  {feature.name}
-                </li>
-              ))}
-            </ul>
-            {plan.intera_coins_reward && (
-              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg text-center">
-                <p className="text-green-700 font-sans text-sm">Earn {plan.intera_coins_reward.toLocaleString()} Intera Coins</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </motion.div>
+        {plan.name === "Enterprise" ? (
+          <Link href="/contact">Contact Sales</Link>
+        ) : (
+          <Link href={`/accounts?plan_id=${plan.id}`}>Start Free Trial</Link>
+        )}
+      </Button>
     </motion.div>
   )
 }
@@ -518,7 +485,7 @@ export default function HomePage() {
               ))}
             {error && <p>Error loading plans</p>}
             {pricingPlans?.map((plan, index) => (
-              <PricingCube key={plan.id} plan={plan} isPopular={index === 1} />
+              <PricingCard key={plan.id} plan={plan} isPopular={index === 1} />
             ))}
           </div>
 
