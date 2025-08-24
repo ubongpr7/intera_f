@@ -476,7 +476,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {isLoading &&
               Array.from({ length: 3 }).map((_, index) => (
                 <div key={index} className="relative h-96">
