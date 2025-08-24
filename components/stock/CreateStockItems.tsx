@@ -24,6 +24,17 @@ interface InventoryColumn<T> {
   render?: InventoryColumnRender;
 }
 
+const formatQuantity = (value: number): number => {
+  if (value === null || value === undefined) return 0;
+
+  const decimalPart = value.toString().split('.')[1];
+  if (decimalPart && decimalPart.length > 2) {
+    return parseFloat(value.toPrecision(2));
+  } else {
+    return parseFloat(value.toFixed(2));
+  }
+};
+
 const inventoryColumns: InventoryColumn<StockItem>[] = [
   {
     header: 'Name',
@@ -33,7 +44,7 @@ const inventoryColumns: InventoryColumn<StockItem>[] = [
   {
     header: 'Quantity',
     accessor: 'quantity',
-    render: (value: number) => value || 0,
+    render: (value: number) => formatQuantity(value),
     className: 'font-medium',
   },
   {
