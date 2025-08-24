@@ -1,12 +1,14 @@
 'use client'
 import { PurchaseOrderLineItem } from "../../interfaces/order";
-import { Column, DataTable } from "../../common/DataTable/DataTable";
-import { useGetPurchseOrderLineItemsQuery,useCreatePurchaseOrderLineItemMutation } from "../../../redux/features/orders/orderAPISlice";
+import { Column, DataTable, ActionButton } from "../../common/DataTable/DataTable";
+import { useGetPurchseOrderLineItemsQuery,useCreatePurchaseOrderLineItemMutation, useUpdatePurchaseOrderLineItemMutation, useDeletePurchaseOrderLineItemMutation } from "../../../redux/features/orders/orderAPISlice";
 import { useState } from "react";
 import { PageHeader } from "../../inventory/PageHeader";
 import CustomCreateCard from '../../common/createCard';
 import {  useGetStockItemDataQuery } from "@/redux/features/stock/stockAPISlice";
 import { getCurrencySymbol } from "@/lib/currency-utils";
+import { toast } from "react-toastify";
+import { Edit, Trash2 } from "lucide-react";
 
 interface Props {
   reference: string;
@@ -18,14 +20,13 @@ interface Props {
 
 
 function PurchaseOrderLineItems({reference,currency,lineItemsLoading,lineItems,refetch}:Props) {
-    // const {data:lineItems,isLoading:lineItemsLoading,refetch,error}=useGetPurchseOrderLineItemsQuery(reference)
     const [createLineItem, { isLoading: lineItemCreateLoading }] = useCreatePurchaseOrderLineItemMutation();
-    const [isCreateOpen, setIsCreateOpen] = useState(false); // Renamed for clarity
+    const [updateLineItem, { isLoading: lineItemUpdateLoading }] = useUpdatePurchaseOrderLineItemMutation();
+    const [deleteLineItem, { isLoading: lineItemDeleteLoading }] = useDeletePurchaseOrderLineItemMutation();
+    const [isCreateOpen, setIsCreateOpen] = useState(false); 
+    const [editingLineItem, setEditingLineItem] = useState<PurchaseOrderLineItem | null>(null);
     const {data:stockItems,isLoading:stockItemsLoading,}=useGetStockItemDataQuery(reference)
     
-
-    
-
 const inventoryColumns: Column<PurchaseOrderLineItem>[] = [
   {
     header: 'Product Name',
@@ -64,24 +65,58 @@ const inventoryColumns: Column<PurchaseOrderLineItem>[] = [
     accessor: 'total_price',
     className: 'font-medium',
   },
-
-  
-  
 ];
 
     const handleCreate = async (createdData: Partial<PurchaseOrderLineItem>) => {
     try {   
-        const response = await createLineItem({data:createdData,purchase_order_id:reference});
+        await createLineItem({data:createdData,purchase_order_id:reference}).unwrap();
         setIsCreateOpen(false);
         await refetch(); 
+        toast.success("Line item created successfully!");
     }
     catch (error) {
+      toast.error("Failed to create line item.");
     }
     };
-    const handleRowClick = (row: PurchaseOrderLineItem) => {
 
-      };
-      
+    const handleUpdate = async (updatedData: Partial<PurchaseOrderLineItem>) => {
+      if (!editingLineItem) return;
+      try {
+        await updateLineItem({ reference: reference, id: editingLineItem.id, data: updatedData }).unwrap();
+        setEditingLineItem(null);
+        await refetch();
+        toast.success("Line item updated successfully!");
+      } catch (error) {
+        toast.error("Failed to update line item.");
+      }
+    };
+
+    const handleDelete = async (id: string) => {
+      if (window.confirm("Are you sure you want to delete this line item?")) {
+        try {
+          await deleteLineItem({reference: reference, id: id}).unwrap();
+          await refetch();
+          toast.success("Line item deleted successfully!");
+        } catch (error) {
+          toast.error("Failed to delete line item.");
+        }
+      }
+    };
+
+    const actionButtons: ActionButton<PurchaseOrderLineItem>[] = [
+      {
+        label: "Edit",
+        icon: Edit,
+        onClick: (row) => setEditingLineItem(row),
+      },
+      {
+        label: "Delete",
+        icon: Trash2,
+        onClick: (row) => handleDelete(row.id),
+        className: "text-red-600 hover:text-red-800",
+      },
+    ];
+
     const stockItemsOptions = stockItems?.map((StockItem) => ({
       text: `${StockItem.name } (${StockItem.sku})`,
       value: StockItem.id,
@@ -105,30 +140,36 @@ const inventoryColumns: Column<PurchaseOrderLineItem>[] = [
     <div>
     <PageHeader
             title="Purchase Order Line Items"
-            onClose={() => setIsCreateOpen(true)} // Renamed to onCreate for clarity
+            onClose={() => setIsCreateOpen(true)}
           />
       <DataTable<PurchaseOrderLineItem>
               columns={inventoryColumns}
               data={lineItems || []}
               isLoading={lineItemsLoading}
-              onRowClick={handleRowClick}
+              actionButtons={actionButtons}
             />
 
-        <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>
-                <CustomCreateCard
-                  defaultValues={{'quantity': 1, 'unit_price': 0, 'tax_rate': 0, 'discount_rate': 0, 'tax_amount': 0, 'discount': 0, 'total_price': 0}}
-                  onClose={() => setIsCreateOpen(false)}
-                  onSubmit={handleCreate}
-                  isLoading={lineItemCreateLoading}
-                  selectOptions={selectionOptions}
-                  keyInfo={{}}
-                  notEditableFields={['stock_item_name',]}
-                  interfaceKeys={interfaceKeys}
-                  dateFields={[]}
-                  optionalFields={[]}
-                  readOnlyFields={['total_price', 'tax_amount', 'discount',]}
-                />
-              </div>
+        {(isCreateOpen || editingLineItem) && (
+          <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50`}>
+            <CustomCreateCard
+              defaultValues={editingLineItem || {'quantity': 1, 'unit_price': 0, 'tax_rate': 0, 'discount_rate': 0, 'tax_amount': 0, 'discount': 0, 'total_price': 0}}
+              onClose={() => {
+                setIsCreateOpen(false);
+                setEditingLineItem(null);
+              }}
+              onSubmit={editingLineItem ? handleUpdate : handleCreate}
+              isLoading={lineItemCreateLoading || lineItemUpdateLoading}
+              selectOptions={selectionOptions}
+              keyInfo={{}}
+              notEditableFields={editingLineItem ? ['batch_number'] : []}
+              interfaceKeys={interfaceKeys}
+              dateFields={[]}
+              optionalFields={[]}
+              readOnlyFields={['total_price', 'tax_amount', 'discount',]}
+              itemTitle={editingLineItem ? 'Update Line Item' : 'Create Line Item'}
+            />
+          </div>
+        )}
     </div>
   );
 }

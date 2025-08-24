@@ -1,14 +1,14 @@
 'use client'
 import { StockItem } from "../interfaces/stock";
-import { Column, DataTable } from "../common/DataTable/DataTable";
-import { useGetStockItemDataForInventoryQuery,useCreateStockItemMutation, useGetStockItemDataLocationQuery } from "../../redux/features/stock/stockAPISlice";
+import { Column, DataTable, ActionButton } from "../common/DataTable/DataTable";
+import { useGetStockItemDataForInventoryQuery, useCreateStockItemMutation, useGetStockItemDataLocationQuery, useUpdateStockItemMutation, useDeleteStockItemMutation } from "../../redux/features/stock/stockAPISlice";
 import { useEffect, useState } from "react";
 import { PageHeader } from "../inventory/PageHeader";
 import CustomCreateCard from '../common/createCard';
 import { PACKAGING_OPTIONS } from "./options";
 import { useGetMinimalInventoryQuery } from "@/redux/features/inventory/inventoryAPiSlice";
-
-
+import { toast } from "react-toastify";
+import { Edit, Trash2 } from "lucide-react";
 
 const inventoryColumns: Column<StockItem>[] = [
   {
@@ -33,17 +33,16 @@ const inventoryColumns: Column<StockItem>[] = [
     accessor: 'belongs_to',
     className: 'font-medium',
   },
-  
-  
 ];
 
 function StockItems({reference}:{reference:string}) {
     const {data:stockItems,isLoading:stockItemsLoading,refetch,error}=useGetStockItemDataForInventoryQuery(reference)
     const [createStockItem, { isLoading: stockItemCreateLoading }] = useCreateStockItemMutation();
-    // const [reorderQuantity,setReorderQuantity] = useState(100)
+    const [updateStockItem, { isLoading: stockItemUpdateLoading }] = useUpdateStockItemMutation();
+    const [deleteStockItem, { isLoading: stockItemDeleteLoading }] = useDeleteStockItemMutation();
     const [isCreateOpen, setIsCreateOpen] = useState(false); 
+    const [editingStockItem, setEditingStockItem] = useState<StockItem | null>(null);
     const {data:StockLocationData,isLoading:stockLocationsLoading,}=useGetStockItemDataLocationQuery()
-    // const {data:minimalInventory,isLoading:inventoryLoading } =useGetMinimalInventoryQuery(reference)
    
     const stockItemsOptions = stockItems?.map((StockItem:StockItem) => ({
         text: `${StockItem.name } (${StockItem.sku})`,
@@ -78,13 +77,54 @@ function StockItems({reference}:{reference:string}) {
     const handleCreate = async (createdData: Partial<StockItem>) => {
       const Data= {...createdData,inventory:reference,}
     try {   
-        const response = await createStockItem(Data);
+        await createStockItem(Data).unwrap();
         setIsCreateOpen(false);
         await refetch(); 
+        toast.success("Stock item created successfully!");
     }
     catch (error) {
+      toast.error("Failed to create stock item.");
     }
     };
+
+    const handleUpdate = async (updatedData: Partial<StockItem>) => {
+      if (!editingStockItem) return;
+      try {
+        await updateStockItem({ id: editingStockItem.id, data: updatedData }).unwrap();
+        setEditingStockItem(null);
+        await refetch();
+        toast.success("Stock item updated successfully!");
+      } catch (error) {
+        toast.error("Failed to update stock item.");
+      }
+    };
+
+    const handleDelete = async (id: string) => {
+      if (window.confirm("Are you sure you want to delete this stock item?")) {
+        try {
+          await deleteStockItem(id).unwrap();
+          await refetch();
+          toast.success("Stock item deleted successfully!");
+        } catch (error) {
+          toast.error("Failed to delete stock item.");
+        }
+      }
+    };
+
+    const actionButtons: ActionButton<StockItem>[] = [
+      {
+        label: "Edit",
+        icon: Edit,
+        onClick: (row) => setEditingStockItem(row),
+      },
+      {
+        label: "Delete",
+        icon: Trash2,
+        onClick: (row) => handleDelete(row.id),
+        className: "text-red-600 hover:text-red-800",
+      },
+    ];
+
     const handleRowClick = (row: StockItem) => {
 
       };
@@ -98,7 +138,6 @@ function StockItems({reference}:{reference:string}) {
         'parent',
         'belongs_to',
         'packaging',
-        // 'expiry_date',
         'notes',
         'link',
         'delete_on_deplete',
@@ -116,24 +155,30 @@ function StockItems({reference}:{reference:string}) {
               data={stockItems || []}
               isLoading={stockItemsLoading}
               onRowClick={handleRowClick}
+              actionButtons={actionButtons}
             />
 
-        <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>
-                <CustomCreateCard
-                  defaultValues={{packaging:'box','quantity':0,status:'ok',purchase_price:0,delete_on_deplete:false}}
-                  onClose={() => setIsCreateOpen(false)}
-                  onSubmit={handleCreate}
-                  isLoading={stockItemCreateLoading}
-                  selectOptions={selectionOpions}
-                  keyInfo={{location:`Optional, defaults to parent or inventory's category location `}}
-                  notEditableFields={[]}
-                  interfaceKeys={interfaceKeys}
-                  dateFields={['expiry_date']}
-                  optionalFields={['parent','notes','belongs_to','link','serial','location','delete_on_deplete']}
-                  hiddenFields={{}}
-                  itemTitle={'Create Stock Item'}
-                />
-              </div>
+        {(isCreateOpen || editingStockItem) && (
+          <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50`}>
+            <CustomCreateCard
+              defaultValues={editingStockItem || {packaging:'box','quantity':0,status:'ok',purchase_price:0,delete_on_deplete:false}}
+              onClose={() => {
+                setIsCreateOpen(false);
+                setEditingStockItem(null);
+              }}
+              onSubmit={editingStockItem ? handleUpdate : handleCreate}
+              isLoading={stockItemCreateLoading || stockItemUpdateLoading}
+              selectOptions={selectionOpions}
+              keyInfo={{location:`Optional, defaults to parent or inventory's category location `}}
+              notEditableFields={editingStockItem ? ['sku'] : []}
+              interfaceKeys={interfaceKeys}
+              dateFields={['expiry_date']}
+              optionalFields={['parent','notes','belongs_to','link','serial','location','delete_on_deplete']}
+              hiddenFields={{}}
+              itemTitle={editingStockItem ? 'Update Stock Item' : 'Create Stock Item'}
+            />
+          </div>
+        )}
     </div>
   );
 }

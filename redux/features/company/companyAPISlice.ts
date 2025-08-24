@@ -109,6 +109,13 @@ export const companyAddressApiSlice = apiSlice.injectEndpoints({
         service:service
       }),
     }),
+    deleteCompanyAddress: builder.mutation({
+      query: (id) => ({
+        url: `/${management_api}/company-addresses/${id}/`,
+        method: 'DELETE',
+        service:service
+      }),
+    }),
   
     getCompanyAddresses: builder.query({
       query: (company_id) => ({
@@ -124,7 +131,7 @@ export const companyAddressApiSlice = apiSlice.injectEndpoints({
 export const {
   useCreateCompanyAddressMutation,
   useUpdateCompanyAddressMutation,
-  // useGetCompanyAddressQuery,
+  useDeleteCompanyAddressMutation,
   useGetCompanyAddressesQuery
 } = companyAddressApiSlice;
 
@@ -149,6 +156,13 @@ export const ContactPersonApiSlice = apiSlice.injectEndpoints({
 
       }),
     }),
+    deleteContactPerson: builder.mutation({
+      query: (id) => ({
+        url: `/${management_api}/company-contacts/${id}/`,
+        method: 'DELETE',
+        service:service
+      }),
+    }),
     
     getContactPerson: builder.query({
       query: (company_id) => ({
@@ -165,5 +179,6 @@ export const ContactPersonApiSlice = apiSlice.injectEndpoints({
 export const {
   useCreateContactPersonMutation,
   useUpdateContactPersonMutation,
+  useDeleteContactPersonMutation,
   useGetContactPersonQuery
 } = ContactPersonApiSlice;
