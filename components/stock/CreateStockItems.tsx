@@ -18,7 +18,7 @@ const inventoryColumns: Column<StockItem>[] = [
   },
   {
     header: 'Quantity',
-    accessor: 'quantity_w_unit',
+    accessor: 'quantity',
     render:(value)=>value||0,
     className: 'font-medium',
   },
