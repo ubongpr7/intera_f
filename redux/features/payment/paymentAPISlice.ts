@@ -140,21 +140,21 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
     // Subscriptions
     getSubscriptions: builder.query({
       query: (params = {}) => ({
-        url: `subscriptions/?${new URLSearchParams(params).toString()}`,
+        url: `subscriptions-to-plans/?${new URLSearchParams(params).toString()}`,
         service: "payment",
       }),
     }),
 
     getSubscriptionById: builder.query({
       query: (id) => ({
-        url: `subscriptions/${id}/`,
+        url: `subscriptions-to-plans/${id}/`,
         service: "payment",
       }),
     }),
 
     createSubscription: builder.mutation({
       query: (data) => ({
-        url: "subscriptions/",
+        url: "subscriptions-to-plans/",
         method: "POST",
         body: data,
         service: "payment",
@@ -163,7 +163,7 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
 
     updateSubscription: builder.mutation({
       query: ({ id, ...data }) => ({
-        url: `subscriptions/${id}/`,
+        url: `subscriptions-to-plans/${id}/`,
         method: "PATCH",
         body: data,
         service: "payment",
@@ -172,7 +172,7 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
 
     cancelSubscription: builder.mutation({
       query: (id) => ({
-        url: `subscriptions/${id}/cancel/`,
+        url: `subscriptions-to-plans/${id}/cancel/`,
         method: "POST",
         service: "payment",
       }),
