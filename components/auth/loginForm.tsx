@@ -6,7 +6,7 @@ import { useLoginMutation, useResendCodeMutation,
 	useVerifyCodeMutation,  } from '../../redux/features/authApiSlice';
 import { toast } from "react-toastify";
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { LoginErrorResponse, LoginResponse } from '../types/authResponse';
 import { LoginFormData } from '../types/authForms';
 import { setCookie } from 'cookies-next';
@@ -20,6 +20,8 @@ export default function LoginForm() {
   const [currentStep, setCurrentStep] = useState<"EMAIL" | "VERIFICATION" | "PASSWORD">("EMAIL");
   const [verifiedEmail, setVerifiedEmail] = useState<string>("");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextUrl = searchParams.get('next');
   const [showPassWord,setShowPassword]=useState(false)
 
   // API mutations
@@ -69,7 +71,7 @@ export default function LoginForm() {
         password: data.password,
       }).unwrap();
       toast.success("Login successful. Welcome back!");
-      router.push("/dashboard");
+      router.push(nextUrl || "/dashboard");
     } catch (err) {
       const error = err as LoginErrorResponse;
       const errorMessage = error.data?.detail || "Login failed.";

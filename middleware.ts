@@ -13,7 +13,9 @@ export function middleware(request: NextRequest) {
   }
 
   if (!isPublicPath && !token) {
-    return NextResponse.redirect(new URL("/accounts/signin", request.url))
+    const loginUrl = new URL("/accounts/signin", request.url)
+    loginUrl.searchParams.set("next", path)
+    return NextResponse.redirect(loginUrl)
   }
 
   return NextResponse.next()
