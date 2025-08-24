@@ -485,7 +485,7 @@ export default function HomePage() {
               ))}
             {error && <p>Error loading plans</p>}
             {pricingPlans?.map((plan, index) => (
-              <PricingCard key={plan.id} plan={plan} isPopular={index === 1} />
+              <PricingCard key={plan.id} plan={plan} isPopular={index === 2} />
             ))}
           </div>
 
