@@ -41,12 +41,16 @@ function ConversationBubble({ message, isAI, delay = 0 }) {
 }
 
 // Pricing Card Component
-function PricingCard({ plan, isPopular = false }: { plan: SubscriptionPlan; isPopular?: boolean }) {
+function PricingCard({ plan, isPopular = false, index = 0 }: { plan: SubscriptionPlan; isPopular?: boolean; index?: number }) {
   const [showAllFeatures, setShowAllFeatures] = useState(false)
 
   const features: (Feature | { name: string })[] = [...plan.features]
   if (plan.intera_coins_reward) {
     features.unshift({ name: `${plan.intera_coins_reward} Intera Coins for agentic conversation` })
+  }
+
+  if (index > 0) {
+    features.splice(1, 0, { name: "All features of the previous plan" })
   }
 
   const displayedFeatures = showAllFeatures ? features : features.slice(0, 10)
@@ -479,7 +483,7 @@ export default function HomePage() {
               ))}
             {error && <p>Error loading plans</p>}
             {pricingPlans?.map((plan, index) => (
-              <PricingCard key={plan.id} plan={plan} isPopular={index === 2} />
+              <PricingCard key={plan.id} plan={plan} isPopular={index === 2} index={index} />
             ))}
           </div>
 
