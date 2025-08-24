@@ -183,7 +183,7 @@ export default function HomePage() {
                 <Link href="/accounts/signin">Sign In</Link>
               </Button>
               <Button asChild className="bg-gray-800 hover:bg-gray-900 text-white">
-                <Link href="/accounts">Start Free Trial</Link>
+                <a href="#pricing">Get Started</a>
               </Button>
             </div>
 
@@ -224,7 +224,7 @@ export default function HomePage() {
                     <Link href="/accounts/signin">Sign In</Link>
                   </Button>
                   <Button asChild className="bg-gray-800 hover:bg-gray-900 text-white">
-                    <Link href="/accounts">Start Free Trial</Link>
+                    <Link href="/accounts">Get Started</Link>
                   </Button>
                 </div>
               </div>
