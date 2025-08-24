@@ -24,7 +24,9 @@ interface InventoryColumn<T> {
   render?: InventoryColumnRender;
 }
 
-const formatQuantity = (value: number): number => {
+const formatQuantity = (value: any): number => {
+  value = parseFloat(value);
+
   if (value === null || value === undefined) return 0;
 
   const decimalPart = value.toString().split('.')[1];
