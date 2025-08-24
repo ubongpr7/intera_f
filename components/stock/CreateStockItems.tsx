@@ -9,8 +9,22 @@ import { PACKAGING_OPTIONS } from "./options";
 import { useGetMinimalInventoryQuery } from "@/redux/features/inventory/inventoryAPiSlice";
 import { toast } from "react-toastify";
 import { Edit, Trash2 } from "lucide-react";
+import { get } from "http";
+import { formatCurrency, getCurrencySymbolForProfile } from "@/lib/currency-utils";
+import { getCookie } from "cookies-next";
 
-const inventoryColumns: Column<StockItem>[] = [
+interface InventoryColumnRender {
+  (value: any, row?: StockItem): React.ReactNode;
+}
+
+interface InventoryColumn<T> {
+  header: string;
+  accessor: keyof T;
+  className?: string;
+  render?: InventoryColumnRender;
+}
+
+const inventoryColumns: InventoryColumn<StockItem>[] = [
   {
     header: 'Name',
     accessor: 'name',
@@ -19,21 +33,20 @@ const inventoryColumns: Column<StockItem>[] = [
   {
     header: 'Quantity',
     accessor: 'quantity',
-    render:(value)=>value||0,
+    render: (value: number) => value || 0,
     className: 'font-medium',
   },
   {
     header: 'Purchase Price',
     accessor: 'purchase_price',
+    render: (value: number) => formatCurrency(`${getCookie('currency') || 'NGN'}`, value),
     className: 'font-medium',
   },
-  
   {
     header: 'Stock Keeping Unit',
     accessor: 'sku',
     className: 'font-medium',
   },
-  
   {
     header: 'Installed In',
     accessor: 'belongs_to',
