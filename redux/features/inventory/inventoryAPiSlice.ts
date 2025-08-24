@@ -30,6 +30,13 @@ export const inventoryApiSlice = apiSlice.injectEndpoints({
 
       }),
     }),
+    deleteCategory: builder.mutation({
+      query: (id) => ({
+        url: `/${management_api}/categories/${id}/`,
+        method: 'DELETE',
+				service:service,
+      }),
+    }),
     updateInventory: builder.mutation({
       query: ({ id, data }) => ({
         url: `/${management_api}/inventories/${id}/`,
@@ -69,5 +76,6 @@ export const {
   useGetMinimalInventoryQuery,
   useGetInventoryCategoriesQuery,
   useUpdateCategoryMutation,
+  useDeleteCategoryMutation,
   useGetInventoryDataQuery
 } = inventoryApiSlice;

@@ -26,6 +26,13 @@ export const stockApiSlice = apiSlice.injectEndpoints({
 				service:service,
       }),
     }),
+    deleteStockItem: builder.mutation({
+      query: (id) => ({
+        url: `/${management_api}/stock-item/${id}/`,
+        method: 'DELETE',
+				service:service,
+      }),
+    }),
     getStockItem: builder.query({
       query: (id) => ({
         url:`/${management_api}/stock-item/${id}/`,
@@ -54,6 +61,13 @@ export const stockApiSlice = apiSlice.injectEndpoints({
         url: `/${management_api}/locations/${id}/`,
         method: 'PATCH',
         body: data,
+				service:service,
+      }),
+    }),
+    deleteStockItemLocation: builder.mutation({
+      query: (id) => ({
+        url: `/${management_api}/locations/${id}/`,
+        method: 'DELETE',
 				service:service,
       }),
     }),
@@ -101,11 +115,13 @@ export const stockApiSlice = apiSlice.injectEndpoints({
 export const { 
   useCreateStockItemMutation,
   useUpdateStockItemMutation,
+  useDeleteStockItemMutation,
   useGetStockItemQuery,
   useGetStockItemDataQuery,
 
   useCreateStockItemLocationMutation,
   useUpdateStockItemLocationMutation,
+  useDeleteStockItemLocationMutation,
   useGetStockItemLocationQuery,
   useGetStockItemDataLocationQuery,
     useGetFilteredStockItemDataLocationQuery,

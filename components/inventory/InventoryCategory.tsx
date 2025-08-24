@@ -2,13 +2,14 @@
 import { useEffect, useState } from 'react';
 import { PageHeader } from "../inventory/PageHeader";
 import { useRouter } from 'nextjs-toploader/app';
-import { DataTable, Column } from "../common/DataTable/DataTable";
-import { useCreateCategoryMutation, useGetInventoryCategoriesQuery, useUpdateCategoryMutation } from "../../redux/features/inventory/inventoryAPiSlice";
+import { DataTable, Column, ActionButton } from "../common/DataTable/DataTable";
+import { useCreateCategoryMutation, useGetInventoryCategoriesQuery, useUpdateCategoryMutation, useDeleteCategoryMutation } from "../../redux/features/inventory/inventoryAPiSlice";
 import { CategoryData } from '../interfaces/inventory';
 import CustomCreateCard from '../common/createCard';
 import { toast } from 'react-toastify';
 import { useGetStockItemDataLocationQuery } from '@/redux/features/stock/stockAPISlice';
 import { RefetchDataProp } from '../interfaces/common';
+import { Edit, Trash2 } from 'lucide-react';
 
 const inventoryColumns: Column<CategoryData>[] = [
   {
@@ -37,6 +38,7 @@ function InventoryCategoryView({ refetchData, setRefetchData }: RefetchDataProp)
   const { data: stockLocationData, isLoading: stockLocationsLoading, refetch: refetchLocation } = useGetStockItemDataLocationQuery();
   const [categoryDetail, setCategoryDetail] = useState<CategoryData | null>(null); // Changed to null for initial state
   const [updateCategory, { isLoading: isUpdatingCategory }] = useUpdateCategoryMutation();
+  const [deleteCategory, { isLoading: isDeletingCategory }] = useDeleteCategoryMutation();
   const [itemId, setItemId] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
@@ -76,24 +78,46 @@ function InventoryCategoryView({ refetchData, setRefetchData }: RefetchDataProp)
     await refetch();
     setIsCreateOpen(false);
     setRefetchData(true);
-    
+    toast.success("Category created successfully!");
   };
 
   const handleUpdate = async (updatedData: Partial<CategoryData>) => {
-    if (!categoryDetail || !itemId) return;
-    await updateCategory({ data: updatedData, id: itemId }).unwrap();
+    if (!categoryDetail) return;
+    await updateCategory({ data: updatedData, id: categoryDetail.id }).unwrap();
     await refetch();
     setIsCreateOpen(false);
-    setRefetchData(true);
     setCategoryDetail(null); // Clear editing state
-    
+    toast.success("Category updated successfully!");
   };
 
-  const handleRowClick = (row: CategoryData) => {
-    setItemId(row.id);
-    setCategoryDetail(row);
-    setIsCreateOpen(true);
+  const handleDelete = async (id: string) => {
+    if (window.confirm("Are you sure you want to delete this category?")) {
+      try {
+        await deleteCategory(id).unwrap();
+        await refetch();
+        toast.success("Category deleted successfully!");
+      } catch (error) {
+        toast.error("Failed to delete category.");
+      }
+    }
   };
+
+  const actionButtons: ActionButton<CategoryData>[] = [
+    {
+      label: "Edit",
+      icon: Edit,
+      onClick: (row) => {
+        setCategoryDetail(row);
+        setIsCreateOpen(true);
+      },
+    },
+    {
+      label: "Delete",
+      icon: Trash2,
+      onClick: (row) => handleDelete(row.id),
+      className: "text-red-600 hover:text-red-800",
+    },
+  ];
 
   if (error) {
     return (
@@ -110,7 +134,7 @@ function InventoryCategoryView({ refetchData, setRefetchData }: RefetchDataProp)
         columns={inventoryColumns}
         data={data || []}
         isLoading={isLoading}
-        onRowClick={handleRowClick}
+        actionButtons={actionButtons}
       />
       {isCreateOpen && (
         <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>
