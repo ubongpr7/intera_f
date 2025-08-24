@@ -152,7 +152,7 @@ export default function HomePage() {
   const [activeDemo, setActiveDemo] = useState(0)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  const { data: pricingPlans, isLoading, error } = useGetSubscriptionPlansQuery({})
+  const { data: pricingPlans, isLoading, error } = useGetSubscriptionPlansQuery({ application__slug: "inventory-system" })
 
   const conversations = [
     [

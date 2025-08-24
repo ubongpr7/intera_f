@@ -72,8 +72,8 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
 
     // Subscription Plans
     getSubscriptionPlans: builder.query({
-      query: () => ({
-        url: "subscriptions/",
+      query: (params = {}) => ({
+        url: `subscriptions/?${new URLSearchParams(params).toString()}`,
         service: "payment",
       }),
     }),
