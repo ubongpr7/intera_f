@@ -248,18 +248,12 @@ export default function HomePage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" asChild className="bg-gray-800 hover:bg-gray-900 text-white px-8 py-4 text-lg">
-                <Link href="/accounts">
-                  Start Free Trial
+                <Link href="#pricing">
+                  Get Started
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-gray-400 text-gray-700 hover:bg-gray-200 px-8 py-4 text-lg bg-transparent"
-              >
-                View Demo
-              </Button>
+              
             </div>
           </div>
         </div>
@@ -489,12 +483,6 @@ export default function HomePage() {
             ))}
           </div>
 
-          <div className="text-center mt-12">
-            <p className="text-gray-600 mb-6">All plans include 14-day free trial • No setup fees • Cancel anytime</p>
-            <Button size="lg" asChild className="bg-gray-800 hover:bg-gray-900 text-white">
-              <Link href="/accounts">Start Free Trial</Link>
-            </Button>
-          </div>
         </div>
       </section>
 
@@ -538,8 +526,9 @@ export default function HomePage() {
                 asChild
                 className="bg-gray-800 hover:bg-gray-900 text-white text-lg px-12 py-4 animate-pulse-glow"
               >
-                <Link href="/accounts">Start Your AI Agent Now</Link>
+                <Link href="#pricing">Start Your AI Agent Now</Link>
               </Button>
+              {/** 
               <Button
                 size="lg"
                 variant="outline"
@@ -547,6 +536,7 @@ export default function HomePage() {
               >
                 <Link href="/demo">Schedule Demo</Link>
               </Button>
+              */}
             </div>
             <p className="text-gray-600 mt-8">
               No credit card required • AI agents activate instantly • 14-day free trial
