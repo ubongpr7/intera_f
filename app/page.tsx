@@ -108,7 +108,7 @@ function PricingCard({ plan, isPopular = false }: { plan: SubscriptionPlan; isPo
         {plan.name === "Enterprise" ? (
           <Link href="/contact">Contact Sales</Link>
         ) : (
-          <Link href={`/accounts?plan_id=${plan.id}`}>Start Free Trial</Link>
+          <Link href={`/accounts?plan_id=${plan.id}`}>Get Started</Link>
         )}
       </Button>
     </motion.div>
