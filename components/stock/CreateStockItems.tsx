@@ -89,14 +89,10 @@ function StockItems({reference}:{reference:string}) {
 
     const handleUpdate = async (updatedData: Partial<StockItem>) => {
       if (!editingStockItem) return;
-      try {
         await updateStockItem({ id: editingStockItem.id, data: updatedData }).unwrap();
         setEditingStockItem(null);
         await refetch();
-        toast.success("Stock item updated successfully!");
-      } catch (error) {
-        toast.error("Failed to update stock item.");
-      }
+       
     };
 
     const handleDelete = async (id: string) => {
