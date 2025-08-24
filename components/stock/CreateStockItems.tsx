@@ -23,6 +23,12 @@ const inventoryColumns: Column<StockItem>[] = [
     className: 'font-medium',
   },
   {
+    header: 'Purchase Price',
+    accessor: 'purchase_price',
+    className: 'font-medium',
+  },
+  
+  {
     header: 'Stock Keeping Unit',
     accessor: 'sku',
     className: 'font-medium',
