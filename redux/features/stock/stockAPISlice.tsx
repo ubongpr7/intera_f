@@ -20,7 +20,7 @@ export const stockApiSlice = apiSlice.injectEndpoints({
     
     updateStockItem: builder.mutation({
       query: ({ id, data }) => ({
-        url: `/${management_api}/stock-item/${id}/`,
+        url: `/${management_api}/stock-items/${id}/`,
         method: 'PATCH',
         body: data,
 				service:service,
@@ -28,14 +28,14 @@ export const stockApiSlice = apiSlice.injectEndpoints({
     }),
     deleteStockItem: builder.mutation({
       query: (id) => ({
-        url: `/${management_api}/stock-item/${id}/`,
+        url: `/${management_api}/stock-items/${id}/`,
         method: 'DELETE',
 				service:service,
       }),
     }),
     getStockItem: builder.query({
       query: (id) => ({
-        url:`/${management_api}/stock-item/${id}/`,
+        url:`/${management_api}/stock-items/${id}/`,
 				service:service,
     }),
   }),
