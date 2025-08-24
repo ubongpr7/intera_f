@@ -136,7 +136,7 @@ function StockItems({reference}:{reference:string}) {
         'packaging',
         'notes',
         'link',
-        'delete_on_deplete',
+        // 'delete_on_deplete',
 
       ];
       
