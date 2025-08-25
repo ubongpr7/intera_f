@@ -525,7 +525,7 @@ export default function HomePage() {
             <div>
               <div className="flex items-center mb-4">
               <Link href="/" className="flex items-center space-x-2">
-              <Image src="https://interabucket.s3.amazonaws.com/attachments/product/dark_intera-202508252114.png" alt="Intera logo" width={100} height={100} />
+              <Image src="https://interabucket.s3.amazonaws.com/attachments/product/light_intera-202508252032.png" alt="Intera logo" width={100} height={100} />
             </Link>
               </div>
               <p className="text-gray-400">The central hub for intelligent inventory and POS management.</p>
