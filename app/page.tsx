@@ -158,8 +158,8 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <Link href="/" className="flex items-center space-x-2">
-              <Image src="/assets/light_intera.png" alt="Intera logo" width={100} height={100} className="block dark:hidden" />
-              <Image src="/assets/dark_intera.png" alt="Intera logo" width={100} height={100} className="hidden dark:block" />
+              <Image src="https://interabucket.s3.amazonaws.com/attachments/product/light_intera-202508252032.png" alt="Intera logo" width={100} height={100} className="block dark:hidden" />
+              <Image src="https://interabucket.s3.amazonaws.com/attachments/product/dark_intera-202508252034.png" alt="Intera logo" width={100} height={100} className="hidden dark:block" />
             </Link>
 
             {/* Desktop Navigation */}
@@ -208,8 +208,8 @@ export default function HomePage() {
             <div className="md:hidden py-4 border-t border-gray-200">
               <div className="flex flex-col space-y-4">
               <Link href="/" className="flex items-center space-x-2">
-              <Image src="/assets/light_intera.png" alt="Intera logo" width={100} height={100} className="block dark:hidden" />
-              <Image src="/assets/dark_intera.png" alt="Intera logo" width={100} height={100} className="hidden dark:block" />
+              <Image src="https://interabucket.s3.amazonaws.com/attachments/product/light_intera-202508252032.png" alt="Intera logo" width={100} height={100} className="block dark:hidden" />
+              <Image src="https://interabucket.s3.amazonaws.com/attachments/product/dark_intera-202508252034.png" alt="Intera logo" width={100} height={100} className="hidden dark:block" />
             </Link>
                 <a href="#features" className="text-gray-600 hover:text-gray-900 font-sans">
                   Features
@@ -559,7 +559,7 @@ export default function HomePage() {
             <div>
               <div className="flex items-center mb-4">
               <Link href="/" className="flex items-center space-x-2">
-              <Image src="/assets/dark_intera.png" alt="Intera logo" width={100} height={100} />
+              <Image src="https://interabucket.s3.amazonaws.com/attachments/product/dark_intera-202508252034.png" alt="Intera logo" width={100} height={100} />
             </Link>
               </div>
               <p className="text-gray-400">The central hub for intelligent inventory and POS management.</p>

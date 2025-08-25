@@ -10,9 +10,9 @@ export const metadata: Metadata = {
   title: "Intera Inventory",
   description: "AI-driven IMS",
   icons: {
-    icon: ['/assets/light_intera.png'],
-    apple:['/assets/light_intera.png'],
-    shortcut:['/assets/light_intera.png']
+    icon: ['https://interabucket.s3.amazonaws.com/attachments/product/light_intera-202508252032.png'],
+    apple:['https://interabucket.s3.amazonaws.com/attachments/product/light_intera-202508252032.png'],
+    shortcut:['https://interabucket.s3.amazonaws.com/attachments/product/light_intera-202508252032.png']
   },
 };
 
