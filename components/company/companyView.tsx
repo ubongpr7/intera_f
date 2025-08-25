@@ -114,6 +114,9 @@ function CompanyView() {
         data={data || []}
         isLoading={isLoading}
         onRowClick={handleRowClick}
+        searchableFields={['name', 'email', 'phone']}
+        filterableFields={['company_type']}
+        sortableFields={['name', 'email', 'phone']}
       />
 
       {/* Always render CustomCreateCard but control visibility */}

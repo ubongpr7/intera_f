@@ -189,6 +189,9 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
         data={data || []}
         isLoading={isLoading}
         onRowClick={handleRowClick}
+        searchableFields={['name', 'external_system_id']}
+        filterableFields={['category_name']}
+        sortableFields={['name', 'external_system_id']}
       />
 
       {/* Always render CustomCreateCard but control visibility */}

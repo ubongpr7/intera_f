@@ -119,6 +119,10 @@ const ProductVariantManager = ({ productId, refetchData, setRefetchData,ProductD
         data={variants || []}
         isLoading={isVariantsFetching}
         onRowClick={handleRowClick}
+        searchableFields={["pos_display_name", "variant_sku"]}
+        filterableFields={["active", "pos_visible"]}
+        sortableFields={["pos_display_name", "variant_sku"]}
+        actionButtons={actionButtons}
       />
 
       {isCreateOpen && (

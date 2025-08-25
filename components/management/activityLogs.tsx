@@ -143,6 +143,9 @@ const handleRowClick = (row: ActivityLogInterface) => {
             data={data || []}
             isLoading={isLoading}
             onRowClick={handleRowClick}
+            searchableFields={['action', 'model_name', 'model_identifier']}
+            filterableFields={['action']}
+            sortableFields={['action', 'model_name', 'model_identifier']}
           />
     
   )

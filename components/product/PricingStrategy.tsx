@@ -214,6 +214,9 @@ export default function ProductPricingStrategies({ productId,product }: ProductP
         data={pricingStrategies || []}
         isLoading={isLoading}
         onRowClick={handleRowClick}
+        searchableFields={['name']}
+        filterableFields={['strategy']}
+        sortableFields={['name', 'strategy']}
       />
 
       {/* Create/Edit Pricing Strategy Modal */}

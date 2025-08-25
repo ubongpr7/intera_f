@@ -118,6 +118,9 @@ const StaffRole =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
             data={data || []}
             isLoading={isLoading}
             onRowClick={handleRowClick}
+            searchableFields={['name', 'description']}
+            filterableFields={[]}
+            sortableFields={['name', 'description']}
             />
 
             <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>

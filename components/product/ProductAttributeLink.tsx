@@ -173,8 +173,11 @@ const interfaceKeys: (keyof ProductAttributeLink)[] = [
         data={attributeLinks || []}
         isLoading={isAttributeLinksLoading}
         onRowClick={handleRowClick}
-        
+        searchableFields={['attribute_name']}
+        filterableFields={['attribute_type']}
+        sortableFields={['attribute_name', 'attribute_type']}
       />
+
 
       {isCreateOpen && (
         <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>

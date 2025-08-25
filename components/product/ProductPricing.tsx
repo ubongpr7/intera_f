@@ -255,6 +255,10 @@ const defaultValues: Partial<PricingRule> = {
         data={pricingRules || []}
         isLoading={isLoading}
         onRowClick={handleRowClick}
+        searchableFields={['name']}
+        filterableFields={['rule_type', 'discount_type']}
+        sortableFields={['name', 'rule_type', 'discount_type']}
+        actionButtons={actionButtons}
       />
 
       {/* Create/Edit Pricing Rule Modal */}

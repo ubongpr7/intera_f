@@ -74,6 +74,10 @@ function ProductCategoryView() {
         data={data || []}
         isLoading={isLoading}
         onRowClick={handleRowClick}
+        searchableFields={['name']}
+        filterableFields={['parent']}
+        sortableFields={['name']}
+  
         
       />
       <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>
