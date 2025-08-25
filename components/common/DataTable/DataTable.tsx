@@ -58,6 +58,8 @@ interface DataTableProps<T> {
   showRowNumbers?: boolean
   rowNumberHeader?: string
   startNumberFrom?: number
+  title?: string
+  onClose?: () => void
   generalButtons?: GeneralButton<T>[]
   getRowId?: (row: T) => string
   showSelectAll?: boolean
@@ -93,6 +95,8 @@ export function DataTable<T>({
   qrScannableField,
   barcodeScannableField,
   onScanSuccess,
+  title,
+  onClose,
 }: DataTableProps<T>) {
   const filterDropdownRef = React.useRef<HTMLDivElement>(null)
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false)
@@ -358,6 +362,20 @@ export function DataTable<T>({
 
   return (
     <div className="rounded-lg border border-gray-200 overflow-hidden">
+      {(title || onClose) && (
+        <div className="flex items-center justify-between px-4 py-2 border-b bg-white">
+          {title && <h1 className="text-lg md:text-xl font-semibold">{title}</h1>}
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium rounded border border-gray-300 bg-white hover:bg-gray-50"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+              <span className="hidden sm:inline">New {title}</span>
+            </button>
+          )}
+        </div>
+      )}
       <div className="p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
         <div className="relative w-56">
           <input
