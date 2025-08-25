@@ -63,6 +63,7 @@ interface DataTableProps<T> {
   showSelectAll?: boolean
   searchableFields?: (keyof T)[]
   filterableFields?: (keyof T)[]
+  rangeFilterFields?: (keyof T)[]
   sortableFields?: (keyof T)[]
   qrScannableField?: keyof T; // Field to extract from QR code for filtering
   barcodeScannableField?: keyof T; // Field to extract from Barcode for filtering
@@ -87,6 +88,7 @@ export function DataTable<T>({
   showSelectAll,
   searchableFields = [],
   filterableFields = [],
+  rangeFilterFields = [],
   sortableFields = [],
   qrScannableField,
   barcodeScannableField,
@@ -96,6 +98,8 @@ export function DataTable<T>({
   const [selectAll, setSelectAll] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [filters, setFilters] = useState<Record<keyof T, string>>({} as Record<keyof T, string>)
+  const [rangeFilters, setRangeFilters] = useState<Record<keyof T, {from: string, to: string}>>({} as Record<keyof T, {from: string, to: string}>)
+  const [filterDropdownOpen, setFilterDropdownOpen] = useState(false)
   const [sortConfig, setSortConfig] = useState<{ key: keyof T; direction: "ascending" | "descending" } | null>(null)
 
   const filterOptions = useMemo(() => {
@@ -133,10 +137,25 @@ export function DataTable<T>({
       return false
     })
   }).filter((row) => {
-    return Object.entries(filters).every(([field, value]) => {
+    // Handle exact filters
+    const exactMatch = Object.entries(filters).every(([field, value]) => {
       if (value === "") return true
       return row[field as keyof T] === value
     })
+    // Handle range filters
+    const rangeMatch = rangeFilterFields.every((field) => {
+      const filter = rangeFilters[field]
+      if (!filter || (filter.from === "" && filter.to === "")) return true
+      let rowValue = row[field]
+      let numValue = parseFloat(rowValue as any)
+      if (isNaN(numValue)) return true // ignore non-numeric
+      let from = filter.from !== "" ? parseFloat(filter.from) : undefined
+      let to = filter.to !== "" ? parseFloat(filter.to) : undefined
+      if (from !== undefined && numValue < from) return false
+      if (to !== undefined && numValue > to) return false
+      return true
+    })
+    return exactMatch && rangeMatch
   })
 
   const requestSort = (key: keyof T) => {
@@ -329,6 +348,78 @@ export function DataTable<T>({
           onChange={(e) => setSearchTerm(e.target.value)}
           className="border border-gray-300 rounded-md px-3 py-1 text-sm"
         />
+        <div className="relative">
+          <button
+            className="border border-gray-300 rounded-md px-3 py-1 text-sm bg-white"
+            onClick={() => setFilterDropdownOpen((open) => !open)}
+          >
+            Filter
+          </button>
+          {filterDropdownOpen && (
+            <div className="absolute z-10 bg-white border border-gray-200 rounded shadow-lg p-4 min-w-[250px] right-0">
+              <div className="space-y-2">
+                {filterableFields.map((field) => (
+                  <div key={field as string}>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">{String(field)}</label>
+                    <select
+                      value={filters[field] || ""}
+                      onChange={(e) => setFilters({ ...filters, [field]: e.target.value })}
+                      className="border border-gray-300 rounded-md px-2 py-1 text-sm w-full"
+                    >
+                      <option value="">All {String(field)}</option>
+                      {filterOptions[field]?.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+                {rangeFilterFields.map((field) => (
+                  <div key={field as string} className="flex flex-col">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">{String(field)} (Range)</label>
+                    <div className="flex space-x-2">
+                      <input
+                        type="number"
+                        placeholder="From"
+                        value={rangeFilters[field]?.from || ""}
+                        onChange={(e) => setRangeFilters({
+                          ...rangeFilters,
+                          [field]: {
+                            ...rangeFilters[field],
+                            from: e.target.value
+                          }
+                        })}
+                        className="border border-gray-300 rounded-md px-2 py-1 text-sm w-1/2"
+                      />
+                      <input
+                        type="number"
+                        placeholder="To"
+                        value={rangeFilters[field]?.to || ""}
+                        onChange={(e) => setRangeFilters({
+                          ...rangeFilters,
+                          [field]: {
+                            ...rangeFilters[field],
+                            to: e.target.value
+                          }
+                        })}
+                        className="border border-gray-300 rounded-md px-2 py-1 text-sm w-1/2"
+                      />
+                    </div>
+                  </div>
+                ))}
+                <div className="flex justify-end pt-2">
+                  <button
+                    className="px-3 py-1 text-xs font-medium rounded bg-blue-500 text-white hover:bg-blue-600"
+                    onClick={() => setFilterDropdownOpen(false)}
+                  >
+                    Apply
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
         <div className="flex items-center space-x-2">
           {qrScannableField && (
             <button
@@ -348,21 +439,6 @@ export function DataTable<T>({
               <Barcode size={14} className="mr-1" /> Barcode Scan
             </button>
           )}
-          {filterableFields.map((field) => (
-            <select
-              key={field as string}
-              value={filters[field]}
-              onChange={(e) => setFilters({ ...filters, [field]: e.target.value })}
-              className="border border-gray-300 rounded-md px-3 py-1 text-sm"
-            >
-              <option value="">All {String(field)}</option>
-              {filterOptions[field]?.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          ))}
         </div>
         {hasGeneralButtons && (
           <div className="flex items-center space-x-4">

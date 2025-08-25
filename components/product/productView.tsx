@@ -235,22 +235,18 @@ const actionButtons: ActionButton<ProductData>[] = [
         onClose={() =>setIsCreateOpen(true)}      />
       <DataTable<ProductData>
         columns={inventoryColumns}
-
         data={data || []}
         isLoading={isLoading}
-        
         onRowClick={handleRowClick}
         actionButtons={actionButtons}
-        secondaryButton={
-          {
-            label: 'Create Bulk Product',
-            onClick: () => setIsAIBulkCreateOpen(true),
-
-          }
-        }
+        secondaryButton={{
+          label: 'Create Bulk Product',
+          onClick: () => setIsAIBulkCreateOpen(true),
+        }}
         searchableFields={['name', 'barcode']}
-        filterableFields={['category', 'inventory',]}
+        filterableFields={['category', 'inventory']}
         sortableFields={['name', 'barcode']}
+        rangeFilterFields={['cost_price', 'base_price']}
       />
 
       {/* Always render CustomCreateCard but control visibility */}
