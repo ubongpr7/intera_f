@@ -1,7 +1,7 @@
 "use client"
 import type React from "react"
 import { useState, useEffect, useMemo } from "react"
-import { type LucideIcon } from 'lucide-react'
+import { type LucideIcon, QrCode, Barcode } from 'lucide-react'
 import { FieldInfo } from "../fileFieldInfor"
 import LoadingAnimation from "../LoadingAnimation"
 
@@ -64,6 +64,9 @@ interface DataTableProps<T> {
   searchableFields?: (keyof T)[]
   filterableFields?: (keyof T)[]
   sortableFields?: (keyof T)[]
+  qrScannableField?: keyof T; // Field to extract from QR code for filtering
+  barcodeScannableField?: keyof T; // Field to extract from Barcode for filtering
+  onScanSuccess?: (scannedItem: T) => void; // Callback after successful scan and item retrieval
 }
 
 export function DataTable<T>({
@@ -85,6 +88,9 @@ export function DataTable<T>({
   searchableFields = [],
   filterableFields = [],
   sortableFields = [],
+  qrScannableField,
+  barcodeScannableField,
+  onScanSuccess,
 }: DataTableProps<T>) {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [selectAll, setSelectAll] = useState(false)
@@ -278,6 +284,41 @@ export function DataTable<T>({
 
   const hasActions = actionButtons.length > 0 && showActionsColumn
 
+  const handleScan = (scannedValue: string, scanType: 'qr' | 'barcode') => {
+    if (scanType === 'qr' && qrScannableField) {
+      setSearchTerm(scannedValue);
+      const foundItem = data.find(item => String(item[qrScannableField]) === scannedValue);
+      if (foundItem && onScanSuccess) {
+        onScanSuccess(foundItem);
+      }
+    } else if (scanType === 'barcode' && barcodeScannableField) {
+      setSearchTerm(scannedValue);
+      const foundItem = data.find(item => String(item[barcodeScannableField]) === scannedValue);
+      if (foundItem && onScanSuccess) {
+        onScanSuccess(foundItem);
+      }
+    }
+  };
+
+  // Mock scan functions - replace with actual scanner integrations
+  const startQrCodeScan = () => {
+    // In a real application, this would open a QR code scanner
+    // For demonstration, we'll simulate a scan result
+    const mockQrData = prompt("Simulate QR Code Scan (enter value):");
+    if (mockQrData) {
+      handleScan(mockQrData, 'qr');
+    }
+  };
+
+  const startBarcodeScan = () => {
+    // In a real application, this would open a barcode scanner
+    // For demonstration, we'll simulate a scan result
+    const mockBarcodeData = prompt("Simulate Barcode Scan (enter value):");
+    if (mockBarcodeData) {
+      handleScan(mockBarcodeData, 'barcode');
+    }
+  };
+
   return (
     <div className="rounded-lg border border-gray-200 overflow-hidden">
       <div className="p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
@@ -289,6 +330,24 @@ export function DataTable<T>({
           className="border border-gray-300 rounded-md px-3 py-1 text-sm"
         />
         <div className="flex items-center space-x-2">
+          {qrScannableField && (
+            <button
+              onClick={startQrCodeScan}
+              className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-md bg-blue-500 text-white hover:bg-blue-600"
+              title="Scan QR Code"
+            >
+              <QrCode size={14} className="mr-1" /> QR Scan
+            </button>
+          )}
+          {barcodeScannableField && (
+            <button
+              onClick={startBarcodeScan}
+              className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-md bg-green-500 text-white hover:bg-green-600"
+              title="Scan Barcode"
+            >
+              <Barcode size={14} className="mr-1" /> Barcode Scan
+            </button>
+          )}
           {filterableFields.map((field) => (
             <select
               key={field as string}

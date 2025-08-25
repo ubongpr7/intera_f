@@ -146,6 +146,11 @@ function StockLocations({refetchData, setRefetchData}:RefetchDataProp) {
               searchableFields={['name', 'code', 'physical_address']}
               filterableFields={['location_type_name', 'parent_name']}
               sortableFields={['name', 'code', 'physical_address']}
+              qrScannableField="code"
+              barcodeScannableField="code"
+              onScanSuccess={(item) => {
+                toast.info(`Scanned item: ${item.name} (${item.code})`);
+              }}
             />
 
         {(isCreateOpen || editingStockLocation) && (
