@@ -362,6 +362,7 @@ export function DataTable<T>({
 
   return (
     <div className="rounded-lg border border-gray-200 overflow-hidden">
+    <div className="p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
       {(title || onClose) && (
         <div className="flex items-center justify-between px-4 py-2 border-b bg-white">
           {title && <h1 className="text-lg md:text-xl font-semibold">{title}</h1>}
@@ -378,7 +379,6 @@ export function DataTable<T>({
           
         </div>
       )}
-      <div className="p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
         <div className="relative w-56">
           <input
             type="text"
