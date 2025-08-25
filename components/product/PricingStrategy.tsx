@@ -9,7 +9,7 @@ import {
   useDeletePricingStrategyMutation,
   
 } from "@/redux/features/product/productAPISlice"
-import { PageHeader } from "../inventory/PageHeader"
+
 import { useRouter } from "nextjs-toploader/app"
 import { Column, DataTable } from "../common/DataTable/DataTable"
 import { PricingStrategy, Product } from "../interfaces/product"
@@ -204,10 +204,7 @@ export default function ProductPricingStrategies({ productId,product }: ProductP
 
   return (
     <div className="p-4">
-      <PageHeader
-        title={`Pricing Strategies for ${product?.name || 'Product'}`}
-        onClose={() => setIsCreateOpen(true)}
-      />
+      
       
       <DataTable<PricingStrategy>
         columns={pricingStrategyColumns}
@@ -217,6 +214,8 @@ export default function ProductPricingStrategies({ productId,product }: ProductP
         searchableFields={['name']}
         filterableFields={['strategy']}
         sortableFields={['name', 'strategy']}
+        title={`Pricing Strategies for ${product?.name || 'Product'}`}
+        onClose={() => setIsCreateOpen(true)}
       />
 
       {/* Create/Edit Pricing Strategy Modal */}

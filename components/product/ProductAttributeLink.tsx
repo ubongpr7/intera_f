@@ -8,7 +8,7 @@ import {
   useDeleteProductAttributeLinkMutation,
   useGetProductAttributesQuery,
 } from "@/redux/features/product/productAPISlice"
-import { PageHeader } from "../inventory/PageHeader"
+
 import { useRouter } from "nextjs-toploader/app"
 import { Column, DataTable } from "../common/DataTable/DataTable"
 import { ProductAttributeLink, ProductAttribute, Product } from "../interfaces/product"
@@ -163,10 +163,7 @@ const interfaceKeys: (keyof ProductAttributeLink)[] = [
 
   return (
     <div className="p-4">
-      <PageHeader
-        title={`Attribute Links for ${product?.name || 'Product'}`}
-        onClose={() => setIsCreateOpen(true)}
-      />
+      
       
       <DataTable<ProductAttributeLink>
         columns={attributeLinkColumns}
@@ -176,6 +173,8 @@ const interfaceKeys: (keyof ProductAttributeLink)[] = [
         searchableFields={['attribute_name']}
         filterableFields={['attribute_type']}
         sortableFields={['attribute_name', 'attribute_type']}
+        title={`Attribute Links for ${product?.name || 'Product'}`}
+        onClose={() => setIsCreateOpen(true)}
       />
 
 

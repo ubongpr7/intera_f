@@ -1,6 +1,5 @@
 'use client'
 import { useEffect, useState } from 'react';
-import { PageHeader } from "../inventory/PageHeader";
 import { useRouter } from 'nextjs-toploader/app';
 import { DataTable, Column, ActionButton } from "../common/DataTable/DataTable";
 import { useCreateCategoryMutation, useGetInventoryCategoriesQuery, useUpdateCategoryMutation, useDeleteCategoryMutation } from "../../redux/features/inventory/inventoryAPiSlice";
@@ -129,7 +128,6 @@ function InventoryCategoryView({ refetchData, setRefetchData }: RefetchDataProp)
 
   return (
     <div className="p-4">
-      <PageHeader title="Category" onClose={() => setIsCreateOpen(true)} />
       <DataTable<CategoryData>
         columns={inventoryColumns}
         data={data || []}
@@ -138,6 +136,7 @@ function InventoryCategoryView({ refetchData, setRefetchData }: RefetchDataProp)
         searchableFields={['name', 'parent_name']}
         filterableFields={['parent_name']}
         sortableFields={['name', 'parent_name']}
+        title="Category" onClose={() => setIsCreateOpen(true)} 
       />
       {isCreateOpen && (
         <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>

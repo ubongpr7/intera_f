@@ -1,7 +1,7 @@
 'use client'
 import { RoleData } from "../interfaces/management";
 import CustomCreateCard from "../common/createCard";
-import { PageHeader } from "../inventory/PageHeader";
+
 import { useState,useEffect } from "react";
 import { useCreateRoleMutation,useGetRolesQuery, useUpdateRoleMutation } from "../../redux/features/management/groups";
 import { Column, DataTable } from "../common/DataTable/DataTable";
@@ -108,11 +108,6 @@ const StaffRole =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
 
     return (
         <div>
-        
-            <PageHeader
-            title="Roles"
-            onClose={() => setIsCreateOpen(true)}
-            />
             <DataTable<RoleData>
             columns={inventoryColumns}
             data={data || []}
@@ -121,6 +116,8 @@ const StaffRole =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
             searchableFields={['name', 'description']}
             filterableFields={[]}
             sortableFields={['name', 'description']}
+             title="Roles"
+            onClose={() => setIsCreateOpen(true)}
             />
 
             <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>

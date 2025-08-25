@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import {  useGetProductVariantsQuery } from "@/redux/features/product/productAPISlice"
-import { PageHeader } from "@/components/inventory/PageHeader"
+
 import { type Column, DataTable } from "@/components/common/DataTable/DataTable"
 import type { Product, ProductVariant } from "@/components/interfaces/product"
 import LoadingAnimation from "@/components/common/LoadingAnimation"
@@ -112,8 +112,6 @@ const ProductVariantManager = ({ productId, refetchData, setRefetchData,ProductD
 
   return (
     <div className="p-4">
-      <PageHeader title="Product Variants" onClose={() => setIsCreateOpen(true)} />
-
       <DataTable<ProductVariant>
         columns={variantColumns}
         data={variants || []}
@@ -123,6 +121,7 @@ const ProductVariantManager = ({ productId, refetchData, setRefetchData,ProductD
         filterableFields={["active", "pos_visible"]}
         sortableFields={["pos_display_name", "variant_sku"]}
         actionButtons={actionButtons}
+        title="Product Variants" onClose={() => setIsCreateOpen(true)}
       />
 
       {isCreateOpen && (

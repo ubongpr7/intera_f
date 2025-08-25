@@ -137,10 +137,6 @@ const inventoryColumns: Column<PurchaseOrderLineItem>[] = [
       
  return (
     <div>
-    <PageHeader
-            title="Purchase Order Line Items"
-            onClose={() => setIsCreateOpen(true)}
-          />
       <DataTable<PurchaseOrderLineItem>
               columns={inventoryColumns}
               data={lineItems || []}
@@ -149,6 +145,8 @@ const inventoryColumns: Column<PurchaseOrderLineItem>[] = [
               searchableFields={['batch_number', 'quantity', 'unit_price', 'tax_amount', 'discount', 'total_price']}
               filterableFields={['batch_number']}
               sortableFields={['batch_number', 'quantity', 'unit_price', 'tax_amount', 'discount', 'total_price']}
+              title="Purchase Order Line Items"
+            onClose={() => setIsCreateOpen(true)}
             />
 
         {(isCreateOpen || editingLineItem) && (

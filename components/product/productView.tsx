@@ -1,6 +1,6 @@
 'use client'
 import { act, useEffect, useState } from 'react';
-import { PageHeader } from "../inventory/PageHeader";
+
 import { useRouter } from 'nextjs-toploader/app';
 import { Column, DataTable,ActionButton} from "../common/DataTable/DataTable";
 import { ProductData } from "../interfaces/product";

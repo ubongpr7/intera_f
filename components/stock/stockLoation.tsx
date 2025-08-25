@@ -3,7 +3,6 @@ import { StockLocation } from "../interfaces/stock";
 import { Column, DataTable, ActionButton } from "../common/DataTable/DataTable";
 import { useGetStockItemDataLocationQuery, useCreateStockItemLocationMutation, useGetStockLocationTypesQuery, useDeleteStockItemLocationMutation, useUpdateStockItemLocationMutation } from "../../redux/features/stock/stockAPISlice";
 import { useState } from "react";
-import { PageHeader } from "../inventory/PageHeader";
 import CustomCreateCard from '../common/createCard';
 import { useGetCompanyUsersQuery } from "../../redux/features/users/userApiSlice";
 import { RefetchDataProp } from "../interfaces/common";
@@ -133,10 +132,6 @@ function StockLocations({refetchData, setRefetchData}:RefetchDataProp) {
       
  return (
     <div>
-    <PageHeader
-            title="Stock Locations"
-            onClose={() => setIsCreateOpen(true)} 
-          />
       <DataTable<StockLocation>
               columns={inventoryColumns}
               data={StockLocationData || []}
@@ -146,6 +141,8 @@ function StockLocations({refetchData, setRefetchData}:RefetchDataProp) {
               searchableFields={['name', 'code', 'physical_address']}
               filterableFields={['location_type_name', 'parent_name']}
               sortableFields={['name', 'code', 'physical_address']}
+              title="Stock Locations"
+            onClose={() => setIsCreateOpen(true)} 
             />
 
         {(isCreateOpen || editingStockLocation) && (

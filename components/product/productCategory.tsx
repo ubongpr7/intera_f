@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react';
-import { PageHeader } from "../inventory/PageHeader"
+
 import { title } from "process"
 import { useRouter } from 'nextjs-toploader/app'
 import { DataTable,Column } from "../common/DataTable/DataTable";
@@ -68,7 +68,6 @@ function ProductCategoryView() {
 
   return (
     <div>
-      <PageHeader title="Product Category" onClose={()=>{ setIsCreateOpen(true)}}/>
       <DataTable<ProductCategoryData>
         columns={inventoryColumns}
         data={data || []}
@@ -77,7 +76,8 @@ function ProductCategoryView() {
         searchableFields={['name']}
         filterableFields={['parent']}
         sortableFields={['name']}
-  
+        title="Product Category" 
+        onClose={()=>{ setIsCreateOpen(true)}}
         
       />
       <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>

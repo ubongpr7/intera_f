@@ -10,7 +10,7 @@ import {
   useTogglePricingRuleActiveMutation,
 } from "@/redux/features/product/productAPISlice"
 import { useGetProductVariantsQuery } from "@/redux/features/product/productAPISlice"
-import { PageHeader } from "../inventory/PageHeader"
+
 import { useRouter } from "nextjs-toploader/app"
 import { Column, DataTable } from "../common/DataTable/DataTable"
 import { PricingRule, Product, ProductCategory, ProductVariant } from "../interfaces/product"
@@ -245,10 +245,6 @@ const defaultValues: Partial<PricingRule> = {
 
   return (
     <div className="p-4">
-      <PageHeader
-        title={`Pricing Rules for ${product?.name || 'Product'}`}
-        onClose={() => setIsCreateOpen(true)}
-      />
       
       <DataTable<PricingRule>
         columns={pricingRuleColumns}
@@ -259,6 +255,8 @@ const defaultValues: Partial<PricingRule> = {
         filterableFields={['rule_type', 'discount_type']}
         sortableFields={['name', 'rule_type', 'discount_type']}
         actionButtons={actionButtons}
+         title={`Pricing Rules for ${product?.name || 'Product'}`}
+        onClose={() => setIsCreateOpen(true)}
       />
 
       {/* Create/Edit Pricing Rule Modal */}

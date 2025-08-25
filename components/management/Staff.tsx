@@ -1,7 +1,7 @@
 'use client'
 import { UserData } from "../interfaces/User";
 import CustomCreateCard from "../common/createCard";
-import { PageHeader } from "../inventory/PageHeader";
+
 import { useEffect, useState } from "react";
 import { useGetCompanyUsersQuery,useCreateStaffUserMutation } from "../../redux/features/users/userApiSlice";
 import { Column, DataTable } from "../common/DataTable/DataTable";
@@ -116,11 +116,6 @@ const StaffCreateCard =({refetchData, setRefetchData}:StaffManagementRefetchProp
     
     return (
         <div>
-        
-            <PageHeader
-            title="Staff"
-            onClose={() => setIsCreateOpen(true)}
-            />
             <DataTable<UserData>
             columns={inventoryColumns}
             data={data || []}
@@ -129,6 +124,8 @@ const StaffCreateCard =({refetchData, setRefetchData}:StaffManagementRefetchProp
             searchableFields={['first_name', 'email', 'phone']}
             filterableFields={[]}
             sortableFields={['first_name', 'email', 'phone']}
+            title="Staff"
+            onClose={() => setIsCreateOpen(true)}
             />
 
             <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>

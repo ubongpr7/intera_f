@@ -1,6 +1,5 @@
 'use client'
 import { use, useEffect, useState } from 'react';
-import { PageHeader } from "../inventory/PageHeader";
 import { useRouter } from 'nextjs-toploader/app';
 import { Column, DataTable, ActionButton } from "../common/DataTable/DataTable";
 import { ContactPersonInterface } from "../interfaces/company";
@@ -103,10 +102,7 @@ function ContactPersonView({company_id}:CompanyProps) {
 
   return (
     <div>
-      <PageHeader
-        title="Contact"
-        onClose={() => setIsCreateOpen(true)}
-      />
+      
       <DataTable<ContactPersonInterface>
         columns={inventoryColumns}
         data={data || []}
@@ -115,6 +111,8 @@ function ContactPersonView({company_id}:CompanyProps) {
         searchableFields={['name', 'role', 'email', 'phone']}
         filterableFields={['role']}
         sortableFields={['name', 'role', 'email', 'phone']}
+        title="Contact"
+        onClose={() => setIsCreateOpen(true)}
       />
 
       {(isCreateOpen || editingContact) && (

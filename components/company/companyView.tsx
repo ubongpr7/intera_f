@@ -1,6 +1,5 @@
 'use client'
 import { use, useEffect, useState } from 'react';
-import { PageHeader } from "../inventory/PageHeader";
 import { useRouter } from 'nextjs-toploader/app';
 import { Column, DataTable } from "../common/DataTable/DataTable";
 import { CompanyDataInterface } from "../interfaces/company";
@@ -105,10 +104,7 @@ function CompanyView() {
 
   return (
     <div>
-      <PageHeader
-        title="Company"
-        onClose={() => setIsCreateOpen(true)}
-      />
+      
       <DataTable<CompanyDataInterface>
         columns={inventoryColumns}
         data={data || []}
@@ -117,6 +113,8 @@ function CompanyView() {
         searchableFields={['name', 'email', 'phone']}
         filterableFields={['company_type']}
         sortableFields={['name', 'email', 'phone']}
+         title="Company"
+        onClose={() => setIsCreateOpen(true)}
       />
 
       {/* Always render CustomCreateCard but control visibility */}

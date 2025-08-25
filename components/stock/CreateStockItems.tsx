@@ -3,7 +3,7 @@ import { StockItem } from "../interfaces/stock";
 import { Column, DataTable, ActionButton } from "../common/DataTable/DataTable";
 import { useGetStockItemDataForInventoryQuery, useCreateStockItemMutation, useGetStockItemDataLocationQuery, useUpdateStockItemMutation, useDeleteStockItemMutation } from "../../redux/features/stock/stockAPISlice";
 import { useEffect, useState } from "react";
-import { PageHeader } from "../inventory/PageHeader";
+
 import CustomCreateCard from '../common/createCard';
 import { PACKAGING_OPTIONS } from "./options";
 import { useGetMinimalInventoryQuery } from "@/redux/features/inventory/inventoryAPiSlice";
@@ -174,10 +174,7 @@ function StockItems({reference}:{reference:string}) {
       
  return (
     <div>
-    <PageHeader
-            title="Stock Items"
-            onClose={() => setIsCreateOpen(true)} // Renamed to onCreate for clarity
-          />
+    
       <DataTable<StockItem>
               columns={inventoryColumns}
               data={stockItems || []}
@@ -187,6 +184,8 @@ function StockItems({reference}:{reference:string}) {
               searchableFields={['name', 'sku']}
               filterableFields={['status']}
               sortableFields={['name', 'sku']}
+               title="Stock Items"
+            onClose={() => setIsCreateOpen(true)} 
             />
 
         {(isCreateOpen || editingStockItem) && (

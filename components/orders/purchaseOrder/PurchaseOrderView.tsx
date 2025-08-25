@@ -125,10 +125,7 @@ function PurchaseOrderView() {
 
   return (
     <div>
-      <PageHeader
-        title="Purchase Order"
-        onClose={() => setIsCreateOpen(true)} // Renamed to onCreate for clarity
-      />
+      
       <DataTable<PurchaseOrderInterface>
         columns={inventoryColumns}
         data={data || []}
@@ -137,6 +134,8 @@ function PurchaseOrderView() {
         searchableFields={['reference']}
         filterableFields={['status', 'received_by', 'supplier']}
         sortableFields={['reference']}
+        title="Purchase Order"
+        onClose={() => setIsCreateOpen(true)} // Renamed to onCreate for clarity
       />
 
       <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>

@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react';
-import { PageHeader } from "../inventory/PageHeader";
+
 import { useRouter } from 'nextjs-toploader/app';
 import { Column, DataTable } from "../common/DataTable/DataTable";
 import { InventoryData, inventoryTypes } from "../interfaces/inventory";
@@ -181,9 +181,7 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
 
   return (
     <div>
-      <PageHeader
-        title="Inventory"
-        onClose={() =>setIsCreateOpen(true)}      />
+      
       <DataTable<InventoryData>
         columns={inventoryColumns}
         data={data || []}
@@ -192,6 +190,8 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
         searchableFields={['name', 'external_system_id']}
         filterableFields={['category_name']}
         sortableFields={['name', 'external_system_id']}
+         title="Inventory"
+        onClose={() =>setIsCreateOpen(true)} 
       />
 
       {/* Always render CustomCreateCard but control visibility */}

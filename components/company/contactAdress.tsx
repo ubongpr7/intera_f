@@ -1,6 +1,5 @@
 'use client'
 import { use, useEffect, useState } from 'react';
-import { PageHeader } from "../inventory/PageHeader";
 import { useRouter } from 'nextjs-toploader/app';
 import { Column, DataTable, ActionButton } from "../common/DataTable/DataTable";
 import { CompanyAddressDataInterface } from "../interfaces/company";
@@ -109,10 +108,7 @@ function CompanyAddressView({company_id}:CompanyProps) {
 
   return (
     <div>
-      <PageHeader
-        title="Company Adress"
-        onClose={() => setIsCreateOpen(true)}
-      />
+      
       <DataTable<CompanyAddressDataInterface>
         columns={inventoryColumns}
         data={data || []}
@@ -121,6 +117,8 @@ function CompanyAddressView({company_id}:CompanyProps) {
         searchableFields={['title', 'postal_code', 'full_address']}
         filterableFields={['title', 'postal_code']}
         sortableFields={['title', 'postal_code', 'full_address']}
+        title="Company Adress"
+        onClose={() => setIsCreateOpen(true)}
       />
 
       {(isCreateOpen || editingAddress) && (

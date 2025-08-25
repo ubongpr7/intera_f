@@ -1,7 +1,7 @@
 'use client'
 import { GroupData } from "../interfaces/management";
 import CustomCreateCard from "../common/createCard";
-import { PageHeader } from "../inventory/PageHeader";
+
 import { useEffect, useState } from "react";
 import { useGetGroupsQuery,useCreateGroupMutation,useUpdateGroupMutation ,useGetGroupQuery} from "../../redux/features/management/groups";
 import { Column, DataTable } from "../common/DataTable/DataTable";
@@ -103,11 +103,6 @@ const StaffGroup =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
   };
     return (
         <div>
-        
-            <PageHeader
-            title="Groups"
-            onClose={() => setIsCreateOpen(true)}
-            />
             <DataTable<GroupData>
             columns={inventoryColumns}
             data={data || []}
@@ -116,6 +111,8 @@ const StaffGroup =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
             searchableFields={['name', 'description']}
             filterableFields={[]}
             sortableFields={['name', 'description']}
+            title="Groups"
+            onClose={() => setIsCreateOpen(true)}
             
             />
 
