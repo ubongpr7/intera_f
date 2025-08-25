@@ -1,7 +1,8 @@
 "use client"
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import Link from "next/link"
+import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button"
 import {
   ArrowRight,
@@ -156,12 +157,10 @@ export default function HomePage() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">I</span>
-              </div>
-              <span className="text-xl font-serif font-bold text-gray-900">INTERA</span>
-            </div>
+            <Link href="/" className="flex items-center space-x-2">
+              <Image src="/light_intera.png" alt="Intera logo" width={100} height={100} className="block dark:hidden" />
+              <Image src="/dark_intera.png" alt="Intera logo" width={100} height={100} className="hidden dark:block" />
+            </Link>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
@@ -208,6 +207,10 @@ export default function HomePage() {
           {mobileMenuOpen && (
             <div className="md:hidden py-4 border-t border-gray-200">
               <div className="flex flex-col space-y-4">
+              <Link href="/" className="flex items-center space-x-2">
+              <Image src="/light_intera.png" alt="Intera logo" width={100} height={100} className="block dark:hidden" />
+              <Image src="/dark_intera.png" alt="Intera logo" width={100} height={100} className="hidden dark:block" />
+            </Link>
                 <a href="#features" className="text-gray-600 hover:text-gray-900 font-sans">
                   Features
                 </a>
@@ -555,22 +558,9 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center mb-4">
-                <div className="bg-white p-1 rounded-lg">
-                  <div className="bg-gradient-to-r from-purple-600 to-violet-600 w-8 h-8 rounded-md flex items-center justify-center">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-white">
-                      <circle cx="12" cy="12" r="2" fill="currentColor" />
-                      <circle cx="6" cy="6" r="1.5" fill="currentColor" opacity="0.8" />
-                      <circle cx="18" cy="6" r="1.5" fill="currentColor" opacity="0.8" />
-                      <circle cx="6" cy="18" r="1.5" fill="currentColor" opacity="0.8" />
-                      <circle cx="18" cy="18" r="1.5" fill="currentColor" opacity="0.8" />
-                      <line x1="12" y1="12" x2="6" y2="6" stroke="currentColor" strokeWidth="1" opacity="0.6" />
-                      <line x1="12" y1="12" x2="18" y2="6" stroke="currentColor" strokeWidth="1" opacity="0.6" />
-                      <line x1="12" y1="12" x2="6" y2="18" stroke="currentColor" strokeWidth="1" opacity="0.6" />
-                      <line x1="12" y1="12" x2="18" y2="18" stroke="currentColor" strokeWidth="1" opacity="0.6" />
-                    </svg>
-                  </div>
-                </div>
-                <span className="ml-3 text-xl font-bold text-white">INTERA</span>
+              <Link href="/" className="flex items-center space-x-2">
+              <Image src="/dark_intera.png" alt="Intera logo" width={100} height={100} />
+            </Link>
               </div>
               <p className="text-gray-400">The central hub for intelligent inventory and POS management.</p>
             </div>
