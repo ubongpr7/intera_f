@@ -82,7 +82,7 @@ const  Navbar = ({user}:NavbarProps) => {
           {themeMenuOpen && (
             <div className={`absolute right-0 mt-2 w-48 bg-white  rounded-md shadow-lg py-1 z-10 border `}>
               <button
-                className={`block px-4 py-2 text-sm w-full ${!isDarkMode && !isSystemTheme ? "bg-gray-100 dark:bg-gray-700" : ""} text-left text-gray-900`}
+                className={`block px-4 py-2 text-sm w-full ${!isDarkMode && !isSystemTheme ? "bg-gray-100 " : ""} text-left text-gray-900`}
                 onClick={() => toggleTheme("light")}
               >
                 <div className="flex items-center">

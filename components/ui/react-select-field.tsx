@@ -78,19 +78,19 @@ export const ReactSelectField = forwardRef(
   ) => {
     return (
       <div className={cn("space-y-1", className)}>
-        {label && <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>}
+        {label && <label className="block text-sm font-medium text-gray-700 ">{label}</label>}
         <Select
           ref={ref}
           styles={customStyles}
           classNames={{
-            control: () => cn("border rounded-md p-1", error ? "border-red-500" : "border-gray-300 dark:border-gray-600"),
+            control: () => cn("border rounded-md p-1", error ? "border-red-500" : "border-gray-300 "),
             menu: () => "p-1",
           }}
           inputId={inputId}
           {...props}
         />
         {helperText && (
-          <p className={cn("text-xs", error ? "text-red-500 dark:text-red-400" : "text-gray-500 dark:text-gray-400")}>
+          <p className={cn("text-xs", error ? "text-red-500 " : "text-gray-500 ")}>
             {helperText}
           </p>
         )}

@@ -189,7 +189,7 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto text-inherit">
+      <DialogContent className="max-w-4xl text-gray-900 max-h-[90vh] overflow-y-auto text-inherit">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
