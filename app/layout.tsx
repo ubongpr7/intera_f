@@ -10,9 +10,9 @@ export const metadata: Metadata = {
   title: "Intera Inventory",
   description: "AI-driven IMS",
   icons: {
-    icon: ['/light_intera.png'],
-    apple:['/light_intera.png'],
-    shortcut:['/light_intera.png']
+    icon: ['/assets/light_intera.png'],
+    apple:['/assets/light_intera.png'],
+    shortcut:['/assets/light_intera.png']
   },
 };
 
