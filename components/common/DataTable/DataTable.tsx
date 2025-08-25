@@ -359,13 +359,25 @@ export function DataTable<T>({
   return (
     <div className="rounded-lg border border-gray-200 overflow-hidden">
       <div className="p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-        <input
-          type="text"
-          placeholder="Search..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="border border-gray-300 rounded-md px-3 py-1 text-sm"
-        />
+        <div className="relative w-56">
+          <input
+            type="text"
+            placeholder="Search..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="border border-gray-300 rounded-md px-3 py-1 text-sm w-full pr-8"
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              onClick={() => setSearchTerm("")}
+              aria-label="Clear search"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          )}
+        </div>
         <div className="relative">
           <button
             className="border border-gray-300 rounded-md px-3 py-1 text-sm bg-white"
