@@ -281,7 +281,7 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
           {/* Inventory Selection */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center  gap-2">
                 <ImageIcon className="h-4 w-4" />
                 Select Inventory Location
               </CardTitle>
