@@ -1,5 +1,5 @@
 "use client"
-import type React from "react"
+import React from "react"
 import { useState, useEffect, useMemo } from "react"
 import { type LucideIcon, QrCode, Barcode } from 'lucide-react'
 import { FieldInfo } from "../fileFieldInfor"
@@ -94,12 +94,30 @@ export function DataTable<T>({
   barcodeScannableField,
   onScanSuccess,
 }: DataTableProps<T>) {
+  const filterDropdownRef = React.useRef<HTMLDivElement>(null)
+  const [filterDropdownOpen, setFilterDropdownOpen] = useState(false)
+  useEffect(() => {
+    if (!filterDropdownOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (filterDropdownRef.current && !filterDropdownRef.current.contains(e.target as Node)) {
+        setFilterDropdownOpen(false)
+      }
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setFilterDropdownOpen(false)
+    }
+    document.addEventListener("mousedown", handleClick)
+    document.addEventListener("keydown", handleKey)
+    return () => {
+      document.removeEventListener("mousedown", handleClick)
+      document.removeEventListener("keydown", handleKey)
+    }
+  }, [filterDropdownOpen])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [selectAll, setSelectAll] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [filters, setFilters] = useState<Record<keyof T, string>>({} as Record<keyof T, string>)
   const [rangeFilters, setRangeFilters] = useState<Record<keyof T, {from: string, to: string}>>({} as Record<keyof T, {from: string, to: string}>)
-  const [filterDropdownOpen, setFilterDropdownOpen] = useState(false)
   const [sortConfig, setSortConfig] = useState<{ key: keyof T; direction: "ascending" | "descending" } | null>(null)
 
   const filterOptions = useMemo(() => {
@@ -356,7 +374,7 @@ export function DataTable<T>({
             Filter
           </button>
           {filterDropdownOpen && (
-            <div className="absolute z-10 bg-white border border-gray-200 rounded shadow-lg p-4 min-w-[250px] right-0">
+            <div ref={filterDropdownRef} className="absolute z-10 bg-white border border-gray-200 rounded shadow-lg p-4 min-w-[250px] right-0">
               <div className="space-y-2">
                 {filterableFields.map((field) => (
                   <div key={field as string}>
