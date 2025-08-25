@@ -158,8 +158,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <Link href="/" className="flex items-center space-x-2">
-              <Image src="/light_intera.png" alt="Intera logo" width={100} height={100} className="block dark:hidden" />
-              <Image src="/dark_intera.png" alt="Intera logo" width={100} height={100} className="hidden dark:block" />
+              <Image src="/dark_intera.png" alt="Intera logo" width={100} height={100} className="" />
             </Link>
 
             {/* Desktop Navigation */}
