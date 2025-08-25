@@ -28,7 +28,7 @@ const { data: units=[] } = useGetUnitsQuery();
     const { data:inventoryData=[] } = useGetInventoryDataQuery();
   
 const inventoryOptions = inventoryData.map((inventory: any) => ({
-        value: inventory.id,
+        value: inventory.external_system_id,
         text: inventory.name,
       }));
       

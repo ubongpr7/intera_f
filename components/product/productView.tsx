@@ -36,6 +36,12 @@ const inventoryColumns: Column<ProductData>[] = [
     render: (value) => value || 'N/A',
     className: 'font-medium',
   },
+  {
+    header: 'Inventory',
+    accessor: 'inventory',
+    render: (value) => value || 'N/A',
+    className: 'font-medium',
+  },
  {
     header: "Image",
     accessor: "display_image",
@@ -131,7 +137,7 @@ function ProductView() {
       }));
     
       const inventoryOptions = inventoryData.map((inventory: any) => ({
-        value: inventory.id,
+        value: inventory.external_system_id,
         text: inventory.name,
       }));
       

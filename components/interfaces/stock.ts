@@ -6,6 +6,7 @@ export interface StockItem {
     created_at: Date;
     updated_at: Date;
     quantity: number;
+    product_variant?:string;
     location: string;
     parent: string;
     serial: string;

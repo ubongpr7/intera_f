@@ -182,8 +182,8 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
   // Prepare inventory options from inventoryData
   const inventoryOptions: SelectOption[] = inventoryData
     ? inventoryData.map((item) => ({
-        value: item.id.toString(),
-        label: item.name || `Location ${item.id}`,
+        value: item.external_system_id,
+        label: item.name || `Location ${item.external_system_id}`,
       }))
     : []
 

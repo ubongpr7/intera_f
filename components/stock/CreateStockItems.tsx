@@ -44,6 +44,11 @@ const inventoryColumns: InventoryColumn<StockItem>[] = [
     className: 'font-medium',
   },
   {
+    header: 'Variant Barcode',
+    accessor: 'product_variant',
+    className: 'font-medium',
+  },
+  {
     header: 'Quantity',
     accessor: 'quantity',
     render: (value: number) => formatQuantity(value),
