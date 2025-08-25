@@ -184,6 +184,9 @@ function StockItems({reference}:{reference:string}) {
               isLoading={stockItemsLoading}
               onRowClick={handleRowClick}
               actionButtons={actionButtons}
+              searchableFields={['name', 'sku']}
+              filterableFields={['status']}
+              sortableFields={['name', 'sku']}
             />
 
         {(isCreateOpen || editingStockItem) && (
