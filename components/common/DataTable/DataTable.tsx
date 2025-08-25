@@ -1,6 +1,6 @@
 "use client"
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { type LucideIcon } from 'lucide-react'
 import { FieldInfo } from "../fileFieldInfor"
 import LoadingAnimation from "../LoadingAnimation"
@@ -61,6 +61,9 @@ interface DataTableProps<T> {
   generalButtons?: GeneralButton<T>[]
   getRowId?: (row: T) => string
   showSelectAll?: boolean
+  searchableFields?: (keyof T)[]
+  filterableFields?: (keyof T)[]
+  sortableFields?: (keyof T)[]
 }
 
 export function DataTable<T>({
@@ -79,9 +82,64 @@ export function DataTable<T>({
   generalButtons,
   getRowId,
   showSelectAll,
+  searchableFields = [],
+  filterableFields = [],
+  sortableFields = [],
 }: DataTableProps<T>) {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [selectAll, setSelectAll] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [filters, setFilters] = useState<Record<keyof T, string>>({} as Record<keyof T, string>)
+  const [sortConfig, setSortConfig] = useState<{ key: keyof T; direction: "ascending" | "descending" } | null>(null)
+
+  const filterOptions = useMemo(() => {
+    const options: Record<keyof T, string[]> = {} as Record<keyof T, string[]>
+    filterableFields.forEach((field) => {
+      const uniqueValues = [...new Set(data.map((row) => row[field] as string))]
+      options[field] = uniqueValues
+    })
+    return options
+  }, [data, filterableFields])
+
+  const sortedData = useMemo(() => {
+    let sortableData = [...data]
+    if (sortConfig !== null) {
+      sortableData.sort((a, b) => {
+        if (a[sortConfig.key] < b[sortConfig.key]) {
+          return sortConfig.direction === "ascending" ? -1 : 1
+        }
+        if (a[sortConfig.key] > b[sortConfig.key]) {
+          return sortConfig.direction === "ascending" ? 1 : -1
+        }
+        return 0
+      })
+    }
+    return sortableData
+  }, [data, sortConfig])
+
+  const filteredAndSortedData = sortedData.filter((row) => {
+    if (searchTerm === "") return true
+    return searchableFields.some((field) => {
+      const value = row[field]
+      if (typeof value === "string") {
+        return value.toLowerCase().includes(searchTerm.toLowerCase())
+      }
+      return false
+    })
+  }).filter((row) => {
+    return Object.entries(filters).every(([field, value]) => {
+      if (value === "") return true
+      return row[field as keyof T] === value
+    })
+  })
+
+  const requestSort = (key: keyof T) => {
+    let direction: "ascending" | "descending" = "ascending"
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === "ascending") {
+      direction = "descending"
+    }
+    setSortConfig({ key, direction })
+  }
 
   // Handle individual row selection
   const handleRowSelect = (rowId: string, isSelected: boolean) => {
@@ -96,7 +154,7 @@ export function DataTable<T>({
   // Handle select all functionality
   const handleSelectAll = (isSelected: boolean) => {
     if (isSelected) {
-      const allIds = data.map((row) => getRowId?.(row) || "").filter(Boolean)
+      const allIds = filteredAndSortedData.map((row) => getRowId?.(row) || "").filter(Boolean)
       setSelectedIds(allIds)
       setSelectAll(true)
     } else {
@@ -107,11 +165,11 @@ export function DataTable<T>({
 
   // Update select all state when individual selections change
   useEffect(() => {
-    if (data.length > 0 && getRowId) {
-      const allIds = data.map((row) => getRowId(row)).filter(Boolean)
+    if (filteredAndSortedData.length > 0 && getRowId) {
+      const allIds = filteredAndSortedData.map((row) => getRowId(row)).filter(Boolean)
       setSelectAll(allIds.length > 0 && allIds.every((id) => selectedIds.includes(id)))
     }
-  }, [selectedIds, data, getRowId])
+  }, [selectedIds, filteredAndSortedData, getRowId])
 
   const hasGeneralButtons = generalButtons && generalButtons.length > 0 && getRowId
   const hasSelections = selectedIds.length > 0
@@ -189,7 +247,7 @@ export function DataTable<T>({
         </span>
         {generalButtons!.map((button, index) => {
           const isDisabled = !hasSelections || button.disabled
-          const selectedRows = data.filter((row) => selectedIds.includes(getRowId!(row)))
+          const selectedRows = filteredAndSortedData.filter((row) => selectedIds.includes(getRowId!(row)))
           const IconComponent = button.icon
           return (
             <button
@@ -222,9 +280,32 @@ export function DataTable<T>({
 
   return (
     <div className="rounded-lg border border-gray-200 overflow-hidden">
-      {/* General buttons section */}
-      {hasGeneralButtons && (
-        <div className="p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+      <div className="p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+        <input
+          type="text"
+          placeholder="Search..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="border border-gray-300 rounded-md px-3 py-1 text-sm"
+        />
+        <div className="flex items-center space-x-2">
+          {filterableFields.map((field) => (
+            <select
+              key={field as string}
+              value={filters[field]}
+              onChange={(e) => setFilters({ ...filters, [field]: e.target.value })}
+              className="border border-gray-300 rounded-md px-3 py-1 text-sm"
+            >
+              <option value="">All {String(field)}</option>
+              {filterOptions[field]?.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          ))}
+        </div>
+        {hasGeneralButtons && (
           <div className="flex items-center space-x-4">
             {showSelectAll !== false && (
               <div className="flex items-center space-x-2">
@@ -248,9 +329,9 @@ export function DataTable<T>({
               </div>
             )}
           </div>
-          {renderGeneralButtons()}
-        </div>
-      )}
+        )}
+        {renderGeneralButtons()}
+      </div>
 
       {/* Render secondary button outside the table */}
       {secondaryButton && !secondaryButton.hidden && (
@@ -300,8 +381,14 @@ export function DataTable<T>({
                   className={`px-2 whitespace-nowrap py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
                     column.headerClassName || ""
                   }`}
+                  onClick={() => sortableFields.includes(column.accessor as keyof T) && requestSort(column.accessor as keyof T)}
                 >
                   {column.header}
+                  {sortableFields.includes(column.accessor as keyof T) && (
+                    <span>
+                      {sortConfig?.key === column.accessor && (sortConfig?.direction === "ascending" ? " 🔼" : " 🔽")}
+                    </span>
+                  )}
                   {column.info && <FieldInfo info={column.info} displayBelow={true} />}
                 </th>
               ))}
@@ -315,7 +402,7 @@ export function DataTable<T>({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {data.map((row, rowIndex) => (
+            {filteredAndSortedData.map((row, rowIndex) => (
               <tr
                 key={rowIndex}
                 onClick={() => onRowClick?.(row)}
@@ -355,8 +442,8 @@ export function DataTable<T>({
             ))}
           </tbody>
         </table>
-        {!isLoading && data.length === 0 && <div className="text-center py-8 text-gray-500">No records found</div>}
-        {isLoading && data.length === 0 && (
+        {!isLoading && filteredAndSortedData.length === 0 && <div className="text-center py-8 text-gray-500">No records found</div>}
+        {isLoading && filteredAndSortedData.length === 0 && (
           <div className="text-center flex items-center justify-center py-8 text-gray-500">
             <LoadingAnimation text="Loading..." ringColor="#3b82f6" />
           </div>

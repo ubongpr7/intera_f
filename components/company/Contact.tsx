@@ -112,6 +112,9 @@ function ContactPersonView({company_id}:CompanyProps) {
         data={data || []}
         isLoading={isLoading}
         actionButtons={actionButtons}
+        searchableFields={['name', 'role', 'email', 'phone']}
+        filterableFields={['role']}
+        sortableFields={['name', 'role', 'email', 'phone']}
       />
 
       {(isCreateOpen || editingContact) && (

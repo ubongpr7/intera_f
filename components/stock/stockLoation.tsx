@@ -143,6 +143,9 @@ function StockLocations({refetchData, setRefetchData}:RefetchDataProp) {
               isLoading={stockItemsLoading}
               onRowClick={handleRowClick}
               actionButtons={actionButtons}
+              searchableFields={['name', 'code', 'physical_address']}
+              filterableFields={['location_type_name', 'parent_name']}
+              sortableFields={['name', 'code', 'physical_address']}
             />
 
         {(isCreateOpen || editingStockLocation) && (

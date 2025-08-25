@@ -135,6 +135,9 @@ function InventoryCategoryView({ refetchData, setRefetchData }: RefetchDataProp)
         data={data || []}
         isLoading={isLoading}
         actionButtons={actionButtons}
+        searchableFields={['name', 'parent_name']}
+        filterableFields={['parent_name']}
+        sortableFields={['name', 'parent_name']}
       />
       {isCreateOpen && (
         <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>

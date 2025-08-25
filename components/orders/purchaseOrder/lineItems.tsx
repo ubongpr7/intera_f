@@ -30,8 +30,7 @@ function PurchaseOrderLineItems({reference,currency,lineItemsLoading,lineItems,r
 const inventoryColumns: Column<PurchaseOrderLineItem>[] = [
   {
     header: 'Product Name',
-    accessor: 'stock_item_details',
-    render:(value)=>value.name,
+    accessor: (row) => row.stock_item_details.name,
     className: 'font-medium',
   },
   {
@@ -41,7 +40,7 @@ const inventoryColumns: Column<PurchaseOrderLineItem>[] = [
   },
   {
     header: 'Quantity',
-    accessor: 'quantity_w_unit',
+    accessor: 'quantity',
     className: 'font-medium',
   },
  
@@ -147,6 +146,9 @@ const inventoryColumns: Column<PurchaseOrderLineItem>[] = [
               data={lineItems || []}
               isLoading={lineItemsLoading}
               actionButtons={actionButtons}
+              searchableFields={['batch_number', 'quantity', 'unit_price', 'tax_amount', 'discount', 'total_price']}
+              filterableFields={['batch_number']}
+              sortableFields={['batch_number', 'quantity', 'unit_price', 'tax_amount', 'discount', 'total_price']}
             />
 
         {(isCreateOpen || editingLineItem) && (

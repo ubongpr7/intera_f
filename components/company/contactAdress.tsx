@@ -118,6 +118,9 @@ function CompanyAddressView({company_id}:CompanyProps) {
         data={data || []}
         isLoading={isLoading}
         actionButtons={actionButtons}
+        searchableFields={['title', 'postal_code', 'full_address']}
+        filterableFields={['title', 'postal_code']}
+        sortableFields={['title', 'postal_code', 'full_address']}
       />
 
       {(isCreateOpen || editingAddress) && (
