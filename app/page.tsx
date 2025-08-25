@@ -159,7 +159,7 @@ export default function HomePage() {
           <div className="flex justify-between items-center py-4">
             <Link href="/" className="flex items-center space-x-2">
               <Image src="https://interabucket.s3.amazonaws.com/attachments/product/light_intera-202508252032.png" alt="Intera logo" width={100} height={100} className="block dark:hidden" />
-              <Image src="https://interabucket.s3.amazonaws.com/attachments/product/dark_intera-202508252034.png" alt="Intera logo" width={100} height={100} className="hidden dark:block" />
+              <Image src="https://interabucket.s3.amazonaws.com/attachments/product/dark_intera-202508252114.png" alt="Intera logo" width={100} height={100} className="hidden dark:block" />
             </Link>
 
             {/* Desktop Navigation */}
@@ -209,7 +209,7 @@ export default function HomePage() {
               <div className="flex flex-col space-y-4">
               <Link href="/" className="flex items-center space-x-2">
               <Image src="https://interabucket.s3.amazonaws.com/attachments/product/light_intera-202508252032.png" alt="Intera logo" width={50} height={50} className="block dark:hidden" />
-              <Image src="https://interabucket.s3.amazonaws.com/attachments/product/dark_intera-202508252034.png" alt="Intera logo" width={50} height={50} className="hidden dark:block" />
+              <Image src="https://interabucket.s3.amazonaws.com/attachments/product/dark_intera-202508252114.png" alt="Intera logo" width={50} height={50} className="hidden dark:block" />
             </Link>
                 <a href="#features" className="text-gray-600 hover:text-gray-900 font-sans">
                   Features
@@ -517,40 +517,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
-            <h2 className="text-4xl md:text-5xl font-bold mb-8">
-              Ready to Meet Your <span className="text-violet-400">AI Inventory Team?</span>
-            </h2>
-            <p className="text-xl text-gray-600 mb-12">
-              Join the inventory revolution. Your AI agents are waiting to transform your business.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-6 justify-center">
-              <Button
-                size="lg"
-                asChild
-                className="bg-gray-800 hover:bg-gray-900 text-white text-lg px-12 py-4 animate-pulse-glow"
-              >
-                <Link href="#pricing">Start Your AI Agent Now</Link>
-              </Button>
-              {/** 
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-violet-400 text-violet-400 hover:bg-violet-400 hover:text-white text-lg px-12 py-4 bg-transparent"
-              >
-                <Link href="/demo">Schedule Demo</Link>
-              </Button>
-              */}
-            </div>
-            <p className="text-gray-600 mt-8">
-              No credit card required • AI agents activate instantly • 14-day free trial
-            </p>
-          </motion.div>
-        </div>
-      </section>
 
       {/* Footer */}
       <footer className="bg-gray-800 border-t border-gray-700 py-12">
@@ -559,7 +525,7 @@ export default function HomePage() {
             <div>
               <div className="flex items-center mb-4">
               <Link href="/" className="flex items-center space-x-2">
-              <Image src="https://interabucket.s3.amazonaws.com/attachments/product/dark_intera-202508252034.png" alt="Intera logo" width={100} height={100} />
+              <Image src="https://interabucket.s3.amazonaws.com/attachments/product/dark_intera-202508252114.png" alt="Intera logo" width={100} height={100} />
             </Link>
               </div>
               <p className="text-gray-400">The central hub for intelligent inventory and POS management.</p>
