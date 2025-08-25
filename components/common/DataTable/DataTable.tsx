@@ -134,33 +134,20 @@ export function DataTable<T>({
   }, [data, filterableFields])
 
   const sortedData = useMemo(() => {
-    let sortableData = [...data];
+    let sortableData = [...data]
     if (sortConfig !== null) {
       sortableData.sort((a, b) => {
-        const aValue = a[sortConfig.key];
-        const bValue = b[sortConfig.key];
-
-        // Handle different data types
-        if (typeof aValue === 'number' && typeof bValue === 'number') {
-          return sortConfig.direction === 'ascending' ? aValue - bValue : bValue - aValue;
-        } else if (aValue instanceof Date && bValue instanceof Date) {
-          return sortConfig.direction === 'ascending' ? aValue.getTime() - bValue.getTime() : bValue.getTime() - aValue.getTime();
-        } else {
-          // Default to string comparison
-          const stringA = String(aValue).toLowerCase();
-          const stringB = String(bValue).toLowerCase();
-          if (stringA < stringB) {
-            return sortConfig.direction === 'ascending' ? -1 : 1;
-          }
-          if (stringA > stringB) {
-            return sortConfig.direction === 'ascending' ? 1 : -1;
-          }
-          return 0;
+        if (a[sortConfig.key] < b[sortConfig.key]) {
+          return sortConfig.direction === "ascending" ? -1 : 1
         }
-      });
+        if (a[sortConfig.key] > b[sortConfig.key]) {
+          return sortConfig.direction === "ascending" ? 1 : -1
+        }
+        return 0
+      })
     }
-    return sortableData;
-  }, [data, sortConfig]);
+    return sortableData
+  }, [data, sortConfig])
 
   const filteredAndSortedData = sortedData.filter((row) => {
     if (searchTerm === "") return true
@@ -375,100 +362,9 @@ export function DataTable<T>({
 
   return (
     <div className="rounded-lg border border-gray-200 overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-2 border-b bg-white">
-        {title && <h1 className="text-lg md:text-xl font-semibold">{title}</h1>}
-        <div className="flex items-center space-x-2">
-          <div className="relative w-56">
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-1 text-sm w-full pr-8"
-            />
-            {searchTerm && (
-              <button
-                type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                onClick={() => setSearchTerm("")}
-                aria-label="Clear search"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            )}
-          </div>
-          <div className="relative">
-            <button
-              className="border border-gray-300 rounded-md px-3 py-1 text-sm bg-white"
-              onClick={() => setFilterDropdownOpen((open) => !open)}
-            >
-              Filter
-            </button>
-            {filterDropdownOpen && (
-              <div ref={filterDropdownRef} className="absolute z-10 bg-white border border-gray-200 rounded shadow-lg p-4 min-w-[250px] right-0 max-h-72 overflow-y-auto">
-                <div className="space-y-2">
-                  {filterableFields.map((field) => (
-                    <div key={field as string}>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">{String(field)}</label>
-                      <select
-                        value={filters[field] || ""}
-                        onChange={(e) => setFilters({ ...filters, [field]: e.target.value })}
-                        className="border border-gray-300 rounded-md px-2 py-1 text-sm w-full"
-                      >
-                        <option value="">All {String(field)}</option>
-                        {filterOptions[field]?.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ))}
-                  {rangeFilterFields.map((field) => (
-                    <div key={field as string} className="flex flex-col">
-                      <label className="block text-xs font-medium text-gray-700 mb-1">{String(field)} (Range)</label>
-                      <div className="flex space-x-2">
-                        <input
-                          type="number"
-                          placeholder="From"
-                          value={rangeFilters[field]?.from || ""}
-                          onChange={(e) => setRangeFilters({
-                            ...rangeFilters,
-                            [field]: {
-                              ...rangeFilters[field],
-                              from: e.target.value
-                            }
-                          })}
-                          className="border border-gray-300 rounded-md px-2 py-1 text-sm w-1/2"
-                        />
-                        <input
-                          type="number"
-                          placeholder="To"
-                          value={rangeFilters[field]?.to || ""}
-                          onChange={(e) => setRangeFilters({
-                            ...rangeFilters,
-                            [field]: {
-                              ...rangeFilters[field],
-                              to: e.target.value
-                            }
-                          })}
-                          className="border border-gray-300 rounded-md px-2 py-1 text-sm w-1/2"
-                        />
-                      </div>
-                    </div>
-                  ))}
-                  <div className="flex justify-end pt-2">
-                    <button
-                      className="px-3 py-1 text-xs font-medium rounded bg-blue-500 text-white hover:bg-blue-600"
-                      onClick={() => setFilterDropdownOpen(false)}
-                    >
-                      Apply
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+      {(title || onClose) && (
+        <div className="flex items-center justify-between px-4 py-2 border-b bg-white">
+          {title && <h1 className="text-lg md:text-xl font-semibold">{title}</h1>}
           {onClose && (
             <button
               onClick={onClose}
@@ -478,8 +374,102 @@ export function DataTable<T>({
               <span className="hidden sm:inline">New {title}</span>
             </button>
           )}
+
+          
         </div>
-      </div>
+      )}
+      <div className="p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+        <div className="relative w-56">
+          <input
+            type="text"
+            placeholder="Search..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="border border-gray-300 rounded-md px-3 py-1 text-sm w-full pr-8"
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              onClick={() => setSearchTerm("")}
+              aria-label="Clear search"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          )}
+        </div>
+        <div className="relative">
+          <button
+            className="border border-gray-300 rounded-md px-3 py-1 text-sm bg-white"
+            onClick={() => setFilterDropdownOpen((open) => !open)}
+          >
+            Filter
+          </button>
+          {filterDropdownOpen && (
+            <div ref={filterDropdownRef} className="absolute z-10 bg-white border border-gray-200 rounded shadow-lg p-4 min-w-[250px] right-0 max-h-72 overflow-y-auto">
+              <div className="space-y-2">
+                {filterableFields.map((field) => (
+                  <div key={field as string}>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">{String(field)}</label>
+                    <select
+                      value={filters[field] || ""}
+                      onChange={(e) => setFilters({ ...filters, [field]: e.target.value })}
+                      className="border border-gray-300 rounded-md px-2 py-1 text-sm w-full"
+                    >
+                      <option value="">All {String(field)}</option>
+                      {filterOptions[field]?.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+                {rangeFilterFields.map((field) => (
+                  <div key={field as string} className="flex flex-col">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">{String(field)} (Range)</label>
+                    <div className="flex space-x-2">
+                      <input
+                        type="number"
+                        placeholder="From"
+                        value={rangeFilters[field]?.from || ""}
+                        onChange={(e) => setRangeFilters({
+                          ...rangeFilters,
+                          [field]: {
+                            ...rangeFilters[field],
+                            from: e.target.value
+                          }
+                        })}
+                        className="border border-gray-300 rounded-md px-2 py-1 text-sm w-1/2"
+                      />
+                      <input
+                        type="number"
+                        placeholder="To"
+                        value={rangeFilters[field]?.to || ""}
+                        onChange={(e) => setRangeFilters({
+                          ...rangeFilters,
+                          [field]: {
+                            ...rangeFilters[field],
+                            to: e.target.value
+                          }
+                        })}
+                        className="border border-gray-300 rounded-md px-2 py-1 text-sm w-1/2"
+                      />
+                    </div>
+                  </div>
+                ))}
+                <div className="flex justify-end pt-2">
+                  <button
+                    className="px-3 py-1 text-xs font-medium rounded bg-blue-500 text-white hover:bg-blue-600"
+                    onClick={() => setFilterDropdownOpen(false)}
+                  >
+                    Apply
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
         <div className="flex items-center space-x-2">
           {qrScannableField && (
             <button
@@ -529,16 +519,21 @@ export function DataTable<T>({
       </div>
 
       {/* Render secondary button outside the table */}
-      {secondaryButton && !secondaryButton?.hidden && (
+      {secondaryButton && !secondaryButton.hidden && (
         <div className="p-4 bg-gray-50 border-b border-gray-200">
           <button
             onClick={handleSecondaryClick}
-            disabled={secondaryButton?.disabled || false}
-            className={`${getSecondaryButtonClasses()} ${secondaryButton?.className || ""}`}
-            title={secondaryButton?.tooltip}
+            disabled={secondaryButton.disabled || false}
+            className={`${getSecondaryButtonClasses()} ${secondaryButton.className || ""}`}
+            title={secondaryButton.tooltip}
           >
-            
-            {secondaryButton?.label}
+            {secondaryButton.icon && (
+              <secondaryButton.icon 
+                size={14} 
+                className={secondaryButton.label ? "mr-1" : ""} 
+              />
+            )}
+            {secondaryButton.label}
           </button>
         </div>
       )}
