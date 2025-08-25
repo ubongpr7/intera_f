@@ -248,7 +248,7 @@ const actionButtons: ActionButton<ProductData>[] = [
 
         }}
         searchableFields={['name', 'barcode']}
-        filterableFields={['category', 'inventory']}
+        filterableFields={['pos_category', 'inventory']}
         sortableFields={['name', 'barcode']}
         rangeFilterFields={['cost_price', 'base_price']}
         title="Product"
