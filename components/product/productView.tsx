@@ -251,8 +251,6 @@ const actionButtons: ActionButton<ProductData>[] = [
         searchableFields={['name', 'barcode']}
         filterableFields={['category', 'inventory',]}
         sortableFields={['name', 'barcode']}
-        qrScannableField="barcode"
-        barcodeScannableField="barcode"
       />
 
       {/* Always render CustomCreateCard but control visibility */}
