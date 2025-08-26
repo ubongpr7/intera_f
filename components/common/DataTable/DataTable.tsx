@@ -1,7 +1,7 @@
 "use client"
 import React from "react"
 import { useState, useEffect, useMemo } from "react"
-import { type LucideIcon, QrCode, Barcode } from 'lucide-react'
+import { type LucideIcon, QrCode, Barcode, Filter } from 'lucide-react'
 import { FieldInfo } from "../fileFieldInfor"
 import LoadingAnimation from "../LoadingAnimation"
 
@@ -403,10 +403,10 @@ export function DataTable<T>({
             className="border border-gray-300 rounded-md px-3 py-1 text-sm bg-white"
             onClick={() => setFilterDropdownOpen((open) => !open)}
           >
-            Filter
+            Filter <Filter size={14} className="ml-1" />
           </button>
           {filterDropdownOpen && (
-            <div ref={filterDropdownRef} className="absolute z-10 bg-white border border-gray-200 rounded shadow-lg p-4 min-w-[250px] right-0 max-h-72 overflow-y-auto">
+            <div ref={filterDropdownRef} className="absolute z-50 bg-white border border-gray-200 rounded shadow-lg p-4 min-w-[250px] right-0 max-h-72 overflow-y-auto">
               <div className="space-y-2">
                 {filterableFields.map((field) => (
                   <div key={field as string}>
