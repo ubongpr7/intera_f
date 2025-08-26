@@ -400,13 +400,13 @@ export function DataTable<T>({
         </div>
         <div className="relative">
           <button
-            className="border border-gray-300 flex rounded-md px-3 py-1 text-sm bg-white"
+            className="border border-gray-300 flex text-center items-center rounded-md px-3 py-1 text-sm bg-white"
             onClick={() => setFilterDropdownOpen((open) => !open)}
           >
             Filter <Filter size={14} className="ml-1" />
           </button>
           {filterDropdownOpen && (
-            <div ref={filterDropdownRef} className="absolute z-50 bg-white border border-gray-200 rounded shadow-lg p-4 min-w-[250px] right-0 -top-20 max-h-50 overflow-y-auto">
+            <div ref={filterDropdownRef} className="absolute z-50 bg-white border border-gray-200 rounded shadow-lg p-4 min-w-[250px] right-0 -top-5 max-h-40 overflow-y-auto">
               <div className="space-y-2">
                 {filterableFields.map((field) => (
                   <div key={field as string}>
