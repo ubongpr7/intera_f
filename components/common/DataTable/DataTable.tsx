@@ -406,7 +406,7 @@ export function DataTable<T>({
             Filter <Filter size={14} className="ml-1" />
           </button>
           {filterDropdownOpen && (
-            <div ref={filterDropdownRef} className="absolute z-50 bg-white border border-gray-200 rounded shadow-lg p-4 min-w-[250px] right-0 max-h-72 overflow-y-auto">
+            <div ref={filterDropdownRef} className="absolute z-50 bg-white border border-gray-200 rounded shadow-lg p-4 min-w-[250px] right-0 -top-20 max-h-50 overflow-y-auto">
               <div className="space-y-2">
                 {filterableFields.map((field) => (
                   <div key={field as string}>
