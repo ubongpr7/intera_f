@@ -400,7 +400,7 @@ export function DataTable<T>({
         </div>
         <div className="relative">
           <button
-            className="border border-gray-300 rounded-md px-3 py-1 text-sm bg-white"
+            className="border border-gray-300 flex rounded-md px-3 py-1 text-sm bg-white"
             onClick={() => setFilterDropdownOpen((open) => !open)}
           >
             Filter <Filter size={14} className="ml-1" />
