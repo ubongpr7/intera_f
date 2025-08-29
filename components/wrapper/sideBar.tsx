@@ -84,6 +84,7 @@ const SideBar = ({user}:SideBarDataProps) => {
             {/* Links */}
             <div className={`flex-grow mt-8 `}>
             <SidebarLink href="/dashboard" icon={Home} label="Dashboard" isCollapsed={SidebarCollapsed} />
+            <SidebarLink href="/realtime-dashboard" icon={Layout} label="Realtime Dashboard" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/inventory" icon={Package} label="Inventory" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/profile/staff" icon={Users} label="Staff" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/companies" icon={Truck} label="Affilications" isCollapsed={SidebarCollapsed} />

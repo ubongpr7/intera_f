@@ -1,26 +1,3 @@
-Create a Next.js application for an offline-first Point of Sales (POS) system
- using TypeScript, designed for Electron desktop conversion. The app must sync with
-  existing Django backend POS and Product services (read-only access) without modifying their codebases. Use TypeScript, Redux Toolkit, MUI, React Hook Form, and TailwindCSS. Incorporate these features:
-
-1. Offline-First Capability: Use IndexedDB to queue transactions and inventory updates locally, syncing with POS/Product services via REST API (e.g., /api/pos/sync, /api/product/variants) using JWT Auth when online.
-2. Product Variety Handling: Display and manage diverse products (e.g., variants with price changes) from Product service, supporting 45,000 assets, with dynamic pricing based on attributes (color, size) using TypeScript types.
-3. Sales Tracking: Record transactions (sales, returns) with product variety details, generating receipts offline, syncing totals when connected.
-4. Inventory Updates: Reflect real-time stock levels (e.g., StockItem) from Product service when online, queuing changes offline.
-5. Responsive UI: Design a desktop-friendly interface with MUI and TailwindCSS (e.g., flex, bg-gray-100, text-red-600), including drag-drop for images, chat help, and logout/profile settings.
-6. Electron Readiness: Provide a basic `main.js` to load the Next.js static build (e.g., `out/index.html`) and `electron-builder` config.
-
-
-Structure with TypeScript components (e.g., ProductCard.tsx, TransactionForm.tsx), 
-Redux slices (e.g., posSlice.ts, productSlice.ts), and 
-pages (sales.tsx, inventory.tsx, settings.tsx). Use env files, middleware, and 
-Next config for API integration. Ensure offline resilience and variety-driven
- pricing accuracy with TypeScript types.
-
- you can modify the pos service code base anyhow you want so it fits your needs.
- then for pos it must be be able to handle transactions completely offline and always sync when there is internet connection. 
-
-
- Create a Next.js application with TypeScript for an offline-first Point of Sales (POS) system, designed for Electron desktop conversion. The app must sync with existing Django backend POS and Product services (read-only) without modifying their codebases. Use TypeScript, Redux Toolkit, MUI, React Hook Form, and TailwindCSS. Implement these 59 features:
 
 1. Offline Transaction Recording  
 2. Offline Inventory Updates  
@@ -81,5 +58,3 @@ Next config for API integration. Ensure offline resilience and variety-driven
 57. Mobile Order Taking  
 58. Stock Transfer Between Locations  
 59. Supplier Due Management  
-
-Structure with TypeScript components (e.g., ProductCard.tsx, TransactionForm.tsx), Redux slices (e.g., posSlice.ts, productSlice.ts), and pages (sales.tsx, inventory.tsx, settings.tsx). Use IndexedDB for offline queuing, env files, middleware, and Next config for API integration. Provide a `main.js` and `electron-builder` config for Electron readiness. Ensure offline resilience and variety-driven pricing for 45,000 assets.
