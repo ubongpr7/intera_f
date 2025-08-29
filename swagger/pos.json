@@ -1,0 +1,2667 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Quick Campaign API",
+    "description": "Test description",
+    "termsOfService": "https://www.google.com/policies/terms/",
+    "contact": {
+      "email": "contact@snippets.local"
+    },
+    "license": {
+      "name": "BSD License"
+    },
+    "version": "v1"
+  },
+  "host": "dev.pos.destinybuilders.africa",
+  "schemes": [
+    "https"
+  ],
+  "basePath": "/pos_api",
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "securityDefinitions": {
+    "Basic": {
+      "type": "basic"
+    }
+  },
+  "security": [
+    {
+      "Basic": []
+    }
+  ],
+  "paths": {
+    "/analytics/daily_sales/": {
+      "get": {
+        "operationId": "analytics_daily_sales",
+        "description": "Get daily sales analytics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "analytics"
+        ]
+      },
+      "parameters": []
+    },
+    "/configurations/": {
+      "get": {
+        "operationId": "configurations_list",
+        "description": "POS Configuration management",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/POSConfiguration"
+              }
+            }
+          }
+        },
+        "tags": [
+          "configurations"
+        ]
+      },
+      "post": {
+        "operationId": "configurations_create",
+        "description": "POS Configuration management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POSConfiguration"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSConfiguration"
+            }
+          }
+        },
+        "tags": [
+          "configurations"
+        ]
+      },
+      "parameters": []
+    },
+    "/configurations/current/": {
+      "get": {
+        "operationId": "configurations_current",
+        "description": "Get current POS configuration",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/POSConfiguration"
+              }
+            }
+          }
+        },
+        "tags": [
+          "configurations"
+        ]
+      },
+      "parameters": []
+    },
+    "/configurations/{id}/": {
+      "get": {
+        "operationId": "configurations_read",
+        "description": "POS Configuration management",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSConfiguration"
+            }
+          }
+        },
+        "tags": [
+          "configurations"
+        ]
+      },
+      "put": {
+        "operationId": "configurations_update",
+        "description": "POS Configuration management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POSConfiguration"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSConfiguration"
+            }
+          }
+        },
+        "tags": [
+          "configurations"
+        ]
+      },
+      "patch": {
+        "operationId": "configurations_partial_update",
+        "description": "POS Configuration management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POSConfiguration"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSConfiguration"
+            }
+          }
+        },
+        "tags": [
+          "configurations"
+        ]
+      },
+      "delete": {
+        "operationId": "configurations_delete",
+        "description": "POS Configuration management",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "configurations"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/customers/": {
+      "get": {
+        "operationId": "customers_list",
+        "description": "Customer management",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Customer"
+              }
+            }
+          }
+        },
+        "tags": [
+          "customers"
+        ]
+      },
+      "post": {
+        "operationId": "customers_create",
+        "description": "Customer management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Customer"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Customer"
+            }
+          }
+        },
+        "tags": [
+          "customers"
+        ]
+      },
+      "parameters": []
+    },
+    "/customers/{id}/": {
+      "get": {
+        "operationId": "customers_read",
+        "description": "Customer management",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Customer"
+            }
+          }
+        },
+        "tags": [
+          "customers"
+        ]
+      },
+      "put": {
+        "operationId": "customers_update",
+        "description": "Customer management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Customer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Customer"
+            }
+          }
+        },
+        "tags": [
+          "customers"
+        ]
+      },
+      "patch": {
+        "operationId": "customers_partial_update",
+        "description": "Customer management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Customer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Customer"
+            }
+          }
+        },
+        "tags": [
+          "customers"
+        ]
+      },
+      "delete": {
+        "operationId": "customers_delete",
+        "description": "Customer management",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "customers"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/discounts/": {
+      "get": {
+        "operationId": "discounts_list",
+        "description": "POS Discount management",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/POSDiscount"
+              }
+            }
+          }
+        },
+        "tags": [
+          "discounts"
+        ]
+      },
+      "post": {
+        "operationId": "discounts_create",
+        "description": "POS Discount management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POSDiscount"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSDiscount"
+            }
+          }
+        },
+        "tags": [
+          "discounts"
+        ]
+      },
+      "parameters": []
+    },
+    "/discounts/{id}/": {
+      "get": {
+        "operationId": "discounts_read",
+        "description": "POS Discount management",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSDiscount"
+            }
+          }
+        },
+        "tags": [
+          "discounts"
+        ]
+      },
+      "put": {
+        "operationId": "discounts_update",
+        "description": "POS Discount management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POSDiscount"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSDiscount"
+            }
+          }
+        },
+        "tags": [
+          "discounts"
+        ]
+      },
+      "patch": {
+        "operationId": "discounts_partial_update",
+        "description": "POS Discount management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POSDiscount"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSDiscount"
+            }
+          }
+        },
+        "tags": [
+          "discounts"
+        ]
+      },
+      "delete": {
+        "operationId": "discounts_delete",
+        "description": "POS Discount management",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "discounts"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/orders/": {
+      "get": {
+        "operationId": "orders_list",
+        "description": "POS Order management",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/POSOrder"
+              }
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ]
+      },
+      "post": {
+        "operationId": "orders_create",
+        "description": "POS Order management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POSOrder"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSOrder"
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ]
+      },
+      "parameters": []
+    },
+    "/orders/create_or_get_draft/": {
+      "post": {
+        "operationId": "orders_create_or_get_draft",
+        "description": "Create or get existing draft order",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POSOrder"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSOrder"
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ]
+      },
+      "parameters": []
+    },
+    "/orders/current_draft/": {
+      "get": {
+        "operationId": "orders_current_draft",
+        "description": "Get current draft order for the session",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/POSOrder"
+              }
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ]
+      },
+      "parameters": []
+    },
+    "/orders/held_orders/": {
+      "get": {
+        "operationId": "orders_held_orders",
+        "description": "Get held orders",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/POSOrder"
+              }
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ]
+      },
+      "parameters": []
+    },
+    "/orders/retrieve_held_order/": {
+      "post": {
+        "operationId": "orders_retrieve_held_order",
+        "description": "Retrieve a held order",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POSOrder"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSOrder"
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ]
+      },
+      "parameters": []
+    },
+    "/orders/{id}/": {
+      "get": {
+        "operationId": "orders_read",
+        "description": "POS Order management",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSOrder"
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ]
+      },
+      "put": {
+        "operationId": "orders_update",
+        "description": "POS Order management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POSOrder"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSOrder"
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ]
+      },
+      "patch": {
+        "operationId": "orders_partial_update",
+        "description": "POS Order management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POSOrder"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSOrder"
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ]
+      },
+      "delete": {
+        "operationId": "orders_delete",
+        "description": "POS Order management",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "orders"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/orders/{id}/add_item/": {
+      "post": {
+        "operationId": "orders_add_item",
+        "description": "Add item to order",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POSOrder"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSOrder"
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/orders/{id}/add_tip/": {
+      "post": {
+        "operationId": "orders_add_tip",
+        "description": "Add tip to order",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POSOrder"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSOrder"
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/orders/{id}/apply_discount/": {
+      "post": {
+        "operationId": "orders_apply_discount",
+        "description": "Apply discount to order",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POSOrder"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSOrder"
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/orders/{id}/hold_order/": {
+      "post": {
+        "operationId": "orders_hold_order",
+        "description": "Hold order for later",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POSOrder"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSOrder"
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/orders/{id}/process_payment/": {
+      "post": {
+        "operationId": "orders_process_payment",
+        "description": "Process payment for order",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POSOrder"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSOrder"
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/orders/{id}/remove_item/": {
+      "post": {
+        "operationId": "orders_remove_item",
+        "description": "Remove item from order",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POSOrder"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSOrder"
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/orders/{id}/update_item/": {
+      "post": {
+        "operationId": "orders_update_item",
+        "description": "Update order item",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POSOrder"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSOrder"
+            }
+          }
+        },
+        "tags": [
+          "orders"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/products/by_category/": {
+      "get": {
+        "operationId": "products_by_category",
+        "description": "Get products by category",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "products"
+        ]
+      },
+      "parameters": []
+    },
+    "/products/categories/": {
+      "get": {
+        "operationId": "products_categories",
+        "description": "Get POS categories",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "products"
+        ]
+      },
+      "parameters": []
+    },
+    "/products/featured/": {
+      "get": {
+        "operationId": "products_featured",
+        "description": "Get featured products",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "products"
+        ]
+      },
+      "parameters": []
+    },
+    "/products/search/": {
+      "get": {
+        "operationId": "products_search",
+        "description": "Search products for POS",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "products"
+        ]
+      },
+      "parameters": []
+    },
+    "/products/{id}/variants/": {
+      "get": {
+        "operationId": "products_variants",
+        "description": "Get product variants",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "products"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        }
+      ]
+    },
+    "/sessions/": {
+      "get": {
+        "operationId": "sessions_list",
+        "description": "POS Session management",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/POSSession"
+              }
+            }
+          }
+        },
+        "tags": [
+          "sessions"
+        ]
+      },
+      "post": {
+        "operationId": "sessions_create",
+        "description": "POS Session management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POSSession"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSSession"
+            }
+          }
+        },
+        "tags": [
+          "sessions"
+        ]
+      },
+      "parameters": []
+    },
+    "/sessions/current/": {
+      "get": {
+        "operationId": "sessions_current",
+        "description": "Get current open session",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/POSSession"
+              }
+            }
+          }
+        },
+        "tags": [
+          "sessions"
+        ]
+      },
+      "parameters": []
+    },
+    "/sessions/open_session/": {
+      "post": {
+        "operationId": "sessions_open_session",
+        "description": "Open a new POS session",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POSSession"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSSession"
+            }
+          }
+        },
+        "tags": [
+          "sessions"
+        ]
+      },
+      "parameters": []
+    },
+    "/sessions/{id}/": {
+      "get": {
+        "operationId": "sessions_read",
+        "description": "POS Session management",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSSession"
+            }
+          }
+        },
+        "tags": [
+          "sessions"
+        ]
+      },
+      "put": {
+        "operationId": "sessions_update",
+        "description": "POS Session management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POSSession"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSSession"
+            }
+          }
+        },
+        "tags": [
+          "sessions"
+        ]
+      },
+      "patch": {
+        "operationId": "sessions_partial_update",
+        "description": "POS Session management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POSSession"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSSession"
+            }
+          }
+        },
+        "tags": [
+          "sessions"
+        ]
+      },
+      "delete": {
+        "operationId": "sessions_delete",
+        "description": "POS Session management",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "sessions"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/sessions/{id}/close_session/": {
+      "post": {
+        "operationId": "sessions_close_session",
+        "description": "Close a POS session",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POSSession"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSSession"
+            }
+          }
+        },
+        "tags": [
+          "sessions"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/tables/": {
+      "get": {
+        "operationId": "tables_list",
+        "description": "Table management",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Table"
+              }
+            }
+          }
+        },
+        "tags": [
+          "tables"
+        ]
+      },
+      "post": {
+        "operationId": "tables_create",
+        "description": "Table management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Table"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Table"
+            }
+          }
+        },
+        "tags": [
+          "tables"
+        ]
+      },
+      "parameters": []
+    },
+    "/tables/{id}/": {
+      "get": {
+        "operationId": "tables_read",
+        "description": "Table management",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Table"
+            }
+          }
+        },
+        "tags": [
+          "tables"
+        ]
+      },
+      "put": {
+        "operationId": "tables_update",
+        "description": "Table management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Table"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Table"
+            }
+          }
+        },
+        "tags": [
+          "tables"
+        ]
+      },
+      "patch": {
+        "operationId": "tables_partial_update",
+        "description": "Table management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Table"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Table"
+            }
+          }
+        },
+        "tags": [
+          "tables"
+        ]
+      },
+      "delete": {
+        "operationId": "tables_delete",
+        "description": "Table management",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "tables"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/terminals/": {
+      "get": {
+        "operationId": "terminals_list",
+        "description": "POS Terminal management",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/POSTerminal"
+              }
+            }
+          }
+        },
+        "tags": [
+          "terminals"
+        ]
+      },
+      "post": {
+        "operationId": "terminals_create",
+        "description": "POS Terminal management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POSTerminal"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSTerminal"
+            }
+          }
+        },
+        "tags": [
+          "terminals"
+        ]
+      },
+      "parameters": []
+    },
+    "/terminals/{id}/": {
+      "get": {
+        "operationId": "terminals_read",
+        "description": "POS Terminal management",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSTerminal"
+            }
+          }
+        },
+        "tags": [
+          "terminals"
+        ]
+      },
+      "put": {
+        "operationId": "terminals_update",
+        "description": "POS Terminal management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POSTerminal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSTerminal"
+            }
+          }
+        },
+        "tags": [
+          "terminals"
+        ]
+      },
+      "patch": {
+        "operationId": "terminals_partial_update",
+        "description": "POS Terminal management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/POSTerminal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/POSTerminal"
+            }
+          }
+        },
+        "tags": [
+          "terminals"
+        ]
+      },
+      "delete": {
+        "operationId": "terminals_delete",
+        "description": "POS Terminal management",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "terminals"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    }
+  },
+  "definitions": {
+    "POSConfiguration": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "ID",
+          "description": "Unique identifier for the model instance.",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "created_at": {
+          "title": "Created At",
+          "description": "Timestamp when this model instance was created.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "description": "Timestamp when this model instance was last updated.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "profile": {
+          "title": "Profile",
+          "description": "Profile of the user or entity associated with this model.",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "created_by": {
+          "title": "Created By",
+          "description": "User ID of the creator",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1,
+          "x-nullable": true
+        },
+        "sync_identifier": {
+          "title": "Sync identifier",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "is_synced": {
+          "title": "Is synced",
+          "type": "boolean"
+        },
+        "last_sync_attempt": {
+          "title": "Last sync attempt",
+          "type": "string",
+          "format": "date-time",
+          "x-nullable": true
+        },
+        "sync_version": {
+          "title": "Sync version",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": 0
+        },
+        "name": {
+          "title": "Name",
+          "type": "string",
+          "maxLength": 100,
+          "minLength": 1
+        },
+        "currency": {
+          "title": "Currency",
+          "type": "string",
+          "maxLength": 3,
+          "minLength": 1
+        },
+        "tax_inclusive": {
+          "title": "Tax inclusive",
+          "type": "boolean"
+        },
+        "default_tax_rate": {
+          "title": "Default tax rate",
+          "type": "string",
+          "format": "decimal"
+        },
+        "allow_negative_stock": {
+          "title": "Allow negative stock",
+          "type": "boolean"
+        },
+        "require_customer": {
+          "title": "Require customer",
+          "type": "boolean"
+        },
+        "auto_print_receipt": {
+          "title": "Auto print receipt",
+          "type": "boolean"
+        },
+        "receipt_header": {
+          "title": "Receipt header",
+          "type": "string"
+        },
+        "receipt_footer": {
+          "title": "Receipt footer",
+          "type": "string"
+        },
+        "allow_split_payment": {
+          "title": "Allow split payment",
+          "type": "boolean"
+        },
+        "max_discount_percent": {
+          "title": "Max discount percent",
+          "type": "string",
+          "format": "decimal"
+        }
+      }
+    },
+    "Customer": {
+      "required": [
+        "name"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "ID",
+          "description": "Unique identifier for the model instance.",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "created_at": {
+          "title": "Created At",
+          "description": "Timestamp when this model instance was created.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "description": "Timestamp when this model instance was last updated.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "profile": {
+          "title": "Profile",
+          "description": "Profile of the user or entity associated with this model.",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "created_by": {
+          "title": "Created By",
+          "description": "User ID of the creator",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1,
+          "x-nullable": true
+        },
+        "sync_identifier": {
+          "title": "Sync identifier",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "is_synced": {
+          "title": "Is synced",
+          "type": "boolean"
+        },
+        "last_sync_attempt": {
+          "title": "Last sync attempt",
+          "type": "string",
+          "format": "date-time",
+          "x-nullable": true
+        },
+        "sync_version": {
+          "title": "Sync version",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": 0
+        },
+        "name": {
+          "title": "Name",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "email": {
+          "title": "Email",
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "phone": {
+          "title": "Phone",
+          "type": "string",
+          "maxLength": 20
+        },
+        "address": {
+          "title": "Address",
+          "type": "string"
+        },
+        "loyalty_points": {
+          "title": "Loyalty points",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": 0
+        }
+      }
+    },
+    "POSDiscount": {
+      "required": [
+        "name",
+        "discount_type",
+        "value"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "ID",
+          "description": "Unique identifier for the model instance.",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "created_at": {
+          "title": "Created At",
+          "description": "Timestamp when this model instance was created.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "description": "Timestamp when this model instance was last updated.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "profile": {
+          "title": "Profile",
+          "description": "Profile of the user or entity associated with this model.",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "created_by": {
+          "title": "Created By",
+          "description": "User ID of the creator",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1,
+          "x-nullable": true
+        },
+        "sync_identifier": {
+          "title": "Sync identifier",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "is_synced": {
+          "title": "Is synced",
+          "type": "boolean"
+        },
+        "last_sync_attempt": {
+          "title": "Last sync attempt",
+          "type": "string",
+          "format": "date-time",
+          "x-nullable": true
+        },
+        "sync_version": {
+          "title": "Sync version",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": 0
+        },
+        "name": {
+          "title": "Name",
+          "type": "string",
+          "maxLength": 100,
+          "minLength": 1
+        },
+        "discount_type": {
+          "title": "Discount type",
+          "type": "string",
+          "enum": [
+            "percentage",
+            "fixed"
+          ]
+        },
+        "value": {
+          "title": "Value",
+          "type": "string",
+          "format": "decimal"
+        },
+        "is_active": {
+          "title": "Is active",
+          "type": "boolean"
+        },
+        "requires_approval": {
+          "title": "Requires approval",
+          "type": "boolean"
+        },
+        "min_order_amount": {
+          "title": "Min order amount",
+          "type": "string",
+          "format": "decimal",
+          "x-nullable": true
+        },
+        "max_discount_amount": {
+          "title": "Max discount amount",
+          "type": "string",
+          "format": "decimal",
+          "x-nullable": true
+        }
+      }
+    },
+    "POSOrderItem": {
+      "required": [
+        "product_variant_id",
+        "product_name",
+        "quantity",
+        "unit_price",
+        "order"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "ID",
+          "description": "Unique identifier for the model instance.",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "customization_cost": {
+          "title": "Customization cost",
+          "type": "string",
+          "readOnly": true
+        },
+        "created_at": {
+          "title": "Created At",
+          "description": "Timestamp when this model instance was created.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "description": "Timestamp when this model instance was last updated.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "profile": {
+          "title": "Profile",
+          "description": "Profile of the user or entity associated with this model.",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "created_by": {
+          "title": "Created By",
+          "description": "User ID of the creator",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1,
+          "x-nullable": true
+        },
+        "sync_identifier": {
+          "title": "Sync identifier",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "is_synced": {
+          "title": "Is synced",
+          "type": "boolean"
+        },
+        "last_sync_attempt": {
+          "title": "Last sync attempt",
+          "type": "string",
+          "format": "date-time",
+          "x-nullable": true
+        },
+        "sync_version": {
+          "title": "Sync version",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": 0
+        },
+        "product_variant_id": {
+          "title": "Product variant id",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "product_name": {
+          "title": "Product name",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "variant_name": {
+          "title": "Variant name",
+          "type": "string",
+          "maxLength": 255
+        },
+        "quantity": {
+          "title": "Quantity",
+          "type": "string",
+          "format": "decimal"
+        },
+        "unit_price": {
+          "title": "Unit price",
+          "type": "string",
+          "format": "decimal"
+        },
+        "tax_rate": {
+          "title": "Tax rate",
+          "type": "string",
+          "format": "decimal"
+        },
+        "discount_percent": {
+          "title": "Discount percent",
+          "type": "string",
+          "format": "decimal"
+        },
+        "line_subtotal": {
+          "title": "Line subtotal",
+          "type": "string",
+          "format": "decimal",
+          "readOnly": true
+        },
+        "discount_amount": {
+          "title": "Discount amount",
+          "type": "string",
+          "format": "decimal",
+          "readOnly": true
+        },
+        "tax_amount": {
+          "title": "Tax amount",
+          "type": "string",
+          "format": "decimal",
+          "readOnly": true
+        },
+        "line_total": {
+          "title": "Line total",
+          "type": "string",
+          "format": "decimal",
+          "readOnly": true
+        },
+        "customizations": {
+          "title": "Customizations",
+          "type": "object"
+        },
+        "special_instructions": {
+          "title": "Special instructions",
+          "type": "string"
+        },
+        "order": {
+          "title": "Order",
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "POSPayment": {
+      "required": [
+        "payment_method",
+        "amount",
+        "order"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "ID",
+          "description": "Unique identifier for the model instance.",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "created_at": {
+          "title": "Created At",
+          "description": "Timestamp when this model instance was created.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "description": "Timestamp when this model instance was last updated.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "profile": {
+          "title": "Profile",
+          "description": "Profile of the user or entity associated with this model.",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "created_by": {
+          "title": "Created By",
+          "description": "User ID of the creator",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1,
+          "x-nullable": true
+        },
+        "sync_identifier": {
+          "title": "Sync identifier",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "is_synced": {
+          "title": "Is synced",
+          "type": "boolean"
+        },
+        "last_sync_attempt": {
+          "title": "Last sync attempt",
+          "type": "string",
+          "format": "date-time",
+          "x-nullable": true
+        },
+        "sync_version": {
+          "title": "Sync version",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": 0
+        },
+        "payment_method": {
+          "title": "Payment method",
+          "type": "string",
+          "enum": [
+            "cash",
+            "card",
+            "mobile",
+            "qr",
+            "loyalty",
+            "gift_card"
+          ]
+        },
+        "amount": {
+          "title": "Amount",
+          "type": "string",
+          "format": "decimal"
+        },
+        "reference_number": {
+          "title": "Reference number",
+          "type": "string",
+          "maxLength": 255
+        },
+        "cash_received": {
+          "title": "Cash received",
+          "type": "string",
+          "format": "decimal",
+          "x-nullable": true
+        },
+        "change_given": {
+          "title": "Change given",
+          "type": "string",
+          "format": "decimal",
+          "readOnly": true
+        },
+        "is_processed": {
+          "title": "Is processed",
+          "type": "boolean",
+          "readOnly": true
+        },
+        "processed_at": {
+          "title": "Processed at",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true,
+          "x-nullable": true
+        },
+        "order": {
+          "title": "Order",
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "POSOrder": {
+      "required": [
+        "session"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "ID",
+          "description": "Unique identifier for the model instance.",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/POSOrderItem"
+          },
+          "readOnly": true
+        },
+        "payments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/POSPayment"
+          },
+          "readOnly": true
+        },
+        "customer_name": {
+          "title": "Customer name",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "table_number": {
+          "title": "Table number",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "total_paid": {
+          "title": "Total paid",
+          "type": "string",
+          "readOnly": true
+        },
+        "remaining_balance": {
+          "title": "Remaining balance",
+          "type": "string",
+          "readOnly": true
+        },
+        "created_at": {
+          "title": "Created At",
+          "description": "Timestamp when this model instance was created.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "description": "Timestamp when this model instance was last updated.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "profile": {
+          "title": "Profile",
+          "description": "Profile of the user or entity associated with this model.",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "created_by": {
+          "title": "Created By",
+          "description": "User ID of the creator",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1,
+          "x-nullable": true
+        },
+        "sync_identifier": {
+          "title": "Sync identifier",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "is_synced": {
+          "title": "Is synced",
+          "type": "boolean"
+        },
+        "last_sync_attempt": {
+          "title": "Last sync attempt",
+          "type": "string",
+          "format": "date-time",
+          "x-nullable": true
+        },
+        "sync_version": {
+          "title": "Sync version",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": 0
+        },
+        "order_number": {
+          "title": "Order number",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "status": {
+          "title": "Status",
+          "type": "string",
+          "enum": [
+            "draft",
+            "pending",
+            "completed",
+            "cancelled",
+            "refunded"
+          ]
+        },
+        "subtotal": {
+          "title": "Subtotal",
+          "type": "string",
+          "format": "decimal",
+          "readOnly": true
+        },
+        "tax_amount": {
+          "title": "Tax amount",
+          "type": "string",
+          "format": "decimal",
+          "readOnly": true
+        },
+        "discount_amount": {
+          "title": "Discount amount",
+          "type": "string",
+          "format": "decimal"
+        },
+        "tip_amount": {
+          "title": "Tip amount",
+          "type": "string",
+          "format": "decimal"
+        },
+        "total_amount": {
+          "title": "Total amount",
+          "type": "string",
+          "format": "decimal",
+          "readOnly": true
+        },
+        "notes": {
+          "title": "Notes",
+          "type": "string"
+        },
+        "completed_at": {
+          "title": "Completed at",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true,
+          "x-nullable": true
+        },
+        "session": {
+          "title": "Session",
+          "type": "string",
+          "format": "uuid"
+        },
+        "customer": {
+          "title": "Customer",
+          "type": "string",
+          "format": "uuid",
+          "x-nullable": true
+        },
+        "table": {
+          "title": "Table",
+          "type": "string",
+          "format": "uuid",
+          "x-nullable": true
+        }
+      }
+    },
+    "POSSession": {
+      "required": [
+        "terminal"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "ID",
+          "description": "Unique identifier for the model instance.",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "total_sales": {
+          "title": "Total sales",
+          "type": "string",
+          "readOnly": true
+        },
+        "terminal": {
+          "title": "Terminal",
+          "type": "string",
+          "format": "uuid"
+        },
+        "created_at": {
+          "title": "Created At",
+          "description": "Timestamp when this model instance was created.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "description": "Timestamp when this model instance was last updated.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "profile": {
+          "title": "Profile",
+          "description": "Profile of the user or entity associated with this model.",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "created_by": {
+          "title": "Created By",
+          "description": "User ID of the creator",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1,
+          "x-nullable": true
+        },
+        "sync_identifier": {
+          "title": "Sync identifier",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "is_synced": {
+          "title": "Is synced",
+          "type": "boolean"
+        },
+        "last_sync_attempt": {
+          "title": "Last sync attempt",
+          "type": "string",
+          "format": "date-time",
+          "x-nullable": true
+        },
+        "sync_version": {
+          "title": "Sync version",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": 0
+        },
+        "user": {
+          "title": "User",
+          "description": "User ID of the session owner",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "status": {
+          "title": "Status",
+          "type": "string",
+          "enum": [
+            "open",
+            "closed",
+            "suspended"
+          ]
+        },
+        "opening_time": {
+          "title": "Opening time",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "closing_time": {
+          "title": "Closing time",
+          "type": "string",
+          "format": "date-time",
+          "x-nullable": true
+        },
+        "opening_balance": {
+          "title": "Opening balance",
+          "type": "string",
+          "format": "decimal"
+        },
+        "closing_balance": {
+          "title": "Closing balance",
+          "type": "string",
+          "format": "decimal",
+          "x-nullable": true
+        },
+        "expected_balance": {
+          "title": "Expected balance",
+          "type": "string",
+          "format": "decimal"
+        }
+      }
+    },
+    "Table": {
+      "required": [
+        "number"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "ID",
+          "description": "Unique identifier for the model instance.",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "created_at": {
+          "title": "Created At",
+          "description": "Timestamp when this model instance was created.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "description": "Timestamp when this model instance was last updated.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "profile": {
+          "title": "Profile",
+          "description": "Profile of the user or entity associated with this model.",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "created_by": {
+          "title": "Created By",
+          "description": "User ID of the creator",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1,
+          "x-nullable": true
+        },
+        "sync_identifier": {
+          "title": "Sync identifier",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "is_synced": {
+          "title": "Is synced",
+          "type": "boolean"
+        },
+        "last_sync_attempt": {
+          "title": "Last sync attempt",
+          "type": "string",
+          "format": "date-time",
+          "x-nullable": true
+        },
+        "sync_version": {
+          "title": "Sync version",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": 0
+        },
+        "number": {
+          "title": "Number",
+          "type": "string",
+          "maxLength": 20,
+          "minLength": 1
+        },
+        "name": {
+          "title": "Name",
+          "type": "string",
+          "maxLength": 100
+        },
+        "capacity": {
+          "title": "Capacity",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": 0
+        },
+        "is_active": {
+          "title": "Is active",
+          "type": "boolean"
+        }
+      }
+    },
+    "POSTerminal": {
+      "required": [
+        "name",
+        "configuration"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "ID",
+          "description": "Unique identifier for the model instance.",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "created_at": {
+          "title": "Created At",
+          "description": "Timestamp when this model instance was created.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "description": "Timestamp when this model instance was last updated.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "profile": {
+          "title": "Profile",
+          "description": "Profile of the user or entity associated with this model.",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "created_by": {
+          "title": "Created By",
+          "description": "User ID of the creator",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1,
+          "x-nullable": true
+        },
+        "sync_identifier": {
+          "title": "Sync identifier",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "is_synced": {
+          "title": "Is synced",
+          "type": "boolean"
+        },
+        "last_sync_attempt": {
+          "title": "Last sync attempt",
+          "type": "string",
+          "format": "date-time",
+          "x-nullable": true
+        },
+        "sync_version": {
+          "title": "Sync version",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": 0
+        },
+        "name": {
+          "title": "Name",
+          "type": "string",
+          "maxLength": 100,
+          "minLength": 1
+        },
+        "location": {
+          "title": "Location",
+          "type": "string",
+          "maxLength": 255
+        },
+        "is_active": {
+          "title": "Is active",
+          "type": "boolean"
+        },
+        "configuration": {
+          "title": "Configuration",
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    }
+  }
+}

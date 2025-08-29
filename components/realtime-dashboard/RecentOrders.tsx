@@ -1,36 +1,44 @@
-
 'use client';
-import { useGetPurchaseOderDataQuery } from '@/redux/features/orders/orderAPISlice';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShoppingCart } from 'lucide-react';
+import { useGetDashboardRecentOrdersQuery } from '@/redux/features/dashboard/dashboardApiSlice';
+import { ShoppingCart, Clock, CheckCircle } from 'lucide-react';
+import LoadingAnimation from '../common/LoadingAnimation';
 
 const RecentOrders = () => {
-  const { data, error, isLoading } = useGetPurchaseOderDataQuery();
+  const { data, error, isLoading } = useGetDashboardRecentOrdersQuery('');
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) return <div className="h-full flex justify-center items-center"><LoadingAnimation /></div>;
   if (error) return <div>Error loading recent orders</div>;
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Recent Orders</CardTitle>
-        <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
+    <div className="rounded-xl bg-white p-6 shadow-sm border border-gray-100">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold">Recent Purchase Orders</h2>
+        <ShoppingCart className="w-6 h-6 text-purple-600" />
+      </div>
+
+      <div className="space-y-4">
         {data && data.length > 0 ? (
-          <ul className="divide-y divide-gray-200">
-            {data.slice(0, 5).map((order: any) => (
-              <li key={order.id} className="py-3">
-                <p className="text-sm font-medium">Order #{order.order_number}</p>
-                <p className="text-sm text-gray-500">{order.status}</p>
-              </li>
-            ))}
-          </ul>
+          data.slice(0, 3).map((order: any) => (
+            <div key={order.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <p className="font-medium mb-1">#{order.order_number}</p>
+                <p className="text-sm text-gray-500">{order.items_count} items</p>
+              </div>
+              <div className="text-right">
+                <p className="font-medium mb-1">${order.total_amount}</p>
+                <div className="flex items-center space-x-1 text-sm">
+                  {order.status === 'pending' && <Clock className="w-4 h-4 text-yellow-600" />}
+                  {order.status === 'completed' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                  <span>{order.status}</span>
+                </div>
+              </div>
+            </div>
+          ))
         ) : (
           <p>No recent orders</p>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 

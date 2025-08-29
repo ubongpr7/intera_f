@@ -1,0 +1,4546 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Quick Campaign API",
+    "description": "Test description",
+    "termsOfService": "https://www.google.com/policies/terms/",
+    "contact": {
+      "email": "contact@snippets.local"
+    },
+    "license": {
+      "name": "BSD License"
+    },
+    "version": "v1"
+  },
+  "host": "dev.inventory.destinybuilders.africa",
+  "schemes": [
+    "https"
+  ],
+  "basePath": "/",
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "securityDefinitions": {
+    "Basic": {
+      "type": "basic"
+    }
+  },
+  "security": [
+    {
+      "Basic": []
+    }
+  ],
+  "paths": {
+    "/company_api/companies/": {
+      "get": {
+        "operationId": "company_api_companies_list",
+        "description": "",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Company"
+              }
+            }
+          }
+        },
+        "tags": [
+          "company_api"
+        ]
+      },
+      "post": {
+        "operationId": "company_api_companies_create",
+        "description": "",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Company"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Company"
+            }
+          }
+        },
+        "tags": [
+          "company_api"
+        ]
+      },
+      "parameters": []
+    },
+    "/company_api/companies/{id}/": {
+      "get": {
+        "operationId": "company_api_companies_read",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Company"
+            }
+          }
+        },
+        "tags": [
+          "company_api"
+        ]
+      },
+      "put": {
+        "operationId": "company_api_companies_update",
+        "description": "",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Company"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Company"
+            }
+          }
+        },
+        "tags": [
+          "company_api"
+        ]
+      },
+      "patch": {
+        "operationId": "company_api_companies_partial_update",
+        "description": "",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Company"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Company"
+            }
+          }
+        },
+        "tags": [
+          "company_api"
+        ]
+      },
+      "delete": {
+        "operationId": "company_api_companies_delete",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "company_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/company_api/companies/{id}/addresses/": {
+      "get": {
+        "operationId": "company_api_companies_addresses",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Company"
+            }
+          }
+        },
+        "tags": [
+          "company_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/company_api/companies/{id}/contacts/": {
+      "get": {
+        "operationId": "company_api_companies_contacts",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Company"
+            }
+          }
+        },
+        "tags": [
+          "company_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/company_api/company-addresses/": {
+      "get": {
+        "operationId": "company_api_company-addresses_list",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/CompanyAddress"
+              }
+            }
+          }
+        },
+        "tags": [
+          "company_api"
+        ]
+      },
+      "post": {
+        "operationId": "company_api_company-addresses_create",
+        "description": "",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CompanyAddress"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/CompanyAddress"
+            }
+          }
+        },
+        "tags": [
+          "company_api"
+        ]
+      },
+      "parameters": []
+    },
+    "/company_api/company-addresses/{id}/": {
+      "get": {
+        "operationId": "company_api_company-addresses_read",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/CompanyAddress"
+            }
+          }
+        },
+        "tags": [
+          "company_api"
+        ]
+      },
+      "put": {
+        "operationId": "company_api_company-addresses_update",
+        "description": "",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CompanyAddress"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/CompanyAddress"
+            }
+          }
+        },
+        "tags": [
+          "company_api"
+        ]
+      },
+      "patch": {
+        "operationId": "company_api_company-addresses_partial_update",
+        "description": "",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CompanyAddress"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/CompanyAddress"
+            }
+          }
+        },
+        "tags": [
+          "company_api"
+        ]
+      },
+      "delete": {
+        "operationId": "company_api_company-addresses_delete",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "company_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/company_api/company-contacts/": {
+      "get": {
+        "operationId": "company_api_company-contacts_list",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Contact"
+              }
+            }
+          }
+        },
+        "tags": [
+          "company_api"
+        ]
+      },
+      "post": {
+        "operationId": "company_api_company-contacts_create",
+        "description": "",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Contact"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Contact"
+            }
+          }
+        },
+        "tags": [
+          "company_api"
+        ]
+      },
+      "parameters": []
+    },
+    "/company_api/company-contacts/{id}/": {
+      "get": {
+        "operationId": "company_api_company-contacts_read",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Contact"
+            }
+          }
+        },
+        "tags": [
+          "company_api"
+        ]
+      },
+      "put": {
+        "operationId": "company_api_company-contacts_update",
+        "description": "",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Contact"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Contact"
+            }
+          }
+        },
+        "tags": [
+          "company_api"
+        ]
+      },
+      "patch": {
+        "operationId": "company_api_company-contacts_partial_update",
+        "description": "",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Contact"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Contact"
+            }
+          }
+        },
+        "tags": [
+          "company_api"
+        ]
+      },
+      "delete": {
+        "operationId": "company_api_company-contacts_delete",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "company_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/inventory_api/categories/": {
+      "get": {
+        "operationId": "inventory_api_categories_list",
+        "description": "ViewSet for inventory categories with hierarchical support",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/InventoryCategoryDetail"
+              }
+            }
+          }
+        },
+        "tags": [
+          "inventory_api"
+        ]
+      },
+      "post": {
+        "operationId": "inventory_api_categories_create",
+        "description": "ViewSet for inventory categories with hierarchical support",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/InventoryCategoryDetail"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/InventoryCategoryDetail"
+            }
+          }
+        },
+        "tags": [
+          "inventory_api"
+        ]
+      },
+      "parameters": []
+    },
+    "/inventory_api/categories/tree/": {
+      "get": {
+        "operationId": "inventory_api_categories_tree",
+        "description": "Get category tree structure",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/InventoryCategoryDetail"
+              }
+            }
+          }
+        },
+        "tags": [
+          "inventory_api"
+        ]
+      },
+      "parameters": []
+    },
+    "/inventory_api/categories/{id}/": {
+      "get": {
+        "operationId": "inventory_api_categories_read",
+        "description": "ViewSet for inventory categories with hierarchical support",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/InventoryCategoryDetail"
+            }
+          }
+        },
+        "tags": [
+          "inventory_api"
+        ]
+      },
+      "put": {
+        "operationId": "inventory_api_categories_update",
+        "description": "ViewSet for inventory categories with hierarchical support",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/InventoryCategoryDetail"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/InventoryCategoryDetail"
+            }
+          }
+        },
+        "tags": [
+          "inventory_api"
+        ]
+      },
+      "patch": {
+        "operationId": "inventory_api_categories_partial_update",
+        "description": "ViewSet for inventory categories with hierarchical support",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/InventoryCategoryDetail"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/InventoryCategoryDetail"
+            }
+          }
+        },
+        "tags": [
+          "inventory_api"
+        ]
+      },
+      "delete": {
+        "operationId": "inventory_api_categories_delete",
+        "description": "ViewSet for inventory categories with hierarchical support",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "inventory_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/inventory_api/categories/{id}/children/": {
+      "get": {
+        "operationId": "inventory_api_categories_children",
+        "description": "Get direct children of a category",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/InventoryCategoryDetail"
+            }
+          }
+        },
+        "tags": [
+          "inventory_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/inventory_api/categories/{id}/inventories/": {
+      "get": {
+        "operationId": "inventory_api_categories_inventories",
+        "description": "Get all inventories in this category",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/InventoryCategoryDetail"
+            }
+          }
+        },
+        "tags": [
+          "inventory_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/inventory_api/inventories/": {
+      "get": {
+        "operationId": "inventory_api_inventories_list",
+        "description": "Comprehensive ViewSet for inventory management",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/InventoryList"
+              }
+            }
+          }
+        },
+        "tags": [
+          "inventory_api"
+        ]
+      },
+      "post": {
+        "operationId": "inventory_api_inventories_create",
+        "description": "Comprehensive ViewSet for inventory management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/InventoryDetail"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/InventoryDetail"
+            }
+          }
+        },
+        "tags": [
+          "inventory_api"
+        ]
+      },
+      "parameters": []
+    },
+    "/inventory_api/inventories/analytics/": {
+      "get": {
+        "operationId": "inventory_api_inventories_analytics",
+        "description": "Get comprehensive inventory analytics",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/InventoryDetail"
+              }
+            }
+          }
+        },
+        "tags": [
+          "inventory_api"
+        ]
+      },
+      "parameters": []
+    },
+    "/inventory_api/inventories/low_stock/": {
+      "get": {
+        "operationId": "inventory_api_inventories_low_stock",
+        "description": "Get inventories with low stock",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/InventoryDetail"
+              }
+            }
+          }
+        },
+        "tags": [
+          "inventory_api"
+        ]
+      },
+      "parameters": []
+    },
+    "/inventory_api/inventories/needs_reorder/": {
+      "get": {
+        "operationId": "inventory_api_inventories_needs_reorder",
+        "description": "Get inventories that need reordering",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/InventoryDetail"
+              }
+            }
+          }
+        },
+        "tags": [
+          "inventory_api"
+        ]
+      },
+      "parameters": []
+    },
+    "/inventory_api/inventories/{id}/": {
+      "get": {
+        "operationId": "inventory_api_inventories_read",
+        "description": "Comprehensive ViewSet for inventory management",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/InventoryDetail"
+            }
+          }
+        },
+        "tags": [
+          "inventory_api"
+        ]
+      },
+      "put": {
+        "operationId": "inventory_api_inventories_update",
+        "description": "Comprehensive ViewSet for inventory management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/InventoryDetail"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/InventoryDetail"
+            }
+          }
+        },
+        "tags": [
+          "inventory_api"
+        ]
+      },
+      "patch": {
+        "operationId": "inventory_api_inventories_partial_update",
+        "description": "Comprehensive ViewSet for inventory management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/InventoryDetail"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/InventoryDetail"
+            }
+          }
+        },
+        "tags": [
+          "inventory_api"
+        ]
+      },
+      "delete": {
+        "operationId": "inventory_api_inventories_delete",
+        "description": "Comprehensive ViewSet for inventory management",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "inventory_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/inventory_api/inventories/{id}/adjust_stock/": {
+      "post": {
+        "operationId": "inventory_api_inventories_adjust_stock",
+        "description": "Adjust stock levels for inventory",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/InventoryDetail"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/InventoryDetail"
+            }
+          }
+        },
+        "tags": [
+          "inventory_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/inventory_api/inventories/{id}/minimal_inventory/": {
+      "get": {
+        "operationId": "inventory_api_inventories_minimal_inventory",
+        "description": "Comprehensive ViewSet for inventory management",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/InventoryDetail"
+            }
+          }
+        },
+        "tags": [
+          "inventory_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/inventory_api/inventories/{id}/stock_summary/": {
+      "get": {
+        "operationId": "inventory_api_inventories_stock_summary",
+        "description": "Get stock summary for specific inventory",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/InventoryDetail"
+            }
+          }
+        },
+        "tags": [
+          "inventory_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/order_api/purchase-orders/": {
+      "get": {
+        "operationId": "order_api_purchase-orders_list",
+        "description": "Enhanced ViewSet for comprehensive purchase order management\nIncludes workflow management, receiving, returns, and analytics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PurchaseOrderList"
+              }
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "post": {
+        "operationId": "order_api_purchase-orders_create",
+        "description": "Enhanced ViewSet for comprehensive purchase order management\nIncludes workflow management, receiving, returns, and analytics",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "parameters": []
+    },
+    "/order_api/purchase-orders/analytics/": {
+      "get": {
+        "operationId": "order_api_purchase-orders_analytics",
+        "description": "Get comprehensive purchase order analytics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PurchaseOrderDetail"
+              }
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "parameters": []
+    },
+    "/order_api/purchase-orders/bulk_pdf_download/": {
+      "post": {
+        "operationId": "order_api_purchase-orders_bulk_pdf_download",
+        "description": "Generate PDF for multiple purchase orders",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "parameters": []
+    },
+    "/order_api/purchase-orders/dashboard_summary/": {
+      "get": {
+        "operationId": "order_api_purchase-orders_dashboard_summary",
+        "description": "Get dashboard summary for purchase orders",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PurchaseOrderDetail"
+              }
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "parameters": []
+    },
+    "/order_api/purchase-orders/resend_email/": {
+      "post": {
+        "operationId": "order_api_purchase-orders_resend_email",
+        "description": "Resend purchase order email",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "parameters": []
+    },
+    "/order_api/purchase-orders/{id}/": {
+      "get": {
+        "operationId": "order_api_purchase-orders_read",
+        "description": "Enhanced ViewSet for comprehensive purchase order management\nIncludes workflow management, receiving, returns, and analytics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "put": {
+        "operationId": "order_api_purchase-orders_update",
+        "description": "Enhanced ViewSet for comprehensive purchase order management\nIncludes workflow management, receiving, returns, and analytics",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "patch": {
+        "operationId": "order_api_purchase-orders_partial_update",
+        "description": "Enhanced ViewSet for comprehensive purchase order management\nIncludes workflow management, receiving, returns, and analytics",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "delete": {
+        "operationId": "order_api_purchase-orders_delete",
+        "description": "Enhanced ViewSet for comprehensive purchase order management\nIncludes workflow management, receiving, returns, and analytics",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/order_api/purchase-orders/{id}/add_line_item/": {
+      "post": {
+        "operationId": "order_api_purchase-orders_add_line_item",
+        "description": "Add line item to purchase order",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/order_api/purchase-orders/{id}/approve/": {
+      "put": {
+        "operationId": "order_api_purchase-orders_approve_update",
+        "description": "Approve purchase order",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "patch": {
+        "operationId": "order_api_purchase-orders_approve_partial_update",
+        "description": "Approve purchase order",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/order_api/purchase-orders/{id}/cancel/": {
+      "put": {
+        "operationId": "order_api_purchase-orders_cancel_update",
+        "description": "Cancel purchase order",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "patch": {
+        "operationId": "order_api_purchase-orders_cancel_partial_update",
+        "description": "Cancel purchase order",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/order_api/purchase-orders/{id}/complete/": {
+      "put": {
+        "operationId": "order_api_purchase-orders_complete_update",
+        "description": "Mark purchase order as complete and finalize stock",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "patch": {
+        "operationId": "order_api_purchase-orders_complete_partial_update",
+        "description": "Mark purchase order as complete and finalize stock",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/order_api/purchase-orders/{id}/create_return_order/": {
+      "post": {
+        "operationId": "order_api_purchase-orders_create_return_order",
+        "description": "Create return order from purchase order",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/order_api/purchase-orders/{id}/download_pdf/": {
+      "get": {
+        "operationId": "order_api_purchase-orders_download_pdf",
+        "description": "Download purchase order as PDF",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/order_api/purchase-orders/{id}/issue/": {
+      "put": {
+        "operationId": "order_api_purchase-orders_issue_update",
+        "description": "Enhanced issue method with proper email handling",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "patch": {
+        "operationId": "order_api_purchase-orders_issue_partial_update",
+        "description": "Enhanced issue method with proper email handling",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/order_api/purchase-orders/{id}/line_items/": {
+      "get": {
+        "operationId": "order_api_purchase-orders_line_items",
+        "description": "List line items for purchase order",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/order_api/purchase-orders/{id}/receive/": {
+      "put": {
+        "operationId": "order_api_purchase-orders_receive_update",
+        "description": "Mark purchase order as received",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "patch": {
+        "operationId": "order_api_purchase-orders_receive_partial_update",
+        "description": "Mark purchase order as received",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/order_api/purchase-orders/{id}/receive_items/": {
+      "put": {
+        "operationId": "order_api_purchase-orders_receive_items_update",
+        "description": "Receive specific items and update stock",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "patch": {
+        "operationId": "order_api_purchase-orders_receive_items_partial_update",
+        "description": "Receive specific items and update stock",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/order_api/purchase-orders/{id}/remove_line_item/": {
+      "delete": {
+        "operationId": "order_api_purchase-orders_remove_line_item",
+        "description": "Remove a line item from purchase order",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/order_api/purchase-orders/{id}/update_line_item/": {
+      "put": {
+        "operationId": "order_api_purchase-orders_update_line_item_update",
+        "description": "Update a specific line item",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "patch": {
+        "operationId": "order_api_purchase-orders_update_line_item_partial_update",
+        "description": "Update a specific line item",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/PurchaseOrderDetail"
+            }
+          }
+        },
+        "tags": [
+          "order_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/stock_api/location-types/": {
+      "get": {
+        "operationId": "stock_api_location-types_list",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/StockLocationType"
+              }
+            }
+          }
+        },
+        "tags": [
+          "stock_api"
+        ]
+      },
+      "parameters": []
+    },
+    "/stock_api/location-types/{id}/": {
+      "get": {
+        "operationId": "stock_api_location-types_read",
+        "description": "",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/StockLocationType"
+            }
+          }
+        },
+        "tags": [
+          "stock_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "A unique integer value identifying this Stock Location Type.",
+          "required": true,
+          "type": "integer"
+        }
+      ]
+    },
+    "/stock_api/locations/": {
+      "get": {
+        "operationId": "stock_api_locations_list",
+        "description": "ViewSet for stock location management",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/StockLocationList"
+              }
+            }
+          }
+        },
+        "tags": [
+          "stock_api"
+        ]
+      },
+      "post": {
+        "operationId": "stock_api_locations_create",
+        "description": "ViewSet for stock location management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/StockLocationDetail"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/StockLocationDetail"
+            }
+          }
+        },
+        "tags": [
+          "stock_api"
+        ]
+      },
+      "parameters": []
+    },
+    "/stock_api/locations/{id}/": {
+      "get": {
+        "operationId": "stock_api_locations_read",
+        "description": "ViewSet for stock location management",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/StockLocationDetail"
+            }
+          }
+        },
+        "tags": [
+          "stock_api"
+        ]
+      },
+      "put": {
+        "operationId": "stock_api_locations_update",
+        "description": "ViewSet for stock location management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/StockLocationDetail"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/StockLocationDetail"
+            }
+          }
+        },
+        "tags": [
+          "stock_api"
+        ]
+      },
+      "patch": {
+        "operationId": "stock_api_locations_partial_update",
+        "description": "ViewSet for stock location management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/StockLocationDetail"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/StockLocationDetail"
+            }
+          }
+        },
+        "tags": [
+          "stock_api"
+        ]
+      },
+      "delete": {
+        "operationId": "stock_api_locations_delete",
+        "description": "ViewSet for stock location management",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "stock_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/stock_api/locations/{id}/stock_items/": {
+      "get": {
+        "operationId": "stock_api_locations_stock_items",
+        "description": "Get all stock items in this location",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/StockLocationDetail"
+            }
+          }
+        },
+        "tags": [
+          "stock_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/stock_api/locations/{id}/transfer_stock/": {
+      "post": {
+        "operationId": "stock_api_locations_transfer_stock",
+        "description": "Transfer stock between locations",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/StockLocationDetail"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/StockLocationDetail"
+            }
+          }
+        },
+        "tags": [
+          "stock_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/stock_api/stock-items/": {
+      "get": {
+        "operationId": "stock_api_stock-items_list",
+        "description": "ViewSet for stock item management",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/StockItemDetail"
+              }
+            }
+          }
+        },
+        "tags": [
+          "stock_api"
+        ]
+      },
+      "post": {
+        "operationId": "stock_api_stock-items_create",
+        "description": "ViewSet for stock item management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/StockItemDetail"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/StockItemDetail"
+            }
+          }
+        },
+        "tags": [
+          "stock_api"
+        ]
+      },
+      "parameters": []
+    },
+    "/stock_api/stock-items/analytics/": {
+      "get": {
+        "operationId": "stock_api_stock-items_analytics",
+        "description": "Get stock analytics",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/StockItemDetail"
+              }
+            }
+          }
+        },
+        "tags": [
+          "stock_api"
+        ]
+      },
+      "parameters": []
+    },
+    "/stock_api/stock-items/create_for_variants/": {
+      "post": {
+        "operationId": "stock_api_stock-items_create_for_variants",
+        "description": "Create stock items for product variants",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/StockItemDetail"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/StockItemDetail"
+            }
+          }
+        },
+        "tags": [
+          "stock_api"
+        ]
+      },
+      "parameters": []
+    },
+    "/stock_api/stock-items/expiring_soon/": {
+      "get": {
+        "operationId": "stock_api_stock-items_expiring_soon",
+        "description": "Get items expiring within specified days",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/StockItemDetail"
+              }
+            }
+          }
+        },
+        "tags": [
+          "stock_api"
+        ]
+      },
+      "parameters": []
+    },
+    "/stock_api/stock-items/get_inventory_items/": {
+      "get": {
+        "operationId": "stock_api_stock-items_get_inventory_items",
+        "description": "ViewSet for stock item management",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A search term.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "ordering",
+            "in": "query",
+            "description": "Which field to use when ordering the results.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/StockItemDetail"
+              }
+            }
+          }
+        },
+        "tags": [
+          "stock_api"
+        ]
+      },
+      "parameters": []
+    },
+    "/stock_api/stock-items/{id}/": {
+      "get": {
+        "operationId": "stock_api_stock-items_read",
+        "description": "ViewSet for stock item management",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/StockItemDetail"
+            }
+          }
+        },
+        "tags": [
+          "stock_api"
+        ]
+      },
+      "put": {
+        "operationId": "stock_api_stock-items_update",
+        "description": "ViewSet for stock item management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/StockItemDetail"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/StockItemDetail"
+            }
+          }
+        },
+        "tags": [
+          "stock_api"
+        ]
+      },
+      "patch": {
+        "operationId": "stock_api_stock-items_partial_update",
+        "description": "ViewSet for stock item management",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/StockItemDetail"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/StockItemDetail"
+            }
+          }
+        },
+        "tags": [
+          "stock_api"
+        ]
+      },
+      "delete": {
+        "operationId": "stock_api_stock-items_delete",
+        "description": "ViewSet for stock item management",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "stock_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/stock_api/stock-items/{id}/tracking_history/": {
+      "get": {
+        "operationId": "stock_api_stock-items_tracking_history",
+        "description": "Get complete tracking history for stock item",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/StockItemDetail"
+            }
+          }
+        },
+        "tags": [
+          "stock_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    },
+    "/stock_api/stock-items/{id}/update_status/": {
+      "post": {
+        "operationId": "stock_api_stock-items_update_status",
+        "description": "Update stock item status",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/StockItemDetail"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/StockItemDetail"
+            }
+          }
+        },
+        "tags": [
+          "stock_api"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "description": "Unique identifier for the model instance.",
+          "required": true,
+          "type": "string",
+          "format": "uuid"
+        }
+      ]
+    }
+  },
+  "definitions": {
+    "Company": {
+      "required": [
+        "name"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "ID",
+          "description": "Unique identifier for the model instance.",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "name": {
+          "title": "Company name",
+          "type": "string",
+          "maxLength": 100,
+          "minLength": 1
+        },
+        "description": {
+          "title": "Company description",
+          "description": "Briefly describe the company",
+          "type": "string",
+          "maxLength": 1000,
+          "x-nullable": true
+        },
+        "website": {
+          "title": "Website",
+          "description": "Company website URL (optional)",
+          "type": "string",
+          "format": "uri",
+          "maxLength": 200,
+          "x-nullable": true
+        },
+        "phone": {
+          "title": "Phone number",
+          "description": "Contact phone number (optional)",
+          "type": "string",
+          "maxLength": 15
+        },
+        "email": {
+          "title": "Email",
+          "description": "Contact email address (optional)",
+          "type": "string",
+          "format": "email",
+          "maxLength": 254,
+          "x-nullable": true
+        },
+        "link": {
+          "title": "Link/Website",
+          "description": "Link to external company information or profile",
+          "type": "string",
+          "format": "uri",
+          "maxLength": 200
+        },
+        "is_customer": {
+          "title": "Is customer",
+          "description": "Do you sell items to this company?",
+          "type": "boolean"
+        },
+        "is_supplier": {
+          "title": "Is supplier",
+          "description": "Do you purchase items from this company?",
+          "type": "boolean"
+        },
+        "is_manufacturer": {
+          "title": "Is manufacturer",
+          "description": "Does this company manufacture parts?",
+          "type": "boolean"
+        },
+        "currency": {
+          "title": "Currency",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "company_type": {
+          "title": "Company type",
+          "type": "string",
+          "readOnly": true
+        },
+        "short_address": {
+          "title": "Address",
+          "type": "string",
+          "maxLength": 200,
+          "x-nullable": true
+        }
+      }
+    },
+    "CompanyAddress": {
+      "required": [
+        "title",
+        "address"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "ID",
+          "description": "Unique identifier for the model instance.",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "full_address": {
+          "title": "Full address",
+          "type": "string",
+          "readOnly": true
+        },
+        "created_by": {
+          "title": "Created By",
+          "description": "User who created this model instance.",
+          "type": "string",
+          "maxLength": 400,
+          "x-nullable": true
+        },
+        "created_at": {
+          "title": "Created At",
+          "description": "Timestamp when this model instance was created.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "description": "Timestamp when this model instance was last updated.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "title": {
+          "title": "Address title",
+          "description": "Title describing the address entry",
+          "type": "string",
+          "maxLength": 100,
+          "minLength": 1
+        },
+        "address": {
+          "title": "Address",
+          "type": "string",
+          "maxLength": 300,
+          "minLength": 1
+        },
+        "primary": {
+          "title": "Primary address",
+          "description": "Set as primary or main address",
+          "type": "boolean"
+        },
+        "shipping_notes": {
+          "title": "Courier shipping notes",
+          "description": "Notes for shipping courier",
+          "type": "string",
+          "maxLength": 100
+        },
+        "internal_shipping_notes": {
+          "title": "Internal shipping notes",
+          "description": "Shipping notes for internal use",
+          "type": "string",
+          "maxLength": 100
+        },
+        "link": {
+          "title": "Link",
+          "description": "Link to address information (external)",
+          "type": "string",
+          "format": "uri",
+          "maxLength": 200,
+          "x-nullable": true
+        },
+        "company": {
+          "title": "Company",
+          "description": "Select company",
+          "type": "string",
+          "format": "uuid",
+          "x-nullable": true
+        }
+      }
+    },
+    "Contact": {
+      "required": [
+        "name",
+        "company"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "ID",
+          "description": "Unique identifier for the model instance.",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "created_by": {
+          "title": "Created By",
+          "description": "User who created this model instance.",
+          "type": "string",
+          "maxLength": 400,
+          "x-nullable": true
+        },
+        "created_at": {
+          "title": "Created At",
+          "description": "Timestamp when this model instance was created.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "description": "Timestamp when this model instance was last updated.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "name": {
+          "title": "Name",
+          "type": "string",
+          "maxLength": 100,
+          "minLength": 1
+        },
+        "phone": {
+          "title": "Phone",
+          "type": "string",
+          "maxLength": 15
+        },
+        "email": {
+          "title": "Email",
+          "type": "string",
+          "format": "email",
+          "maxLength": 254,
+          "x-nullable": true
+        },
+        "role": {
+          "title": "Role",
+          "description": "Contact person role in company",
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9]*$",
+          "maxLength": 100
+        },
+        "company": {
+          "title": "Company",
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "InventoryCategoryList": {
+      "required": [
+        "name"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "ID",
+          "description": "Unique identifier for the model instance.",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "name": {
+          "title": "Category name*",
+          "description": "It must be unique",
+          "type": "string",
+          "maxLength": 200,
+          "minLength": 1
+        },
+        "slug": {
+          "title": "Slug",
+          "type": "string",
+          "format": "slug",
+          "pattern": "^[-a-zA-Z0-9_]+$",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "is_active": {
+          "title": "Is active",
+          "type": "boolean"
+        },
+        "inventory_count": {
+          "title": "Inventory count",
+          "type": "string",
+          "readOnly": true
+        },
+        "parent": {
+          "title": "Parent category",
+          "description": "Parent to which this category falls",
+          "type": "string",
+          "format": "uuid",
+          "x-nullable": true
+        },
+        "parent_name": {
+          "title": "Parent name",
+          "type": "string",
+          "readOnly": true
+        }
+      }
+    },
+    "InventoryCategoryDetail": {
+      "required": [
+        "name"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "ID",
+          "description": "Unique identifier for the model instance.",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "inventory_count": {
+          "title": "Inventory count",
+          "type": "string",
+          "readOnly": true
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/InventoryCategoryList"
+          },
+          "readOnly": true
+        },
+        "created_by_details": {
+          "title": "Created by details",
+          "type": "string",
+          "readOnly": true
+        },
+        "modified_by_details": {
+          "title": "Modified by details",
+          "type": "string",
+          "readOnly": true
+        },
+        "parent_name": {
+          "title": "Parent name",
+          "type": "string",
+          "readOnly": true
+        },
+        "created_at": {
+          "title": "Created At",
+          "description": "Timestamp when this model instance was created.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "description": "Timestamp when this model instance was last updated.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "profile": {
+          "title": "Profile",
+          "description": "Profile of the user or entity associated with this model.",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "created_by": {
+          "title": "Created By",
+          "description": "User  ID of the creator",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1,
+          "x-nullable": true
+        },
+        "structural": {
+          "title": "Structural",
+          "description": "Inventory may not be directly assigned to a structural category, but may be assigned to child categories.",
+          "type": "boolean"
+        },
+        "name": {
+          "title": "Category name*",
+          "description": "It must be unique",
+          "type": "string",
+          "maxLength": 200,
+          "minLength": 1
+        },
+        "slug": {
+          "title": "Slug",
+          "type": "string",
+          "format": "slug",
+          "pattern": "^[-a-zA-Z0-9_]+$",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "is_active": {
+          "title": "Is active",
+          "type": "boolean"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string",
+          "x-nullable": true
+        },
+        "lft": {
+          "title": "Lft",
+          "type": "integer",
+          "readOnly": true
+        },
+        "rght": {
+          "title": "Rght",
+          "type": "integer",
+          "readOnly": true
+        },
+        "tree_id": {
+          "title": "Tree id",
+          "type": "integer",
+          "readOnly": true
+        },
+        "level": {
+          "title": "Level",
+          "type": "integer",
+          "readOnly": true
+        },
+        "default_location": {
+          "title": "Default Location",
+          "description": "Default location for parts in this category",
+          "type": "string",
+          "format": "uuid",
+          "x-nullable": true
+        },
+        "parent": {
+          "title": "Parent category",
+          "description": "Parent to which this category falls",
+          "type": "string",
+          "format": "uuid",
+          "x-nullable": true
+        }
+      }
+    },
+    "InventoryList": {
+      "required": [
+        "name"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "ID",
+          "description": "Unique identifier for the model instance.",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "name": {
+          "title": "Inventory Name",
+          "description": "Unique identifier for this inventory system",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "external_system_id": {
+          "title": "External ID",
+          "description": "Identifier in external ERP/WMS systems",
+          "type": "string",
+          "maxLength": 200,
+          "x-nullable": true
+        },
+        "inventory_type": {
+          "title": "Inventory Type",
+          "description": "Type of inventory item",
+          "type": "string",
+          "enum": [
+            "raw_material",
+            "finished_good",
+            "work_in_progress",
+            "maintenance_spare_part",
+            "consumable",
+            "tooling",
+            "packaging"
+          ]
+        },
+        "unit_name": {
+          "title": "Unit name",
+          "type": "string",
+          "maxLength": 23,
+          "x-nullable": true
+        },
+        "total_stock_value": {
+          "title": "Total stock value",
+          "type": "string",
+          "readOnly": true
+        },
+        "category_name": {
+          "title": "Category name",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "stock_status": {
+          "title": "Stock status",
+          "type": "string",
+          "readOnly": true
+        },
+        "active": {
+          "title": "Active",
+          "description": "Is this Inventory active?",
+          "type": "boolean"
+        },
+        "current_stock_level": {
+          "title": "Current stock level",
+          "type": "string",
+          "readOnly": true
+        },
+        "minimum_stock_level": {
+          "title": "Safety Stock",
+          "description": "Buffer stock for demand/supply fluctuations",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": -2147483648
+        },
+        "re_order_point": {
+          "title": "Reorder Point",
+          "description": "Inventory level triggering replenishment (units)",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": -2147483648
+        },
+        "created_at": {
+          "title": "Created At",
+          "description": "Timestamp when this model instance was created.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "re_order_quantity": {
+          "title": "Reorder Quantity",
+          "description": "Standard quantity for automated replenishment",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": -2147483648
+        },
+        "reorder_strategy": {
+          "title": "Replenishment Strategy",
+          "description": "Methodology for inventory replenishment",
+          "type": "string",
+          "enum": [
+            "FQ",
+            "FI",
+            "DY"
+          ]
+        }
+      }
+    },
+    "InventoryDetail": {
+      "required": [
+        "name"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "ID",
+          "description": "Unique identifier for the model instance.",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "category_details": {
+          "$ref": "#/definitions/InventoryCategoryList"
+        },
+        "current_stock": {
+          "title": "Current stock",
+          "type": "string",
+          "readOnly": true
+        },
+        "stock_status": {
+          "title": "Stock status",
+          "type": "string",
+          "readOnly": true
+        },
+        "calculated_safety_stock": {
+          "title": "Calculated safety stock",
+          "type": "string",
+          "readOnly": true
+        },
+        "officer_in_charge_details": {
+          "title": "Officer in charge details",
+          "type": "string",
+          "readOnly": true
+        },
+        "created_by_details": {
+          "title": "Created by details",
+          "type": "string",
+          "readOnly": true
+        },
+        "modified_by_details": {
+          "title": "Modified by details",
+          "type": "string",
+          "readOnly": true
+        },
+        "stock_analytics": {
+          "title": "Stock analytics",
+          "type": "string",
+          "readOnly": true
+        },
+        "created_at": {
+          "title": "Created At",
+          "description": "Timestamp when this model instance was created.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "description": "Timestamp when this model instance was last updated.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "profile": {
+          "title": "Profile",
+          "description": "Profile of the user or entity associated with this model.",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "created_by": {
+          "title": "Created By",
+          "description": "User  ID of the creator",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1,
+          "x-nullable": true
+        },
+        "unit": {
+          "title": "Unit",
+          "type": "string",
+          "maxLength": 23,
+          "x-nullable": true
+        },
+        "unit_name": {
+          "title": "Unit name",
+          "type": "string",
+          "maxLength": 23,
+          "x-nullable": true
+        },
+        "re_order_point": {
+          "title": "Reorder Point",
+          "description": "Inventory level triggering replenishment (units)",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": -2147483648
+        },
+        "re_order_quantity": {
+          "title": "Reorder Quantity",
+          "description": "Standard quantity for automated replenishment",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": -2147483648
+        },
+        "safety_stock_level": {
+          "title": "Safety Stock",
+          "description": "Buffer stock for demand/supply fluctuations",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": -2147483648
+        },
+        "minimum_stock_level": {
+          "title": "Safety Stock",
+          "description": "Buffer stock for demand/supply fluctuations",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": -2147483648
+        },
+        "supplier_lead_time": {
+          "title": "Supplier Lead Time",
+          "description": "Average replenishment duration (days)",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": -2147483648
+        },
+        "internal_processing_time": {
+          "title": "Internal Processing Time",
+          "description": "Days needed for internal order processing",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": -2147483648
+        },
+        "reorder_strategy": {
+          "title": "Replenishment Strategy",
+          "description": "Methodology for inventory replenishment",
+          "type": "string",
+          "enum": [
+            "FQ",
+            "FI",
+            "DY"
+          ]
+        },
+        "expiration_threshold": {
+          "title": "Expiration Alert Window",
+          "description": "Days before expiry to trigger alerts",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": -2147483648
+        },
+        "expiration_policy": {
+          "title": "Expiration Handling",
+          "description": "Procedure for expired inventory items",
+          "type": "string",
+          "enum": [
+            "0",
+            "1"
+          ]
+        },
+        "recall_policy": {
+          "title": "Recall Procedure",
+          "description": "Protocol for product recall scenarios",
+          "type": "string",
+          "enum": [
+            "0",
+            "1",
+            "3",
+            "4",
+            "5"
+          ]
+        },
+        "near_expiry_policy": {
+          "title": "Near-Expiry Action",
+          "description": "Action plan for items nearing expiration",
+          "type": "string",
+          "enum": [
+            "DISCOUNT",
+            "DONATE",
+            "DESTROY",
+            "RETURN"
+          ]
+        },
+        "forecast_method": {
+          "title": "Forecast Method",
+          "description": "Algorithm for demand prediction",
+          "type": "string",
+          "enum": [
+            "SA",
+            "MA",
+            "ES"
+          ]
+        },
+        "supplier_reliability_score": {
+          "title": "Supplier Score",
+          "description": "Performance rating (0-100 scale)",
+          "type": "string",
+          "format": "decimal"
+        },
+        "alert_threshold": {
+          "title": "Alert Threshold",
+          "description": "Percentage variance to trigger stock alerts",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": -2147483648
+        },
+        "external_system_id": {
+          "title": "External ID",
+          "description": "Identifier in external ERP/WMS systems",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1,
+          "x-nullable": true
+        },
+        "auto_archive_days": {
+          "title": "Auto-Archive Period",
+          "description": "Days of inactivity before archiving inventory",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": 0
+        },
+        "assembly": {
+          "title": "Assembly",
+          "description": "Can this Inventory be built from other Inventory?",
+          "type": "boolean"
+        },
+        "batch_tracking_enabled": {
+          "title": "Batch Tracking",
+          "description": "Enable batch/lot number tracking for items",
+          "type": "boolean"
+        },
+        "automate_reorder": {
+          "title": "Auto-Replenish",
+          "description": "Enable automatic purchase orders at reorder point",
+          "type": "boolean"
+        },
+        "component": {
+          "title": "Component",
+          "description": "Can this Inventory be used to build other Inventory?",
+          "type": "boolean"
+        },
+        "trackable": {
+          "title": "Trackable",
+          "description": "Does this Inventory have tracking for unique items?",
+          "type": "boolean"
+        },
+        "testable": {
+          "title": "Testable",
+          "description": "Can this Inventory have test results recorded against it?",
+          "type": "boolean"
+        },
+        "purchaseable": {
+          "title": "Purchaseable",
+          "description": "Can this Inventory be purchased from external suppliers?",
+          "type": "boolean"
+        },
+        "salable": {
+          "title": "Salable",
+          "description": "Can this Inventory be sold to customers?",
+          "type": "boolean"
+        },
+        "active": {
+          "title": "Active",
+          "description": "Is this Inventory active?",
+          "type": "boolean"
+        },
+        "locked": {
+          "title": "Locked",
+          "description": "Locked Inventory cannot be edited",
+          "type": "boolean"
+        },
+        "virtual": {
+          "title": "Virtual",
+          "description": "Is this a virtual inventory, such as a software product or license?",
+          "type": "boolean"
+        },
+        "name": {
+          "title": "Inventory Name",
+          "description": "Unique identifier for this inventory system",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "description": {
+          "title": "Description",
+          "description": "Detailed operational context and usage notes",
+          "type": "string",
+          "x-nullable": true
+        },
+        "inventory_type": {
+          "title": "Inventory Type",
+          "description": "Type of inventory item",
+          "type": "string",
+          "enum": [
+            "raw_material",
+            "finished_good",
+            "work_in_progress",
+            "maintenance_spare_part",
+            "consumable",
+            "tooling",
+            "packaging"
+          ]
+        },
+        "sync_status": {
+          "title": "Sync status",
+          "type": "string",
+          "enum": [
+            "SYNCED",
+            "PENDING",
+            "ERROR"
+          ]
+        },
+        "last_sync_timestamp": {
+          "title": "Last sync timestamp",
+          "type": "string",
+          "format": "date-time",
+          "x-nullable": true
+        },
+        "sync_error_message": {
+          "title": "Sync error message",
+          "type": "string",
+          "x-nullable": true
+        },
+        "external_references": {
+          "title": "External references",
+          "description": "References to this inventory in external systems",
+          "type": "object"
+        },
+        "officer_in_charge": {
+          "title": "Officer in Charge ID",
+          "description": "ID of the officer responsible for this inventory",
+          "type": "string",
+          "maxLength": 400,
+          "x-nullable": true
+        },
+        "default_supplier": {
+          "title": "Default Supplier",
+          "description": "Default supplier For the Inventory",
+          "type": "string",
+          "format": "uuid",
+          "x-nullable": true
+        },
+        "category": {
+          "title": "Classification Category",
+          "description": "Hierarchical grouping for inventory items",
+          "type": "string",
+          "format": "uuid",
+          "x-nullable": true
+        }
+      }
+    },
+    "PurchaseOrderList": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "ID",
+          "description": "Unique identifier for the model instance.",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "reference": {
+          "title": "Reference",
+          "description": "Order reference",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "status": {
+          "title": "Status",
+          "description": "Purchase order status",
+          "type": "string",
+          "enum": [
+            "pending",
+            "issued",
+            "completed",
+            "cancelled",
+            "overdue",
+            "received",
+            "rejected",
+            "approved",
+            "lost",
+            "returned"
+          ]
+        },
+        "supplier_name": {
+          "title": "Supplier name",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "total_price": {
+          "title": "Total price",
+          "type": "string",
+          "readOnly": true
+        },
+        "issue_date": {
+          "title": "Issue Date",
+          "description": "Date order was issued",
+          "type": "string",
+          "format": "date-time",
+          "x-nullable": true
+        },
+        "delivery_date": {
+          "title": "Delivery Date",
+          "description": "Expected date for order delivery. Order will be overdue after this date.",
+          "type": "string",
+          "format": "date",
+          "x-nullable": true
+        },
+        "line_items_count": {
+          "title": "Line items count",
+          "type": "string",
+          "readOnly": true
+        },
+        "created_at": {
+          "title": "Created At",
+          "description": "Timestamp when this model instance was created.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "workflow_state": {
+          "title": "Workflow state",
+          "type": "string",
+          "enum": [
+            "DRAFT",
+            "PENDING_APPROVAL",
+            "APPROVED",
+            "SENT_TO_SUPPLIER",
+            "PARTIALLY_RECEIVED",
+            "FULLY_RECEIVED",
+            "CLOSED"
+          ]
+        }
+      }
+    },
+    "InventoryStockItemList": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "ID",
+          "description": "Unique identifier for the model instance.",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "name": {
+          "title": "Name",
+          "description": "Name of the stock item",
+          "type": "string",
+          "maxLength": 200,
+          "minLength": 1,
+          "x-nullable": true
+        },
+        "sku": {
+          "title": "Stock keeping unit",
+          "description": "Stock keeping unit for this stock item",
+          "type": "string",
+          "maxLength": 100,
+          "x-nullable": true
+        },
+        "serial": {
+          "title": "Serial Number",
+          "description": "Unique serial number for this StockItem",
+          "type": "string",
+          "maxLength": 100,
+          "x-nullable": true
+        },
+        "quantity": {
+          "title": "Stock Quantity",
+          "type": "string",
+          "format": "decimal"
+        },
+        "status": {
+          "title": "Status",
+          "description": "Status of this StockItem ",
+          "type": "string",
+          "enum": [
+            "ok",
+            "attention_needed",
+            "damaged",
+            "destroyed",
+            "rejected",
+            "lost",
+            "quarantined",
+            "returned"
+          ]
+        },
+        "inventory_name": {
+          "title": "Inventory name",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "location_name": {
+          "title": "Location name",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "expiry_date": {
+          "title": "Expiry Date",
+          "description": "Expiry date for stock item. Stock will be considered expired after this date",
+          "type": "string",
+          "format": "date",
+          "x-nullable": true
+        },
+        "days_to_expiry": {
+          "title": "Days to expiry",
+          "type": "string",
+          "readOnly": true
+        },
+        "purchase_price": {
+          "title": "Purchase Price",
+          "description": "Single unit purchase price at the time of purchase",
+          "type": "string",
+          "format": "decimal",
+          "x-nullable": true
+        },
+        "created_at": {
+          "title": "Created At",
+          "description": "Timestamp when this model instance was created.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        }
+      }
+    },
+    "PurchaseOrderLineItem": {
+      "required": [
+        "purchase_order",
+        "quantity",
+        "unit_price"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "ID",
+          "description": "Unique identifier for the model instance.",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "purchase_order": {
+          "title": "Purchase order",
+          "type": "string",
+          "format": "uuid"
+        },
+        "stock_item": {
+          "title": "Stock item",
+          "type": "string",
+          "format": "uuid",
+          "x-nullable": true
+        },
+        "stock_item_details": {
+          "$ref": "#/definitions/InventoryStockItemList"
+        },
+        "quantity": {
+          "title": "Quantity",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": 1
+        },
+        "quantity_w_unit": {
+          "title": "Quantity w unit",
+          "type": "string",
+          "readOnly": true
+        },
+        "unit_price": {
+          "title": "Unit price",
+          "type": "string",
+          "format": "decimal"
+        },
+        "discount_rate": {
+          "title": "Discount rate",
+          "description": "Discount rate as a percentage (e.g. 5.0)",
+          "type": "string",
+          "format": "decimal"
+        },
+        "tax_rate": {
+          "title": "Tax rate",
+          "type": "string",
+          "format": "decimal"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string",
+          "x-nullable": true
+        },
+        "batch_number": {
+          "title": "Batch number",
+          "type": "string",
+          "maxLength": 30
+        },
+        "expiry_date": {
+          "title": "Expiry date",
+          "type": "string",
+          "format": "date",
+          "x-nullable": true
+        },
+        "manufactured_date": {
+          "title": "Manufactured date",
+          "type": "string",
+          "format": "date",
+          "x-nullable": true
+        },
+        "fully_received": {
+          "title": "Fully received",
+          "type": "boolean"
+        },
+        "tax_amount": {
+          "title": "Tax amount",
+          "type": "string",
+          "format": "decimal",
+          "readOnly": true
+        },
+        "discount": {
+          "title": "Discount",
+          "type": "string",
+          "readOnly": true
+        },
+        "total_price": {
+          "title": "Total price",
+          "type": "string",
+          "format": "decimal",
+          "readOnly": true
+        }
+      }
+    },
+    "PurchaseOrderDetail": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "ID",
+          "description": "Unique identifier for the model instance.",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "line_items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PurchaseOrderLineItem"
+          },
+          "readOnly": true
+        },
+        "supplier_details": {
+          "title": "Supplier details",
+          "type": "string",
+          "readOnly": true
+        },
+        "responsible_details": {
+          "title": "Responsible details",
+          "type": "string",
+          "readOnly": true
+        },
+        "received_by_details": {
+          "title": "Received by details",
+          "type": "string",
+          "readOnly": true
+        },
+        "total_price": {
+          "title": "Total price",
+          "type": "string",
+          "readOnly": true
+        },
+        "order_analytics": {
+          "title": "Order analytics",
+          "type": "string",
+          "readOnly": true
+        },
+        "created_by": {
+          "title": "Created By",
+          "description": "User who created this model instance.",
+          "type": "string",
+          "maxLength": 400,
+          "x-nullable": true
+        },
+        "created_at": {
+          "title": "Created At",
+          "description": "Timestamp when this model instance was created.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "description": "Timestamp when this model instance was last updated.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "profile": {
+          "title": "Profile",
+          "description": "Profile of the user or entity associated with this model.",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "order_currency": {
+          "title": "Order Currency",
+          "type": "string",
+          "maxLength": 10,
+          "x-nullable": true
+        },
+        "description": {
+          "title": "Description",
+          "description": "Order description (optional)",
+          "type": "string",
+          "maxLength": 250
+        },
+        "notes": {
+          "title": "Notes",
+          "description": "Additional notes (optional)",
+          "type": "string"
+        },
+        "link": {
+          "title": "Link",
+          "description": "Link to an external page",
+          "type": "string",
+          "format": "uri",
+          "maxLength": 200
+        },
+        "delivery_date": {
+          "title": "Delivery Date",
+          "description": "Expected date for order delivery. Order will be overdue after this date.",
+          "type": "string",
+          "format": "date",
+          "x-nullable": true
+        },
+        "received_date": {
+          "title": "Received Date",
+          "description": "Date order was received",
+          "type": "string",
+          "format": "date",
+          "x-nullable": true
+        },
+        "responsible": {
+          "title": "Responsible",
+          "description": "User or group responsible for this order",
+          "type": "string",
+          "maxLength": 400,
+          "x-nullable": true
+        },
+        "reference": {
+          "title": "Reference",
+          "description": "Order reference",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "status": {
+          "title": "Status",
+          "description": "Purchase order status",
+          "type": "string",
+          "enum": [
+            "pending",
+            "issued",
+            "completed",
+            "cancelled",
+            "overdue",
+            "received",
+            "rejected",
+            "approved",
+            "lost",
+            "returned"
+          ]
+        },
+        "supplier_reference": {
+          "title": "Supplier Reference",
+          "description": "Supplier order reference code",
+          "type": "string",
+          "maxLength": 64,
+          "x-nullable": true
+        },
+        "received_by": {
+          "title": "Received By",
+          "type": "string",
+          "maxLength": 400,
+          "x-nullable": true
+        },
+        "issue_date": {
+          "title": "Issue Date",
+          "description": "Date order was issued",
+          "type": "string",
+          "format": "date-time",
+          "x-nullable": true
+        },
+        "complete_date": {
+          "title": "Completion Date",
+          "description": "Date order was completed",
+          "type": "string",
+          "format": "date-time",
+          "x-nullable": true
+        },
+        "workflow_state": {
+          "title": "Workflow state",
+          "type": "string",
+          "enum": [
+            "DRAFT",
+            "PENDING_APPROVAL",
+            "APPROVED",
+            "SENT_TO_SUPPLIER",
+            "PARTIALLY_RECEIVED",
+            "FULLY_RECEIVED",
+            "CLOSED"
+          ]
+        },
+        "approval_required": {
+          "title": "Approval required",
+          "type": "boolean"
+        },
+        "approved_by": {
+          "title": "Approved by",
+          "type": "string",
+          "maxLength": 255
+        },
+        "approved_at": {
+          "title": "Approved at",
+          "type": "string",
+          "format": "date-time",
+          "x-nullable": true
+        },
+        "budget_code": {
+          "title": "Budget code",
+          "type": "string",
+          "maxLength": 50
+        },
+        "department": {
+          "title": "Department",
+          "type": "string",
+          "maxLength": 100
+        },
+        "contact": {
+          "title": "Contact Person",
+          "description": "Point of contact for this order, that is the person you should keep in contact with for this order in the affiliated business",
+          "type": "string",
+          "format": "uuid",
+          "x-nullable": true
+        },
+        "address": {
+          "title": "Address",
+          "description": "Company address for this order of the affiliated business",
+          "type": "string",
+          "format": "uuid",
+          "x-nullable": true
+        },
+        "supplier": {
+          "title": "Supplier",
+          "description": "Company from which the items are being ordered",
+          "type": "string",
+          "format": "uuid",
+          "x-nullable": true
+        }
+      }
+    },
+    "StockLocationType": {
+      "required": [
+        "name"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "ID",
+          "type": "integer",
+          "readOnly": true
+        },
+        "name": {
+          "title": "Name",
+          "description": "Brief name for the stock location type (unique)",
+          "type": "string",
+          "maxLength": 100,
+          "minLength": 1
+        },
+        "description": {
+          "title": "Description",
+          "description": "Longer form description of the stock location type (optional)",
+          "type": "string",
+          "maxLength": 250
+        }
+      }
+    },
+    "StockLocationList": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "ID",
+          "description": "Unique identifier for the model instance.",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "name": {
+          "title": "Name",
+          "type": "string",
+          "maxLength": 200,
+          "minLength": 1,
+          "x-nullable": true
+        },
+        "code": {
+          "title": "Location Code",
+          "description": "Unique location identifier (auto-generated)",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1,
+          "x-nullable": true
+        },
+        "parent_name": {
+          "title": "Parent name",
+          "type": "string",
+          "readOnly": true
+        },
+        "location_type_name": {
+          "title": "Location type name",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "stock_count": {
+          "title": "Stock count",
+          "type": "string",
+          "readOnly": true
+        },
+        "structural": {
+          "title": "Structural",
+          "description": "Stock items may not be directly located into a structural stock location, but may be located to child locations.",
+          "type": "boolean"
+        },
+        "external": {
+          "title": "External",
+          "description": "This is an external stock location",
+          "type": "boolean"
+        },
+        "physical_address": {
+          "title": "Physical address",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        }
+      }
+    },
+    "StockLocationDetail": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "ID",
+          "description": "Unique identifier for the model instance.",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "location_type_name": {
+          "title": "Location type name",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/StockLocationList"
+          },
+          "readOnly": true
+        },
+        "official_details": {
+          "title": "Official details",
+          "type": "string",
+          "readOnly": true
+        },
+        "stock_summary": {
+          "title": "Stock summary",
+          "type": "string",
+          "readOnly": true
+        },
+        "parent_name": {
+          "title": "Parent name",
+          "type": "string",
+          "readOnly": true
+        },
+        "created_at": {
+          "title": "Created At",
+          "description": "Timestamp when this model instance was created.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "description": "Timestamp when this model instance was last updated.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "profile": {
+          "title": "Profile",
+          "description": "Profile of the user or entity associated with this model.",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "created_by": {
+          "title": "Created By",
+          "description": "User  ID of the creator",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1,
+          "x-nullable": true
+        },
+        "code": {
+          "title": "Location Code",
+          "description": "Unique location identifier (auto-generated)",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1,
+          "x-nullable": true
+        },
+        "name": {
+          "title": "Name",
+          "type": "string",
+          "maxLength": 200,
+          "minLength": 1,
+          "x-nullable": true
+        },
+        "official": {
+          "title": "Manager ID",
+          "description": "ID of the manager for this stock location",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "structural": {
+          "title": "Structural",
+          "description": "Stock items may not be directly located into a structural stock location, but may be located to child locations.",
+          "type": "boolean"
+        },
+        "external": {
+          "title": "External",
+          "description": "This is an external stock location",
+          "type": "boolean"
+        },
+        "description": {
+          "title": "Description",
+          "description": "Longer form description of the stock location (optional)",
+          "type": "string",
+          "x-nullable": true
+        },
+        "physical_address": {
+          "title": "Physical address",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "lft": {
+          "title": "Lft",
+          "type": "integer",
+          "readOnly": true
+        },
+        "rght": {
+          "title": "Rght",
+          "type": "integer",
+          "readOnly": true
+        },
+        "tree_id": {
+          "title": "Tree id",
+          "type": "integer",
+          "readOnly": true
+        },
+        "level": {
+          "title": "Level",
+          "type": "integer",
+          "readOnly": true
+        },
+        "parent": {
+          "title": "Super Location",
+          "description": "The location this falls under eg if this is a sub location in a bigger location like warehouse",
+          "type": "string",
+          "format": "uuid",
+          "x-nullable": true
+        },
+        "location_type": {
+          "title": "Location type",
+          "description": "Stock location type of this location",
+          "type": "integer",
+          "x-nullable": true
+        }
+      }
+    },
+    "StockInventoryList": {
+      "required": [
+        "name"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "ID",
+          "description": "Unique identifier for the model instance.",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "name": {
+          "title": "Inventory Name",
+          "description": "Unique identifier for this inventory system",
+          "type": "string",
+          "maxLength": 255,
+          "minLength": 1
+        },
+        "external_system_id": {
+          "title": "External ID",
+          "description": "Identifier in external ERP/WMS systems",
+          "type": "string",
+          "maxLength": 200,
+          "x-nullable": true
+        },
+        "inventory_type": {
+          "title": "Inventory Type",
+          "description": "Type of inventory item",
+          "type": "string",
+          "enum": [
+            "raw_material",
+            "finished_good",
+            "work_in_progress",
+            "maintenance_spare_part",
+            "consumable",
+            "tooling",
+            "packaging"
+          ]
+        },
+        "category_name": {
+          "title": "Category name",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1
+        },
+        "current_stock": {
+          "title": "Current stock",
+          "type": "string",
+          "readOnly": true
+        },
+        "stock_status": {
+          "title": "Stock status",
+          "type": "string",
+          "readOnly": true
+        },
+        "active": {
+          "title": "Active",
+          "description": "Is this Inventory active?",
+          "type": "boolean"
+        },
+        "minimum_stock_level": {
+          "title": "Safety Stock",
+          "description": "Buffer stock for demand/supply fluctuations",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": -2147483648
+        },
+        "re_order_point": {
+          "title": "Reorder Point",
+          "description": "Inventory level triggering replenishment (units)",
+          "type": "integer",
+          "maximum": 2147483647,
+          "minimum": -2147483648
+        },
+        "created_at": {
+          "title": "Created At",
+          "description": "Timestamp when this model instance was created.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        }
+      }
+    },
+    "StockItemDetail": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "ID",
+          "description": "Unique identifier for the model instance.",
+          "type": "string",
+          "format": "uuid",
+          "readOnly": true
+        },
+        "inventory_details": {
+          "$ref": "#/definitions/StockInventoryList"
+        },
+        "location_details": {
+          "$ref": "#/definitions/StockLocationList"
+        },
+        "customer_details": {
+          "title": "Customer details",
+          "type": "string",
+          "readOnly": true
+        },
+        "stocktaker_details": {
+          "title": "Stocktaker details",
+          "type": "string",
+          "readOnly": true
+        },
+        "current_pricing": {
+          "title": "Current pricing",
+          "type": "string",
+          "readOnly": true
+        },
+        "recent_movements": {
+          "title": "Recent movements",
+          "type": "string",
+          "readOnly": true
+        },
+        "created_by": {
+          "title": "Created By",
+          "description": "User who created this model instance.",
+          "type": "string",
+          "maxLength": 400,
+          "x-nullable": true
+        },
+        "created_at": {
+          "title": "Created At",
+          "description": "Timestamp when this model instance was created.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "description": "Timestamp when this model instance was last updated.",
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "name": {
+          "title": "Name",
+          "description": "Name of the stock item",
+          "type": "string",
+          "maxLength": 200,
+          "minLength": 1,
+          "x-nullable": true
+        },
+        "product_variant": {
+          "title": "Product Variant Barcode",
+          "description": "Barcode to variant of the product",
+          "type": "string",
+          "maxLength": 200,
+          "x-nullable": true
+        },
+        "packaging": {
+          "title": "Packaging",
+          "description": "Description of how the StockItem is packaged (e.g. \"reel\", \"loose\", \"tape\" etc)",
+          "type": "string",
+          "maxLength": 100,
+          "x-nullable": true
+        },
+        "customer": {
+          "title": "Customer ID",
+          "description": "Customer ID",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "serial": {
+          "title": "Serial Number",
+          "description": "Unique serial number for this StockItem",
+          "type": "string",
+          "maxLength": 100,
+          "x-nullable": true
+        },
+        "sku": {
+          "title": "Stock keeping unit",
+          "description": "Stock keeping unit for this stock item",
+          "type": "string",
+          "readOnly": true,
+          "minLength": 1,
+          "x-nullable": true
+        },
+        "serial_int": {
+          "title": "Serial int",
+          "type": "integer",
+          "readOnly": true
+        },
+        "link": {
+          "title": "External Link",
+          "description": "Optional URL to link to an external resource",
+          "type": "string",
+          "format": "uri",
+          "maxLength": 200,
+          "x-nullable": true
+        },
+        "batch": {
+          "title": "Batch Code",
+          "description": "Batch code for this stock item",
+          "type": "string",
+          "maxLength": 100,
+          "x-nullable": true
+        },
+        "quantity": {
+          "title": "Stock Quantity",
+          "type": "string",
+          "format": "decimal"
+        },
+        "expiry_date": {
+          "title": "Expiry Date",
+          "description": "Expiry date for stock item. Stock will be considered expired after this date",
+          "type": "string",
+          "format": "date",
+          "x-nullable": true
+        },
+        "stocktake_date": {
+          "title": "Stocktake date",
+          "type": "string",
+          "format": "date",
+          "x-nullable": true
+        },
+        "stocktaker": {
+          "title": "Stocktaker",
+          "description": "User  ID that performed the most recent stocktake",
+          "type": "string",
+          "maxLength": 255,
+          "x-nullable": true
+        },
+        "review_needed": {
+          "title": "Review needed",
+          "type": "boolean"
+        },
+        "delete_on_deplete": {
+          "title": "Delete on deplete",
+          "description": "Delete this Stock Item when stock is depleted",
+          "type": "boolean"
+        },
+        "status": {
+          "title": "Status",
+          "description": "Status of this StockItem ",
+          "type": "string",
+          "enum": [
+            "ok",
+            "attention_needed",
+            "damaged",
+            "destroyed",
+            "rejected",
+            "lost",
+            "quarantined",
+            "returned"
+          ]
+        },
+        "purchase_price": {
+          "title": "Purchase Price",
+          "description": "Single unit purchase price at the time of purchase",
+          "type": "string",
+          "format": "decimal",
+          "x-nullable": true
+        },
+        "override_sales_price": {
+          "title": "Override sales price",
+          "description": "Temporary price override for this stock batch",
+          "type": "string",
+          "format": "decimal",
+          "x-nullable": true
+        },
+        "notes": {
+          "title": "Notes",
+          "description": "Extra notes field",
+          "type": "string",
+          "x-nullable": true
+        },
+        "lft": {
+          "title": "Lft",
+          "type": "integer",
+          "readOnly": true
+        },
+        "rght": {
+          "title": "Rght",
+          "type": "integer",
+          "readOnly": true
+        },
+        "tree_id": {
+          "title": "Tree id",
+          "type": "integer",
+          "readOnly": true
+        },
+        "level": {
+          "title": "Level",
+          "type": "integer",
+          "readOnly": true
+        },
+        "inventory": {
+          "title": "Inventory",
+          "type": "string",
+          "format": "uuid",
+          "x-nullable": true
+        },
+        "parent": {
+          "title": "Parent Stock Item",
+          "description": "Link to another StockItem from which this StockItem was created",
+          "type": "string",
+          "format": "uuid",
+          "x-nullable": true
+        },
+        "location": {
+          "title": "Stock Location",
+          "description": "Where this StockItem is located",
+          "type": "string",
+          "format": "uuid",
+          "x-nullable": true
+        },
+        "belongs_to": {
+          "title": "Installed In",
+          "description": "Is this item installed in another item?",
+          "type": "string",
+          "format": "uuid",
+          "x-nullable": true
+        },
+        "purchase_order": {
+          "title": "Source Purchase Order",
+          "description": "Link to a PurchaseOrder (if this stock item was created from a PurchaseOrder)",
+          "type": "string",
+          "format": "uuid",
+          "x-nullable": true
+        },
+        "sales_order": {
+          "title": "Destination Sales Order",
+          "description": "Link item to a SalesOrder",
+          "type": "string",
+          "format": "uuid",
+          "x-nullable": true
+        }
+      }
+    }
+  }
+}

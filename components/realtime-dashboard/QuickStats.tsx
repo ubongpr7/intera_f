@@ -1,53 +1,51 @@
-
 'use client';
-import { useGetDashboardStatsQuery } from '@/redux/features/product/productAPISlice';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, ShoppingCart, Users, Zap } from 'lucide-react';
+import { useGetDashboardStatsQuery } from '@/redux/features/dashboard/dashboardApiSlice';
+import { Box, AlertTriangle, ClipboardList, Truck } from 'lucide-react';
+import LoadingAnimation from '../common/LoadingAnimation';
 
 const QuickStats = () => {
-  const { data, error, isLoading } = useGetDashboardStatsQuery();
+  const { data, error, isLoading } = useGetDashboardStatsQuery('');
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) return <div className="h-full flex justify-center items-center"><LoadingAnimation /></div>;
   if (error) return <div>Error loading stats</div>;
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-          <DollarSign className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">${data?.total_revenue?.toLocaleString() || 0}</div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-          <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">+{data?.total_sales || 0}</div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-          <Zap className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{data?.total_products || 0}</div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
-          <Users className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{data?.total_customers || 0}</div>
-        </CardContent>
-      </Card>
+    <div className="rounded-xl bg-white p-6 shadow-sm border border-gray-100">
+      <h2 className="text-xl font-semibold mb-6">Quick Stats</h2>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div className="p-4 bg-indigo-50 rounded-lg flex items-center">
+          <Box className="w-8 h-8 text-indigo-600 mr-3" />
+          <div>
+            <p className="text-sm text-gray-500">Total Products</p>
+            <p className="text-xl font-bold">{data?.total_products || 0}</p>
+          </div>
+        </div>
+
+        <div className="p-4 bg-red-50 rounded-lg flex items-center">
+          <AlertTriangle className="w-8 h-8 text-red-600 mr-3" />
+          <div>
+            <p className="text-sm text-gray-500">Low Stock Items</p>
+            <p className="text-xl font-bold">{data?.low_stock_items || 0}</p>
+          </div>
+        </div>
+
+        <div className="p-4 bg-cyan-50 rounded-lg flex items-center">
+          <ClipboardList className="w-8 h-8 text-cyan-600 mr-3" />
+          <div>
+            <p className="text-sm text-gray-500">POs This Month</p>
+            <p className="text-xl font-bold">{data?.purchase_orders_this_month || 0}</p>
+          </div>
+        </div>
+
+        <div className="p-4 bg-orange-50 rounded-lg flex items-center">
+          <Truck className="w-8 h-8 text-orange-600 mr-3" />
+          <div>
+            <p className="text-sm text-gray-500">Pending Shipments</p>
+            <p className="text-xl font-bold">{data?.pending_shipments || 0}</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
