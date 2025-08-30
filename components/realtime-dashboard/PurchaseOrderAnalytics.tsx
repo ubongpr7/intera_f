@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Spinner from '@/components/common/Spinner';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { formatMoneyCompactForProfile } from '@/lib/currency-utils';
 
 const PurchaseOrderAnalytics = () => {
   const { data, error, isLoading } = useGetPurchaseOrderAnalyticsQuery(undefined);
@@ -23,9 +24,9 @@ const PurchaseOrderAnalytics = () => {
       <CardContent>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="p-4 border rounded-lg"><h4 className="font-semibold">Total Orders</h4><p className="text-2xl">{data?.total_purchase_orders}</p></div>
-          <div className="p-4 border rounded-lg"><h4 className="font-semibold">Total Value</h4><p className="text-2xl">${data?.total_order_value}</p></div>
-          <div className="p-4 border rounded-lg"><h4 className="font-semibold">Average Value</h4><p className="text-2xl">${data?.average_order_value}</p></div>
-          <div className="p-4 border rounded-lg"><h4 className="font-semibold">Cost Per Order</h4><p className="text-2xl">${data?.cost_per_order}</p></div>
+          <div className="p-4 border rounded-lg"><h4 className="font-semibold">Total Value</h4><p className="text-2xl">{formatMoneyCompactForProfile(data?.total_order_value)}</p></div>
+          <div className="p-4 border rounded-lg"><h4 className="font-semibold">Average Value</h4><p className="text-2xl">{formatMoneyCompactForProfile(data?.average_order_value)}</p></div>
+          <div className="p-4 border rounded-lg"><h4 className="font-semibold">Cost Per Order</h4><p className="text-2xl">{formatMoneyCompactForProfile(data?.cost_per_order)}</p></div>
           <div className="p-4 border rounded-lg"><h4 className="font-semibold">Avg Processing Time</h4><p className="text-2xl">{data?.average_processing_time} days</p></div>
           <div className="p-4 border rounded-lg"><h4 className="font-semibold">Avg Delivery Time</h4><p className="text-2xl">{data?.average_delivery_time} days</p></div>
           <div className="p-4 border rounded-lg"><h4 className="font-semibold">On-Time Rate</h4><p className="text-2xl">{data?.on_time_delivery_rate}%</p></div>
@@ -80,7 +81,7 @@ const PurchaseOrderAnalytics = () => {
               <TableHeader><TableRow><TableHead>Supplier</TableHead><TableHead>Total Value</TableHead></TableRow></TableHeader>
               <TableBody>
                 {data?.top_suppliers_by_value?.map((supplier: any, index: number) => (
-                  <TableRow key={index}><TableCell>{supplier.supplier__name}</TableCell><TableCell>${supplier.total_value}</TableCell></TableRow>
+                  <TableRow key={index}><TableCell>{supplier.supplier__name}</TableCell><TableCell>{formatMoneyCompactForProfile(supplier.total_value)}</TableCell></TableRow>
                 ))}
               </TableBody>
             </Table>
@@ -96,7 +97,7 @@ const PurchaseOrderAnalytics = () => {
                         <TableRow key={index}>
                             <TableCell>{supplier.supplier__name}</TableCell>
                             <TableCell>{supplier.order_count}</TableCell>
-                            <TableCell>${supplier.total_value}</TableCell>
+                            <TableCell>{formatMoneyCompactForProfile(supplier.total_value)}</TableCell>
                             <TableCell>{supplier.on_time_deliveries}</TableCell>
                         </TableRow>
                     ))}

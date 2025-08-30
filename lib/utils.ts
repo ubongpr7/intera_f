@@ -137,8 +137,8 @@ export const extractErrorMessage = (error: any, listOfKeys: string[]): string =>
     if (!navigator.onLine) {
         return "Network error: Please check your internet connection";
     }
-    if (error.data.error) {
-        return error.data.error;
+    if (error.data.error ) {
+        return `Error: ${error.data.error}`;
     }
 
 
