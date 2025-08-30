@@ -12,8 +12,6 @@ const StockAnalytics = () => {
   if (error) return <div>Error loading stock analytics.</div>;
   if (!data) return null;
 
-  const { total_stock_items, total_locations, total_stock_value, location_distribution, status_distribution, aging_analysis } = data;
-
   return (
     <Card>
       <CardHeader>
@@ -23,15 +21,15 @@ const StockAnalytics = () => {
         <div className="grid grid-cols-3 gap-4 mb-4">
           <div className="p-4 border rounded-lg">
             <h4 className="text-lg font-semibold">Total Stock Items</h4>
-            <p className="text-2xl">{total_stock_items}</p>
+            <p className="text-2xl">{data?.total_stock_items}</p>
           </div>
           <div className="p-4 border rounded-lg">
             <h4 className="text-lg font-semibold">Total Locations</h4>
-            <p className="text-2xl">{total_locations}</p>
+            <p className="text-2xl">{data?.total_locations}</p>
           </div>
           <div className="p-4 border rounded-lg">
             <h4 className="text-lg font-semibold">Total Stock Value</h4>
-            <p className="text-2xl">${total_stock_value}</p>
+            <p className="text-2xl">${data?.total_stock_value}</p>
           </div>
         </div>
 
@@ -46,7 +44,7 @@ const StockAnalytics = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {location_distribution.map((loc: any, index: number) => (
+              {data?.location_distribution?.map((loc: any, index: number) => (
                 <TableRow key={index}>
                   <TableCell>{loc.location__name}</TableCell>
                   <TableCell>{loc.item_count}</TableCell>
@@ -67,7 +65,7 @@ const StockAnalytics = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {Object.entries(status_distribution).map(([status, count]: [string, any]) => (
+              {Object.entries(data?.status_distribution || {}).map(([status, count]: [string, any]) => (
                 <TableRow key={status}>
                   <TableCell>{status}</TableCell>
                   <TableCell>{count}</TableCell>
@@ -87,7 +85,7 @@ const StockAnalytics = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {Object.entries(aging_analysis).map(([range, count]: [string, any]) => (
+              {Object.entries(data?.aging_analysis || {}).map(([range, count]: [string, any]) => (
                 <TableRow key={range}>
                   <TableCell>{range.replace('_', ' ')}</TableCell>
                   <TableCell>{count}</TableCell>

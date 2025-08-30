@@ -15,21 +15,6 @@ const PurchaseOrderAnalytics = () => {
   if (error) return <div>Error loading purchase order analytics.</div>;
   if (!data) return null;
 
-  const {
-    total_purchase_orders,
-    total_order_value,
-    average_order_value,
-    status_distribution,
-    monthly_trends,
-    weekly_trends,
-    supplier_performance,
-    top_suppliers_by_value,
-    average_processing_time,
-    average_delivery_time,
-    on_time_delivery_rate,
-    cost_per_order,
-  } = data;
-
   return (
     <Card className="col-span-1 lg:col-span-2">
       <CardHeader>
@@ -37,20 +22,20 @@ const PurchaseOrderAnalytics = () => {
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="p-4 border rounded-lg"><h4 className="font-semibold">Total Orders</h4><p className="text-2xl">{total_purchase_orders}</p></div>
-          <div className="p-4 border rounded-lg"><h4 className="font-semibold">Total Value</h4><p className="text-2xl">${total_order_value}</p></div>
-          <div className="p-4 border rounded-lg"><h4 className="font-semibold">Average Value</h4><p className="text-2xl">${average_order_value}</p></div>
-          <div className="p-4 border rounded-lg"><h4 className="font-semibold">Cost Per Order</h4><p className="text-2xl">${cost_per_order}</p></div>
-          <div className="p-4 border rounded-lg"><h4 className="font-semibold">Avg Processing Time</h4><p className="text-2xl">{average_processing_time} days</p></div>
-          <div className="p-4 border rounded-lg"><h4 className="font-semibold">Avg Delivery Time</h4><p className="text-2xl">{average_delivery_time} days</p></div>
-          <div className="p-4 border rounded-lg"><h4 className="font-semibold">On-Time Rate</h4><p className="text-2xl">{on_time_delivery_rate}%</p></div>
+          <div className="p-4 border rounded-lg"><h4 className="font-semibold">Total Orders</h4><p className="text-2xl">{data?.total_purchase_orders}</p></div>
+          <div className="p-4 border rounded-lg"><h4 className="font-semibold">Total Value</h4><p className="text-2xl">${data?.total_order_value}</p></div>
+          <div className="p-4 border rounded-lg"><h4 className="font-semibold">Average Value</h4><p className="text-2xl">${data?.average_order_value}</p></div>
+          <div className="p-4 border rounded-lg"><h4 className="font-semibold">Cost Per Order</h4><p className="text-2xl">${data?.cost_per_order}</p></div>
+          <div className="p-4 border rounded-lg"><h4 className="font-semibold">Avg Processing Time</h4><p className="text-2xl">{data?.average_processing_time} days</p></div>
+          <div className="p-4 border rounded-lg"><h4 className="font-semibold">Avg Delivery Time</h4><p className="text-2xl">{data?.average_delivery_time} days</p></div>
+          <div className="p-4 border rounded-lg"><h4 className="font-semibold">On-Time Rate</h4><p className="text-2xl">{data?.on_time_delivery_rate}%</p></div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <div>
             <h4 className="font-semibold mb-2">Monthly Trends</h4>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={monthly_trends}>
+              <LineChart data={data?.monthly_trends}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
@@ -64,7 +49,7 @@ const PurchaseOrderAnalytics = () => {
           <div>
             <h4 className="font-semibold mb-2">Weekly Trends</h4>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={weekly_trends}>
+              <LineChart data={data?.weekly_trends}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="week" />
                 <YAxis />
@@ -83,7 +68,7 @@ const PurchaseOrderAnalytics = () => {
             <Table>
               <TableHeader><TableRow><TableHead>Status</TableHead><TableHead>Count</TableHead></TableRow></TableHeader>
               <TableBody>
-                {Object.entries(status_distribution).map(([status, count]: [string, any]) => (
+                {Object.entries(data?.status_distribution || {}).map(([status, count]: [string, any]) => (
                   <TableRow key={status}><TableCell>{status}</TableCell><TableCell>{count}</TableCell></TableRow>
                 ))}
               </TableBody>
@@ -94,7 +79,7 @@ const PurchaseOrderAnalytics = () => {
             <Table>
               <TableHeader><TableRow><TableHead>Supplier</TableHead><TableHead>Total Value</TableHead></TableRow></TableHeader>
               <TableBody>
-                {top_suppliers_by_value.map((supplier: any, index: number) => (
+                {data?.top_suppliers_by_value?.map((supplier: any, index: number) => (
                   <TableRow key={index}><TableCell>{supplier.supplier__name}</TableCell><TableCell>${supplier.total_value}</TableCell></TableRow>
                 ))}
               </TableBody>
@@ -107,7 +92,7 @@ const PurchaseOrderAnalytics = () => {
             <Table>
                 <TableHeader><TableRow><TableHead>Supplier</TableHead><TableHead>Orders</TableHead><TableHead>Total Value</TableHead><TableHead>On-time Deliveries</TableHead></TableRow></TableHeader>
                 <TableBody>
-                    {supplier_performance.map((supplier: any, index: number) => (
+                    {data?.supplier_performance?.map((supplier: any, index: number) => (
                         <TableRow key={index}>
                             <TableCell>{supplier.supplier__name}</TableCell>
                             <TableCell>{supplier.order_count}</TableCell>
