@@ -19,17 +19,17 @@ const StockAnalytics = () => {
         <CardTitle>Stock Analytics</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div className="p-4 border rounded-lg">
-            <h4 className="text-lg font-semibold">Total Stock Items</h4>
+            <h3 className="text-lg font-semibold">Total Stock Items</h3>
             <p className="text-2xl">{data?.total_stock_items}</p>
           </div>
           <div className="p-4 border rounded-lg">
-            <h4 className="text-lg font-semibold">Total Locations</h4>
+            <h3 className="text-lg font-semibold">Total Locations</h3>
             <p className="text-2xl">{data?.total_locations}</p>
           </div>
           <div className="p-4 border rounded-lg">
-            <h4 className="text-lg font-semibold">Total Stock Value</h4>
+            <h3 className="text-lg font-semibold">Total Stock Value</h3>
             <p className="text-2xl">{formatMoneyCompactForProfile(data?.total_stock_value)}</p>
           </div>
         </div>
