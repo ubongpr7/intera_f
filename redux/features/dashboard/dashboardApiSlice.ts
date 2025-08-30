@@ -111,6 +111,12 @@ export const dashboardApiSlice = apiSlice.injectEndpoints({
           service: 'inventory',
         }),
       }),
+      getPurchaseOrderSummary: builder.query({
+        query: () => ({
+          url: `/order_api/purchase-orders/dashboard_summary/`,
+          service: 'inventory',
+        }),
+      }),
   }),
 });
 
@@ -133,4 +139,5 @@ export const {
     useGetDashboardPosSessionStatusQuery,
     useGetStockAnalyticsQuery,
     useGetPurchaseOrderAnalyticsQuery,
+    useGetPurchaseOrderSummaryQuery,
 } = dashboardApiSlice;
