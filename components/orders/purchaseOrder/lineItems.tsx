@@ -67,27 +67,17 @@ const inventoryColumns: Column<PurchaseOrderLineItem>[] = [
 ];
 
     const handleCreate = async (createdData: Partial<PurchaseOrderLineItem>) => {
-    try {   
         await createLineItem({data:createdData,purchase_order_id:reference}).unwrap();
         setIsCreateOpen(false);
         await refetch(); 
-        toast.success("Line item created successfully!");
-    }
-    catch (error) {
-      toast.error("Failed to create line item.");
-    }
+    
     };
 
     const handleUpdate = async (updatedData: Partial<PurchaseOrderLineItem>) => {
       if (!editingLineItem) return;
-      try {
         await updateLineItem({ reference: reference, id: editingLineItem.id, data: updatedData }).unwrap();
         setEditingLineItem(null);
         await refetch();
-        toast.success("Line item updated successfully!");
-      } catch (error) {
-        toast.error("Failed to update line item.");
-      }
     };
 
     const handleDelete = async (id: string) => {
