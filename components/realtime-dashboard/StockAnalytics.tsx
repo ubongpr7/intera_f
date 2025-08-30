@@ -42,6 +42,7 @@ const StockAnalytics = () => {
                 <TableHead>Location</TableHead>
                 <TableHead>Item Count</TableHead>
                 <TableHead>Total Quantity</TableHead>
+                <TableHead>Total Value</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -50,6 +51,7 @@ const StockAnalytics = () => {
                   <TableCell>{loc.location__name}</TableCell>
                   <TableCell>{loc.item_count}</TableCell>
                   <TableCell>{loc.total_quantity}</TableCell>
+                  <TableCell>{loc.total_value}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
