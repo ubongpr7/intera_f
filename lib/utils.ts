@@ -137,9 +137,14 @@ export const extractErrorMessage = (error: any, listOfKeys: string[]): string =>
     if (!navigator.onLine) {
         return "Network error: Please check your internet connection";
     }
+    if (error.data.error) {
+        return error.data.error;
+    }
+
 
     // Default error messages based on status code
     switch (error.status) {
+
         case 400:
             return "Invalid request: Please check your information";
         case 401:
