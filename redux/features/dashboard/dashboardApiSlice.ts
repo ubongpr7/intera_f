@@ -146,4 +146,5 @@ export const {
     useGetStockAnalyticsQuery,
     useGetPurchaseOrderAnalyticsQuery,
     useGetPurchaseOrderSummaryQuery,
+    useGetLowStockItemsQuery,
 } = dashboardApiSlice;

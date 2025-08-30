@@ -1,10 +1,12 @@
 'use client';
-import { useGetDashboardStatsQuery } from '@/redux/features/dashboard/dashboardApiSlice';
+import { useGetDashboardStatsQuery, useGetLowStockItemsQuery } from '@/redux/features/dashboard/dashboardApiSlice';
 import { Box, AlertTriangle, ClipboardList, Truck } from 'lucide-react';
 import LoadingAnimation from '../common/LoadingAnimation';
 
 const QuickStats = () => {
   const { data, error, isLoading } = useGetDashboardStatsQuery('');
+  const {data:lowStockData,error:lowStockError,isLoading:lowStockLoading}=useGetLowStockItemsQuery({stock_status:"low_stock"});
+  console.log(lowStockData);
 
   if (isLoading) return <div className="h-full flex justify-center items-center"><LoadingAnimation /></div>;
   if (error) return <div>Error loading stats</div>;
