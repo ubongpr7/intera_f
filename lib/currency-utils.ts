@@ -135,6 +135,15 @@ export function getCurrencySymbolForProfile() {
   return config?.symbol || currencyCode.toUpperCase()
 }
 
+export function formatMoneyCompactForProfile(amount:string|number){
+  const currencyCode= `${getCookie('currency')}`
+  return formatCurrency(currencyCode,amount,{compact:true})
+}
+export function formatMoneyForProfile(amount:string|number){
+  const currencyCode= `${getCookie('currency')}`
+  return formatCurrency(currencyCode,amount,{compact:false})
+}
+
 /**
  * Formats multiple currency amounts for display
  * @param balances - Array of {currency, amount} objects

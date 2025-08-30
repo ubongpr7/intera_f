@@ -4,6 +4,7 @@ import { useGetStockAnalyticsQuery } from '@/redux/features/dashboard/dashboardA
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Spinner from '@/components/common/Spinner';
+import { formatMoneyCompactForProfile } from '@/lib/currency-utils';
 
 const StockAnalytics = () => {
   const { data, error, isLoading } = useGetStockAnalyticsQuery(undefined);
@@ -29,7 +30,7 @@ const StockAnalytics = () => {
           </div>
           <div className="p-4 border rounded-lg">
             <h4 className="text-lg font-semibold">Total Stock Value</h4>
-            <p className="text-2xl">${data?.total_stock_value}</p>
+            <p className="text-2xl">{formatMoneyCompactForProfile(data?.total_stock_value)}</p>
           </div>
         </div>
 
