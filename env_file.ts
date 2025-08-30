@@ -7,6 +7,6 @@ const env = {
     AGENT_BACKEND_URL: "https://dev.pos.destinybuilders.africa/",
     PAYMENT_BACKEND_URL: "http:localhost:8550/",
   };
-  
+
   
 export default env;

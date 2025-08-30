@@ -16,6 +16,8 @@ import PendingPurchaseOrders from '@/components/realtime-dashboard/PendingPurcha
 import RecentCustomers from '@/components/realtime-dashboard/RecentCustomers';
 import BulkTaskStatus from '@/components/realtime-dashboard/BulkTaskStatus';
 import PosSessionStatus from '@/components/realtime-dashboard/PosSessionStatus';
+import StockAnalytics from '@/components/realtime-dashboard/StockAnalytics';
+import PurchaseOrderAnalytics from '@/components/realtime-dashboard/PurchaseOrderAnalytics';
 
 const RealtimeDashboard = () => {
   return (
@@ -44,6 +46,10 @@ const RealtimeDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <RecentOrders />
         <RecentSales />
+      </div>
+      <div className="grid grid-cols-1 gap-6 mt-6">
+        <StockAnalytics />
+        <PurchaseOrderAnalytics />
       </div>
     </div>
   );

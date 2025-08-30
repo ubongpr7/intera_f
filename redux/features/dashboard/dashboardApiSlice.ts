@@ -99,6 +99,18 @@ export const dashboardApiSlice = apiSlice.injectEndpoints({
             service: 'pos',
         }),
       }),
+      getStockAnalytics: builder.query({
+        query: () => ({
+          url: `/stock_api/stock-items/analytics/`,
+          service: 'inventory',
+        }),
+      }),
+      getPurchaseOrderAnalytics: builder.query({
+        query: () => ({
+          url: `/order_api/purchase-orders/analytics/`,
+          service: 'inventory',
+        }),
+      }),
   }),
 });
 
@@ -119,4 +131,6 @@ export const {
     useGetDashboardRecentCustomersQuery,
     useGetDashboardBulkTaskStatusQuery,
     useGetDashboardPosSessionStatusQuery,
+    useGetStockAnalyticsQuery,
+    useGetPurchaseOrderAnalyticsQuery,
 } = dashboardApiSlice;
