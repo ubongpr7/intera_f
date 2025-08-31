@@ -2,7 +2,11 @@
 "use client"
 import React, { useState } from 'react';
 import { DataTable, Column, ActionButton } from '@/components/common/DataTable/DataTable';
-import { useGetConfigurationsQuery, useCreateConfigurationMutation, useUpdateConfigurationMutation, useDeleteConfigurationMutation } from '@/redux/features/pos/posAPISlice';
+import { 
+  useGetConfigurationsQuery, 
+  useCreateConfigurationMutation, 
+  useUpdateConfigurationMutation, 
+  useDeleteConfigurationMutation } from '@/redux/features/pos/posAPISlice';
 import CustomCreateCard from '@/components/common/createCard';
 import { toast } from 'react-toastify';
 import { getCurrencySymbol } from '@/lib/currency-utils';
