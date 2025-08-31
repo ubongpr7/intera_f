@@ -6,17 +6,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import Spinner from '@/components/common/Spinner';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import { formatMoneyCompactForProfile } from '@/lib/currency-utils';
-import { TrendingUp, Calendar, Clock, Package, CheckCircle, AlertCircle, ArrowUpRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { TrendingUp, Calendar, Clock, Package, CheckCircle, AlertCircle, ArrowUpRight, ChevronDown, ChevronUp, BarChart3 } from 'lucide-react';
 
 // Custom tooltip for charts
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label, isCurrency = false }: any) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
         <p className="font-semibold text-gray-800">{label}</p>
         {payload.map((entry: any, index: number) => (
           <p key={`item-${index}`} className="text-sm" style={{ color: entry.color }}>
-            {entry.name}: {entry.name.includes('Value') ? formatMoneyCompactForProfile(entry.value) : entry.value}
+            {entry.name}: {isCurrency ? formatMoneyCompactForProfile(entry.value) : entry.value}
           </p>
         ))}
       </div>
@@ -28,26 +28,39 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 // Status badge component
 const StatusBadge = ({ status }: { status: string }) => {
   const statusColors: Record<string, string> = {
-    'completed': 'bg-green-100 text-green-800',
     'pending': 'bg-yellow-100 text-yellow-800',
-    'processing': 'bg-blue-100 text-blue-800',
-    'cancelled': 'bg-red-100 text-red-800',
-    'approved': 'bg-indigo-100 text-indigo-800',
-    'overdue': 'bg-rose-100 text-rose-800'
+    'approved': 'bg-blue-100 text-blue-800',
+    'issued': 'bg-indigo-100 text-indigo-800',
+    'received': 'bg-purple-100 text-purple-800',
+    'completed': 'bg-green-100 text-green-800',
+    'cancelled': 'bg-red-100 text-red-800'
   };
 
   return (
     <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[status.toLowerCase()] || 'bg-gray-100 text-gray-800'}`}>
-      {status}
+      {status.replace('_', ' ').toUpperCase()}
     </span>
   );
 };
 
-// Combined Purchase Order Dashboard
+// Format date for X-axis based on time period
+const formatXAxis = (tickItem: string, timePeriod: string) => {
+  if (timePeriod === 'monthly') {
+    const date = new Date(tickItem);
+    return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+  } else {
+    // For weekly data in format "YYYY-Www"
+    const [year, week] = tickItem.split('-W');
+    return `W${week} ${year}`;
+  }
+};
+
+// Combined Purchase Order Dashboard with Time Series
 const PurchaseOrderDashboard = () => {
   const { data: analyticsData, error: analyticsError, isLoading: analyticsLoading } = useGetPurchaseOrderAnalyticsQuery(undefined);
   const { data: summaryData, error: summaryError, isLoading: summaryLoading } = useGetPurchaseOrderSummaryQuery(undefined);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [timePeriod, setTimePeriod] = useState<'weekly' | 'monthly'>('monthly');
 
   if (analyticsLoading || summaryLoading) return (
     <div className="col-span-1 lg:col-span-2 rounded-2xl bg-white p-6 shadow-lg border border-gray-100 h-96 flex items-center justify-center">
@@ -70,7 +83,9 @@ const PurchaseOrderDashboard = () => {
   if (!analyticsData || !summaryData) return null;
 
   // Prepare data for charts
-  const statusData = Object.entries(analyticsData?.status_distribution || {}).map(([name, value]) => ({ name, value }));
+  const statusData = Object.entries(analyticsData?.status_distribution || {})
+    .filter(([_, value]) => value as number > 0)
+    .map(([name, value]) => ({ name, value }));
   
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
 
@@ -124,7 +139,7 @@ const PurchaseOrderDashboard = () => {
     {
       id: 6,
       title: 'Monthly Value',
-      value: `$${summaryData?.total_value_this_month}`,
+      value: formatMoneyCompactForProfile(summaryData?.total_value_this_month),
       icon: <CheckCircle className="w-5 h-5" />,
       color: 'bg-gradient-to-r from-teal-500 to-green-600',
       change: '+18%',
@@ -178,6 +193,11 @@ const PurchaseOrderDashboard = () => {
     }
   ];
 
+  // Get the appropriate trend data based on selection
+  const trendData = timePeriod === 'monthly' 
+    ? analyticsData?.monthly_trends 
+    : analyticsData?.weekly_trends;
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
       {/* Summary Section - 2/5 width */}
@@ -201,7 +221,6 @@ const PurchaseOrderDashboard = () => {
                     {metric.icon}
                   </div>
                   <span className={`text-xs flex items-center ${metric.trend === 'up' ? 'text-green-100' : 'text-rose-100'}`}>
-                    {metric.trend === 'up' ? <TrendingUp className="w-3 h-3 mr-1" /> : <ChevronDown className="w-3 h-3 mr-1" />}
                     {metric.change}
                   </span>
                 </div>
@@ -219,8 +238,17 @@ const PurchaseOrderDashboard = () => {
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold text-gray-800">Order Analytics</h2>
             <div className="flex space-x-2">
-              <button className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 transition-colors">
-                This Month
+              <button 
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${timePeriod === 'monthly' ? 'bg-indigo-50 text-indigo-700' : 'bg-gray-100 text-gray-700'}`}
+                onClick={() => setTimePeriod('monthly')}
+              >
+                Monthly
+              </button>
+              <button 
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${timePeriod === 'weekly' ? 'bg-indigo-50 text-indigo-700' : 'bg-gray-100 text-gray-700'}`}
+                onClick={() => setTimePeriod('weekly')}
+              >
+                Weekly
               </button>
               <button className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
                 Export
@@ -242,49 +270,99 @@ const PurchaseOrderDashboard = () => {
             ))}
           </div>
 
-          {/* Charts Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <div className="bg-gray-50 p-4 rounded-xl">
-              <h4 className="font-semibold text-gray-800 mb-4 flex items-center">
-                <TrendingUp className="w-4 h-4 mr-2 text-indigo-600" /> Monthly Trends
+          {/* Time Series Chart Section */}
+          <div className="bg-gray-50 p-4 rounded-xl mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="font-semibold text-gray-800 flex items-center">
+                <TrendingUp className="w-4 h-4 mr-2 text-indigo-600" /> 
+                {timePeriod === 'monthly' ? 'Monthly' : 'Weekly'} Trends
               </h4>
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={analyticsData?.monthly_trends}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
-                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend />
-                  <Bar dataKey="count" name="Orders" fill="#8884d8" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="text-sm text-gray-500">
+                {timePeriod === 'monthly' ? 'Last 12 months' : 'Last 8 weeks'}
+              </div>
             </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <h5 className="text-sm font-medium text-gray-700 mb-2">Order Count</h5>
+                <ResponsiveContainer width="100%" height={250}>
+                  <LineChart data={trendData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+                    <XAxis 
+                      dataKey={timePeriod === 'monthly' ? 'month' : 'week'} 
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(tick) => formatXAxis(tick, timePeriod)}
+                    />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Line 
+                      type="monotone" 
+                      dataKey="count" 
+                      stroke="#8884d8" 
+                      strokeWidth={2} 
+                      dot={{ r: 4 }} 
+                      activeDot={{ r: 6 }} 
+                      name="Orders" 
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              
+              <div>
+                <h5 className="text-sm font-medium text-gray-700 mb-2">Order Value</h5>
+                <ResponsiveContainer width="100%" height={250}>
+                  <LineChart data={trendData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+                    <XAxis 
+                      dataKey={timePeriod === 'monthly' ? 'month' : 'week'} 
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(tick) => formatXAxis(tick, timePeriod)}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 12 }} 
+                      tickFormatter={(value) => formatMoneyCompactForProfile(value)}
+                    />
+                    <Tooltip content={<CustomTooltip isCurrency={true} />} />
+                    <Line 
+                      type="monotone" 
+                      dataKey="total_value" 
+                      stroke="#82ca9d" 
+                      strokeWidth={2} 
+                      dot={{ r: 4 }} 
+                      activeDot={{ r: 6 }} 
+                      name="Value" 
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
 
-            <div className="bg-gray-50 p-4 rounded-xl">
-              <h4 className="font-semibold text-gray-800 mb-4 flex items-center">
-                <Calendar className="w-4 h-4 mr-2 text-indigo-600" /> Status Distribution
-              </h4>
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={statusData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    labelLine={false}
-                  >
-                    {statusData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => [`${value} orders`, 'Count']} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+          {/* Status Distribution Chart */}
+          <div className="bg-gray-50 p-4 rounded-xl mb-6">
+            <h4 className="font-semibold text-gray-800 mb-4 flex items-center">
+              <BarChart3 className="w-4 h-4 mr-2 text-indigo-600" /> Status Distribution
+            </h4>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={statusData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  labelLine={false}
+                >
+                  {statusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => [`${value} orders`, 'Count']} />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
 
           {/* Expandable Tables Section */}
@@ -295,7 +373,7 @@ const PurchaseOrderDashboard = () => {
                 className="w-full p-4 bg-gray-50 text-left font-semibold text-gray-800 flex items-center justify-between"
                 onClick={() => setExpandedSection(expandedSection === 'status' ? null : 'status')}
               >
-                <span>Status Distribution</span>
+                <span>Status Distribution Details</span>
                 {expandedSection === 'status' ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
               </button>
               
