@@ -119,7 +119,7 @@ export const dashboardApiSlice = apiSlice.injectEndpoints({
       }),
       getLowStockItems: builder.query({
         query: (params={}) => ({
-          url: `/inventory_api/inventories/low_stock/?${new URLSearchParams(params)}`,
+          url: `/inventory_api/stock-items/low_stock/?${new URLSearchParams(params)}`,
           service: 'inventory',
         }),
       }),
