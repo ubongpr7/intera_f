@@ -28,6 +28,13 @@ export const posAPISlice = apiSlice.injectEndpoints({
       }),
     }),
 
+    getSessions: builder.query({
+      query: () => ({
+        url: "/pos_api/sessions/",
+        service: "pos",
+      }),
+    }),
+
     // Order endpoints
     getCurrentOrder: builder.query({
       query: (sessionId) => ({
@@ -362,6 +369,7 @@ export const {
   useGetCurrentSessionQuery,
   useOpenSessionMutation,
   useCloseSessionMutation,
+  useGetSessionsQuery,
   useGetCurrentOrderQuery,
   useCreateOrGetDraftOrderMutation,
   useAddItemToOrderMutation,

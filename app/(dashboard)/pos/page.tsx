@@ -3,6 +3,11 @@ import Tabs from '@/components/common/Tabs';
 import Configurations from '@/components/pos/Configurations';
 import Discounts from '@/components/pos/Discounts';
 import Terminals from '@/components/pos/Terminals';
+import Sessions from '@/components/pos/Sessions';
+import Orders from '@/components/pos/Orders';
+import Customers from '@/components/pos/Customers';
+import Tables from '@/components/pos/Tables';
+import SalesAnalytics from '@/components/pos/SalesAnalytics';
 
 const POSConfigurationPage = () => {
   const tabs = [
@@ -20,6 +25,31 @@ const POSConfigurationPage = () => {
       id: 'terminals',
       label: 'Terminals',
       content: <Terminals />,
+    },
+    {
+      id: 'sessions',
+      label: 'Sessions',
+      content: <Sessions />,
+    },
+    {
+      id: 'orders',
+      label: 'Orders',
+      content: <Orders />,
+    },
+    {
+      id: 'customers',
+      label: 'Customers',
+      content: <Customers />,
+    },
+    {
+      id: 'tables',
+      label: 'Tables',
+      content: <Tables />,
+    },
+    {
+      id: 'analytics',
+      label: 'Sales Analytics',
+      content: <SalesAnalytics />,
     },
   ];
 
