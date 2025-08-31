@@ -6,6 +6,8 @@ import { useGetConfigurationsQuery, useCreateConfigurationMutation, useUpdateCon
 import CustomCreateCard from '@/components/common/createCard';
 import { toast } from 'react-toastify';
 import { extractErrorMessage } from '@/lib/utils';
+import { getCurrencySymbol } from '@/lib/currency-utils';
+import { CURRENCY_CODES } from '@/lib/currencyCode';
 
 interface POSConfiguration {
   id: string;
@@ -30,29 +32,32 @@ const Configurations = () => {
   const [createConfiguration, { isLoading: isCreating }] = useCreateConfigurationMutation();
   const [updateConfiguration, { isLoading: isUpdating }] = useUpdateConfigurationMutation();
   const [deleteConfiguration, { isLoading: isDeleting }] = useDeleteConfigurationMutation();
+  const currencies = CURRENCY_CODES
+     
+       const currencyOptions = currencies.map(currency => ({
+       value: currency,
+       text: `${getCurrencySymbol(currency)} ${currency} `
+     }));
+    const selectOptions = {
+     currency:currencyOptions,
+    
+  };
 
   const handleCreate = async (data: Partial<POSConfiguration>) => {
-    try {
       await createConfiguration(data).unwrap();
       toast.success("Configuration created successfully");
       setCreateCardOpen(false);
       refetch();
-    } catch (error) {
-      toast.error(extractErrorMessage(error));
-    }
   };
 
   const handleUpdate = async (data: Partial<POSConfiguration>) => {
     if (!editingConfiguration) return;
-    try {
       await updateConfiguration({ id: editingConfiguration.id, ...data }).unwrap();
       toast.success("Configuration updated successfully");
       setEditingConfiguration(null);
       setCreateCardOpen(false);
       refetch();
-    } catch (error) {
-      toast.error(extractErrorMessage(error));
-    }
+    
   };
 
   const handleDelete = async (id: string) => {
@@ -62,7 +67,7 @@ const Configurations = () => {
         toast.success("Configuration deleted successfully");
         refetch();
       } catch (error) {
-        toast.error(extractErrorMessage(error));
+        toast.error('Error deleting configuration.');
       }
     }
   };
@@ -101,6 +106,7 @@ const Configurations = () => {
           isLoading={isCreating || isUpdating}
           interfaceKeys={['name', 'currency', 'tax_inclusive', 'default_tax_rate', 'allow_negative_stock', 'require_customer', 'auto_print_receipt', 'receipt_header', 'receipt_footer', 'allow_split_payment', 'max_discount_percent']}
           itemTitle={editingConfiguration ? "Update Configuration" : "Create Configuration"}
+          selectOptions={selectOptions}
           optionalFields={['receipt_header', 'receipt_footer','tax_inclusive','allow_negative_stock','require_customer', 'auto_print_receipt']}
         />
       )}

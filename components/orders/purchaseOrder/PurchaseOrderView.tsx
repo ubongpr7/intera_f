@@ -79,17 +79,10 @@ function PurchaseOrderView() {
   }));
     
 
-  // const inventoryDataOptions = inventoryData ? inventoryData.map(inventory => ({
-  //   value: inventory.id?.toString() || '',
-  //   text: `${inventory.name} `
-  // })) : [];
-
     
     const selectOptions = {
      order_currency:currencyOptions,
     supplier:supplierResponseOptions,
-    // received_by:staffOptions,
-    // inventory:inventoryDataOptions,
     responsible:staffOptions,
     
   };
