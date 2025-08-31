@@ -5,9 +5,9 @@ import { DataTable, Column, ActionButton } from '@/components/common/DataTable/D
 import { useGetConfigurationsQuery, useCreateConfigurationMutation, useUpdateConfigurationMutation, useDeleteConfigurationMutation } from '@/redux/features/pos/posAPISlice';
 import CustomCreateCard from '@/components/common/createCard';
 import { toast } from 'react-toastify';
-import { extractErrorMessage } from '@/lib/utils';
 import { getCurrencySymbol } from '@/lib/currency-utils';
 import { CURRENCY_CODES } from '@/lib/currencyCode';
+import { format } from 'path';
 
 interface POSConfiguration {
   id: string;
@@ -45,7 +45,6 @@ const Configurations = () => {
 
   const handleCreate = async (data: Partial<POSConfiguration>) => {
       await createConfiguration(data).unwrap();
-      toast.success("Configuration created successfully");
       setCreateCardOpen(false);
       refetch();
   };
@@ -53,7 +52,6 @@ const Configurations = () => {
   const handleUpdate = async (data: Partial<POSConfiguration>) => {
     if (!editingConfiguration) return;
       await updateConfiguration({ id: editingConfiguration.id, ...data }).unwrap();
-      toast.success("Configuration updated successfully");
       setEditingConfiguration(null);
       setCreateCardOpen(false);
       refetch();
@@ -74,7 +72,7 @@ const Configurations = () => {
 
   const columns: Column<POSConfiguration>[] = [
     { header: 'Name', accessor: 'name' },
-    { header: 'Currency', accessor: 'currency' },
+    { header: 'Currency', accessor: 'currency',render: (value) =>getCurrencySymbol(value) },
     { header: 'Tax Inclusive', accessor: 'tax_inclusive', render: (value) => (value ? 'Yes' : 'No') },
     { header: 'Default Tax Rate', accessor: 'default_tax_rate' },
   ];
