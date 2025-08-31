@@ -2,11 +2,16 @@
 import { useGetDashboardStatsQuery, useGetLowStockItemsQuery } from '@/redux/features/dashboard/dashboardApiSlice';
 import { Box, AlertTriangle, ClipboardList, Truck } from 'lucide-react';
 import LoadingAnimation from '../common/LoadingAnimation';
+import { useMemo } from 'react'; // Import useMemo
 
 const QuickStats = () => {
   const { data, error, isLoading } = useGetDashboardStatsQuery('');
   const {data:lowStockData,error:lowStockError,isLoading:lowStockLoading}=useGetLowStockItemsQuery({stock_status:"low_stock"});
-  console.log(lowStockData);
+  // console.log(lowStockData); // Remove console.log as per best practices
+
+  const lowStockCount = useMemo(() => {
+    return lowStockData?.length || 0;
+  }, [lowStockData]);
 
   if (isLoading) return <div className="h-full flex justify-center items-center"><LoadingAnimation /></div>;
   if (error) return <div>Error loading stats</div>;
@@ -28,7 +33,7 @@ const QuickStats = () => {
           <AlertTriangle className="w-8 h-8 text-red-600 mr-3" />
           <div>
             <p className="text-sm text-gray-500">Low Stock Items</p>
-            <p className="text-xl font-bold">{data?.low_stock_items || 0}</p>
+            <p className="text-xl font-bold">{lowStockCount}</p> {/* Use lowStockCount here */}
           </div>
         </div>
 
@@ -48,6 +53,27 @@ const QuickStats = () => {
           </div>
         </div>
       </div>
+
+      {lowStockLoading && <p>Loading low stock items...</p>}
+      {lowStockError && <p>Error loading low stock items.</p>}
+      {lowStockData && lowStockData.length > 0 && (
+        <div className="mt-6">
+          <h3 className="text-lg font-semibold mb-3">Low Stock Details</h3>
+          <ul>
+            {lowStockData.map((item: any) => (
+              <li key={item.id} className="mb-2 flex items-center">
+                {item.display_image && (
+                  <img src={item.display_image} alt={item.name} className="w-10 h-10 rounded-md mr-3 object-cover" />
+                )}
+                <div>
+                  <p className="font-medium">{item.name}</p>
+                  <p className="text-sm text-gray-600">SKU: {item.sku} | Quantity: {parseFloat(item.quantity).toFixed(0)} | Min Stock: {item.minimum_stock_level}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 };

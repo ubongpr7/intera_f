@@ -5,7 +5,7 @@ import StockAlerts from "@/components/dashboard/StockAlerts"
 import SupplierPerformance from "../../SupplierPerformance"
 import OrderFulfillment from "@/components/dashboard/OrderFulfillment"
 import InventoryTurnover from "@/components/dashboard/InventoryTurnover"
-import QuickStats from "@/components/dashboard/QuickStats"
+// import QuickStats from "@/components/dashboard/QuickStats"
 import ShippingStatus from "@/components/dashboard/ShippingStatus"
 import CategoryStock from "@/components/dashboard/CategoryStock"
 import RecentPurchases from "@/components/dashboard/RecentPurchases"
@@ -31,7 +31,7 @@ export default function Inventory() {
     <SupplierPerformance />
     <OrderFulfillment />
     <InventoryTurnover />
-    <QuickStats />
+    
     <ShippingStatus />
     <CategoryStock />
     <RecentPurchases />
