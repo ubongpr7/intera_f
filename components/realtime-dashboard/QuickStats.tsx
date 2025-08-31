@@ -19,7 +19,7 @@ const QuickStats = () => {
     <div className="rounded-xl bg-white p-6 shadow-sm border border-gray-100">
       <h2 className="text-xl font-semibold mb-6">Quick Stats</h2>
       
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="p-4 bg-indigo-50 rounded-lg flex items-center">
           <Box className="w-8 h-8 text-indigo-600 mr-3" />
           <div>
