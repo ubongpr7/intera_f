@@ -231,7 +231,7 @@ const PurchaseOrderDashboard = () => {
           </div>
         </div>
         {/* Status Distribution Chart */}
-        <div className="bg-gray-50 p-4 rounded-xl mb-6">
+        <div className="bg-white p-4 rounded-xl mb-6">
           <h4 className="font-semibold text-gray-800 mb-4 flex items-center">
             <BarChart3 className="w-4 h-4 mr-2 text-indigo-600" /> Status Distribution
           </h4>
