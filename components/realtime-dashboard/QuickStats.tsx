@@ -2,12 +2,11 @@
 import { useGetDashboardStatsQuery, useGetLowStockItemsQuery } from '@/redux/features/dashboard/dashboardApiSlice';
 import { Box, AlertTriangle, ClipboardList, Truck } from 'lucide-react';
 import LoadingAnimation from '../common/LoadingAnimation';
-import { useMemo } from 'react'; // Import useMemo
+import { useMemo } from 'react';
 
 const QuickStats = () => {
   const { data, error, isLoading } = useGetDashboardStatsQuery('');
   const {data:lowStockData,error:lowStockError,isLoading:lowStockLoading}=useGetLowStockItemsQuery({stock_status:"low_stock"});
-  // console.log(lowStockData); // Remove console.log as per best practices
 
   const lowStockCount = useMemo(() => {
     return lowStockData?.length || 0;
@@ -33,7 +32,7 @@ const QuickStats = () => {
           <AlertTriangle className="w-8 h-8 text-red-600 mr-3" />
           <div>
             <p className="text-sm text-gray-500">Low Stock Items</p>
-            <p className="text-xl font-bold">{lowStockCount}</p> {/* Use lowStockCount here */}
+            <p className="text-xl font-bold">{lowStockCount}</p>
           </div>
         </div>
 
@@ -54,24 +53,24 @@ const QuickStats = () => {
         </div>
       </div>
 
-      {lowStockLoading && <p>Loading low stock items...</p>}
-      {lowStockError && <p>Error loading low stock items.</p>}
+      {lowStockLoading && <p className="mt-6">Loading low stock items...</p>}
+      {lowStockError && <p className="mt-6 text-red-500">Error loading low stock items.</p>}
       {lowStockData && lowStockData.length > 0 && (
         <div className="mt-6">
-          <h3 className="text-lg font-semibold mb-3">Low Stock Details</h3>
-          <ul>
+          <h3 className="text-lg font-semibold mb-4">Low Stock Details</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {lowStockData.map((item: any) => (
-              <li key={item.id} className="mb-2 flex items-center">
+              <div key={item.id} className="bg-gray-50 p-4 rounded-lg shadow-sm flex flex-col items-center text-center">
                 {item.display_image && (
-                  <img src={item.display_image} alt={item.name} className="w-10 h-10 rounded-md mr-3 object-cover" />
+                  <img src={item.display_image} alt={item.name} className="w-24 h-24 rounded-md mb-3 object-cover border border-gray-200" />
                 )}
-                <div>
-                  <p className="font-medium">{item.name}</p>
-                  <p className="text-sm text-gray-600">SKU: {item.sku} | Quantity: {parseFloat(item.quantity).toFixed(0)} | Min Stock: {item.minimum_stock_level}</p>
-                </div>
-              </li>
+                <p className="font-medium text-gray-800 mb-1">{item.name}</p>
+                <p className="text-sm text-gray-600">SKU: {item.sku}</p>
+                <p className="text-sm text-gray-600">Quantity: {parseFloat(item.quantity).toFixed(0)}</p>
+                <p className="text-sm text-red-500 font-semibold">Min Stock: {item.minimum_stock_level}</p>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       )}
     </div>
