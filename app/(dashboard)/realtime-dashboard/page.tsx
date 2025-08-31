@@ -15,7 +15,7 @@ import PendingPurchaseOrders from '@/components/realtime-dashboard/PendingPurcha
 import RecentCustomers from '@/components/realtime-dashboard/RecentCustomers';
 import BulkTaskStatus from '@/components/realtime-dashboard/BulkTaskStatus';
 import PosSessionStatus from '@/components/realtime-dashboard/PosSessionStatus';
-import StockAnalytics from '@/components/realtime-dashboard/StockAnalytics';
+import StockAnalyticsDashboard from '@/components/realtime-dashboard/StockAnalytics';
 import PurchaseOrderDashboard from '@/components/realtime-dashboard/PurchaseOrderAnalytics';
 import PurchaseOrderSummary from '@/components/realtime-dashboard/PurchaseOrderSummary';
 
@@ -26,27 +26,13 @@ const RealtimeDashboard = () => {
       <div className="grid grid-cols-1  gap-6">
         <div className="lg:col-span-1 flex flex-col gap-6">
           <QuickStats />
-          <HeldOrders />
-          <PendingPurchaseOrders />
-          <PosSessionStatus />
-          <BulkTaskStatus />
         </div>
-        <div className="lg:col-span-1 flex flex-col gap-6">
-          <InventoryMovementChart />
-          <TopSellingProducts />
-          <RecentPriceChanges />
-        </div>
-        <div className="lg:col-span-1 flex flex-col gap-6">
-          <InventoryByCategory />
-          <StockValueByLocation />
-        </div>
+        
+        
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        <RecentOrders />
-        <RecentSales />
-      </div>
+      
       <div className="grid grid-cols-1 gap-6 mt-6">
-        <StockAnalytics />
+        <StockAnalyticsDashboard />
         <PurchaseOrderDashboard />
       </div>
     </div>
