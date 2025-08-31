@@ -3,9 +3,9 @@ import DetailCard from '../common/Detail';
 import { CompanyDataInterface } from '../interfaces/company';
 import LoadingAnimation from '../common/LoadingAnimation';
 import { CompanyInterfaceKeys, CompanyKeyInfo } from './selectOptions';
-import { useGetCurrencyQuery } from '../../redux/features/common/typeOF';
 import { useGetCompanyQuery,useUpdateCompanyMutation } from '../../redux/features/company/companyAPISlice';
 import { getCurrencySymbol } from '@/lib/currency-utils';
+import { CURRENCY_CODES } from '@/lib/currencyCode';
 
 export default function CompanyDetail({ id }: { id: string }) {
   const { data: Company, isLoading,refetch  } = useGetCompanyQuery(id);
@@ -20,13 +20,12 @@ export default function CompanyDetail({ id }: { id: string }) {
   };
 
 
-const { data: response,isLoading:currencyLoading,error:currencyError } = useGetCurrencyQuery();
-  const currencies = response||[]
+  const currencies = CURRENCY_CODES
   
 
   const currencyOptions = currencies.map(currency => ({
-  value: currency.code,
-  text: `${getCurrencySymbol(currency.code)} ${currency.code} `
+  value: currency,
+  text: `${getCurrencySymbol(currency)} ${currency} `
 }));
  
   const  selectOptions = {

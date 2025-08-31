@@ -7,7 +7,6 @@ import { useGetCompanyAddressesQuery, useCreateCompanyAddressMutation, useUpdate
 import CustomCreateCard from '../common/createCard';
 import { CompanyAddressInterfaceKeys } from './selectOptions';
 import { CompanyAddressKeyInfo } from './selectOptions';
-import { useGetCurrencyQuery } from '../../redux/features/common/typeOF';
 import { toast } from 'react-toastify';
 import { Edit, Trash2 } from 'lucide-react';
 

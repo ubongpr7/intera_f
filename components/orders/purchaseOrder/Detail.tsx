@@ -11,7 +11,6 @@ import {
   useCompletePurchaseOderMutation,
 
  } from '@/redux/features/orders/orderAPISlice';
-import { useGetCurrencyQuery } from '@/redux/features/common/typeOF';
 import { useGetSupplersQuery } from '@/redux/features/company/companyAPISlice';
 import { useGetCompanyUsersQuery } from '@/redux/features/users/userApiSlice';
 import { UserData } from '../../interfaces/User';
@@ -41,6 +40,7 @@ import { ActionItem as CommonActionItem } from '../../interfaces/common';
 import { toast } from 'react-toastify';
 import { getCurrencySymbol } from '@/lib/currency-utils';
 import { useEffect } from 'react';
+import { CURRENCY_CODES } from '@/lib/currencyCode';
 
 interface ActionItem extends CommonActionItem {
   icon: LucideIcon;
@@ -64,17 +64,16 @@ export default function purchaseOrderDataDetail({ purchaseOrderData, isLoading,r
   };
 const { data: staff } = useGetCompanyUsersQuery()
   const { data: supplierResponse,isLoading:supplierLoading,error:supplierError } = useGetSupplersQuery();
-  const { data: response,isLoading:currencyLoading,error:currencyError } = useGetCurrencyQuery();
 
   const supplierResponseOptions = supplierResponse ? supplierResponse.map(supplier => ({
     value: supplier.id.toString(),
     text: `${supplier.name} `
   })) : [];
-    const currencies = response||[]
+    const currencies = CURRENCY_CODES
     
       const currencyOptions = currencies.map(currency => ({
-      value: currency.code,
-      text: `${getCurrencySymbol(currency.code)} ${currency.code} `
+      value: currency,
+      text: `${getCurrencySymbol(currency)} ${currency} `
     }));
 
   const staffUsers = staff||[]

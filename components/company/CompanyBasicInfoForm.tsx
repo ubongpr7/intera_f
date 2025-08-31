@@ -10,9 +10,9 @@ import { ReactSelectField, type SelectOption } from "@/components/ui/react-selec
 import { Building2, Calendar, Users, FileText } from "lucide-react"
 import { useUpdateCompanyProfileMutation } from "@/redux/features/management/companyProfileApiSlice"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { useGetCurrencyQuery } from '../../redux/features/common/typeOF';
 import type { CompanyProfile, CompanyFormData } from "@/types/company-profile"
 import { getCurrencySymbol } from "@/lib/currency-utils"
+import { CURRENCY_CODES } from "@/lib/currencyCode"
 
 interface CompanyBasicInfoFormProps {
   profile: CompanyProfile | null
@@ -48,11 +48,10 @@ const INDUSTRY_OPTIONS: SelectOption[] = [
 
 export function CompanyBasicInfoForm({ profile, onSuccess }: CompanyBasicInfoFormProps) {
   const [updateProfile, { isLoading, isSuccess, isError, error, }] = useUpdateCompanyProfileMutation()
-  const { data: currencies=[],isLoading:currencyLoading,error:currencyError } = useGetCurrencyQuery();
 
-  const currencyOptions = currencies.map(currency => ({
-  value: currency.code,
-  label: `${getCurrencySymbol(currency.code)} ${currency.code} `
+  const currencyOptions = CURRENCY_CODES.map(currency => ({
+  value: currency,
+  label: `${getCurrencySymbol(currency)} ${currency} `
 }));
   const [formData, setFormData] = useState<CompanyFormData>({
     name: "",

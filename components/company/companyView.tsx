@@ -7,8 +7,8 @@ import { useGetCompanyDataQuery, useCreateCompanyMutation,useGetSupplersQuery } 
 import CustomCreateCard from '../common/createCard';
 import { CompanyInterfaceKeys,defaultValues } from './selectOptions';
 import { CompanyKeyInfo } from './selectOptions';
-import { useGetCurrencyQuery } from '../../redux/features/common/typeOF';
 import { getCurrencySymbol } from '@/lib/currency-utils';
+import { CURRENCY_CODES } from '@/lib/currencyCode';
 
 const inventoryColumns: Column<CompanyDataInterface>[] = [
   {
@@ -55,13 +55,11 @@ function CompanyView() {
   const [createInventory, { isLoading: companyCreateLoading }] = useCreateCompanyMutation();
   const [isCreateOpen, setIsCreateOpen] = useState(false); 
   const router = useRouter();
-  const { data: response,isLoading:currencyLoading,error:currencyError } = useGetCurrencyQuery();
-  const currencies = response||[]
   
 
-  const currencyOptions = currencies.map(currency => ({
-  value: currency.code,
-  text: `${getCurrencySymbol(currency.code)} ${currency.code} `
+  const currencyOptions = CURRENCY_CODES.map(currency => ({
+  value: currency,
+  text: `${getCurrencySymbol(currency)} ${currency} `
 }));
   const  selectOptions = {
           

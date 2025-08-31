@@ -7,11 +7,11 @@ import { PurchaseOrderInterface, PurchaseOrderStatus } from '../../interfaces/or
 import { useCreatePurchaseOderMutation, useGetPurchaseOderDataQuery } from '../../../redux/features/orders/orderAPISlice';
 import CustomCreateCard from '../../common/createCard';
 import { PurchaseOrderKeyInfo,PurchaseOrderInterfaceKeys,defaultValues } from './selectOptions';
-import { useGetCurrencyQuery } from '../../../redux/features/common/typeOF';
 import { useGetSupplersQuery } from '../../../redux/features/company/companyAPISlice';
 import { useGetCompanyUsersQuery } from '../../../redux/features/users/userApiSlice';
 import { UserData } from '../../interfaces/User';
 import { getCurrencySymbol } from '@/lib/currency-utils';
+import { CURRENCY_CODES } from '@/lib/currencyCode';
 // import { useGetInventoryDataQuery } from '../../../redux/features/inventory/inventoryAPiSlice';
 
 
@@ -59,22 +59,16 @@ function PurchaseOrderView() {
   };
   const { data: staff } = useGetCompanyUsersQuery()
   const { data: supplierResponse,isLoading:supplierLoading,error:supplierError } = useGetSupplersQuery();
-  const { data: response,isLoading:currencyLoading,error:currencyError } = useGetCurrencyQuery();
-  // const { 
-  //   data: inventoryData,
-  //    isLoading: inventoryLoading, 
-  //    refetch: inventoryRefetch, error: inventoryError 
-  //   } = useGetInventoryDataQuery();
 
   const supplierResponseOptions = supplierResponse ? supplierResponse.map(supplier => ({
     value: supplier.id.toString(),
     text: `${supplier.name} `
   })) : [];
-    const currencies = response||[]
+    const currencies = CURRENCY_CODES
    
      const currencyOptions = currencies.map(currency => ({
-     value: currency.code,
-     text: `${getCurrencySymbol(currency.code)} ${currency.code} `
+     value: currency,
+     text: `${getCurrencySymbol(currency)} ${currency} `
    }));
 
   const staffUsers = staff||[]

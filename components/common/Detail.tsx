@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Check, CheckCircle, Edit, XCircle } from 'lucide-react';
 import ActionHeader from './actions';
 import { ActionItem } from '../interfaces/common'
-import { getCurrencySymbol } from '@/lib/currency-utils';
+import { getCurrencySymbol, getCurrencySymbolForProfile } from '@/lib/currency-utils';
 import Image from 'next/image';
 import CustomCreateCard from './createCard';
 
@@ -90,7 +90,7 @@ export default function DetailCard<T extends Record<string, any>>({
       return `${getCurrencySymbol(value)} ${value}`
     }
     if ( String(key).toLowerCase().includes('price') ){
-      return `${getCurrencySymbol('NGN')} ${value}`
+      return `${getCurrencySymbolForProfile()} ${value}`
     }
     // if (String(key).toLowerCase().includes('image') ){
     //   return <Image src={value} width={24} alt={value}/>
