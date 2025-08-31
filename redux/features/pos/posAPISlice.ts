@@ -145,6 +145,32 @@ export const posAPISlice = apiSlice.injectEndpoints({
       }),
     }),
 
+    createCustomer: builder.mutation({
+      query: (data) => ({
+        url: "/pos_api/customers/",
+        method: "POST",
+        body: data,
+        service: "pos",
+      }),
+    }),
+
+    updateCustomer: builder.mutation({
+      query: ({ id, ...data }) => ({
+        url: `/pos_api/customers/${id}/`,
+        method: "PUT",
+        body: data,
+        service: "pos",
+      }),
+    }),
+
+    deleteCustomer: builder.mutation({
+      query: (id) => ({
+        url: `/pos_api/customers/${id}/`,
+        method: "DELETE",
+        service: "pos",
+      }),
+    }),
+
     // Table endpoints
     getTables: builder.query({
       query: () => ({
@@ -383,6 +409,9 @@ export const {
   useGetPOSCategoriesQuery,
   useGetFeaturedProductsQuery,
   useGetCustomersQuery,
+  useCreateCustomerMutation,
+  useUpdateCustomerMutation,
+  useDeleteCustomerMutation,
   useGetTablesQuery,
   useGetDailySalesQuery,
   useGetConfigurationsQuery,
