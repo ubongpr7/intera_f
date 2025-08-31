@@ -55,9 +55,14 @@ export default function QuickStats() {
           <h3 className="text-lg font-semibold mb-3">Low Stock Details</h3>
           <ul>
             {lowStockData.map((item: any) => (
-              <li key={item.id} className="mb-2">
-                <p className="font-medium">{item.name}</p>
-                <p className="text-sm text-gray-600">SKU: {item.sku} | Quantity: {item.quantity} | Min Stock: {item.minimum_stock_level}</p>
+              <li key={item.id} className="mb-2 flex items-center">
+                {item.display_image && (
+                  <img src={item.display_image} alt={item.name} className="w-10 h-10 rounded-md mr-3 object-cover" />
+                )}
+                <div>
+                  <p className="font-medium">{item.name}</p>
+                  <p className="text-sm text-gray-600">SKU: {item.sku} | Quantity: {parseFloat(item.quantity).toFixed(0)} | Min Stock: {item.minimum_stock_level}</p>
+                </div>
               </li>
             ))}
           </ul>
