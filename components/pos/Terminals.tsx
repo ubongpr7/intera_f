@@ -41,6 +41,7 @@ const Terminals = () => {
       await updateTerminal({ id: editingTerminal.id, ...data }).unwrap();
       toast.success("Terminal updated successfully");
       setEditingTerminal(null);
+      setCreateCardOpen(false);
       refetch();
     } catch (error) {
       toast.error(extractErrorMessage(error));
@@ -48,12 +49,14 @@ const Terminals = () => {
   };
 
   const handleDelete = async (id: string) => {
-    try {
-      await deleteTerminal(id).unwrap();
-      toast.success("Terminal deleted successfully");
-      refetch();
-    } catch (error) {
-      toast.error(extractErrorMessage(error));
+    if (window.confirm("Are you sure you want to delete this terminal?")) {
+      try {
+        await deleteTerminal(id).unwrap();
+        toast.success("Terminal deleted successfully");
+        refetch();
+      } catch (error) {
+        toast.error(extractErrorMessage(error));
+      }
     }
   };
 
@@ -65,14 +68,14 @@ const Terminals = () => {
   ];
 
   const actionButtons: ActionButton<POSTerminal>[] = [
-    { label: 'Edit', onClick: (row) => setEditingTerminal(row) },
+    { label: 'Edit', onClick: (row) => { setEditingTerminal(row); setCreateCardOpen(true); } },
     { label: 'Delete', onClick: (row) => handleDelete(row.id), variant: 'danger' },
   ];
 
   return (
     <div>
       <div className="flex justify-end mb-4">
-        <button onClick={() => setCreateCardOpen(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+        <button onClick={() => { setEditingTerminal(null); setCreateCardOpen(true); }} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
           Create Terminal
         </button>
       </div>
@@ -85,21 +88,12 @@ const Terminals = () => {
       />
       {isCreateCardOpen && (
         <CustomCreateCard<POSTerminal>
+          defaultValues={editingTerminal || {}}
           onClose={() => setCreateCardOpen(false)}
-          onSubmit={handleCreate}
-          isLoading={isCreating}
+          onSubmit={editingTerminal ? handleUpdate : handleCreate}
+          isLoading={isCreating || isUpdating}
           interfaceKeys={['name', 'terminal_id', 'location', 'is_active']}
-          itemTitle="Create Terminal"
-        />
-      )}
-      {editingTerminal && (
-        <CustomCreateCard<POSTerminal>
-          defaultValues={editingTerminal}
-          onClose={() => setEditingTerminal(null)}
-          onSubmit={handleUpdate}
-          isLoading={isUpdating}
-          interfaceKeys={['name', 'terminal_id', 'location', 'is_active']}
-          itemTitle="Update Terminal"
+          itemTitle={editingTerminal ? "Update Terminal" : "Create Terminal"}
         />
       )}
     </div>

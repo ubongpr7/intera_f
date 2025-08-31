@@ -6,8 +6,6 @@ import { useGetConfigurationsQuery, useCreateConfigurationMutation, useUpdateCon
 import CustomCreateCard from '@/components/common/createCard';
 import { toast } from 'react-toastify';
 import { extractErrorMessage } from '@/lib/utils';
-import { CURRENCY_CODES } from '@/lib/currencyCode';
-import { getCurrencySymbol } from '@/lib/currency-utils';
 
 interface POSConfiguration {
   id: string;
@@ -32,42 +30,40 @@ const Configurations = () => {
   const [createConfiguration, { isLoading: isCreating }] = useCreateConfigurationMutation();
   const [updateConfiguration, { isLoading: isUpdating }] = useUpdateConfigurationMutation();
   const [deleteConfiguration, { isLoading: isDeleting }] = useDeleteConfigurationMutation();
-  const currencies = CURRENCY_CODES
-     
-       const currencyOptions = currencies.map(currency => ({
-       value: currency,
-       text: `${getCurrencySymbol(currency)} ${currency} `
-     }));
 
-     const selectOptions = {
-     currency:currencyOptions,
-  };
-  
   const handleCreate = async (data: Partial<POSConfiguration>) => {
+    try {
       await createConfiguration(data).unwrap();
       toast.success("Configuration created successfully");
       setCreateCardOpen(false);
       refetch();
-    
+    } catch (error) {
+      toast.error(extractErrorMessage(error));
+    }
   };
 
   const handleUpdate = async (data: Partial<POSConfiguration>) => {
     if (!editingConfiguration) return;
-    
+    try {
       await updateConfiguration({ id: editingConfiguration.id, ...data }).unwrap();
       toast.success("Configuration updated successfully");
       setEditingConfiguration(null);
+      setCreateCardOpen(false);
       refetch();
-    
+    } catch (error) {
+      toast.error(extractErrorMessage(error));
+    }
   };
 
   const handleDelete = async (id: string) => {
-    try {
-      await deleteConfiguration(id).unwrap();
-      toast.success("Configuration deleted successfully");
-      refetch();
-    } catch (error) {
-      toast.error('Configuration Could not be deleted');
+    if (window.confirm("Are you sure you want to delete this configuration?")) {
+      try {
+        await deleteConfiguration(id).unwrap();
+        toast.success("Configuration deleted successfully");
+        refetch();
+      } catch (error) {
+        toast.error(extractErrorMessage(error));
+      }
     }
   };
 
@@ -79,14 +75,14 @@ const Configurations = () => {
   ];
 
   const actionButtons: ActionButton<POSConfiguration>[] = [
-    { label: 'Edit', onClick: (row) => setEditingConfiguration(row) },
+    { label: 'Edit', onClick: (row) => { setEditingConfiguration(row); setCreateCardOpen(true); } },
     { label: 'Delete', onClick: (row) => handleDelete(row.id), variant: 'danger' },
   ];
 
   return (
     <div>
       <div className="flex justify-end mb-4">
-        <button onClick={() => setCreateCardOpen(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+        <button onClick={() => { setEditingConfiguration(null); setCreateCardOpen(true); }} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
           Create Configuration
         </button>
       </div>
@@ -99,23 +95,13 @@ const Configurations = () => {
       />
       {isCreateCardOpen && (
         <CustomCreateCard<POSConfiguration>
+          defaultValues={editingConfiguration || {}}
           onClose={() => setCreateCardOpen(false)}
-          onSubmit={handleCreate}
-          isLoading={isCreating}
+          onSubmit={editingConfiguration ? handleUpdate : handleCreate}
+          isLoading={isCreating || isUpdating}
           interfaceKeys={['name', 'currency', 'tax_inclusive', 'default_tax_rate', 'allow_negative_stock', 'require_customer', 'auto_print_receipt', 'receipt_header', 'receipt_footer', 'allow_split_payment', 'max_discount_percent']}
-          itemTitle="Create Configuration"
-          selectOptions={selectOptions}
-        />
-      )}
-      {editingConfiguration && (
-        <CustomCreateCard<POSConfiguration>
-          defaultValues={editingConfiguration}
-          onClose={() => setEditingConfiguration(null)}
-          onSubmit={handleUpdate}
-          isLoading={isUpdating}
-          interfaceKeys={['name', 'currency', 'tax_inclusive', 'default_tax_rate', 'allow_negative_stock', 'require_customer', 'auto_print_receipt', 'receipt_header', 'receipt_footer', 'allow_split_payment', 'max_discount_percent']}
-          itemTitle="Update Configuration"
-          selectOptions={selectOptions}
+          itemTitle={editingConfiguration ? "Update Configuration" : "Create Configuration"}
+          optionalFields={['receipt_header', 'receipt_footer','tax_inclusive','allow_negative_stock','require_customer', 'auto_print_receipt']}
         />
       )}
     </div>

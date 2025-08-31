@@ -44,6 +44,7 @@ const Discounts = () => {
       await updateDiscount({ id: editingDiscount.id, ...data }).unwrap();
       toast.success("Discount updated successfully");
       setEditingDiscount(null);
+      setCreateCardOpen(false);
       refetch();
     } catch (error) {
       toast.error(extractErrorMessage(error));
@@ -51,12 +52,14 @@ const Discounts = () => {
   };
 
   const handleDelete = async (id: string) => {
-    try {
-      await deleteDiscount(id).unwrap();
-      toast.success("Discount deleted successfully");
-      refetch();
-    } catch (error) {
-      toast.error(extractErrorMessage(error));
+    if (window.confirm("Are you sure you want to delete this discount?")) {
+      try {
+        await deleteDiscount(id).unwrap();
+        toast.success("Discount deleted successfully");
+        refetch();
+      } catch (error) {
+        toast.error(extractErrorMessage(error));
+      }
     }
   };
 
@@ -68,14 +71,14 @@ const Discounts = () => {
   ];
 
   const actionButtons: ActionButton<POSDiscount>[] = [
-    { label: 'Edit', onClick: (row) => setEditingDiscount(row) },
+    { label: 'Edit', onClick: (row) => { setEditingDiscount(row); setCreateCardOpen(true); } },
     { label: 'Delete', onClick: (row) => handleDelete(row.id), variant: 'danger' },
   ];
 
   return (
     <div>
       <div className="flex justify-end mb-4">
-        <button onClick={() => setCreateCardOpen(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+        <button onClick={() => { setEditingDiscount(null); setCreateCardOpen(true); }} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
           Create Discount
         </button>
       </div>
@@ -88,21 +91,12 @@ const Discounts = () => {
       />
       {isCreateCardOpen && (
         <CustomCreateCard<POSDiscount>
+          defaultValues={editingDiscount || {}}
           onClose={() => setCreateCardOpen(false)}
-          onSubmit={handleCreate}
-          isLoading={isCreating}
+          onSubmit={editingDiscount ? handleUpdate : handleCreate}
+          isLoading={isCreating || isUpdating}
           interfaceKeys={['name', 'discount_type', 'value', 'is_active', 'requires_approval', 'min_order_amount', 'max_discount_amount']}
-          itemTitle="Create Discount"
-        />
-      )}
-      {editingDiscount && (
-        <CustomCreateCard<POSDiscount>
-          defaultValues={editingDiscount}
-          onClose={() => setEditingDiscount(null)}
-          onSubmit={handleUpdate}
-          isLoading={isUpdating}
-          interfaceKeys={['name', 'discount_type', 'value', 'is_active', 'requires_approval', 'min_order_amount', 'max_discount_amount']}
-          itemTitle="Update Discount"
+          itemTitle={editingDiscount ? "Update Discount" : "Create Discount"}
         />
       )}
     </div>

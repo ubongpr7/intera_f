@@ -40,6 +40,7 @@ const Tables = () => {
       await updateTable({ id: editingTable.id, ...data }).unwrap();
       toast.success("Table updated successfully");
       setEditingTable(null);
+      setCreateCardOpen(false);
       refetch();
     } catch (error) {
       toast.error(extractErrorMessage(error));
@@ -47,12 +48,14 @@ const Tables = () => {
   };
 
   const handleDelete = async (id: string) => {
-    try {
-      await deleteTable(id).unwrap();
-      toast.success("Table deleted successfully");
-      refetch();
-    } catch (error) {
-      toast.error(extractErrorMessage(error));
+    if (window.confirm("Are you sure you want to delete this table?")) {
+      try {
+        await deleteTable(id).unwrap();
+        toast.success("Table deleted successfully");
+        refetch();
+      } catch (error) {
+        toast.error(extractErrorMessage(error));
+      }
     }
   };
 
@@ -63,14 +66,14 @@ const Tables = () => {
   ];
 
   const actionButtons: ActionButton<POSTable>[] = [
-    { label: 'Edit', onClick: (row) => setEditingTable(row) },
+    { label: 'Edit', onClick: (row) => { setEditingTable(row); setCreateCardOpen(true); } },
     { label: 'Delete', onClick: (row) => handleDelete(row.id), variant: 'danger' },
   ];
 
   return (
     <div>
       <div className="flex justify-end mb-4">
-        <button onClick={() => setCreateCardOpen(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+        <button onClick={() => { setEditingTable(null); setCreateCardOpen(true); }} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
           Create Table
         </button>
       </div>
@@ -83,21 +86,12 @@ const Tables = () => {
       />
       {isCreateCardOpen && (
         <CustomCreateCard<POSTable>
+          defaultValues={editingTable || {}}
           onClose={() => setCreateCardOpen(false)}
-          onSubmit={handleCreate}
-          isLoading={isCreating}
+          onSubmit={editingTable ? handleUpdate : handleCreate}
+          isLoading={isCreating || isUpdating}
           interfaceKeys={['name', 'capacity', 'is_available']}
-          itemTitle="Create Table"
-        />
-      )}
-      {editingTable && (
-        <CustomCreateCard<POSTable>
-          defaultValues={editingTable}
-          onClose={() => setEditingTable(null)}
-          onSubmit={handleUpdate}
-          isLoading={isUpdating}
-          interfaceKeys={['name', 'capacity', 'is_available']}
-          itemTitle="Update Table"
+          itemTitle={editingTable ? "Update Table" : "Create Table"}
         />
       )}
     </div>

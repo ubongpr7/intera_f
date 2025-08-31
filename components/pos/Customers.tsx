@@ -42,6 +42,7 @@ const Customers = () => {
       await updateCustomer({ id: editingCustomer.id, ...data }).unwrap();
       toast.success("Customer updated successfully");
       setEditingCustomer(null);
+      setCreateCardOpen(false);
       refetch();
     } catch (error) {
       toast.error(extractErrorMessage(error));
@@ -49,12 +50,14 @@ const Customers = () => {
   };
 
   const handleDelete = async (id: string) => {
-    try {
-      await deleteCustomer(id).unwrap();
-      toast.success("Customer deleted successfully");
-      refetch();
-    } catch (error) {
-      toast.error(extractErrorMessage(error));
+    if (window.confirm("Are you sure you want to delete this customer?")) {
+      try {
+        await deleteCustomer(id).unwrap();
+        toast.success("Customer deleted successfully");
+        refetch();
+      } catch (error) {
+        toast.error(extractErrorMessage(error));
+      }
     }
   };
 
@@ -67,14 +70,14 @@ const Customers = () => {
   ];
 
   const actionButtons: ActionButton<POSCustomer>[] = [
-    { label: 'Edit', onClick: (row) => setEditingCustomer(row) },
+    { label: 'Edit', onClick: (row) => { setEditingCustomer(row); setCreateCardOpen(true); } },
     { label: 'Delete', onClick: (row) => handleDelete(row.id), variant: 'danger' },
   ];
 
   return (
     <div>
       <div className="flex justify-end mb-4">
-        <button onClick={() => setCreateCardOpen(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+        <button onClick={() => { setEditingCustomer(null); setCreateCardOpen(true); }} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
           Create Customer
         </button>
       </div>
@@ -87,21 +90,12 @@ const Customers = () => {
       />
       {isCreateCardOpen && (
         <CustomCreateCard<POSCustomer>
+          defaultValues={editingCustomer || {}}
           onClose={() => setCreateCardOpen(false)}
-          onSubmit={handleCreate}
-          isLoading={isCreating}
+          onSubmit={editingCustomer ? handleUpdate : handleCreate}
+          isLoading={isCreating || isUpdating}
           interfaceKeys={['name', 'email', 'phone', 'address', 'loyalty_points']}
-          itemTitle="Create Customer"
-        />
-      )}
-      {editingCustomer && (
-        <CustomCreateCard<POSCustomer>
-          defaultValues={editingCustomer}
-          onClose={() => setEditingCustomer(null)}
-          onSubmit={handleUpdate}
-          isLoading={isUpdating}
-          interfaceKeys={['name', 'email', 'phone', 'address', 'loyalty_points']}
-          itemTitle="Update Customer"
+          itemTitle={editingCustomer ? "Update Customer" : "Create Customer"}
         />
       )}
     </div>
