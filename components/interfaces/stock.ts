@@ -23,6 +23,7 @@ export interface StockItem {
     customer: string;
     sku: string;
     belongs_to: string;
+    display_image?:string;
     reference: string;
     quantity_w_unit:string;
   }

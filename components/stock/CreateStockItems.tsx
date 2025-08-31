@@ -12,6 +12,7 @@ import { Edit, Trash2 } from "lucide-react";
 import { get } from "http";
 import { formatCurrency, getCurrencySymbolForProfile } from "@/lib/currency-utils";
 import { getCookie } from "cookies-next";
+import { TableImageHover } from "../common/table-image-render";
 
 interface InventoryColumnRender {
   (value: any, row?: StockItem): React.ReactNode;
@@ -46,6 +47,18 @@ const inventoryColumns: InventoryColumn<StockItem>[] = [
   {
     header: 'Variant Barcode',
     accessor: 'product_variant',
+    className: 'font-medium',
+  },
+  {
+    header: 'Image',
+    accessor: 'display_image',
+    render: (value: string) => (
+      <TableImageHover
+              src={value}
+              alt="Product Image"
+              className="hover:ring-2 hover:ring-blue-500 hover:ring-opacity-50"
+            />
+          ),
     className: 'font-medium',
   },
   {
