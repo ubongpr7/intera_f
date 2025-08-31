@@ -23,7 +23,7 @@ const RealtimeDashboard = () => {
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <h1 className="text-2xl font-bold mb-6">Real-time Dashboard</h1>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1  gap-6">
         <div className="lg:col-span-1 flex flex-col gap-6">
           <QuickStats />
           <HeldOrders />
