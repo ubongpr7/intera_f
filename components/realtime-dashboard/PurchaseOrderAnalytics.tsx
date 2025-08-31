@@ -231,6 +231,32 @@ const PurchaseOrderDashboard = () => {
           </div>
         </div>
       </div>
+{/* Status Distribution Chart */}
+          <div className="bg-gray-50 p-4 rounded-xl mb-6">
+            <h4 className="font-semibold text-gray-800 mb-4 flex items-center">
+              <BarChart3 className="w-4 h-4 mr-2 text-indigo-600" /> Status Distribution
+            </h4>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={statusData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  labelLine={false}
+                >
+                  {statusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => [`${value} orders`, 'Count']} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
 
       {/* Analytics Section - 3/5 width */}
       <div className="lg:col-span-3">
@@ -338,33 +364,7 @@ const PurchaseOrderDashboard = () => {
             </div>
           </div>
 
-          {/* Status Distribution Chart */}
-          <div className="bg-gray-50 p-4 rounded-xl mb-6">
-            <h4 className="font-semibold text-gray-800 mb-4 flex items-center">
-              <BarChart3 className="w-4 h-4 mr-2 text-indigo-600" /> Status Distribution
-            </h4>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={statusData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  labelLine={false}
-                >
-                  {statusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => [`${value} orders`, 'Count']} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-
+          
           {/* Expandable Tables Section */}
           <div className="space-y-4">
             {/* Status Distribution Table */}
