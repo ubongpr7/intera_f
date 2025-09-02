@@ -58,3 +58,22 @@
 57. Mobile Order Taking  
 58. Stock Transfer Between Locations  
 59. Supplier Due Management  
+
+not done yet:
+    23. Profit Margin Analysis
+    24. Payment Type Reports
+    25. Discount Application
+    26. Tax Calculation
+    27. Customer Purchase History
+    34. Shift Tracking
+    41. Multi-Language Support
+    42. Third-Party App Integrations
+    43. E-commerce Sync
+    44. Accounting Software Sync
+    45. Payment Gateway Integration
+    46. Refund Management
+    48. AI-Generated Product Descriptions
+    49. Appointment Scheduling
+    50. No-Show Protection
+    51. Automated Reminders
+    52. Project Management Tools

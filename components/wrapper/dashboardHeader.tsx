@@ -44,11 +44,7 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
     {!shouldHideDashboardUI(pathname) &&  <Navbar user={user} />}
     
     {children}
-    {/*
-    {getCookie('api_key') &&(
-      
-    )}
-     */}
+    
      {getCookie('api_key') && (<A2AChat/>)}
     
     </main>
