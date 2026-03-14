@@ -1,6 +1,8 @@
 import { Address } from "@/components/interfaces/common"
 import { apiSlice } from "../../services/apiSlice"
 import type {
+  CompanyAgentSetupResponse,
+  SaveCompanyAgentSetupPayload,
   CompanyProfile,
   StaffRole,
   StaffGroup,
@@ -49,6 +51,23 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         url: `/${management_api}/owner-company-profile/`,
         service: service,
 
+      }),
+    }),
+
+    getCompanyAgentSetup: builder.query<CompanyAgentSetupResponse, void>({
+      query: () => ({
+        url: `/${management_api}/agent-setup/`,
+        method: "GET",
+        service,
+      }),
+    }),
+
+    saveCompanyAgentSetup: builder.mutation<CompanyAgentSetupResponse, SaveCompanyAgentSetupPayload>({
+      query: (data) => ({
+        url: `/${management_api}/agent-setup/`,
+        method: "POST",
+        body: data,
+        service,
       }),
     }),
 
@@ -433,6 +452,8 @@ export const {
   useUpdateCompanyProfileMutation,
   useGetCompanyProfileQuery,
   useGetOwnerCompanyProfileQuery,
+  useGetCompanyAgentSetupQuery,
+  useSaveCompanyAgentSetupMutation,
   useDeleteCompanyProfileMutation,
 
   // Company Address hooks

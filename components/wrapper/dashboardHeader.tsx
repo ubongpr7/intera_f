@@ -13,6 +13,7 @@ import { useRefreshMutation } from '@/redux/features/authApiSlice';
 
 import { getCookie } from 'cookies-next';
 import A2AChat from '../agents/ai-chat-widget';
+import { readCookieValue } from '@/lib/authCookies';
 
 const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
 
@@ -32,6 +33,8 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
   const shouldHideDashboardUI = (path: string) => {
     return path.startsWith('/accounts')|| path ==='/profile' || path === '/'|| path==='/features';
   };
+
+  const shouldShowLegacyAgentWidget = pathname !== "/agent" && Boolean(readCookieValue("accessToken", getCookie));
   
   return (
     <div className={`flex bg-gray-50 text-gray-900 w-full min-h-screen`}>
@@ -45,7 +48,7 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
     
     {children}
     
-     {getCookie('api_key') && (<A2AChat/>)}
+     {shouldShowLegacyAgentWidget && (<A2AChat/>)}
     
     </main>
     </div>

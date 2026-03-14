@@ -1,4 +1,5 @@
 import { getCookie } from "cookies-next";
+import { readCookieValue } from "./authCookies";
 
 interface CurrencyConfig {
   symbol: string
@@ -130,17 +131,17 @@ export function getCurrencySymbol(currencyCode: string): string {
   return config?.symbol || currencyCode.toUpperCase()
 }
 export function getCurrencySymbolForProfile() {
-  const currencyCode= `${getCookie('currency')}`
+  const currencyCode = `${readCookieValue("currency", getCookie) || "USD"}`
   const config = CURRENCY_CONFIG[currencyCode?.toUpperCase()||'USD']
   return config?.symbol || currencyCode.toUpperCase()
 }
 
 export function formatMoneyCompactForProfile(amount:string|number){
-  const currencyCode= `${getCookie('currency')}`
+  const currencyCode = `${readCookieValue("currency", getCookie) || "USD"}`
   return formatCurrency(currencyCode,amount,{compact:true})
 }
 export function formatMoneyForProfile(amount:string|number){
-  const currencyCode= `${getCookie('currency')}`
+  const currencyCode = `${readCookieValue("currency", getCookie) || "USD"}`
   return formatCurrency(currencyCode,amount,{compact:false})
 }
 

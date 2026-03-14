@@ -8,6 +8,8 @@ import { useAppSelector, useAppDispatch } from "../../redux/store";
 import { setIsDarkMode, setIsSidebarCollapsed,resetToSystemTheme } from "@/redux/state";
 import { UserData } from '../interfaces/User'
 import LogoutButton from '../auth/logoutUser'
+import { useGetUserCompaniesQuery, useSwitchCompanyMutation } from '@/redux/features/authApiSlice';
+import { toast } from 'react-toastify';
 
 interface NavbarProps{
     user:UserData
@@ -24,6 +26,21 @@ const  Navbar = ({user}:NavbarProps) => {
             dispatch(setIsSidebarCollapsed(!SidebarCollapsed))
         }
   const themeMenuRef = useRef<HTMLDivElement>(null)
+  const { data: companyMemberships } = useGetUserCompaniesQuery();
+  const [switchCompany, { isLoading: isSwitchingCompany }] = useSwitchCompanyMutation();
+  const [selectedCompanyCode, setSelectedCompanyCode] = useState<string>("");
+
+  React.useEffect(() => {
+    if (!companyMemberships?.profiles?.length) return;
+    const active = companyMemberships.profiles.find(
+      (profile) => `${profile.id}` === `${companyMemberships.active_profile_id}`,
+    );
+    if (active?.company_code) {
+      setSelectedCompanyCode(active.company_code);
+    } else if (companyMemberships.profiles[0]?.company_code) {
+      setSelectedCompanyCode(companyMemberships.profiles[0].company_code);
+    }
+  }, [companyMemberships]);
 
   const toggleTheme = (theme: "light" | "dark" | "system") => {
     if (theme === "system") {
@@ -33,6 +50,18 @@ const  Navbar = ({user}:NavbarProps) => {
     }
     setThemeMenuOpen(false)
   }
+
+  const handleSwitchCompany = async (companyCode: string) => {
+    if (!companyCode || companyCode === selectedCompanyCode) return;
+    try {
+      await switchCompany({ company_code: companyCode }).unwrap();
+      setSelectedCompanyCode(companyCode);
+      toast.success("Company context switched.");
+      window.location.reload();
+    } catch (error: any) {
+      toast.error(error?.data?.detail || "Failed to switch company context.");
+    }
+  };
 
   return (
     <div className={`flex justify-between items-center w-full mb-7`}> 
@@ -70,6 +99,20 @@ const  Navbar = ({user}:NavbarProps) => {
         {/* Right Side */}
         <div className={`flex items-center justify-between gap-5`}> 
                 <div className={`hidden md:flex items-center gap-5 justify-between`}>
+                     {companyMemberships?.profiles?.length ? (
+                      <select
+                        value={selectedCompanyCode}
+                        onChange={(e) => handleSwitchCompany(e.target.value)}
+                        disabled={isSwitchingCompany}
+                        className="bg-white border border-gray-300 text-sm rounded-md px-2 py-1 text-gray-700"
+                      >
+                        {companyMemberships.profiles.map((profile) => (
+                          <option key={`${profile.id}`} value={profile.company_code}>
+                            {profile.name} ({profile.company_code})
+                          </option>
+                        ))}
+                      </select>
+                    ) : null}
                      <div className="relative" ref={themeMenuRef}>
           <button
             className="p-2 rounded-full hover:bg-gray-200 "

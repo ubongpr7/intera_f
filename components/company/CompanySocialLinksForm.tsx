@@ -5,13 +5,14 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Linkedin, Twitter, Instagram, Facebook, Link2 } from "lucide-react"
-import type { CompanyProfile } from "types/company-profile"
+import { useUpdateCompanyProfileMutation } from "@/redux/features/management/companyProfileApiSlice"
+import type { CompanyProfile } from "@/types/company-profile"
 
 interface CompanySocialLinksFormProps {
   profile: CompanyProfile | null
-  onUpdate: (data: any) => Promise<any>
-  
+  onUpdate?: () => Promise<any> | void
 }
 
 interface SocialLinksData {
@@ -31,6 +32,7 @@ interface FormErrors {
 }
 
 export function CompanySocialLinksForm({ profile, onUpdate,  }: CompanySocialLinksFormProps) {
+  const [updateProfile, { isLoading: isSaving, isError, error, isSuccess }] = useUpdateCompanyProfileMutation()
   const [formData, setFormData] = useState<SocialLinksData>({
     linkedin: "",
     twitter: "",
@@ -39,7 +41,7 @@ export function CompanySocialLinksForm({ profile, onUpdate,  }: CompanySocialLin
     other_link: "",
   })
   const [errors, setErrors] = useState<FormErrors>({})
-  const [isLoading, setIsLoading] = useState(false)
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false)
 
   useEffect(() => {
     if (profile) {
@@ -52,6 +54,14 @@ export function CompanySocialLinksForm({ profile, onUpdate,  }: CompanySocialLin
       })
     }
   }, [profile])
+
+  useEffect(() => {
+    if (isSuccess) {
+      setShowSuccessMessage(true)
+      const timer = setTimeout(() => setShowSuccessMessage(false), 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [isSuccess])
 
   const updateFormData = (data: Partial<SocialLinksData>) => {
     setFormData((prev) => ({ ...prev, ...data }))
@@ -101,18 +111,35 @@ export function CompanySocialLinksForm({ profile, onUpdate,  }: CompanySocialLin
       return
     }
 
-    setIsLoading(true)
     try {
-      await onUpdate(formData)
+      if (!profile?.id) {
+        setErrors({ other_link: "Save your basic company information first." })
+        return
+      }
+
+      await updateProfile({ id: profile.id, data: formData }).unwrap()
+      await onUpdate?.()
     } catch (error) {
       console.error("Failed to update social links:", error)
-    } finally {
-      setIsLoading(false)
     }
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {showSuccessMessage && (
+        <Alert className="border-green-200 bg-green-50">
+          <AlertDescription className="text-green-800">Social links updated successfully.</AlertDescription>
+        </Alert>
+      )}
+
+      {isError && (
+        <Alert className="border-red-200 bg-red-50">
+          <AlertDescription className="text-red-800">
+            {error ? `Error: ${JSON.stringify(error)}` : "Failed to save social links. Please try again."}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="space-y-4">
         <div className="flex items-center gap-2 mb-4">
           <Link2 className="h-5 w-5 text-blue-600" />
@@ -202,8 +229,8 @@ export function CompanySocialLinksForm({ profile, onUpdate,  }: CompanySocialLin
       </div>
 
       <div className="flex justify-end">
-        <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white" disabled={isLoading}>
-          {isLoading ? "Saving..." : "Save Social Links"}
+        <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white" disabled={isSaving}>
+          {isSaving ? "Saving..." : "Save Social Links"}
         </Button>
       </div>
     </form>

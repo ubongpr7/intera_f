@@ -8,7 +8,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ReactSelectField, type SelectOption } from "@/components/ui/react-select-field"
 import { Building2, Calendar, Users, FileText } from "lucide-react"
-import { useUpdateCompanyProfileMutation } from "@/redux/features/management/companyProfileApiSlice"
+import {
+  useCreateCompanyProfileMutation,
+  useUpdateCompanyProfileMutation,
+} from "@/redux/features/management/companyProfileApiSlice"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import type { CompanyProfile, CompanyFormData } from "@/types/company-profile"
 import { getCurrencySymbol } from "@/lib/currency-utils"
@@ -22,7 +25,7 @@ interface CompanyBasicInfoFormProps {
 interface FormErrors {
   name?: string
   industry?: string
-  currency:string
+  currency?: string
   description?: string
   founded_date?: string
   employees_count?: string
@@ -47,7 +50,12 @@ const INDUSTRY_OPTIONS: SelectOption[] = [
 ]
 
 export function CompanyBasicInfoForm({ profile, onSuccess }: CompanyBasicInfoFormProps) {
-  const [updateProfile, { isLoading, isSuccess, isError, error, }] = useUpdateCompanyProfileMutation()
+  const [updateProfile, updateState] = useUpdateCompanyProfileMutation()
+  const [createProfile, createState] = useCreateCompanyProfileMutation()
+  const isLoading = updateState.isLoading || createState.isLoading
+  const isSuccess = updateState.isSuccess || createState.isSuccess
+  const isError = updateState.isError || createState.isError
+  const error = updateState.error || createState.error
 
   const currencyOptions = CURRENCY_CODES.map(currency => ({
   value: currency,
@@ -157,7 +165,11 @@ export function CompanyBasicInfoForm({ profile, onSuccess }: CompanyBasicInfoFor
     }
 
     try {
-      await updateProfile({ id:profile?.id, data: formData }).unwrap()
+      if (profile?.id) {
+        await updateProfile({ id: profile.id, data: formData }).unwrap()
+      } else {
+        await createProfile(formData).unwrap()
+      }
       onSuccess?.()
     } catch (err) {
       console.error("Failed to update company profile:", err)

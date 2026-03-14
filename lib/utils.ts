@@ -169,12 +169,12 @@ export const extractErrorMessage = (error: any, listOfKeys: string[]): string =>
 
 import {jwtDecode} from 'jwt-decode'
 import {getCookie} from 'cookies-next'
+import { readCookieValue } from './authCookies'
 export function getDecodedToken(){
-  const token= getCookie('accessToken')
+  const token= readCookieValue("accessToken", getCookie)
   try{
     return jwtDecode(`${token}`)
   } catch{
     return null
   }
 }
-

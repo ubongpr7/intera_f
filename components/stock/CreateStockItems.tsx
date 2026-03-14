@@ -12,6 +12,7 @@ import { Edit, Trash2 } from "lucide-react";
 import { get } from "http";
 import { formatCurrency, getCurrencySymbolForProfile } from "@/lib/currency-utils";
 import { getCookie } from "cookies-next";
+import { readCookieValue } from "@/lib/authCookies";
 import { TableImageHover } from "../common/table-image-render";
 
 interface InventoryColumnRender {
@@ -70,7 +71,7 @@ const inventoryColumns: InventoryColumn<StockItem>[] = [
   {
     header: 'Purchase Price',
     accessor: 'purchase_price',
-    render: (value: number) => formatCurrency(`${getCookie('currency') || 'NGN'}`, value),
+    render: (value: number) => formatCurrency(`${readCookieValue("currency", getCookie) || 'NGN'}`, value),
     className: 'font-medium',
   },
   {

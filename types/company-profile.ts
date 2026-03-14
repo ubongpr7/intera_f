@@ -128,3 +128,46 @@ export interface CompanyFormData {
   currency?: string
   headquarters_address?:Address
 }
+
+export interface AgentModelVersionOption {
+  id: number | string
+  provider: string
+  provider_label: string
+  model_name: string
+  base_url?: string | null
+}
+
+export interface CompanyAgentSetup {
+  id: number | string
+  profile?: number | string
+  name: string
+  version: number | string
+  provider: string
+  provider_label: string
+  model_name: string
+  provider_base_url?: string | null
+  effective_base_url?: string | null
+  special_instruction?: string
+  system_instruction?: string
+  assistant_instruction?: string
+  has_api_key: boolean
+  has_tavily_api_key: boolean
+  api_key_masked?: string
+  tavily_api_key_masked?: string
+}
+
+export interface CompanyAgentSetupResponse {
+  configured: boolean
+  agent: CompanyAgentSetup | null
+  available_versions: AgentModelVersionOption[]
+}
+
+export interface SaveCompanyAgentSetupPayload {
+  name?: string
+  version?: number | string
+  api_key?: string
+  tavily_api_key?: string
+  special_instruction?: string
+  system_instruction?: string
+  assistant_instruction?: string
+}

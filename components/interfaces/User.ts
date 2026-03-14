@@ -11,9 +11,6 @@ export interface UserData {
     sex?: 'male' | 'female' | 'other' | 'prefer_not_to_say' | null;
     is_verified: boolean;
     is_staff: boolean;
-    is_subscriber: boolean;
-    is_worker: boolean;
-    is_main: boolean;
     date_of_birth?: Date | string | null;
     profile?: number | null;
     date_joined: Date | string;

@@ -3,20 +3,27 @@ import type { BaseQueryFn, FetchArgs as OriginalFetchArgs, FetchBaseQueryError }
 import { setAuth, logout } from "../features/authSlice"
 import { Mutex } from "async-mutex"
 import { setCookie, getCookie, deleteCookie } from "cookies-next"
-import env from "../../env_file"
-import { set } from "nprogress"
+import { jwtDecode, type JwtPayload as JWTPayload } from "jwt-decode"
+import { AUTH_COOKIE_NAMES, AUTH_COOKIE_KEYS, readCookieValue } from "@/lib/authCookies"
+const BACKEND_HOST_URL = process.env.NEXT_PUBLIC_BACKEND_HOST_URL ?? ''
+const COMMON_BACKEND_URL = process.env.NEXT_PUBLIC_COMMON_BACKEND_URL ?? ''
+const INVENNTORY_BACKEND_URL = process.env.NEXT_PUBLIC_INVENNTORY_BACKEND_URL ?? ''
+const PRODUCT_BACKEND_URL = process.env.NEXT_PUBLIC_PRODUCT_BACKEND_URL ?? ''
+const POS_BACKEND_URL = process.env.NEXT_PUBLIC_POS_BACKEND_URL ?? ''
+const AGENT_BACKEND_URL = process.env.NEXT_PUBLIC_AGENT_BACKEND_URL ?? ''
+const PAYMENT_BACKEND_URL = process.env.NEXT_PUBLIC_PAYMENT_BACKEND_URL ?? ''
 
 export type serviceType = "users" | "inventory"| "common"|"product"|'pos'| "agent"|'payment'
 const accessAge = 60*60*24
 const refreshAge = 60*60*24
 export const serviceMap: Record<serviceType, string> = {
-  users: env.BACKEND_HOST_URL,
-  inventory: env.INVENNTORY_BACKEND_URL,
-  common: env.COMMON_BACKEND_URL,
-  product: env.PRODUCT_BACKEND_URL,
-  pos: env.POS_BACKEND_URL,
-  agent: env.AGENT_BACKEND_URL,
-  payment: env.PAYMENT_BACKEND_URL,
+  users: BACKEND_HOST_URL,
+  inventory: INVENNTORY_BACKEND_URL,
+  common: COMMON_BACKEND_URL,
+  product: PRODUCT_BACKEND_URL,
+  pos: POS_BACKEND_URL,
+  agent: AGENT_BACKEND_URL,
+  payment: PAYMENT_BACKEND_URL,
 }
 
 const mutex = new Mutex()
@@ -28,15 +35,138 @@ interface FetchArgs extends OriginalFetchArgs {
   service?: serviceType
 }
 
+interface ProfileContext {
+  id?: string | number | null
+  company_code?: string | null
+  currency?: string | null
+}
+
+interface AuthResponsePayload {
+  access?: string
+  refresh?: string
+  id?: string | number
+  profile?: string | number | null
+  profile_context?: ProfileContext | null
+  currency?: string | null
+  model_name?: string | null
+  provider?: string | null
+  agent_name?: string | null
+}
+
+type AccessTokenPayload = JWTPayload & {
+  has_onboarded?: boolean
+  user_id?: number
+  email?: string
+  permissions?: string[]
+  plan_name?: string
+  ai_simulations_left?: number
+  role?: string
+  mfa_enabled?: boolean
+  is_staff?: boolean
+  is_superuser?: boolean
+  has_setup_mfa?: boolean
+}
+
+const decodeAccessToken = (token: string): AccessTokenPayload | null => {
+  try {
+    return jwtDecode<AccessTokenPayload>(token)
+  } catch (error) {
+    console.error("Failed to decode access token", error)
+    return null
+  }
+}
+
+const AUTH_RESPONSE_URLS = new Set(["/auth/login/", "/auth/refresh/", "/auth/switch-company/", "/accounts/mfa/verify/"])
+const AUTH_LOGOUT_URLS = new Set(["/auth/logout/", "/api/v1/accounts/logout/"])
+
+const readAuthCookie = (key: keyof typeof AUTH_COOKIE_NAMES): string | undefined =>
+  readCookieValue(key, (name) => getCookie(name))
+
+const setAuthCookie = (key: keyof typeof AUTH_COOKIE_NAMES, value: string, maxAge: number) => {
+  setCookie(AUTH_COOKIE_NAMES[key], value, {
+    maxAge,
+    path: "/",
+    sameSite: "lax",
+  })
+}
+
+const deleteAuthCookie = (key: keyof typeof AUTH_COOKIE_NAMES) => {
+  const currentName = AUTH_COOKIE_NAMES[key]
+  deleteCookie(currentName)
+  if (currentName !== key) {
+    deleteCookie(key)
+  }
+}
+
+const persistAuthSession = (response: AuthResponsePayload) => {
+  const profileContext = response.profile_context ?? {}
+  const activeProfileId = profileContext.id ?? response.profile ?? null
+  const companyCode = profileContext.company_code ?? null
+  const currency = response.currency ?? profileContext.currency ?? null
+
+  if (response.access) {
+    const decodedTokenPayload = decodeAccessToken(response.access)
+    console.log("Decoded access token payload:", decodedTokenPayload)
+
+    setAuthCookie("accessToken", response.access, accessAge)
+  }
+  if (response.refresh) {
+    setAuthCookie("refreshToken", response.refresh, refreshAge)
+  }
+  if (response.id !== undefined && response.id !== null) {
+    setAuthCookie("userID", `${response.id}`, refreshAge)
+  }
+  if (activeProfileId !== undefined && activeProfileId !== null && `${activeProfileId}`.length > 0) {
+    setAuthCookie("profileId", `${activeProfileId}`, refreshAge)
+    setAuthCookie("profile", `${activeProfileId}`, refreshAge)
+  } else {
+    deleteAuthCookie("profileId")
+    deleteAuthCookie("profile")
+  }
+  if (companyCode) {
+    setAuthCookie("companyCode", companyCode, refreshAge)
+  } else {
+    deleteAuthCookie("companyCode")
+  }
+  if (currency) {
+    setAuthCookie("currency", currency, refreshAge)
+  } else {
+    deleteAuthCookie("currency")
+  }
+  if (response.model_name) {
+    setAuthCookie("model_name", response.model_name, accessAge)
+  } else {
+    deleteAuthCookie("model_name")
+  }
+  if (response.provider) {
+    setAuthCookie("provider", response.provider, accessAge)
+  } else {
+    deleteAuthCookie("provider")
+  }
+  if (response.agent_name) {
+    setAuthCookie("agent_name", response.agent_name, accessAge)
+  } else {
+    deleteAuthCookie("agent_name")
+  }
+  deleteAuthCookie("api_key")
+  deleteAuthCookie("tavily_api_key")
+}
+
+const clearAuthSession = () => {
+  for (const key of AUTH_COOKIE_KEYS) {
+    deleteAuthCookie(key)
+  }
+}
+
 // Create base queries for each service
 const createBaseQuery = (baseUrl: string, isFileUpload = false) => {
   return fetchBaseQuery({
     baseUrl,
     credentials: "include",
     timeout: 600000,
-    prepareHeaders: (headers, { getState }) => {
-      const token = getCookie("accessToken")
-      const profile = getCookie("profile")
+    prepareHeaders: (headers) => {
+      const token = readAuthCookie("accessToken")
+      const profile = readAuthCookie("profileId") ?? readAuthCookie("profile")
 
       if (token) {
         headers.set("Authorization", `Bearer ${token}`)
@@ -98,7 +228,13 @@ const getServiceForEndpoint = (args: string | FetchArgs): serviceType => {
 
   // Fallback: determine by URL pattern
   const url = args.url
-  if (url.includes("/jwt/") || url.includes("/api/v1/accounts/")) {
+  if (
+    url.includes("/jwt/") ||
+    url.includes("/api/v1/accounts/") ||
+    url.includes("/auth/") ||
+    url.includes("/accounts/") ||
+    url.includes("/djoser/")
+  ) {
     return "users"
   }
   if (url.includes("/inventory_api/")) {
@@ -136,43 +272,11 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
   // Handle authentication responses (only for users service)
   if (result?.data && service === "users") {
     const url = enhancedArgs.url
-    if (url === "/jwt/create/" || url === "/jwt/refresh/") {
-      const response = result.data as {
-        access: string
-        refresh: string
-        access_token: string
-        id: string
-        profile: string
-        currency:string
-        model_name:string
-        api_key:string
-        provider:string
-        tavily_api_key:string
-        agent_name:string
-
-      }
-      setCookie("accessToken", response.access, { maxAge:  accessAge,httpOnly: false, path: "/",sameSite: 'lax' })
-      setCookie("model_name", response.model_name, { maxAge:  accessAge, path: "/" })
-      setCookie("api_key", response.api_key, { maxAge:  accessAge, path: "/" })
-      setCookie("provider", response.provider, { maxAge:  accessAge, path: "/" })
-      setCookie("tavily_api_key", response.tavily_api_key, { maxAge:  accessAge, path: "/" })
-      setCookie("agent_name", response.agent_name, { maxAge:  accessAge, path: "/" })
-      setCookie("refreshToken", response.refresh, { maxAge:refreshAge, path: "/" })
-      setCookie("userID", response.id, { maxAge: refreshAge, path: "/" })
-      setCookie("profile", response.profile, { maxAge: refreshAge, path: "/" })
-      setCookie("currency", response.currency, { maxAge: refreshAge, path: "/" })
+    if (AUTH_RESPONSE_URLS.has(url) || url.startsWith("/auth/o/")) {
+      persistAuthSession(result.data as AuthResponsePayload)
       api.dispatch(setAuth())
-    } else if (url === "/api/v1/accounts/logout/") {
-      deleteCookie("accessToken")
-      deleteCookie("refreshToken")
-      deleteCookie('model_name')
-      deleteCookie('api_key')
-      deleteCookie('provider')
-      deleteCookie('tavily_api_key')
-      deleteCookie('agent_name')
-      deleteCookie("userID")
-      deleteCookie("profile")
-      deleteCookie("currency")
+    } else if (AUTH_LOGOUT_URLS.has(url)) {
+      clearAuthSession()
       api.dispatch(logout())
     }
   }
@@ -186,16 +290,14 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
       if (!mutex.isLocked()) {
         const release = await mutex.acquire()
         try {
-          const refreshToken = getCookie("refreshToken")
-          // const refreshToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc1MjY1OTUzNSwiaWF0IjoxNzUwOTMxNTM1LCJqdGkiOiJhMTFjZDY3NGZkYmQ0NTE0OTc4NGE2MjAzNGIxOTBlMiIsInVzZXJfaWQiOjEsInBlcm1pc3Npb25zIjpbInJlc3RvcmVfaW52ZW50b3J5IiwidXBkYXRlX2ludmVudG9yeV9jYXRlZ29yeSIsImNyZWF0ZV9pbnZlbnRvcnkiLCJhcmNoaXZlX2ludmVudG9yeSIsImRlbGV0ZV9pbnZlbnRvcnkiLCJ1cGRhdGVfaW52ZW50b3J5Iiwidmlld19pbnZlbnRvcnlfcmVwb3J0cyIsImFwcHJvdmVfaW52ZW50b3J5X2NhdGVnb3J5IiwicmVqZWN0X2ludmVudG9yeSIsImFwcHJvdmVfaW52ZW50b3J5IiwiY3JlYXRlX2ludmVudG9yeV9jYXRlZ29yeSIsImRlbGV0ZV9pbnZlbnRvcnlfY2F0ZWdvcnkiLCJtYW5hZ2VfaW52ZW50b3J5X3NldHRpbmdzIiwicmVhZF9pbnZlbnRvcnlfY2F0ZWdvcnkiLCJyZWFkX2ludmVudG9yeSJdLCJwcm9maWxlX2lkIjoxLCJvd25lcl9pZCI6MX0.unH-j4NY8tkE4HisouOSNeHFVn6JgvkRxeY-L_KKdY0'
+          const refreshToken = readAuthCookie("refreshToken")
 
           if (refreshToken) {
             // Always use users service for token refresh
             const refreshResult = await fetchBaseQuery({
-                  baseUrl:env.BACKEND_HOST_URL,
+                  baseUrl:BACKEND_HOST_URL,
                   credentials: "include",
-                  prepareHeaders: (headers, { getState }) => {
-              
+                  prepareHeaders: (headers) => {
               headers.set("Content-Type", "application/json");
               headers.set("X-Requested-With", "XMLHttpRequest");
               return headers
@@ -203,7 +305,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
             })(
                   
               {
-                url: "/jwt/refresh/",
+                url: "/auth/refresh/",
                 method: "POST",
                 body: { refresh: refreshToken },
                 mode: "cors",
@@ -214,28 +316,22 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
             )
 
             if (refreshResult.data) {
-              const data = refreshResult.data as { access: string,refresh:string }
-              const newAccessToken = data.access
-              
-              const newRefreshToken = data.refresh
-              setCookie("accessToken", newAccessToken, { maxAge:  accessAge,httpOnly: false, path: "/",sameSite: 'lax' })
-
-              setCookie("refreshToken", newRefreshToken, { maxAge:   refreshAge, path: "/" })
-              
+              persistAuthSession(refreshResult.data as AuthResponsePayload)
               api.dispatch(setAuth())
               // Retry the original request with the new token
               result = await appropriateBaseQuery(enhancedArgs, api, extraOptions)
             } else {
-              deleteCookie("accessToken")
-              deleteCookie("refreshToken")
-              deleteCookie("userID")
-              deleteCookie("profile")
+              clearAuthSession()
               api.dispatch(logout())
             }
           } else {
+            clearAuthSession()
             api.dispatch(logout())
-            // window.location='/accounts/signin'
-            window.location.href='/accounts/signin'
+            if (typeof window !== "undefined") {
+              if (!window.location.pathname.startsWith("/accounts/signin")) {
+                window.location.replace("/accounts/signin")
+              }
+            }
           }
         } finally {
           release()

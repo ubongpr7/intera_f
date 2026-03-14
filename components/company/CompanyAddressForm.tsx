@@ -29,7 +29,7 @@ import { CompanyProfile } from "@/types/company-profile"
 
 interface CompanyAddressFormProps {
   profile: CompanyProfile | null
-  onUpdate: (data: { headquarters_address: Address }) => Promise<any>
+  onUpdate: () => Promise<any> | void
 }
 
 interface FormErrors {
@@ -172,11 +172,11 @@ export function CompanyAddressForm({ profile, onUpdate }: CompanyAddressFormProp
     try {
       // Determine if this is an update or new address (simplified logic)
       const addressAction = profile?.headquarters_address
-        ? updateAddress({ id: profile?.headquarters_address?.id, address: formData })
+        ? updateAddress({ id: profile?.headquarters_address?.id, data: formData })
         : addAddress(formData )
 
       await addressAction.unwrap()
-      await onUpdate({ headquarters_address: formData })
+      await onUpdate()
     } catch (error) {
       console.error("Failed to update company address:", error)
     } finally {

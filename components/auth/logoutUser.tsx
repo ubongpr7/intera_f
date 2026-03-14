@@ -1,6 +1,8 @@
+import { deleteCookie } from 'cookies-next';
 import { useLogoutMutation } from '../../redux/features/authApiSlice';
 import { useRouter } from 'nextjs-toploader/app';
 import { toast } from 'react-toastify';
+import { AUTH_COOKIE_KEYS, getCookieCandidates } from '@/lib/authCookies';
 
 function LogoutButton() {
   const [logoutMutation, { isLoading }] = useLogoutMutation();
@@ -8,11 +10,13 @@ function LogoutButton() {
 
   const handleLogout = async () => {
     try {
-      await logoutMutation('').unwrap();
-      
-      
+      // await logoutMutation('').unwrap();
+      for (const key of AUTH_COOKIE_KEYS) {
+        for (const name of getCookieCandidates(key)) {
+          deleteCookie(name);
+        }
+      }
       router.push('/');
-      
       toast.success('Logged out successfully');
     } catch (error) {
       toast.error('Logout failed. Please try again.');

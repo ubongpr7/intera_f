@@ -18,17 +18,36 @@ export type ErrorResponse = {
 
 //login
 export interface LoginResponse {
-    id: string;
-    username: string;
-    email: string;
-    is_worker: boolean;
-    is_main: boolean;
-    is_verified: boolean;
-    profile:string
-    company?:string
-    first_name: string;
-    access_token?: string;  // If using JWT
-    refresh_token?: string; // If using refresh tokens
+    id: string | number;
+    username?: string;
+    email?: string;
+    is_verified?: boolean;
+    profile?: string | null;
+    first_name?: string;
+    access?: string;
+    refresh?: string;
+    profile_context?: {
+      id?: string | number;
+      name?: string;
+      company_code?: string;
+      role?: string | null;
+      owner_id?: string | null;
+      membership_id?: string | null;
+      currency?: string | null;
+    } | null;
+    profiles?: Array<{
+      id?: string | number;
+      name?: string;
+      company_code?: string;
+      role?: string | null;
+      owner_id?: string | null;
+      membership_id?: string | null;
+      currency?: string | null;
+    }>;
+    currency?: string | null;
+    model_name?: string | null;
+    provider?: string | null;
+    agent_name?: string | null;
   }
   
 export interface LoginErrorResponse {

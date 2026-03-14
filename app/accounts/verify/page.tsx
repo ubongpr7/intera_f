@@ -2,13 +2,14 @@
 import { useEffect, useState } from "react";
 import VerificationForm from "../../../components/auth/verificationForm";
 import { getCookie } from "cookies-next";
+import { readCookieValue } from "@/lib/authCookies";
 
 export default function VerifyPage() {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedUserId = getCookie("userID") as string | null;
-    setUserId(storedUserId);
+    const storedUserId = readCookieValue("userID", getCookie);
+    setUserId(storedUserId ?? null);
 
   }, []);
 

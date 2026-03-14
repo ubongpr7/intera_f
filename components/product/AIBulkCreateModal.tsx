@@ -18,6 +18,7 @@ import { toast } from "react-toastify"
 import { ReactSelectField, type SelectOption } from "@/components/ui/react-select-field"
 import { cn } from "@/lib/utils"
 import { getCookie } from "cookies-next"
+import { readCookieValue } from "@/lib/authCookies"
 
 interface AIBulkCreateModalProps {
   isOpen: boolean
@@ -89,7 +90,7 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
       formData.append("images", image)
     })
     formData.append("images_count", images.length.toString())
-    formData.append("currency", `${getCookie("currency") || "NGN"}`)
+    formData.append("currency", `${readCookieValue("currency", getCookie) || "NGN"}`)
     formData.append("inventory", selectedInventory)
 
     try {
