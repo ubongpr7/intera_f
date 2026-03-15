@@ -1,5 +1,5 @@
 import { apiSlice } from '../../services/apiSlice';
-import { GroupData, RoleData } from '../../../components/interfaces/management';
+import type { GroupData, RoleData } from './managementTypes';
 const management_api=`management`
 const service='users'
 export const groupsAPISlice = apiSlice.injectEndpoints({

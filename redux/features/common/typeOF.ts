@@ -1,21 +1,9 @@
 import { get } from 'http';
 import { apiSlice } from '../../services/apiSlice';
-
-import { DropdownOption } from '../../../components/interfaces/common';
+import type { CurrencyOption, DropdownOption, TypeOfData, UnitOption } from './commonTypes';
 
 const common_api='common_api'
 const service ='common'
-interface TypeOfData {
-  id: number;
-  name: string;
-  which_model: string;
-  slug: string;
-  is_active: boolean;
-  parent: number | null;
-  description: string | null;
-  children?: TypeOfData[];
-}
-
 export const typeOfApiSlice = apiSlice.injectEndpoints({
   endpoints: builder => ({
     getTypesByModel: builder.query<TypeOfData[], string>({
@@ -34,20 +22,10 @@ export const {
 } = typeOfApiSlice;
 
 
-interface Currency {
-  code: string;
-  name: string;
-}
-interface CurrencyInterface {
-  id: string;
-  code: string;
-  name: string;
-}
-
 export const currencyApiSlice = apiSlice.injectEndpoints({
   endpoints: builder => ({
     
-    getCurrency: builder.query<CurrencyInterface[], void>({
+    getCurrency: builder.query<CurrencyOption[], void>({
       query: () =>({
         url: `/${common_api}/currency/`,
         service:service,
@@ -64,7 +42,7 @@ export const {
 export const commonApiSlice = apiSlice.injectEndpoints({
   endpoints: builder => ({
     
-    getUnits: builder.query<Currency[], void>({
+    getUnits: builder.query<UnitOption[], void>({
       query: () =>({
         url: `/${common_api}/units/`,
         service:service,

@@ -1,8 +1,34 @@
 import { apiSlice } from "../../services/apiSlice"
-import type { Attachment, Product, ProductAttribute, ProductAttributeLink, ProductAttributeValue, ProductCategory, ProductVariantAttribute } from "../../../components/interfaces/product"
+import type {
+  Attachment,
+  BulkTaskStatus,
+  PriceChangeHistory,
+  PricingRule,
+  PricingStrategy,
+  Product,
+  ProductAttribute,
+  ProductAttributeLink,
+  ProductAttributeValue,
+  ProductCategory,
+  ProductDashboardStats,
+  ProductInventorySummary,
+  ProductPosProductsResponse,
+  ProductPriceTrends,
+  ProductStockAlerts,
+  ProductVariant,
+  ProductVariantAttribute,
+  PurchasePriceHistory,
+} from "./productTypes"
 
 const product_api = "product_api"
 const service = "product"
+
+const unsupportedEndpoint = (detail: string) => async () => ({
+  error: {
+    status: 501,
+    data: { detail },
+  } as const,
+})
 
 export const productApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -41,14 +67,14 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getProduct: builder.query({
+    getProduct: builder.query<Product, string>({
       query: (id) => ({
         url: `/${product_api}/products/${id}/`,
         service: service,
       }),
     }),
 
-    getMinimalProduct: builder.query({
+    getMinimalProduct: builder.query<Partial<Product>, string>({
       query: (id) => ({
         url: `/${product_api}/products/${id}/minimal_product/`,
         service: service,
@@ -79,28 +105,28 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getProductVariants: builder.query({
+    getProductVariants: builder.query<ProductVariant[], string>({
       query: (productId) => ({
         url: `/${product_api}/management/products/${productId}/variants/`,
         service: service,
       }),
     }),
 
-    getProductPosVariants: builder.query({
+    getProductPosVariants: builder.query<ProductVariant[], string>({
       query: (productId) => ({
         url: `/${product_api}/management/products/${productId}/pos-variants/`,
         service: service,
       }),
     }),
 
-    getProductFeaturedVariants: builder.query({
+    getProductFeaturedVariants: builder.query<ProductVariant, string>({
       query: (productId) => ({
         url: `/${product_api}/management/products/${productId}/featured-variants/`,
         service: service,
       }),
     }),
 
-    getProductPriceHistory: builder.query({
+    getProductPriceHistory: builder.query<PriceChangeHistory[], { productId: string; params?: Record<string, unknown> }>({
       query: ({ productId, params = {} }) => ({
         url: `/${product_api}/management/products/${productId}/price-history/`,
         params,
@@ -108,7 +134,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getProductAnalytics: builder.query({
+    getProductAnalytics: builder.query<Record<string, unknown>, string>({
       query: (productId) => ({
         url: `/${product_api}/management/products/${productId}/analytics/`,
         service: service,
@@ -116,58 +142,37 @@ export const productApiSlice = apiSlice.injectEndpoints({
     }),
 
     // Product Categories
-    createProductCategory: builder.mutation({
-      query: (data: Partial<ProductCategory>) => ({
-        url: `/${product_api}/categories/`,
-        method: "POST",
-        body: data,
-        service: service,
-      }),
+    createProductCategory: builder.mutation<ProductCategory, Partial<ProductCategory>>({
+      queryFn: unsupportedEndpoint("Product category creation is not exposed by the current product_service backend."),
     }),
 
-    updateProductCategory: builder.mutation({
-      query: ({ id, data }) => ({
-        url: `/${product_api}/categories/${id}/`,
-        method: "PATCH",
-        body: data,
-        service: service,
-      }),
+    updateProductCategory: builder.mutation<ProductCategory, { id: string; data: Partial<ProductCategory> }>({
+      queryFn: unsupportedEndpoint("Product category updates are not exposed by the current product_service backend."),
     }),
 
-    deleteProductCategory: builder.mutation({
-      query: (id) => ({
-        url: `/${product_api}/categories/${id}/`,
-        method: "DELETE",
-        service: service,
-      }),
+    deleteProductCategory: builder.mutation<void, string>({
+      queryFn: unsupportedEndpoint("Product category deletion is not exposed by the current product_service backend."),
     }),
 
-    getProductCategories: builder.query({
-      query: (params = {}) => ({
-        url: `/common_api/categories/`,
-        params,
-        service: 'common',
-      }),
-    }),
-
-    getCategoryTree: builder.query({
+    getProductCategories: builder.query<ProductCategory[], unknown>({
       query: () => ({
-        url: `/${product_api}/management/categories/tree/`,
+        url: `/${product_api}/products/product_categories/`,
         service: service,
       }),
     }),
 
-    getPosCategoryTree: builder.query({
-      query: () => ({
-        url: `/${product_api}/management/categories/pos-tree/`,
-        service: service,
-      }),
+    getCategoryTree: builder.query<ProductCategory[], void>({
+      queryFn: unsupportedEndpoint("Category tree endpoints are not exposed by the current product_service backend."),
     }),
 
-    getCategoryProducts: builder.query({
+    getPosCategoryTree: builder.query<ProductCategory[], void>({
+      queryFn: unsupportedEndpoint("POS category tree endpoints are not exposed by the current product_service backend."),
+    }),
+
+    getCategoryProducts: builder.query<Product[], { categoryId: string; params?: Record<string, unknown> }>({
       query: ({ categoryId, params = {} }) => ({
-        url: `/${product_api}/management/categories/${categoryId}/products/`,
-        params,
+        url: `/${product_api}/products/`,
+        params: { ...params, category: categoryId },
         service: service,
       }),
     }),
@@ -183,39 +188,21 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getBulkTaskStatus: builder.query<
-      {
-        task_id: string
-        status: string
-        error_message?: string
-        result_file?: string
-        created_at: string
-        updated_at: string
-      },
-      string
-    >({
+    getBulkTaskStatus: builder.query<BulkTaskStatus, string>({
       query: (taskId) => ({
         url: `/${product_api}/products/bulk_task_status/?task_id=${taskId}`,
         service: service,
       }),
     }),
 
-    listBulkTasks: builder.query<
-      Array<{
-        task_id: string
-        status: string
-        created_at: string
-        result_file?: string
-      }>,
-      void
-    >({
+    listBulkTasks: builder.query<BulkTaskStatus[], void>({
       query: () => ({
         url: `/${product_api}/products/bulk_task_status/`,
         service: service,
       }),
     }),
     // Product Variants
-    createProductVariant: builder.mutation({
+    createProductVariant: builder.mutation<ProductVariant, Partial<ProductVariant>>({
       query: (variantData) => ({
         url: `/${product_api}/variants/`,
         method: "POST",
@@ -224,7 +211,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    updateProductVariant: builder.mutation({
+    updateProductVariant: builder.mutation<ProductVariant, { id: string; data: Partial<ProductVariant> }>({
       query: ({ id, data }) => ({
         url: `/${product_api}/variants/${id}/`,
         method: "PATCH",
@@ -241,14 +228,14 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getProductVariant: builder.query({
+    getProductVariant: builder.query<ProductVariant, string>({
       query: (id) => ({
         url: `/${product_api}/variants/${id}/`,
         service: service,
       }),
     }),
 
-    getAllProductVariants: builder.query({
+    getAllProductVariants: builder.query<ProductVariant[], Record<string, unknown> | void>({
       query: (params = {}) => ({
         url: `/${product_api}/variants/`,
         params,
@@ -272,7 +259,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getVariantStockHistory: builder.query({
+    getVariantStockHistory: builder.query<Record<string, unknown>, string>({
       query: (id) => ({
         url: `/${product_api}/management/variants/${id}/stock-history/`,
         service: service,
@@ -297,7 +284,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
     
-    getVariantStatistics: builder.query<any, string>({
+    getVariantStatistics: builder.query<Record<string, unknown>, string>({
       query: (variantId) => ({
         url:`/${product_api}/variants/${variantId}/statistics/`,
         service: service,
@@ -402,7 +389,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
     }),
     
     // Product Attributes
-    createProductAttribute: builder.mutation({
+    createProductAttribute: builder.mutation<ProductAttribute, Partial<ProductAttribute>>({
       query: (attributeData) => ({
         url: `/${product_api}/attributes/`,
         method: "POST",
@@ -411,7 +398,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    updateProductAttribute: builder.mutation({
+    updateProductAttribute: builder.mutation<ProductAttribute, { id: string; data: Partial<ProductAttribute> }>({
       query: ({ id, data }) => ({
         url: `/${product_api}/attributes/${id}/`,
         method: "PATCH",
@@ -428,7 +415,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getProductAttributes: builder.query({
+    getProductAttributes: builder.query<ProductAttribute[], { excludeProductId?: string } | void>({
       query: ({excludeProductId}) => ({
         url: `/${product_api}/attributes/?exclude_product_id=${excludeProductId}`,
         
@@ -436,7 +423,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getAttributeValues: builder.query({
+    getAttributeValues: builder.query<ProductAttributeValue[], string>({
       query: (attributeId) => ({
         url: `/${product_api}/management/attributes/${attributeId}/values/`,
         service: service,
@@ -452,7 +439,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getVariantAttributes: builder.query({
+    getVariantAttributes: builder.query<ProductAttribute[], void>({
       query: () => ({
         url: `/${product_api}/management/attributes/variant-attributes/`,
         service: service,
@@ -460,7 +447,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
     }),
 
     // Attribute Values
-    createAttributeValue: builder.mutation({
+    createAttributeValue: builder.mutation<ProductAttributeValue, Partial<ProductAttributeValue>>({
       query: (valueData) => ({
         url: `/${product_api}/attribute-values/`,
         method: "POST",
@@ -469,7 +456,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    updateAttributeValue: builder.mutation({
+    updateAttributeValue: builder.mutation<ProductAttributeValue, { id: string; data: Partial<ProductAttributeValue> }>({
       query: ({ id, data }) => ({
         url: `/${product_api}/attribute-values/${id}/`,
         method: "PATCH",
@@ -495,7 +482,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
     }),
 
     // Pricing Strategies
-    createPricingStrategy: builder.mutation({
+    createPricingStrategy: builder.mutation<PricingStrategy, Partial<PricingStrategy>>({
       query: (strategyData) => ({
         url: `/${product_api}/pricing-strategies/`,
         method: "POST",
@@ -504,7 +491,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    updatePricingStrategy: builder.mutation({
+    updatePricingStrategy: builder.mutation<PricingStrategy, { id: string; data: Partial<PricingStrategy> }>({
       query: ({ id, data }) => ({
         url: `/${product_api}/pricing-strategies/${id}/`,
         method: "PATCH",
@@ -521,7 +508,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getPricingStrategies: builder.query({
+    getPricingStrategies: builder.query<PricingStrategy[], Record<string, unknown> | void>({
       query: (params = {}) => ({
         url: `/${product_api}/pricing-strategies/`,
         params,
@@ -538,7 +525,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getActivePricingStrategies: builder.query({
+    getActivePricingStrategies: builder.query<PricingStrategy[], void>({
       query: () => ({
         url: `/${product_api}/management/pricing-strategies/active/`,
         service: service,
@@ -546,7 +533,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
     }),
 
     // Price Change History
-    getPriceChangeHistory: builder.query({
+    getPriceChangeHistory: builder.query<PriceChangeHistory[], Record<string, unknown> | void>({
       query: (params = {}) => ({
         url: `/${product_api}/price-history/`,
         params,
@@ -554,7 +541,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getRecentPriceChanges: builder.query({
+    getRecentPriceChanges: builder.query<PriceChangeHistory[], number | void>({
       query: (days = 7) => ({
         url: `/${product_api}/management/price-history/recent/`,
         params: { days },
@@ -562,7 +549,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getPendingPriceApprovals: builder.query({
+    getPendingPriceApprovals: builder.query<PriceChangeHistory[], void>({
       query: () => ({
         url: `/${product_api}/management/price-history/pending/`,
         service: service,
@@ -587,7 +574,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
     }),
 
     // Purchase Price History
-    createPurchasePriceHistory: builder.mutation({
+    createPurchasePriceHistory: builder.mutation<PurchasePriceHistory, Partial<PurchasePriceHistory>>({
       query: (historyData) => ({
         url: `/${product_api}/purchase-history/`,
         method: "POST",
@@ -596,7 +583,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    updatePurchasePriceHistory: builder.mutation({
+    updatePurchasePriceHistory: builder.mutation<PurchasePriceHistory, { id: string; data: Partial<PurchasePriceHistory> }>({
       query: ({ id, data }) => ({
         url: `/${product_api}/purchase-history/${id}/`,
         method: "PATCH",
@@ -605,7 +592,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getPurchasePriceHistory: builder.query({
+    getPurchasePriceHistory: builder.query<PurchasePriceHistory[], Record<string, unknown> | void>({
       query: (params = {}) => ({
         url: `/${product_api}/purchase-history/`,
         params,
@@ -613,7 +600,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getCurrentPurchasePrices: builder.query({
+    getCurrentPurchasePrices: builder.query<PurchasePriceHistory[], void>({
       query: () => ({
         url: `/${product_api}/management/purchase-history/current/`,
         service: service,
@@ -629,7 +616,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
     }),
 
     // Pricing Rules
-    createPricingRule: builder.mutation({
+    createPricingRule: builder.mutation<PricingRule, Partial<PricingRule>>({
       query: (ruleData) => ({
         url: `/${product_api}/pricing-rules/`,
         method: "POST",
@@ -638,7 +625,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    updatePricingRule: builder.mutation({
+    updatePricingRule: builder.mutation<PricingRule, { id: string; data: Partial<PricingRule> }>({
       query: ({ id, data }) => ({
         url: `/${product_api}/pricing-rules/${id}/`,
         method: "PATCH",
@@ -655,7 +642,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getPricingRules: builder.query({
+    getPricingRules: builder.query<PricingRule[], Record<string, unknown> | void>({
       query: (params = {}) => ({
         url: `/${product_api}/pricing-rules/`,
         params,
@@ -663,7 +650,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getActivePricingRules: builder.query({
+    getActivePricingRules: builder.query<PricingRule[], void>({
       query: () => ({
         url: `/${product_api}/management/pricing-rules/active/`,
         service: service,
@@ -688,7 +675,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
     }),
 
     // Attachments
-    createAttachment: builder.mutation({
+    createAttachment: builder.mutation<Attachment, FormData | Record<string, unknown>>({
       query: (attachmentData) => ({
         url: `/${product_api}/attachments/`,
         method: "POST",
@@ -697,7 +684,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    updateAttachment: builder.mutation({
+    updateAttachment: builder.mutation<Attachment, { id: string; data: Partial<Attachment> }>({
       query: ({ id, data }) => ({
         url: `/${product_api}/attachments/${id}/`,
         method: "PATCH",
@@ -714,7 +701,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getAttachments: builder.query({
+    getAttachments: builder.query<Attachment[], Record<string, unknown> | void>({
       query: (params = {}) => ({
         url: `/${product_api}/attachments/`,
         params,
@@ -740,31 +727,20 @@ export const productApiSlice = apiSlice.injectEndpoints({
     }),
 
     // POS Configuration
-    getPosConfiguration: builder.query({
-      query: () => ({
-        url: `/${product_api}/pos/config/`,
-        service: service,
-      }),
+    getPosConfiguration: builder.query<Record<string, unknown>, unknown>({
+      queryFn: unsupportedEndpoint("POS configuration endpoints are not exposed by the current product_service backend."),
     }),
 
-    updatePosConfiguration: builder.mutation({
-      query: (configData) => ({
-        url: `/${product_api}/pos/config/`,
-        method: "POST",
-        body: configData,
-        service: service,
-      }),
+    updatePosConfiguration: builder.mutation<Record<string, unknown>, Record<string, unknown>>({
+      queryFn: unsupportedEndpoint("POS configuration endpoints are not exposed by the current product_service backend."),
     }),
 
-    generateBarcode: builder.query({
-      query: () => ({
-        url: `/${product_api}/pos/config/barcode/`,
-        service: service,
-      }),
+    generateBarcode: builder.query<Record<string, unknown>, unknown>({
+      queryFn: unsupportedEndpoint("Barcode generation endpoints are not exposed by the current product_service backend."),
     }),
 
     // POS Operations
-    getPosProducts: builder.query({
+    getPosProducts: builder.query<ProductPosProductsResponse, Record<string, unknown> | void>({
       query: (params = {}) => ({
         url: `/${product_api}/pos/products/`,
         params,
@@ -772,7 +748,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    searchPosProducts: builder.query({
+    searchPosProducts: builder.query<Product[], string>({
       query: (searchQuery) => ({
         url: `/${product_api}/pos/products/search/`,
         params: { q: searchQuery },
@@ -780,39 +756,39 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getPosFeaturedProducts: builder.query({
+    getPosFeaturedProducts: builder.query<Product[], void>({
       query: () => ({
         url: `/${product_api}/pos/products/featured/`,
         service: service,
       }),
     }),
 
-    getPosCategories: builder.query({
+    getPosCategories: builder.query<ProductCategory[], void>({
       query: () => ({
-        url: `/${product_api}/pos/products/categories/`,
+        url: `/${product_api}/products/product_categories/`,
         service: service,
       }),
     }),
 
-    getPosVariants: builder.query({
+    getPosVariants: builder.query<ProductVariant[], Record<string, unknown> | void>({
       query: (params = {}) => ({
-        url: `/${product_api}/variants/`,
+        url: `/${product_api}/pos/variants/`,
         params,
         service: service,
       }),
     }),
 
-    searchPosVariants: builder.query({
+    searchPosVariants: builder.query<ProductVariant[], string>({
       query: (searchQuery) => ({
-        url: `/${product_api}/variants/search/`,
+        url: `/${product_api}/pos/variants/search/`,
         params: { q: searchQuery },
         service: service,
       }),
     }),
 
-    getVariantByBarcode: builder.query({
+    getVariantByBarcode: builder.query<ProductVariant, string>({
       query: (barcode) => ({
-        url: `/${product_api}/variants/barcode/`,
+        url: `/${product_api}/pos/variants/barcode/`,
         params: { barcode },
         service: service,
       }),
@@ -838,21 +814,21 @@ export const productApiSlice = apiSlice.injectEndpoints({
     }),
 
     // Analytics
-    getInventorySummary: builder.query({
+    getInventorySummary: builder.query<ProductInventorySummary, void>({
       query: () => ({
         url: `/${product_api}/analytics/inventory-summary/`,
         service: service,
       }),
     }),
 
-    getStockAlerts: builder.query({
+    getStockAlerts: builder.query<ProductStockAlerts, void>({
       query: () => ({
         url: `/${product_api}/analytics/stock-alerts/`,
         service: service,
       }),
     }),
 
-    getPriceTrends: builder.query({
+    getPriceTrends: builder.query<ProductPriceTrends, number | void>({
       query: (days = 30) => ({
         url: `/${product_api}/analytics/price-trends/`,
         params: { days },
@@ -860,7 +836,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getDashboardStats: builder.query({
+    getDashboardStats: builder.query<ProductDashboardStats, void>({
       query: () => ({
         url: `/${product_api}/dashboard/stats/`,
         service: service,
