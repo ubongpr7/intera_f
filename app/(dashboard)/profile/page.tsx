@@ -1,8 +1,14 @@
+import CompanyProfileContainer from "@/components/company/CompanyProfileContainer";
+import { WorkspaceSetupShell } from "@/components/onboarding/WorkspaceSetupShell";
 
-const Company = () => {
+export default function CreateCompanyPage() {
   return (
-    <div>Company</div>
-  )
+    <WorkspaceSetupShell
+      activeStage="company"
+      title="Create and activate your company workspace"
+      description="This onboarding flow is intentionally step-based. Capture your company identity first, then address, social links, and policies so the rest of the inventory platform has a clean operating context."
+    >
+      <CompanyProfileContainer />
+    </WorkspaceSetupShell>
+  );
 }
-
-export default Company

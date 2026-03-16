@@ -22,11 +22,13 @@ const isDarkMode = () => typeof document !== "undefined" && document.documentEle
 const customStyles: StylesConfig<SelectOption, boolean> = {
   control: (provided, state) => ({
     ...provided,
-    backgroundColor: state.isDisabled ? "#f9fafb" : "transparent",
-    borderColor: state.isFocused ? "#3b82f6" : "#d1d5db",
-    boxShadow: state.isFocused ? "0 0 0 1px #3b82f6" : "none",
+    minHeight: 44,
+    borderRadius: 14,
+    backgroundColor: state.isDisabled ? "#f9fafb" : "#ffffff",
+    borderColor: state.isFocused ? "#60a5fa" : "#e5e7eb",
+    boxShadow: state.isFocused ? "0 0 0 4px rgba(59, 130, 246, 0.14)" : "0 1px 2px rgba(15, 23, 42, 0.06)",
     "&:hover": {
-      borderColor: state.isFocused ? "#3b82f6" : "#9ca3af",
+      borderColor: state.isFocused ? "#60a5fa" : "#cbd5e1",
     },
     ...(isDarkMode() && {
       backgroundColor: "#1f2937",
@@ -37,6 +39,9 @@ const customStyles: StylesConfig<SelectOption, boolean> = {
   menu: (provided) => ({
     ...provided,
     backgroundColor: "#ffffff",
+    borderRadius: 18,
+    overflow: "hidden",
+    boxShadow: "0 18px 40px rgba(15, 23, 42, 0.12)",
     ...(isDarkMode() && {
       backgroundColor: "#1f2937",
     }),
@@ -77,7 +82,11 @@ export const ReactSelectField = forwardRef<any, ReactSelectFieldProps>(
         ref={ref}
         styles={customStyles}
         classNames={{
-          control: () => cn("border rounded-md p-1", error ? "border-red-500" : "border-gray-300"),
+          control: () =>
+            cn(
+              "rounded-xl border bg-white px-1.5 py-0.5",
+              error ? "border-red-500" : "border-gray-200",
+            ),
           menu: () => "p-1",
         }}
         inputId={inputId}

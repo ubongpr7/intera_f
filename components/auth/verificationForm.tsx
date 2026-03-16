@@ -1,22 +1,19 @@
 'use client';
 import { useForm, SubmitHandler } from 'react-hook-form';
-import { useVerifyAccountMutation, useGetverifyAccountMutation } from '@/redux/features/auth/authApiSlice';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
-// import  { useRouter } from 'next/navigation';
-import { useLoginMutation, useResendCodeMutation,
-  useVerifyCodeMutation,  } from '@/redux/features/auth/authApiSlice';
+import { useResendCodeMutation, useVerifyCodeMutation } from '@/redux/features/auth/authApiSlice';
 import { VerificationProps, VerifyFormData } from '../types/authForms';
-import { VerificationError, ErrorResponse, ResendError } from '../types/authResponse';
+import { ErrorResponse, ResendError } from '../types/authResponse';
 import { useRouter } from 'nextjs-toploader/app'
-export default function VerificationForm({ userId,redirectTo }: VerificationProps) {
-  const [verify, { isLoading, error }] = useVerifyAccountMutation();
-  const [resendCode, { isLoading: isResending }] = useGetverifyAccountMutation();
+export default function VerificationForm({ email,redirectTo }: VerificationProps) {
+  const [verifyCode, { isLoading, error }] = useVerifyCodeMutation();
+  const [resendCode, { isLoading: isResending }] = useResendCodeMutation();
   const [cooldown, setCooldown] = useState(120);
   const inputsRef = useRef<HTMLInputElement[]>([]);
   const router=useRouter();
   const { register, handleSubmit, setValue, watch } = useForm<VerifyFormData>({
-    defaultValues: { userId, code: '' }
+    defaultValues: { code: '', userId: '' }
   });
 
   const codeValue = watch('code', '');
@@ -33,7 +30,7 @@ export default function VerificationForm({ userId,redirectTo }: VerificationProp
     if (cooldown > 0) return;
     
     try {
-      await resendCode({ id: userId, }).unwrap();
+      await resendCode({ email }).unwrap();
       setCooldown(120);
       toast.success("Verification code resent successfully");
     } catch (error) {
@@ -86,7 +83,7 @@ export default function VerificationForm({ userId,redirectTo }: VerificationProp
 
   const onSubmit: SubmitHandler<VerifyFormData> = async (data) => {
     try {
-      const response = await verify(data).unwrap();
+      await verifyCode({ email, code: data.code }).unwrap();
       toast.success("Verification successful!");
       router.push(redirectTo);
 
@@ -117,7 +114,6 @@ export default function VerificationForm({ userId,redirectTo }: VerificationProp
       <h2 className="text-2xl font-bold mb-6 text-center">Verify Your Email</h2>
       
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" onPaste={handlePaste}>
-        <input type="hidden" {...register('userId')} />
         <input type="hidden" {...register('code')} />
         
         <div className="flex justify-center space-x-2 mb-8">
@@ -146,7 +142,7 @@ export default function VerificationForm({ userId,redirectTo }: VerificationProp
 
         {error && (
           <div className="mt-4 text-red-600 text-center">
-            {'data' in error ? (error.data as { detail?: string }).detail : 'Verification failed'}
+            {'data' in error ? ((error.data as { detail?: string; error?: string }).detail || (error.data as { error?: string }).error) : 'Verification failed'}
           </div>
         )}
 

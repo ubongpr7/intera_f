@@ -1,25 +1,24 @@
-"use client";
-import { useEffect, useState } from "react";
 import VerificationForm from "../../../components/auth/verificationForm";
-import { getCookie } from "cookies-next";
-import { readCookieValue } from "@/lib/authCookies";
 
-export default function VerifyPage() {
-  const [userId, setUserId] = useState<string | null>(null);
+export default async function VerifyPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ email?: string; next?: string }>;
+}) {
+  const { email, next } = await searchParams;
+  const normalizedEmail = email?.trim();
 
-  useEffect(() => {
-    const storedUserId = readCookieValue("userID", getCookie);
-    setUserId(storedUserId ?? null);
-
-  }, []);
-
-  if (!userId) {
+  if (!normalizedEmail) {
     return <div>Invalid verification request</div>;
   }
 
+  const redirectTo = normalizedEmail
+    ? `/accounts/signin${next ? `?next=${encodeURIComponent(next)}` : ""}`
+    : "/accounts/signin";
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <VerificationForm userId={userId} redirectTo={"/accounts/signin"} />
+      <VerificationForm email={normalizedEmail} redirectTo={redirectTo} />
     </div>
   );
 }

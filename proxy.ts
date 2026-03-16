@@ -2,9 +2,14 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { getCookieCandidates, type AuthCookieKey } from "./lib/authCookies"
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname
-  const isMfaPath = path.startsWith('/accounts/mfa')
+  const isMfaPath = path.startsWith("/accounts/mfa")
+  const isInvitationPath =
+    path === "/accounts/invitations" ||
+    path.startsWith("/accounts/invitations/") ||
+    path === "/invitations/accept"
+  const isActivationPath = path.startsWith("/activate/")
   const readCookie = (key: AuthCookieKey) => {
     for (const name of getCookieCandidates(key)) {
       const value = request.cookies.get(name)?.value
@@ -16,19 +21,20 @@ export function middleware(request: NextRequest) {
   }
 
   const isPublicPath =
-    path.startsWith('/accounts') ||
-    path === '/' ||
-    path === '/features' ||
-    path === '/pricing' ||
-    path === '/about' ||
-    path === '/contact' ||
-    path === '/blog' ||
-    path.startsWith('/blog/') ||
-    path.startsWith('/docs') ||
-    path.startsWith('/docs/') ||
-    path.startsWith('/api') ||
-    path.startsWith('/_next/static') ||
-    path.startsWith('/_next/image')
+    path.startsWith("/accounts") ||
+    isActivationPath ||
+    path === "/invitations/accept" ||
+    path === "/" ||
+    path === "/pricing" ||
+    path === "/about" ||
+    path === "/contact" ||
+    path === "/blog" ||
+    path.startsWith("/blog/") ||
+    path.startsWith("/docs") ||
+    path.startsWith("/docs/") ||
+    path.startsWith("/api") ||
+    path.startsWith("/_next/static") ||
+    path.startsWith("/_next/image")
 
   const refreshToken = readCookie("refreshToken")
   const accessToken = readCookie("accessToken")
@@ -59,7 +65,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(mfaTargetPath, request.url))
   }
 
-  if (isPublicPath && mfaVerified) {
+  if (isPublicPath && mfaVerified && !isInvitationPath && !isActivationPath) {
     return NextResponse.redirect(new URL("/dashboard", request.url))
   }
 

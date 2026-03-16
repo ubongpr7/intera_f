@@ -8,7 +8,7 @@ import { useGetInventoryDataQuery, useCreateInventoryMutation, useDeleteInventor
 import CustomCreateCard from '../common/createCard';
 import { InventoryInterfaceKeys,defaultValues } from './selectOptions';
 import { InventoryKeyInfo } from './selectOptions';
-import { useGetUnitsQuery,useGetTypesByModelQuery } from "../../redux/features/common/typeOF";
+import { useGetUnitsQuery } from "../../redux/features/common/typeOF";
 import { useGetInventoryCategoriesQuery } from "../../redux/features/inventory/inventoryAPiSlice";
 import { useGetCompanyUsersQuery } from '@/redux/features/users/userApiSlice';
 import { RefetchDataProp } from "@/redux/features/common/commonTypes";

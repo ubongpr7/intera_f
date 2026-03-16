@@ -53,7 +53,16 @@ export function CompanySocialLinksForm({ profile, onUpdate, submitLabel = "Save 
         facebook: profile.facebook || "",
         other_link: profile.other_link || "",
       })
+      return
     }
+
+    setFormData({
+      linkedin: "",
+      twitter: "",
+      instagram: "",
+      facebook: "",
+      other_link: "",
+    })
   }, [profile])
 
   useEffect(() => {

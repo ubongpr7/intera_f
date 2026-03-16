@@ -122,7 +122,12 @@ export default function LoginForm() {
 
       <div className="flex justify-center gap-1">
         <p>No Account Yet?</p>
-        <Link href="/accounts" className="text-blue-600 hover:text-blue-800">Register Here</Link>
+        <Link
+          href={nextUrl ? `/accounts?next=${encodeURIComponent(nextUrl)}` : "/accounts"}
+          className="text-blue-600 hover:text-blue-800"
+        >
+          Register Here
+        </Link>
       </div>
     </div>
   );

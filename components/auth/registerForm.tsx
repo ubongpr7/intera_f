@@ -8,6 +8,7 @@ import Link from "next/link";
 import { ErrorResponse, RegisterResponse } from '../types/authResponse';
 import { RegisterFormInputs } from '../types/authForms';
 import { useRouter } from 'nextjs-toploader/app'
+import { useSearchParams } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 import { continueWithSocialAuth } from '@/lib/socialAuth';
 
@@ -50,6 +51,8 @@ const PasswordStrengthIndicator = ({ password }: { password: string }) => {
 export default function RegisterForm() {
   const [registerUser, { isLoading }] = useRegisterMutation();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextUrl = searchParams.get('next')?.trim();
   const [password, setPassword] = useState('');
   const [showPassWord,setShowPassword]=useState(false)
   const [isSocialLoading, setIsSocialLoading] = useState(false);
@@ -66,8 +69,9 @@ export default function RegisterForm() {
         ...formData,
         last_name: formData.last_name ?? "",
       }).unwrap() as RegisterResponse;
-      toast.success("Registration successful! Redirecting...");
-      router.push("/accounts/signin");
+      toast.success("Registration successful. Check your email to activate your account.");
+      const nextSuffix = nextUrl ? `&next=${encodeURIComponent(nextUrl)}` : "";
+      router.push(`/accounts/activation-sent?email=${encodeURIComponent(userData.email)}${nextSuffix}`);
     } catch (error) {
       const apiError = error as ErrorResponse;
       const errorMessage = apiError.data?.detail || "Registration failed";
@@ -240,7 +244,12 @@ export default function RegisterForm() {
       </button>
       <div className="flex justify-center gap-1"> 
       <p> Already have an account?</p>
-      <Link href="/accounts/signin" className="text-blue-600 hover:text-blue-800"> Sign in</Link>
+      <Link
+        href={nextUrl ? `/accounts/signin?next=${encodeURIComponent(nextUrl)}` : "/accounts/signin"}
+        className="text-blue-600 hover:text-blue-800"
+      >
+        {" "}Sign in
+      </Link>
       
       </div>
     </form>

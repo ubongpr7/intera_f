@@ -2,42 +2,9 @@ import { get } from 'http';
 import { apiSlice } from '../../services/apiSlice';
 import type { CurrencyOption, DropdownOption, TypeOfData, UnitOption } from './commonTypes';
 
-const common_api='common_api'
-const service ='common'
-export const typeOfApiSlice = apiSlice.injectEndpoints({
-  endpoints: builder => ({
-    getTypesByModel: builder.query<TypeOfData[], string>({
-      query: (forWhichModel) => ({
-        url: `/${common_api}/types/`,
-        params: { for_which_model: forWhichModel },
-        service:service,
-      }),
-      
-    }),
-  }),
-});
+const common_api='common'
+const service ='users'
 
-export const { 
-  useGetTypesByModelQuery 
-} = typeOfApiSlice;
-
-
-export const currencyApiSlice = apiSlice.injectEndpoints({
-  endpoints: builder => ({
-    
-    getCurrency: builder.query<CurrencyOption[], void>({
-      query: () =>({
-        url: `/${common_api}/currency/`,
-        service:service,
-      })
-      
-    }),
-  }),
-});
-
-export const { 
-  useGetCurrencyQuery
-} = currencyApiSlice;
 
 export const commonApiSlice = apiSlice.injectEndpoints({
   endpoints: builder => ({
@@ -57,7 +24,7 @@ export const {
   useGetUnitsQuery
 } = commonApiSlice;
 
-export const dropdownApiSlice = apiSlice.injectEndpoints({
+export const geofenceApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getCountries: builder.query<DropdownOption[], void>({
       query: () => ({
@@ -95,4 +62,4 @@ export const {
   useGetRegionsQuery,
   useGetSubregionsQuery,
   useGetCitiesQuery,
-} = dropdownApiSlice;
+} = geofenceApiSlice;

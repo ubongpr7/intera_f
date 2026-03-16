@@ -207,29 +207,21 @@ export default function AgentChat({
     const jsonCodeBlockRegex = /```json\s*([\s\S]*?)\s*```/gi
     const codeBlockMatches = [...content.matchAll(jsonCodeBlockRegex)]
 
-    console.log("Detecting interaction in content:", content.substring(0, 100) + "...")
-    console.log("Found JSON code blocks:", codeBlockMatches.length)
-
     for (const match of codeBlockMatches) {
       const jsonContent = match[1].trim()
-      console.log("Parsing JSON block:", jsonContent.substring(0, 100) + "...")
 
       try {
         const parsed = JSON.parse(jsonContent)
-        console.log("Parsed JSON:", parsed)
 
         if (parsed.interaction_type === "confirmation_request") {
-          console.log("Detected confirmation request")
           return { type: "confirmation", data: parsed }
         }
 
         if (parsed.type === "AGENT_CONFIRMATION_REQUEST") {
-          console.log("Detected legacy confirmation request")
           return { type: "confirmation", data: parsed }
         }
 
         if (parsed.interaction_type) {
-          console.log("Detected interaction type:", parsed.interaction_type)
           return {
             type: parsed.interaction_type,
             data: parsed,
@@ -261,8 +253,7 @@ export default function AgentChat({
             data: parsed,
           }
         }
-      } catch (error) {
-        console.log("Failed to parse JSON block:", error)
+      } catch {
         continue
       }
     }
@@ -271,17 +262,14 @@ export default function AgentChat({
       const parsed = JSON.parse(content.trim())
 
       if (parsed.interaction_type === "confirmation_request") {
-        console.log("Detected confirmation request")
         return { type: "confirmation", data: parsed }
       }
 
       if (parsed.type === "AGENT_CONFIRMATION_REQUEST") {
-        console.log("Detected legacy confirmation request")
         return { type: "confirmation", data: parsed }
       }
 
       if (parsed.interaction_type) {
-        console.log("Detected interaction type:", parsed.interaction_type)
         return {
           type: parsed.interaction_type,
           data: parsed,
@@ -359,9 +347,6 @@ export default function AgentChat({
   const renderInlineInteraction = (type: string, data: any, messageId: string) => {
     const isDisabled = respondedInteractions.has(messageId)
 
-    console.log("Rendering interaction:", type, "with data:", data)
-    console.log("Is disabled:", isDisabled)
-
     const commonProps = {
       data,
       onResponse: (response: any) => handleInteractionResponse(response, messageId),
@@ -395,7 +380,6 @@ export default function AgentChat({
       case "image_annotation":
         return <ImageAnnotationHandler {...commonProps} />
       case "searchable_selection":
-        console.log("Rendering SearchableSelectionHandler with props:", commonProps)
         return <SearchableSelectionHandler {...commonProps} />
       case "hierarchical_selection":
         return <HierarchicalSelectionHandler {...commonProps} />
@@ -430,7 +414,6 @@ export default function AgentChat({
       case "kanban_board":
         return <div className="p-4 text-center text-gray-500">Kanban Board - Coming Soon</div>
       default:
-        console.log("Unknown interaction type:", type)
         return null
     }
   }
@@ -481,8 +464,7 @@ export default function AgentChat({
     onActivity?.()
   }
 
-  const speakMessage = (content: string, messageId: string) => {
-    console.log("[v0] Speaking message:", messageId, content.substring(0, 50) + "...")
+  const speakMessage = (content: string, _messageId: string) => {
     voiceChat.speak(content)
     onActivity?.()
   }

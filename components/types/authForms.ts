@@ -15,7 +15,7 @@ export  type RegisterFormInputs = {
 
 // verify
 export interface VerificationProps {
-  userId: string;
+  email: string;
   redirectTo:string
 }
 

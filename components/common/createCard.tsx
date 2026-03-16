@@ -214,7 +214,6 @@ export default function CustomCreateCard<T extends Record<string, any>>({
       onClose();
       reset();
     } catch (error) {
-      console.log(error);
       toast.error(`${extractErrorMessage(error, interfaceKeys as string[])}`);
     }
   };
@@ -405,7 +404,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                                   value={field.value?.toString() ?? ""}
                                   onChange={(e) => field.onChange(e.target.valueAsNumber)}
                                   onBlur={field.onBlur}
-                                  className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
+                                  className={`w-full bg-gray-50 px-3 border-2  border-gray-300 focus:outline-none
                                     focus:border-blue-500 py-2 rounded-md ${
                                       errors[key as string]
                                         ? "border-red-500 ring-red-500"
@@ -422,7 +421,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                                 type="text"
                                 readOnly
                                 value={field.value?.toString() ?? ""}
-                                className={`w-full px-3 border-2 py-2 rounded-md ${readonlyStyles}`}
+                                className={`w-full px-3 border-2 py-2 rounded ${readonlyStyles}`}
                               />
                             );
                           }

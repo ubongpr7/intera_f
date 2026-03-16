@@ -83,11 +83,6 @@ export function useVoiceChat({
 
         const loadVoices = () => {
           const voices = speechSynthesisRef.current?.getVoices() || []
-          console.log(
-            "[v0] Available voices:",
-            voices.length,
-            voices.map((v) => ({ name: v.name, lang: v.lang })),
-          )
           setAvailableVoices(voices)
 
           if (!selectedVoice && voices.length > 0) {
@@ -112,17 +107,15 @@ export function useVoiceChat({
         recognition.lang = language
 
         recognition.onstart = () => {
-          console.log("[v0] Voice recognition started")
           setIsListening(true)
         }
 
         recognition.onend = () => {
-          console.log("[v0] Voice recognition ended")
           setIsListening(false)
         }
 
         recognition.onerror = (event: any) => {
-          console.error("[v0] Voice recognition error:", event.error)
+          console.error("Voice recognition error:", event.error)
           setIsListening(false)
         }
 
@@ -158,7 +151,6 @@ export function useVoiceChat({
 
               autoSendTimeoutRef.current = setTimeout(() => {
                 if (lastTranscriptRef.current.trim() && !typingDetectionRef.current) {
-                  console.log("[v0] Auto-sending voice message after silence")
                   onAutoSend(lastTranscriptRef.current.trim())
                   clearTranscript()
                 }
@@ -169,7 +161,7 @@ export function useVoiceChat({
 
         recognitionRef.current = recognition
       } else {
-        console.warn("[v0] Speech recognition or synthesis not supported in this browser")
+        console.warn("Speech recognition or synthesis not supported in this browser")
       }
     }
   }, [language, onTranscript, onAutoSend, autoSendDelay, onInputMethodChange, autoSubmitEnabled, selectedVoice])
@@ -179,7 +171,7 @@ export function useVoiceChat({
       try {
         recognitionRef.current.start()
       } catch (error) {
-        console.error("[v0] Failed to start voice recognition:", error)
+        console.error("Failed to start voice recognition:", error)
       }
     }
   }, [isListening])
@@ -198,11 +190,8 @@ export function useVoiceChat({
   const speak = useCallback(
     (text: string, isVoiceMessage = false) => {
       if (!speechSynthesisRef.current || !text.trim()) {
-        console.log("[v0] Cannot speak: missing synthesis or empty text")
         return
       }
-
-      console.log("[v0] Attempting to speak:", text.substring(0, 50) + "...")
 
       // Cancel any ongoing speech
       speechSynthesisRef.current.cancel()
@@ -217,39 +206,24 @@ export function useVoiceChat({
         .trim()
 
       if (!cleanText) {
-        console.log("[v0] No clean text to speak after processing")
         return
       }
-
-      console.log("[v0] Clean text to speak:", cleanText.substring(0, 100) + "...")
 
       const utterance = new SpeechSynthesisUtterance(cleanText)
 
       if (selectedVoice) {
         utterance.voice = selectedVoice
-        console.log("[v0] Using selected voice:", selectedVoice.name, selectedVoice.lang)
       }
 
       utterance.rate = 0.95
       utterance.pitch = 1
       utterance.volume = volume
 
-      console.log(
-        "[v0] Speech settings - Rate:",
-        utterance.rate,
-        "Pitch:",
-        utterance.pitch,
-        "Volume:",
-        utterance.volume,
-      )
-
       utterance.onstart = () => {
-        console.log("[v0] Started speaking")
         setIsSpeaking(true)
       }
 
       utterance.onend = () => {
-        console.log("[v0] Finished speaking")
         setIsSpeaking(false)
         currentUtteranceRef.current = null
 
@@ -260,7 +234,7 @@ export function useVoiceChat({
       }
 
       utterance.onerror = (error) => {
-        console.error("[v0] Speech synthesis error:", error)
+        console.error("Speech synthesis error:", error)
         setIsSpeaking(false)
         currentUtteranceRef.current = null
 
@@ -273,21 +247,9 @@ export function useVoiceChat({
       currentUtteranceRef.current = utterance
 
       try {
-        console.log("[v0] Calling speechSynthesis.speak()")
         speechSynthesisRef.current.speak(utterance)
-
-        setTimeout(() => {
-          if (speechSynthesisRef.current) {
-            console.log(
-              "[v0] Speech synthesis status - speaking:",
-              speechSynthesisRef.current.speaking,
-              "pending:",
-              speechSynthesisRef.current.pending,
-            )
-          }
-        }, 100)
       } catch (error) {
-        console.error("[v0] Error calling speak():", error)
+        console.error("Error calling speak():", error)
         setIsSpeaking(false)
         currentUtteranceRef.current = null
       }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { X, UploadCloud, UserPlus, Trash2 } from "lucide-react";
+import { X, UploadCloud, UserPlus, Trash2, RotateCcw } from "lucide-react";
 import { getCookie } from "cookies-next";
 import { toast } from "react-toastify";
 import { readCookieValue } from "@/lib/authCookies";
@@ -21,6 +21,7 @@ import {
   useGetPendingInvitationsQuery,
   useInviteStaffBulkMutation,
   useRemoveCompanyMemberMutation,
+  useResendInvitationMutation,
   useRevokeInvitationMutation,
 } from "../../redux/features/users/userApiSlice";
 import {
@@ -98,6 +99,7 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
   const [inviteStaff, { isLoading: singleInviteLoading }] = useCreateStaffUserMutation();
   const [inviteStaffBulk, { isLoading: bulkInviteLoading }] = useInviteStaffBulkMutation();
   const [removeMember, { isLoading: removeMemberLoading }] = useRemoveCompanyMemberMutation();
+  const [resendInvitation, { isLoading: resendInvitationLoading }] = useResendInvitationMutation();
   const [revokeInvitation, { isLoading: revokeInvitationLoading }] = useRevokeInvitationMutation();
 
   const {
@@ -114,6 +116,7 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
     singleInviteLoading ||
     bulkInviteLoading ||
     removeMemberLoading ||
+    resendInvitationLoading ||
     revokeInvitationLoading;
 
   const refreshAll = useCallback(async () => {
@@ -242,6 +245,20 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
     await refetchMembers();
   };
 
+  const handleResendInvite = async (row: StaffRow) => {
+    if (row.rowType !== "invitation") {
+      return;
+    }
+    if (!row.invitationId) {
+      toast.error("Invitation id is missing.");
+      return;
+    }
+
+    await resendInvitation(row.invitationId).unwrap();
+    toast.success(`Invitation resent to ${row.email}.`);
+    await refetchInvitations();
+  };
+
   const handleUpdate = async (createdData: Partial<UserData>) => {
     const updateData = await updateUser({ id: userId, data: createdData }).unwrap();
     setUserDetail((previous) => (previous ? { ...previous, ...updateData } : undefined));
@@ -249,6 +266,20 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
   };
 
   const actionButtons: ActionButton<StaffRow>[] = [
+    {
+      label: "Resend",
+      icon: RotateCcw,
+      variant: "secondary",
+      hidden: (row) => row.rowType !== "invitation",
+      onClick: async (row) => {
+        try {
+          await handleResendInvite(row);
+        } catch (error: any) {
+          const message = error?.data?.detail || error?.data?.error || "Unable to resend invitation.";
+          toast.error(message);
+        }
+      },
+    },
     {
       label: "Remove",
       icon: Trash2,

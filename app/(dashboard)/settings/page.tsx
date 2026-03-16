@@ -101,7 +101,7 @@ const AgentSetupEmptyState = ({ profilesCount }: { profilesCount: number }) => (
       </Button>
       {profilesCount === 0 ? (
         <Button asChild variant="outline">
-          <Link href="/profile/create">Create company profile</Link>
+          <Link href="/profile">Create company profile</Link>
         </Button>
       ) : null}
     </CardContent>
@@ -261,7 +261,7 @@ export default function Settings() {
         ) : null}
 
         {!setupHasError ? (
-          <div className="grid gap-6 xl:grid-cols-[0.9fr_1.4fr]">
+          <div className="grid gap-6 xl:grid-cols-2">
             <Card className="border-gray-200 shadow-sm">
               <CardHeader className="p-6 text-left">
                 <CardTitle className="flex items-center gap-2 text-xl text-gray-900">
@@ -289,8 +289,8 @@ export default function Settings() {
                       <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Credentials</p>
                       <div className="mt-2 space-y-1 text-sm text-gray-700">
                         <p>Base URL: {setupResponse.agent.effective_base_url || "Provider default not set"}</p>
-                        <p>LLM API Key: {setupResponse.agent.api_key_masked || "Not set"}</p>
-                        <p>Tavily API Key: {setupResponse.agent.tavily_api_key_masked || "Not set"}</p>
+                        <p>LLM API Key: {setupResponse.agent.api_key_masked?.slice(0, 4) + "****" || "Not set"}</p>
+                        <p>Tavily API Key: {setupResponse.agent.tavily_api_key_masked?.slice(0, 4) + "****" || "Not set"}</p>
                       </div>
                     </div>
                   </>

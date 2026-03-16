@@ -98,7 +98,21 @@ export function CompanyBasicInfoForm({ profile, onSuccess, submitLabel = "Save C
         phone: profile.phone || "",
         email: profile.email || "",
       })
+      return
     }
+
+    setFormData({
+      name: "",
+      industry: "",
+      currency: "",
+      description: "",
+      founded_date: "",
+      employees_count: undefined,
+      tax_id: "",
+      website: "",
+      phone: "",
+      email: "",
+    })
   }, [profile])
 
   useEffect(() => {

@@ -70,10 +70,8 @@ const StaffRole =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
   };
   useEffect(()=>{
     if (refetchData){
-      console.log('before: ',refetchData)
       refetch();
       setRefetchData(false);
-      console.log('after',refetchData)
     }
     },[refetchData])
  
@@ -175,4 +173,3 @@ const StaffRole =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
     )
 }
 export default StaffRole;
-

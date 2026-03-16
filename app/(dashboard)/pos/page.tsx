@@ -125,7 +125,7 @@ export default function POSPage() {
           </CardHeader>
           <CardContent className="p-6 pt-0">
             <Button asChild>
-              <Link href="/profile/create">Go to workspace setup</Link>
+              <Link href="/profile">Go to workspace setup</Link>
             </Button>
           </CardContent>
         </Card>

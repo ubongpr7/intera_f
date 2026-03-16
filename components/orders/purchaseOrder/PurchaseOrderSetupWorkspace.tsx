@@ -179,7 +179,7 @@ export default function PurchaseOrderSetupWorkspace() {
           </CardHeader>
           <CardContent className="p-6 pt-0">
             <Button asChild>
-              <Link href="/profile/create">
+              <Link href="/profile">
                 Go to workspace setup
                 <ArrowRight className="h-4 w-4" />
               </Link>

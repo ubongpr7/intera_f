@@ -1,40 +1,31 @@
 'use client'
-import classNames from 'classnames'
 import { useAppSelector, useAppDispatch } from "../../redux/store";
-import { setIsDarkMode, setIsSidebarCollapsed } from "../../redux/state";
+import { setIsSidebarCollapsed } from "../../redux/state";
 import { generateColorFromName } from '../utils/colorGenerator';
 import { SidebarLink } from './SideBarLinks';
-import {   Archive,
-  CircleDollarSign,
-  Clipboard,
+import {
   Layout,
-  LucideIcon,
   Menu,
   Home,
-  SlidersHorizontal,
-  UserSearch,Users, Settings, Package, 
-  Warehouse,
-  Box,
+  Users,
+  Settings,
+  Package,
   Gift,
-  Tag,
-  Factory,
   ReceiptText,
   CreditCard,
   ShoppingCart,
-  Bus,
   Truck,
-  Undo2} from 'lucide-react';
-  import { useEffect, useRef } from 'react';
+  Undo2,
+} from 'lucide-react';
+import { useEffect, useRef } from 'react';
 import { UserData } from "@/redux/features/users/userTypes";
 interface SideBarDataProps{
   user?:UserData
 }
 const SideBar = ({user}:SideBarDataProps) => {
   const SidebarCollapsed = useAppSelector((state) => state.global.isSidebarCollapsed);
-    const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
     const dispatch = useAppDispatch();
     const sidebarRef = useRef<HTMLDivElement>(null);
-    const toggleButtonRef = useRef<HTMLButtonElement>(null); // If you have a toggle button
     
     useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
@@ -64,13 +55,13 @@ const SideBar = ({user}:SideBarDataProps) => {
         <div className={`flex    justify-between items-center md:justify-normal pt-8 ${SidebarCollapsed?"px-3":"px-6"}`}>
             <div className={`flex  items-center gap-5`}>
                 <div className={`w-10 h-10   rounded-full flex items-center justify-center`}
-                style={{backgroundColor: generateColorFromName('LernOn')}}>
+                style={{backgroundColor: generateColorFromName('Intera')}}>
                 <h1 className={` text-2xl text-center font-extrabold  text-gray-800`}>
-                    D
+                    I
                 </h1>
                 </div>
                     <h1 className={`${SidebarCollapsed?"hidden":""} text-xl font-extrabold  text-gray-800`}>
-                        DrabTech
+                        Intera
                     </h1>
 
                     <button onClick={()=>{
@@ -87,26 +78,18 @@ const SideBar = ({user}:SideBarDataProps) => {
             <SidebarLink href="/dashboard" icon={Home} label="Dashboard" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/realtime-dashboard" icon={Layout} label="Realtime Dashboard" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/inventory" icon={Package} label="Inventory" isCollapsed={SidebarCollapsed} />
+            <SidebarLink href="/pos" icon={CreditCard} label="POS" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/profile/staff" icon={Users} label="Staff" isCollapsed={SidebarCollapsed} />
-            <SidebarLink href="/companies" icon={Truck} label="Affilications" isCollapsed={SidebarCollapsed} />
+            <SidebarLink href="/companies" icon={Truck} label="Partners" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/order/purchase" icon={ShoppingCart} label="Purchase Orders" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/order/sales" icon={ReceiptText} label="Sales Orders" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/order/returns" icon={Undo2} label="Returns" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/product" icon={Gift} label="Product" isCollapsed={SidebarCollapsed} />
-            {/*
-            <SidebarLink href="/stockitems" icon={Box} label="Stock Items" isCollapsed={SidebarCollapsed} />
-            <SidebarLink href="/warehouse" icon={Warehouse } label="Warehouse" isCollapsed={SidebarCollapsed} />
-            <SidebarLink href="/point-of-sales" icon={CreditCard} label="Sales" isCollapsed={SidebarCollapsed} />
-            <SidebarLink href="/pricing" icon={Tag} label="Pricing" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/settings" icon={Settings} label="Settings" isCollapsed={SidebarCollapsed} />
-            <SidebarLink href="/archive" icon={Archive} label="Archive" isCollapsed={SidebarCollapsed} />
-            <SidebarLink href="/billing" icon={CircleDollarSign} label="Billing" isCollapsed={SidebarCollapsed} />
-            <SidebarLink href="/sales" icon={ReceiptText} label="Sales Record" isCollapsed={SidebarCollapsed} />
-            */}
             </div>
             {/* Footer 
             <div className={`text-gray-500 text-xs text-center  ${SidebarCollapsed?"hidden":""} `}>
-            &copy; 2025 DrabTech
+            &copy; 2025 Intera
             </div>
             */}
 

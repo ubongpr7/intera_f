@@ -151,7 +151,20 @@ export function CompanyAddressForm({ profile, onUpdate, submitLabel = "Save Addr
         postal_code: profile.headquarters_address.postal_code || null,
         full_address: profile.headquarters_address.full_address || null,
       })
+      return
     }
+
+    setFormData({
+      country: null,
+      region: null,
+      subregion: null,
+      city: null,
+      apt_number: null,
+      street_number: null,
+      street: null,
+      postal_code: null,
+      full_address: null,
+    })
   }, [profile])
 
   // Update form data

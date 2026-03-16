@@ -88,7 +88,7 @@ export const useWorkspaceSetupProgress = () => {
         id: "company",
         title: "Company profile",
         description: "Identity, address, and operational policies",
-        href: "/profile/create",
+        href: "/profile",
         icon: Building2,
         complete: readiness.basicsComplete && readiness.addressComplete && readiness.policyComplete,
         helper: activeProfileId
@@ -160,7 +160,7 @@ export function WorkspaceSetupShell({
   const { activeMembership, completionPercentage, nextRecommendedStage, stages } = useWorkspaceSetupProgress()
 
   return (
-    <div className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[300px_1fr] lg:px-8">
+    <div className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6  lg:px-8">
       <aside className="space-y-4">
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="p-5 text-left text-inherit">
@@ -317,7 +317,7 @@ export function WorkspaceSetupOverview() {
               </Button>
             ) : null}
             <Button asChild variant="outline">
-              <Link href="/profile/create">
+              <Link href="/profile">
                 {readiness.basicsComplete && readiness.addressComplete ? "Review company setup" : "Open company setup"}
               </Link>
             </Button>

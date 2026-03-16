@@ -5,20 +5,19 @@ import {
   useGetCompanyProfileQuery,
   useUpdateCompanyProfileMutation,
 } from "@/redux/features/management/companyProfileApiSlice"
-import { useAuth } from "@/redux/features/users/useAuth"
+import { useGetUserCompaniesQuery } from "@/redux/features/auth/authApiSlice"
 
 export function useCompanyProfile() {
-  const { user, isLoading: isAuthLoading } = useAuth()
-
-  const profileId = String(user?.profile)
-  const shouldSkip = isAuthLoading || !profileId
+  const { data: memberships, isLoading: isMembershipLoading } = useGetUserCompaniesQuery()
+  const activeProfileId = memberships?.active_profile_id ?? null
+  const shouldSkip = isMembershipLoading || !activeProfileId
 
   const {
     data: profile,
     isLoading: isProfileLoading,
     error,
     refetch,
-  } = useGetCompanyProfileQuery(profileId, {
+  } = useGetCompanyProfileQuery(String(activeProfileId), {
     skip: shouldSkip,
   })
 
@@ -35,7 +34,7 @@ export function useCompanyProfile() {
 
   return {
     profile,
-    isLoading: isAuthLoading || isProfileLoading || isUpdating || isCreating,
+    isLoading: isMembershipLoading || isProfileLoading || isUpdating || isCreating,
     error,
     updateProfile: updateCompanyProfile,
     refetch,

@@ -65,8 +65,12 @@ export interface TypeOfData {
 }
 
 export interface UnitOption {
+  id?: number;
   code: string;
   name: string;
+  abbreviated_name?: string;
+  dimension_type?: string;
+  conversion_factor?: number;
 }
 
 export interface CurrencyOption {

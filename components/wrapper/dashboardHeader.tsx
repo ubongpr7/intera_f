@@ -1,15 +1,11 @@
 'use client'
 import Navbar from './navbar'
 import SideBar from './sideBar'
-import { useAppSelector, useAppDispatch } from "../../redux/store";
-import { useEffect } from 'react';
+import { useAppSelector } from "../../redux/store";
 import { usePathname } from 'next/navigation';
-import { toast } from "react-toastify"
 import { ToastContainer } from "react-toastify";
 import { useGetLoggedInUserQuery } from '../../redux/features/users/userApiSlice';
 import { publicRoutes } from '../../redux/features/users/useAuth';
-import NextTopLoader from 'nextjs-toploader';
-import { useRefreshMutation } from '@/redux/features/auth/authApiSlice';
 
 import { getCookie } from 'cookies-next';
 import A2AChat from '../agents/ai-chat-widget';
@@ -18,12 +14,10 @@ import { readCookieValue } from '@/lib/authCookies';
 const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
 
   const SidebarCollapsed = useAppSelector((state) => state.global.isSidebarCollapsed);
-  const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
-  const dispatch = useAppDispatch();
   const pathname = usePathname();
   const isPublic = publicRoutes.includes(pathname);
 
-  const { data: user, isLoading, isSuccess } = useGetLoggedInUserQuery(undefined, {
+  const { data: user } = useGetLoggedInUserQuery(undefined, {
     skip: isPublic,
     refetchOnMountOrArgChange: true,
   });
@@ -31,7 +25,7 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
   
 
   const shouldHideDashboardUI = (path: string) => {
-    return path.startsWith('/accounts')|| path ==='/profile' || path === '/'|| path==='/features';
+    return path.startsWith('/accounts') || path === '/';
   };
 
   const shouldShowLegacyAgentWidget = pathname !== "/agent" && Boolean(readCookieValue("accessToken", getCookie));

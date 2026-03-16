@@ -63,10 +63,8 @@ const StaffGroup =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
 
  useEffect(()=>{
    if (refetchData){
-     console.log('before: ',refetchData)
      refetch();
      setRefetchData(false);
-     console.log('after',refetchData)
    }
    },[refetchData])
   

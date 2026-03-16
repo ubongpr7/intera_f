@@ -1,7 +1,7 @@
+@import 'react-phone-number-input/style.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import 'react-phone-number-input/style.css';
 *,
 *::before,
 *::after{
@@ -96,7 +96,8 @@ select {
   appearance: none;
 }
 input,textarea{
-  @apply bg-gray-200/70 text-gray-800
+  @apply bg-gray-200/70 text-gray-800;
+  border-radius: 50%;
 }
 ::-webkit-scrollbar {
   width: 8px;
@@ -174,4 +175,3 @@ option {
 [data-tooltip]:hover::before {
   opacity: 1;
 }
-

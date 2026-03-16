@@ -82,7 +82,7 @@ const NoProfileState = ({
             </p>
             <div className="mt-6">
               <Button asChild>
-                <Link href="/profile/create">
+                <Link href="/profile">
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Create company profile
                 </Link>
@@ -139,7 +139,7 @@ const NoProfileState = ({
 
       <div className="mt-6">
         <Button asChild variant="outline">
-          <Link href="/profile/create">
+          <Link href="/profile">
             <PlusCircle className="mr-2 h-4 w-4" />
             Create another company profile
           </Link>
@@ -201,7 +201,7 @@ export default function DashboardPage() {
             Retry
           </Button>
           <Button asChild>
-            <Link href="/profile/create">Create company profile</Link>
+            <Link href="/profile">Create company profile</Link>
           </Button>
         </div>
       </div>

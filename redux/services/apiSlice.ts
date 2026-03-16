@@ -3,7 +3,6 @@ import type { BaseQueryFn, FetchArgs as OriginalFetchArgs, FetchBaseQueryError }
 import { setAuth, logout } from "../features/authSlice"
 import { Mutex } from "async-mutex"
 import { setCookie, getCookie, deleteCookie } from "cookies-next"
-import { jwtDecode, type JwtPayload as JWTPayload } from "jwt-decode"
 import { AUTH_COOKIE_NAMES, AUTH_COOKIE_KEYS, readCookieValue } from "@/lib/authCookies"
 const BACKEND_HOST_URL = process.env.NEXT_PUBLIC_BACKEND_HOST_URL ?? ''
 const COMMON_BACKEND_URL = process.env.NEXT_PUBLIC_COMMON_BACKEND_URL ?? ''
@@ -53,29 +52,6 @@ interface AuthResponsePayload {
   agent_name?: string | null
 }
 
-type AccessTokenPayload = JWTPayload & {
-  has_onboarded?: boolean
-  user_id?: number
-  email?: string
-  permissions?: string[]
-  plan_name?: string
-  ai_simulations_left?: number
-  role?: string
-  mfa_enabled?: boolean
-  is_staff?: boolean
-  is_superuser?: boolean
-  has_setup_mfa?: boolean
-}
-
-const decodeAccessToken = (token: string): AccessTokenPayload | null => {
-  try {
-    return jwtDecode<AccessTokenPayload>(token)
-  } catch (error) {
-    console.error("Failed to decode access token", error)
-    return null
-  }
-}
-
 const AUTH_RESPONSE_URLS = new Set(["/auth/login/", "/auth/refresh/", "/auth/switch-company/", "/accounts/mfa/verify/"])
 const AUTH_LOGOUT_URLS = new Set(["/auth/logout/", "/api/v1/accounts/logout/"])
 
@@ -105,9 +81,6 @@ const persistAuthSession = (response: AuthResponsePayload) => {
   const currency = response.currency ?? profileContext.currency ?? null
 
   if (response.access) {
-    const decodedTokenPayload = decodeAccessToken(response.access)
-    console.log("Decoded access token payload:", decodedTokenPayload)
-
     setAuthCookie("accessToken", response.access, accessAge)
   }
   if (response.refresh) {
