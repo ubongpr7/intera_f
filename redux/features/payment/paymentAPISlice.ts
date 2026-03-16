@@ -1,16 +1,25 @@
 import { apiSlice } from "../../services/apiSlice"
+import { buildQuery } from "../common/queryParams"
+import type {
+  PaymentAnalyticsResponse,
+  PaymentProvider,
+  PaymentProviderInput,
+  PaymentRecord,
+  SubscriptionAnalyticsResponse,
+  SubscriptionRecord,
+} from "./paymentTypes"
 
 export const paymentApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // Payment Providers
-    getPaymentProviders: builder.query({
+    getPaymentProviders: builder.query<PaymentProvider[], Record<string, unknown> | void>({
       query: () => ({
         url: "providers/",
         service: "payment",
       }),
     }),
 
-    createPaymentProvider: builder.mutation({
+    createPaymentProvider: builder.mutation<PaymentProvider, PaymentProviderInput>({
       query: (data) => ({
         url: "providers/",
         method: "POST",
@@ -19,7 +28,7 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    updatePaymentProvider: builder.mutation({
+    updatePaymentProvider: builder.mutation<PaymentProvider, { id: string } & Partial<PaymentProviderInput>>({
       query: ({ id, ...data }) => ({
         url: `providers/${id}/`,
         method: "PATCH",
@@ -105,9 +114,9 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
     }),
 
     // Payments
-    getPayments: builder.query({
+    getPayments: builder.query<PaymentRecord[], Record<string, unknown> | void>({
       query: (params = {}) => ({
-        url: `payments/?${new URLSearchParams(params).toString()}`,
+        url: buildQuery("payments/", params),
         service: "payment",
       }),
     }),
@@ -138,9 +147,9 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
     }),
 
     // Subscriptions
-    getSubscriptions: builder.query({
+    getSubscriptions: builder.query<SubscriptionRecord[], Record<string, unknown> | void>({
       query: (params = {}) => ({
-        url: `subscriptions-to-plans/?${new URLSearchParams(params).toString()}`,
+        url: buildQuery("subscriptions-to-plans/", params),
         service: "payment",
       }),
     }),
@@ -187,16 +196,16 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
     }),
 
     // Analytics
-    getPaymentAnalytics: builder.query({
+    getPaymentAnalytics: builder.query<PaymentAnalyticsResponse, Record<string, unknown> | void>({
       query: (params = {}) => ({
-        url: `analytics/payments/?${new URLSearchParams(params).toString()}`,
+        url: buildQuery("analytics/payments/", params),
         service: "payment",
       }),
     }),
 
-    getSubscriptionAnalytics: builder.query({
+    getSubscriptionAnalytics: builder.query<SubscriptionAnalyticsResponse, Record<string, unknown> | void>({
       query: (params = {}) => ({
-        url: `analytics/subscriptions/?${new URLSearchParams(params).toString()}`,
+        url: buildQuery("analytics/subscriptions/", params),
         service: "payment",
       }),
     }),

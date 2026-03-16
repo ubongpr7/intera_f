@@ -1,4 +1,5 @@
 import { apiSlice } from "../../services/apiSlice"
+import { normalizeQueryParams } from "../common/queryParams"
 import type {
   Attachment,
   BulkTaskStatus,
@@ -6,6 +7,7 @@ import type {
   PricingRule,
   PricingStrategy,
   Product,
+  ProductAnalyticsResponse,
   ProductAttribute,
   ProductAttributeLink,
   ProductAttributeValue,
@@ -18,6 +20,7 @@ import type {
   ProductVariant,
   ProductVariantAttribute,
   PurchasePriceHistory,
+  VariantStatisticsResponse,
 } from "./productTypes"
 
 const product_api = "product_api"
@@ -134,7 +137,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getProductAnalytics: builder.query<Record<string, unknown>, string>({
+    getProductAnalytics: builder.query<ProductAnalyticsResponse, string>({
       query: (productId) => ({
         url: `/${product_api}/management/products/${productId}/analytics/`,
         service: service,
@@ -154,14 +157,14 @@ export const productApiSlice = apiSlice.injectEndpoints({
       queryFn: unsupportedEndpoint("Product category deletion is not exposed by the current product_service backend."),
     }),
 
-    getProductCategories: builder.query<ProductCategory[], unknown>({
+    getProductCategories: builder.query<ProductCategory[], void>({
       query: () => ({
         url: `/${product_api}/products/product_categories/`,
         service: service,
       }),
     }),
 
-    getCategoryTree: builder.query<ProductCategory[], void>({
+    getProductCategoryTree: builder.query<ProductCategory[], void>({
       queryFn: unsupportedEndpoint("Category tree endpoints are not exposed by the current product_service backend."),
     }),
 
@@ -236,9 +239,9 @@ export const productApiSlice = apiSlice.injectEndpoints({
     }),
 
     getAllProductVariants: builder.query<ProductVariant[], Record<string, unknown> | void>({
-      query: (params = {}) => ({
+      query: (params) => ({
         url: `/${product_api}/variants/`,
-        params,
+        params: normalizeQueryParams(params),
         service: service,
       }),
     }),
@@ -284,7 +287,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
     
-    getVariantStatistics: builder.query<Record<string, unknown>, string>({
+    getVariantStatistics: builder.query<VariantStatisticsResponse, string>({
       query: (variantId) => ({
         url:`/${product_api}/variants/${variantId}/statistics/`,
         service: service,
@@ -416,9 +419,9 @@ export const productApiSlice = apiSlice.injectEndpoints({
     }),
 
     getProductAttributes: builder.query<ProductAttribute[], { excludeProductId?: string } | void>({
-      query: ({excludeProductId}) => ({
-        url: `/${product_api}/attributes/?exclude_product_id=${excludeProductId}`,
-        
+      query: (arg) => ({
+        url: `/${product_api}/attributes/`,
+        params: normalizeQueryParams({ exclude_product_id: arg?.excludeProductId }),
         service: service,
       }),
     }),
@@ -509,9 +512,9 @@ export const productApiSlice = apiSlice.injectEndpoints({
     }),
 
     getPricingStrategies: builder.query<PricingStrategy[], Record<string, unknown> | void>({
-      query: (params = {}) => ({
+      query: (params) => ({
         url: `/${product_api}/pricing-strategies/`,
-        params,
+        params: normalizeQueryParams(params),
         service: service,
       }),
     }),
@@ -534,9 +537,9 @@ export const productApiSlice = apiSlice.injectEndpoints({
 
     // Price Change History
     getPriceChangeHistory: builder.query<PriceChangeHistory[], Record<string, unknown> | void>({
-      query: (params = {}) => ({
+      query: (params) => ({
         url: `/${product_api}/price-history/`,
-        params,
+        params: normalizeQueryParams(params),
         service: service,
       }),
     }),
@@ -593,9 +596,9 @@ export const productApiSlice = apiSlice.injectEndpoints({
     }),
 
     getPurchasePriceHistory: builder.query<PurchasePriceHistory[], Record<string, unknown> | void>({
-      query: (params = {}) => ({
+      query: (params) => ({
         url: `/${product_api}/purchase-history/`,
-        params,
+        params: normalizeQueryParams(params),
         service: service,
       }),
     }),
@@ -643,9 +646,9 @@ export const productApiSlice = apiSlice.injectEndpoints({
     }),
 
     getPricingRules: builder.query<PricingRule[], Record<string, unknown> | void>({
-      query: (params = {}) => ({
+      query: (params) => ({
         url: `/${product_api}/pricing-rules/`,
-        params,
+        params: normalizeQueryParams(params),
         service: service,
       }),
     }),
@@ -702,9 +705,9 @@ export const productApiSlice = apiSlice.injectEndpoints({
     }),
 
     getAttachments: builder.query<Attachment[], Record<string, unknown> | void>({
-      query: (params = {}) => ({
+      query: (params) => ({
         url: `/${product_api}/attachments/`,
-        params,
+        params: normalizeQueryParams(params),
         service: service,
       }),
     }),
@@ -741,9 +744,9 @@ export const productApiSlice = apiSlice.injectEndpoints({
 
     // POS Operations
     getPosProducts: builder.query<ProductPosProductsResponse, Record<string, unknown> | void>({
-      query: (params = {}) => ({
+      query: (params) => ({
         url: `/${product_api}/pos/products/`,
-        params,
+        params: normalizeQueryParams(params),
         service: service,
       }),
     }),
@@ -771,9 +774,9 @@ export const productApiSlice = apiSlice.injectEndpoints({
     }),
 
     getPosVariants: builder.query<ProductVariant[], Record<string, unknown> | void>({
-      query: (params = {}) => ({
+      query: (params) => ({
         url: `/${product_api}/pos/variants/`,
-        params,
+        params: normalizeQueryParams(params),
         service: service,
       }),
     }),
@@ -844,27 +847,30 @@ export const productApiSlice = apiSlice.injectEndpoints({
     }),
 
     // Export Operations
-    exportProductsCsv: builder.query({
-      query: (params = {}) => ({
+    exportProductsCsv: builder.query<Blob, Record<string, unknown> | void>({
+      query: (params) => ({
         url: `/${product_api}/export/products/csv/`,
-        params,
+        params: normalizeQueryParams(params),
         service: service,
+        responseHandler: (response: Response) => response.blob(),
       }),
     }),
 
-    exportVariantsCsv: builder.query({
-      query: (params = {}) => ({
+    exportVariantsCsv: builder.query<Blob, Record<string, unknown> | void>({
+      query: (params) => ({
         url: `/${product_api}/export/variants/csv/`,
-        params,
+        params: normalizeQueryParams(params),
         service: service,
+        responseHandler: (response: Response) => response.blob(),
       }),
     }),
     
-    exportPriceHistoryCsv: builder.query({
-      query: (params = {}) => ({
+    exportPriceHistoryCsv: builder.query<Blob, Record<string, unknown> | void>({
+      query: (params) => ({
         url: `/${product_api}/export/price-history/csv/`,
-        params,
+        params: normalizeQueryParams(params),
         service: service,
+        responseHandler: (response: Response) => response.blob(),
       }),
     }),
   }),
@@ -892,7 +898,7 @@ export const {
   useUpdateProductCategoryMutation,
   useDeleteProductCategoryMutation,
   useGetProductCategoriesQuery,
-  useGetCategoryTreeQuery,
+  useGetProductCategoryTreeQuery,
   useGetPosCategoryTreeQuery,
   useGetCategoryProductsQuery,
 
@@ -1009,6 +1015,9 @@ export const {
 
   // Export Operations
   useExportProductsCsvQuery,
+  useLazyExportProductsCsvQuery,
   useExportVariantsCsvQuery,
+  useLazyExportVariantsCsvQuery,
   useExportPriceHistoryCsvQuery,
+  useLazyExportPriceHistoryCsvQuery,
 } = productApiSlice

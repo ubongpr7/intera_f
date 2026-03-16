@@ -22,11 +22,12 @@ import {   Archive,
   CreditCard,
   ShoppingCart,
   Bus,
-  Truck} from 'lucide-react';
+  Truck,
+  Undo2} from 'lucide-react';
   import { useEffect, useRef } from 'react';
-import { UserData } from '../interfaces/User';
+import { UserData } from "@/redux/features/users/userTypes";
 interface SideBarDataProps{
-  user:UserData
+  user?:UserData
 }
 const SideBar = ({user}:SideBarDataProps) => {
   const SidebarCollapsed = useAppSelector((state) => state.global.isSidebarCollapsed);
@@ -89,6 +90,8 @@ const SideBar = ({user}:SideBarDataProps) => {
             <SidebarLink href="/profile/staff" icon={Users} label="Staff" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/companies" icon={Truck} label="Affilications" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/order/purchase" icon={ShoppingCart} label="Purchase Orders" isCollapsed={SidebarCollapsed} />
+            <SidebarLink href="/order/sales" icon={ReceiptText} label="Sales Orders" isCollapsed={SidebarCollapsed} />
+            <SidebarLink href="/order/returns" icon={Undo2} label="Returns" isCollapsed={SidebarCollapsed} />
             <SidebarLink href="/product" icon={Gift} label="Product" isCollapsed={SidebarCollapsed} />
             {/*
             <SidebarLink href="/stockitems" icon={Box} label="Stock Items" isCollapsed={SidebarCollapsed} />

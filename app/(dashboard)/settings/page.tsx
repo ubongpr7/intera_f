@@ -20,12 +20,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { useGetUserCompaniesQuery, useRefreshMutation } from "@/redux/features/authApiSlice"
+import { WorkspaceSetupShell } from "@/components/onboarding/WorkspaceSetupShell"
+import { useGetUserCompaniesQuery, useRefreshMutation } from "@/redux/features/auth/authApiSlice"
 import {
   useGetCompanyAgentSetupQuery,
   useSaveCompanyAgentSetupMutation,
 } from "@/redux/features/management/companyProfileApiSlice"
-import type { SaveCompanyAgentSetupPayload } from "@/types/company-profile"
+import type { SaveCompanyAgentSetupPayload } from "@/redux/features/management/companyProfileTypes"
 
 type AgentSetupFormState = {
   name: string
@@ -204,7 +205,7 @@ export default function Settings() {
 
   if (loadingCompanies || (activeProfileId && loadingSetup)) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-indigo-50 p-6">
+      <div className="p-2">
         <AgentSetupLoading />
       </div>
     )
@@ -212,15 +213,23 @@ export default function Settings() {
 
   if (!activeProfileId) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-indigo-50 p-6">
+      <WorkspaceSetupShell
+        activeStage="agent"
+        title="Configure the company AI workspace"
+        description="Save the company-level model, API credentials, and instruction set here. This becomes the agent context for the active workspace."
+      >
         <AgentSetupEmptyState profilesCount={companies?.profiles?.length ?? 0} />
-      </div>
+      </WorkspaceSetupShell>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-indigo-50 p-4 md:p-6">
-      <div className="mx-auto grid w-full max-w-6xl gap-6">
+    <WorkspaceSetupShell
+      activeStage="agent"
+      title="Configure the company AI workspace"
+      description="This is the final onboarding layer for the workspace. Save the company-level model version, encrypted keys, and reusable instructions so the agent system stays scoped to the active company."
+    >
+      <div className="grid w-full gap-6">
         <Card className="border-blue-100 bg-white/95 shadow-sm">
           <CardHeader className="gap-3 p-6 text-left">
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
@@ -431,6 +440,6 @@ export default function Settings() {
           </div>
         ) : null}
       </div>
-    </div>
+    </WorkspaceSetupShell>
   )
 }

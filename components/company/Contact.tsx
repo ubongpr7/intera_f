@@ -2,7 +2,7 @@
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { Column, DataTable, ActionButton } from "../common/DataTable/DataTable";
-import { ContactPersonInterface } from "../interfaces/company";
+import { ContactPersonInterface } from "@/redux/features/company/companyTypes";
 import { useGetContactPersonQuery, useCreateContactPersonMutation, useUpdateContactPersonMutation, useDeleteContactPersonMutation } from '../../redux/features/company/companyAPISlice';
 import CustomCreateCard from '../common/createCard';
 import { contactPersonInterfaceKeys } from './selectOptions';
@@ -63,7 +63,7 @@ function ContactPersonView({company_id}:CompanyProps) {
     toast.success("Contact updated successfully!");
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string | number) => {
     if (window.confirm("Are you sure you want to delete this contact?")) {
       try {
         await deleteContact(id).unwrap();

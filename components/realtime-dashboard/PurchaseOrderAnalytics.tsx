@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { useGetPurchaseOrderAnalyticsQuery, useGetPurchaseOrderSummaryQuery } from '@/redux/features/dashboard/dashboardApiSlice';
+import { useGetDashboardPurchaseOrderAnalyticsQuery, useGetPurchaseOrderSummaryQuery } from '@/redux/features/dashboard/dashboardApiSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Spinner from '@/components/common/Spinner';
@@ -57,7 +57,7 @@ const formatXAxis = (tickItem: string, timePeriod: string) => {
 
 // Combined Purchase Order Dashboard with Time Series
 const PurchaseOrderDashboard = () => {
-  const { data: analyticsData, error: analyticsError, isLoading: analyticsLoading } = useGetPurchaseOrderAnalyticsQuery(undefined);
+  const { data: analyticsData, error: analyticsError, isLoading: analyticsLoading } = useGetDashboardPurchaseOrderAnalyticsQuery(undefined);
   const { data: summaryData, error: summaryError, isLoading: summaryLoading } = useGetPurchaseOrderSummaryQuery(undefined);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [timePeriod, setTimePeriod] = useState<'weekly' | 'monthly'>('monthly');

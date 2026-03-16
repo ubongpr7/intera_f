@@ -1,4 +1,5 @@
 import { apiSlice } from "../../services/apiSlice";
+import { buildQuery } from "../common/queryParams";
 import type {
   CreateInventoryVariantPayload,
   LowStockItem,
@@ -22,20 +23,6 @@ const stockApi = "stock_api";
 const service = "inventory";
 
 type EntityId = string | number;
-
-const buildQuery = (path: string, params?: Record<string, unknown>) => {
-  const search = new URLSearchParams();
-
-  for (const [key, value] of Object.entries(params ?? {})) {
-    if (value === undefined || value === null || value === "") {
-      continue;
-    }
-    search.set(key, String(value));
-  }
-
-  const query = search.toString();
-  return query ? `${path}?${query}` : path;
-};
 
 export const stockApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -201,7 +188,17 @@ export const stockApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    listReservations: builder.query<StockReservation[], { inventory?: string; inventory_item?: string; status?: string } | void>({
+    listReservations: builder.query<
+      StockReservation[],
+      {
+        inventory?: string
+        inventory_item?: string
+        status?: string
+        external_order_type?: string
+        external_order_id?: string
+        external_order_line_id?: string
+      } | void
+    >({
       query: (params) => ({
         url: buildQuery(`/${stockApi}/reservations/`, params),
         service,

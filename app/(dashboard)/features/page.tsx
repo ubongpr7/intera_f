@@ -3,8 +3,29 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
+type FeatureSubtask = {
+  id: number;
+  title: string;
+  completed: boolean;
+};
+
+type FeatureTask = {
+  id: number;
+  title: string;
+  progress: number;
+  subtasks: FeatureSubtask[];
+};
+
+type FeatureMilestone = {
+  id: number;
+  title: string;
+  description?: string;
+  progress: number;
+  tasks: FeatureTask[];
+};
+
 export default function FeatureTracker() {
-  const [milestones, setMilestones] = useState([
+  const [milestones, setMilestones] = useState<FeatureMilestone[]>([
     {
       id: 1,
       title: "Core Inventory Management",
@@ -117,7 +138,7 @@ export default function FeatureTracker() {
 
   const [newSubtask, setNewSubtask] = useState("");
   const [expandedTask, setExpandedTask] = useState<number | null>(null);
-  const [newMilestone, setNewMilestone] = useState({
+  const [newMilestone, setNewMilestone] = useState<Pick<FeatureMilestone, "title" | "description">>({
     title: "",
     description: ""
   });

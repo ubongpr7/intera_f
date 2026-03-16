@@ -60,6 +60,18 @@ export default function CustomCreateCard<T extends Record<string, any>>({
   readOnlyFields = [],
   itemTitle = "Item",
 }: CustomCreateCardProps<T>) {
+  const getSingleSelectOption = (option: SelectOption | readonly SelectOption[] | null): SelectOption | null => {
+    if (Array.isArray(option)) {
+      return null;
+    }
+    return option as SelectOption | null;
+  };
+
+  const getFieldErrorMessage = (fieldName: keyof T) => {
+    const message = errors[fieldName as string]?.message;
+    return typeof message === "string" ? message : message ? String(message) : undefined;
+  };
+
   const {
     control,
     handleSubmit,
@@ -120,8 +132,10 @@ export default function CustomCreateCard<T extends Record<string, any>>({
   });
 
   const selectedSupplier = watch("supplier" as Path<Partial<T>>);
-  const { data: contactPersons = [] } = useGetCompanyContactPersonQuery(selectedSupplier,{skip: !selectedSupplier});
-  const { data: companyData = [] } = useGetCompanyDataQuery("");
+  const supplierId =
+    typeof selectedSupplier === "string" || typeof selectedSupplier === "number" ? selectedSupplier : undefined;
+  const { data: contactPersons = [] } = useGetCompanyContactPersonQuery(supplierId ?? "", { skip: !supplierId });
+  useGetCompanyDataQuery("");
 
   useEffect(() => {
     const resetDependents = (parentKey: keyof T, ...dependentKeys: (keyof T)[]) => {
@@ -227,7 +241,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
       let taxRate = directTax ? 0 : clampRate(getNum(value.tax_rate));
       
       const safeUpdate = (field: keyof T, value: number) => {
-        const current = getNum(field);
+        const current = getNum((watch(field as Path<Partial<T>>) as number | string | undefined) ?? 0);
         const rounded = precisionRound(value);
         if (!Object.is(current, rounded)) {
           setValue(field as Path<Partial<T>>, rounded as any);
@@ -423,8 +437,9 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                                 options={options}
                                 value={options.find((option) => option.value === field.value?.toString()) || null}
                                 onChange={(option) => {
-                                  if (option && !Array.isArray(option)) {
-                                    field.onChange(option.value);
+                                  const nextOption = getSingleSelectOption(option);
+                                  if (nextOption) {
+                                    field.onChange(nextOption.value);
                                   } else {
                                     field.onChange("");
                                   }
@@ -438,7 +453,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                                   "w-full",
                                   errors[key as string] ? "border-red-500" : ""
                                 )}
-                                error={errors[key as string]?.message}
+                                error={getFieldErrorMessage(key)}
                               />
                             );
                           }
@@ -453,8 +468,9 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                                 options={options}
                                 value={options.find((option) => option.value === field.value?.toString()) || null}
                                 onChange={(option) => {
-                                  if (option && !Array.isArray(option)) {
-                                    field.onChange(option.value);
+                                  const nextOption = getSingleSelectOption(option);
+                                  if (nextOption) {
+                                    field.onChange(nextOption.value);
                                   } else {
                                     field.onChange("");
                                   }
@@ -468,7 +484,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                                   "w-full",
                                   errors[key as string] ? "border-red-500" : ""
                                 )}
-                                error={errors[key as string]?.message}
+                                error={getFieldErrorMessage(key)}
                               />
                             );
                           }
@@ -482,8 +498,9 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                                 options={options}
                                 value={options.find((option) => option.value === field.value?.toString()) || null}
                                 onChange={(option) => {
-                                  if (option && !Array.isArray(option)) {
-                                    field.onChange(option.value);
+                                  const nextOption = getSingleSelectOption(option);
+                                  if (nextOption) {
+                                    field.onChange(nextOption.value);
                                   } else {
                                     field.onChange("");
                                   }
@@ -496,7 +513,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                                   "w-full",
                                   errors[key as string] ? "border-red-500" : ""
                                 )}
-                                error={errors[key as string]?.message}
+                                error={getFieldErrorMessage(key)}
                               />
                             );
                           }

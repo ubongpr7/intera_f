@@ -9,7 +9,7 @@ import { ToastContainer } from "react-toastify";
 import { useGetLoggedInUserQuery } from '../../redux/features/users/userApiSlice';
 import { publicRoutes } from '../../redux/features/users/useAuth';
 import NextTopLoader from 'nextjs-toploader';
-import { useRefreshMutation } from '@/redux/features/authApiSlice';
+import { useRefreshMutation } from '@/redux/features/auth/authApiSlice';
 
 import { getCookie } from 'cookies-next';
 import A2AChat from '../agents/ai-chat-widget';

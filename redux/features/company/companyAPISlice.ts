@@ -1,4 +1,5 @@
 import { apiSlice } from "../../services/apiSlice";
+import { buildQuery } from "../common/queryParams";
 import type {
   CompanyAddressDataInterface,
   CompanyAddressInterface,
@@ -11,20 +12,6 @@ const companyApi = "company_api";
 const service = "inventory";
 
 type EntityId = string | number;
-
-const buildQuery = (path: string, params?: Record<string, unknown>) => {
-  const search = new URLSearchParams();
-
-  for (const [key, value] of Object.entries(params ?? {})) {
-    if (value === undefined || value === null || value === "") {
-      continue;
-    }
-    search.set(key, String(value));
-  }
-
-  const query = search.toString();
-  return query ? `${path}?${query}` : path;
-};
 
 export const companyApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({

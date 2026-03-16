@@ -1,6 +1,8 @@
 "use client"
 
 import {
+  type ColumnFiltersState,
+  type SortingState,
   flexRender,
   getCoreRowModel,
   useReactTable,
@@ -27,8 +29,8 @@ export function DataTable<TData, TValue>({
   loading = false,
   searchKey = "name",
 }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = useState([])
-  const [columnFilters, setColumnFilters] = useState([])
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [globalFilter, setGlobalFilter] = useState("")
 
   const table = useReactTable({

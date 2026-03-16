@@ -20,15 +20,17 @@ const InventorySummary = () => {
         <div className="grid gap-4">
           <div>
             <p className="text-sm font-medium">Total Items</p>
-            <p className="text-2xl font-bold">{data?.total_items || 0}</p>
+            <p className="text-2xl font-bold">{data?.product_stats.total_products || 0}</p>
           </div>
           <div>
             <p className="text-sm font-medium">Total Value</p>
-            <p className="text-2xl font-bold">${data?.total_value?.toLocaleString() || 0}</p>
+            <p className="text-2xl font-bold">${data?.price_analysis.avg_price?.toLocaleString() || 0}</p>
           </div>
           <div>
             <p className="text-sm font-medium">Out of Stock</p>
-            <p className="text-2xl font-bold text-red-500">{data?.out_of_stock_items || 0}</p>
+            <p className="text-2xl font-bold text-red-500">
+              {(data?.variant_stats.total_variants || 0) - (data?.variant_stats.pos_visible_variants || 0)}
+            </p>
           </div>
         </div>
       </CardContent>

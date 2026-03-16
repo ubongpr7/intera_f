@@ -1,8 +1,9 @@
 "use client"
 
 import { useCreateProductVariantMutation } from "@/redux/features/product/productAPISlice"
+import type { Product, ProductVariant } from "@/redux/features/product/productTypes"
 import CustomCreateCard from "@/components/common/createCard"
-import type { Product, ProductVariant } from "@/components/interfaces/product"
+import { toast } from "react-toastify"
 
 interface CreateVariantModalProps {
   productId: string
@@ -33,14 +34,14 @@ const CreateVariantModal = ({ productId, onClose, onSuccess,ProductData }: Creat
       const variantData = { ...data, product: productId }
       await createVariant(variantData).unwrap()
       onSuccess()
-    } catch (error) {
-      console.error("Failed to create variant:", error)
+    } catch {
+      toast.error("Failed to create variant.")
     }
   }
 
 const defaultValues: Partial<ProductVariant> = {
   active: ProductData.is_active,
-  pos_visible: ProductData?.pos_ready||false,
+  pos_visible: ProductData.quick_sale ?? false,
   is_featured: false,
   price_override: ProductData.base_price,
   cost_override: ProductData?.cost_price,

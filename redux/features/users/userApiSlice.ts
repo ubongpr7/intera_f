@@ -86,14 +86,6 @@ export const userApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    verifyAccount: builder.mutation<VerificationResponse, VerificationRequestPayload>({
-      query: (data) => ({
-        url: `/${accountsApi}/verify/`,
-        method: "POST",
-        body: data,
-        service,
-      }),
-    }),
 
     sendVerificationCode: builder.mutation<VerificationResponse, { email: string }>({
       query: ({ email }) => ({
@@ -104,14 +96,6 @@ export const userApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    verifyCode: builder.mutation<VerificationResponse, { email: string; code: string }>({
-      query: ({ email, code }) => ({
-        url: `/${accountsApi}/verify/`,
-        method: "POST",
-        body: { email, code, action: "verify_code" },
-        service,
-      }),
-    }),
 
     mfaSetup: builder.mutation<MfaSetupResponse, { force?: boolean } | void>({
       query: (body) => ({
@@ -274,9 +258,7 @@ export const {
   useSearchUsersQuery,
   useLazySearchUsersQuery,
   useGetQuotaMetadataQuery,
-  useVerifyAccountMutation,
   useSendVerificationCodeMutation,
-  useVerifyCodeMutation,
   useMfaSetupMutation,
   useMfaVerifyMutation,
   useMfaToggleMutation,

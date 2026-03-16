@@ -1,18 +1,17 @@
 'use client'
-import { act, useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { useRouter } from 'nextjs-toploader/app';
 import { Column, DataTable,ActionButton} from "../common/DataTable/DataTable";
-import { ProductData } from "../interfaces/product";
+import type { ProductData } from "@/redux/features/product/productTypes";
 import { useGetProductDataQuery, useCreateProductMutation,useDeleteProductMutation,useRemoveTemplateModeMutation } from "@/redux/features/product/productAPISlice";
 import CustomCreateCard from '../common/createCard';
-import { InventoryInterfaceKeys,defaultValues } from './selectOptions';
-import { useGetUnitsQuery,useGetTypesByModelQuery } from "@/redux/features/common/typeOF";
+import { ProductFormKeys, defaultValues } from './selectOptions';
+import { useGetUnitsQuery } from "@/redux/features/common/typeOF";
 import { useGetProductCategoriesQuery } from "@/redux/features/product/productAPISlice";
-import { useGetInventoryDataQuery } from '@/redux/features/inventory/inventoryAPiSlice';
 import {AIBulkCreateModal} from './AIBulkCreateModal';
 import { TableImageHover } from '../common/table-image-render';
-import { Edit, Trash2, Eye, Copy, BarChart3, Package, ShoppingCart, ToggleLeftIcon } from "lucide-react"
+import { Trash2, Copy, ToggleLeftIcon } from "lucide-react"
 import { toast } from 'react-toastify';
 import { getCurrencySymbolForProfile } from '@/lib/currency-utils';
 
@@ -26,9 +25,9 @@ const inventoryColumns: Column<ProductData>[] = [
   },
   {
     header: 'Category',
-    accessor: 'pos_category',
+    accessor: 'category',
     render: (value) => value || 'N/A',
-    info: 'Category to which the inventory belong',
+    info: 'Catalog category assigned to the product',
   },
   {
     header: 'Barcode',
@@ -37,8 +36,8 @@ const inventoryColumns: Column<ProductData>[] = [
     className: 'font-medium',
   },
   {
-    header: 'Inventory',
-    accessor: 'inventory',
+    header: 'SKU',
+    accessor: 'sku',
     render: (value) => value || 'N/A',
     className: 'font-medium',
   },
@@ -63,13 +62,13 @@ const inventoryColumns: Column<ProductData>[] = [
     header: `Base Cost Price (${getCurrencySymbolForProfile()})`,
     accessor: 'cost_price',
     render: (value) => value || '0',
-    info: 'Category to which the inventory belong',
+    info: 'Configured baseline cost for margin calculations',
   },
   {
     header: `Base Price (${getCurrencySymbolForProfile()})`,
     accessor: 'base_price',
     render: (value) => value || '0',
-    info: 'Category to which the inventory belong',
+    info: 'Configured baseline selling price before variant or rule overrides',
   },
  
 ];
@@ -77,14 +76,13 @@ const inventoryColumns: Column<ProductData>[] = [
 
 function ProductView() {
   const { data, isLoading, refetch, error } = useGetProductDataQuery();
-  const [createInventory, { isLoading: inventoryCreateLoading }] = useCreateProductMutation();
+  const [createProduct, { isLoading: productCreateLoading }] = useCreateProductMutation();
   const [isCreateOpen, setIsCreateOpen] = useState(false); // Renamed for clarity
   const router = useRouter();
-  const { data:inventoryData=[] } = useGetInventoryDataQuery();
   const [isAIBulkCreateOpen, setIsAIBulkCreateOpen] = useState(false);
 
   const handleCreate = async (createdData: Partial<ProductData>) => {
-    await createInventory(createdData).unwrap();
+    await createProduct(createdData).unwrap();
     setIsCreateOpen(false); 
     await refetch(); 
   };
@@ -124,7 +122,7 @@ function ProductView() {
       }
     }
       
-    const { data: categories = [], isLoading: isCatLoading, error: catError } = useGetProductCategoriesQuery(1);
+      const { data: categories = [] } = useGetProductCategoriesQuery();
       const { data: units=[] } = useGetUnitsQuery();
       const unitOptions = units.map((unit: any) => ({
         value: `${unit.name} (${unit.dimension_type})`,
@@ -135,41 +133,31 @@ function ProductView() {
         value: cat.name,
         text: cat.name,
       }));
-    
-      const inventoryOptions = inventoryData.map((inventory: any) => ({
-        value: inventory.external_system_id,
-        text: inventory.name,
-      }));
       
     const  selectOptions = {
-          
-            category:categoryOptions,
-            unit:unitOptions,
-            inventory:inventoryOptions,
-           
-      }
-  
-
-  const handleRefresh = async () => {
-    await refetch();
-  };
+      category: categoryOptions,
+      unit: unitOptions,
+    }
 
   const handleRowClick = (row: ProductData) => {
     router.push(`/product/${row.id}`);
   };
 
   const handleDuplicate = async (product: ProductData) => {
-    const duplicateData = {
-      ...product,
-      name: `${product.name} (Copy)`,
-      barcode: "", // Clear barcode for duplicate
-      id: undefined, // Remove ID so it creates new
-      created_at: undefined,
-      updated_at: undefined,
-    }
+    const duplicateData: Partial<ProductData> = {}
+    ProductFormKeys.forEach((key) => {
+      const value = product[key]
+      if (value !== undefined) {
+        ;(duplicateData as Record<string, unknown>)[String(key)] = value as unknown
+      }
+    })
+
+    duplicateData.name = `${product.name} (Copy)`
+    duplicateData.barcode = ""
+    duplicateData.sku = ""
 
     try {
-      await createInventory(duplicateData).unwrap()
+      await createProduct(duplicateData).unwrap()
       await refetch()
       toast.success("Product duplicated successfully!")
     } catch (error) {
@@ -247,11 +235,11 @@ const actionButtons: ActionButton<ProductData>[] = [
           onClick: () => setIsAIBulkCreateOpen(true),
 
         }}
-        searchableFields={['name', 'barcode']}
-        filterableFields={['pos_category', 'inventory']}
-        sortableFields={['name', 'barcode']}
+        searchableFields={['name', 'barcode', 'sku']}
+        filterableFields={['category', 'pos_category']}
+        sortableFields={['name', 'barcode', 'base_price']}
         rangeFilterFields={['cost_price', 'base_price']}
-        title="Product"
+        title="Products"
         onClose={() =>setIsCreateOpen(true)}
       />
 
@@ -275,12 +263,12 @@ const actionButtons: ActionButton<ProductData>[] = [
           
           }}
           onSubmit={handleCreate}
-          isLoading={inventoryCreateLoading}
+          isLoading={productCreateLoading}
           selectOptions={selectOptions}
           keyInfo={{}}
           notEditableFields={notEditableFields}
-          interfaceKeys={InventoryInterfaceKeys}
-          optionalFields={['description','cost_price', 'dimensions','weight','max_discount_percent','allow_discount','tax_inclusive','quick_sale','pos_ready',]}
+          interfaceKeys={ProductFormKeys}
+          optionalFields={['description', 'short_description', 'cost_price', 'barcode', 'sku', 'pos_category', 'unit', 'dimensions', 'weight', 'meta_title', 'meta_description']}
           itemTitle={'New Product'}
         />
        

@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Plus, Edit, Trash2, FileText, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
-import type { InventoryPolicy } from "@/types/company-profile"
+import type { InventoryPolicy } from "@/redux/features/management/companyProfileTypes"
 import { useCreateInventoryPolicyMutation, 
   useDeleteInventoryPolicyMutation,
    useGetInventoryPoliciesQuery, 
@@ -234,8 +234,9 @@ export function InventoryPolicyManagement({profileId}:InventoryPolicyManagementP
                     options={POLICY_TYPE_OPTIONS}
                     value={POLICY_TYPE_OPTIONS.find((option) => option.value === formData.policy_type) || null}
                     onChange={(option) => {
-                      if (option && !Array.isArray(option)) {
-                        setFormData((prev) => ({ ...prev, policy_type: option.value }))
+                      const nextOption = Array.isArray(option) ? null : (option as SelectOption | null)
+                      if (nextOption) {
+                        setFormData((prev) => ({ ...prev, policy_type: String(nextOption.value) }))
                       }
                     }}
                     placeholder="Select policy type"

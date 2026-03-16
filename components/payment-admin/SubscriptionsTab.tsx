@@ -1,20 +1,22 @@
 "use client"
 
 import { useState } from "react"
+import type { ColumnDef } from "@tanstack/react-table"
 import { Eye, RefreshCw, Ban } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
 import { useGetSubscriptionsQuery, useCancelSubscriptionMutation } from "@/redux/features/payment/paymentAPISlice"
+import type { SubscriptionRecord, SubscriptionStatus } from "@/redux/features/payment/paymentTypes"
 import { toast } from "react-toastify"
 
 export function SubscriptionsTab() {
-  const [filters, setFilters] = useState({})
+  const [filters, setFilters] = useState<Record<string, string>>({})
   const { data: subscriptions = [], isLoading, refetch } = useGetSubscriptionsQuery(filters)
   const [cancelSubscription] = useCancelSubscriptionMutation()
 
-  const handleCancel = async (id) => {
+  const handleCancel = async (id: string) => {
     if (confirm("Are you sure you want to cancel this subscription?")) {
       try {
         await cancelSubscription(id).unwrap()
@@ -26,21 +28,21 @@ export function SubscriptionsTab() {
     }
   }
 
-  const getStatusBadge = (status) => {
-    const variants = {
+  const getStatusBadge = (status: SubscriptionStatus) => {
+    const variants: Record<SubscriptionStatus, "default" | "destructive" | "secondary" | "outline"> = {
       active: "default",
       cancelled: "destructive",
       expired: "secondary",
       trial: "outline",
     }
-    return <Badge variant={variants[status] || "secondary"}>{status}</Badge>
+    return <Badge variant={variants[status]}>{status}</Badge>
   }
 
-  const columns = [
+  const columns: ColumnDef<SubscriptionRecord>[] = [
     {
       accessorKey: "id",
       header: "ID",
-      cell: ({ row }) => <span className="font-mono text-sm">#{row.getValue("id")}</span>,
+      cell: ({ row }) => <span className="font-mono text-sm">#{String(row.getValue("id"))}</span>,
     },
     {
       accessorKey: "plan",
@@ -50,20 +52,20 @@ export function SubscriptionsTab() {
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }) => getStatusBadge(row.getValue("status")),
+      cell: ({ row }) => getStatusBadge(row.getValue("status") as SubscriptionStatus),
     },
     {
       accessorKey: "current_period_end",
       header: "Next Billing",
       cell: ({ row }) => {
         const date = row.getValue("current_period_end")
-        return date ? new Date(date).toLocaleDateString() : "N/A"
+        return date ? new Date(String(date)).toLocaleDateString() : "N/A"
       },
     },
     {
       accessorKey: "created_at",
       header: "Created",
-      cell: ({ row }) => new Date(row.getValue("created_at")).toLocaleDateString(),
+      cell: ({ row }) => new Date(String(row.getValue("created_at"))).toLocaleDateString(),
     },
     {
       id: "actions",

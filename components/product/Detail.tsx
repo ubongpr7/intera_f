@@ -1,37 +1,29 @@
 'use client'
 import DetailCard from '../common/Detail';
 import { useGetProductCategoriesQuery, useGetProductQuery } from '../../redux/features/product/productAPISlice'
-import { ProductData } from '../interfaces/product';
+import type { Product } from "@/redux/features/product/productTypes";
 import { useUpdateProductMutation } from '../../redux/features/product/productAPISlice';
-import { useGetTypesByModelQuery, useGetUnitsQuery } from '../../redux/features/common/typeOF';
+import { useGetUnitsQuery } from '../../redux/features/common/typeOF';
 import LoadingAnimation from '../common/LoadingAnimation';
-import { InventoryInterfaceKeys } from './selectOptions';
-import { useGetInventoryDataQuery } from '@/redux/features/inventory/inventoryAPiSlice';
-
+import { ProductFormKeys } from './selectOptions';
 
 export default function ProductDetail({ id, }: { id: string }) {
-  const { data: inventory, isLoading,refetch  } = useGetProductQuery(id);
-  const ProductData = inventory as ProductData;
-  const [updateInventory,{isLoading:updateIsLoading}] = useUpdateProductMutation();
+  const { data: product, isLoading, refetch } = useGetProductQuery(id);
+  const productData = product as Product;
+  const [updateProduct, { isLoading: updateIsLoading }] = useUpdateProductMutation();
 
   
-  const handleUpdate = async (updatedData: Partial<ProductData>) => {
-    await updateInventory({ id: ProductData.id, data: updatedData }).unwrap();
+  const handleUpdate = async (updatedData: Partial<Product>) => {
+    await updateProduct({ id: productData.id, data: updatedData }).unwrap();
     await refetch();
 
   };
 
 
 //////////////////////////////
-const { data: categories = [], isLoading: isCatLoading, error: catError } = useGetProductCategoriesQuery(1);
+const { data: categories = [] } = useGetProductCategoriesQuery();
 const { data: units=[] } = useGetUnitsQuery();
-    const { data:inventoryData=[] } = useGetInventoryDataQuery();
-  
-const inventoryOptions = inventoryData.map((inventory: any) => ({
-        value: inventory.external_system_id,
-        text: inventory.name,
-      }));
-      
+
 const unitOptions = units.map((unit: any) => ({
     value: `${unit.name} (${unit.dimension_type})`,
     text: `${unit.name} (${unit.dimension_type})`,
@@ -43,7 +35,6 @@ const categoryOptions = categories.map((cat: any) => ({
 }));
 
 const  selectOptions = {
-      inventory:inventoryOptions,
       category:categoryOptions,
       unit:unitOptions,
       
@@ -59,22 +50,22 @@ const  selectOptions = {
   <LoadingAnimation text="Loading..." ringColor="#3b82f6" />
   </div>
   </div>;
-  if (!inventory) return <div>Inventory not found</div>;
+  if (!product) return <div>Product not found</div>;
 
   
   return (
     <DetailCard 
-      interfaceKeys={InventoryInterfaceKeys}
+      interfaceKeys={ProductFormKeys}
     
-      data={ProductData}
+      data={productData}
       notEditableFields={['id', 'created_at','updated_at', ]}
       updateMutation={handleUpdate}
-      excludeFields={['id','inventory', 'category', 'category_details', 'display_image','price_range', 'attribute_links']}
+      excludeFields={['id', 'category_details', 'display_image', 'price_range', 'attribute_links', 'quick_sale_variants', 'pricing_strategy_details', 'created_by_details']}
       selectOptions={selectOptions}
       isLoading={updateIsLoading}
-      policyFields={['description']}
+      policyFields={['description', 'short_description', 'meta_title', 'meta_description']}
       keyInfo={{}}
-      optionalFields={['description','cost_price', 'dimensions','weight','max_discount_percent','allow_discount','tax_inclusive','quick_sale','pos_ready',]}
+      optionalFields={['description', 'short_description', 'cost_price', 'barcode', 'sku', 'pos_category', 'unit', 'dimensions', 'weight', 'meta_title', 'meta_description']}
 
 
     />

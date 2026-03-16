@@ -7,6 +7,7 @@ import type {
   AuthSessionResponse,
   AuthUser,
   CompanyMembershipResponse,
+  CompanyProfileContext,
   SocialAuthArgs,
   SwitchCompanyPayload,
 } from "./authTypes";
@@ -179,3 +180,5 @@ export const {
   useResetPasswordMutation,
   useResetPasswordConfirmMutation,
 } = authApiSlice;
+
+export type { CompanyProfileContext };

@@ -10,10 +10,8 @@ import {
   useTogglePricingRuleActiveMutation,
 } from "@/redux/features/product/productAPISlice"
 import { useGetProductVariantsQuery } from "@/redux/features/product/productAPISlice"
-
-import { useRouter } from "nextjs-toploader/app"
+import type { PricingRule, Product, ProductVariant } from "@/redux/features/product/productTypes"
 import { Column, DataTable } from "../common/DataTable/DataTable"
-import { PricingRule, Product, ProductCategory, ProductVariant } from "../interfaces/product"
 import CustomCreateCard from "../common/createCard"
 import LoadingAnimation from "../common/LoadingAnimation"
 
@@ -98,7 +96,6 @@ const interfaceKeys: (keyof PricingRule)[] = [
 ]
 
 export default function ProductPricing({ productId,product }: ProductPricingProps) {
-  const router = useRouter()
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [editingRule, setEditingRule] = useState<PricingRule | null>(null)
 
@@ -107,7 +104,7 @@ export default function ProductPricing({ productId,product }: ProductPricingProp
     isLoading, 
     refetch, 
     error 
-  } = useGetPricingRulesQuery({ productId })
+  } = useGetPricingRulesQuery({ product: productId })
 
 
   const { 
@@ -122,7 +119,7 @@ export default function ProductPricing({ productId,product }: ProductPricingProp
 
   const variantOptions = variants.map((variant: ProductVariant) => ({
     value: variant.id,
-    text: variant.pos_name,
+    text: variant.pos_name || variant.display_name || variant.variant_sku || `Variant ${variant.id}`,
   }))
 
 

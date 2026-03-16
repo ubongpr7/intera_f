@@ -1,103 +1,61 @@
 
 "use client"
-import React, { useState } from 'react';
-import { DataTable, Column, ActionButton } from '@/components/common/DataTable/DataTable';
-import { useGetTerminalsQuery, useCreateTerminalMutation, useUpdateTerminalMutation, useDeleteTerminalMutation } from '@/redux/features/pos/posAPISlice';
-import CustomCreateCard from '@/components/common/createCard';
-import { toast } from 'react-toastify';
-import { extractErrorMessage } from '@/lib/utils';
 
-interface POSTerminal {
-  id: string;
-  name: string;
-  terminal_id: string;
-  location: string;
-  is_active: boolean;
-}
+import { type Column } from "@/components/common/DataTable/DataTable"
+import POSResourceManager from "@/components/pos/POSResourceManager"
+import {
+  useCreateTerminalMutation,
+  useDeleteTerminalMutation,
+  useGetConfigurationsQuery,
+  useGetTerminalsQuery,
+  useUpdateTerminalMutation,
+} from "@/redux/features/pos/posAPISlice"
+import type { POSTerminal } from "@/redux/features/pos/posTypes"
 
-const Terminals = () => {
-  const [isCreateCardOpen, setCreateCardOpen] = useState(false);
-  const [editingTerminal, setEditingTerminal] = useState<POSTerminal | null>(null);
+const columns: Column<POSTerminal>[] = [
+  { header: "Name", accessor: "name" },
+  { header: "Terminal key", accessor: "sync_identifier" },
+  { header: "Location", accessor: "location" },
+  { header: "Status", accessor: "is_active", render: (value) => (value ? "Active" : "Inactive") },
+]
 
-  const { data: terminals, isLoading, refetch } = useGetTerminalsQuery("");
-  const [createTerminal, { isLoading: isCreating }] = useCreateTerminalMutation();
-  const [updateTerminal, { isLoading: isUpdating }] = useUpdateTerminalMutation();
-  const [deleteTerminal, { isLoading: isDeleting }] = useDeleteTerminalMutation();
-
-  const handleCreate = async (data: Partial<POSTerminal>) => {
-    try {
-      await createTerminal(data).unwrap();
-      toast.success("Terminal created successfully");
-      setCreateCardOpen(false);
-      refetch();
-    } catch (error) {
-      toast.error(extractErrorMessage(error));
-    }
-  };
-
-  const handleUpdate = async (data: Partial<POSTerminal>) => {
-    if (!editingTerminal) return;
-    try {
-      await updateTerminal({ id: editingTerminal.id, ...data }).unwrap();
-      toast.success("Terminal updated successfully");
-      setEditingTerminal(null);
-      setCreateCardOpen(false);
-      refetch();
-    } catch (error) {
-      toast.error(extractErrorMessage(error));
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this terminal?")) {
-      try {
-        await deleteTerminal(id).unwrap();
-        toast.success("Terminal deleted successfully");
-        refetch();
-      } catch (error) {
-        toast.error(extractErrorMessage(error));
-      }
-    }
-  };
-
-  const columns: Column<POSTerminal>[] = [
-    { header: 'Name', accessor: 'name' },
-    { header: 'Terminal ID', accessor: 'terminal_id' },
-    { header: 'Location', accessor: 'location' },
-    { header: 'Active', accessor: 'is_active', render: (value) => (value ? 'Yes' : 'No') },
-  ];
-
-  const actionButtons: ActionButton<POSTerminal>[] = [
-    { label: 'Edit', onClick: (row) => { setEditingTerminal(row); setCreateCardOpen(true); } },
-    { label: 'Delete', onClick: (row) => handleDelete(row.id), variant: 'danger' },
-  ];
+export default function Terminals() {
+  const { data: terminals = [], isLoading, refetch } = useGetTerminalsQuery()
+  const { data: configurations = [] } = useGetConfigurationsQuery()
+  const [createTerminal] = useCreateTerminalMutation()
+  const [updateTerminal] = useUpdateTerminalMutation()
+  const [deleteTerminal] = useDeleteTerminalMutation()
 
   return (
-    <div>
-      <div className="flex justify-end mb-4">
-        <button onClick={() => { setEditingTerminal(null); setCreateCardOpen(true); }} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-          Create Terminal
-        </button>
-      </div>
-      <DataTable
-        columns={columns}
-        data={terminals || []}
-        isLoading={isLoading}
-        actionButtons={actionButtons}
-        showActionsColumn
-      />
-      {isCreateCardOpen && (
-        <CustomCreateCard<POSTerminal>
-          defaultValues={editingTerminal || {}}
-          onClose={() => setCreateCardOpen(false)}
-          onSubmit={editingTerminal ? handleUpdate : handleCreate}
-          isLoading={isCreating || isUpdating}
-          interfaceKeys={['name', 'terminal_id', 'location', 'is_active']}
-          itemTitle={editingTerminal ? "Update Terminal" : "Create Terminal"}
-        />
-      )}
-    </div>
-  );
-};
-
-export default Terminals;
+    <POSResourceManager<POSTerminal>
+      title="Selling terminals"
+      description="Create the physical checkout endpoints that cashiers will open sessions against."
+      data={terminals}
+      isLoading={isLoading}
+      columns={columns}
+      createLabel="New terminal"
+      itemTitle="Terminal"
+      interfaceKeys={["name", "location", "is_active", "configuration"]}
+      selectOptions={{
+        configuration: configurations.map((configuration) => ({
+          value: configuration.sync_identifier || configuration.id,
+          text: configuration.name,
+        })),
+      }}
+      optionalFields={["location"]}
+      onCreate={async (data) => {
+        await createTerminal(data).unwrap()
+        await refetch()
+      }}
+      onUpdate={async (id, data) => {
+        await updateTerminal({ id, data }).unwrap()
+        await refetch()
+      }}
+      onDelete={async (id) => {
+        await deleteTerminal(id).unwrap()
+        await refetch()
+      }}
+      emptyState="Create at least one active terminal so staff can open POS sessions."
+    />
+  )
+}

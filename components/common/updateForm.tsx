@@ -8,7 +8,6 @@ import { FieldInfo } from './fileFieldInfor';
 import { isValidPhoneNumber } from 'libphonenumber-js';
 import {
   useGetContactPersonQuery,
-  useGetCompanyDataQuery,
   useGetCompanyContactPersonQuery,
 } from '../../redux/features/company/companyAPISlice';
 import {
@@ -74,6 +73,11 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
       ...hiddenFields,
     },
   });
+
+  const getFieldErrorMessage = (fieldName: keyof T) => {
+    const message = errors[fieldName as string]?.message;
+    return typeof message === 'string' ? message : message ? String(message) : undefined;
+  };
   
   const geoFields = {
     country: {
@@ -110,7 +114,9 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
   });
   const [edit,setEdit] = useState(false);
   const selectedSupplier = watch('supplier' as Path<Partial<T>>);
-  const { data: contactPersons = [] } = useGetCompanyContactPersonQuery(selectedSupplier,{skip:!selectedSupplier});
+  const supplierId =
+    typeof selectedSupplier === 'string' || typeof selectedSupplier === 'number' ? selectedSupplier : undefined;
+  const { data: contactPersons = [] } = useGetCompanyContactPersonQuery(supplierId ?? '', { skip: !supplierId });
 
   useEffect(() => {
     const resetDependents = (parentKey: keyof T, ...dependentKeys: (keyof T)[]) => {
@@ -317,8 +323,8 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
                                 ref={field.ref}
                                 >
                                 <option value="">Select Contact Person</option>
-                                {contactPersons.map((contact: { id: number; name: string }) => (
-                                  <option key={contact.id} value={contact.id.toString()}> {/* Ensure string value */}
+                                {contactPersons.map((contact) => (
+                                  <option key={contact.id} value={String(contact.id)}>
                                     {contact.name}
                                   </option>
                                 ))}
@@ -404,7 +410,7 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
                       />
                       {errors[key as string] && (
                         <p className="text-xs text-red-600 mt-1">
-                          {String(errors[key as string]?.message)}
+                          {getFieldErrorMessage(key)}
                         </p>
                       )}
                     </div>

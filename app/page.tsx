@@ -642,7 +642,7 @@ export default function HomePage() {
                   Unable to load pricing plans right now. Please refresh or try again shortly.
                 </div>
               ) : null}
-              {pricingPlans?.map((plan, index) => (
+              {pricingPlans?.map((plan: SubscriptionPlan, index: number) => (
                 <PlanCard key={plan.id} plan={plan} highlighted={index === 1} />
               ))}
             </div>

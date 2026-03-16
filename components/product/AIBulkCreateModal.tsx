@@ -13,10 +13,7 @@ import {
   useLazyGetBulkTaskStatusQuery,
   useListBulkTasksQuery,
 } from "@/redux/features/product/productAPISlice"
-import { useGetInventoryDataQuery } from "@/redux/features/inventory/inventoryAPiSlice"
 import { toast } from "react-toastify"
-import { ReactSelectField, type SelectOption } from "@/components/ui/react-select-field"
-import { cn } from "@/lib/utils"
 import { getCookie } from "cookies-next"
 import { readCookieValue } from "@/lib/authCookies"
 
@@ -30,7 +27,6 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
   const [taskId, setTaskId] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
   const [status, setStatus] = useState<"idle" | "processing" | "completed" | "error">("idle")
-  const [selectedInventory, setSelectedInventory] = useState<string | null>(null)
 
   // RTK Query hooks
   const [aiBulkCreate, { isLoading: isCreating, error: createError }] = useAiBulkCreateProductsMutation()
@@ -38,7 +34,10 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
   const { data: bulkTasks, refetch: refetchTasks } = useListBulkTasksQuery(undefined, {
     skip: !isOpen,
   })
-  const { data: inventoryData, isLoading: isInventoryLoading, error: inventoryError } = useGetInventoryDataQuery()
+  const createErrorDetail =
+    createError && typeof createError === "object" && "data" in createError
+      ? (createError.data as { detail?: string } | undefined)?.detail
+      : undefined
 
   const onImageDrop = useCallback((acceptedFiles: File[]) => {
     const validFiles = acceptedFiles.filter((file) => {
@@ -79,11 +78,6 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
       toast.error("Maximum 50 images allowed per batch")
       return
     }
-    if (!selectedInventory) {
-      toast.error("Please select an inventory location")
-      return
-    }
-
     const formData = new FormData()
     // Add images
     images.forEach((image, index) => {
@@ -91,7 +85,6 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
     })
     formData.append("images_count", images.length.toString())
     formData.append("currency", `${readCookieValue("currency", getCookie) || "NGN"}`)
-    formData.append("inventory", selectedInventory)
 
     try {
       const result = await aiBulkCreate(formData).unwrap()
@@ -104,7 +97,12 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
     } catch (error: any) {
       console.error("Failed to start AI processing:", error)
       setStatus("error")
-      const errorMessage = error?.data?.detail || error?.message || "Failed to start AI processing"
+      const errorMessage =
+        typeof error === "object" && error !== null && "data" in error
+          ? ((error as { data?: { detail?: string }; message?: string }).data?.detail ??
+            (error as { message?: string }).message ??
+            "Failed to start AI processing")
+          : "Failed to start AI processing"
       toast.error(errorMessage)
     }
   }
@@ -156,7 +154,6 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
     setTaskId(null)
     setProgress(0)
     setStatus("idle")
-    setSelectedInventory(null)
   }
 
   const downloadReport = (resultFileUrl: string) => {
@@ -179,14 +176,6 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
       pollTaskStatus(taskId)
     }
   }, [isOpen, taskId])
-
-  // Prepare inventory options from inventoryData
-  const inventoryOptions: SelectOption[] = inventoryData
-    ? inventoryData.map((item) => ({
-        value: item.external_system_id,
-        label: item.name || `Location ${item.external_system_id}`,
-      }))
-    : []
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -271,45 +260,13 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
                   <Alert variant="destructive">
                     <XCircle className="h-4 w-4" />
                     <AlertDescription>
-                      {taskStatus?.error_message || createError?.data?.detail || "An error occurred during processing"}
+                      {taskStatus?.error_message || createErrorDetail || "An error occurred during processing"}
                     </AlertDescription>
                   </Alert>
                 )}
               </CardContent>
             </Card>
           )}
-
-          {/* Inventory Selection */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center  gap-2">
-                <ImageIcon className="h-4 w-4" />
-                Select Inventory Location
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ReactSelectField
-                options={inventoryOptions}
-                value={inventoryOptions.find((option) => option.value === selectedInventory) || null}
-                onChange={(option) => {
-                  if (option && !Array.isArray(option)) {
-                    setSelectedInventory(option.value)
-                  } else {
-                    setSelectedInventory(null)
-                  }
-                }}
-                isDisabled={isCreating || status === "processing" || isInventoryLoading}
-                placeholder="Select Inventory Location"
-                isSearchable
-                isClearable
-                className={cn(
-                  "w-full",
-                  inventoryError || (inventoryData && inventoryData.length === 0) ? "border-red-500" : "",
-                )}
-                error={inventoryError ? "Failed to load inventory locations" : undefined}
-              />
-            </CardContent>
-          </Card>
 
           {/* Image Upload */}
           <Card>

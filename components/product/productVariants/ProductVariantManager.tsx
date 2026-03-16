@@ -1,20 +1,25 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import {  useGetProductVariantsQuery } from "@/redux/features/product/productAPISlice"
+import { useState } from "react"
+import {
+  useDeleteProductVariantMutation,
+  useGetProductVariantsQuery,
+  useToggleVariantFeaturedMutation,
+  useToggleVariantPosVisibleMutation,
+} from "@/redux/features/product/productAPISlice"
+import type { Product, ProductVariant } from "@/redux/features/product/productTypes"
 
-import { type Column, DataTable } from "@/components/common/DataTable/DataTable"
-import type { Product, ProductVariant } from "@/components/interfaces/product"
+import { type ActionButton, type Column, DataTable } from "@/components/common/DataTable/DataTable"
 import LoadingAnimation from "@/components/common/LoadingAnimation"
 import CreateVariantModal from "./CreateVariantModal"
 import VariantDetailsModal from "./VariantDetailsModal"
 import { getCurrencySymbolForProfile } from "@/lib/currency-utils"
 import { TableImageHover } from '@/components/common/table-image-render';
+import { Eye, ScanBarcode, Star, Trash2 } from "lucide-react"
+import { toast } from "react-toastify"
 
 interface ProductVariantManagerProps {
   productId: string
-  refetchData: boolean
-  setRefetchData: (value: boolean) => void
   ProductData:Partial<Product>
 }
 
@@ -67,7 +72,7 @@ const variantColumns: Column<ProductVariant>[] = [
   },
 ]
 
-const ProductVariantManager = ({ productId, refetchData, setRefetchData,ProductData }: ProductVariantManagerProps) => {
+const ProductVariantManager = ({ productId, ProductData }: ProductVariantManagerProps) => {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
 
@@ -78,6 +83,9 @@ const ProductVariantManager = ({ productId, refetchData, setRefetchData,ProductD
     refetch: refetchVariants,
     error: variantsError,
   } = useGetProductVariantsQuery(productId)
+  const [deleteVariant, { isLoading: isDeletingVariant }] = useDeleteProductVariantMutation()
+  const [toggleVariantPosVisible] = useToggleVariantPosVisibleMutation()
+  const [toggleVariantFeatured] = useToggleVariantFeaturedMutation()
 
   const handleRowClick = (row: ProductVariant) => {
     setSelectedVariantId(row.id)
@@ -87,14 +95,73 @@ const ProductVariantManager = ({ productId, refetchData, setRefetchData,ProductD
     setSelectedVariantId(null)
   }
 
-  const actionButtons = [
+  const handleDeleteVariant = async (variant: ProductVariant) => {
+    if (!window.confirm(`Delete variant "${variant.pos_display_name || variant.display_name || variant.variant_sku || variant.id}"?`)) {
+      return
+    }
+
+    try {
+      await deleteVariant(variant.id).unwrap()
+      toast.success("Variant deleted successfully.")
+      await refetchVariants()
+      if (selectedVariantId === variant.id) {
+        setSelectedVariantId(null)
+      }
+    } catch {
+      toast.error("Failed to delete variant.")
+    }
+  }
+
+  const handleTogglePosVisible = async (variant: ProductVariant) => {
+    try {
+      await toggleVariantPosVisible(variant.id).unwrap()
+      await refetchVariants()
+    } catch {
+      toast.error("Failed to toggle POS visibility.")
+    }
+  }
+
+  const handleToggleFeatured = async (variant: ProductVariant) => {
+    try {
+      await toggleVariantFeatured(variant.id).unwrap()
+      await refetchVariants()
+    } catch {
+      toast.error("Failed to toggle featured status.")
+    }
+  }
+
+  const actionButtons: ActionButton<ProductVariant>[] = [
     {
-      label: "Delete",
-      onClick: (row: ProductVariant) => {
-        // Handle delete logic here
-        console.log("Delete variant:", row.id)
+      label: "",
+      icon: Eye,
+      onClick: (row) => setSelectedVariantId(row.id),
+      tooltip: "Open variant details",
+      variant: "secondary",
+    },
+    {
+      label: "",
+      icon: Star,
+      onClick: (row) => handleToggleFeatured(row),
+      tooltip: "Toggle featured",
+      variant: "secondary",
+    },
+    {
+      label: "",
+      icon: ScanBarcode,
+      onClick: (row) => handleTogglePosVisible(row),
+      tooltip: "Toggle POS visibility",
+      variant: "secondary",
+    },
+    {
+      label: "",
+      icon: Trash2,
+      onClick: (row) => {
+        void handleDeleteVariant(row)
       },
       className: "text-red-500",
+      tooltip: "Delete variant",
+      variant: "secondary",
+      disabled: () => isDeletingVariant,
     },
   ]
 
@@ -130,7 +197,6 @@ const ProductVariantManager = ({ productId, refetchData, setRefetchData,ProductD
           productId={productId}
           onClose={() => setIsCreateOpen(false)}
           onSuccess={() => {
-            setRefetchData(true)
             setIsCreateOpen(false)
             refetchVariants()
             
@@ -142,8 +208,9 @@ const ProductVariantManager = ({ productId, refetchData, setRefetchData,ProductD
         <VariantDetailsModal
           variantId={selectedVariantId}
           onClose={handleCloseVariantDetails}
-          onSuccess={() => setRefetchData(true)}
-          refetchData={refetchData}
+          onSuccess={() => {
+            void refetchVariants()
+          }}
         />
       )}
     </div>

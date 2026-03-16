@@ -1,6 +1,6 @@
 'use client';
 import { useForm, SubmitHandler } from 'react-hook-form';
-import { useRegisterMutation } from '../../redux/features/authApiSlice';
+import { useRegisterMutation } from '../../redux/features/auth/authApiSlice';
 // import { useRouter } from "next/navigation";
 import { toast } from "react-toastify"
 import { useState, useMemo } from 'react';
@@ -62,7 +62,10 @@ export default function RegisterForm() {
 
   const onSubmit: SubmitHandler<RegisterFormInputs> = async (formData) => {
     try {
-      const userData = await registerUser(formData).unwrap() as RegisterResponse;
+      const userData = await registerUser({
+        ...formData,
+        last_name: formData.last_name ?? "",
+      }).unwrap() as RegisterResponse;
       toast.success("Registration successful! Redirecting...");
       router.push("/accounts/signin");
     } catch (error) {

@@ -1,533 +1,125 @@
 "use client"
 
-import React from "react"
-
-import { useState } from "react"
+import { toast } from "react-toastify"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
-  useGetPosConfigurationQuery,
-  useUpdatePosConfigurationMutation,
-  useGenerateBarcodeQuery,
+  useGetProductPosVariantsQuery,
+  useGetProductQuery,
+  useToggleProductFeaturedMutation,
   useToggleProductQuickSaleMutation,
 } from "@/redux/features/product/productAPISlice"
-import LoadingAnimation from "../common/LoadingAnimation"
-import { Product } from "../interfaces/product"
+import type { Product } from "@/redux/features/product/productTypes"
 
 interface ProductPOSProps {
   productId: string
-    product:Partial<Product>
-  
+  product: Partial<Product>
 }
 
-export default function ProductPOS({ productId,product }: ProductPOSProps) {
-  const [isEditing, setIsEditing] = useState(false)
-
-  const { data: posConfig, isLoading: configLoading, refetch: refetchConfig } = useGetPosConfigurationQuery('')
-  const { data: nextBarcode } = useGenerateBarcodeQuery('')
-  const [updateConfig, { isLoading: isUpdating }] = useUpdatePosConfigurationMutation()
-  const [toggleQuickSale] = useToggleProductQuickSaleMutation()
-
-  const [configData, setConfigData] = useState({
-    default_tax_rate: 0,
-    tax_inclusive_pricing: false,
-    allow_negative_stock: false,
-    show_stock_levels: true,
-    low_stock_warning: true,
-    require_barcode: false,
-    auto_generate_barcode: true,
-    barcode_prefix: "",
-    auto_print_receipt: true,
-    receipt_header: "",
-    receipt_footer: "",
-    allow_item_discount: true,
-    allow_transaction_discount: true,
-    max_discount_without_approval: 10,
-    products_per_page: 20,
-    show_product_images: true,
-    default_view: "grid",
-    enable_quick_sale: true,
-    quick_sale_categories: "",
-    cash_rounding: 0.01,
-    enable_loyalty: false,
-    loyalty_points_rate: 1.0,
-  })
-
-  React.useEffect(() => {
-    if (posConfig) {
-      setConfigData(posConfig)
-    }
-  }, [posConfig])
-
-  const handleSaveConfig = async () => {
-    try {
-      await updateConfig(configData).unwrap()
-      setIsEditing(false)
-      refetchConfig()
-    } catch (error) {
-      console.error("Error updating POS config:", error)
-    }
-  }
+export default function ProductPOS({ productId, product }: ProductPOSProps) {
+  const { data: posVariants = [], isLoading } = useGetProductPosVariantsQuery(productId)
+  const { data: currentProduct, refetch: refetchProduct } = useGetProductQuery(productId)
+  const [toggleQuickSale, { isLoading: isTogglingQuickSale }] = useToggleProductQuickSaleMutation()
+  const [toggleFeatured, { isLoading: isTogglingFeatured }] = useToggleProductFeaturedMutation()
+  const productData = currentProduct ?? product
 
   const handleToggleQuickSale = async () => {
     try {
       await toggleQuickSale(productId).unwrap()
-    } catch (error) {
-      console.error("Error toggling quick sale:", error)
+      await refetchProduct()
+      toast.success("Quick-sale setting updated.")
+    } catch {
+      toast.error("Failed to update quick-sale setting.")
     }
   }
 
-  if (configLoading) {
-    return (
-      <div className="text-center flex items-center justify-center py-8 text-gray-500">
-        <LoadingAnimation text="Loading POS settings..." ringColor="#3b82f6" />
-      </div>
-    )
+  const handleToggleFeatured = async () => {
+    try {
+      await toggleFeatured(productId).unwrap()
+      await refetchProduct()
+      toast.success("Featured status updated.")
+    } catch {
+      toast.error("Failed to update featured status.")
+    }
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">POS Settings</h2>
-        <div className="flex space-x-3">
-          {isEditing ? (
-            <>
-              <button
-                onClick={() => setIsEditing(false)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveConfig}
-                disabled={isUpdating}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center"
-              >
-                {isUpdating && <LoadingAnimation text="" ringColor="#ffffff"  />}
-                Save Changes
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Edit Settings
-            </button>
-          )}
+    <Card className="border-gray-200 shadow-sm">
+      <CardHeader className="p-6 text-left text-inherit">
+        <CardTitle className="text-lg">POS readiness</CardTitle>
+        <CardDescription className="text-sm leading-6 text-gray-600">
+          Keep the POS-facing controls tied to real product capabilities that exist in the current backend: quick sale, featured state, discount rules, and POS-visible variants.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6 p-6 pt-0">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+            <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Quick sale</div>
+            <div className="mt-2 text-2xl font-semibold text-gray-900">{productData.quick_sale ? "Enabled" : "Disabled"}</div>
+          </div>
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+            <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Featured</div>
+            <div className="mt-2 text-2xl font-semibold text-gray-900">{productData.is_featured ? "Yes" : "No"}</div>
+          </div>
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+            <div className="text-xs font-medium uppercase tracking-wide text-gray-500">POS ready</div>
+            <div className="mt-2 text-2xl font-semibold text-gray-900">{productData.pos_ready ? "Yes" : "No"}</div>
+          </div>
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+            <div className="text-xs font-medium uppercase tracking-wide text-gray-500">POS variants</div>
+            <div className="mt-2 text-2xl font-semibold text-gray-900">{isLoading ? "..." : posVariants.length}</div>
+          </div>
         </div>
-      </div>
 
-      {/* Product-Specific POS Settings */}
-      <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Product POS Settings</h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Quick Sale Status</label>
-            <div className="flex items-center space-x-3">
-              <span
-                className={`px-3 py-1 rounded-full text-sm ${
-                  product?.quick_sale ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"
-                }`}
-              >
-                {product?.quick_sale ? "Enabled" : "Disabled"}
-              </span>
-              <button
-                onClick={handleToggleQuickSale}
-                className={`px-3 py-1 rounded text-sm ${
-                  product?.quick_sale
-                    ? "bg-red-600 text-white hover:bg-red-700"
-                    : "bg-green-600 text-white hover:bg-green-700"
-                }`}
-              >
-                {product?.quick_sale ? "Disable" : "Enable"}
-              </button>
+        <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+          <div className="space-y-4 rounded-2xl border border-gray-200 bg-gray-50 p-4">
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
+              <p className="text-sm font-semibold text-gray-900">Commercial controls</p>
+              <p className="mt-2 text-sm leading-6 text-gray-600">
+                Product-level POS configuration in the old UI depended on backend endpoints that are no longer exposed. This panel keeps only the controls that the current backend actually supports.
+              </p>
             </div>
-            <p className="text-xs text-gray-600 mt-1">Quick sale products appear in POS for fast access</p>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Button onClick={handleToggleQuickSale} disabled={isTogglingQuickSale}>
+                {productData.quick_sale ? "Disable quick sale" : "Enable quick sale"}
+              </Button>
+              <Button variant="outline" onClick={handleToggleFeatured} disabled={isTogglingFeatured}>
+                {productData.is_featured ? "Remove featured" : "Mark featured"}
+              </Button>
+            </div>
+
+            <div className="rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-600">
+              <p>Tax rate: <span className="font-semibold text-gray-900">{productData.tax_rate ?? 0}%</span></p>
+              <p className="mt-2">Discounts: <span className="font-semibold text-gray-900">{productData.allow_discount ? `Allowed up to ${productData.max_discount_percent ?? 0}%` : "Disabled"}</span></p>
+              <p className="mt-2">POS category: <span className="font-semibold text-gray-900">{productData.pos_category || "Not assigned"}</span></p>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">POS Category</label>
-            <p className="text-sm text-gray-900">{product?.pos_category || "Not assigned"}</p>
-            <p className="text-xs text-gray-600 mt-1">Category for POS display grouping</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Tax Rate</label>
-            <p className="text-sm text-gray-900">{product?.tax_rate}%</p>
-            <p className="text-xs text-gray-600 mt-1">Default tax rate for this product</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Discount Settings</label>
-            <div className="space-y-1">
-              <p className="text-sm text-gray-900">Allow Discount: {product?.allow_discount ? "Yes" : "No"}</p>
-              {product?.allow_discount && (
-                <p className="text-sm text-gray-900">Max Discount: {product?.max_discount_percent}%</p>
+          <div className="rounded-2xl border border-gray-200 bg-white p-4">
+            <h3 className="text-sm font-semibold text-gray-900">POS-visible variants</h3>
+            <div className="mt-3 space-y-3">
+              {posVariants.length ? (
+                posVariants.map((variant) => (
+                  <div key={variant.id} className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-gray-900">{variant.pos_display_name || variant.display_name || "Variant"}</p>
+                      <span className="text-xs uppercase tracking-wide text-gray-500">{variant.variant_barcode || "No barcode"}</span>
+                    </div>
+                    <p className="mt-2 text-sm text-gray-600">
+                      SKU: {variant.variant_sku || "N/A"} • Price: {variant.selling_price ?? 0}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-3 py-4 text-sm text-gray-600">
+                  No POS-visible variants are currently configured for this product.
+                </div>
               )}
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Global POS Configuration */}
-      
-      <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Global POS Configuration</h3>
-
-        <div className="space-y-6">
-          {/* Tax Settings */}
-          <div>
-            <h4 className="text-md font-medium text-gray-900 mb-3">Tax Settings</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Default Tax Rate (%)</label>
-                {isEditing ? (
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={configData.default_tax_rate}
-                    onChange={(e) =>
-                      setConfigData({
-                        ...configData,
-                        default_tax_rate: Number.parseFloat(e.target.value) || 0,
-                      })
-                    }
-                    className="w-full px-3 text-inherit py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                ) : (
-                  <p className="text-sm text-gray-900">{configData.default_tax_rate}%</p>
-                )}
-              </div>
-
-              <div className="flex items-center">
-                {isEditing ? (
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={configData.tax_inclusive_pricing}
-                      onChange={(e) =>
-                        setConfigData({
-                          ...configData,
-                          tax_inclusive_pricing: e.target.checked,
-                        })
-                      }
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <span className="ml-2 text-sm text-gray-900">Tax Inclusive Pricing</span>
-                  </label>
-                ) : (
-                  <div>
-                    <span className="text-sm text-gray-700">Tax Inclusive Pricing: </span>
-                    <span className="text-sm text-gray-900">{configData.tax_inclusive_pricing ? "Yes" : "No"}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Stock Settings */}
-          <div>
-            <h4 className="text-md font-medium text-gray-900 mb-3">Stock Settings</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex items-center">
-                {isEditing ? (
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={configData.allow_negative_stock}
-                      onChange={(e) =>
-                        setConfigData({
-                          ...configData,
-                          allow_negative_stock: e.target.checked,
-                        })
-                      }
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <span className="ml-2 text-sm text-gray-900">Allow Negative Stock</span>
-                  </label>
-                ) : (
-                  <div>
-                    <span className="text-sm text-gray-700">Allow Negative Stock: </span>
-                    <span className="text-sm text-gray-900">{configData.allow_negative_stock ? "Yes" : "No"}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center">
-                {isEditing ? (
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={configData.show_stock_levels}
-                      onChange={(e) =>
-                        setConfigData({
-                          ...configData,
-                          show_stock_levels: e.target.checked,
-                        })
-                      }
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <span className="ml-2 text-sm text-gray-900">Show Stock Levels</span>
-                  </label>
-                ) : (
-                  <div>
-                    <span className="text-sm text-gray-700">Show Stock Levels: </span>
-                    <span className="text-sm text-gray-900">{configData.show_stock_levels ? "Yes" : "No"}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center">
-                {isEditing ? (
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={configData.low_stock_warning}
-                      onChange={(e) =>
-                        setConfigData({
-                          ...configData,
-                          low_stock_warning: e.target.checked,
-                        })
-                      }
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <span className="ml-2 text-sm text-gray-900">Low Stock Warning</span>
-                  </label>
-                ) : (
-                  <div>
-                    <span className="text-sm text-gray-700">Low Stock Warning: </span>
-                    <span className="text-sm text-gray-900">{configData.low_stock_warning ? "Yes" : "No"}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Barcode Settings */}
-          <div>
-            <h4 className="text-md font-medium text-gray-900 mb-3">Barcode Settings</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Barcode Prefix</label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={configData.barcode_prefix}
-                    onChange={(e) =>
-                      setConfigData({
-                        ...configData,
-                        barcode_prefix: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="e.g., PRD"
-                  />
-                ) : (
-                  <p className="text-sm text-gray-900">{configData.barcode_prefix || "None"}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Next Barcode</label>
-                <p className="text-sm text-gray-900">{nextBarcode?.next_barcode || "Loading..."}</p>
-              </div>
-
-              <div className="flex items-center">
-                {isEditing ? (
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={configData.require_barcode}
-                      onChange={(e) =>
-                        setConfigData({
-                          ...configData,
-                          require_barcode: e.target.checked,
-                        })
-                      }
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <span className="ml-2 text-sm text-gray-900">Require Barcode</span>
-                  </label>
-                ) : (
-                  <div>
-                    <span className="text-sm text-gray-700">Require Barcode: </span>
-                    <span className="text-sm text-gray-900">{configData.require_barcode ? "Yes" : "No"}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center">
-                {isEditing ? (
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={configData.auto_generate_barcode}
-                      onChange={(e) =>
-                        setConfigData({
-                          ...configData,
-                          auto_generate_barcode: e.target.checked,
-                        })
-                      }
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <span className="ml-2 text-sm text-gray-900">Auto Generate Barcode</span>
-                  </label>
-                ) : (
-                  <div>
-                    <span className="text-sm text-gray-700">Auto Generate: </span>
-                    <span className="text-sm text-gray-900">{configData.auto_generate_barcode ? "Yes" : "No"}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Display Settings */}
-          <div>
-            <h4 className="text-md font-medium text-gray-900 mb-3">Display Settings</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Products Per Page</label>
-                {isEditing ? (
-                  <input
-                    type="number"
-                    value={configData.products_per_page}
-                    onChange={(e) =>
-                      setConfigData({
-                        ...configData,
-                        products_per_page: Number.parseInt(e.target.value) || 20,
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                ) : (
-                  <p className="text-sm text-gray-900">{configData.products_per_page}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Default View</label>
-                {isEditing ? (
-                  <select
-                    value={configData.default_view}
-                    onChange={(e) =>
-                      setConfigData({
-                        ...configData,
-                        default_view: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="grid">Grid View</option>
-                    <option value="list">List View</option>
-                  </select>
-                ) : (
-                  <p className="text-sm text-gray-900">
-                    {configData.default_view === "grid" ? "Grid View" : "List View"}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex items-center">
-                {isEditing ? (
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={configData.show_product_images}
-                      onChange={(e) =>
-                        setConfigData({
-                          ...configData,
-                          show_product_images: e.target.checked,
-                        })
-                      }
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <span className="ml-2 text-sm text-gray-900">Show Product Images</span>
-                  </label>
-                ) : (
-                  <div>
-                    <span className="text-sm text-gray-700">Show Images: </span>
-                    <span className="text-sm text-gray-900">{configData.show_product_images ? "Yes" : "No"}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Receipt Settings */}
-          <div>
-            <h4 className="text-md font-medium text-gray-900 mb-3">Receipt Settings</h4>
-            <div className="space-y-4">
-              <div className="flex items-center">
-                {isEditing ? (
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={configData.auto_print_receipt}
-                      onChange={(e) =>
-                        setConfigData({
-                          ...configData,
-                          auto_print_receipt: e.target.checked,
-                        })
-                      }
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <span className="ml-2 text-sm text-gray-900">Auto Print Receipt</span>
-                  </label>
-                ) : (
-                  <div>
-                    <span className="text-sm text-gray-700">Auto Print Receipt: </span>
-                    <span className="text-sm text-gray-900">{configData.auto_print_receipt ? "Yes" : "No"}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Receipt Header</label>
-                  {isEditing ? (
-                    <textarea
-                      value={configData.receipt_header}
-                      onChange={(e) =>
-                        setConfigData({
-                          ...configData,
-                          receipt_header: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      rows={3}
-                      placeholder="Custom header text..."
-                    />
-                  ) : (
-                    <p className="text-sm text-gray-900">{configData.receipt_header || "None"}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Receipt Footer</label>
-                  {isEditing ? (
-                    <textarea
-                      value={configData.receipt_footer}
-                      onChange={(e) =>
-                        setConfigData({
-                          ...configData,
-                          receipt_footer: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      rows={3}
-                      placeholder="Custom footer text..."
-                    />
-                  ) : (
-                    <p className="text-sm text-gray-900">{configData.receipt_footer || "None"}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }

@@ -13,13 +13,14 @@ import {
   useUpdateCompanyProfileMutation,
 } from "@/redux/features/management/companyProfileApiSlice"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import type { CompanyProfile, CompanyFormData } from "@/types/company-profile"
+import type { CompanyProfile, CompanyFormData } from "@/redux/features/management/companyProfileTypes"
 import { getCurrencySymbol } from "@/lib/currency-utils"
 import { CURRENCY_CODES } from "@/lib/currencyCode"
 
 interface CompanyBasicInfoFormProps {
   profile: CompanyProfile | null
-  onSuccess?: () => void
+  onSuccess?: (profile: CompanyProfile) => void | Promise<void>
+  submitLabel?: string
 }
 
 interface FormErrors {
@@ -49,7 +50,14 @@ const INDUSTRY_OPTIONS: SelectOption[] = [
   { value: "Other", label: "Other" },
 ]
 
-export function CompanyBasicInfoForm({ profile, onSuccess }: CompanyBasicInfoFormProps) {
+export function CompanyBasicInfoForm({ profile, onSuccess, submitLabel = "Save Changes" }: CompanyBasicInfoFormProps) {
+  const getSingleOption = (option: SelectOption | readonly SelectOption[] | null): SelectOption | null => {
+    if (Array.isArray(option)) {
+      return null;
+    }
+    return option as SelectOption | null;
+  };
+
   const [updateProfile, updateState] = useUpdateCompanyProfileMutation()
   const [createProfile, createState] = useCreateCompanyProfileMutation()
   const isLoading = updateState.isLoading || createState.isLoading
@@ -96,7 +104,6 @@ export function CompanyBasicInfoForm({ profile, onSuccess }: CompanyBasicInfoFor
   useEffect(() => {
     if (isSuccess) {
       setShowSuccessMessage(true)
-      if (onSuccess) onSuccess()
 
       const timer = setTimeout(() => {
         setShowSuccessMessage(false)
@@ -165,12 +172,13 @@ export function CompanyBasicInfoForm({ profile, onSuccess }: CompanyBasicInfoFor
     }
 
     try {
+      let savedProfile: CompanyProfile
       if (profile?.id) {
-        await updateProfile({ id: profile.id, data: formData }).unwrap()
+        savedProfile = await updateProfile({ id: profile.id, data: formData }).unwrap()
       } else {
-        await createProfile(formData).unwrap()
+        savedProfile = await createProfile(formData).unwrap()
       }
-      onSuccess?.()
+      await onSuccess?.(savedProfile)
     } catch (err) {
       console.error("Failed to update company profile:", err)
     }
@@ -214,8 +222,9 @@ export function CompanyBasicInfoForm({ profile, onSuccess }: CompanyBasicInfoFor
             options={INDUSTRY_OPTIONS}
             value={INDUSTRY_OPTIONS.find((option) => option.value === formData.industry) || null}
             onChange={(option) => {
-              if (option && !Array.isArray(option)) {
-                updateFormData({ industry: option?.value })
+              const nextOption = getSingleOption(option)
+              if (nextOption) {
+                updateFormData({ industry: String(nextOption.value) })
               } else {
                 updateFormData({ industry: "" })
               }
@@ -234,8 +243,9 @@ export function CompanyBasicInfoForm({ profile, onSuccess }: CompanyBasicInfoFor
             options={currencyOptions}
             value={currencyOptions.find((option) => option.value === formData.currency) || null}
             onChange={(option) => {
-              if (option && !Array.isArray(option)) {
-                updateFormData({ currency: option?.value })
+              const nextOption = getSingleOption(option)
+              if (nextOption) {
+                updateFormData({ currency: String(nextOption.value) })
               } else {
                 updateFormData({ currency: undefined})
               }
@@ -358,7 +368,7 @@ export function CompanyBasicInfoForm({ profile, onSuccess }: CompanyBasicInfoFor
 
       <div className="flex justify-end">
         <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white" disabled={isLoading }>
-          {isLoading ? "Saving..." : "Save Changes"}
+          {isLoading ? "Saving..." : submitLabel}
         </Button>
       </div>
     </form>

@@ -18,7 +18,7 @@ import {
   useUpdateReorderStrategyMutation,
   useDeleteReorderStrategyMutation,
 } from "@/redux/features/management/companyProfileApiSlice"
-import type { ReorderStrategy } from "@/types/company-profile"
+import type { ReorderStrategy } from "@/redux/features/management/companyProfileTypes"
 
 interface ReorderStrategyManagementProps {
   profileId: number
@@ -228,8 +228,9 @@ export function ReorderStrategyManagement({profileId}:ReorderStrategyManagementP
                     options={STRATEGY_TYPE_OPTIONS}
                     value={STRATEGY_TYPE_OPTIONS.find((option) => option.value === formData.strategy_type) || null}
                     onChange={(option) => {
-                      if (option && !Array.isArray(option)) {
-                        setFormData((prev) => ({ ...prev, strategy_type: option.value }))
+                      const nextOption = Array.isArray(option) ? null : (option as SelectOption | null)
+                      if (nextOption) {
+                        setFormData((prev) => ({ ...prev, strategy_type: String(nextOption.value) }))
                       }
                     }}
                     placeholder="Select strategy type"

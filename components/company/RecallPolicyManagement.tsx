@@ -16,7 +16,7 @@ import {
   useUpdateRecallPolicyMutation,
   useDeleteRecallPolicyMutation,
 } from "@/redux/features/management/companyProfileApiSlice"
-import type { RecallPolicy } from "@/types/company-profile"
+import type { RecallPolicy } from "@/redux/features/management/companyProfileTypes"
 
 interface RecallPolicyManagementProps {
   profileId: number

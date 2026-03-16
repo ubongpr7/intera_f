@@ -191,7 +191,7 @@ export const posAPISlice = apiSlice.injectEndpoints({
         service,
       }),
     }),
-    getCustomer: builder.query<POSCustomer, string>({
+    getPOSCustomer: builder.query<POSCustomer, string>({
       query: (id) => ({
         url: `/${pos_api}/customers/${id}/`,
         service,
@@ -584,7 +584,7 @@ export const {
   useGetPOSCategoriesQuery,
   useGetFeaturedProductsQuery,
   useGetCustomersQuery,
-  useGetCustomerQuery,
+  useGetPOSCustomerQuery,
   useCreateCustomerMutation,
   useUpdateCustomerMutation,
   usePartialUpdateCustomerMutation,

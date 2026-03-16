@@ -3,7 +3,7 @@ import { formatDateTime } from '../common/utils';
 import { useGetUserActivitiesQuery } from '../../redux/features/users/activityLogs';
 import LoadingAnimation from '../common/LoadingAnimation';
 import { DataTable,Column } from '../common/DataTable/DataTable';
-import { ActivityLogInterface } from '../interfaces/User';
+import { ActivityLogInterface } from "@/redux/features/users/userTypes";
 import { useEffect } from 'react';
 
 export function capitalizeSentence(sentence:string) {

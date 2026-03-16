@@ -6,13 +6,13 @@ import Link from 'next/link'
 import { Settings } from 'http2'
 import { useAppSelector, useAppDispatch } from "../../redux/store";
 import { setIsDarkMode, setIsSidebarCollapsed,resetToSystemTheme } from "@/redux/state";
-import { UserData } from '../interfaces/User'
+import { UserData } from "@/redux/features/users/userTypes"
 import LogoutButton from '../auth/logoutUser'
-import { useGetUserCompaniesQuery, useSwitchCompanyMutation } from '@/redux/features/authApiSlice';
+import { useGetUserCompaniesQuery, useSwitchCompanyMutation } from '@/redux/features/auth/authApiSlice';
 import { toast } from 'react-toastify';
 
 interface NavbarProps{
-    user:UserData
+    user?:UserData
 }
 
 const  Navbar = ({user}:NavbarProps) => {

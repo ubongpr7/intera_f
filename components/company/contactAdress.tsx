@@ -2,7 +2,7 @@
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { Column, DataTable, ActionButton } from "../common/DataTable/DataTable";
-import { CompanyAddressDataInterface } from "../interfaces/company";
+import { CompanyAddressDataInterface } from "@/redux/features/company/companyTypes";
 import { useGetCompanyAddressesQuery, useCreateCompanyAddressMutation, useUpdateCompanyAddressMutation, useDeleteCompanyAddressMutation } from '../../redux/features/company/companyAPISlice';
 import CustomCreateCard from '../common/createCard';
 import { CompanyAddressInterfaceKeys } from './selectOptions';
@@ -58,7 +58,7 @@ function CompanyAddressView({company_id}:CompanyProps) {
     toast.success("Address updated successfully!");
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string | number) => {
     if (window.confirm("Are you sure you want to delete this address?")) {
       try {
         await deleteAddress(id).unwrap();

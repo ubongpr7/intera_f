@@ -617,7 +617,7 @@ export default function AgentChat({
                   >
                     <div className={`font-semibold text-xs mb-3 ${style.textColor} flex items-center gap-2`}>
                       <span>{style.icon}</span>
-                      Assistant - {type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                      Assistant - {type.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase())}
                       {isInteractionDisabled && (
                         <span className="ml-auto text-green-600 flex items-center gap-1">
                           <Check className="h-3 w-3" />

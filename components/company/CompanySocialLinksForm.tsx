@@ -8,11 +8,12 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Linkedin, Twitter, Instagram, Facebook, Link2 } from "lucide-react"
 import { useUpdateCompanyProfileMutation } from "@/redux/features/management/companyProfileApiSlice"
-import type { CompanyProfile } from "@/types/company-profile"
+import type { CompanyProfile } from "@/redux/features/management/companyProfileTypes"
 
 interface CompanySocialLinksFormProps {
   profile: CompanyProfile | null
   onUpdate?: () => Promise<any> | void
+  submitLabel?: string
 }
 
 interface SocialLinksData {
@@ -31,7 +32,7 @@ interface FormErrors {
   other_link?: string
 }
 
-export function CompanySocialLinksForm({ profile, onUpdate,  }: CompanySocialLinksFormProps) {
+export function CompanySocialLinksForm({ profile, onUpdate, submitLabel = "Save Social Links" }: CompanySocialLinksFormProps) {
   const [updateProfile, { isLoading: isSaving, isError, error, isSuccess }] = useUpdateCompanyProfileMutation()
   const [formData, setFormData] = useState<SocialLinksData>({
     linkedin: "",
@@ -230,7 +231,7 @@ export function CompanySocialLinksForm({ profile, onUpdate,  }: CompanySocialLin
 
       <div className="flex justify-end">
         <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white" disabled={isSaving}>
-          {isSaving ? "Saving..." : "Save Social Links"}
+          {isSaving ? "Saving..." : submitLabel}
         </Button>
       </div>
     </form>

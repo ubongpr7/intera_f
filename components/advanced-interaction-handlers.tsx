@@ -524,7 +524,7 @@ export function BulkActionSelectorHandler({ data, onResponse }: AdvancedInteract
                       .slice(1, 3)
                       .map(([key, value]) => (
                         <span key={key} className="mr-4">
-                          {key}: {value}
+                          {key}: {String(value)}
                         </span>
                       ))}
                   </div>

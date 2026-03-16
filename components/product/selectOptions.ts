@@ -1,23 +1,45 @@
+import type { Product } from "@/redux/features/product/productTypes";
 
-import { ProductData } from "../interfaces/product";
-import { InventoryData } from "../interfaces/inventory";
+export const ProductFormKeys: (keyof Product)[] = [
+  "name",
+  "description",
+  "short_description",
+  "category",
+  "pos_category",
+  "base_price",
+  "cost_price",
+  "barcode",
+  "sku",
+  "unit",
+  "weight",
+  "dimensions",
+  "tax_rate",
+  "tax_inclusive",
+  "allow_discount",
+  "max_discount_percent",
+  "quick_sale",
+  "is_template",
+  "is_active",
+  "is_featured",
+  "track_stock",
+  "allow_backorder",
+  "low_stock_threshold",
+  "meta_title",
+  "meta_description",
+];
 
-
-
-
-export const InventoryInterfaceKeys: (keyof ProductData)[]=[
-    'inventory','name', 'description','category','base_price','cost_price',
-    'unit','max_discount_percent','dimensions','weight','allow_discount','tax_inclusive','quick_sale','is_active','pos_ready',
-    'short_description',
-    
-
-]
-export const defaultValues: Partial<ProductData> = {
-  base_price:0,
-  allow_discount:false,
-  tax_inclusive:false,
-  quick_sale:false,
-  pos_ready:false,
-  max_discount_percent:0,
-  is_active:true,
-  };
+export const defaultValues: Partial<Product> = {
+  base_price: 0,
+  cost_price: 0,
+  tax_rate: 0,
+  allow_discount: true,
+  tax_inclusive: false,
+  quick_sale: false,
+  is_template: true,
+  is_active: true,
+  is_featured: false,
+  track_stock: true,
+  allow_backorder: false,
+  low_stock_threshold: 10,
+  max_discount_percent: 100,
+};

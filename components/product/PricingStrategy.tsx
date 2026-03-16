@@ -10,9 +10,8 @@ import {
   
 } from "@/redux/features/product/productAPISlice"
 
-import { useRouter } from "nextjs-toploader/app"
 import { Column, DataTable } from "../common/DataTable/DataTable"
-import { PricingStrategy, Product } from "../interfaces/product"
+import { PricingStrategy, Product } from "@/redux/features/product/productTypes"
 import CustomCreateCard from "../common/createCard"
 import LoadingAnimation from "../common/LoadingAnimation"
 
@@ -112,7 +111,6 @@ const interfaceKeys: (keyof PricingStrategy)[] = [
 ]
 
 export default function ProductPricingStrategies({ productId,product }: ProductPricingStrategiesProps) {
-  const router = useRouter()
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [editingStrategy, setEditingStrategy] = useState<PricingStrategy | null>(null)
 

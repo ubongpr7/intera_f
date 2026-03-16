@@ -25,7 +25,7 @@ const RecentPriceChanges = () => {
               <li key={change.id} className="py-3">
                 <p className="text-sm font-medium">{change.product_name}</p>
                 <p className="text-sm text-gray-500">
-                  <span className="line-through">${change.old_price}</span> -> ${change.new_price}
+                  <span className="line-through">${change.old_price}</span> {"->"} ${change.new_price}
                 </p>
               </li>
             ))}

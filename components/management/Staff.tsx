@@ -14,7 +14,7 @@ import UserGroupManager from "../permissions/manytomany";
 import CustomUpdateForm from "../common/updateForm";
 import RoleManager from "./roleManager";
 import { StaffManagementRefetchProp } from "./roles";
-import { UserData } from "../interfaces/User";
+import { UserData } from "@/redux/features/users/userTypes";
 import {
   useCreateStaffUserMutation,
   useGetCompanyUsersQuery,
@@ -28,7 +28,7 @@ import {
   useUpdateUserPermissionMutation,
 } from "../../redux/features/permission/permit";
 import { useUpdateUserMutation } from "../../redux/features/users/userApiSlice";
-import { RoleAssignment } from "components/interfaces/management";
+import { RoleAssignment } from "@/redux/features/management/managementTypes";
 
 type StaffRow = UserData & {
   rowType: "member" | "invitation";
@@ -128,7 +128,16 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
 
   const tableData = useMemo<StaffRow[]>(() => {
     const activeRows: StaffRow[] = (members || []).map((member) => ({
-      ...member,
+      id: Number(member.user?.id ?? member.id),
+      first_name: member.user?.first_name ?? "",
+      last_name: member.user?.last_name ?? "",
+      email: member.user?.email ?? "",
+      phone: member.user?.phone ?? null,
+      is_verified: true,
+      is_staff: false,
+      date_joined: new Date().toISOString(),
+      password: "",
+      roles: [],
       rowType: "member",
       inviteStatus: "active",
     }));
@@ -235,7 +244,7 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
 
   const handleUpdate = async (createdData: Partial<UserData>) => {
     const updateData = await updateUser({ id: userId, data: createdData }).unwrap();
-    setUserDetail(updateData);
+    setUserDetail((previous) => (previous ? { ...previous, ...updateData } : undefined));
     await refetchMembers();
   };
 

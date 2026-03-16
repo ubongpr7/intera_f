@@ -1,11 +1,11 @@
 'use client';
 import { useForm, SubmitHandler } from 'react-hook-form';
-import { useVerifyAccountMutation, useGetverifyAccountMutation } from '../../redux/features/authApiSlice';
+import { useVerifyAccountMutation, useGetverifyAccountMutation } from '@/redux/features/auth/authApiSlice';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 // import  { useRouter } from 'next/navigation';
 import { useLoginMutation, useResendCodeMutation,
-  useVerifyCodeMutation,  } from '../../redux/features/authApiSlice';
+  useVerifyCodeMutation,  } from '@/redux/features/auth/authApiSlice';
 import { VerificationProps, VerifyFormData } from '../types/authForms';
 import { VerificationError, ErrorResponse, ResendError } from '../types/authResponse';
 import { useRouter } from 'nextjs-toploader/app'

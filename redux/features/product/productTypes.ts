@@ -64,6 +64,7 @@ export interface ProductAttributeValue {
 }
 
 export interface PricingStrategy extends UUIDBaseModel {
+  product?: string | null;
   name: string;
   strategy: "margin" | "multiplier" | "fixed" | "dynamic" | "tiered";
   margin_percentage?: number;
@@ -80,7 +81,6 @@ export interface PricingStrategy extends UUIDBaseModel {
   tier_3_discount?: number;
   is_active: boolean;
   calculated_price_example?: number;
-  product: string;
 }
 
 export interface ProductCategory {
@@ -106,7 +106,6 @@ export interface ProductCategory {
 }
 
 export interface Product extends ProfileMixin {
-  inventory?: string;
   name: string;
   description: string;
   short_description?: string;
@@ -365,6 +364,27 @@ export interface ProductDashboardStats {
   };
 }
 
+export interface ProductAnalyticsResponse {
+  variant_stats: {
+    total_variants: number;
+    active_variants: number;
+    inactive_variants: number;
+  };
+  stock_stats: {
+    total_stock: number;
+    low_stock_variants: number;
+    out_of_stock_variants: number;
+  };
+  price_stats: {
+    min_price: number;
+    max_price: number;
+    avg_price: number;
+  };
+  profit_margin: number;
+  recent_price_changes: number;
+  pos_ready: boolean;
+}
+
 export interface ProductInventorySummary {
   product_stats: {
     total_products: number;
@@ -387,15 +407,48 @@ export interface ProductInventorySummary {
 }
 
 export interface ProductStockAlerts {
-  low_stock_items: Array<Record<string, unknown>>;
+  low_stock_items: Array<{
+    name: string;
+    sku?: string;
+    quantity: number;
+    threshold: number;
+  }>;
   untracked_products: number;
   total_alerts: number;
 }
 
 export interface ProductPriceTrends {
-  price_changes_by_type: Array<Record<string, unknown>>;
-  daily_trends: Array<Record<string, unknown>>;
+  price_changes_by_type: Array<{
+    change_type: string;
+    count: number;
+    avg_change: number;
+  }>;
+  daily_trends: Array<{
+    day: string;
+    count: number;
+    avg_change: number;
+  }>;
   period_days: number;
+}
+
+export interface VariantStatisticsResponse {
+  stock?: {
+    available: number;
+    committed: number;
+    on_order: number;
+  };
+  price_history?: Array<{
+    id: string;
+    timestamp: string;
+    old_price: number;
+    new_price: number;
+    percentage_change?: number;
+    reason?: string;
+  }>;
+  sales?: {
+    total_sales: number;
+    last_sale?: string | null;
+  };
 }
 
 export interface ProductPosProductsResponse {

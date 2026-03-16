@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useSocialAuthenticateMutation } from "@/redux/features/authApiSlice";
+import { useSocialAuthenticateMutation } from "@/redux/features/auth/authApiSlice";
 import { initializeMfaChallenge } from "@/lib/mfaFlow";
 import { socialProviderFromSlug, socialRedirectForProviderSlug } from "@/lib/socialAuth";
 

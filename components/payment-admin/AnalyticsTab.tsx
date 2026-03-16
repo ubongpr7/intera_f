@@ -5,11 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { TrendingUp, TrendingDown, DollarSign, Users, CreditCard, Activity } from "lucide-react"
 import { useGetPaymentAnalyticsQuery, useGetSubscriptionAnalyticsQuery } from "@/redux/features/payment/paymentAPISlice"
+import type { PaymentAnalyticsResponse, SubscriptionAnalyticsResponse } from "@/redux/features/payment/paymentTypes"
 
 export function AnalyticsTab() {
   const [dateRange, setDateRange] = useState("30d")
-  const { data: paymentAnalytics = {}, isLoading: paymentLoading } = useGetPaymentAnalyticsQuery({ period: dateRange })
-  const { data: subscriptionAnalytics = {}, isLoading: subscriptionLoading } = useGetSubscriptionAnalyticsQuery({
+  const { data: paymentAnalytics = {} as PaymentAnalyticsResponse, isLoading: paymentLoading } = useGetPaymentAnalyticsQuery({ period: dateRange })
+  const { data: subscriptionAnalytics = {} as SubscriptionAnalyticsResponse, isLoading: subscriptionLoading } = useGetSubscriptionAnalyticsQuery({
     period: dateRange,
   })
 
@@ -87,7 +88,7 @@ export function AnalyticsTab() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {paymentAnalytics.recent_payments?.slice(0, 5).map((payment, index) => (
+              {paymentAnalytics.recent_payments?.slice(0, 5).map((payment, index: number) => (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full" />
@@ -123,7 +124,7 @@ export function AnalyticsTab() {
                       />
                       <span className="text-sm font-medium capitalize">{status}</span>
                     </div>
-                    <Badge variant="secondary">{count}</Badge>
+                    <Badge variant="secondary">{String(count ?? 0)}</Badge>
                   </div>
                 ))
               ) : (

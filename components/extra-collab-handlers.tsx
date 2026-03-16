@@ -288,13 +288,11 @@ export function AlertManagerHandler({ data, onResponse, compact = false, disable
                 placeholder="Condition"
                 value={newAlert.condition}
                 onChange={(e) => setNewAlert({ ...newAlert, condition: e.target.value })}
-                size={compact ? "sm" : "default"}
               />
               <Input
                 placeholder="Value"
                 value={newAlert.value}
                 onChange={(e) => setNewAlert({ ...newAlert, value: e.target.value })}
-                size={compact ? "sm" : "default"}
               />
             </div>
             <Button onClick={handleCreateAlert} className="w-full mt-2" size={compact ? "sm" : "default"}>
@@ -396,7 +394,6 @@ export function TaskAssignmentHandler({ data, onResponse, compact = false, disab
                 type="datetime-local"
                 value={assignment.due_date}
                 onChange={(e) => setAssignment({ ...assignment, due_date: e.target.value })}
-                size={compact ? "sm" : "default"}
               />
             </div>
           )}
@@ -695,7 +692,6 @@ export function WizardFlowHandler({ data, onResponse, compact = false, disabled 
                       value={currentStepData[field.name] || ""}
                       onChange={(e) => handleFieldChange(field.name, e.target.value)}
                       placeholder={field.placeholder}
-                      size={compact ? "sm" : "default"}
                     />
                   )}
 

@@ -2,17 +2,19 @@
 import { useEffect, useState } from 'react';
 
 import { useRouter } from 'nextjs-toploader/app';
-import { Column, DataTable } from "../common/DataTable/DataTable";
-import { InventoryData, inventoryTypes } from "../interfaces/inventory";
-import { useGetInventoryDataQuery, useCreateInventoryMutation } from "../../redux/features/inventory/inventoryAPiSlice";
+import { ActionButton, Column, DataTable } from "../common/DataTable/DataTable";
+import { InventoryData, inventoryTypes } from "@/redux/features/inventory/inventoryTypes";
+import { useGetInventoryDataQuery, useCreateInventoryMutation, useDeleteInventoryMutation } from "../../redux/features/inventory/inventoryAPiSlice";
 import CustomCreateCard from '../common/createCard';
 import { InventoryInterfaceKeys,defaultValues } from './selectOptions';
 import { InventoryKeyInfo } from './selectOptions';
 import { useGetUnitsQuery,useGetTypesByModelQuery } from "../../redux/features/common/typeOF";
 import { useGetInventoryCategoriesQuery } from "../../redux/features/inventory/inventoryAPiSlice";
 import { useGetCompanyUsersQuery } from '@/redux/features/users/userApiSlice';
-import { RefetchDataProp } from '../interfaces/common';
+import { RefetchDataProp } from "@/redux/features/common/commonTypes";
 import { formatCurrencyCompact } from '@/lib/currency-utils';
+import { Trash2 } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 
 const strategies = {
@@ -68,6 +70,7 @@ const inventoryColumns: Column<InventoryData>[] = [
 function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
   const { data, isLoading, refetch, error } = useGetInventoryDataQuery();
   const [createInventory, { isLoading: inventoryCreateLoading }] = useCreateInventoryMutation();
+  const [deleteInventory] = useDeleteInventoryMutation();
   const [isCreateOpen, setIsCreateOpen] = useState(false); // Renamed for clarity
   const router = useRouter();
 
@@ -78,7 +81,7 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
   };
 
     //////////////////////////////
-    const { data: categories = [], isLoading: isCatLoading, error: catError,refetch:refetchCategory } = useGetInventoryCategoriesQuery(1);
+    const { data: categories = [], isLoading: isCatLoading, error: catError,refetch:refetchCategory } = useGetInventoryCategoriesQuery();
       const { data: units=[] } = useGetUnitsQuery();
       const { data: userData, isLoading: userLoading,  } = useGetCompanyUsersQuery();
       
@@ -106,9 +109,9 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
       }));
   
 
-    const userOptions = userData?.map((user) => ({
-        text: `${user.first_name} ${user.email}`,
-        value: user.id.toString(),
+    const userOptions = userData?.map((assignment) => ({
+        text: `${assignment.user?.first_name ?? "Unknown"} ${assignment.user?.email ?? ""}`.trim(),
+        value: String(assignment.user?.id ?? assignment.id),
       })) || [];      
     const  selectOptions = {
           
@@ -156,6 +159,20 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
     router.push(`/inventory/${row.id}`);
   };
 
+  const handleDelete = async (row: InventoryData) => {
+    if (!window.confirm(`Delete inventory "${row.name}"?`)) {
+      return;
+    }
+
+    try {
+      await deleteInventory(row.id).unwrap();
+      toast.success("Inventory deleted successfully.");
+      await refetch();
+    } catch (error) {
+      toast.error("Failed to delete inventory.");
+    }
+  };
+
   if (error) {
     return (
       <div className="p-4 text-red-500">
@@ -177,6 +194,17 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
     'unit_name'
   ];
 
+  const actionButtons: ActionButton<InventoryData>[] = [
+    {
+      label: "Delete",
+      icon: Trash2,
+      onClick: (row) => {
+        void handleDelete(row);
+      },
+      variant: "danger",
+    },
+  ];
+
   
 
   return (
@@ -187,6 +215,7 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
         data={data || []}
         isLoading={isLoading}
         onRowClick={handleRowClick}
+        actionButtons={actionButtons}
         searchableFields={['name', 'external_system_id']}
         filterableFields={['category_name']}
         sortableFields={['name', 'external_system_id']}

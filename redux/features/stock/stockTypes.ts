@@ -29,6 +29,8 @@ export interface StockLocation extends StockLocationSummary {
   children?: StockLocationSummary[];
   stock_summary?: Record<string, unknown>;
   location_type?: string | number | null;
+  physical_address?: string | null;
+  code?: string;
 }
 
 export interface StockMovement {
@@ -94,6 +96,15 @@ export interface StockItem {
   updated_by_user_id?: string | number | null;
   created_by_details?: Partial<UserData> | null;
   updated_by_details?: Partial<UserData> | null;
+  inventory?: string | number | null;
+  location?: string | number | null;
+  parent?: string | number | null;
+  packaging?: string | null;
+  belongs_to?: string | number | null;
+  notes?: string | null;
+  link?: string | null;
+  delete_on_deplete?: boolean;
+  barcode_snapshot?: string | null;
 }
 
 export interface StockTrackingEntry {

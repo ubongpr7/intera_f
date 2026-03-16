@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { useDeactivateRoleMutation, useGetRolesQuery } from '../../redux/features/management/groups';
-import { RoleAssignment, RoleData } from '../interfaces/management';
+import { RoleAssignment, RoleData } from "@/redux/features/management/managementTypes";
 import CustomCreateForm from "../common/createForm";
 import { useAssignUserRoleMutation } from '../../redux/features/permission/permit';
 import { formatDateTime } from '../common/utils';

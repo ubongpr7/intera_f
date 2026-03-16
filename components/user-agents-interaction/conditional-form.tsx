@@ -106,7 +106,6 @@ export function ConditionalFormHandler({ data, onResponse, compact = false, disa
             value={formData[field.name] || ""}
             onChange={(e) => handleChange(field.name, e.target.value)}
             placeholder={field.placeholder}
-            size={compact ? "sm" : "default"}
           />
         )}
 

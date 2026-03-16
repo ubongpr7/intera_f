@@ -1,6 +1,6 @@
 'use client'
 import DetailCard from '../common/Detail';
-import { CompanyDataInterface } from '../interfaces/company';
+import { CompanyDataInterface } from "@/redux/features/company/companyTypes";
 import LoadingAnimation from '../common/LoadingAnimation';
 import { CompanyInterfaceKeys, CompanyKeyInfo } from './selectOptions';
 import { useGetCompanyQuery,useUpdateCompanyMutation } from '../../redux/features/company/companyAPISlice';

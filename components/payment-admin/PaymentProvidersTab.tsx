@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import type { ColumnDef } from "@tanstack/react-table"
 import { Plus, Edit, Trash2, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,22 +9,23 @@ import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
 import { PaymentProviderDialog } from "./PaymentProviderDialog"
 import { useGetPaymentProvidersQuery, useDeletePaymentProviderMutation } from "@/redux/features/payment/paymentAPISlice"
+import type { PaymentProvider } from "@/redux/features/payment/paymentTypes"
 import { toast } from "react-toastify"
 
 export function PaymentProvidersTab() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingProvider, setEditingProvider] = useState(null)
-  const [showSecrets, setShowSecrets] = useState({})
+  const [editingProvider, setEditingProvider] = useState<PaymentProvider | null>(null)
+  const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({})
 
   const { data: providers = [], isLoading, refetch } = useGetPaymentProvidersQuery({})
   const [deleteProvider] = useDeletePaymentProviderMutation()
 
-  const handleEdit = (provider) => {
+  const handleEdit = (provider: PaymentProvider) => {
     setEditingProvider(provider)
     setIsDialogOpen(true)
   }
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this payment provider?")) {
       try {
         await deleteProvider(id).unwrap()
@@ -35,14 +37,14 @@ export function PaymentProvidersTab() {
     }
   }
 
-  const toggleSecretVisibility = (id) => {
+  const toggleSecretVisibility = (id: string) => {
     setShowSecrets((prev) => ({
       ...prev,
       [id]: !prev[id],
     }))
   }
 
-  const columns = [
+  const columns: ColumnDef<PaymentProvider>[] = [
     {
       accessorKey: "name",
       header: "Provider Name",
@@ -50,7 +52,7 @@ export function PaymentProvidersTab() {
     {
       accessorKey: "slug",
       header: "Slug",
-      cell: ({ row }) => <Badge variant="secondary">{row.getValue("slug")}</Badge>,
+      cell: ({ row }) => <Badge variant="secondary">{String(row.getValue("slug"))}</Badge>,
     },
     {
       accessorKey: "is_active",
@@ -66,7 +68,7 @@ export function PaymentProvidersTab() {
       header: "Webhook Secret",
       cell: ({ row }) => {
         const id = row.original.id
-        const secret = row.getValue("webhook_secret")
+        const secret = String(row.getValue("webhook_secret") ?? "")
         const isVisible = showSecrets[id]
 
         return (

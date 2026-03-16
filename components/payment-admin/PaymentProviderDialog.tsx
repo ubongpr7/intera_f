@@ -18,10 +18,12 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import Select from "react-select"
+import type { SingleValue } from "react-select"
 import {
   useCreatePaymentProviderMutation,
   useUpdatePaymentProviderMutation,
 } from "@/redux/features/payment/paymentAPISlice"
+import type { PaymentProvider, PaymentProviderInput } from "@/redux/features/payment/paymentTypes"
 import { toast } from "react-toastify"
 
 const formSchema = z.object({
@@ -43,8 +45,13 @@ const providerOptions = [
 interface PaymentProviderDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  provider?: any
+  provider?: PaymentProvider | null
   onSuccess: () => void
+}
+
+type ProviderOption = {
+  value: string
+  label: string
 }
 
 export function PaymentProviderDialog({ open, onOpenChange, provider, onSuccess }: PaymentProviderDialogProps) {
@@ -82,7 +89,7 @@ export function PaymentProviderDialog({ open, onOpenChange, provider, onSuccess 
     }
   }, [provider, form])
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: PaymentProviderInput) => {
     try {
       if (provider) {
         await updateProvider({ id: provider.id, ...values }).unwrap()
@@ -97,7 +104,7 @@ export function PaymentProviderDialog({ open, onOpenChange, provider, onSuccess 
     }
   }
 
-  const handleProviderSelect = (selectedOption) => {
+  const handleProviderSelect = (selectedOption: SingleValue<ProviderOption>) => {
     if (selectedOption) {
       form.setValue("name", selectedOption.label)
       form.setValue("slug", selectedOption.value)

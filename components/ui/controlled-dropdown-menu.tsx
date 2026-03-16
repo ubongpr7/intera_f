@@ -4,20 +4,21 @@ import * as React from "react"
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
 import { cn } from "@/lib/utils"
 
-const ControlledDropdownMenu = React.forwardRef<
-  React.ElementRef<typeof DropdownMenuPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Root> & {
-    open?: boolean
-    onOpenChange?: (open: boolean) => void
-  }
->(({ open, onOpenChange, children, ...props }, ref) => {
+const ControlledDropdownMenu = ({
+  open,
+  onOpenChange,
+  children,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Root> & {
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+}) => {
   return (
     <DropdownMenuPrimitive.Root open={open} onOpenChange={onOpenChange} {...props}>
       {children}
     </DropdownMenuPrimitive.Root>
   )
-})
-ControlledDropdownMenu.displayName = "ControlledDropdownMenu"
+}
 
 const ControlledDropdownMenuTrigger = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Trigger>,

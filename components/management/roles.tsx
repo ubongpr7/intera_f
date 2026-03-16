@@ -1,5 +1,5 @@
 'use client'
-import { RoleData } from "../interfaces/management";
+import { RoleData } from "@/redux/features/management/managementTypes";
 import CustomCreateCard from "../common/createCard";
 
 import { useState,useEffect } from "react";
@@ -9,7 +9,7 @@ import { useRouter } from 'nextjs-toploader/app';
 import VerticalTabs from '../common/verticalTabs'
 import RolePermissionForm from '../permissions/customPermission';
 import { useUpdateRolePermissionMutation,useGetRolePermissionQuery } from "../../redux/features/permission/permit";
-import { Permission } from "../interfaces/common";
+import { Permission } from "@/redux/features/common/commonTypes";
 import CustomUpdateForm from "../common/updateForm";
 
 
@@ -175,5 +175,4 @@ const StaffRole =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
     )
 }
 export default StaffRole;
-
 

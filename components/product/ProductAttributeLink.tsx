@@ -8,17 +8,14 @@ import {
   useDeleteProductAttributeLinkMutation,
   useGetProductAttributesQuery,
 } from "@/redux/features/product/productAPISlice"
-
-import { useRouter } from "nextjs-toploader/app"
+import type { ProductAttributeLink, ProductAttribute, Product } from "@/redux/features/product/productTypes"
 import { Column, DataTable } from "../common/DataTable/DataTable"
-import { ProductAttributeLink, ProductAttribute, Product } from "../interfaces/product"
 import CustomCreateCard from "../common/createCard"
 import LoadingAnimation from "../common/LoadingAnimation"
 
 interface ProductAttributeLinksProps {
   productId: string;
   product:Partial<Product>;
-  setRefetchData:(arg:boolean)=>void;
 }
 
 const attributeLinkColumns: Column<ProductAttributeLink>[] = [
@@ -67,8 +64,7 @@ const defaultValues: Partial<ProductAttributeLink> = {
   is_visible_in_pos: true,
 }
 
-export default function ProductAttributeLinks({ productId,product,setRefetchData }: ProductAttributeLinksProps) {
-  const router = useRouter()
+export default function ProductAttributeLinks({ productId, product }: ProductAttributeLinksProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [editingAttributeLink, setEditingAttributeLink] = useState<ProductAttributeLink | null>(null)
 
@@ -103,7 +99,6 @@ export default function ProductAttributeLinks({ productId,product,setRefetchData
       await createAttributeLink({ productId, data }).unwrap()
       setIsCreateOpen(false)
       refetchAttributeLinks()
-      setRefetchData(true)
     } catch (error) {
       console.error('Failed to create attribute link:', error)
     }
@@ -115,7 +110,6 @@ export default function ProductAttributeLinks({ productId,product,setRefetchData
       await updateAttributeLink({ productId, id: editingAttributeLink.id, data }).unwrap()
       setEditingAttributeLink(null)
       setIsCreateOpen(false)
-      setRefetchData(true)
       refetchAttributeLinks()
     } catch (error) {
       console.error('Failed to update attribute link:', error)
@@ -126,8 +120,6 @@ export default function ProductAttributeLinks({ productId,product,setRefetchData
     try {
       await deleteAttributeLink({ productId, id: attributeLinkId }).unwrap()
       refetchAttributeLinks()
-      setRefetchData(true)
-
     } catch (error) {
       console.error('Failed to delete attribute link:', error)
     }

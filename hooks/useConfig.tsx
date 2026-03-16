@@ -149,7 +149,7 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
       return null;
     }
     const jsonSettings = getCookie("lk_settings");
-    if (!jsonSettings) {
+    if (typeof jsonSettings !== "string" || !jsonSettings) {
       return null;
     }
     return JSON.parse(jsonSettings) as UserSettings;

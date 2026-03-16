@@ -1,8 +1,9 @@
 "use client"
 
 import { useUpdateProductVariantMutation } from "@/redux/features/product/productAPISlice"
+import type { ProductVariant } from "@/redux/features/product/productTypes"
 import CustomUpdateForm from "@/components/common/updateForm"
-import type { ProductVariant } from "@/components/interfaces/product"
+import { toast } from "react-toastify"
 
 interface VariantDetailsTabProps {
   variant: ProductVariant
@@ -31,8 +32,8 @@ const VariantDetailsTab = ({ variant, onSuccess }: VariantDetailsTabProps) => {
     try {
       await updateVariant({ id: variant.id, data }).unwrap()
       onSuccess()
-    } catch (error) {
-      console.error("Failed to update variant:", error)
+    } catch {
+      toast.error("Failed to update variant.")
     }
   }
 

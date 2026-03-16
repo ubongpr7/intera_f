@@ -9,7 +9,6 @@
 // import { Search, Download, Activity, AlertCircle } from "lucide-react"
 // import { Alert, AlertDescription } from "@/components/ui/alert"
 // import { useGetActivityLogsQuery, useExportActivityLogsMutation } from "@/redux/features/management/companyProfileApiSlice"
-// import type { ActivityLog } from "@/types/company-profile"
 
 // interface ActivityLogViewProps {
 //   profileId: string

@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { useGetStockAnalyticsQuery, useGetDashboardStockValueByLocationQuery } from '@/redux/features/dashboard/dashboardApiSlice';
+import { useGetDashboardStockAnalyticsQuery, useGetDashboardStockValueByLocationQuery } from '@/redux/features/dashboard/dashboardApiSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Spinner from '@/components/common/Spinner';
@@ -44,7 +44,7 @@ const StatusBadge = ({ status }: { status: string }) => {
 
 // Combined Stock Analytics Dashboard
 const StockAnalyticsDashboard = () => {
-  const { data: analyticsData, error: analyticsError, isLoading: analyticsLoading } = useGetStockAnalyticsQuery(undefined);
+  const { data: analyticsData, error: analyticsError, isLoading: analyticsLoading } = useGetDashboardStockAnalyticsQuery(undefined);
   const { data: locationData, error: locationError, isLoading: locationLoading } = useGetDashboardStockValueByLocationQuery('');
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 

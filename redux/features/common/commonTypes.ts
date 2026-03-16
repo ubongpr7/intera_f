@@ -13,7 +13,7 @@ export interface CurrencyResponse {
 }
 
 export interface Address {
-  id?: number;
+  id?: number | string;
   country: number | null;
   region: number | null;
   subregion: number | null;
@@ -22,7 +22,7 @@ export interface Address {
   street_number: number | null;
   street: string | null;
   postal_code: string | null;
-  company?: string | null;
+  company?: string | number | null;
   full_address: string | null;
   longitude?: string;
   latitude?: string;

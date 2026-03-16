@@ -3,8 +3,7 @@ import {
   CompanyAddressInterface, 
   CompanyDataInterface ,
   ContactPersonInterface
-
-} from "../interfaces/company";
+} from "@/redux/features/company/companyTypes";
 
 export const CompanyKeyInfo = {
     name: 'The legal name of the company (required, unique identifier)',
@@ -55,14 +54,14 @@ export const CompanyKeyInfo = {
     // 'company'
   ];
   
-  export const defaultValues: Partial<CompanyDataInterface> = {
+export const defaultValues: Partial<CompanyDataInterface> = {
     is_customer: false,
     is_supplier: true,
     is_manufacturer: false,
     currency: 'NGN',
     description: '',
     website: '',
-    address: '',
+    short_address: '',
     phone: '',
     email: '',
     link: '',
@@ -81,10 +80,12 @@ export const CompanyAddressKeyInfo = {
 
 export const defaultAddressValues: Partial<CompanyAddressInterface> = {
   primary: false,
-  line1: '',
-  line2: '',
+  street: '',
   postal_code: '',
-  country: 'US',
+  country: null,
+  region: null,
+  subregion: null,
+  city: null,
   shipping_notes: '',
   internal_shipping_notes: ''
 };
@@ -97,4 +98,3 @@ export const nonEditableAddressFields: (keyof CompanyAddressInterface)[] = [
 export const contactPersonInterfaceKeys: (keyof ContactPersonInterface )[] =[
 'name','phone','email','role',
 ]
-

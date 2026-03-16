@@ -1,12 +1,12 @@
 'use client';
-import { useGetDashboardStatsQuery, useGetLowStockItemsQuery } from '@/redux/features/dashboard/dashboardApiSlice';
+import { useGetDashboardLowStockItemsQuery, useGetRealtimeDashboardStatsQuery } from '@/redux/features/dashboard/dashboardApiSlice';
 import { Box, AlertTriangle, ClipboardList, Truck, TrendingUp, ChevronRight } from 'lucide-react';
 import LoadingAnimation from '../common/LoadingAnimation';
 import { useMemo, useState } from 'react';
 
 const QuickStats = () => {
-  const { data, error, isLoading } = useGetDashboardStatsQuery('');
-  const { data: lowStockData, error: lowStockError, isLoading: lowStockLoading } = useGetLowStockItemsQuery({ stock_status: "low_stock" });
+  const { data, error, isLoading } = useGetRealtimeDashboardStatsQuery('');
+  const { data: lowStockData, error: lowStockError, isLoading: lowStockLoading } = useGetDashboardLowStockItemsQuery({ stock_status: "low_stock" });
   const [expandedCard, setExpandedCard] = useState<number | null>(null);
 
   const lowStockCount = useMemo(() => {

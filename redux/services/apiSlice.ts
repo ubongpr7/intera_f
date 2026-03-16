@@ -166,15 +166,11 @@ const createBaseQuery = (baseUrl: string, isFileUpload = false) => {
     timeout: 600000,
     prepareHeaders: (headers) => {
       const token = readAuthCookie("accessToken")
-      const profile = readAuthCookie("profileId") ?? readAuthCookie("profile")
-
+     
       if (token) {
         headers.set("Authorization", `Bearer ${token}`)
       }
 
-      if (profile) {
-        headers.set("X-Profile-ID", `${profile}`)
-      }
 
       if (!isFileUpload) {
         headers.set("Content-Type", "application/json")

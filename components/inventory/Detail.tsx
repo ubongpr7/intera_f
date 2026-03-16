@@ -1,7 +1,7 @@
 'use client'
 import DetailCard from '../common/Detail';
 import { useGetInventoryCategoriesQuery, useGetInventoryQuery } from '@/redux/features/inventory/inventoryAPiSlice';
-import { InventoryData, inventoryTypes } from '../interfaces/inventory';
+import { InventoryData, inventoryTypes } from "@/redux/features/inventory/inventoryTypes";
 import { useUpdateInventoryMutation } from '../../redux/features/inventory/inventoryAPiSlice';
 import LoadingAnimation from '../common/LoadingAnimation';
 import { InventoryInterfaceKeys, InventoryKeyInfo } from './selectOptions';
@@ -25,7 +25,7 @@ export default function InventoryDetail({ id }: { id: string }) {
   };
 
 
-const { data: categories = [], isLoading: isCatLoading, error: catError } = useGetInventoryCategoriesQuery(1);
+const { data: categories = [], isLoading: isCatLoading, error: catError } = useGetInventoryCategoriesQuery();
 const categoryOptions = categories.map((cat: any) => ({
   value: cat.id,
   text: cat.name,
@@ -39,9 +39,9 @@ const typeOptions = inventoryTypes ? inventoryTypes.map((inventory_type: any) =>
         text: inventory_type.text,
       })) : [];
       
-    const userOptions = userData?.map((user:{first_name:string,email:string,id:number}) => ({
-        text: `${user.first_name} ${user.email}`,
-        value: user.id.toString(),
+    const userOptions = userData?.map((assignment) => ({
+        text: `${assignment.user?.first_name ?? "Unknown"} ${assignment.user?.email ?? ""}`.trim(),
+        value: String(assignment.user?.id ?? assignment.id),
       })) || [];    
 const  selectOptions = {
     

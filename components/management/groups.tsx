@@ -1,5 +1,5 @@
 'use client'
-import { GroupData } from "../interfaces/management";
+import { GroupData } from "@/redux/features/management/managementTypes";
 import CustomCreateCard from "../common/createCard";
 
 import { useEffect, useState } from "react";
@@ -9,7 +9,7 @@ import { useRouter } from 'nextjs-toploader/app';
 import VerticalTabs from '../common/verticalTabs'
 import GroupPermissionForm from '../permissions/customPermission';
 import { useUpdateGroupPermissionMutation,useGetGroupPermissionQuery } from "../../redux/features/permission/permit";
-import { Permission } from "components/interfaces/common";
+import { Permission } from "@/redux/features/common/commonTypes";
 import CustomUpdateForm from "../common/updateForm";
 import { StaffManagementRefetchProp } from "./roles";
 
@@ -169,5 +169,3 @@ const StaffGroup =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
     )
 }
 export default StaffGroup;
-
-

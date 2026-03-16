@@ -1,13 +1,14 @@
 'use client'
-import { StockLocation } from "../interfaces/stock";
+import { StockLocation } from "@/redux/features/stock/stockTypes";
 import { Column, DataTable, ActionButton } from "../common/DataTable/DataTable";
 import { useGetStockItemDataLocationQuery, useCreateStockItemLocationMutation, useGetStockLocationTypesQuery, useDeleteStockItemLocationMutation, useUpdateStockItemLocationMutation } from "../../redux/features/stock/stockAPISlice";
 import { useState } from "react";
 import CustomCreateCard from '../common/createCard';
 import { useGetCompanyUsersQuery } from "../../redux/features/users/userApiSlice";
-import { RefetchDataProp } from "../interfaces/common";
+import { RefetchDataProp } from "@/redux/features/common/commonTypes";
 import { toast } from 'react-toastify';
 import { Edit, Trash2 } from "lucide-react";
+import StockLocationInspector from "./StockLocationInspector";
 
 const inventoryColumns: Column<StockLocation>[] = [
   {
@@ -44,7 +45,8 @@ function StockLocations({refetchData, setRefetchData}:RefetchDataProp) {
     const [deleteStockLocation, { isLoading: stockItemDeleteLoading }] = useDeleteStockItemLocationMutation();
     const [isCreateOpen, setIsCreateOpen] = useState(false); 
     const [editingStockLocation, setEditingStockLocation] = useState<StockLocation | null>(null);
-    const {data:locationTypes,isLoading:locationTypesLoading}=useGetStockLocationTypesQuery('')
+    const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+    const {data:locationTypes,isLoading:locationTypesLoading}=useGetStockLocationTypesQuery()
     const { data: userData, isLoading: userLoading,  } = useGetCompanyUsersQuery();
     
     const locationTypeOptions = locationTypes?.map((locationType) => ({
@@ -56,9 +58,9 @@ function StockLocations({refetchData, setRefetchData}:RefetchDataProp) {
         value: StockLocationItem.id.toString(),
       })) || [];
       
-    const userOptions = userData?.map((user) => ({
-        text: `${user.first_name} ${user.email}`,
-        value: user.id.toString(),
+    const userOptions = userData?.map((assignment) => ({
+        text: `${assignment.user?.first_name ?? "Unknown"} ${assignment.user?.email ?? ""}`.trim(),
+        value: String(assignment.user?.id ?? assignment.id),
       })) || [];
       const selectionOpions={
         location_type:locationTypeOptions,
@@ -117,7 +119,7 @@ function StockLocations({refetchData, setRefetchData}:RefetchDataProp) {
     ];
 
     const handleRowClick = (row: StockLocation) => {
-
+      setSelectedLocationId(String(row.id));
       };
 
       const interfaceKeys: (keyof StockLocation)[] = [
@@ -166,6 +168,15 @@ function StockLocations({refetchData, setRefetchData}:RefetchDataProp) {
             />
           </div>
         )}
+
+        {selectedLocationId ? (
+          <StockLocationInspector
+            locationId={selectedLocationId}
+            allLocations={StockLocationData || []}
+            onClose={() => setSelectedLocationId(null)}
+            onUpdated={refetch}
+          />
+        ) : null}
     </div>
   );
 }

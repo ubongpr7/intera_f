@@ -1,5 +1,5 @@
 
-import { InventoryData } from "../interfaces/inventory";
+import { InventoryData } from "@/redux/features/inventory/inventoryTypes";
 
 
 

@@ -11,10 +11,9 @@ interface VariantDetailsModalProps {
   variantId: string
   onClose: () => void
   onSuccess: () => void
-  refetchData:boolean
 }
 
-const VariantDetailsModal = ({ variantId, onClose, onSuccess,refetchData }: VariantDetailsModalProps) => {
+const VariantDetailsModal = ({ variantId, onClose, onSuccess }: VariantDetailsModalProps) => {
   const { data: variant, isLoading, error, refetch } = useGetProductVariantQuery(variantId)
 
   if (error) {
@@ -71,7 +70,6 @@ const VariantDetailsModal = ({ variantId, onClose, onSuccess,refetchData }: Vari
                 label: "Attributes",
                 content: (
                   <VariantAttributesTab
-                  refetchData={refetchData}
                     variant={variant}
                     onSuccess={() => {
                       refetch()

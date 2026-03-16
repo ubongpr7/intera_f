@@ -3,11 +3,11 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { DataTable, Column, ActionButton } from "../common/DataTable/DataTable";
 import { useCreateCategoryMutation, useGetInventoryCategoriesQuery, useUpdateCategoryMutation, useDeleteCategoryMutation } from "../../redux/features/inventory/inventoryAPiSlice";
-import { CategoryData } from '../interfaces/inventory';
+import { CategoryData } from "@/redux/features/inventory/inventoryTypes";
 import CustomCreateCard from '../common/createCard';
 import { toast } from 'react-toastify';
 import { useGetStockItemDataLocationQuery } from '@/redux/features/stock/stockAPISlice';
-import { RefetchDataProp } from '../interfaces/common';
+import { RefetchDataProp } from "@/redux/features/common/commonTypes";
 import { Edit, Trash2 } from 'lucide-react';
 
 const inventoryColumns: Column<CategoryData>[] = [
@@ -31,7 +31,7 @@ const inventoryColumns: Column<CategoryData>[] = [
 ];
 
 function InventoryCategoryView({ refetchData, setRefetchData }: RefetchDataProp) {
-  const { data, isLoading, error, refetch } = useGetInventoryCategoriesQuery('');
+  const { data, isLoading, error, refetch } = useGetInventoryCategoriesQuery();
   const router = useRouter();
   const [createCategory, { isLoading: creatingCategory, error: catError }] = useCreateCategoryMutation();
   const { data: stockLocationData, isLoading: stockLocationsLoading, refetch: refetchLocation } = useGetStockItemDataLocationQuery();

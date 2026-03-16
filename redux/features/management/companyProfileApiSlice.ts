@@ -1,4 +1,5 @@
 import type { Address } from "../common/commonTypes";
+import { normalizeQueryParams } from "../common/queryParams";
 import { apiSlice } from "../../services/apiSlice";
 import type {
   AddStaffPayload,
@@ -478,7 +479,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
     getInventoryPolicies: builder.query<InventoryPolicy[], { active_only?: boolean } | void>({
       query: (params) => ({
         url: `/${managementApi}/inventory-policies/`,
-        params,
+        params: normalizeQueryParams(params),
         service,
       }),
     }),

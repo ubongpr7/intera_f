@@ -1,19 +1,18 @@
 'use client'
-import { StockItem } from "../interfaces/stock";
+import { StockItem } from "@/redux/features/stock/stockTypes";
 import { Column, DataTable, ActionButton } from "../common/DataTable/DataTable";
 import { useGetStockItemDataForInventoryQuery, useCreateStockItemMutation, useGetStockItemDataLocationQuery, useUpdateStockItemMutation, useDeleteStockItemMutation } from "../../redux/features/stock/stockAPISlice";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import CustomCreateCard from '../common/createCard';
 import { PACKAGING_OPTIONS } from "./options";
-import { useGetMinimalInventoryQuery } from "@/redux/features/inventory/inventoryAPiSlice";
 import { toast } from "react-toastify";
 import { Edit, Trash2 } from "lucide-react";
-import { get } from "http";
 import { formatCurrency, getCurrencySymbolForProfile } from "@/lib/currency-utils";
 import { getCookie } from "cookies-next";
 import { readCookieValue } from "@/lib/authCookies";
 import { TableImageHover } from "../common/table-image-render";
+import StockItemInspector from "./StockItemInspector";
 
 interface InventoryColumnRender {
   (value: any, row?: StockItem): React.ReactNode;
@@ -93,6 +92,7 @@ function StockItems({reference}:{reference:string}) {
     const [deleteStockItem, { isLoading: stockItemDeleteLoading }] = useDeleteStockItemMutation();
     const [isCreateOpen, setIsCreateOpen] = useState(false); 
     const [editingStockItem, setEditingStockItem] = useState<StockItem | null>(null);
+    const [selectedStockItemId, setSelectedStockItemId] = useState<string | null>(null);
     const {data:StockLocationData,isLoading:stockLocationsLoading,}=useGetStockItemDataLocationQuery()
    
     const stockItemsOptions = stockItems?.map((StockItem:StockItem) => ({
@@ -173,8 +173,8 @@ function StockItems({reference}:{reference:string}) {
     ];
 
     const handleRowClick = (row: StockItem) => {
-
-      };
+      setSelectedStockItemId(row.id);
+    };
 
       const interfaceKeys: (keyof StockItem)[] = [
         'name',
@@ -228,6 +228,15 @@ function StockItems({reference}:{reference:string}) {
             />
           </div>
         )}
+
+        {selectedStockItemId ? (
+          <StockItemInspector
+            itemId={selectedStockItemId}
+            onClose={() => setSelectedStockItemId(null)}
+            onUpdated={refetch}
+            currencyCode={`${readCookieValue("currency", getCookie) || 'NGN'}`}
+          />
+        ) : null}
     </div>
   );
 }

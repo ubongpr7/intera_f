@@ -2,7 +2,7 @@
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { Column, DataTable } from "../common/DataTable/DataTable";
-import { CompanyDataInterface } from "../interfaces/company";
+import { CompanyDataInterface } from "@/redux/features/company/companyTypes";
 import { useGetCompanyDataQuery, useCreateCompanyMutation,useGetSupplersQuery } from '../../redux/features/company/companyAPISlice';
 import CustomCreateCard from '../common/createCard';
 import { CompanyInterfaceKeys,defaultValues } from './selectOptions';

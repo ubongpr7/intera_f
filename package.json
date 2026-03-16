@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "yarn check:rtk-endpoints && next build",
+    "check:rtk-endpoints": "node ./scripts/check-rtk-endpoint-collisions.mjs",
     "start": "next start",
     "lint": "next lint"
   },
