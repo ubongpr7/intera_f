@@ -273,13 +273,15 @@ export default function HomePage() {
       <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-2">
-            <Image
+          {/* <Image }  
+          <Image
               src="https://interabucket.s3.amazonaws.com/attachments/product/light_intera-202508252032.png"
               alt="Intera"
               width={52}
               height={52}
             />
-            <span className="text-lg font-semibold tracking-tight">Intera Inventory</span>
+            */ }
+            <span className="text-lg font-semibold text-gray-900">Intera Inventory</span>
           </Link>
 
           <nav className="hidden items-center gap-8 md:flex">
