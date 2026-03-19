@@ -50,7 +50,8 @@ import {
   WizardFlowHandler,
 } from "@/components/extra-collab-handlers"
 import { useVoiceChat } from "@/hooks/use-voice-chat"
-import type { ChatMessage } from "./ai-chat-widget"
+import type { ChatMessage } from "@/redux/features/ka2a/ka2aSlice"
+import { detectInteractionRequest } from "@/lib/agent-structured-output"
 import { useState, useRef, useEffect, useMemo } from "react"
 
 interface AgentChatProps {
@@ -65,7 +66,14 @@ interface AgentChatProps {
   taskCount?: number
   eventCount?: number
   lastUpdatedAt?: number
+  activeAgentName?: string
+  statusText?: string
+  awaitingInput?: boolean
+  showHeader?: boolean
+  showWindowControls?: boolean
 }
+
+const asText = (value: unknown): string => (typeof value === "string" ? value : "")
 
 export default function AgentChat({
   onClose,
@@ -79,6 +87,11 @@ export default function AgentChat({
   taskCount = 0,
   eventCount = 0,
   lastUpdatedAt,
+  activeAgentName = "host",
+  statusText,
+  awaitingInput = false,
+  showHeader = true,
+  showWindowControls = true,
 }: AgentChatProps) {
   const [input, setInput] = useState("")
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
@@ -141,6 +154,16 @@ export default function AgentChat({
     }
   }, [hasActiveInteraction, voiceChat])
 
+  useEffect(() => {
+    const activeInteraction = messages.some(
+      (message) =>
+        message.role === "assistant"
+        && Boolean(detectInteractionRequest(message.content, message.structuredPayload))
+        && !respondedInteractions.has(message.id),
+    )
+    setHasActiveInteraction(activeInteraction)
+  }, [messages, respondedInteractions])
+
   function scrollToBottom() {
     endRef.current?.scrollIntoView({ behavior: "smooth" })
     setUnreadCount(0)
@@ -201,111 +224,6 @@ export default function AgentChat({
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
-  }
-
-  const detectInteractionRequest = (content: string) => {
-    const jsonCodeBlockRegex = /```json\s*([\s\S]*?)\s*```/gi
-    const codeBlockMatches = [...content.matchAll(jsonCodeBlockRegex)]
-
-    for (const match of codeBlockMatches) {
-      const jsonContent = match[1].trim()
-
-      try {
-        const parsed = JSON.parse(jsonContent)
-
-        if (parsed.interaction_type === "confirmation_request") {
-          return { type: "confirmation", data: parsed }
-        }
-
-        if (parsed.type === "AGENT_CONFIRMATION_REQUEST") {
-          return { type: "confirmation", data: parsed }
-        }
-
-        if (parsed.interaction_type) {
-          return {
-            type: parsed.interaction_type,
-            data: parsed,
-          }
-        }
-
-        const interactionTypes = [
-          "AGENT_MULTIPLE_CHOICE",
-          "AGENT_FILE_UPLOAD",
-          "AGENT_PROGRESS_TRACKER",
-          "AGENT_DATA_TABLE",
-          "AGENT_DYNAMIC_FORM",
-          "AGENT_DATE_TIME_PICKER",
-          "AGENT_SLIDER_INPUT",
-          "AGENT_PRIORITY_RANKING",
-          "AGENT_CODE_REVIEW",
-          "AGENT_IMAGE_ANNOTATION",
-          "AGENT_DASHBOARD_BUILDER",
-          "AGENT_MASTER_DETAIL_TABLE",
-          "AGENT_ALERT_MANAGER",
-          "AGENT_TASK_ASSIGNMENT",
-          "AGENT_COMMENT_THREAD",
-          "AGENT_APPROVAL_WORKFLOW",
-        ]
-
-        if (interactionTypes.includes(parsed.type)) {
-          return {
-            type: parsed.type.replace("AGENT_", "").toLowerCase(),
-            data: parsed,
-          }
-        }
-      } catch {
-        continue
-      }
-    }
-
-    try {
-      const parsed = JSON.parse(content.trim())
-
-      if (parsed.interaction_type === "confirmation_request") {
-        return { type: "confirmation", data: parsed }
-      }
-
-      if (parsed.type === "AGENT_CONFIRMATION_REQUEST") {
-        return { type: "confirmation", data: parsed }
-      }
-
-      if (parsed.interaction_type) {
-        return {
-          type: parsed.interaction_type,
-          data: parsed,
-        }
-      }
-
-      const interactionTypes = [
-        "AGENT_MULTIPLE_CHOICE",
-        "AGENT_FILE_UPLOAD",
-        "AGENT_PROGRESS_TRACKER",
-        "AGENT_DATA_TABLE",
-        "AGENT_DYNAMIC_FORM",
-        "AGENT_DATE_TIME_PICKER",
-        "AGENT_SLIDER_INPUT",
-        "AGENT_PRIORITY_RANKING",
-        "AGENT_CODE_REVIEW",
-        "AGENT_IMAGE_ANNOTATION",
-        "AGENT_DASHBOARD_BUILDER",
-        "AGENT_MASTER_DETAIL_TABLE",
-        "AGENT_ALERT_MANAGER",
-        "AGENT_TASK_ASSIGNMENT",
-        "AGENT_COMMENT_THREAD",
-        "AGENT_APPROVAL_WORKFLOW",
-      ]
-
-      if (interactionTypes.includes(parsed.type)) {
-        return {
-          type: parsed.type.replace("AGENT_", "").toLowerCase(),
-          data: parsed,
-        }
-      }
-    } catch {
-      // Not a JSON interaction request
-    }
-
-    return null
   }
 
   const getInteractionStyle = (type: string) => {
@@ -471,63 +389,73 @@ export default function AgentChat({
 
   return (
     <>
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 flex items-center justify-between">
-        {/* Left group */}
-        <div className="flex items-center gap-2 min-w-0">
-          <Bot className="h-5 w-5 text-white shrink-0" aria-hidden strokeWidth={2.2} />
+      {showHeader && (
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 min-w-0">
+            <Bot className="h-5 w-5 text-white shrink-0" aria-hidden strokeWidth={2.2} />
 
-          {/* Badges */}
-          <div className="ml-3 flex items-center gap-2 text-xs">
-            <span className="inline-flex whitespace-nowrap items-center gap-1 rounded-full bg-white/15 px-2 py-1">
-              <Radio
-                className={`h-4 w-4 ${pendingCount > 0 ? "animate-pulse text-yellow-300" : "text-white"}`}
-                aria-hidden
-                strokeWidth={2.4}
-              />
-              <span>{pendingCount > 0 ? `${pendingCount} pending` : "Idle"}</span>
-            </span>
-            <span className="inline-flex whitespace-nowrap items-center gap-1 rounded-full bg-white/15 px-2 py-1">
-              <ListChecks className="h-4 w-4 text-white" aria-hidden strokeWidth={2.4} />
-              <span>{taskCount} tasks</span>
-            </span>
-            <span className="hidden whitespace-nowrap sm:inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1">
-              <Clock className="h-4 w-4 text-white" aria-hidden strokeWidth={2.4} />
-              <span>{eventCount} events</span>
-            </span>
+            <div className="ml-3 flex items-center gap-2 text-xs">
+              <span className="inline-flex whitespace-nowrap items-center gap-1 rounded-full bg-white/15 px-2 py-1">
+                <Radio
+                  className={`h-4 w-4 ${pendingCount > 0 ? "animate-pulse text-yellow-300" : "text-white"}`}
+                  aria-hidden
+                  strokeWidth={2.4}
+                />
+                <span>{pendingCount > 0 ? `${pendingCount} pending` : "Idle"}</span>
+              </span>
+              <span className="inline-flex whitespace-nowrap items-center gap-1 rounded-full bg-white/15 px-2 py-1">
+                <ListChecks className="h-4 w-4 text-white" aria-hidden strokeWidth={2.4} />
+                <span>{taskCount} tasks</span>
+              </span>
+              <span className="hidden whitespace-nowrap sm:inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1">
+                <Clock className="h-4 w-4 text-white" aria-hidden strokeWidth={2.4} />
+                <span>{eventCount} events</span>
+              </span>
+              <span className="hidden whitespace-nowrap md:inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1">
+                <Bot className="h-4 w-4 text-white" aria-hidden strokeWidth={2.4} />
+                <span>{activeAgentName}</span>
+              </span>
+              {awaitingInput && (
+                <span className="hidden whitespace-nowrap md:inline-flex items-center gap-1 rounded-full bg-amber-100/95 px-2 py-1 text-amber-900">
+                  <Clock className="h-4 w-4" aria-hidden strokeWidth={2.4} />
+                  <span>Awaiting input</span>
+                </span>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Right group */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => {
-              toggleFullScreen()
-              onActivity?.()
-            }}
-            className="p-1 rounded-full hover:bg-white/20 transition-colors shrink-0"
-            aria-label={isFullScreen ? "Exit full screen" : "Enter full screen"}
-            title={isFullScreen ? "Exit full screen" : "Enter full screen"}
-          >
-            {isFullScreen ? (
-              <Minimize className="h-5 w-5 text-white" strokeWidth={2.2} />
-            ) : (
-              <Maximize className="h-5 w-5 text-white" strokeWidth={2.2} />
-            )}
-          </button>
-          <button
-            onClick={() => {
-              onClose()
-              onActivity?.()
-            }}
-            className="p-1 rounded-full hover:bg-white/20 transition-colors"
-            aria-label="Close chat"
-            title="Close"
-          >
-            <X className="h-5 w-5 text-white" strokeWidth={2.2} />
-          </button>
+          {showWindowControls ? (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  toggleFullScreen()
+                  onActivity?.()
+                }}
+                className="p-1 rounded-full hover:bg-white/20 transition-colors shrink-0"
+                aria-label={isFullScreen ? "Exit full screen" : "Enter full screen"}
+                title={isFullScreen ? "Exit full screen" : "Enter full screen"}
+              >
+                {isFullScreen ? (
+                  <Minimize className="h-5 w-5 text-white" strokeWidth={2.2} />
+                ) : (
+                  <Maximize className="h-5 w-5 text-white" strokeWidth={2.2} />
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  onClose()
+                  onActivity?.()
+                }}
+                className="p-1 rounded-full hover:bg-white/20 transition-colors"
+                aria-label="Close chat"
+                title="Close"
+              >
+                <X className="h-5 w-5 text-white" strokeWidth={2.2} />
+              </button>
+            </div>
+          ) : null}
         </div>
-      </div>
+      )}
 
       {/* Messages area */}
       <div
@@ -536,6 +464,17 @@ export default function AgentChat({
         onMouseMove={handleUserInterruption}
         onClick={handleUserInterruption}
       >
+        {statusText && (
+          <div className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${
+            awaitingInput ? "border-amber-200 bg-amber-50 text-amber-800" : "border-blue-200 bg-blue-50 text-blue-800"
+          }`}>
+            <div className="flex items-center gap-2 font-medium">
+              <Bot className="h-4 w-4" />
+              <span>{activeAgentName}</span>
+            </div>
+            <p className="mt-1">{statusText}</p>
+          </div>
+        )}
         {messages.length === 0 ? (
           <div className="text-center h-full flex flex-col items-center justify-center text-gray-500">
             <Bot className="h-12 w-12 mb-3 text-blue-500" aria-hidden strokeWidth={2.2} />
@@ -543,7 +482,8 @@ export default function AgentChat({
           </div>
         ) : (
           messages.map((m) => {
-            const interactionData = m.role === "assistant" ? detectInteractionRequest(m.content) : null
+            const interactionData =
+              m.role === "assistant" ? detectInteractionRequest(m.content, m.structuredPayload) : null
             const isInteractionDisabled = respondedInteractions.has(m.id)
 
             if (interactionData) {
@@ -567,9 +507,11 @@ export default function AgentChat({
                         Assistant - {isInteractionDisabled ? "Response Sent" : "Awaiting Confirmation"}
                       </div>
                       <div className="space-y-3">
-                        <p className="font-medium text-gray-900 text-sm">{data.description}</p>
-                        {data.details && (
-                          <p className="text-xs text-gray-600 bg-white/50 p-2 rounded-lg">{data.details}</p>
+                        <p className="font-medium text-gray-900 text-sm">
+                          {asText(data.description) || asText(data.title) || "Please review this request."}
+                        </p>
+                        {asText(data.details) && (
+                          <p className="text-xs text-gray-600 bg-white/50 p-2 rounded-lg">{asText(data.details)}</p>
                         )}
                         {!isInteractionDisabled && (
                           <button

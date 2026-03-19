@@ -71,21 +71,64 @@ export function useVoiceChat({
   const lastTranscriptRef = useRef("")
   const voiceInterruptionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const typingDetectionRef = useRef<boolean>(false)
+  const onTranscriptRef = useRef(onTranscript)
+  const onAutoSendRef = useRef(onAutoSend)
+  const onInputMethodChangeRef = useRef(onInputMethodChange)
+  const selectedVoiceRef = useRef<SpeechSynthesisVoice | null>(initialSelectedVoice)
+  const autoSubmitEnabledRef = useRef(initialAutoSubmitEnabled)
+  const autoSendDelayRef = useRef(autoSendDelay)
+
+  const clearTranscript = useCallback(() => {
+    setTranscript("")
+    lastTranscriptRef.current = ""
+
+    if (autoSendTimeoutRef.current) {
+      clearTimeout(autoSendTimeoutRef.current)
+      autoSendTimeoutRef.current = null
+    }
+
+    typingDetectionRef.current = false
+  }, [])
+
+  useEffect(() => {
+    onTranscriptRef.current = onTranscript
+  }, [onTranscript])
+
+  useEffect(() => {
+    onAutoSendRef.current = onAutoSend
+  }, [onAutoSend])
+
+  useEffect(() => {
+    onInputMethodChangeRef.current = onInputMethodChange
+  }, [onInputMethodChange])
+
+  useEffect(() => {
+    selectedVoiceRef.current = selectedVoice
+  }, [selectedVoice])
+
+  useEffect(() => {
+    autoSubmitEnabledRef.current = autoSubmitEnabled
+  }, [autoSubmitEnabled])
+
+  useEffect(() => {
+    autoSendDelayRef.current = autoSendDelay
+  }, [autoSendDelay])
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition
+      let loadVoices: (() => void) | undefined
 
       if (SpeechRecognitionAPI && window.speechSynthesis) {
         setIsSupported(true)
 
         speechSynthesisRef.current = window.speechSynthesis
 
-        const loadVoices = () => {
+        loadVoices = () => {
           const voices = speechSynthesisRef.current?.getVoices() || []
           setAvailableVoices(voices)
 
-          if (!selectedVoice && voices.length > 0) {
+          if (!selectedVoiceRef.current && voices.length > 0) {
             const preferredVoice =
               voices.find((voice) => voice.name.includes("Google") && voice.lang.startsWith("en")) ||
               voices.find((voice) => voice.lang.startsWith("en") && !voice.name.includes("Microsoft")) ||
@@ -134,27 +177,27 @@ export function useVoiceChat({
 
           const fullTranscript = lastTranscriptRef.current + finalTranscript + interimTranscript
           setTranscript(fullTranscript)
-          onTranscript(fullTranscript)
+          onTranscriptRef.current(fullTranscript)
 
           if (finalTranscript || interimTranscript) {
             setInputMethodState("voice")
-            onInputMethodChange?.("voice")
+            onInputMethodChangeRef.current?.("voice")
           }
 
           if (finalTranscript) {
             lastTranscriptRef.current += finalTranscript
 
-            if (autoSubmitEnabled && !typingDetectionRef.current) {
+            if (autoSubmitEnabledRef.current && !typingDetectionRef.current) {
               if (autoSendTimeoutRef.current) {
                 clearTimeout(autoSendTimeoutRef.current)
               }
 
               autoSendTimeoutRef.current = setTimeout(() => {
                 if (lastTranscriptRef.current.trim() && !typingDetectionRef.current) {
-                  onAutoSend(lastTranscriptRef.current.trim())
+                  onAutoSendRef.current(lastTranscriptRef.current.trim())
                   clearTranscript()
                 }
-              }, autoSendDelay)
+              }, autoSendDelayRef.current)
             }
           }
         }
@@ -163,8 +206,26 @@ export function useVoiceChat({
       } else {
         console.warn("Speech recognition or synthesis not supported in this browser")
       }
+
+      return () => {
+        if (speechSynthesisRef.current && loadVoices) {
+          speechSynthesisRef.current.removeEventListener("voiceschanged", loadVoices)
+        }
+        if (recognitionRef.current) {
+          try {
+            recognitionRef.current.onstart = null
+            recognitionRef.current.onend = null
+            recognitionRef.current.onerror = null
+            recognitionRef.current.onresult = null
+            recognitionRef.current.stop()
+          } catch {
+            // Ignore cleanup errors from browser speech APIs.
+          }
+          recognitionRef.current = null
+        }
+      }
     }
-  }, [language, onTranscript, onAutoSend, autoSendDelay, onInputMethodChange, autoSubmitEnabled, selectedVoice])
+  }, [language, clearTranscript])
 
   const startListening = useCallback(() => {
     if (recognitionRef.current && !isListening) {
@@ -268,18 +329,6 @@ export function useVoiceChat({
       clearTimeout(voiceInterruptionTimeoutRef.current)
       voiceInterruptionTimeoutRef.current = null
     }
-  }, [])
-
-  const clearTranscript = useCallback(() => {
-    setTranscript("")
-    lastTranscriptRef.current = ""
-
-    if (autoSendTimeoutRef.current) {
-      clearTimeout(autoSendTimeoutRef.current)
-      autoSendTimeoutRef.current = null
-    }
-
-    typingDetectionRef.current = false
   }, [])
 
   const setInputMethod = useCallback(

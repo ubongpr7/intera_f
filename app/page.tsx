@@ -303,8 +303,8 @@ export default function HomePage() {
           </nav>
 
           <div className="hidden items-center gap-3 md:flex">
-            <Button variant="ghost" asChild>
-              <Link href="/accounts/signin">Sign in</Link>
+            <Button variant="secondary" asChild>
+              <Link  href="/accounts/signin">Sign in</Link>
             </Button>
             <Button asChild>
               <Link href="/accounts">Get started</Link>

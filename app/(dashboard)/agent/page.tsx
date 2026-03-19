@@ -11,11 +11,11 @@ import {
   Copy,
   Plus,
   RefreshCcw,
-  Send,
   Server,
   Sparkles,
   Trash2,
 } from "lucide-react";
+import AgentChat from "@/components/agents/agent-chat";
 
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import {
@@ -58,7 +58,6 @@ export default function AgentsPage() {
   const sessions = useAppSelector((state) => state.ka2a.sessions);
   const activeSessionId = useAppSelector((state) => state.ka2a.activeSessionId);
   const activeSession = activeSessionId ? sessions[activeSessionId] : undefined;
-  const [draft, setDraft] = useState("");
   const [copiedBundle, setCopiedBundle] = useState(false);
   const [copiedEventId, setCopiedEventId] = useState<string | null>(null);
   const [showSessionSettings, setShowSessionSettings] = useState(false);
@@ -85,11 +84,28 @@ export default function AgentsPage() {
   const totalEvents = sessionList.reduce((count, session) => count + session.eventLog.length, 0);
   const totalRuns = sessionList.reduce((count, session) => count + Object.keys(session.runs).length, 0);
   const recentEvents = useMemo(() => [...(activeSession?.eventLog ?? [])].reverse(), [activeSession?.eventLog]);
+  const chatMessages = useMemo(
+    () =>
+      (activeSession?.messages ?? []).map((message) => ({
+        id: message.id,
+        role: message.role,
+        content: message.content,
+        timestamp: message.timestamp,
+        structuredPayload: message.structuredPayload,
+      })),
+    [activeSession?.messages],
+  );
+  const activeAgentName = activeSession?.activeSpecialist || activeSession?.agentName || "host";
+  const statusText = activeSession?.awaitingInput
+    ? "Waiting for your answer to continue this task."
+    : activeSession?.currentStatusText || undefined;
   const debugBundle = useMemo(() => {
     const transcript = (activeSession?.messages ?? []).map((message) => ({
       role: message.role,
       timestamp: message.timestamp,
       taskId: message.taskId ?? null,
+      serverMessageId: message.serverMessageId ?? null,
+      structuredPayload: message.structuredPayload ?? null,
       content: message.content,
     }));
 
@@ -114,6 +130,11 @@ export default function AgentsPage() {
             historyLength: activeSession.historyLength,
             isStreaming: activeSession.isStreaming,
             lastTaskId: activeSession.lastTaskId ?? null,
+            activeSpecialist: activeSession.activeSpecialist ?? null,
+            currentTaskState: activeSession.currentTaskState ?? null,
+            currentStatusText: activeSession.currentStatusText ?? null,
+            awaitingInput: activeSession.awaitingInput,
+            resumeTaskId: activeSession.resumeTaskId ?? null,
             error: activeSession.error ?? null,
             transcript,
             runs: activeSession.runs,
@@ -128,6 +149,10 @@ export default function AgentsPage() {
         historyLength: session.historyLength,
         isStreaming: session.isStreaming,
         lastTaskId: session.lastTaskId ?? null,
+        activeSpecialist: session.activeSpecialist ?? null,
+        currentTaskState: session.currentTaskState ?? null,
+        awaitingInput: session.awaitingInput,
+        resumeTaskId: session.resumeTaskId ?? null,
         messageCount: session.messages.length,
         eventCount: session.eventLog.length,
         runCount: Object.keys(session.runs).length,
@@ -143,15 +168,6 @@ export default function AgentsPage() {
     isLoadingAgents,
     sessionList,
   ]);
-
-  const handleSend = async () => {
-    const text = draft.trim();
-    if (!text || !activeSession || activeSession.isStreaming) {
-      return;
-    }
-    setDraft("");
-    await dispatch(sendStreamMessage({ text }));
-  };
 
   const handleCreateSession = () => {
     dispatch(createSession());
@@ -303,8 +319,18 @@ export default function AgentsPage() {
 
                 <div className="grid gap-2 text-xs text-gray-600 sm:grid-cols-3">
                   <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
-                    <p className="font-semibold uppercase tracking-wide text-gray-500">Agent</p>
+                    <p className="font-semibold uppercase tracking-wide text-gray-500">Target</p>
                     <p className="mt-1 font-mono text-[11px] text-gray-900">{activeSession?.agentName || "host"}</p>
+                  </div>
+                  <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+                    <p className="font-semibold uppercase tracking-wide text-gray-500">Specialist</p>
+                    <p className="mt-1 font-mono text-[11px] text-gray-900">{activeAgentName}</p>
+                  </div>
+                  <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+                    <p className="font-semibold uppercase tracking-wide text-gray-500">State</p>
+                    <p className="mt-1 font-mono text-[11px] text-gray-900">
+                      {activeSession?.currentTaskState || (activeSession?.isStreaming ? "working" : "idle")}
+                    </p>
                   </div>
                   <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
                     <p className="font-semibold uppercase tracking-wide text-gray-500">Task</p>
@@ -312,7 +338,7 @@ export default function AgentsPage() {
                       {activeSession?.lastTaskId || "none"}
                     </p>
                   </div>
-                  <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+                  <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 sm:col-span-2">
                     <p className="font-semibold uppercase tracking-wide text-gray-500">Context</p>
                     <p className="mt-1 truncate font-mono text-[11px] text-gray-900">
                       {activeSession?.contextId || "none"}
@@ -320,99 +346,67 @@ export default function AgentsPage() {
                   </div>
                 </div>
               </div>
+
+              {activeSession ? (
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleClearSession}
+                    className="inline-flex items-center rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition hover:border-red-200 hover:text-red-600"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Clear session
+                  </button>
+                </div>
+              ) : null}
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto bg-gray-50 px-5 py-4">
+          <div className="min-h-0 flex-1 bg-gray-50">
             {activeSession?.error ? (
-              <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="mx-5 mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {activeSession.error}
               </div>
             ) : null}
 
-            {!activeSession?.messages.length ? (
-              <div className="flex h-full min-h-[320px] items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-white px-6 text-center">
-                <div>
-                  <Bot className="mx-auto h-10 w-10 text-gray-400" />
-                  <p className="mt-4 text-base font-medium text-gray-900">No messages yet</p>
-                  <p className="mt-2 text-sm text-gray-500">
-                    Start a conversation and the host agent will stream status and results into this pane.
-                  </p>
+            {activeSession?.awaitingInput ? (
+              <div className="mx-5 mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-semibold">Paused for user input</span>
+                  {activeSession.resumeTaskId ? (
+                    <span className="rounded-full bg-white px-2.5 py-1 font-mono text-[11px] text-amber-900">
+                      resume {activeSession.resumeTaskId}
+                    </span>
+                  ) : null}
                 </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {activeSession.messages.map((message) => {
-                  const isAssistant = message.role === "assistant";
-                  return (
-                    <div key={message.id} className={`flex ${isAssistant ? "justify-start" : "justify-end"}`}>
-                      <div
-                        className={`max-w-3xl rounded-2xl border px-4 py-3 shadow-sm ${
-                          isAssistant
-                            ? "border-gray-200 bg-white text-gray-800"
-                            : "border-blue-200 bg-blue-600 text-white"
-                        }`}
-                      >
-                        <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wide opacity-80">
-                          <span>{isAssistant ? "Assistant" : "You"}</span>
-                          <span className="normal-case opacity-70">{formatTimestamp(message.timestamp)}</span>
-                        </div>
-                        <p className="whitespace-pre-wrap text-sm leading-6">{message.content}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          <div className="border-t border-gray-200 bg-white px-5 py-3.5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="text-sm text-gray-500">
-                Press <span className="font-medium text-gray-700">Enter</span> to send and{" "}
-                <span className="font-medium text-gray-700">Shift+Enter</span> for a new line.
-              </div>
-
-              {activeSession ? (
-                <button
-                  type="button"
-                  onClick={handleClearSession}
-                  className="inline-flex items-center rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition hover:border-red-200 hover:text-red-600"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Clear
-                </button>
-              ) : null}
-            </div>
-
-            <div className="mt-3 rounded-2xl border border-gray-200 bg-gray-50 p-3">
-              <textarea
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    void handleSend();
-                  }
-                }}
-                placeholder="Ask the host agent to help with products, inventory, or operations."
-                className="min-h-[96px] w-full resize-none border-0 bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
-              />
-
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <p className="text-xs text-gray-500">
-                  {activeSession?.isStreaming ? "Streaming task updates..." : "Ready for the next prompt."}
+                <p className="mt-1">
+                  Reply in the chat below and the same task will continue instead of starting a new one.
                 </p>
-                <button
-                  type="button"
-                  onClick={() => void handleSend()}
-                  disabled={!activeSession || activeSession.isStreaming || !draft.trim()}
-                  className="inline-flex items-center rounded-full bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
-                >
-                  <Send className="mr-2 h-4 w-4" />
-                  {activeSession?.isStreaming ? "Sending..." : "Send"}
-                </button>
               </div>
+            ) : null}
+
+            <div className="flex min-h-0 flex-1 flex-col">
+              <AgentChat
+                onClose={() => undefined}
+                isFullScreen={false}
+                toggleFullScreen={() => undefined}
+                messages={chatMessages}
+                onSend={(text) => {
+                  if (!activeSession?.sessionId || activeSession.isStreaming) {
+                    return;
+                  }
+                  void dispatch(sendStreamMessage({ text, sessionId: activeSession.sessionId }));
+                }}
+                isBusy={activeSession?.isStreaming ?? false}
+                pendingCount={activeSession?.isStreaming ? 1 : 0}
+                taskCount={Object.keys(activeSession?.runs ?? {}).length}
+                eventCount={activeSession?.eventLog.length ?? 0}
+                activeAgentName={activeAgentName}
+                statusText={statusText}
+                awaitingInput={activeSession?.awaitingInput ?? false}
+                showHeader={false}
+                showWindowControls={false}
+              />
             </div>
           </div>
         </div>
@@ -532,6 +526,17 @@ export default function AgentsPage() {
                           <span className="rounded-full bg-white px-2.5 py-1 text-gray-600">
                             {session.eventLog.length} events
                           </span>
+                          {session.activeSpecialist ? (
+                            <span className="rounded-full bg-white px-2.5 py-1 text-gray-600">
+                              {session.activeSpecialist}
+                            </span>
+                          ) : null}
+                          {session.awaitingInput ? (
+                            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-amber-800">awaiting input</span>
+                          ) : null}
+                          {session.currentTaskState ? (
+                            <span className="rounded-full bg-white px-2.5 py-1 text-gray-600">{session.currentTaskState}</span>
+                          ) : null}
                           {session.isStreaming ? (
                             <span className="rounded-full bg-blue-100 px-2.5 py-1 text-blue-700">streaming</span>
                           ) : null}

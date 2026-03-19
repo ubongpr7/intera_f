@@ -23,6 +23,14 @@ type StreamMessageArgs = {
   historyLength: number;
 };
 
+type ContinueTaskStreamArgs = {
+  sessionId: string;
+  taskId: string;
+  text: string;
+  agentName: string;
+  historyLength: number;
+};
+
 const stripTrailingSlash = (value: string) => value.replace(/\/+$/, "");
 
 const getGatewayBaseUrl = () => {
@@ -45,20 +53,10 @@ const getRequestTimeoutMs = () => {
 const buildGatewayHeaders = (contentType = true) => {
   const headers = new Headers();
   const accessToken = readCookieValue("accessToken", (name) => getCookie(name));
-  const profileId = readCookieValue("profileId", (name) => getCookie(name))
-    ?? readCookieValue("profile", (name) => getCookie(name));
-  const companyCode = readCookieValue("companyCode", (name) => getCookie(name));
 
   if (accessToken) {
     headers.set("Authorization", `Bearer ${accessToken}`);
   }
-  if (profileId) {
-    headers.set("X-Profile-ID", profileId);
-  }
-  if (companyCode) {
-    headers.set("X-Company-Code", companyCode);
-  }
-  headers.set("X-Requested-With", "XMLHttpRequest");
   if (contentType) {
     headers.set("Content-Type", "application/json");
   }
@@ -127,7 +125,6 @@ const requestJson = async <T>(
       `${getGatewayBaseUrl()}${path}`,
       {
         cache: "no-store",
-        credentials: "include",
         headers: buildGatewayHeaders(false),
       },
       signal,
@@ -207,12 +204,58 @@ export const ka2aApiSlice = apiSlice.injectEndpoints({
             {
               method: "POST",
               cache: "no-store",
-              credentials: "include",
               headers: buildGatewayHeaders(true),
               body: JSON.stringify({
                 text: args.text,
                 agentName: args.agentName,
                 contextId: args.contextId,
+                historyLength: args.historyLength,
+              }),
+            },
+            api.signal,
+          );
+
+          if (!response.ok) {
+            const detail = await response.text().catch(() => "");
+            return httpError(response.status, detail || response.statusText);
+          }
+          if (!response.body) {
+            return fetchError("No response body");
+          }
+
+          await parseSseChunks(response.body, (obj) => {
+            if (!obj || typeof obj !== "object" || Array.isArray(obj)) {
+              return;
+            }
+            const record = obj as Record<string, unknown>;
+            if (typeof record.kind !== "string") {
+              return;
+            }
+            api.dispatch(eventReceived({ sessionId: args.sessionId, event: record as Ka2aEvent }));
+          });
+
+          return { data: { ok: true } };
+        } catch (error) {
+          return fetchError(error);
+        }
+      },
+    }),
+    continueTaskStream: builder.mutation<StreamMessageResult, ContinueTaskStreamArgs>({
+      queryFn: async (args, api) => {
+        try {
+          const search = new URLSearchParams();
+          if (args.agentName) {
+            search.set("agent_name", args.agentName);
+          }
+          const suffix = search.size ? `?${search.toString()}` : "";
+          const response = await fetchWithOptionalTimeout(
+            `${getGatewayBaseUrl()}/tasks/${encodeURIComponent(args.taskId)}/continue/stream${suffix}`,
+            {
+              method: "POST",
+              cache: "no-store",
+              headers: buildGatewayHeaders(true),
+              body: JSON.stringify({
+                text: args.text,
                 historyLength: args.historyLength,
               }),
             },

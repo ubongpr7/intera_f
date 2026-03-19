@@ -1,4 +1,9 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import {
+  extractInteractionPayloadFromParts,
+  summarizeStructuredPayload,
+  type AgentStructuredPayload,
+} from "@/lib/agent-structured-output";
 
 type Ka2aRole = "user" | "assistant";
 
@@ -15,6 +20,8 @@ export type ChatMessage = {
   content: string;
   taskId?: string;
   timestamp: string;
+  serverMessageId?: string;
+  structuredPayload?: AgentStructuredPayload;
 };
 
 export type EventLogItem = {
@@ -43,6 +50,11 @@ export type Ka2aSession = {
   messages: ChatMessage[];
   eventLog: EventLogItem[];
   runs: Record<string, TaskRun>;
+  activeSpecialist?: string;
+  currentTaskState?: string;
+  currentStatusText?: string;
+  awaitingInput: boolean;
+  resumeTaskId?: string;
   error?: string;
 };
 
@@ -92,28 +104,53 @@ const extractTextParts = (value: unknown): string =>
     .join("")
     .trim();
 
-const upsertAssistantMessage = (session: Ka2aSession, payload: { taskId?: string; content: string; timestamp: string }) => {
+const extractPrimaryData = (value: unknown): Record<string, unknown> | undefined => {
+  const part = asArray(value)
+    .map((item) => asObject(item))
+    .find((item) => asString(item.kind) === "data");
+  if (!part) {
+    return undefined;
+  }
+  const data = asObject(part.data);
+  return Object.keys(data).length ? data : undefined;
+};
+
+const upsertAssistantMessage = (
+  session: Ka2aSession,
+  payload: {
+    taskId?: string;
+    content: string;
+    timestamp: string;
+    serverMessageId?: string;
+    structuredPayload?: AgentStructuredPayload;
+  },
+) => {
   const text = payload.content.trim();
-  if (!text) {
+  const fallbackText = summarizeStructuredPayload(payload.structuredPayload);
+  const content = text || fallbackText;
+  if (!content && !payload.structuredPayload) {
     return;
   }
 
-  const existing = payload.taskId
-    ? session.messages.find((message) => message.role === "assistant" && message.taskId === payload.taskId)
+  const existing = payload.serverMessageId
+    ? session.messages.find((message) => message.role === "assistant" && message.serverMessageId === payload.serverMessageId)
     : undefined;
 
   if (existing) {
-    existing.content = text;
+    existing.content = content;
     existing.timestamp = payload.timestamp;
+    existing.structuredPayload = payload.structuredPayload ?? existing.structuredPayload;
     return;
   }
 
   session.messages.push({
     id: createId(),
     role: "assistant",
-    content: text,
+    content,
     taskId: payload.taskId,
     timestamp: payload.timestamp,
+    serverMessageId: payload.serverMessageId,
+    structuredPayload: payload.structuredPayload,
   });
 };
 
@@ -126,6 +163,7 @@ const newSession = (): Ka2aSession => ({
   messages: [],
   eventLog: [],
   runs: {},
+  awaitingInput: false,
 });
 
 const initialState: Ka2aState = {
@@ -141,6 +179,31 @@ const ka2aSlice = createSlice({
       const session = newSession();
       state.sessions[session.sessionId] = session;
       state.activeSessionId = session.sessionId;
+    },
+    createSessionWithConfig: (
+      state,
+      action: PayloadAction<{
+        sessionId: string;
+        title?: string;
+        agentName?: string;
+        historyLength?: number;
+        makeActive?: boolean;
+      }>,
+    ) => {
+      const session = {
+        ...newSession(),
+        sessionId: action.payload.sessionId,
+        title: action.payload.title || "Assistant",
+        agentName: action.payload.agentName || "host",
+        historyLength:
+          typeof action.payload.historyLength === "number"
+            ? Math.max(0, Math.floor(action.payload.historyLength))
+            : 10,
+      };
+      state.sessions[session.sessionId] = session;
+      if (action.payload.makeActive !== false) {
+        state.activeSessionId = session.sessionId;
+      }
     },
     setActiveSession: (state, action: PayloadAction<string>) => {
       if (state.sessions[action.payload]) {
@@ -181,8 +244,16 @@ const ka2aSlice = createSlice({
       if (!session) {
         return;
       }
+      const resumingExistingTask = session.awaitingInput;
       session.isStreaming = true;
       session.error = undefined;
+      session.awaitingInput = false;
+      session.resumeTaskId = undefined;
+      session.currentTaskState = "working";
+      session.currentStatusText = undefined;
+      if (!resumingExistingTask) {
+        session.activeSpecialist = undefined;
+      }
       session.messages.push({
         id: createId(),
         role: "user",
@@ -203,6 +274,7 @@ const ka2aSlice = createSlice({
         return;
       }
       session.isStreaming = false;
+      session.currentStatusText = undefined;
       session.error = action.payload.error;
     },
     eventReceived: (state, action: PayloadAction<{ sessionId: string; event: Ka2aEvent }>) => {
@@ -220,6 +292,7 @@ const ka2aSlice = createSlice({
         const contextId = asString(event.contextId) || undefined;
         session.contextId = contextId || session.contextId;
         session.lastTaskId = taskId || session.lastTaskId;
+        session.currentTaskState = asString(asObject(event.status).state) || session.currentTaskState;
 
         const status = asObject(event.status);
         const stateValue = asString(status.state) || undefined;
@@ -248,13 +321,20 @@ const ka2aSlice = createSlice({
         const timestamp = asString(status.timestamp) || undefined;
         const isFinal = asBoolean(event.final);
         const statusMessage = asObject(status.message);
-        const finalText = extractTextParts(statusMessage.parts);
+        const statusMessageRole = asString(statusMessage.role) || undefined;
+        const statusMessageId = asString(statusMessage.messageId) || undefined;
+        const structuredPayload = extractInteractionPayloadFromParts(statusMessage.parts);
+        const finalText = extractTextParts(statusMessage.parts) || summarizeStructuredPayload(structuredPayload);
+        session.currentTaskState = stateValue || session.currentTaskState;
+        if (!isFinal && finalText && statusMessageRole !== "user") {
+          session.currentStatusText = finalText;
+        }
 
         if (taskId) {
           const run = session.runs[taskId] || { taskId };
           run.contextId = run.contextId || contextId;
           run.state = stateValue || run.state;
-          if (finalText) {
+          if (finalText && statusMessageRole !== "user") {
             run.resultText = finalText;
           }
           if (isFinal) {
@@ -266,11 +346,17 @@ const ka2aSlice = createSlice({
 
         if (isFinal) {
           session.isStreaming = false;
-          if (finalText) {
+          session.currentStatusText = undefined;
+          const awaitingInput = stateValue === "input-required" || stateValue === "auth-required";
+          session.awaitingInput = awaitingInput;
+          session.resumeTaskId = awaitingInput ? taskId || undefined : undefined;
+          if (finalText && statusMessageRole !== "user") {
             upsertAssistantMessage(session, {
               taskId: taskId || undefined,
               content: finalText,
               timestamp: timestamp || nowIso(),
+              serverMessageId: statusMessageId,
+              structuredPayload,
             });
           }
         }
@@ -286,14 +372,22 @@ const ka2aSlice = createSlice({
 
         const artifact = asObject(event.artifact);
         const artifactName = asString(artifact.name);
+        const artifactData = extractPrimaryData(artifact.parts);
+
+        if (artifactName === "delegation" && artifactData) {
+          const selectedAgent = asString(artifactData.selectedAgent);
+          session.activeSpecialist = selectedAgent || session.activeSpecialist;
+        }
 
         if (artifactName === "result") {
           const text = extractTextParts(artifact.parts);
+          const structuredPayload = extractInteractionPayloadFromParts(artifact.parts);
+          const resultText = text || summarizeStructuredPayload(structuredPayload);
 
           if (taskId) {
             const run = session.runs[taskId] || { taskId };
             run.contextId = run.contextId || contextId;
-            run.resultText = text || run.resultText;
+            run.resultText = resultText || run.resultText;
             session.runs[taskId] = run;
             session.lastTaskId = taskId;
           }
@@ -310,12 +404,18 @@ const ka2aSlice = createSlice({
       session.runs = {};
       session.error = undefined;
       session.isStreaming = false;
+      session.activeSpecialist = undefined;
+      session.currentTaskState = undefined;
+      session.currentStatusText = undefined;
+      session.awaitingInput = false;
+      session.resumeTaskId = undefined;
     },
   },
 });
 
 export const {
   createSession,
+  createSessionWithConfig,
   setActiveSession,
   deleteSession,
   updateSessionConfig,

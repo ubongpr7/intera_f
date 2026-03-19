@@ -25,9 +25,9 @@ const errorMessage = (error: unknown): string => {
 };
 
 export const sendStreamMessage =
-  (args: { text: string }) => async (dispatch: AppDispatch, getState: () => RootState) => {
+  (args: { text: string; sessionId?: string }) => async (dispatch: AppDispatch, getState: () => RootState) => {
     const state = getState();
-    const sessionId = state.ka2a.activeSessionId;
+    const sessionId = args.sessionId || state.ka2a.activeSessionId;
     if (!sessionId) {
       return;
     }
@@ -44,15 +44,25 @@ export const sendStreamMessage =
     dispatch(streamStarted({ sessionId, userText: text }));
 
     try {
-      const request = dispatch(
-        ka2aApiSlice.endpoints.streamMessage.initiate({
-          sessionId,
-          text,
-          agentName: session.agentName,
-          contextId: session.contextId,
-          historyLength: session.historyLength,
-        }),
-      );
+      const request = session.resumeTaskId
+        ? dispatch(
+            ka2aApiSlice.endpoints.continueTaskStream.initiate({
+              sessionId,
+              taskId: session.resumeTaskId,
+              text,
+              agentName: session.agentName,
+              historyLength: session.historyLength,
+            }),
+          )
+        : dispatch(
+            ka2aApiSlice.endpoints.streamMessage.initiate({
+              sessionId,
+              text,
+              agentName: session.agentName,
+              contextId: session.contextId,
+              historyLength: session.historyLength,
+            }),
+          );
       try {
         await request.unwrap();
       } finally {

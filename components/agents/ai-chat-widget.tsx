@@ -1,104 +1,74 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import AgentChat from "./agent-chat"
-import { MessageSquareText, X } from 'lucide-react'
-import {
-  useCreateConversationMutation,
-  useSendMessageMutation,
-  useListMessagesMutation,
-  usePendingMessagesMutation,
-  useGetEventMutation,
-  useListTaskMutation,
-  useLoadToolsMutation,
-} from "@/redux/features/agent/agentAPISlice"
-import { v4 as uuidv4 } from "uuid"
+import { MessageSquareText, X } from "lucide-react"
 import { toast } from "react-toastify"
 
+import AgentChat from "./agent-chat"
+import { createSessionWithConfig, type ChatMessage } from "@/redux/features/ka2a/ka2aSlice"
+import { sendStreamMessage } from "@/redux/features/ka2a/ka2aThunks"
+import { useAppDispatch, useAppSelector } from "@/redux/store"
 
-type Role = "user" | "assistant"
-
-export type ChatMessage = {
-  id: string
-  role: Role
-  content: string
-}
-
-function partsToText(parts: any[] | undefined): string {
-  if (!Array.isArray(parts)) return ""
-  return parts
-    .map((p) => {
-      if (!p) return ""
-      if (p.text && typeof p.text === "string") return p.text
-      if (p.kind === "text" && typeof p.text === "string") return p.text
-      return ""
-    })
-    .filter(Boolean)
-    .join("\n")
-}
-
-function mapServerMessagesToClient(serverMessages: any[], sessionId: string) {
-  const filtered = serverMessages.filter((m) =>
-    typeof m?.contextId === "string" ? m.contextId === sessionId : true
-  )
-  return filtered.map((m) => {
-    const role = m?.role === "agent" ? ("assistant" as Role) : ("user" as Role)
-    const text = partsToText(m?.parts)
-    return {
-      id: m?.messageId ?? uuidv4(),
-      role,
-      content: text,
-    } as ChatMessage
-  })
+const createLocalId = () => {
+  const cryptoAny = globalThis.crypto as { randomUUID?: () => string } | undefined
+  if (cryptoAny?.randomUUID) {
+    return cryptoAny.randomUUID()
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
 
 export default function AIChatWidget() {
+  const dispatch = useAppDispatch()
   const [isOpen, setIsOpen] = useState(false)
   const [isFullScreen, setIsFullScreen] = useState(false)
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [lastActivityAt, setLastActivityAt] = useState<number | null>(null)
+
   const widgetRef = useRef<HTMLDivElement>(null)
   const toggleBtnRef = useRef<HTMLButtonElement>(null)
 
-  // Conversation state
-  const [sessionId, setSessionId] = useState<string | null>(null)
-  const [messagesMap, setMessagesMap] = useState<Map<string, ChatMessage>>(new Map())
-  const messages = useMemo(() => Array.from(messagesMap.values()), [messagesMap])
+  const session = useAppSelector((state) => (sessionId ? state.ka2a.sessions[sessionId] : undefined))
+  const messages = useMemo<ChatMessage[]>(
+    () =>
+      (session?.messages ?? []).map((message) => ({
+        id: message.id,
+        role: message.role,
+        content: message.content,
+        timestamp: message.timestamp,
+        structuredPayload: message.structuredPayload,
+      })),
+    [session?.messages],
+  )
 
-  // Live counters
-  const [pendingCount, setPendingCount] = useState(0)
-  const [eventCount, setEventCount] = useState(0)
-  const [taskCount, setTaskCount] = useState(0)
-  const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(null)
-
-  // Activity tracking (for auto-close)
-  const [lastActivityAt, setLastActivityAt] = useState<number | null>(null)
-  const prevSnapshotRef = useRef({ msgSize: 0, pending: 0, events: 0, tasks: 0 })
-const [loadTools,{isLoading:isLoadingTools}]=useLoadToolsMutation()
-
-
-  // RTK Query hooks
-  const [createConversation, { isLoading: isCreatingConversation }] = useCreateConversationMutation()
-  const [sendMessage, { isLoading: isSendingMessage }] = useSendMessageMutation()
-  const [listMessages] = useListMessagesMutation()
-  const [pendingMessages] = usePendingMessagesMutation()
-  const [getEvents] = useGetEventMutation()
-  const [listTasks] = useListTaskMutation()
-
-  const combinedLoading = isCreatingConversation || isSendingMessage||isLoadingTools
+  const pendingCount = session?.isStreaming ? 1 : 0
+  const eventCount = session?.eventLog.length ?? 0
+  const taskCount = Object.keys(session?.runs ?? {}).length
+  const lastUpdatedAt = useMemo(() => {
+    const latest = session?.eventLog.at(-1)?.receivedAt
+    if (!latest) {
+      return undefined
+    }
+    const ts = new Date(latest).getTime()
+    return Number.isNaN(ts) ? undefined : ts
+  }, [session?.eventLog])
+  const activeAgentName = session?.activeSpecialist || session?.agentName || "host"
+  const statusText = session?.awaitingInput
+    ? "Waiting for your answer to continue"
+    : session?.currentStatusText || undefined
 
   const toggleChat = () => {
     setIsOpen((prev) => !prev)
     if (!isOpen) {
-      // Just opened: mark activity now
       setLastActivityAt(Date.now())
     }
     if (isFullScreen) setIsFullScreen(false)
   }
+
   const toggleFullScreen = () => {
     setIsFullScreen((prev) => !prev)
     setLastActivityAt(Date.now())
   }
 
-  // Close chat when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -116,7 +86,6 @@ const [loadTools,{isLoading:isLoadingTools}]=useLoadToolsMutation()
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [isOpen, isFullScreen])
 
-  // ESC handling
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -127,230 +96,63 @@ const [loadTools,{isLoading:isLoadingTools}]=useLoadToolsMutation()
     document.addEventListener("keydown", onKey)
     return () => document.removeEventListener("keydown", onKey)
   }, [isOpen, isFullScreen])
-  // Create conversation on open
+
   useEffect(() => {
-    if (!isOpen || sessionId || isCreatingConversation) return
-    ;(async () => {
-      try {
-        const resp = await createConversation({}).unwrap()
-        const id = resp?.result?.conversation_id
-        if (typeof id === "string" && id.length > 0) {
-          setSessionId(id)
-          setMessagesMap(new Map())
-          setLastActivityAt(Date.now())
-          await loadTools({
-            data: { id: uuidv4(), jsonrpc: "2.0", method: "load_tools", params: id },
-        
-          }).unwrap()
-        }
-      } catch (err) {
-        console.error("Failed to create conversation:", err)
-      }
-    })()
-  }, [isOpen, sessionId, isCreatingConversation, createConversation])
+    if (!isOpen || sessionId) {
+      return
+    }
+    const id = createLocalId()
+    setSessionId(id)
+    dispatch(
+      createSessionWithConfig({
+        sessionId: id,
+        title: "Assistant",
+        agentName: "host",
+        historyLength: 10,
+        makeActive: false,
+      }),
+    )
+    setLastActivityAt(Date.now())
+  }, [dispatch, isOpen, sessionId])
 
-  // Poll messages/pending/events/tasks regularly while open
   useEffect(() => {
-    if (!isOpen || !sessionId) return
-    let cancelled = false
-
-    const poll = async () => {
-      let changeDetected = false
-
-      // 1) Messages
-      try {
-        const res = await listMessages({
-          data: { id: uuidv4(), jsonrpc: "2.0", method: "message/list", params: sessionId },
-        } as any).unwrap()
-        const serverMessages = Array.isArray(res?.result) ? res.result : []
-        const mapped = mapServerMessagesToClient(serverMessages, sessionId)
-        if (!cancelled && mapped.length) {
-          // Calculate new messages to merge
-          const newOnes = mapped.filter((m) => !messagesMap.has(m.id) && m.content?.trim())
-          if (newOnes.length > 0) changeDetected = true
-          if (newOnes.length > 0) {
-            setMessagesMap((prev) => {
-              const next = new Map(prev)
-              for (const m of newOnes) next.set(m.id, m)
-              return next
-            })
-          }
-        }
-      } catch (e) {
-        console.warn("message/list poll error:", e)
-      }
-
-      // 2) Pending
-      try {
-        const res = await pendingMessages({
-          data: { id: uuidv4(), jsonrpc: "2.0", method: "message/pending", params: sessionId },
-        } as any).unwrap()
-        const result = Array.isArray(res?.result) ? res.result : []
-        const count = result.length
-        if (!cancelled) {
-          if (count !== prevSnapshotRef.current.pending) {
-            changeDetected = true
-          }
-          setPendingCount(count)
-        }
-      } catch (e) {
-        console.warn("message/pending poll error:", e)
-      }
-
-      // 3) Events
-      try {
-        const res = await getEvents({
-          data: { id: uuidv4(), jsonrpc: "2.0", method: "events/get", params: sessionId },
-        } as any).unwrap()
-        const events = Array.isArray(res?.result) ? res.result : []
-        // Filter to this conversation if available in content
-        const filtered = events.filter((ev: any) => ev?.content?.contextId === sessionId)
-        if (!cancelled) {
-          if (filtered.length !== prevSnapshotRef.current.events) {
-            changeDetected = true
-          }
-          setEventCount(filtered.length)
-        }
-      } catch (e) {
-        console.warn("events/get poll error:", e)
-      }
-
-      // 4) Tasks
-      try {
-        const res = await listTasks({
-          data: { id: uuidv4(), jsonrpc: "2.0", method: "task/list", params: sessionId },
-        } as any).unwrap()
-        const tasks = Array.isArray(res?.result) ? res.result : []
-        const filtered = tasks.filter((t: any) => (t?.contextId ?? t?.content?.contextId) === sessionId)
-        if (!cancelled) {
-          if (filtered.length !== prevSnapshotRef.current.tasks) {
-            changeDetected = true
-          }
-          setTaskCount(filtered.length)
-        }
-      } catch (e) {
-        console.warn("task/list poll error:", e)
-      }
-
-      if (!cancelled) {
-        // Update lastUpdatedAt every cycle
-        setLastUpdatedAt(Date.now())
-
-        // Update snapshot for inactivity detection
-        const currentMsgSize = messagesMap.size
-        if (currentMsgSize !== prevSnapshotRef.current.msgSize) changeDetected = true
-
-        prevSnapshotRef.current = {
-          msgSize: messagesMap.size,
-          pending: pendingCount,
-          events: eventCount,
-          tasks: taskCount,
-        }
-
-        if (changeDetected) {
-          setLastActivityAt(Date.now())
-        }
-      }
+    if (!isOpen) {
+      return
     }
+    setLastActivityAt(Date.now())
+  }, [isOpen, messages.length, pendingCount, eventCount, taskCount])
 
-    // Initial poll, then interval
-    poll()
-    const interval = setInterval(poll, 2500)
-    return () => {
-      cancelled = true
-      clearInterval(interval)
-    }
-  }, [
-    isOpen,
-    sessionId,
-    listMessages,
-    pendingMessages,
-    getEvents,
-    listTasks,
-    messagesMap.size,
-    pendingCount,
-    eventCount,
-    taskCount,
-  ])
-
-  // Inactivity auto-close: close after 3 minutes with no activity and no work in progress
   useEffect(() => {
     if (!isOpen) return
-    const INACTIVITY_MS = 3 * 60 * 1000 // 3 minutes
+    const inactivityMs = 3 * 60 * 1000
 
     const ticker = setInterval(() => {
-      if (!isOpen) return
-      if (!lastActivityAt) return
-
-      const now = Date.now()
-      const idleFor = now - lastActivityAt
-
-      // Don't close if any work is in progress
-      const hasWork = pendingCount > 0 || taskCount > 0
-      if (!hasWork && idleFor >= INACTIVITY_MS) {
+      if (!isOpen || !lastActivityAt) return
+      const idleFor = Date.now() - lastActivityAt
+      const hasWork = pendingCount > 0 || Boolean(session?.awaitingInput)
+      if (!hasWork && idleFor >= inactivityMs) {
         setIsOpen(false)
         toast.info("AI Assistant closed due to inactivity.")
-        
       }
-    }, 10000) // check every 10s
+    }, 10000)
 
     return () => clearInterval(ticker)
-  }, [isOpen, lastActivityAt, pendingCount, taskCount, toast])
+  }, [isOpen, lastActivityAt, pendingCount, session?.awaitingInput])
 
-  // Send user message
   const handleSend = async (text: string) => {
-    if (!text.trim() || combinedLoading || !sessionId) return
-    const messageId = uuidv4()
-    setMessagesMap((prev) => {
-      const next = new Map(prev)
-      next.set(messageId, { id: messageId, role: "user", content: text })
-      return next
-    })
+    if (!text.trim() || !sessionId) return
     setLastActivityAt(Date.now())
-
-    try {
-      const payload = {
-        data: {
-          jsonrpc: "2.0",
-          id: uuidv4(),
-          method: "message/send",
-          params: {
-            messageId,
-            contextId: sessionId,
-            role: "user",
-            parts: [{ kind: "text", text }],
-            kind: "message",
-          },
-          metadata: {
-            blocking: true,
-            accepted_output_modes: ["text/plain"],
-          },
-        },
-      } as any
-      await sendMessage(payload).unwrap()
-      // Polling will ingest assistant messages
-    } catch (err) {
-      console.error("send message error:", err)
-      setMessagesMap((prev) => {
-        const next = new Map(prev)
-        next.delete(messageId)
-        const errId = uuidv4()
-        next.set(errId, { id: errId, role: "assistant", content: "Sorry, I couldn't process that request." })
-        return next
-      })
-    }
+    await dispatch(sendStreamMessage({ text, sessionId }))
   }
 
-  // User activity callback passed down to the chat (typing, toggling, etc.)
   const handleUserActivity = () => setLastActivityAt(Date.now())
 
   const chatWindowClasses = isFullScreen
     ? "fixed inset-0 w-full h-full rounded-none"
-    : "absolute bottom-20 right-0 max-w-[450px] h-[450px] rounded-xl border border-gray-200"
+    : "absolute bottom-20 right-0 max-w-[450px] h-[520px] rounded-xl border border-gray-200"
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
-      {/* Toggle Button */}
       <button
         id="chat-toggle"
         ref={toggleBtnRef}
@@ -361,7 +163,6 @@ const [loadTools,{isLoading:isLoadingTools}]=useLoadToolsMutation()
         {isOpen ? <X className="h-6 w-6" /> : <MessageSquareText className="h-6 w-6" />}
       </button>
 
-      {/* Chat Window */}
       {isOpen && (
         <div
           id="chat-widget"
@@ -369,9 +170,7 @@ const [loadTools,{isLoading:isLoadingTools}]=useLoadToolsMutation()
           className={`shadow-2xl flex flex-col overflow-hidden bg-white ${chatWindowClasses}`}
         >
           <AgentChat
-            onClose={() => {
-              setIsOpen(false)
-            }}
+            onClose={() => setIsOpen(false)}
             isFullScreen={isFullScreen}
             toggleFullScreen={() => {
               toggleFullScreen()
@@ -380,11 +179,14 @@ const [loadTools,{isLoading:isLoadingTools}]=useLoadToolsMutation()
             messages={messages}
             onSend={handleSend}
             onActivity={handleUserActivity}
-            isBusy={combinedLoading}
+            isBusy={session?.isStreaming ?? false}
             pendingCount={pendingCount}
             taskCount={taskCount}
             eventCount={eventCount}
-            lastUpdatedAt={lastUpdatedAt ?? undefined}
+            lastUpdatedAt={lastUpdatedAt}
+            activeAgentName={activeAgentName}
+            statusText={statusText}
+            awaitingInput={session?.awaitingInput ?? false}
           />
         </div>
       )}
