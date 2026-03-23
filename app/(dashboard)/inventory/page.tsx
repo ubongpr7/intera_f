@@ -15,6 +15,7 @@ import {
 } from "lucide-react"
 import InventoryAttentionCard from "@/components/inventory/InventoryAttentionCard"
 import InventoryCategoryView from "@/components/inventory/InventoryCategory"
+import InventoryOperationalInsights from "@/components/inventory/InventoryOperationalInsights"
 import InventoryView from "@/components/inventory/InventoryView"
 import { useWorkspaceSetupProgress } from "@/components/onboarding/WorkspaceSetupShell"
 import OperationalStepSection from "@/components/setup/OperationalStepSection"
@@ -30,7 +31,7 @@ import {
   useGetInventoriesNeedingReorderQuery,
   useGetLowStockInventoriesQuery,
 } from "@/redux/features/inventory/inventoryAPiSlice"
-import { useGetExpiringStockItemsQuery, useGetLowStockItemsQuery, useGetStockItemDataLocationQuery } from "@/redux/features/stock/stockAPISlice"
+import { useGetExpiringInventoryItemsQuery, useGetLowStockItemsQuery, useGetStockItemDataLocationQuery } from "@/redux/features/stock/stockAPISlice"
 
 type InventorySetupStep = {
   id: string
@@ -59,7 +60,7 @@ export default function InventoryPage() {
   const { data: lowStockItems, isLoading: loadingLowStock } = useGetLowStockItemsQuery()
   const { data: lowStockInventories = [], isLoading: loadingLowStockInventories } = useGetLowStockInventoriesQuery()
   const { data: inventoriesNeedingReorder = [], isLoading: loadingReorderInventories } = useGetInventoriesNeedingReorderQuery()
-  const { data: expiringStockItems = [], isLoading: loadingExpiringStock } = useGetExpiringStockItemsQuery({ days: 30 })
+  const { data: expiringStockItems = [], isLoading: loadingExpiringStock } = useGetExpiringInventoryItemsQuery({ days: 30 })
 
   const locationCount = locations?.length ?? 0
   const categoryCount = categories?.length ?? 0
@@ -67,6 +68,7 @@ export default function InventoryPage() {
   const lowStockCount = inventoryAnalytics?.low_stock_count ?? lowStockItems?.length ?? 0
   const totalStockValue = Number(inventoryAnalytics?.total_stock_value ?? 0)
   const currencyCode = profile?.currency || "NGN"
+  const inventoryItemCount = inventoryAnalytics?.total_inventory_items ?? inventoryCount
 
   const setupSteps: InventorySetupStep[] = useMemo(
     () => [
@@ -86,13 +88,13 @@ export default function InventoryPage() {
       },
       {
         id: "inventories",
-        title: "Open inventory ledgers",
-        description: "Create the actual inventory buckets with valuation, reorder rules, and ownership.",
-        complete: inventoryCount > 0,
+        title: "Create inventory items",
+        description: "Create the actual inventory items with valuation, reorder rules, and ownership.",
+        complete: inventoryItemCount > 0,
         icon: Warehouse,
       },
     ],
-    [categoryCount, inventoryCount, locationCount],
+    [categoryCount, inventoryItemCount, locationCount],
   )
 
   const completedSetupSteps = setupSteps.filter((step) => step.complete).length
@@ -101,7 +103,7 @@ export default function InventoryPage() {
   const lowStockInventoryItems = (lowStockInventories || []).slice(0, 4).map((inventory) => ({
     id: inventory.id,
     title: inventory.name,
-    supporting: inventory.category_name || "Inventory",
+    supporting: inventory.category_name || "Inventory item",
     detail: `Current stock: ${inventory.current_stock_level ?? 0} • Minimum: ${inventory.minimum_stock_level ?? 0}`,
     href: `/inventory/${inventory.id}`,
     badge: inventory.stock_status || "low stock",
@@ -109,17 +111,25 @@ export default function InventoryPage() {
   const reorderInventoryItems = (inventoriesNeedingReorder || []).slice(0, 4).map((inventory) => ({
     id: inventory.id,
     title: inventory.name,
-    supporting: inventory.reorder_strategy || "Reorder required",
-    detail: `Reorder point: ${inventory.re_order_point ?? 0} • Suggested quantity: ${inventory.re_order_quantity ?? 0}`,
+    supporting: inventory.category_name || "Reorder required",
+    detail: `Reorder point: ${inventory.reorder_point ?? 0} • Suggested quantity: ${inventory.reorder_quantity ?? 0}`,
     href: `/inventory/${inventory.id}`,
-    badge: inventory.re_order_quantity ?? 0,
+    badge: inventory.reorder_quantity ?? 0,
   }))
   const expiringInventoryItems = (expiringStockItems || []).slice(0, 4).map((item) => ({
     id: item.id,
-    title: item.name || "Stock item",
+    title: item.name || "Inventory item",
     supporting: item.inventory_name || "Inventory item",
     detail: `Expiry: ${item.expiry_date || "Unknown"} • Quantity: ${item.quantity ?? 0}`,
     badge: item.days_to_expiry ?? "watch",
+  }))
+  const inventoryOptions = (inventories || []).map((item) => ({
+    id: item.id,
+    name: item.name,
+  }))
+  const locationOptions = (locations || []).map((location) => ({
+    id: String(location.id),
+    name: location.name,
   }))
 
   if (!activeMembership) {
@@ -130,7 +140,7 @@ export default function InventoryPage() {
             <CardTitle className="text-3xl tracking-tight">Create a workspace before setting up inventory</CardTitle>
             <CardDescription className="max-w-2xl text-sm leading-6 text-gray-600">
               Inventory setup depends on an active company workspace. Create and activate your workspace first, then come back here to
-              define locations, categories, and inventory ledgers.
+              define locations, categories, and inventory items.
             </CardDescription>
           </CardHeader>
           <CardContent className="p-6 pt-0">
@@ -157,7 +167,7 @@ export default function InventoryPage() {
             </div>
             <CardTitle className="mt-3 text-xl">Build the operating structure before stock starts moving</CardTitle>
             <CardDescription className="text-sm leading-6 text-gray-600">
-              The clean order is location structure, then categories, then the inventory ledgers your staff will manage every day.
+              The clean order is location structure, then categories, then the inventory items your staff will manage every day.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 p-5 pt-0">
@@ -240,8 +250,8 @@ export default function InventoryPage() {
               <p className="mt-1">Categories can reference default locations, so define your structure before building category rules.</p>
             </div>
             <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
-              <p className="font-medium text-gray-900">Categories before inventories</p>
-              <p className="mt-1">Inventories should land inside a clear operating category so reorder and reporting stay consistent.</p>
+              <p className="font-medium text-gray-900">Categories before inventory items</p>
+              <p className="mt-1">Inventory items should land inside a clear operating category so reorder and reporting stay consistent.</p>
             </div>
             {!readiness.teamComplete || !readiness.agentComplete ? (
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-900">
@@ -270,8 +280,8 @@ export default function InventoryPage() {
           <CardHeader className="border-b border-gray-100 p-6 text-left text-inherit">
             <CardTitle className="text-3xl tracking-tight">Inventory operations setup</CardTitle>
             <CardDescription className="max-w-3xl text-sm leading-6 text-gray-600">
-              This page is now structured like the real operational journey: establish your stock map, group the inventories that follow the
-              same rules, then create the inventory ledgers your team will replenish, monitor, and sell against.
+              This page is now structured like the real operational journey: establish your stock map, group the inventory items that follow the
+              same rules, then create the inventory records your team will replenish, monitor, and sell against.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-4">
@@ -289,15 +299,15 @@ export default function InventoryPage() {
                 <FolderTree className="h-4 w-4 text-gray-400" />
               </div>
               <div className="mt-3 text-3xl font-semibold text-gray-900">{displayCount(categoryCount, loadingCategories)}</div>
-              <p className="mt-2 text-sm text-gray-600">Operational groupings that inventories can inherit from.</p>
+              <p className="mt-2 text-sm text-gray-600">Operational groupings that inventory items can inherit from.</p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Inventories</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Inventory items</p>
                 <Warehouse className="h-4 w-4 text-gray-400" />
               </div>
-              <div className="mt-3 text-3xl font-semibold text-gray-900">{displayCount(inventoryCount, loadingInventories)}</div>
-              <p className="mt-2 text-sm text-gray-600">Ledgers with replenishment, value, and stock rules.</p>
+              <div className="mt-3 text-3xl font-semibold text-gray-900">{displayCount(inventoryItemCount, loadingInventories)}</div>
+              <p className="mt-2 text-sm text-gray-600">Operational records with replenishment, value, and stock rules.</p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <div className="flex items-center justify-between">
@@ -316,15 +326,15 @@ export default function InventoryPage() {
 
         <section className="grid gap-4 xl:grid-cols-3">
           <InventoryAttentionCard
-            title="Low-stock inventories"
-            description="These ledgers need a replenishment review before the stock situation becomes disruptive."
-            emptyMessage={loadingLowStockInventories ? "Loading low-stock inventories..." : "No inventory is currently flagged as low stock."}
+            title="Low-stock inventory items"
+            description="These inventory items need a replenishment review before the stock situation becomes disruptive."
+            emptyMessage={loadingLowStockInventories ? "Loading low-stock inventory items..." : "No inventory item is currently flagged as low stock."}
             items={lowStockInventoryItems}
           />
           <InventoryAttentionCard
             title="Needs reorder"
-            description="These inventories already crossed their reorder point and should be planned next."
-            emptyMessage={loadingReorderInventories ? "Loading reorder candidates..." : "No inventory is currently flagged for reorder."}
+            description="These inventory items already crossed their reorder point and should be planned next."
+            emptyMessage={loadingReorderInventories ? "Loading reorder candidates..." : "No inventory item is currently flagged for reorder."}
             items={reorderInventoryItems}
           />
           <InventoryAttentionCard
@@ -340,7 +350,7 @@ export default function InventoryPage() {
           step={1}
           title="Define your stock location structure"
           description="Start with the physical map of your operation: warehouses, branches, backrooms, shelves, and external fulfillment points."
-          helper="If a category or inventory should default into a location later, define that location here first."
+          helper="If a category or inventory item should default into a location later, define that location here first."
           status={locationCount > 0 ? "complete" : "in_progress"}
           facts={[
             { label: "Current locations", value: displayCount(locationCount, loadingLocations) },
@@ -360,7 +370,7 @@ export default function InventoryPage() {
           id="categories"
           step={2}
           title="Create inventory categories that match operations"
-          description="Categories define how inventories are grouped and where they naturally belong, which keeps reporting and replenishment cleaner."
+          description="Categories define how inventory items are grouped and where they naturally belong, which keeps reporting and replenishment cleaner."
           helper="Categories can still be created without default locations, but they become much more useful once the location map already exists."
           status={categoryCount > 0 ? "complete" : locationCount > 0 ? "in_progress" : "pending"}
           facts={[
@@ -382,29 +392,31 @@ export default function InventoryPage() {
         <OperationalStepSection
           id="inventories"
           step={3}
-          title="Open the inventories your team will manage"
-          description="Each inventory becomes an operational ledger with ownership, reorder rules, stock thresholds, and valuation details."
-          helper="By the time you create inventories, your location and category model should already describe where the stock belongs and who is responsible."
-          status={inventoryCount > 0 ? "complete" : categoryCount > 0 ? "in_progress" : "pending"}
+          title="Create the inventory items your team will manage"
+          description="Each inventory item becomes an operational record with ownership, reorder rules, stock thresholds, and valuation details."
+          helper="By the time you create inventory items, your location and category model should already describe where the stock belongs and who is responsible."
+          status={inventoryItemCount > 0 ? "complete" : categoryCount > 0 ? "in_progress" : "pending"}
           facts={[
-            { label: "Inventories", value: displayCount(inventoryCount, loadingInventories) },
+            { label: "Inventory items", value: displayCount(inventoryItemCount, loadingInventories) },
             { label: "Categories ready", value: categoryCount > 0 ? "Yes" : "No" },
             { label: "Stock value", value: loadingAnalytics ? "..." : formatCurrencyCompact(currencyCode, totalStockValue) },
           ]}
           notice={
             categoryCount === 0 ? (
               <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                Create at least one inventory category before opening ledgers, otherwise your stock model will become hard to scale.
+                Create at least one inventory category before creating inventory items, otherwise your stock model will become hard to scale.
               </div>
-            ) : inventoryCount === 0 ? (
+            ) : inventoryItemCount === 0 ? (
               <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-                Once the first inventory exists, you can move into products, stock items, and replenishment flows with much less friction.
+                Once the first inventory item exists, you can move into products, stock tracking, and replenishment flows with much less friction.
               </div>
             ) : undefined
           }
         >
           <InventoryView refetchData={refetchData} setRefetchData={setRefetchData} />
         </OperationalStepSection>
+
+        <InventoryOperationalInsights inventoryOptions={inventoryOptions} locationOptions={locationOptions} />
 
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="p-6 text-left text-inherit">
@@ -421,7 +433,7 @@ export default function InventoryPage() {
                 Product setup next
               </div>
               <p className="mt-2 text-sm leading-6 text-gray-600">
-                Move from inventory ledgers into product templates, variants, pricing, and sellable catalog structure.
+                Move from inventory items into product templates, variants, pricing, and sellable catalog structure.
               </p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">

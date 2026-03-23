@@ -35,6 +35,8 @@ export interface StockLocation extends StockLocationSummary {
 
 export interface StockMovement {
   id: string;
+  inventory_item?: string;
+  inventory_item_name?: string;
   movement_type: string;
   movement_type_display?: string;
   quantity: string | number;
@@ -50,7 +52,48 @@ export interface StockMovement {
   actor_details?: Partial<UserData> | null;
 }
 
-export interface StockItem {
+export interface StockBalanceRow {
+  id: string;
+  inventory_item_id?: string | null;
+  inventory_item_name?: string | null;
+  stock_location_id?: string | null;
+  stock_location_name?: string | null;
+  stock_lot_id?: string | null;
+  lot_number?: string | null;
+  quantity_on_hand?: string | number;
+  quantity_reserved?: string | number;
+  quantity_available?: string | number;
+}
+
+export interface StockLot {
+  id: string;
+  inventory_item_id?: string | null;
+  inventory_item_name?: string | null;
+  lot_number: string;
+  expiry_date?: string | null;
+  unit_cost?: string | number | null;
+  currency_code?: string | null;
+  received_quantity?: string | number;
+  remaining_quantity?: string | number;
+  status?: string | null;
+  supplier_name?: string | null;
+  created_at?: string;
+}
+
+export interface StockSerial {
+  id: string;
+  inventory_item_id?: string | null;
+  inventory_item_name?: string | null;
+  serial_number: string;
+  status?: string | null;
+  stock_location_id?: string | null;
+  stock_location_name?: string | null;
+  stock_lot_id?: string | null;
+  lot_number?: string | null;
+  created_at?: string;
+}
+
+export interface InventoryItem {
   id: string;
   name?: string;
   description?: string | null;
@@ -91,6 +134,10 @@ export interface StockItem {
   lot_count?: number;
   serial_count?: number;
   current_pricing?: Record<string, unknown> | null;
+  balances?: StockBalanceRow[];
+  lots?: StockLot[];
+  serials?: StockSerial[];
+  active_reservations?: StockReservation[];
   recent_movements?: StockMovement[];
   created_by_user_id?: string | number | null;
   updated_by_user_id?: string | number | null;
@@ -106,6 +153,8 @@ export interface StockItem {
   delete_on_deplete?: boolean;
   barcode_snapshot?: string | null;
 }
+
+export type StockItem = InventoryItem;
 
 export interface StockTrackingEntry {
   id: string;
@@ -124,7 +173,7 @@ export interface LowStockItem {
   quantity: string | number;
   inventory_name: string;
   minimum_stock_level: string | number;
-  re_order_point: string | number;
+  reorder_point: string | number;
   shortfall: string | number;
   product_variant?: string;
   display_image?: string | null;
@@ -145,6 +194,7 @@ export interface StockReservation {
   external_order_line_id?: string | null;
   reserved_quantity: string | number;
   fulfilled_quantity: string | number;
+  remaining_quantity?: string | number;
   status: string;
   expires_at?: string | null;
   created_at?: string;
@@ -152,8 +202,7 @@ export interface StockReservation {
 }
 
 export interface StockReservationPayload {
-  inventory_id?: string;
-  inventory_item_id?: string;
+  inventory_item_id: string;
   location_id: string;
   quantity: string | number;
   external_order_type: string;
@@ -174,7 +223,6 @@ export interface StockReservationMutationPayload {
 export interface StockTransferPayload {
   to_location_id: string;
   quantity: string | number;
-  stock_item_id?: string;
   inventory_item_id?: string;
   stock_lot_id?: string;
   stock_serial_id?: string;
@@ -200,13 +248,27 @@ export interface StockStatusUpdateResponse {
 }
 
 export interface CreateInventoryVariantPayload {
-  inventory: string;
   product_variant: string;
   name?: string;
+  description?: string;
+  inventory_category_id?: string;
+  inventory_type?: string;
+  default_uom_code?: string;
+  stock_uom_code?: string;
+  track_stock?: boolean;
+  track_lot?: boolean;
+  track_serial?: boolean;
+  track_expiry?: boolean;
+  allow_negative_stock?: boolean;
+  reorder_point?: string | number;
+  reorder_quantity?: string | number;
+  minimum_stock_level?: string | number;
+  safety_stock_level?: string | number;
 }
 
 export interface StockAnalyticsResponse {
-  total_stock_items: number;
+  total_inventory_items: number;
+  total_stock_items?: number;
   total_locations: number;
   total_stock_value: string | number;
   location_distribution: Array<Record<string, unknown>>;
@@ -219,8 +281,9 @@ export interface StockLocationResponse {
   next: string | null;
 }
 
-export interface StockItemListParams {
-  inventory?: string;
+export interface InventoryItemListParams {
+  inventory_item?: string;
+  inventory_category?: string;
   location?: string;
   purchase_order?: string;
   sales_order?: string;
@@ -228,6 +291,46 @@ export interface StockItemListParams {
   expiry_status?: "expired" | "expiring_soon";
   quantity_filter?: "zero" | "low";
   status?: string;
+  search?: string;
+  ordering?: string;
+}
+
+export type StockItemListParams = InventoryItemListParams;
+
+export interface StockBalanceListParams {
+  inventory_item?: string;
+  stock_location?: string;
+  stock_lot?: string;
+  search?: string;
+  ordering?: string;
+}
+
+export interface StockLotListParams {
+  inventory_item?: string;
+  supplier?: string;
+  status?: string;
+  search?: string;
+  ordering?: string;
+}
+
+export interface StockSerialListParams {
+  inventory_item?: string;
+  stock_location?: string;
+  stock_lot?: string;
+  status?: string;
+  search?: string;
+  ordering?: string;
+}
+
+export interface StockMovementListParams {
+  inventory_item?: string;
+  movement_type?: string;
+  reference_type?: string;
+  reference_id?: string;
+  from_location?: string;
+  to_location?: string;
+  stock_lot?: string;
+  stock_serial?: string;
   search?: string;
   ordering?: string;
 }

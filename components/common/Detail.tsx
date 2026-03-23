@@ -77,6 +77,13 @@ export default function DetailCard<T extends Record<string, any>>({
   ) as (keyof T)[];
 
   const formatLabel = (str: string): string => {
+    if (str.endsWith('_snapshot')) {
+      str = str.replace(/_snapshot$/, '');
+    }
+    str = str
+      .replace('default_uom_code', 'default UOM')
+      .replace('stock_uom_code', 'stock UOM')
+      .replace('inventory_item', 'inventory item');
     if (str.toLocaleLowerCase().includes('weight')){
       str = str+ ' (kg)'
     }

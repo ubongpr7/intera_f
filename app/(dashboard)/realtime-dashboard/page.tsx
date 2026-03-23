@@ -45,6 +45,8 @@ export default function RealtimeDashboardPage() {
   const { data: purchaseAnalytics } = useGetPurchaseOrderAnalyticsQuery()
 
   const currencyCode = activeMembership?.currency || "NGN"
+  const inventoryItemCount = inventoryAnalytics?.total_inventory_items ?? inventoryAnalytics?.total_inventories ?? 0
+  const trackedInventoryItemCount = stockAnalytics?.total_inventory_items ?? stockAnalytics?.total_stock_items ?? 0
 
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-6 px-4 py-6 lg:px-8">
@@ -115,7 +117,7 @@ export default function RealtimeDashboardPage() {
             <StatTile
               label="Stock value"
               value={formatCurrencyCompact(currencyCode, Number(stockAnalytics?.total_stock_value ?? inventoryAnalytics?.total_stock_value ?? 0))}
-              description={`${stockAnalytics?.total_stock_items ?? 0} stock items across ${stockAnalytics?.total_locations ?? 0} locations`}
+              description={`${trackedInventoryItemCount} inventory items across ${stockAnalytics?.total_locations ?? 0} locations`}
               icon={Boxes}
             />
           </div>
@@ -125,7 +127,7 @@ export default function RealtimeDashboardPage() {
       <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="border-b border-gray-100 p-5 text-left text-inherit">
-            <CardTitle className="text-xl tracking-tight">Inventory watchlist</CardTitle>
+            <CardTitle className="text-xl tracking-tight">Inventory item watchlist</CardTitle>
             <CardDescription className="text-sm leading-6 text-gray-600">
               Immediate stock pressure that may affect sales, fulfillment, or purchasing today.
             </CardDescription>
@@ -292,17 +294,17 @@ export default function RealtimeDashboardPage() {
               </p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-              <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">Inventories</div>
-              <div className="mt-2 text-2xl font-semibold text-gray-900">{inventoryAnalytics?.total_inventories ?? 0}</div>
+              <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">Inventory items</div>
+              <div className="mt-2 text-2xl font-semibold text-gray-900">{inventoryItemCount}</div>
               <p className="mt-2 text-sm text-gray-600">
-                {inventoryAnalytics?.active_inventories ?? 0} active · {inventoryAnalytics?.low_stock_count ?? 0} low stock
+                {(inventoryAnalytics?.active_inventories ?? inventoryItemCount)} active · {inventoryAnalytics?.low_stock_count ?? 0} low stock
               </p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">Stock locations</div>
               <div className="mt-2 text-2xl font-semibold text-gray-900">{stockAnalytics?.total_locations ?? 0}</div>
               <p className="mt-2 text-sm text-gray-600">
-                {stockAnalytics?.total_stock_items ?? 0} items tracked across the warehouse footprint
+                {trackedInventoryItemCount} items tracked across the warehouse footprint
               </p>
             </div>
 

@@ -81,8 +81,8 @@ const StockAnalyticsDashboard = () => {
   const summaryMetrics = [
     {
       id: 1,
-      title: 'Total Stock Items',
-      value: analyticsData?.total_stock_items,
+      title: 'Total Inventory Items',
+      value: analyticsData?.total_inventory_items ?? analyticsData?.total_stock_items,
       icon: <Box className="w-5 h-5" />,
       color: 'bg-gradient-to-r from-indigo-500 to-purple-600',
       description: 'All items in inventory'

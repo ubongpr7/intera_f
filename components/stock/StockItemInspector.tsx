@@ -15,9 +15,9 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { formatCurrencyCompact } from "@/lib/currency-utils"
 import {
-  useGetStockItemQuery,
-  useGetStockItemTrackingHistoryQuery,
-  useUpdateStockItemStatusMutation,
+  useGetInventoryItemQuery,
+  useGetInventoryItemTrackingHistoryQuery,
+  useUpdateInventoryItemStatusMutation,
 } from "@/redux/features/stock/stockAPISlice"
 import { useState } from "react"
 
@@ -46,7 +46,18 @@ const getErrorMessage = (error: unknown) => {
       return data.error
     }
   }
-  return "Failed to update stock item status."
+  return "Failed to update inventory item status."
+}
+
+const formatDateLabel = (value?: string | null) => {
+  if (!value) {
+    return "N/A"
+  }
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) {
+    return value
+  }
+  return parsed.toLocaleString()
 }
 
 export default function StockItemInspector({
@@ -55,9 +66,9 @@ export default function StockItemInspector({
   onUpdated,
   currencyCode = "NGN",
 }: StockItemInspectorProps) {
-  const { data: item, isLoading, refetch } = useGetStockItemQuery(itemId)
-  const { data: trackingHistory = [], refetch: refetchTracking } = useGetStockItemTrackingHistoryQuery(itemId)
-  const [updateStatus, { isLoading: isUpdating }] = useUpdateStockItemStatusMutation()
+  const { data: item, isLoading, refetch } = useGetInventoryItemQuery(itemId)
+  const { data: trackingHistory = [], refetch: refetchTracking } = useGetInventoryItemTrackingHistoryQuery(itemId)
+  const [updateStatus, { isLoading: isUpdating }] = useUpdateInventoryItemStatusMutation()
   const [status, setStatus] = useState("")
   const [reason, setReason] = useState("")
 
@@ -72,7 +83,7 @@ export default function StockItemInspector({
         id: itemId,
         data: { status, reason },
       }).unwrap()
-      toast.success("Stock item status updated.")
+      toast.success("Inventory item status updated.")
       setReason("")
       await Promise.all([refetch(), refetchTracking()])
       if (onUpdated) {
@@ -89,9 +100,9 @@ export default function StockItemInspector({
         <CardHeader className="border-b border-gray-100 p-6 text-left text-inherit">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <CardTitle className="text-2xl">{isLoading ? "Loading stock item..." : item?.name || "Stock item"}</CardTitle>
+              <CardTitle className="text-2xl">{isLoading ? "Loading inventory item..." : item?.name || "Inventory item"}</CardTitle>
               <CardDescription className="mt-2 text-sm leading-6 text-gray-600">
-                Inspect this stock item, review its movement history, and change operational status when needed.
+                Inspect this inventory item, review its movement history, and change operational status when needed.
               </CardDescription>
             </div>
             <Button variant="outline" onClick={onClose}>
@@ -158,6 +169,117 @@ export default function StockItemInspector({
               </div>
 
               <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                <h3 className="text-sm font-semibold text-gray-900">Balance by location</h3>
+                <div className="mt-3 space-y-3">
+                  {item?.balances?.length ? (
+                    item.balances.map((balance) => (
+                      <div key={balance.id} className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-sm font-semibold text-gray-900">{balance.stock_location_name || "Unknown location"}</p>
+                          <span className="text-xs uppercase tracking-wide text-gray-500">
+                            {balance.lot_number ? `Lot ${balance.lot_number}` : "No lot split"}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-sm text-gray-600">
+                          On hand: {balance.quantity_on_hand ?? 0} • Reserved: {balance.quantity_reserved ?? 0} • Available: {balance.quantity_available ?? 0}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-3 py-4 text-sm text-gray-600">
+                      No active stock balances are available for this inventory item yet.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                <h3 className="text-sm font-semibold text-gray-900">Active reservations</h3>
+                <div className="mt-3 space-y-3">
+                  {item?.active_reservations?.length ? (
+                    item.active_reservations.map((reservation) => (
+                      <div key={reservation.id} className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-sm font-semibold text-gray-900">
+                            {reservation.external_order_type}: {reservation.external_order_id}
+                          </p>
+                          <span className="text-xs uppercase tracking-wide text-gray-500">{reservation.status}</span>
+                        </div>
+                        <p className="mt-2 text-sm text-gray-600">
+                          Reserved: {reservation.reserved_quantity} • Fulfilled: {reservation.fulfilled_quantity} • Remaining: {reservation.remaining_quantity ?? reservation.reserved_quantity}
+                        </p>
+                        <p className="mt-2 text-sm text-gray-600">
+                          Location: {reservation.location_name || "Unknown location"}
+                          {reservation.lot_number ? ` • Lot: ${reservation.lot_number}` : ""}
+                          {reservation.serial_number ? ` • Serial: ${reservation.serial_number}` : ""}
+                        </p>
+                        {reservation.expires_at ? (
+                          <p className="mt-2 text-sm text-gray-600">Expires: {formatDateLabel(reservation.expires_at)}</p>
+                        ) : null}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-3 py-4 text-sm text-gray-600">
+                      No active reservations are attached to this inventory item.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid gap-4 xl:grid-cols-2">
+                <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                  <h3 className="text-sm font-semibold text-gray-900">Tracked lots</h3>
+                  <div className="mt-3 space-y-3">
+                    {item?.lots?.length ? (
+                      item.lots.map((lot) => (
+                        <div key={lot.id} className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="text-sm font-semibold text-gray-900">{lot.lot_number}</p>
+                            <span className="text-xs uppercase tracking-wide text-gray-500">{lot.status || "unknown"}</span>
+                          </div>
+                          <p className="mt-2 text-sm text-gray-600">
+                            Remaining: {lot.remaining_quantity ?? 0} / Received: {lot.received_quantity ?? 0}
+                          </p>
+                          <p className="mt-2 text-sm text-gray-600">
+                            Expiry: {lot.expiry_date || "N/A"}
+                            {lot.supplier_name ? ` • Supplier: ${lot.supplier_name}` : ""}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-3 py-4 text-sm text-gray-600">
+                        No lots have been recorded for this inventory item.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                  <h3 className="text-sm font-semibold text-gray-900">Tracked serials</h3>
+                  <div className="mt-3 space-y-3">
+                    {item?.serials?.length ? (
+                      item.serials.map((serial) => (
+                        <div key={serial.id} className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="text-sm font-semibold text-gray-900">{serial.serial_number}</p>
+                            <span className="text-xs uppercase tracking-wide text-gray-500">{serial.status || "unknown"}</span>
+                          </div>
+                          <p className="mt-2 text-sm text-gray-600">
+                            Location: {serial.stock_location_name || "Not assigned"}
+                            {serial.lot_number ? ` • Lot: ${serial.lot_number}` : ""}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-3 py-4 text-sm text-gray-600">
+                        No serial-tracked units are available for this inventory item.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-gray-200 bg-white p-4">
                 <h3 className="text-sm font-semibold text-gray-900">Tracking history</h3>
                 <div className="mt-3 space-y-3">
                   {trackingHistory.length === 0 ? (
@@ -202,7 +324,7 @@ export default function StockItemInspector({
                     ))
                   ) : (
                     <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-3 py-4 text-sm text-gray-600">
-                      No recent movements are available for this stock item.
+                      No recent movements are available for this inventory item.
                     </div>
                   )}
                 </div>
@@ -210,7 +332,7 @@ export default function StockItemInspector({
             </div>
 
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-              <h3 className="text-sm font-semibold text-gray-900">Update stock status</h3>
+              <h3 className="text-sm font-semibold text-gray-900">Update inventory item status</h3>
               <p className="mt-2 text-sm leading-6 text-gray-600">
                 Use this only when stock needs operational intervention such as quarantine, damage, rejection, or return.
               </p>

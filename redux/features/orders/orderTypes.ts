@@ -1,4 +1,3 @@
-import type { StockItem } from "../stock/stockTypes";
 import type { UserData } from "../users/userTypes";
 
 export const PurchaseOrderStatus = {
@@ -80,8 +79,6 @@ export interface PurchaseOrderLineItem {
   inventory_item?: EntityId | null;
   inventory_item_name?: string;
   inventory_item_details?: InventoryItemReference | null;
-  stock_item?: EntityId | null;
-  stock_item_details?: StockItem | null;
   quantity: string | number;
   unit_price: string | number;
   discount_rate?: string | number | null;
@@ -148,7 +145,6 @@ export const notEditableFields: (keyof PurchaseOrderInterface)[] = [
 export interface SalesOrderLineItem {
   id?: EntityId;
   sales_order?: EntityId;
-  inventory?: EntityId | null;
   inventory_item?: EntityId | null;
   inventory_name?: string;
   quantity: string | number;
@@ -184,7 +180,6 @@ export interface SalesOrderShipmentLineInterface {
 export interface SalesOrderShipmentInterface {
   id: EntityId;
   order: EntityId;
-  inventory?: EntityId | null;
   reference: string;
   shipment_date?: string | null;
   delivery_date?: string | null;

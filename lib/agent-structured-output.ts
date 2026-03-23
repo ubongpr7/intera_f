@@ -141,30 +141,10 @@ const parseLegacyLiteral = (raw: string): unknown => {
   return value.replace(/^["']|["']$/g, "")
 }
 
-const parseLegacyToolCodePayload = (toolCode: string): AgentStructuredPayload | undefined => {
-  const trimmed = toolCode.trim().replace(/^print\(\s*/, "").replace(/\)\s*$/, "")
-  const match = trimmed.match(/(create_[a-z_]+)\s*\(([\s\S]*)\)\s*$/i)
-  if (!match) {
-    return undefined
-  }
-
-  const functionName = match[1].trim().toLowerCase()
-  const argsSource = match[2].trim()
-  const parsedArgs: Record<string, unknown> = {}
-
-  for (const entry of splitTopLevelArgs(argsSource)) {
-    const eqIndex = entry.indexOf("=")
-    if (eqIndex === -1) {
-      continue
-    }
-    const key = entry.slice(0, eqIndex).trim()
-    const rawValue = entry.slice(eqIndex + 1).trim()
-    if (!key) {
-      continue
-    }
-    parsedArgs[key] = parseLegacyLiteral(rawValue)
-  }
-
+const buildLegacyInteractionPayload = (
+  functionName: string,
+  parsedArgs: Record<string, unknown>,
+): AgentStructuredPayload | undefined => {
   const interactionType =
     functionName === "create_confirmation_request"
       ? "confirmation_request"
@@ -219,6 +199,33 @@ const parseLegacyToolCodePayload = (toolCode: string): AgentStructuredPayload | 
   return normalizeInteractionType(payload) ? payload : undefined
 }
 
+const parseLegacyToolCodePayload = (toolCode: string): AgentStructuredPayload | undefined => {
+  const trimmed = toolCode.trim().replace(/^print\(\s*/, "").replace(/\)\s*$/, "")
+  const match = trimmed.match(/(create_[a-z_]+)\s*\(([\s\S]*)\)\s*$/i)
+  if (!match) {
+    return undefined
+  }
+
+  const functionName = match[1].trim().toLowerCase()
+  const argsSource = match[2].trim()
+  const parsedArgs: Record<string, unknown> = {}
+
+  for (const entry of splitTopLevelArgs(argsSource)) {
+    const eqIndex = entry.indexOf("=")
+    if (eqIndex === -1) {
+      continue
+    }
+    const key = entry.slice(0, eqIndex).trim()
+    const rawValue = entry.slice(eqIndex + 1).trim()
+    if (!key) {
+      continue
+    }
+    parsedArgs[key] = parseLegacyLiteral(rawValue)
+  }
+
+  return buildLegacyInteractionPayload(functionName, parsedArgs)
+}
+
 export const parseInteractionPayloadFromValue = (value: unknown): AgentStructuredPayload | undefined => {
   const payload = asObject(value)
   if (!payload) {
@@ -226,7 +233,18 @@ export const parseInteractionPayloadFromValue = (value: unknown): AgentStructure
   }
   const legacyToolCode = asString(payload.tool_code).trim()
   if (legacyToolCode) {
-    return parseLegacyToolCodePayload(legacyToolCode)
+    const parsedFromCode = parseLegacyToolCodePayload(legacyToolCode)
+    if (parsedFromCode) {
+      return parsedFromCode
+    }
+
+    const functionName = asString(payload.tool_name || payload.toolCode || payload.toolName || payload.tool_code)
+      .trim()
+      .toLowerCase()
+    const parameters = asObject(payload.parameters)
+    if (functionName.startsWith("create_") && parameters) {
+      return buildLegacyInteractionPayload(functionName, parameters)
+    }
   }
   return normalizeInteractionType(payload) ? payload : undefined
 }

@@ -580,9 +580,11 @@ export function ApprovalWorkflowHandler({ data, onResponse, compact = false, dis
 }
 
 export function WizardFlowHandler({ data, onResponse, compact = false, disabled = false }: ExtraCollabProps) {
-  const [currentStep, setCurrentStep] = useState(data.current_step || 0)
-  const [responses, setResponses] = useState<Record<string, any>>(data.existing_responses || {})
-  const [currentStepData, setCurrentStepData] = useState<Record<string, any>>({})
+  const initialStep = data.current_step || 0
+  const initialResponses = data.existing_responses || {}
+  const [currentStep, setCurrentStep] = useState(initialStep)
+  const [responses, setResponses] = useState<Record<string, any>>(initialResponses)
+  const [currentStepData, setCurrentStepData] = useState<Record<string, any>>(initialResponses[`step_${initialStep}`] || {})
 
   const handleFieldChange = (fieldName: string, value: any) => {
     setCurrentStepData((prev) => ({
@@ -600,8 +602,9 @@ export function WizardFlowHandler({ data, onResponse, compact = false, disabled 
     setResponses(updatedResponses)
 
     if (currentStep < data.steps.length - 1) {
-      setCurrentStep(currentStep + 1)
-      setCurrentStepData({})
+      const nextStep = currentStep + 1
+      setCurrentStep(nextStep)
+      setCurrentStepData(updatedResponses[`step_${nextStep}`] || {})
     } else {
       // Final step - submit all responses
       onResponse({
@@ -615,9 +618,9 @@ export function WizardFlowHandler({ data, onResponse, compact = false, disabled 
 
   const handlePrevious = () => {
     if (currentStep > 0) {
-      setCurrentStep(currentStep - 1)
-      // Load previous step data
-      setCurrentStepData(responses[`step_${currentStep - 1}`] || {})
+      const previousStep = currentStep - 1
+      setCurrentStep(previousStep)
+      setCurrentStepData(responses[`step_${previousStep}`] || {})
     }
   }
 

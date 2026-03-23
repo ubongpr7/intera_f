@@ -10,18 +10,10 @@ import { InventoryInterfaceKeys,defaultValues } from './selectOptions';
 import { InventoryKeyInfo } from './selectOptions';
 import { useGetUnitsQuery } from "../../redux/features/common/typeOF";
 import { useGetInventoryCategoriesQuery } from "../../redux/features/inventory/inventoryAPiSlice";
-import { useGetCompanyUsersQuery } from '@/redux/features/users/userApiSlice';
 import { RefetchDataProp } from "@/redux/features/common/commonTypes";
 import { formatCurrencyCompact } from '@/lib/currency-utils';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
-
-
-const strategies = {
-  FQ: 'Fixed Quantity',
-  FI: 'Fixed Interval',
-  DY: 'Dynamic',
-};
 
 const inventoryColumns: Column<InventoryData>[] = [
   {
@@ -30,8 +22,19 @@ const inventoryColumns: Column<InventoryData>[] = [
     className: 'font-medium',
   },
   {
-    header: 'Stock Items',
+    header: 'SKU',
+    accessor: 'sku_snapshot',
+    render: (value) => value || 'N/A',
+    className: 'font-medium',
+  },
+  {
+    header: 'On Hand',
     accessor: 'current_stock_level',
+    className: 'font-medium',
+  },
+  {
+    header: 'Available',
+    accessor: 'quantity_available',
     className: 'font-medium',
   },
   {
@@ -41,8 +44,8 @@ const inventoryColumns: Column<InventoryData>[] = [
     className: 'font-medium',
   },
   {
-    header: 'Reference',
-    accessor: 'external_system_id',
+    header: 'Inventory Type',
+    accessor: 'inventory_type',
     render: (value) => value || 'N/A',
     className: 'font-medium',
   },
@@ -50,19 +53,12 @@ const inventoryColumns: Column<InventoryData>[] = [
     header: 'Category',
     accessor: 'category_name',
     render: (value) => value || 'N/A',
-    info: 'Category to which the inventory belong',
+    info: 'Operational category assigned to the inventory item',
   },
   {
-    header: 'Reorder Strategy',
-    accessor: 'reorder_strategy',
-    render: (value: keyof typeof strategies) => {
-      return strategies[value] || value;
-    },
-  },
-  {
-    header: 'Expiration Policy',
-    accessor: 'expiration_policy',
-    render: (value) => (value === '0' ? 'Dispose of Stock' : 'Return to Manufacturer'),
+    header: 'Reorder Point',
+    accessor: 'reorder_point',
+    render: (value) => value || '0',
   },
 ];
 
@@ -81,9 +77,8 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
   };
 
     //////////////////////////////
-    const { data: categories = [], isLoading: isCatLoading, error: catError,refetch:refetchCategory } = useGetInventoryCategoriesQuery();
+    const { data: categories = [], refetch:refetchCategory } = useGetInventoryCategoriesQuery();
       const { data: units=[] } = useGetUnitsQuery();
-      const { data: userData, isLoading: userLoading,  } = useGetCompanyUsersQuery();
       
 
       
@@ -95,8 +90,8 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
   },[refetchData])
 
      const unitOptions = units.map((unit: any) => ({
-   value: `${unit.name} (${unit.dimension_type})`,
-  text: `${unit.name} (${unit.dimension_type})`,
+   value: unit.code,
+  text: `${unit.name}${unit.abbreviated_name ? ` (${unit.abbreviated_name})` : ""}`,
 })); 
       const typeOptions = inventoryTypes ? inventoryTypes.map((inventory_type: any) => ({
         value: inventory_type.id,
@@ -109,51 +104,22 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
       }));
   
 
-    const userOptions = userData?.map((assignment) => ({
-        text: `${assignment.user?.first_name ?? "Unknown"} ${assignment.user?.email ?? ""}`.trim(),
-        value: String(assignment.user?.id ?? assignment.id),
-      })) || [];      
     const  selectOptions = {
           
-            category:categoryOptions,
-            officer_in_charge:userOptions,
+            inventory_category:categoryOptions,
             inventory_type:typeOptions,
-            unit:unitOptions,
-            reorder_strategy: [
-              { value: 'FQ', text: 'Fixed Quantity' },
-              { value: 'FI', text: 'Fixed Interval' },
-              { value: 'DY', text: 'Demand-Based' }
-            ],
-            expiration_policy: [
-              { value: '0', text: 'Dispose of Stock' },
-              { value: '1', text: 'Return to Manufacturer' }
-            ],
-            recall_policy: [
-              { value: '0', text: 'Remove from Stock' },
-              { value: '1', text: 'Notify Customers' },
-              { value: '3', text: 'Replace Item' },
-              { value: '4', text: 'Destroy Item' },
-              { value: '5', text: 'Repair Item' }
-            ],
-            near_expiry_policy: [
-              { value: 'DISCOUNT', text: 'Sell at Discount' },
-              { value: 'DONATE', text: 'Donate to Charity' },
-              { value: 'DESTROY', text: 'Destroy Immediately' },
-              { value: 'RETURN', text: 'Return to Supplier' }
-            ],
-            forecast_method: [
-              { value: 'SA', text: 'Simple Average' },
-              { value: 'MA', text: 'Moving Average' },
-              { value: 'ES', text: 'Exponential Smoothing' }
+            default_uom_code:unitOptions,
+            stock_uom_code:unitOptions,
+            status: [
+              { value: 'draft', text: 'Draft' },
+              { value: 'active', text: 'Active' },
+              { value: 'archived', text: 'Archived' },
+              { value: 'discontinued', text: 'Discontinued' }
             ],
           
       }
   
     //////////////////////////////
-
-  const handleRefresh = async () => {
-    await refetch();
-  };
 
   const handleRowClick = (row: InventoryData) => {
     router.push(`/inventory/${row.id}`);
@@ -166,10 +132,10 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
 
     try {
       await deleteInventory(row.id).unwrap();
-      toast.success("Inventory deleted successfully.");
+      toast.success("Inventory item deleted successfully.");
       await refetch();
     } catch (error) {
-      toast.error("Failed to delete inventory.");
+      toast.error("Failed to delete inventory item.");
     }
   };
 
@@ -185,13 +151,19 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
     'id',
     'created_at',
     'updated_at',
-    'forecast_method_name',
-    'expiration_policy_name',
-    'reorder_strategy_name',
-    'recall_policy_name',
     'category_name',
-    'external_system_id',
-    'unit_name'
+    'name',
+    'current_stock_level',
+    'current_stock',
+    'quantity_available',
+    'quantity_reserved',
+    'stock_status',
+    'total_stock_value',
+    'created_by_details',
+    'modified_by_details',
+    'updated_by_details',
+    'stock_analytics',
+    'category_details'
   ];
 
   const actionButtons: ActionButton<InventoryData>[] = [
@@ -216,10 +188,10 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
         isLoading={isLoading}
         onRowClick={handleRowClick}
         actionButtons={actionButtons}
-        searchableFields={['name', 'external_system_id']}
+        searchableFields={['name', 'sku_snapshot', 'barcode_snapshot']}
         filterableFields={['category_name']}
-        sortableFields={['name', 'external_system_id']}
-         title="Inventory"
+        sortableFields={['name', 'sku_snapshot', 'inventory_type']}
+         title="Inventory Items"
         onClose={() =>setIsCreateOpen(true)} 
       />
 
@@ -237,8 +209,8 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
           keyInfo={InventoryKeyInfo}
           notEditableFields={notEditableFields}
           interfaceKeys={InventoryInterfaceKeys}
-          optionalFields={['batch_tracking_enabled','description']}
-          itemTitle={'Ceate Inventory'}
+          optionalFields={['description','inventory_category','stock_uom_code']}
+          itemTitle={'Create Inventory Item'}
         />
       </div>
     </div>

@@ -75,21 +75,21 @@ export const inventoryApiSlice = apiSlice.injectEndpoints({
 
     getCategoryInventories: builder.query<InventorySummary[], EntityId>({
       query: (id) => ({
-        url: `/${inventoryApi}/categories/${id}/inventories/`,
+        url: `/${inventoryApi}/categories/${id}/items/`,
         service,
       }),
     }),
 
     listInventories: builder.query<InventorySummary[], InventoryListParams | void>({
       query: (params) => ({
-        url: buildQuery(`/${inventoryApi}/inventories/`, params),
+        url: buildQuery(`/${inventoryApi}/items/`, params),
         service,
       }),
     }),
 
     createInventory: builder.mutation<InventoryData, Partial<InventoryData>>({
       query: (inventoryData) => ({
-        url: `/${inventoryApi}/inventories/`,
+        url: `/${inventoryApi}/items/`,
         method: "POST",
         body: inventoryData,
         service,
@@ -98,14 +98,14 @@ export const inventoryApiSlice = apiSlice.injectEndpoints({
 
     getInventory: builder.query<InventoryData, EntityId>({
       query: (id) => ({
-        url: `/${inventoryApi}/inventories/${id}/`,
+        url: `/${inventoryApi}/items/${id}/`,
         service,
       }),
     }),
 
     updateInventory: builder.mutation<InventoryData, { id: EntityId; data: Partial<InventoryData> }>({
       query: ({ id, data }) => ({
-        url: `/${inventoryApi}/inventories/${id}/`,
+        url: `/${inventoryApi}/items/${id}/`,
         method: "PATCH",
         body: data,
         service,
@@ -114,7 +114,7 @@ export const inventoryApiSlice = apiSlice.injectEndpoints({
 
     deleteInventory: builder.mutation<void, EntityId>({
       query: (id) => ({
-        url: `/${inventoryApi}/inventories/${id}/`,
+        url: `/${inventoryApi}/items/${id}/`,
         method: "DELETE",
         service,
       }),
@@ -122,35 +122,35 @@ export const inventoryApiSlice = apiSlice.injectEndpoints({
 
     getLowStockInventories: builder.query<InventorySummary[], void>({
       query: () => ({
-        url: `/${inventoryApi}/inventories/low_stock/`,
+        url: `/${inventoryApi}/items/low_stock/`,
         service,
       }),
     }),
 
     getInventoriesNeedingReorder: builder.query<InventorySummary[], void>({
       query: () => ({
-        url: `/${inventoryApi}/inventories/needs_reorder/`,
+        url: `/${inventoryApi}/items/needs_reorder/`,
         service,
       }),
     }),
 
     getInventoryStockSummary: builder.query<InventoryStockSummary, EntityId>({
       query: (id) => ({
-        url: `/${inventoryApi}/inventories/${id}/stock_summary/`,
+        url: `/${inventoryApi}/items/${id}/stock_summary/`,
         service,
       }),
     }),
 
     getMinimalInventory: builder.query<InventorySummary, EntityId>({
       query: (id) => ({
-        url: `/${inventoryApi}/inventories/${id}/minimal_inventory/`,
+        url: `/${inventoryApi}/items/${id}/minimal_item/`,
         service,
       }),
     }),
 
     adjustInventoryStock: builder.mutation<AdjustStockResponse, { id: EntityId; data: AdjustStockPayload }>({
       query: ({ id, data }) => ({
-        url: `/${inventoryApi}/inventories/${id}/adjust_stock/`,
+        url: `/${inventoryApi}/items/${id}/adjust_stock/`,
         method: "POST",
         body: data,
         service,
@@ -159,7 +159,7 @@ export const inventoryApiSlice = apiSlice.injectEndpoints({
 
     getInventoryAnalytics: builder.query<InventoryAnalytics, void>({
       query: () => ({
-        url: `/${inventoryApi}/inventories/analytics/`,
+        url: `/${inventoryApi}/items/analytics/`,
         service,
       }),
     }),

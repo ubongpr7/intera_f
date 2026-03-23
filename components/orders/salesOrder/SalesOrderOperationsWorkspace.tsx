@@ -45,10 +45,8 @@ import {
 } from "@/redux/features/orders/orderAPISlice"
 import {
   useGetInventoryDataQuery,
-  useGetInventoryQuery,
 } from "@/redux/features/inventory/inventoryAPiSlice"
 import {
-  useGetInventoryStockItemsQuery,
   useGetStockItemDataLocationQuery,
   useListReservationsQuery,
 } from "@/redux/features/stock/stockAPISlice"
@@ -79,7 +77,6 @@ type SalesOrderHeaderForm = {
 }
 
 type LineItemForm = {
-  inventory: string
   inventory_item: string
   quantity: string
   unit_price: string
@@ -134,7 +131,6 @@ const buildHeaderForm = (order?: SalesOrderInterface | null): SalesOrderHeaderFo
 })
 
 const emptyLineItemForm: LineItemForm = {
-  inventory: "",
   inventory_item: "",
   quantity: "1",
   unit_price: "0",
@@ -182,14 +178,8 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
   const { data: order, isLoading, refetch } = useGetSalesOrderQuery(salesOrderId)
   const { data: customers = [] } = useGetCustomerQuery()
   const { data: users = [] } = useGetCompanyUsersQuery()
-  const { data: inventories = [] } = useGetInventoryDataQuery()
+  const { data: inventoryItems = [] } = useGetInventoryDataQuery()
   const { data: locations = [] } = useGetStockItemDataLocationQuery()
-  const { data: inventoryItems = [] } = useGetInventoryStockItemsQuery(lineItemForm.inventory, {
-    skip: !lineItemForm.inventory,
-  })
-  const { data: selectedInventory } = useGetInventoryQuery(lineItemForm.inventory, {
-    skip: !lineItemForm.inventory,
-  })
   const { data: reservations = [], refetch: refetchReservations } = useListReservationsQuery(
     {
       external_order_type: "sales_order_line",
@@ -247,6 +237,11 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
         (lineItem) => asNumber(lineItem.remaining_quantity) > 0 && asNumber(lineItem.reserved_quantity) <= 0,
       ),
     [lineItems],
+  )
+
+  const selectedInventoryItem = useMemo(
+    () => inventoryItems.find((item) => String(item.id) === lineItemForm.inventory_item),
+    [inventoryItems, lineItemForm.inventory_item],
   )
 
   useEffect(() => {
@@ -368,14 +363,13 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
       return
     }
 
-    if (!lineItemForm.inventory) {
-      toast.error("Select an inventory before saving the line item.")
+    if (!lineItemForm.inventory_item) {
+      toast.error("Select an inventory item before saving the line item.")
       return
     }
 
     const payload = {
-      inventory: lineItemForm.inventory,
-      inventory_item: lineItemForm.inventory_item || undefined,
+      inventory_item: lineItemForm.inventory_item,
       quantity: Number(lineItemForm.quantity || "0"),
       unit_price: Number(lineItemForm.unit_price || "0"),
       discount_rate: Number(lineItemForm.discount_rate || "0"),
@@ -402,14 +396,13 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
       setLineItemForm(emptyLineItemForm)
       await refreshOrderScope()
     } catch (error) {
-      toast.error(extractErrorMessage(error, ["inventory", "inventory_item", "quantity", "unit_price"]))
+      toast.error(extractErrorMessage(error, ["inventory_item", "quantity", "unit_price"]))
     }
   }
 
   const handleEditLineItem = (lineItem: SalesOrderLineItem) => {
     setEditingLineItemId(String(lineItem.id))
     setLineItemForm({
-      inventory: lineItem.inventory ? String(lineItem.inventory) : "",
       inventory_item: lineItem.inventory_item ? String(lineItem.inventory_item) : "",
       quantity: String(lineItem.quantity ?? "1"),
       unit_price: String(lineItem.unit_price ?? "0"),
@@ -760,8 +753,8 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
       <OperationalStepSection
         id="line-items"
         step={2}
-        title="Add the inventory lines that need to be fulfilled"
-        description="Build the commercial order against real inventories and optional inventory items so downstream stock reservation stays accurate."
+        title="Add the inventory items that need to be fulfilled"
+        description="Build the commercial order against the real inventory items that will be reserved, shipped, and completed downstream."
         helper="Line items should be stable before you reserve or ship stock."
         status={lineItems.length > 0 ? "complete" : "in_progress"}
         facts={[
@@ -772,39 +765,18 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
       >
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div className="space-y-2 xl:col-span-2">
-            <Label htmlFor="sales-inventory">Inventory</Label>
-            <Select
-              value={lineItemForm.inventory}
-              onValueChange={(value) => {
-                setLineItemForm((current) => ({ ...current, inventory: value, inventory_item: "" }))
-              }}
-            >
-              <SelectTrigger id="sales-inventory">
-                <SelectValue placeholder="Select inventory" />
-              </SelectTrigger>
-              <SelectContent>
-                {inventories.map((inventory) => (
-                  <SelectItem key={inventory.id} value={String(inventory.id)}>
-                    {inventory.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2 xl:col-span-2">
             <Label htmlFor="sales-inventory-item">Inventory item</Label>
             <Select
               value={lineItemForm.inventory_item}
               onValueChange={(value) => setLineItemForm((current) => ({ ...current, inventory_item: value }))}
-              disabled={!lineItemForm.inventory}
             >
               <SelectTrigger id="sales-inventory-item">
-                <SelectValue placeholder={lineItemForm.inventory ? "Select inventory item" : "Choose inventory first"} />
+                <SelectValue placeholder="Select inventory item" />
               </SelectTrigger>
               <SelectContent>
-                {inventoryItems.map((item) => (
-                  <SelectItem key={item.id} value={String(item.id)}>
-                    {item.name || item.sku || String(item.id)}
+                {inventoryItems.map((inventoryItem) => (
+                  <SelectItem key={inventoryItem.id} value={String(inventoryItem.id)}>
+                    {inventoryItem.name || inventoryItem.sku_snapshot || inventoryItem.barcode_snapshot || String(inventoryItem.id)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -866,15 +838,15 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
           </div>
         </div>
 
-        {selectedInventory ? (
+        {selectedInventoryItem ? (
           <div className="mt-4 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
-            Selected inventory:
+            Selected inventory item:
             {" "}
-            <span className="font-semibold text-gray-900">{selectedInventory.name}</span>
+            <span className="font-semibold text-gray-900">{selectedInventoryItem.name}</span>
             {" "}
             · Current stock
             {" "}
-            <span className="font-semibold text-gray-900">{selectedInventory.current_stock_level ?? selectedInventory.current_stock ?? 0}</span>
+            <span className="font-semibold text-gray-900">{selectedInventoryItem.current_stock_level ?? selectedInventoryItem.current_stock ?? 0}</span>
           </div>
         ) : null}
 
@@ -898,7 +870,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Inventory</TableHead>
+                <TableHead>Inventory item</TableHead>
                 <TableHead>Quantity</TableHead>
                 <TableHead>Reserved</TableHead>
                 <TableHead>Shipped</TableHead>
@@ -911,13 +883,13 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
               {lineItems.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="py-10 text-center text-sm text-gray-500">
-                    No line items yet. Add the inventories that need to be reserved and shipped for this customer.
+                    No line items yet. Add the inventory items that need to be reserved and shipped for this customer.
                   </TableCell>
                 </TableRow>
               ) : (
                 lineItems.map((lineItem) => (
                   <TableRow key={lineItem.id}>
-                    <TableCell className="font-medium text-gray-900">{lineItem.inventory_name || lineItem.inventory_item || lineItem.inventory}</TableCell>
+                    <TableCell className="font-medium text-gray-900">{lineItem.inventory_name || lineItem.inventory_item || `Line ${lineItem.id}`}</TableCell>
                     <TableCell>{lineItem.quantity}</TableCell>
                     <TableCell>{lineItem.reserved_quantity ?? 0}</TableCell>
                     <TableCell>{lineItem.shipped_quantity ?? 0}</TableCell>
@@ -976,7 +948,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
                   const entry = reservationEntries[String(lineItem.id)] || buildReservationEntry(lineItem)
                   return (
                     <div key={lineItem.id} className="rounded-2xl border border-gray-200 p-4">
-                      <div className="font-semibold text-gray-900">{lineItem.inventory_name || lineItem.inventory}</div>
+                      <div className="font-semibold text-gray-900">{lineItem.inventory_name || lineItem.inventory_item || `Line ${lineItem.id}`}</div>
                       <div className="mt-1 text-sm text-gray-600">
                         Reservable {lineItem.reservable_quantity ?? 0} · Already reserved {lineItem.reserved_quantity ?? 0}
                       </div>
@@ -1096,7 +1068,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
                     const lineItem = reservation.external_order_line_id ? lineItemMap[String(reservation.external_order_line_id)] : undefined
                     return (
                       <div key={reservation.id} className="rounded-2xl border border-gray-200 p-4">
-                        <div className="font-semibold text-gray-900">{lineItem?.inventory_name || reservation.inventory_item_name || reservation.id}</div>
+                        <div className="font-semibold text-gray-900">{lineItem?.inventory_name || reservation.inventory_item_name || `Reservation ${reservation.id}`}</div>
                         <div className="mt-1 text-sm text-gray-600">
                           {reservation.location_name || reservation.stock_location} · Reserved {reservation.reserved_quantity} · Fulfilled {reservation.fulfilled_quantity}
                         </div>
@@ -1137,7 +1109,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
                     const entry = shipmentEntries[String(lineItem.id)] || buildShipmentEntry(lineItem)
                     return (
                       <div key={lineItem.id} className="rounded-2xl border border-gray-200 p-4">
-                        <div className="font-semibold text-gray-900">{lineItem.inventory_name || lineItem.inventory}</div>
+                        <div className="font-semibold text-gray-900">{lineItem.inventory_name || lineItem.inventory_item || `Line ${lineItem.id}`}</div>
                         <div className="mt-1 text-sm text-gray-600">
                           Remaining {lineItem.remaining_quantity} · Reserved {lineItem.reserved_quantity ?? 0}
                         </div>

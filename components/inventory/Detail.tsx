@@ -5,7 +5,6 @@ import { InventoryData, inventoryTypes } from "@/redux/features/inventory/invent
 import { useUpdateInventoryMutation } from '../../redux/features/inventory/inventoryAPiSlice';
 import LoadingAnimation from '../common/LoadingAnimation';
 import { InventoryInterfaceKeys, InventoryKeyInfo } from './selectOptions';
-import { useGetCompanyUsersQuery } from '@/redux/features/users/userApiSlice';
 import { useGetUnitsQuery } from '@/redux/features/common/typeOF';
 
 
@@ -14,8 +13,7 @@ export default function InventoryDetail({ id }: { id: string }) {
   const { data: inventory, isLoading,refetch  } = useGetInventoryQuery(id);
   const inventoryData = inventory as InventoryData;
   const [updateInventory,{isLoading:updateIsLoading}] = useUpdateInventoryMutation();
-  const { data: userData, isLoading: userLoading,  } = useGetCompanyUsersQuery();
-  const { data: units=[], isLoading: unitIsloading,  } = useGetUnitsQuery();
+  const { data: units=[] } = useGetUnitsQuery();
 
   
   const handleUpdate = async (updatedData: Partial<InventoryData>) => {
@@ -25,60 +23,31 @@ export default function InventoryDetail({ id }: { id: string }) {
   };
 
 
-const { data: categories = [], isLoading: isCatLoading, error: catError } = useGetInventoryCategoriesQuery();
+const { data: categories = [] } = useGetInventoryCategoriesQuery();
 const categoryOptions = categories.map((cat: any) => ({
   value: cat.id,
   text: cat.name,
 }));
 const unitOptions = units.map((unit: any) => ({
-   value: `${unit.name} (${unit.dimension_type})`,
-  text: `${unit.name} (${unit.dimension_type})`,
+   value: unit.code,
+  text: `${unit.name}${unit.abbreviated_name ? ` (${unit.abbreviated_name})` : ""}`,
 }));
 const typeOptions = inventoryTypes ? inventoryTypes.map((inventory_type: any) => ({
         value: inventory_type.id,
         text: inventory_type.text,
       })) : [];
-      
-    const userOptions = userData?.map((assignment) => ({
-        text: `${assignment.user?.first_name ?? "Unknown"} ${assignment.user?.email ?? ""}`.trim(),
-        value: String(assignment.user?.id ?? assignment.id),
-      })) || [];    
 const  selectOptions = {
     
-      category:categoryOptions,
+      inventory_category:categoryOptions,
       inventory_type:typeOptions,
-      officer_in_charge:userOptions,
-      unit:unitOptions,
-
-
-      reorder_strategy: [
-        { value: 'FQ', text: 'Fixed Quantity' },
-        { value: 'FI', text: 'Fixed Interval' },
-        { value: 'DY', text: 'Demand-Based' }
+      default_uom_code:unitOptions,
+      stock_uom_code:unitOptions,
+      status: [
+        { value: 'draft', text: 'Draft' },
+        { value: 'active', text: 'Active' },
+        { value: 'archived', text: 'Archived' },
+        { value: 'discontinued', text: 'Discontinued' }
       ],
-      expiration_policy: [
-        { value: '0', text: 'Dispose of Stock' },
-        { value: '1', text: 'Return to Manufacturer' }
-      ],
-      recall_policy: [
-        { value: '0', text: 'Remove from Stock' },
-        { value: '1', text: 'Notify Customers' },
-        { value: '3', text: 'Replace Item' },
-        { value: '4', text: 'Destroy Item' },
-        { value: '5', text: 'Repair Item' }
-      ],
-      near_expiry_policy: [
-        { value: 'DISCOUNT', text: 'Sell at Discount' },
-        { value: 'DONATE', text: 'Donate to Charity' },
-        { value: 'DESTROY', text: 'Destroy Immediately' },
-        { value: 'RETURN', text: 'Return to Supplier' }
-      ],
-      forecast_method: [
-        { value: 'SA', text: 'Simple Average' },
-        { value: 'MA', text: 'Moving Average' },
-        { value: 'ES', text: 'Exponential Smoothing' }
-      ],
-    
 }
 
 //////////////////////////////
@@ -91,20 +60,34 @@ const  selectOptions = {
   <LoadingAnimation text="Loading..." ringColor="#3b82f6" />
   </div>
   </div>;
-  if (!inventory) return <div>Inventory not found</div>;
+  if (!inventory) return <div>Inventory item not found</div>;
 
   
   return (
     <DetailCard 
       data={inventoryData}
-            interfaceKeys={InventoryInterfaceKeys}
+      interfaceKeys={InventoryInterfaceKeys}
       updateMutation={handleUpdate}
-      excludeFields={['id','external_references','unit','officer_in_charge','last_sync_timestamp','sync_error_message','sync_status','officer_in_charge_details','modified_by_details','created_by', 'created_by_details','stock_analytics','category_details','category','forecast_method','expiration_policy','recall_policy','reorder_strategy','profile','batch_tracking_enabled',]}
+      excludeFields={[
+        'id',
+        'name_snapshot',
+        'inventory_category',
+        'created_by',
+        'modified_by',
+        'created_by_details',
+        'modified_by_details',
+        'updated_by_details',
+        'category_details',
+        'metadata',
+        'default_supplier',
+        'product_template_id',
+        'product_variant_id',
+      ]}
       selectOptions={selectOptions}
       isLoading={updateIsLoading}
-      policyFields={['description']}
+      policyFields={['description','stock_analytics']}
       keyInfo={InventoryKeyInfo}
-      optionalFields={['description','assembly','batch_tracking_enabled','automate_reorder','component','trackable','purchaseable','active','salable','locked','testable','virtual']}
+      optionalFields={['description','inventory_category','stock_uom_code']}
 
     />
   );

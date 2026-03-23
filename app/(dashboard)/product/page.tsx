@@ -80,7 +80,7 @@ export default function ProductPage() {
       {
         id: "dependency",
         title: "Confirm inventory foundations",
-        description: "Products should be introduced only after inventory foundations exist so stock movement and replenishment remain trustworthy.",
+        description: "Products should be introduced only after inventory items and stock foundations exist so stock movement and replenishment remain trustworthy.",
         complete: inventoryCount > 0,
         icon: Warehouse,
       },
@@ -335,18 +335,18 @@ export default function ProductPage() {
           id="dependency"
           step={1}
           title="Confirm inventory foundations before building the catalog"
-          description="Every serious product setup should start after locations and ledgers exist. That keeps stock movement, valuation, and replenishment aligned."
-          helper="The create-product form can still open, but the workflow is much cleaner once inventory ledgers already exist."
+          description="Every serious product setup should start after locations and inventory items exist. That keeps stock movement, valuation, and replenishment aligned."
+          helper="The create-product form can still open, but the workflow is much cleaner once inventory items already exist."
           status={inventoryCount > 0 ? "complete" : "in_progress"}
           facts={[
-            { label: "Inventories available", value: displayCount(inventoryCount, loadingInventories) },
+            { label: "Inventory items available", value: displayCount(inventoryCount, loadingInventories) },
             { label: "Product categories", value: displayCount(productCategoryCount, loadingCategories) },
             { label: "Next outcome", value: inventoryCount > 0 ? "Catalog can begin" : "Create inventory first" },
           ]}
           notice={
             inventoryCount === 0 ? (
               <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                No inventory ledgers exist yet. Set up inventory first so the catalog can connect cleanly to the real stock model once variants go live.
+                No inventory items exist yet. Set up inventory first so the catalog can connect cleanly to the real stock model once variants go live.
               </div>
             ) : productCategoryCount === 0 ? (
               <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
@@ -360,7 +360,7 @@ export default function ProductPage() {
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <p className="text-sm font-semibold text-gray-900">Inventory dependency</p>
               <p className="mt-2 text-sm leading-6 text-gray-600">
-                Products do not attach directly to a specific inventory record in the current backend, but inventory structure should still exist
+                Products do not attach directly to a specific inventory item in the current backend, but inventory structure should still exist
                 before you start selling or tracking stock. This keeps the catalog aligned with real stock operations.
               </p>
             </div>
@@ -369,7 +369,7 @@ export default function ProductPage() {
               <p className="mt-2 text-sm leading-6 text-gray-600">
                 {inventoryCount > 0
                   ? "Inventory foundations are ready. You can start creating product templates below."
-                  : "Go to the inventory page, define your locations and ledgers, then return here to build the catalog."}
+                  : "Go to the inventory page, define your locations and inventory items, then return here to build the catalog."}
               </p>
               <div className="mt-4">
                 <Button asChild variant={inventoryCount > 0 ? "outline" : "default"}>

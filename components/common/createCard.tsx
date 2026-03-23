@@ -118,11 +118,9 @@ export default function CustomCreateCard<T extends Record<string, any>>({
   };
   
   const percentageFieldsDict = {
-    "minimum_stock_level": "Minimum stock level",
-    "re_order_point": "Re-order point",
-    "safety_stock_level": "Safety stock level",
-    "alert_threshold": "Alert threshold",
-    "supplier_reliability_score": "Supplier reliability score",
+    discount_rate: "Discount rate",
+    tax_rate: "Tax rate",
+    supplier_reliability_score: "Supplier reliability score",
   };
   
   Object.entries(geoFields).forEach(([key, config]) => {
@@ -151,18 +149,28 @@ export default function CustomCreateCard<T extends Record<string, any>>({
   }, [watch, setValue]);
 
   const minStock = watch("minimum_stock_level" as Path<Partial<T>>);
-  const reOrderPoint = watch("re_order_point" as Path<Partial<T>>);
-  const reOrderQty = watch("re_order_quantity" as Path<Partial<T>>);
+  const reorderPoint = watch("reorder_point" as Path<Partial<T>>) ?? watch("re_order_point" as Path<Partial<T>>);
+  const reorderQty = watch("reorder_quantity" as Path<Partial<T>>) ?? watch("re_order_quantity" as Path<Partial<T>>);
   const safetyQty = watch("safety_stock_level" as Path<Partial<T>>);
   useEffect(() => {
     trigger([
       "minimum_stock_level",
+      "reorder_point",
       "re_order_point",
       "safety_stock_level",
+      "reorder_quantity",
+      "re_order_quantity",
     ] as Path<Partial<T>>[]);
-  }, [minStock, reOrderPoint, safetyQty, trigger]);
+  }, [minStock, reorderPoint, reorderQty, safetyQty, trigger]);
 
   const formatLabel = (str: string) => {
+    if (str.endsWith("_snapshot")) {
+      str = str.replace(/_snapshot$/, "");
+    }
+    str = str
+      .replace("default_uom_code", "default UOM")
+      .replace("stock_uom_code", "stock UOM")
+      .replace("inventory_item", "inventory item");
     if (str.toLocaleLowerCase().includes('weight')){
       str = str+ ' (kg)'
     }
@@ -171,21 +179,13 @@ export default function CustomCreateCard<T extends Record<string, any>>({
   
   const getInputType = (key: keyof T) => {
     const keyStr = String(key).toLowerCase();
-    const percentageFields = [
-      "minimum_stock_level",
-      "re_order_point",
-      "safety_stock_level",
-      "alert_threshold",
-      "supplier_reliability_score",
-    ];
-    const percentageList=['tax_rate','discount_rate',]
+    const percentageList = ['tax_rate', 'discount_rate', 'supplier_reliability_score'];
     const value = defaultValues[key];
     if (selectOptions?.[key]) return "select";
     if (typeof value === "boolean") return "checkbox";
 
 
     if (typeof value === "number") return "number";
-    if (percentageFields.includes(keyStr)) return "percentage";
     if (percentageList.includes(keyStr)) return "percentage";
     if (String(key).toLocaleLowerCase().startsWith('allow')) return 'checkbox';
     if (String(key).toLocaleLowerCase().endsWith('percentage')) return 'percentage';
@@ -380,14 +380,14 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                             }
                             if (key === "minimum_stock_level" && typeof value === "number") {
                               if (Number(value) <= Number(safetyQty)) return "Must be > safety stock level";
-                              if (Number(value) >= Number(reOrderPoint)) return "Must be < re-order point";
+                              if (Number(value) >= Number(reorderPoint)) return "Must be < reorder point";
                             }
-                            if (key === "re_order_point" && typeof value === "number") {
+                            if ((key === "reorder_point" || key === "re_order_point") && typeof value === "number") {
                               if (Number(value) <= Number(minStock)) return "Must be > minimum stock level";
-                              if (Number(value) >= Number(reOrderQty)) return "Must be < re-order quantity";
+                              if (Number(value) >= Number(reorderQty)) return "Must be < reorder quantity";
                             }
-                            if (key === "re_order_quantity" && typeof value === "number" && Number(value) <= Number(reOrderPoint)) {
-                              return "Must be > re-order point";
+                            if ((key === "reorder_quantity" || key === "re_order_quantity") && typeof value === "number" && Number(value) <= Number(reorderPoint)) {
+                              return "Must be > reorder point";
                             }
                             return true;
                           },

@@ -132,18 +132,24 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
   }, [watch, setValue]);
 
   const minStock = watch('minimum_stock_level' as Path<Partial<T>>);
-  const reOrderPoint = watch('re_order_point' as Path<Partial<T>>);
-  const reOrderQty = watch('re_order_quantity' as Path<Partial<T>>);
+  const reorderPoint =
+    watch('reorder_point' as Path<Partial<T>>) ??
+    watch('re_order_point' as Path<Partial<T>>);
+  const reorderQty =
+    watch('reorder_quantity' as Path<Partial<T>>) ??
+    watch('re_order_quantity' as Path<Partial<T>>);
   const safetyQty = watch('safety_stock_level' as Path<Partial<T>>);
   
   useEffect(() => {
     trigger([
       'minimum_stock_level',
+      'reorder_point',
       're_order_point',
       'safety_stock_level',
+      'reorder_quantity',
       're_order_quantity'
     ] as Path<Partial<T>>[]);
-  }, [minStock, reOrderPoint, reOrderQty, safetyQty, trigger]);
+  }, [minStock, reorderPoint, reorderQty, safetyQty, trigger]);
 
   const formatLabel = (str: string) => {
     return str.replace('first_name', 'Name').replace(/_/g, ' ').replace(/(^\w|\s\w)/g, m => m.toUpperCase());
@@ -268,14 +274,14 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
                             }
                             if (key === 'minimum_stock_level' && typeof value === 'number') {
                               if (Number(value) <= Number(safetyQty)) return 'Must be > safety stock level';
-                              if (Number(value) >= Number(reOrderPoint)) return 'Must be < re-order point';
+                              if (Number(value) >= Number(reorderPoint)) return 'Must be < reorder point';
                             }
-                            if (key === 're_order_point' && typeof value === 'number') {
+                            if ((key === 'reorder_point' || key === 're_order_point') && typeof value === 'number') {
                               if (Number(value) <= Number(minStock)) return 'Must be > minimum stock level';
-                              if (Number(value) >= Number(reOrderQty)) return 'Must be < re-order quantity';
+                              if (Number(value) >= Number(reorderQty)) return 'Must be < reorder quantity';
                             }
-                            if (key === 're_order_quantity' && typeof value === 'number' && Number(value) <= Number(reOrderPoint)) {
-                              return 'Must be > re-order point';
+                            if ((key === 'reorder_quantity' || key === 're_order_quantity') && typeof value === 'number' && Number(value) <= Number(reorderPoint)) {
+                              return 'Must be > reorder point';
                             }
                             return true;
                           },

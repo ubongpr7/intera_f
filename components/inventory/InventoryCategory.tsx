@@ -1,6 +1,5 @@
 'use client'
 import { useEffect, useState } from 'react';
-import { useRouter } from 'nextjs-toploader/app';
 import { DataTable, Column, ActionButton } from "../common/DataTable/DataTable";
 import { useCreateCategoryMutation, useGetInventoryCategoriesQuery, useUpdateCategoryMutation, useDeleteCategoryMutation } from "../../redux/features/inventory/inventoryAPiSlice";
 import { CategoryData } from "@/redux/features/inventory/inventoryTypes";
@@ -17,7 +16,7 @@ const inventoryColumns: Column<CategoryData>[] = [
     className: 'font-medium',
   },
   {
-    header: 'Inventories',
+    header: 'Inventory Items',
     accessor: 'inventory_count',
     render: (value) => value || 'N/A',
     className: 'font-medium',
@@ -26,19 +25,17 @@ const inventoryColumns: Column<CategoryData>[] = [
     header: 'Parent Category',
     accessor: 'parent_name',
     render: (value) => value || 'N/A',
-    info: 'Category to which the category belong',
+    info: 'Parent category for this operational grouping',
   },
 ];
 
 function InventoryCategoryView({ refetchData, setRefetchData }: RefetchDataProp) {
   const { data, isLoading, error, refetch } = useGetInventoryCategoriesQuery();
-  const router = useRouter();
-  const [createCategory, { isLoading: creatingCategory, error: catError }] = useCreateCategoryMutation();
-  const { data: stockLocationData, isLoading: stockLocationsLoading, refetch: refetchLocation } = useGetStockItemDataLocationQuery();
-  const [categoryDetail, setCategoryDetail] = useState<CategoryData | null>(null); // Changed to null for initial state
+  const [createCategory, { isLoading: creatingCategory }] = useCreateCategoryMutation();
+  const { data: stockLocationData, refetch: refetchLocation } = useGetStockItemDataLocationQuery();
+  const [categoryDetail, setCategoryDetail] = useState<CategoryData | null>(null);
   const [updateCategory, { isLoading: isUpdatingCategory }] = useUpdateCategoryMutation();
-  const [deleteCategory, { isLoading: isDeletingCategory }] = useDeleteCategoryMutation();
-  const [itemId, setItemId] = useState('');
+  const [deleteCategory] = useDeleteCategoryMutation();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   useEffect(() => {
@@ -120,8 +117,8 @@ function InventoryCategoryView({ refetchData, setRefetchData }: RefetchDataProp)
 
   if (error) {
     return (
-      <div className="p-4 text-red-500">
-        Error loading inventory data: {(error as any).message || 'Unknown error'}
+        <div className="p-4 text-red-500">
+        Error loading inventory categories: {(error as any).message || 'Unknown error'}
       </div>
     );
   }
@@ -136,7 +133,7 @@ function InventoryCategoryView({ refetchData, setRefetchData }: RefetchDataProp)
         searchableFields={['name', 'parent_name']}
         filterableFields={['parent_name']}
         sortableFields={['name', 'parent_name']}
-        title="Category" onClose={() => setIsCreateOpen(true)} 
+        title="Inventory Categories" onClose={() => setIsCreateOpen(true)} 
       />
       {isCreateOpen && (
         <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>
@@ -153,7 +150,7 @@ function InventoryCategoryView({ refetchData, setRefetchData }: RefetchDataProp)
             notEditableFields={notEditableFields}
             interfaceKeys={CategoryInterfaceKeys}
             optionalFields={['description', 'parent', 'structural', 'default_location']}
-            itemTitle={`${categoryDetail ? 'Update' : 'Create'} Category`}
+            itemTitle={`${categoryDetail ? 'Update' : 'Create'} Inventory Category`}
           />
         </div>
       )}

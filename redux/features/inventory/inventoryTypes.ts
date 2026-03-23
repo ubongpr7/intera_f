@@ -43,62 +43,53 @@ export interface InventoryStockAnalytics {
   quantity_reserved?: string | number;
   quantity_available?: string | number;
   location_breakdown?: Array<Record<string, unknown>>;
+  lot_count?: number;
+  serial_count?: number;
+  last_movement_at?: string | null;
 }
 
 export interface InventoryData {
   id: string;
   name: string;
+  name_snapshot?: string;
   description?: string | null;
-  external_system_id?: string | null;
+  sku_snapshot?: string;
+  barcode_snapshot?: string;
   inventory_type?: string;
-  unit?: string | null;
-  unit_name?: string | null;
-  category?: string | null;
+  default_uom_code?: string | null;
+  stock_uom_code?: string | null;
+  inventory_category?: string | null;
+  status?: string | null;
   category_name?: string | null;
   category_details?: CategoryData | null;
-  active?: boolean;
   current_stock_level?: string | number;
   current_stock?: string | number;
   stock_status?: string;
+  quantity_available?: string | number;
+  quantity_reserved?: string | number;
   total_stock_value?: string | number;
   minimum_stock_level?: string | number;
-  re_order_point?: string | number;
-  re_order_quantity?: string | number;
-  reorder_strategy?: string | null;
-  reorder_strategy_name?: string | null;
-  expiration_policy?: string | null;
-  expiration_policy_name?: string | null;
-  recall_policy?: string | null;
-  recall_policy_name?: string | null;
-  near_expiry_policy?: string | null;
-  forecast_method?: string | null;
-  forecast_method_name?: string | null;
+  reorder_point?: string | number;
+  reorder_quantity?: string | number;
   calculated_safety_stock?: string | number;
   safety_stock_level?: string | number;
-  supplier_lead_time?: number | null;
-  internal_processing_time?: number | null;
-  holding_cost_per_unit?: string | number | null;
-  ordering_cost?: string | number | null;
-  stockout_cost?: string | number | null;
   default_supplier?: string | null;
-  officer_in_charge?: string | number | null;
+  default_supplier_name?: string | null;
   created_by?: string | number | null;
   modified_by?: string | number | null;
   created_at?: string;
+  updated_at?: string;
   modified_at?: string;
-  batch_tracking_enabled?: boolean;
-  automate_reorder?: boolean;
-  assembly?: boolean;
-  component?: boolean;
-  trackable?: boolean;
-  purchaseable?: boolean;
-  salable?: boolean;
-  locked?: boolean;
-  testable?: boolean;
-  virtual?: boolean;
-  officer_in_charge_details?: InventoryUserReference | null;
+  track_stock?: boolean;
+  track_lot?: boolean;
+  track_serial?: boolean;
+  track_expiry?: boolean;
+  allow_negative_stock?: boolean;
+  product_template_id?: string | null;
+  product_variant_id?: string | null;
   created_by_details?: InventoryUserReference | null;
   modified_by_details?: InventoryUserReference | null;
+  updated_by_details?: InventoryUserReference | null;
   stock_analytics?: InventoryStockAnalytics;
   metadata?: Record<string, unknown>;
   [key: string]: unknown;
@@ -117,7 +108,9 @@ export interface InventoryStockSummary {
   total_value: string | number;
   location_breakdown: Array<Record<string, unknown>>;
   stock_status: string;
-  expiring_lots: Array<Record<string, unknown>>;
+  expiry_date?: string | null;
+  lot_count?: number;
+  serial_count?: number;
 }
 
 export interface AdjustStockPayload {
@@ -136,6 +129,7 @@ export interface AdjustStockResponse {
 export interface InventoryAnalytics {
   total_inventories: number;
   active_inventories: number;
+  total_inventory_items?: number;
   low_stock_count: number;
   out_of_stock_count: number;
   total_stock_value: string | number;
@@ -164,9 +158,9 @@ export interface OrderAnalytics {
 }
 
 export interface InventoryListParams {
-  active?: boolean;
+  status?: string;
   inventory_type?: string;
-  category?: string;
+  inventory_category?: string;
   stock_status?: "low_stock" | "out_of_stock" | "needs_reorder";
   search?: string;
   ordering?: string;

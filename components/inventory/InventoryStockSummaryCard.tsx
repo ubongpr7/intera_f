@@ -28,21 +28,12 @@ const resolveLocationLabel = (entry: Record<string, unknown>) =>
 const resolveLocationQuantity = (entry: Record<string, unknown>) =>
   String(entry.quantity_available ?? entry.quantity_on_hand ?? entry.quantity ?? entry.total_quantity ?? "0")
 
-const resolveExpiringLabel = (entry: Record<string, unknown>) =>
-  String(entry.lot_number ?? entry.serial_number ?? entry.name ?? entry.inventory_item_name ?? "Tracked stock")
-
-const resolveExpiringDetail = (entry: Record<string, unknown>) =>
-  `Expiry: ${String(entry.expiry_date ?? entry.expiration_date ?? entry.date ?? "Unknown")} • Quantity: ${String(
-    entry.quantity_available ?? entry.quantity_on_hand ?? entry.quantity ?? "0",
-  )}`
-
 export default function InventoryStockSummaryCard({
   summary,
   isLoading = false,
   currencyCode = "NGN",
 }: InventoryStockSummaryCardProps) {
   const locationBreakdown = Array.isArray(summary?.location_breakdown) ? summary?.location_breakdown.slice(0, 5) : []
-  const expiringLots = Array.isArray(summary?.expiring_lots) ? summary?.expiring_lots.slice(0, 5) : []
 
   return (
     <Card className="border-gray-200 shadow-sm">
@@ -98,20 +89,25 @@ export default function InventoryStockSummaryCard({
           </div>
 
           <div className="rounded-2xl border border-gray-200 bg-white p-4">
-            <h3 className="text-sm font-semibold text-gray-900">Expiring stock watch</h3>
-            <div className="mt-3 space-y-2">
-              {expiringLots.length ? (
-                expiringLots.map((entry, index) => (
-                  <div key={`expiring-${index}`} className="rounded-xl bg-amber-50 px-3 py-2">
-                    <div className="text-sm font-semibold text-amber-950">{resolveExpiringLabel(entry)}</div>
-                    <div className="mt-1 text-sm text-amber-900">{resolveExpiringDetail(entry)}</div>
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-3 py-4 text-sm text-gray-600">
-                  No expiring lots are currently flagged for this inventory.
+            <h3 className="text-sm font-semibold text-gray-900">Tracking posture</h3>
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl bg-gray-50 px-3 py-3">
+                <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Avg purchase price</div>
+                <div className="mt-2 text-sm font-semibold text-gray-900">
+                  {isLoading ? "..." : formatCurrencyCompact(currencyCode, Number(summary?.avg_purchase_price ?? 0))}
                 </div>
-              )}
+              </div>
+              <div className="rounded-xl bg-gray-50 px-3 py-3">
+                <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Tracked lots</div>
+                <div className="mt-2 text-sm font-semibold text-gray-900">{formatMetric(summary?.lot_count, isLoading)}</div>
+              </div>
+              <div className="rounded-xl bg-gray-50 px-3 py-3">
+                <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Tracked serials</div>
+                <div className="mt-2 text-sm font-semibold text-gray-900">{formatMetric(summary?.serial_count, isLoading)}</div>
+              </div>
+              <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-3 py-4 text-sm text-gray-600 sm:col-span-3">
+                {summary?.expiry_date ? `Next tracked expiry: ${summary.expiry_date}` : "No tracked expiry date is currently flagged for this inventory item."}
+              </div>
             </div>
           </div>
         </div>

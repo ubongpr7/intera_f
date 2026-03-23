@@ -20,11 +20,10 @@ import {
   useListReservationsQuery,
   useReleaseReservationMutation,
 } from "@/redux/features/stock/stockAPISlice"
-import type { StockItem, StockLocation, StockReservation } from "@/redux/features/stock/stockTypes"
+import type { StockLocation, StockReservation } from "@/redux/features/stock/stockTypes"
 
 type InventoryReservationsCardProps = {
-  inventoryId: string
-  stockItems: StockItem[]
+  inventoryItemId: string
   locations: StockLocation[]
   onMutated?: () => void | Promise<void>
 }
@@ -45,18 +44,16 @@ const getRemainingReservation = (reservation: StockReservation) =>
   Math.max(getNumber(reservation.reserved_quantity) - getNumber(reservation.fulfilled_quantity), 0)
 
 export default function InventoryReservationsCard({
-  inventoryId,
-  stockItems,
+  inventoryItemId,
   locations,
   onMutated,
 }: InventoryReservationsCardProps) {
-  const { data: reservations = [], isLoading, refetch } = useListReservationsQuery({ inventory: inventoryId })
+  const { data: reservations = [], isLoading, refetch } = useListReservationsQuery({ inventory_item: inventoryItemId })
   const [createReservation, { isLoading: isCreating }] = useCreateReservationMutation()
   const [releaseReservation, { isLoading: isReleasing }] = useReleaseReservationMutation()
   const [fulfillReservation, { isLoading: isFulfilling }] = useFulfillReservationMutation()
 
   const [locationId, setLocationId] = useState("")
-  const [inventoryItemId, setInventoryItemId] = useState("")
   const [quantity, setQuantity] = useState("")
   const [externalOrderType, setExternalOrderType] = useState("sales_order")
   const [externalOrderId, setExternalOrderId] = useState("")
@@ -80,8 +77,7 @@ export default function InventoryReservationsCard({
 
     try {
       await createReservation({
-        inventory_id: inventoryId,
-        inventory_item_id: inventoryItemId || undefined,
+        inventory_item_id: inventoryItemId,
         location_id: locationId,
         quantity,
         external_order_type: externalOrderType,
@@ -90,7 +86,6 @@ export default function InventoryReservationsCard({
       }).unwrap()
 
       toast.success("Reservation created successfully.")
-      setInventoryItemId("")
       setQuantity("")
       setExternalOrderId("")
       setNotes("")
@@ -148,23 +143,6 @@ export default function InventoryReservationsCard({
                     {actionableLocations.map((location) => (
                       <SelectItem key={String(location.id)} value={String(location.id)}>
                         {location.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="reservation-item">Specific stock item</Label>
-                <Select value={inventoryItemId} onValueChange={setInventoryItemId}>
-                  <SelectTrigger id="reservation-item" className="h-11">
-                    <SelectValue placeholder="Optional: reserve a specific item" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {stockItems.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.name || "Unnamed item"}
-                        {item.sku ? ` (${item.sku})` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -242,7 +220,7 @@ export default function InventoryReservationsCard({
             <div className="space-y-3">
               {reservations.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-sm text-gray-600">
-                  No reservations have been created for this inventory yet.
+                  No reservations have been created for this inventory item yet.
                 </div>
               ) : (
                 reservations.map((reservation) => {
@@ -253,7 +231,7 @@ export default function InventoryReservationsCard({
                         <div>
                           <p className="text-sm font-semibold text-gray-900">{reservation.external_order_id}</p>
                           <p className="mt-1 text-sm text-gray-600">
-                            {reservation.location_name || "Unknown location"} • {reservation.inventory_item_name || "Inventory-level reservation"}
+                            {reservation.location_name || "Unknown location"} • {reservation.inventory_item_name || "Inventory item reservation"}
                           </p>
                           <p className="mt-2 text-xs uppercase tracking-wide text-gray-500">
                             Status: {reservation.status} • Reserved: {reservation.reserved_quantity} • Remaining: {remaining}

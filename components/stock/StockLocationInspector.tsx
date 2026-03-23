@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
-  useGetLocationStockItemsQuery,
+  useGetLocationInventoryItemsQuery,
   useGetStockLocationQuery,
   useTransferLocationStockMutation,
 } from "@/redux/features/stock/stockAPISlice"
@@ -44,7 +44,7 @@ export default function StockLocationInspector({
   onUpdated,
 }: StockLocationInspectorProps) {
   const { data: location, isLoading } = useGetStockLocationQuery(locationId)
-  const { data: stockItems = [], refetch } = useGetLocationStockItemsQuery(locationId)
+  const { data: stockItems = [], refetch } = useGetLocationInventoryItemsQuery(locationId)
   const [transferStock, { isLoading: isTransferring }] = useTransferLocationStockMutation()
   const [targetLocationId, setTargetLocationId] = useState("")
   const [inventoryItemId, setInventoryItemId] = useState("")
@@ -58,7 +58,7 @@ export default function StockLocationInspector({
 
   const handleTransfer = async () => {
     if (!targetLocationId || !inventoryItemId || !quantity) {
-      toast.error("Choose a stock item, destination, and quantity.")
+      toast.error("Choose an inventory item, destination, and quantity.")
       return
     }
 
@@ -117,7 +117,7 @@ export default function StockLocationInspector({
               <div className="mt-2 text-xl font-semibold text-gray-900">{location?.parent_name || "None"}</div>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-              <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Stock items</div>
+              <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Inventory items</div>
               <div className="mt-2 text-2xl font-semibold text-gray-900">{stockItems.length}</div>
             </div>
           </div>
@@ -128,7 +128,7 @@ export default function StockLocationInspector({
               <div className="mt-3 space-y-3">
                 {stockItems.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-3 py-4 text-sm text-gray-600">
-                    No stock items are currently allocated to this location.
+                    No inventory items are currently allocated to this location.
                   </div>
                 ) : (
                   stockItems.map((item) => (
@@ -201,7 +201,7 @@ export default function StockLocationInspector({
                 </div>
 
                 <Button onClick={handleTransfer} disabled={isTransferring || !inventoryItemId || !targetLocationId || !quantity}>
-                  {isTransferring ? "Transferring..." : "Transfer selected stock"}
+                  {isTransferring ? "Transferring..." : "Transfer selected inventory item"}
                 </Button>
               </div>
             </div>

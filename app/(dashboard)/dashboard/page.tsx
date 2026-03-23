@@ -170,6 +170,8 @@ export default function DashboardPage() {
   const profiles = companyMemberships?.profiles ?? []
   const cookieProfileId = readCookieValue("profileId", getCookie) ?? readCookieValue("profile", getCookie)
   const currencyCode = activeMembership?.currency || "NGN"
+  const inventoryItemCount = inventoryAnalytics?.total_inventory_items ?? inventoryAnalytics?.total_inventories ?? 0
+  const activeInventoryItemCount = inventoryAnalytics?.active_inventories ?? inventoryItemCount
 
   const handleSwitchCompany = async (profile: CompanyProfileContext) => {
     try {
@@ -258,9 +260,9 @@ export default function DashboardPage() {
               tone="amber"
             />
             <StatTile
-              label="Inventories"
-              value={inventoryAnalytics?.total_inventories ?? 0}
-              description={`${inventoryAnalytics?.active_inventories ?? 0} active ledgers`}
+              label="Inventory items"
+              value={inventoryItemCount}
+              description={`${activeInventoryItemCount} active items`}
               icon={Boxes}
               tone="blue"
             />
@@ -299,11 +301,11 @@ export default function DashboardPage() {
       <div className="grid gap-6 xl:grid-cols-2">
         <DomainLaunchCard
           title="Inventory"
-          description="Manage locations, ledgers, stock attention queues, adjustments, reservations, and tracked stock."
+          description="Manage locations, inventory items, stock attention queues, adjustments, reservations, and tracked stock."
           href="/inventory"
           icon={Boxes}
           facts={[
-            { label: "Ledgers", value: inventoryAnalytics?.total_inventories ?? 0 },
+            { label: "Items", value: inventoryItemCount },
             { label: "Low stock", value: inventoryAnalytics?.low_stock_count ?? 0 },
             { label: "Stock value", value: formatCurrencyCompact(currencyCode, Number(inventoryAnalytics?.total_stock_value ?? 0)) },
           ]}

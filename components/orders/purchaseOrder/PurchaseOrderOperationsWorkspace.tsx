@@ -65,7 +65,7 @@ type PurchaseOrderHeaderForm = {
 }
 
 type LineItemForm = {
-  stock_item: string
+  inventory_item: string
   quantity: string
   unit_price: string
   discount_rate: string
@@ -108,7 +108,7 @@ const buildHeaderForm = (order?: PurchaseOrderInterface | null): PurchaseOrderHe
 })
 
 const emptyLineItemForm: LineItemForm = {
-  stock_item: "",
+  inventory_item: "",
   quantity: "1",
   unit_price: "0",
   discount_rate: "0",
@@ -146,7 +146,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
   const { data: order, isLoading, refetch } = useGetPurchaseOrderQuery(purchaseOrderId)
   const { data: suppliers = [] } = useGetSupplersQuery()
   const { data: users = [] } = useGetCompanyUsersQuery()
-  const { data: stockItems = [] } = useGetStockItemDataQuery()
+  const { data: inventoryItems = [] } = useGetStockItemDataQuery()
   const { data: locations = [] } = useGetStockItemDataLocationQuery()
 
   const [updatePurchaseOrder, { isLoading: savingHeader }] = useUpdatePurchaseOrderMutation()
@@ -199,7 +199,6 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
         displayName:
           lineItem.inventory_item_name ||
           lineItem.inventory_item_details?.name ||
-          lineItem.stock_item_details?.name ||
           `Line ${lineItem.id}`,
       })),
     [lineItems],
@@ -255,13 +254,13 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
       return
     }
 
-    if (!lineItemForm.stock_item) {
-      toast.error("Select an inventory-linked stock item before saving.")
+    if (!lineItemForm.inventory_item) {
+      toast.error("Select an inventory item before saving.")
       return
     }
 
     const payload = {
-      stock_item: lineItemForm.stock_item,
+      inventory_item: lineItemForm.inventory_item,
       quantity: Number(lineItemForm.quantity || "0"),
       unit_price: Number(lineItemForm.unit_price || "0"),
       discount_rate: Number(lineItemForm.discount_rate || "0"),
@@ -290,14 +289,14 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
       setLineItemForm(emptyLineItemForm)
       await refetch()
     } catch (error) {
-      toast.error(extractErrorMessage(error, ["stock_item", "inventory_item", "quantity", "unit_price"]))
+      toast.error(extractErrorMessage(error, ["inventory_item", "quantity", "unit_price"]))
     }
   }
 
   const handleEditLineItem = (lineItem: PurchaseOrderLineItem) => {
     setEditingLineItemId(String(lineItem.id))
     setLineItemForm({
-      stock_item: lineItem.stock_item ? String(lineItem.stock_item) : "",
+      inventory_item: lineItem.inventory_item ? String(lineItem.inventory_item) : "",
       quantity: String(lineItem.quantity ?? "1"),
       unit_price: String(lineItem.unit_price ?? "0"),
       discount_rate: String(lineItem.discount_rate ?? "0"),
@@ -660,18 +659,18 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
       >
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div className="space-y-2 xl:col-span-2">
-            <Label htmlFor="line-stock-item">Inventory-linked stock item</Label>
+            <Label htmlFor="line-inventory-item">Inventory item</Label>
             <Select
-              value={lineItemForm.stock_item}
-              onValueChange={(value) => setLineItemForm((current) => ({ ...current, stock_item: value }))}
+              value={lineItemForm.inventory_item}
+              onValueChange={(value) => setLineItemForm((current) => ({ ...current, inventory_item: value }))}
             >
-              <SelectTrigger id="line-stock-item">
-                <SelectValue placeholder="Select stock item" />
+              <SelectTrigger id="line-inventory-item">
+                <SelectValue placeholder="Select inventory item" />
               </SelectTrigger>
               <SelectContent>
-                {stockItems.map((stockItem) => (
-                  <SelectItem key={stockItem.id} value={String(stockItem.id)}>
-                    {stockItem.name || stockItem.inventory_name || String(stockItem.id)}
+                {inventoryItems.map((inventoryItem) => (
+                  <SelectItem key={inventoryItem.id} value={String(inventoryItem.id)}>
+                    {inventoryItem.name || inventoryItem.inventory_name || String(inventoryItem.id)}
                   </SelectItem>
                 ))}
               </SelectContent>
