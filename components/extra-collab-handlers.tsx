@@ -635,9 +635,76 @@ export function WizardFlowHandler({ data, onResponse, compact = false, disabled 
 
   const currentStepInfo = data.steps[currentStep]
   const isLastStep = currentStep === data.steps.length - 1
+  const submittedResponses = {
+    ...responses,
+    ...(Object.keys(currentStepData).length > 0 ? { [`step_${currentStep}`]: currentStepData } : {}),
+  }
+  const shouldShowField = (field: any) => {
+    const showWhen = field?.show_when
+    if (!showWhen || typeof showWhen !== "object") {
+      return true
+    }
+    const dependentField = String(showWhen.field || "").trim()
+    if (!dependentField) {
+      return true
+    }
+    const expectedValue = showWhen.equals
+    return currentStepData[dependentField] === expectedValue
+  }
+
+  if (disabled) {
+    return (
+      <Card className={compact ? "text-sm opacity-60" : "opacity-60"}>
+        <CardHeader className={compact ? "pb-2" : ""}>
+          <CardTitle className={`flex items-center gap-2 ${compact ? "text-sm" : ""}`}>
+            <CheckCircle className={compact ? "h-4 w-4 text-green-600" : "h-5 w-5 text-green-600"} />
+            {data.title}
+          </CardTitle>
+          <p className={`text-gray-600 ${compact ? "text-xs" : "text-sm"}`}>Wizard submitted. Waiting for the next step.</p>
+        </CardHeader>
+        <CardContent className={compact ? "pt-0" : ""}>
+          <div className="space-y-3">
+            {data.steps.map((step: any, index: number) => {
+              const stepValues = submittedResponses[`step_${index}`]
+              if (!stepValues || typeof stepValues !== "object" || Object.keys(stepValues).length === 0) {
+                return null
+              }
+
+              return (
+                <div key={step.title || index} className="rounded-lg border border-slate-200 bg-white/70 p-3">
+                  <div className={`font-medium text-slate-800 ${compact ? "text-xs" : "text-sm"}`}>{step.title}</div>
+                  <div className="mt-2 space-y-1">
+                    {step.fields.map((field: any) => {
+                      const value = stepValues[field.name]
+                      if (value === undefined || value === null || value === "") {
+                        return null
+                      }
+
+                      const renderedValue = Array.isArray(value)
+                        ? value.join(", ")
+                        : typeof value === "boolean"
+                          ? value ? "Yes" : "No"
+                          : String(value)
+
+                      return (
+                        <div key={field.name} className={`flex flex-col gap-1 ${compact ? "text-xs" : "text-sm"}`}>
+                          <span className="font-medium text-slate-600">{field.label}</span>
+                          <span className="text-slate-800 whitespace-pre-wrap break-words">{renderedValue}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
-    <Card className={`${compact ? "text-sm" : ""} ${disabled ? "opacity-50 pointer-events-none" : ""}`}>
+    <Card className={compact ? "text-sm" : ""}>
       <CardHeader className={compact ? "pb-2" : ""}>
         <CardTitle className={`flex items-center gap-2 ${compact ? "text-sm" : ""}`}>
           <CheckCircle className={compact ? "h-4 w-4" : "h-5 w-5"} />
@@ -682,7 +749,7 @@ export function WizardFlowHandler({ data, onResponse, compact = false, disabled 
             {/* Render step fields */}
             <div className="space-y-3">
               {currentStepInfo.fields.map((field: any, index: number) => (
-                <div key={index}>
+                <div key={index} className={shouldShowField(field) ? "" : "hidden"}>
                   {field.type !== "checkbox" && field.type !== "boolean" && (
                     <label className={`block font-medium mb-1 ${compact ? "text-xs" : "text-sm"}`}>
                       {field.label}
@@ -714,7 +781,7 @@ export function WizardFlowHandler({ data, onResponse, compact = false, disabled 
                       onChange={(e) => handleFieldChange(field.name, e.target.value)}
                       className={`w-full border rounded px-3 py-2 ${compact ? "text-xs" : "text-sm"}`}
                     >
-                      <option value="">Select {field.label}</option>
+                      <option value="">{field.placeholder || `Select ${field.label}`}</option>
                       {field.options.map((option: any, optIndex: number) => (
                         <option key={optIndex} value={option.value}>
                           {option.label}

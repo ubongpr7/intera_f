@@ -32,7 +32,7 @@ const unsupportedEndpoint = (detail: string) => async () => ({
 
 export const posAPISlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getCurrentSession: builder.query<POSSession, void | string>({
+    getCurrentSession: builder.query<POSSession | null, void | string>({
       query: () => ({
         url: `/${pos_api}/sessions/current/`,
         service,

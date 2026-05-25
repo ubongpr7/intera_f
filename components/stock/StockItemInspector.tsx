@@ -1,6 +1,7 @@
 "use client"
 
 import { toast } from "react-toastify"
+import { useOverlayDismiss } from "@/components/common/useOverlayDismiss"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -21,7 +22,7 @@ import {
 } from "@/redux/features/stock/stockAPISlice"
 import { useState } from "react"
 
-type StockItemInspectorProps = {
+type InventoryItemInspectorProps = {
   itemId: string
   onClose: () => void
   onUpdated?: () => unknown
@@ -60,12 +61,14 @@ const formatDateLabel = (value?: string | null) => {
   return parsed.toLocaleString()
 }
 
-export default function StockItemInspector({
+export default function InventoryItemInspector({
   itemId,
   onClose,
   onUpdated,
   currencyCode = "NGN",
-}: StockItemInspectorProps) {
+}: InventoryItemInspectorProps) {
+  useOverlayDismiss({ onClose })
+
   const { data: item, isLoading, refetch } = useGetInventoryItemQuery(itemId)
   const { data: trackingHistory = [], refetch: refetchTracking } = useGetInventoryItemTrackingHistoryQuery(itemId)
   const [updateStatus, { isLoading: isUpdating }] = useUpdateInventoryItemStatusMutation()
@@ -95,8 +98,11 @@ export default function StockItemInspector({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <Card className="max-h-[90vh] w-full max-w-4xl overflow-y-auto border-gray-200 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <Card
+        className="max-h-[90vh] w-full max-w-4xl overflow-y-auto border-gray-200 shadow-xl"
+        onClick={(event) => event.stopPropagation()}
+      >
         <CardHeader className="border-b border-gray-100 p-6 text-left text-inherit">
           <div className="flex items-start justify-between gap-4">
             <div>

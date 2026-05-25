@@ -218,7 +218,7 @@ export default function DashboardPage() {
     <div className="mx-auto w-full max-w-[1600px] space-y-6 px-4 py-6 lg:px-8">
       <Card className="overflow-hidden border-gray-200 shadow-sm">
         <CardContent className="p-0">
-          <div className="border-b border-gray-100 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.18),_transparent_32%),linear-gradient(135deg,_#eff6ff,_#ffffff_40%,_#fff7ed)] px-6 py-6">
+          <div className="border-b border-gray-100 bg-gray-100/50 px-6 py-6">
             <div className="flex flex-wrap items-start justify-between gap-6">
               <div className="max-w-3xl">
                 <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white/90 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">

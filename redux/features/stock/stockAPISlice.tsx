@@ -14,6 +14,7 @@ import type {
   StockLocationListParams,
   StockLocationType,
   StockReservation,
+  StockReservationListParams,
   StockReservationMutationPayload,
   StockReservationPayload,
   StockSerial,
@@ -224,17 +225,7 @@ export const stockApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    listReservations: builder.query<
-      StockReservation[],
-      {
-        inventory?: string
-        inventory_item?: string
-        status?: string
-        external_order_type?: string
-        external_order_id?: string
-        external_order_line_id?: string
-      } | void
-    >({
+    listReservations: builder.query<StockReservation[], StockReservationListParams | void>({
       query: (params) => ({
         url: buildQuery(`/${stockApi}/reservations/`, params),
         service,

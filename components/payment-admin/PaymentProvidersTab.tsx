@@ -102,7 +102,7 @@ export function PaymentProvidersTab() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Payment Providers</h2>
-          <p className="text-muted-foreground">
+          <p className="text-gray-500">
             Configure and manage payment providers like Flutterwave, Stripe, PayPal, etc.
           </p>
         </div>

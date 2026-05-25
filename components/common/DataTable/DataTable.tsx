@@ -1,9 +1,12 @@
 "use client"
 import React from "react"
 import { useState, useEffect, useMemo } from "react"
-import { type LucideIcon, QrCode, Barcode, Filter } from 'lucide-react'
+import { type LucideIcon, QrCode, Barcode, Filter, Search, SlidersHorizontal, X } from 'lucide-react'
 import { FieldInfo } from "../fileFieldInfor"
 import LoadingAnimation from "../LoadingAnimation"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 export interface Column<T> {
   header: string
@@ -72,6 +75,14 @@ interface DataTableProps<T> {
   onScanSuccess?: (scannedItem: T) => void; // Callback after successful scan and item retrieval
 }
 
+const humanizeFieldName = (value: string) =>
+  value
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase())
+
 export function DataTable<T>({
   columns,
   data,
@@ -118,7 +129,6 @@ export function DataTable<T>({
     }
   }, [filterDropdownOpen])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [selectAll, setSelectAll] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [filters, setFilters] = useState<Record<keyof T, string>>({} as Record<keyof T, string>)
   const [rangeFilters, setRangeFilters] = useState<Record<keyof T, {from: string, to: string}>>({} as Record<keyof T, {from: string, to: string}>)
@@ -134,7 +144,7 @@ export function DataTable<T>({
   }, [data, filterableFields])
 
   const sortedData = useMemo(() => {
-    let sortableData = [...data]
+    const sortableData = [...data]
     if (sortConfig !== null) {
       sortableData.sort((a, b) => {
         if (a[sortConfig.key] < b[sortConfig.key]) {
@@ -168,17 +178,29 @@ export function DataTable<T>({
     const rangeMatch = rangeFilterFields.every((field) => {
       const filter = rangeFilters[field]
       if (!filter || (filter.from === "" && filter.to === "")) return true
-      let rowValue = row[field]
-      let numValue = parseFloat(rowValue as any)
+      const rowValue = row[field]
+      const numValue = parseFloat(rowValue as any)
       if (isNaN(numValue)) return true // ignore non-numeric
-      let from = filter.from !== "" ? parseFloat(filter.from) : undefined
-      let to = filter.to !== "" ? parseFloat(filter.to) : undefined
+      const from = filter.from !== "" ? parseFloat(filter.from) : undefined
+      const to = filter.to !== "" ? parseFloat(filter.to) : undefined
       if (from !== undefined && numValue < from) return false
       if (to !== undefined && numValue > to) return false
       return true
     })
     return exactMatch && rangeMatch
   })
+
+  const activeFiltersCount = useMemo(() => {
+    const exactFiltersCount = Object.values(filters).filter((value) => value !== "").length
+    const rangeFiltersCount = rangeFilterFields.filter((field) => {
+      const rangeFilter = rangeFilters[field]
+      return Boolean(rangeFilter && (rangeFilter.from !== "" || rangeFilter.to !== ""))
+    }).length
+
+    return exactFiltersCount + rangeFiltersCount
+  }, [filters, rangeFilterFields, rangeFilters])
+
+  const hasActiveSearchOrFilters = searchTerm.trim().length > 0 || activeFiltersCount > 0
 
   const requestSort = (key: keyof T) => {
     let direction: "ascending" | "descending" = "ascending"
@@ -188,13 +210,19 @@ export function DataTable<T>({
     setSortConfig({ key, direction })
   }
 
+  const clearAllFilters = () => {
+    setSearchTerm("")
+    setFilters({} as Record<keyof T, string>)
+    setRangeFilters({} as Record<keyof T, { from: string; to: string }>)
+    setFilterDropdownOpen(false)
+  }
+
   // Handle individual row selection
   const handleRowSelect = (rowId: string, isSelected: boolean) => {
     if (isSelected) {
       setSelectedIds((prev) => [...prev, rowId])
     } else {
       setSelectedIds((prev) => prev.filter((id) => id !== rowId))
-      setSelectAll(false)
     }
   }
 
@@ -203,20 +231,16 @@ export function DataTable<T>({
     if (isSelected) {
       const allIds = filteredAndSortedData.map((row) => getRowId?.(row) || "").filter(Boolean)
       setSelectedIds(allIds)
-      setSelectAll(true)
     } else {
       setSelectedIds([])
-      setSelectAll(false)
     }
   }
 
-  // Update select all state when individual selections change
-  useEffect(() => {
-    if (filteredAndSortedData.length > 0 && getRowId) {
-      const allIds = filteredAndSortedData.map((row) => getRowId(row)).filter(Boolean)
-      setSelectAll(allIds.length > 0 && allIds.every((id) => selectedIds.includes(id)))
-    }
-  }, [selectedIds, filteredAndSortedData, getRowId])
+  const allVisibleSelected = useMemo(() => {
+    if (!filteredAndSortedData.length || !getRowId) return false
+    const allIds = filteredAndSortedData.map((row) => getRowId(row)).filter(Boolean)
+    return allIds.length > 0 && allIds.every((id) => selectedIds.includes(id))
+  }, [filteredAndSortedData, getRowId, selectedIds])
 
   const hasGeneralButtons = generalButtons && generalButtons.length > 0 && getRowId
   const hasSelections = selectedIds.length > 0
@@ -361,166 +385,191 @@ export function DataTable<T>({
   };
 
   return (
-    <div className="rounded-lg border border-gray-200 overflow-hidden">
+    <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_50px_-34px_rgba(15,23,42,0.28)] dark:border-slate-800 dark:bg-slate-950">
       {(title || onClose) && (
-        <div className="flex items-center justify-between px-4 py-2 border-b bg-white">
-          {title && <h1 className="text-lg md:text-xl font-semibold">{title}</h1>}
+        <div className="flex items-center justify-between border-b border-slate-200 bg-white/90 px-5 py-4 backdrop-blur dark:border-slate-800 dark:bg-slate-950/88">
+          {title && <h1 className="text-lg font-semibold text-slate-950 dark:text-slate-50 md:text-xl">{title}</h1>}
           {onClose && (
-            <button
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
               onClick={onClose}
-              className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium rounded border border-gray-300 bg-white hover:bg-gray-50"
+              className="rounded-full px-4"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
               <span className="hidden sm:inline">New {title}</span>
-            </button>
+            </Button>
           )}
-
-          
         </div>
       )}
-      <div className="p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-        <div className="relative w-56">
-          <input
-            type="text"
-            placeholder="Search..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-1 text-sm w-full pr-8"
-          />
-          {searchTerm && (
-            <button
-              type="button"
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              onClick={() => setSearchTerm("")}
-              aria-label="Clear search"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-          )}
-        </div>
-        <div className="relative">
-          <button
-            className="border border-gray-300 flex text-center items-center rounded-md px-3 py-1 text-sm bg-white"
-            onClick={() => setFilterDropdownOpen((open) => !open)}
-          >
-            Filter <Filter size={14} className="ml-1" />
-          </button>
-          {filterDropdownOpen && (
-            <div ref={filterDropdownRef} className="absolute z-50 bg-white border border-gray-200 rounded shadow-lg p-4 min-w-[250px] right-0 -top-5 max-h-40 overflow-y-auto">
-              <div className="space-y-2">
-                {filterableFields.map((field) => (
-                  <div key={field as string}>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">{String(field)}</label>
-                    <select
-                      value={filters[field] || ""}
-                      onChange={(e) => setFilters({ ...filters, [field]: e.target.value })}
-                      className="border border-gray-300 rounded-md px-2 py-1 text-sm w-full"
-                    >
-                      <option value="">All {String(field)}</option>
-                      {filterOptions[field]?.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ))}
-                {rangeFilterFields.map((field) => (
-                  <div key={field as string} className="flex flex-col">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">{String(field)} (Range)</label>
-                    <div className="flex space-x-2">
-                      <input
-                        type="number"
-                        placeholder="From"
-                        value={rangeFilters[field]?.from || ""}
-                        onChange={(e) => setRangeFilters({
-                          ...rangeFilters,
-                          [field]: {
-                            ...rangeFilters[field],
-                            from: e.target.value
-                          }
-                        })}
-                        className="border border-gray-300 rounded-md px-2 py-1 text-sm w-1/2"
-                      />
-                      <input
-                        type="number"
-                        placeholder="To"
-                        value={rangeFilters[field]?.to || ""}
-                        onChange={(e) => setRangeFilters({
-                          ...rangeFilters,
-                          [field]: {
-                            ...rangeFilters[field],
-                            to: e.target.value
-                          }
-                        })}
-                        className="border border-gray-300 rounded-md px-2 py-1 text-sm w-1/2"
-                      />
-                    </div>
-                  </div>
-                ))}
-                <div className="flex justify-end pt-2">
-                  <button
-                    className="px-3 py-1 text-xs font-medium rounded bg-blue-500 text-white hover:bg-blue-600"
-                    onClick={() => setFilterDropdownOpen(false)}
-                  >
-                    Apply
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-        <div className="flex items-center space-x-2">
-          {qrScannableField && (
-            <button
-              onClick={startQrCodeScan}
-              className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-md bg-blue-500 text-white hover:bg-blue-600"
-              title="Scan QR Code"
-            >
-              <QrCode size={14} className="mr-1" /> QR Scan
-            </button>
-          )}
-          {barcodeScannableField && (
-            <button
-              onClick={startBarcodeScan}
-              className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-md bg-green-500 text-white hover:bg-green-600"
-              title="Scan Barcode"
-            >
-              <Barcode size={14} className="mr-1" /> Barcode Scan
-            </button>
-          )}
-        </div>
-        {hasGeneralButtons && (
-          <div className="flex items-center space-x-4">
-            {showSelectAll !== false && (
-              <div className="flex items-center space-x-2">
+      <div className="border-b border-slate-200 bg-slate-50/88 p-4 dark:border-slate-800 dark:bg-slate-900/70">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
+            <div className="relative min-w-0 flex-1 md:max-w-sm">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                type="text"
+                placeholder="Search records"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-11 rounded-full border-slate-200 bg-white pl-11 pr-10 text-sm shadow-none dark:border-slate-700 dark:bg-slate-950"
+              />
+              {searchTerm && (
                 <button
-                  onClick={() => handleSelectAll(!selectAll)}
-                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                  onClick={() => setSearchTerm("")}
+                  aria-label="Clear search"
                 >
-                  {selectAll ? "Deselect All" : "Select All"}
+                  <X className="h-4 w-4" />
                 </button>
-                {selectedIds.length > 0 && (
-                  <button
+              )}
+            </div>
+
+            <div className="relative" ref={filterDropdownRef}>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 rounded-full border-slate-200 bg-white px-4 dark:border-slate-700 dark:bg-slate-950"
+                onClick={() => setFilterDropdownOpen((open) => !open)}
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                Filters
+                {activeFiltersCount > 0 ? (
+                  <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[11px] font-semibold text-white">
+                    {activeFiltersCount}
+                  </span>
+                ) : null}
+              </Button>
+
+              {filterDropdownOpen && (
+                <div className="absolute right-0 top-[calc(100%+0.75rem)] z-50 w-[min(92vw,320px)] rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_22px_50px_-24px_rgba(15,23,42,0.35)] dark:border-slate-700 dark:bg-slate-950">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Filter workspace</p>
+                      <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Narrow the current list without leaving the table.</p>
+                    </div>
+                    {hasActiveSearchOrFilters ? (
+                      <Button type="button" variant="ghost" size="sm" className="rounded-full px-3" onClick={clearAllFilters}>
+                        Reset
+                      </Button>
+                    ) : null}
+                  </div>
+
+                  <div className="max-h-[360px] space-y-3 overflow-y-auto pr-1">
+                    {filterableFields.map((field) => (
+                      <div key={field as string}>
+                        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
+                          {humanizeFieldName(String(field))}
+                        </label>
+                        <select
+                          value={filters[field] || ""}
+                          onChange={(e) => setFilters({ ...filters, [field]: e.target.value })}
+                          className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/15 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                        >
+                          <option value="">All {humanizeFieldName(String(field))}</option>
+                          {filterOptions[field]?.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ))}
+
+                    {rangeFilterFields.map((field) => (
+                      <div key={field as string}>
+                        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
+                          {humanizeFieldName(String(field))} Range
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input
+                            type="number"
+                            placeholder="From"
+                            value={rangeFilters[field]?.from || ""}
+                            onChange={(e) => setRangeFilters({
+                              ...rangeFilters,
+                              [field]: {
+                                ...rangeFilters[field],
+                                from: e.target.value,
+                              },
+                            })}
+                            className="rounded-2xl border-slate-200 bg-white text-sm shadow-none dark:border-slate-700 dark:bg-slate-900"
+                          />
+                          <Input
+                            type="number"
+                            placeholder="To"
+                            value={rangeFilters[field]?.to || ""}
+                            onChange={(e) => setRangeFilters({
+                              ...rangeFilters,
+                              [field]: {
+                                ...rangeFilters[field],
+                                to: e.target.value,
+                              },
+                            })}
+                            className="rounded-2xl border-slate-200 bg-white text-sm shadow-none dark:border-slate-700 dark:bg-slate-900"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 flex justify-end">
+                    <Button type="button" className="rounded-full px-4" onClick={() => setFilterDropdownOpen(false)}>
+                      Apply filters
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {hasActiveSearchOrFilters ? (
+              <Button type="button" variant="ghost" className="h-11 rounded-full px-4 md:self-stretch" onClick={clearAllFilters}>
+                Clear search & filters
+              </Button>
+            ) : null}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {qrScannableField && (
+              <Button type="button" size="sm" className="rounded-full px-4" onClick={startQrCodeScan} title="Scan QR Code">
+                <QrCode size={14} /> QR Scan
+              </Button>
+            )}
+            {barcodeScannableField && (
+              <Button type="button" size="sm" variant="secondary" className="rounded-full px-4" onClick={startBarcodeScan} title="Scan Barcode">
+                <Barcode size={14} /> Barcode Scan
+              </Button>
+            )}
+            {hasGeneralButtons && showSelectAll !== false && (
+              <>
+                <Button type="button" variant="ghost" size="sm" className="rounded-full px-3" onClick={() => handleSelectAll(!allVisibleSelected)}>
+                  {allVisibleSelected ? "Deselect all" : "Select all"}
+                </Button>
+                {selectedIds.length > 0 ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="rounded-full px-3"
                     onClick={() => {
                       setSelectedIds([])
-                      setSelectAll(false)
                     }}
-                    className="text-sm text-gray-600 hover:text-gray-800"
                   >
-                    Clear Selection
-                  </button>
-                )}
-              </div>
+                    Clear selection
+                  </Button>
+                ) : null}
+              </>
             )}
+            {renderGeneralButtons()}
           </div>
-        )}
-        {renderGeneralButtons()}
+        </div>
       </div>
 
       {/* Render secondary button outside the table */}
       {secondaryButton && !secondaryButton.hidden && (
-        <div className="p-4 bg-gray-50 border-b border-gray-200">
+        <div className="border-b border-slate-200 bg-slate-50/88 p-4 dark:border-slate-800 dark:bg-slate-900/70">
           <button
             onClick={handleSecondaryClick}
             disabled={secondaryButton.disabled || false}
@@ -538,32 +587,29 @@ export function DataTable<T>({
         </div>
       )}
 
-      {/* Table container with proper overflow handling */}
       <div className="overflow-x-auto overflow-y-visible">
-        <table className="min-w-full divide-y divide-gray-200 table-auto">
-          <thead className="bg-gray-50 sticky top-0">
+        <table className="min-w-full table-auto divide-y divide-slate-200 dark:divide-slate-800">
+          <thead className="sticky top-0 bg-slate-50/96 backdrop-blur dark:bg-slate-900/96">
             <tr>
-              {/* Selection header */}
               {hasGeneralButtons && (
-                <th className="px-2 py-1 whitespace-nowrap text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
+                <th className="w-12 whitespace-nowrap px-2 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   <input
                     type="checkbox"
-                    checked={selectAll}
+                    checked={allVisibleSelected}
                     onChange={(e) => handleSelectAll(e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-700"
                   />
                 </th>
               )}
-              {/* Row number header */}
               {showRowNumbers && (
-                <th className="px-2 py-1 whitespace-nowrap text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
+                <th className="w-16 whitespace-nowrap px-2 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   {rowNumberHeader}
                 </th>
               )}
               {columns.map((column, idx) => (
                 <th
                   key={idx}
-                  className={`px-2 whitespace-nowrap py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                  className={`px-3 whitespace-nowrap py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400 ${
                     column.headerClassName || ""
                   }`}
                   onClick={() => sortableFields.includes(column.accessor as keyof T) && requestSort(column.accessor as keyof T)}
@@ -579,23 +625,22 @@ export function DataTable<T>({
               ))}
               {hasActions && (
                 <th
-                  className={`px-3 whitespace-nowrap py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${actionsColumnWidth}`}
+                  className={`px-3 whitespace-nowrap py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400 ${actionsColumnWidth}`}
                 >
                   {actionsColumnHeader}
                 </th>
               )}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-900 dark:bg-slate-950">
             {filteredAndSortedData.map((row, rowIndex) => (
               <tr
                 key={rowIndex}
                 onClick={() => onRowClick?.(row)}
-                className={`${onRowClick ? "cursor-pointer hover:bg-gray-50" : ""} transition-colors relative`}
+                className={`${onRowClick ? "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/70" : ""} relative transition-colors`}
               >
-                {/* Selection cell */}
                 {hasGeneralButtons && (
-                  <td className="px-4 py-4 w-12 whitespace-nowrap">
+                  <td className="w-12 whitespace-nowrap px-4 py-4">
                     <input
                       type="checkbox"
                       checked={selectedIds.includes(getRowId!(row))}
@@ -603,19 +648,18 @@ export function DataTable<T>({
                         e.stopPropagation()
                         handleRowSelect(getRowId!(row), e.target.checked)
                       }}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-700"
                     />
                   </td>
                 )}
-                {/* Row number cell */}
                 {showRowNumbers && (
-                  <td className="px-4 py-4 text-sm font-medium text-gray-500 w-16 whitespace-nowrap">{startNumberFrom + rowIndex}</td>
+                  <td className="w-16 whitespace-nowrap px-4 py-4 text-sm font-medium text-slate-500 dark:text-slate-400">{startNumberFrom + rowIndex}</td>
                 )}
                 {columns.map((column, colIndex) => {
                   const value =
                     typeof column.accessor === "function" ? column.accessor(row) : row[column.accessor as keyof T]
                   return (
-                    <td key={colIndex} className={`px-3 py-1 text-sm text-gray-900 relativewhitespace-nowrap ${column.className || ""}`}>
+                    <td key={colIndex} className={`px-3 py-3 text-sm text-slate-900 dark:text-slate-100 relativewhitespace-nowrap ${column.className || ""}`}>
                       {column.render ? column.render(value, row) : (value as React.ReactNode)}
                     </td>
                   )
@@ -627,9 +671,25 @@ export function DataTable<T>({
             ))}
           </tbody>
         </table>
-        {!isLoading && filteredAndSortedData.length === 0 && <div className="text-center py-8 text-gray-500">No records found</div>}
+        {!isLoading && filteredAndSortedData.length === 0 && (
+          <div className="flex flex-col items-center justify-center gap-3 px-4 py-12 text-center">
+            <p className="text-base font-semibold text-slate-700 dark:text-slate-200">
+              {hasActiveSearchOrFilters ? "No records match the current view." : "No records found."}
+            </p>
+            <p className="max-w-md text-sm text-slate-500 dark:text-slate-400">
+              {hasActiveSearchOrFilters
+                ? "Adjust the search or filters to widen the result set."
+                : "This table will populate once records are available."}
+            </p>
+            {hasActiveSearchOrFilters ? (
+              <Button type="button" variant="outline" className="rounded-full px-4" onClick={clearAllFilters}>
+                Clear filters
+              </Button>
+            ) : null}
+          </div>
+        )}
         {isLoading && filteredAndSortedData.length === 0 && (
-          <div className="text-center flex items-center justify-center py-8 text-gray-500">
+          <div className="flex items-center justify-center py-10 text-center text-slate-500 dark:text-slate-400">
             <LoadingAnimation text="Loading..." ringColor="#3b82f6" />
           </div>
         )}

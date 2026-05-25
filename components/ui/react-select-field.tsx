@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { forwardRef } from "react"
+import { forwardRef, useState } from "react"
 import Select, { type Props as ReactSelectProps, type StylesConfig } from "react-select"
 import { cn } from "@/lib/utils"
 
@@ -22,18 +22,19 @@ const isDarkMode = () => typeof document !== "undefined" && document.documentEle
 const customStyles: StylesConfig<SelectOption, boolean> = {
   control: (provided, state) => ({
     ...provided,
-    minHeight: 44,
-    borderRadius: 14,
-    backgroundColor: state.isDisabled ? "#f9fafb" : "#ffffff",
-    borderColor: state.isFocused ? "#60a5fa" : "#e5e7eb",
-    boxShadow: state.isFocused ? "0 0 0 4px rgba(59, 130, 246, 0.14)" : "0 1px 2px rgba(15, 23, 42, 0.06)",
+    minHeight: 48,
+    borderRadius: 18,
+    backgroundColor: state.isDisabled ? "#f8fafc" : "#ffffff",
+    borderColor: state.isFocused ? "#60a5fa" : "#e2e8f0",
+    boxShadow: state.isFocused ? "0 0 0 4px rgba(59, 130, 246, 0.14)" : "0 10px 24px rgba(15, 23, 42, 0.05)",
     "&:hover": {
       borderColor: state.isFocused ? "#60a5fa" : "#cbd5e1",
     },
     ...(isDarkMode() && {
-      backgroundColor: "#1f2937",
-      borderColor: state.isFocused ? "#60a5fa" : "#4b5563",
+      backgroundColor: state.isDisabled ? "#0f172a" : "#1e293b",
+      borderColor: state.isFocused ? "#60a5fa" : "#334155",
       color: "#f9fafb",
+      boxShadow: state.isFocused ? "0 0 0 4px rgba(59, 130, 246, 0.16)" : "0 12px 28px rgba(2, 6, 23, 0.42)",
     }),
   }),
   menu: (provided) => ({
@@ -43,19 +44,23 @@ const customStyles: StylesConfig<SelectOption, boolean> = {
     overflow: "hidden",
     boxShadow: "0 18px 40px rgba(15, 23, 42, 0.12)",
     ...(isDarkMode() && {
-      backgroundColor: "#1f2937",
+      backgroundColor: "#0f172a",
     }),
+  }),
+  placeholder: (provided) => ({
+    ...provided,
+    color: isDarkMode() ? "#64748b" : "#94a3b8",
   }),
   option: (provided, state) => ({
     ...provided,
-    backgroundColor: state.isSelected ? "#3b82f6" : state.isFocused ? "#bfdbfe" : "transparent",
-    color: state.isSelected || state.isFocused ? "#ffffff" : "#111827",
+    backgroundColor: state.isSelected ? "#3b82f6" : state.isFocused ? "#dbeafe" : "transparent",
+    color: state.isSelected ? "#ffffff" : "#111827",
     "&:active": {
       backgroundColor: "#3b82f6",
     },
     ...(isDarkMode() && {
-      backgroundColor: state.isSelected ? "#60a5fa" : state.isFocused ? "#93c5fd" : "#1f2937",
-      color: state.isSelected || state.isFocused ? "#ffffff" : "#f9fafb",
+      backgroundColor: state.isSelected ? "#2563eb" : state.isFocused ? "#1e3a8a" : "#0f172a",
+      color: "#f8fafc",
     }),
   }),
   singleValue: (provided) => ({
@@ -72,29 +77,68 @@ const customStyles: StylesConfig<SelectOption, boolean> = {
       color: "#f9fafb",
     }),
   }),
+  menuPortal: (provided) => ({
+    ...provided,
+    zIndex: 9999,
+  }),
 }
 
 export const ReactSelectField = forwardRef<any, ReactSelectFieldProps>(
-  ({ className, error, label, helperText, inputId, ...props }, ref) => (
-    <div className={cn("space-y-1", className)}>
-      {label ? <label className="block text-sm font-medium text-gray-700">{label}</label> : null}
-      <Select
-        ref={ref}
-        styles={customStyles}
-        classNames={{
-          control: () =>
-            cn(
-              "rounded-xl border bg-white px-1.5 py-0.5",
-              error ? "border-red-500" : "border-gray-200",
-            ),
-          menu: () => "p-1",
-        }}
-        inputId={inputId}
-        {...props}
-      />
-      {helperText ? <p className={cn("text-xs", error ? "text-red-500" : "text-gray-500")}>{helperText}</p> : null}
-    </div>
-  ),
+  (
+    {
+      className,
+      error,
+      label,
+      helperText,
+      inputId,
+      menuPortalTarget,
+      menuPosition,
+      menuPlacement,
+      styles,
+      onMenuOpen,
+      onMenuClose,
+      ...props
+    },
+    ref,
+  ) => {
+    const [isMenuOpen, setIsMenuOpen] = useState(false)
+    const resolvedPortalTarget = menuPortalTarget
+
+    return (
+      <div className={cn("relative space-y-1", isMenuOpen ? "z-[120]" : "z-0", className)}>
+        {label ? <label className="block text-sm font-medium text-gray-700">{label}</label> : null}
+        <Select
+          ref={ref}
+          styles={{
+            ...customStyles,
+            ...styles,
+          }}
+          classNames={{
+            control: () =>
+              cn(
+                "rounded-2xl border bg-white px-2 py-1 dark:bg-slate-800/90",
+                error ? "border-red-500 dark:border-red-500" : "border-gray-200 dark:border-slate-700",
+              ),
+            menu: () => "p-1 dark:bg-slate-950",
+          }}
+          inputId={inputId}
+          menuPortalTarget={resolvedPortalTarget}
+          menuPosition={menuPosition ?? (resolvedPortalTarget ? "fixed" : "absolute")}
+          menuPlacement={menuPlacement ?? "auto"}
+          onMenuOpen={() => {
+            setIsMenuOpen(true)
+            onMenuOpen?.()
+          }}
+          onMenuClose={() => {
+            setIsMenuOpen(false)
+            onMenuClose?.()
+          }}
+          {...props}
+        />
+        {helperText ? <p className={cn("text-xs", error ? "text-red-500" : "text-gray-500")}>{helperText}</p> : null}
+      </div>
+    )
+  },
 )
 
 ReactSelectField.displayName = "ReactSelectField"

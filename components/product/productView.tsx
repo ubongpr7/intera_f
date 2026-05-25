@@ -256,7 +256,7 @@ const actionButtons: ActionButton<ProductData>[] = [
           />
         </div>
       )}
-      <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>
+      {isCreateOpen ? (
         <CustomCreateCard
           defaultValues={defaultValues}
           onClose={() => {setIsCreateOpen(false)
@@ -271,9 +271,7 @@ const actionButtons: ActionButton<ProductData>[] = [
           optionalFields={['description', 'short_description', 'cost_price', 'barcode', 'sku', 'pos_category', 'unit', 'dimensions', 'weight', 'meta_title', 'meta_description']}
           itemTitle={'New Product'}
         />
-       
-        
-      </div>
+      ) : null}
     </div>
   );
 }

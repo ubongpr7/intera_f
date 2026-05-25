@@ -68,7 +68,7 @@ export function PaymentsTab() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Payments</h2>
-          <p className="text-muted-foreground">Monitor all payment transactions across your applications.</p>
+          <p className="text-gray-500">Monitor all payment transactions across your applications.</p>
         </div>
         <Button onClick={() => refetch()}>
           <RefreshCw className="h-4 w-4 mr-2" />

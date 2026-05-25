@@ -5,6 +5,7 @@ import { MessageSquareText, X } from "lucide-react"
 import { toast } from "react-toastify"
 
 import AgentChat from "./agent-chat"
+import { deriveWorkflowSummary } from "@/lib/agent-structured-output"
 import { createSessionWithConfig, type ChatMessage } from "@/redux/features/ka2a/ka2aSlice"
 import { sendStreamMessage } from "@/redux/features/ka2a/ka2aThunks"
 import { useAppDispatch, useAppSelector } from "@/redux/store"
@@ -22,7 +23,7 @@ export default function AIChatWidget() {
   const [isOpen, setIsOpen] = useState(false)
   const [isFullScreen, setIsFullScreen] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
-  const [lastActivityAt, setLastActivityAt] = useState<number | null>(null)
+  const lastActivityAtRef = useRef<number | null>(null)
 
   const widgetRef = useRef<HTMLDivElement>(null)
   const toggleBtnRef = useRef<HTMLButtonElement>(null)
@@ -41,8 +42,6 @@ export default function AIChatWidget() {
   )
 
   const pendingCount = session?.isStreaming ? 1 : 0
-  const eventCount = session?.eventLog.length ?? 0
-  const taskCount = Object.keys(session?.runs ?? {}).length
   const lastUpdatedAt = useMemo(() => {
     const latest = session?.eventLog.at(-1)?.receivedAt
     if (!latest) {
@@ -55,18 +54,54 @@ export default function AIChatWidget() {
   const statusText = session?.awaitingInput
     ? "Waiting for your answer to continue"
     : session?.currentStatusText || undefined
+  const workflowSummary = useMemo(
+    () =>
+      deriveWorkflowSummary({
+        messages,
+        activeAgentName: session?.agentName || "host",
+        activeSpecialistName: session?.activeSpecialist || null,
+        currentTaskState: session?.currentTaskState || null,
+        awaitingInput: session?.awaitingInput,
+        statusText,
+      }),
+    [
+      messages,
+      session?.activeSpecialist,
+      session?.agentName,
+      session?.awaitingInput,
+      session?.currentTaskState,
+      statusText,
+    ],
+  )
+
+  const markActivity = () => {
+    lastActivityAtRef.current = Date.now()
+  }
 
   const toggleChat = () => {
+    if (!isOpen && !sessionId) {
+      const id = createLocalId()
+      setSessionId(id)
+      dispatch(
+        createSessionWithConfig({
+          sessionId: id,
+          title: "Assistant",
+          agentName: "host",
+          historyLength: 10,
+          makeActive: false,
+        }),
+      )
+    }
     setIsOpen((prev) => !prev)
     if (!isOpen) {
-      setLastActivityAt(Date.now())
+      markActivity()
     }
     if (isFullScreen) setIsFullScreen(false)
   }
 
   const toggleFullScreen = () => {
     setIsFullScreen((prev) => !prev)
-    setLastActivityAt(Date.now())
+    markActivity()
   }
 
   useEffect(() => {
@@ -98,36 +133,20 @@ export default function AIChatWidget() {
   }, [isOpen, isFullScreen])
 
   useEffect(() => {
-    if (!isOpen || sessionId) {
-      return
-    }
-    const id = createLocalId()
-    setSessionId(id)
-    dispatch(
-      createSessionWithConfig({
-        sessionId: id,
-        title: "Assistant",
-        agentName: "host",
-        historyLength: 10,
-        makeActive: false,
-      }),
-    )
-    setLastActivityAt(Date.now())
-  }, [dispatch, isOpen, sessionId])
-
-  useEffect(() => {
     if (!isOpen) {
       return
     }
-    setLastActivityAt(Date.now())
-  }, [isOpen, messages.length, pendingCount, eventCount, taskCount])
+    markActivity()
+  }, [isOpen, messages.length, pendingCount])
 
   useEffect(() => {
     if (!isOpen) return
     const inactivityMs = 3 * 60 * 1000
 
     const ticker = setInterval(() => {
-      if (!isOpen || !lastActivityAt) return
+      if (!isOpen) return
+      const lastActivityAt = lastActivityAtRef.current
+      if (!lastActivityAt) return
       const idleFor = Date.now() - lastActivityAt
       const hasWork = pendingCount > 0 || Boolean(session?.awaitingInput)
       if (!hasWork && idleFor >= inactivityMs) {
@@ -137,19 +156,19 @@ export default function AIChatWidget() {
     }, 10000)
 
     return () => clearInterval(ticker)
-  }, [isOpen, lastActivityAt, pendingCount, session?.awaitingInput])
+  }, [isOpen, pendingCount, session?.awaitingInput])
 
   const handleSend = async (text: string) => {
     if (!text.trim() || !sessionId) return
-    setLastActivityAt(Date.now())
+    markActivity()
     await dispatch(sendStreamMessage({ text, sessionId }))
   }
 
-  const handleUserActivity = () => setLastActivityAt(Date.now())
+  const handleUserActivity = () => markActivity()
 
   const chatWindowClasses = isFullScreen
     ? "fixed inset-0 w-full h-full rounded-none"
-    : "absolute bottom-20 right-0 max-w-[450px] h-[520px] rounded-xl border border-gray-200"
+    : "absolute bottom-20 right-0  w-[90vw] sm:w-[520px] h-[600px]   rounded-xl border border-gray-200"
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
@@ -181,12 +200,11 @@ export default function AIChatWidget() {
             onActivity={handleUserActivity}
             isBusy={session?.isStreaming ?? false}
             pendingCount={pendingCount}
-            taskCount={taskCount}
-            eventCount={eventCount}
             lastUpdatedAt={lastUpdatedAt}
             activeAgentName={activeAgentName}
             statusText={statusText}
             awaitingInput={session?.awaitingInput ?? false}
+            workflowSummary={workflowSummary}
           />
         </div>
       )}

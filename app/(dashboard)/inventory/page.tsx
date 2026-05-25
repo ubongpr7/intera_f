@@ -31,7 +31,7 @@ import {
   useGetInventoriesNeedingReorderQuery,
   useGetLowStockInventoriesQuery,
 } from "@/redux/features/inventory/inventoryAPiSlice"
-import { useGetExpiringInventoryItemsQuery, useGetLowStockItemsQuery, useGetStockItemDataLocationQuery } from "@/redux/features/stock/stockAPISlice"
+import { useGetExpiringInventoryItemsQuery, useGetLowStockItemsQuery, useListStockLocationsQuery } from "@/redux/features/stock/stockAPISlice"
 
 type InventorySetupStep = {
   id: string
@@ -53,7 +53,7 @@ export default function InventoryPage() {
   const [refetchData, setRefetchData] = useState(false)
   const { activeMembership, nextRecommendedStage, profile, readiness } = useWorkspaceSetupProgress()
 
-  const { data: locations, isLoading: loadingLocations } = useGetStockItemDataLocationQuery()
+  const { data: locations, isLoading: loadingLocations } = useListStockLocationsQuery()
   const { data: categories, isLoading: loadingCategories } = useGetInventoryCategoriesQuery()
   const { data: inventories, isLoading: loadingInventories } = useGetInventoryDataQuery()
   const { data: inventoryAnalytics, isLoading: loadingAnalytics } = useGetInventoryAnalyticsQuery()
@@ -416,7 +416,7 @@ export default function InventoryPage() {
           <InventoryView refetchData={refetchData} setRefetchData={setRefetchData} />
         </OperationalStepSection>
 
-        <InventoryOperationalInsights inventoryOptions={inventoryOptions} locationOptions={locationOptions} />
+        <InventoryOperationalInsights inventoryOptions={inventoryOptions} locationOptions={locationOptions} locations={locations || []} />
 
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="p-6 text-left text-inherit">

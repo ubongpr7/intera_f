@@ -46,7 +46,7 @@ export function AnalyticsTab() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Analytics Dashboard</h2>
-          <p className="text-muted-foreground">Overview of payment system performance and metrics.</p>
+          <p className="text-gray-500">Overview of payment system performance and metrics.</p>
         </div>
       </div>
 
@@ -61,11 +61,11 @@ export function AnalyticsTab() {
             <Card key={index}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                <Icon className="h-4 w-4 text-muted-foreground" />
+                <Icon className="h-4 w-4 text-gray-500" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stat.value}</div>
-                <div className="flex items-center text-xs text-muted-foreground">
+                <div className="flex items-center text-xs text-gray-500">
                   <TrendIcon className={`mr-1 h-3 w-3 ${isPositive ? "text-green-500" : "text-red-500"}`} />
                   <span className={isPositive ? "text-green-500" : "text-red-500"}>
                     {isPositive ? "+" : ""}
@@ -97,11 +97,11 @@ export function AnalyticsTab() {
                       {payment.provider}
                     </Badge>
                   </div>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-gray-500">
                     {new Date(payment.created_at).toLocaleDateString()}
                   </span>
                 </div>
-              )) || <div className="text-center text-muted-foreground py-4">No recent payments</div>}
+              )) || <div className="py-4 text-center text-gray-500">No recent payments</div>}
             </div>
           </CardContent>
         </Card>
@@ -128,7 +128,7 @@ export function AnalyticsTab() {
                   </div>
                 ))
               ) : (
-                <div className="text-center text-muted-foreground py-4">No subscription data</div>
+                <div className="py-4 text-center text-gray-500">No subscription data</div>
               )}
             </div>
           </CardContent>

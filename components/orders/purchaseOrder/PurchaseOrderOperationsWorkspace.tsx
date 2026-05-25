@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { ArrowLeft, CheckCircle2, ClipboardCheck, Mail, PackagePlus, ReceiptText, Truck, Undo2, XCircle } from "lucide-react"
 import { toast } from "react-toastify"
 import OperationalStepSection from "@/components/setup/OperationalStepSection"
@@ -38,7 +38,7 @@ import {
   useUpdatePurchaseOrderLineItemMutation,
   useDeletePurchaseOrderLineItemMutation,
 } from "@/redux/features/orders/orderAPISlice"
-import { useGetStockItemDataLocationQuery, useGetStockItemDataQuery } from "@/redux/features/stock/stockAPISlice"
+import { useListInventoryItemsQuery, useListStockLocationsQuery } from "@/redux/features/stock/stockAPISlice"
 import { useGetCompanyUsersQuery } from "@/redux/features/users/userApiSlice"
 
 const statusStyles: Record<string, string> = {
@@ -134,7 +134,7 @@ const buildReturnEntry = (lineItem: PurchaseOrderLineItem): ReturnEntry => ({
 
 export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: PurchaseOrderOperationsWorkspaceProps) {
   const router = useRouter()
-  const [headerForm, setHeaderForm] = useState<PurchaseOrderHeaderForm>(buildHeaderForm())
+  const [headerFormDraft, setHeaderFormDraft] = useState<Partial<PurchaseOrderHeaderForm>>({})
   const [lineItemForm, setLineItemForm] = useState<LineItemForm>(emptyLineItemForm)
   const [editingLineItemId, setEditingLineItemId] = useState<string | null>(null)
   const [receiveEntries, setReceiveEntries] = useState<Record<string, ReceiveEntry>>({})
@@ -146,8 +146,8 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
   const { data: order, isLoading, refetch } = useGetPurchaseOrderQuery(purchaseOrderId)
   const { data: suppliers = [] } = useGetSupplersQuery()
   const { data: users = [] } = useGetCompanyUsersQuery()
-  const { data: inventoryItems = [] } = useGetStockItemDataQuery()
-  const { data: locations = [] } = useGetStockItemDataLocationQuery()
+  const { data: inventoryItems = [] } = useListInventoryItemsQuery()
+  const { data: locations = [] } = useListStockLocationsQuery()
 
   const [updatePurchaseOrder, { isLoading: savingHeader }] = useUpdatePurchaseOrderMutation()
   const [createLineItem, { isLoading: creatingLineItem }] = useCreatePurchaseOrderLineItemMutation()
@@ -162,35 +162,12 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
   const [downloadPurchaseOrderPdf, { isFetching: isDownloadingPdf }] = useLazyDownloadPurchaseOrderPdfQuery()
   const [resendPurchaseOrderEmail, { isLoading: resendingEmail }] = useResendPurchaseOrderEmailMutation()
 
-  const lineItems = order?.line_items || []
+  const headerForm = useMemo(() => ({ ...buildHeaderForm(order), ...headerFormDraft }), [order, headerFormDraft])
+  const lineItems = useMemo(() => order?.line_items || [], [order])
   const activeCurrency = order?.order_currency || headerForm.order_currency || "NGN"
   const totalQuantity = lineItems.reduce((sum, lineItem) => sum + asNumber(lineItem.quantity), 0)
   const receivedQuantity = lineItems.reduce((sum, lineItem) => sum + asNumber(lineItem.quantity_received), 0)
   const remainingQuantity = Math.max(totalQuantity - receivedQuantity, 0)
-
-  useEffect(() => {
-    if (order) {
-      setHeaderForm(buildHeaderForm(order))
-      setReceiveEntries((current) => {
-        const next = { ...current }
-        for (const lineItem of lineItems) {
-          if (!next[String(lineItem.id)]) {
-            next[String(lineItem.id)] = buildReceiveEntry(lineItem)
-          }
-        }
-        return next
-      })
-      setReturnEntries((current) => {
-        const next = { ...current }
-        for (const lineItem of lineItems) {
-          if (!next[String(lineItem.id)]) {
-            next[String(lineItem.id)] = buildReturnEntry(lineItem)
-          }
-        }
-        return next
-      })
-    }
-  }, [lineItems, order])
 
   const editableLineItems = useMemo(
     () =>
@@ -242,6 +219,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
           delivery_date: headerForm.delivery_date || undefined,
         },
       }).unwrap()
+      setHeaderFormDraft({})
       toast.success("Purchase order updated")
       await refetch()
     } catch (error) {
@@ -343,7 +321,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
         if (lineItem.id === undefined) {
           return []
         }
-        const entry = receiveEntries[String(lineItem.id)]
+        const entry = receiveEntries[String(lineItem.id)] || buildReceiveEntry(lineItem)
         const quantity = Number(entry?.quantity_received || "0")
         if (!entry || quantity <= 0 || !entry.location_id) {
           return []
@@ -417,7 +395,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
         if (lineItem.id === undefined) {
           return []
         }
-        const entry = returnEntries[String(lineItem.id)]
+        const entry = returnEntries[String(lineItem.id)] || buildReturnEntry(lineItem)
         const quantity = Number(entry?.quantity || "0")
         if (!entry || quantity <= 0) {
           return []
@@ -550,7 +528,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="po-supplier">Supplier</Label>
-            <Select value={headerForm.supplier} onValueChange={(value) => setHeaderForm((current) => ({ ...current, supplier: value }))}>
+            <Select value={headerForm.supplier} onValueChange={(value) => setHeaderFormDraft((current) => ({ ...current, supplier: value }))}>
               <SelectTrigger id="po-supplier">
                 <SelectValue placeholder="Select supplier" />
               </SelectTrigger>
@@ -567,7 +545,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
             <Label htmlFor="po-responsible">Responsible owner</Label>
             <Select
               value={headerForm.responsible}
-              onValueChange={(value) => setHeaderForm((current) => ({ ...current, responsible: value }))}
+              onValueChange={(value) => setHeaderFormDraft((current) => ({ ...current, responsible: value }))}
             >
               <SelectTrigger id="po-responsible">
                 <SelectValue placeholder="Select responsible owner" />
@@ -585,7 +563,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
             <Label htmlFor="po-currency">Order currency</Label>
             <Select
               value={headerForm.order_currency}
-              onValueChange={(value) => setHeaderForm((current) => ({ ...current, order_currency: value }))}
+              onValueChange={(value) => setHeaderFormDraft((current) => ({ ...current, order_currency: value }))}
             >
               <SelectTrigger id="po-currency">
                 <SelectValue placeholder="Select currency" />
@@ -604,7 +582,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
             <Input
               id="po-description"
               value={headerForm.description}
-              onChange={(event) => setHeaderForm((current) => ({ ...current, description: event.target.value }))}
+              onChange={(event) => setHeaderFormDraft((current) => ({ ...current, description: event.target.value }))}
               placeholder="What is the order for?"
             />
           </div>
@@ -614,7 +592,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
               id="po-delivery-date"
               type="date"
               value={headerForm.delivery_date}
-              onChange={(event) => setHeaderForm((current) => ({ ...current, delivery_date: event.target.value }))}
+              onChange={(event) => setHeaderFormDraft((current) => ({ ...current, delivery_date: event.target.value }))}
             />
           </div>
           <div className="space-y-2 xl:col-span-3">
@@ -622,7 +600,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
             <Input
               id="po-link"
               value={headerForm.link}
-              onChange={(event) => setHeaderForm((current) => ({ ...current, link: event.target.value }))}
+              onChange={(event) => setHeaderFormDraft((current) => ({ ...current, link: event.target.value }))}
               placeholder="Optional supplier portal or quote link"
             />
           </div>
@@ -631,7 +609,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
             <Textarea
               id="po-notes"
               value={headerForm.notes}
-              onChange={(event) => setHeaderForm((current) => ({ ...current, notes: event.target.value }))}
+              onChange={(event) => setHeaderFormDraft((current) => ({ ...current, notes: event.target.value }))}
               rows={4}
               placeholder="Capture receiving instructions, price notes, or approval context"
             />

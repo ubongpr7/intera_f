@@ -27,6 +27,7 @@ import type {
 
 const managementApi = "management";
 const service = "users";
+const aiService = "agent";
 
 export const companyApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -144,27 +145,27 @@ export const companyApiSlice = apiSlice.injectEndpoints({
 
     getCompanyAgentSetup: builder.query<CompanyAgentSetupResponse, void>({
       query: () => ({
-        url: `/${managementApi}/agent-setup/`,
+        url: `/agent_api/${managementApi}/agent-setup/`,
         method: "GET",
-        service,
+        service: aiService,
       }),
     }),
 
     saveCompanyAgentSetup: builder.mutation<CompanyAgentSetupResponse, SaveCompanyAgentSetupPayload>({
       query: (data) => ({
-        url: `/${managementApi}/agent-setup/`,
+        url: `/agent_api/${managementApi}/agent-setup/`,
         method: "POST",
         body: data,
-        service,
+        service: aiService,
       }),
     }),
 
     patchCompanyAgentSetup: builder.mutation<CompanyAgentSetupResponse, Partial<SaveCompanyAgentSetupPayload>>({
       query: (data) => ({
-        url: `/${managementApi}/agent-setup/`,
+        url: `/agent_api/${managementApi}/agent-setup/`,
         method: "PATCH",
         body: data,
-        service,
+        service: aiService,
       }),
     }),
 

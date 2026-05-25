@@ -552,7 +552,7 @@ export function DataTableHandler({ data, onResponse, compact = false }: Interact
 }
 
 export function DynamicFormHandler({ data, onResponse, compact = false, disabled = false }: InteractionHandlerProps) {
-  const [formData, setFormData] = useState<Record<string, any>>({})
+  const [formData, setFormData] = useState<Record<string, any>>(data.current_values || {})
 
   const handleSubmit = () => {
     onResponse({
@@ -679,7 +679,7 @@ export function DynamicFormHandler({ data, onResponse, compact = false, disabled
           </div>
         ))}
 
-        <Button onClick={handleSubmit} size="sm" className="w-full" disabled={disabled}>
+        <Button type="button" onClick={handleSubmit} size="sm" className="w-full" disabled={disabled}>
           Submit Form
         </Button>
       </div>
@@ -708,7 +708,7 @@ export function DynamicFormHandler({ data, onResponse, compact = false, disabled
           </div>
         ))}
 
-        <Button onClick={handleSubmit} className="w-full" disabled={disabled}>
+        <Button type="button" onClick={handleSubmit} className="w-full" disabled={disabled}>
           Submit Form
         </Button>
       </CardContent>
@@ -1519,7 +1519,7 @@ export function UpdateFormHandler({ data, onResponse, compact = false, disabled 
           </div>
         ))}
 
-        <Button onClick={handleSubmit} size="sm" className="w-full" disabled={disabled}>
+        <Button type="button" onClick={handleSubmit} size="sm" className="w-full" disabled={disabled}>
           Update Item
         </Button>
       </div>
@@ -1551,7 +1551,7 @@ export function UpdateFormHandler({ data, onResponse, compact = false, disabled 
           </div>
         ))}
 
-        <Button onClick={handleSubmit} className="w-full" disabled={disabled}>
+        <Button type="button" onClick={handleSubmit} className="w-full" disabled={disabled}>
           Update Item
         </Button>
       </CardContent>

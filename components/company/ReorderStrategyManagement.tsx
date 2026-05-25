@@ -298,7 +298,7 @@ export function ReorderStrategyManagement({profileId}:ReorderStrategyManagementP
       <div className="grid gap-4">
         {strategies.length === 0 ? (
           <Card>
-            <CardContent className="p-6 text-center text-muted-foreground">
+            <CardContent className="p-6 text-center text-gray-500">
               No reorder strategies found. Create your first strategy to get started.
             </CardContent>
           </Card>
@@ -309,7 +309,7 @@ export function ReorderStrategyManagement({profileId}:ReorderStrategyManagementP
                 <div className="flex justify-between items-start">
                   <div className="space-y-2">
                     <h4 className="font-medium">{strategy.name}</h4>
-                    {strategy.description && <p className="text-sm text-muted-foreground">{strategy.description}</p>}
+                    {strategy.description && <p className="text-sm text-gray-500">{strategy.description}</p>}
                     <div className="flex gap-2">
                       <Badge variant={strategy.is_active ? "default" : "secondary"}>
                         {strategy.is_active ? "Active" : "Inactive"}

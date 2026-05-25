@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { X } from "lucide-react"
-import { useEffect } from "react"
+import { useOverlayDismiss } from "./useOverlayDismiss"
 
 interface ModalProps {
   isOpen: boolean
@@ -14,17 +14,7 @@ interface ModalProps {
 }
 
 export default function Modal({ isOpen, onClose, title, children, size = "md" }: ModalProps) {
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden"
-    } else {
-      document.body.style.overflow = "unset"
-    }
-
-    return () => {
-      document.body.style.overflow = "unset"
-    }
-  }, [isOpen])
+  useOverlayDismiss({ enabled: isOpen, onClose })
 
   if (!isOpen) return null
 

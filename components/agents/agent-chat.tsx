@@ -9,8 +9,6 @@ import {
   X,
   Clock,
   Loader2,
-  ListChecks,
-  Radio,
   Check,
   Mic,
   MicOff,
@@ -38,6 +36,7 @@ import {
   AutocompleteSelectionHandler,
   ComparisonViewHandler,
   BulkActionSelectorHandler,
+  MarketplaceResultsHandler,
 } from "@/components/advanced-interaction-handlers"
 import { ConditionalFormHandler } from "../user-agents-interaction/conditional-form" 
 import {
@@ -51,7 +50,11 @@ import {
 } from "@/components/extra-collab-handlers"
 import { useVoiceChat } from "@/hooks/use-voice-chat"
 import type { ChatMessage } from "@/redux/features/ka2a/ka2aSlice"
-import { detectInteractionRequest } from "@/lib/agent-structured-output"
+import {
+  detectInteractionRequest,
+  detectInteractionResponseSummary,
+  type AgentWorkflowSummary,
+} from "@/lib/agent-structured-output"
 import { useState, useRef, useEffect, useMemo } from "react"
 
 interface AgentChatProps {
@@ -63,17 +66,161 @@ interface AgentChatProps {
   onActivity?: () => void
   isBusy?: boolean
   pendingCount?: number
-  taskCount?: number
-  eventCount?: number
   lastUpdatedAt?: number
   activeAgentName?: string
   statusText?: string
   awaitingInput?: boolean
   showHeader?: boolean
   showWindowControls?: boolean
+  inputPlaceholder?: string
+  emptyTitle?: string
+  emptyDescription?: string
+  sendLabel?: string
+  workflowSummary?: AgentWorkflowSummary | null
 }
 
 const asText = (value: unknown): string => (typeof value === "string" ? value : "")
+
+const createLocalId = () => {
+  const cryptoAny = globalThis.crypto as { randomUUID?: () => string } | undefined
+  if (cryptoAny?.randomUUID) {
+    return cryptoAny.randomUUID()
+  }
+  return `${new Date().toISOString()}-${Math.random().toString(16).slice(2)}`
+}
+
+const formatRelativeTime = (timestamp?: number) => {
+  if (!timestamp) {
+    return ""
+  }
+  const deltaMs = Math.max(Date.now() - timestamp, 0)
+  const seconds = Math.floor(deltaMs / 1000)
+  if (seconds < 45) {
+    return "just now"
+  }
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) {
+    return `${minutes}m ago`
+  }
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) {
+    return `${hours}h ago`
+  }
+  return `${Math.floor(hours / 24)}d ago`
+}
+
+const humanizeTechnicalMessage = (content: string) => {
+  const trimmed = content.trim()
+  if (!trimmed) {
+    return ""
+  }
+
+  if (/Timed out waiting for delegated response from ['"]?[^'"]+['"]? after [\d.]+s\./i.test(trimmed)) {
+    return "A specialist did not respond in time. Retry, simplify the request, or continue with a more specific instruction."
+  }
+
+  if (/No downstream specialist agents are currently visible in the agent directory\./i.test(trimmed)) {
+    return "No specialist agents are currently available for this request."
+  }
+
+  return content
+}
+
+const workflowToneStyles: Record<
+  AgentWorkflowSummary["tone"],
+  {
+    card: string
+    badge: string
+    dot: string
+    stepCompleted: string
+    stepCurrent: string
+    stepPending: string
+  }
+> = {
+  ready: {
+    card: "border-slate-200 bg-white",
+    badge: "bg-slate-100 text-slate-700",
+    dot: "bg-emerald-500",
+    stepCompleted: "border-slate-200 bg-slate-100 text-slate-700",
+    stepCurrent: "border-blue-200 bg-blue-50 text-blue-700",
+    stepPending: "border-slate-200 bg-white text-slate-500",
+  },
+  working: {
+    card: "border-slate-200 bg-white",
+    badge: "bg-slate-100 text-slate-700",
+    dot: "bg-blue-500",
+    stepCompleted: "border-slate-200 bg-slate-100 text-slate-700",
+    stepCurrent: "border-blue-200 bg-blue-50 text-blue-700",
+    stepPending: "border-slate-200 bg-white text-slate-500",
+  },
+  awaiting: {
+    card: "border-slate-200 bg-white",
+    badge: "bg-slate-100 text-slate-700",
+    dot: "bg-amber-500",
+    stepCompleted: "border-slate-200 bg-slate-100 text-slate-700",
+    stepCurrent: "border-amber-200 bg-amber-50 text-amber-700",
+    stepPending: "border-slate-200 bg-white text-slate-500",
+  },
+}
+
+function WorkflowSummaryStrip({ summary }: { summary: AgentWorkflowSummary }) {
+  const tone = workflowToneStyles[summary.tone]
+
+  const stepClass = (status: AgentWorkflowSummary["steps"][number]["status"]) => {
+    if (status === "completed") {
+      return tone.stepCompleted
+    }
+    if (status === "current") {
+      return tone.stepCurrent
+    }
+    return tone.stepPending
+  }
+
+  return (
+    <div className={`mb-4 rounded-[22px] border px-4 py-3 shadow-[0_12px_28px_-26px_rgba(15,23,42,0.18)] ${tone.card}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Workflow</p>
+          <div className="mt-1 flex items-center gap-2">
+            <span className={`inline-flex h-2.5 w-2.5 shrink-0 rounded-full ${tone.dot}`} />
+            <p className="truncate text-sm font-semibold text-slate-900">{summary.title}</p>
+          </div>
+          {summary.detail ? <p className="mt-1 text-xs leading-5 text-slate-600">{summary.detail}</p> : null}
+        </div>
+        <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${tone.badge}`}>
+          {summary.statusLabel}
+        </span>
+      </div>
+      {summary.currentAgentLabel || summary.nextAgentLabel ? (
+        <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-600">
+          {summary.currentAgentLabel ? (
+            <p>
+              <span className="font-medium text-slate-900">Now:</span> {summary.currentAgentLabel}
+            </p>
+          ) : null}
+          {summary.nextAgentLabel ? (
+            <p>
+              <span className="font-medium text-slate-900">Next:</span> {summary.nextAgentLabel}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+      {summary.steps.length ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {summary.steps.map((step, index) => (
+            <span
+              key={step.key}
+              className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[11px] font-medium ${stepClass(step.status)}`}
+            >
+              <span className="text-[10px] font-semibold opacity-70">{index + 1}</span>
+              <span>{step.label}</span>
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+}
 
 export default function AgentChat({
   onClose,
@@ -84,21 +231,23 @@ export default function AgentChat({
   onActivity,
   isBusy = false,
   pendingCount = 0,
-  taskCount = 0,
-  eventCount = 0,
   lastUpdatedAt,
   activeAgentName = "host",
   statusText,
   awaitingInput = false,
   showHeader = true,
   showWindowControls = true,
+  inputPlaceholder,
+  emptyTitle = "How can I help you today?",
+  emptyDescription = "",
+  sendLabel = "Send",
+  workflowSummary = null,
 }: AgentChatProps) {
   const [input, setInput] = useState("")
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const [confirmationDialog, setConfirmationDialog] = useState<any>(null)
   const [respondedInteractions, setRespondedInteractions] = useState<Set<string>>(new Set())
   const [isVoiceModeEnabled, setIsVoiceModeEnabled] = useState(false)
-  const [hasActiveInteraction, setHasActiveInteraction] = useState(false)
   const [isAtBottom, setIsAtBottom] = useState(true)
   const [unreadCount, setUnreadCount] = useState(0)
 
@@ -107,8 +256,6 @@ export default function AgentChat({
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const prevLenRef = useRef<number>(0)
   const MAX_TEXTAREA_HEIGHT = 160
-
-  const newMessagesCount = useMemo(() => Math.max(messages.length - prevLenRef.current, 0), [messages.length])
 
   const voiceChat = useVoiceChat({
     onTranscript: (text: string) => {
@@ -140,29 +287,62 @@ export default function AgentChat({
   }, [])
 
   useEffect(() => {
+    const delta = Math.max(messages.length - prevLenRef.current, 0)
     if (isAtBottom) {
       endRef.current?.scrollIntoView({ behavior: "smooth" })
-    } else if (newMessagesCount > 0) {
-      setUnreadCount((c) => c + newMessagesCount)
+    } else if (delta > 0) {
+      setUnreadCount((c) => c + delta)
     }
     prevLenRef.current = messages.length
-  }, [messages, isAtBottom, newMessagesCount])
+  }, [isAtBottom, messages])
+
+  const hasActiveInteraction = messages.some(
+    (message) =>
+      message.role === "assistant"
+      && Boolean(detectInteractionRequest(message.content, message.structuredPayload))
+      && !respondedInteractions.has(message.id),
+  )
+
+  const statusTone = useMemo(() => {
+    if (awaitingInput) {
+      return {
+        label: "Awaiting your reply",
+        chipClass: "bg-amber-100 text-amber-900",
+        borderClass: "border-amber-200 bg-amber-50 text-amber-800",
+      }
+    }
+    if (isBusy || pendingCount > 0) {
+      return {
+        label: "Working",
+        chipClass: "bg-blue-100 text-blue-900",
+        borderClass: "border-blue-200 bg-blue-50 text-blue-800",
+      }
+    }
+    return {
+      label: "Ready",
+      chipClass: "bg-emerald-100 text-emerald-900",
+      borderClass: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    }
+  }, [awaitingInput, isBusy, pendingCount])
+
+  const workflowDetail = workflowSummary?.detail?.trim() || ""
+
+  const headerDetail = useMemo(() => {
+    if (workflowDetail) {
+      return workflowDetail
+    }
+    if (statusText?.trim()) {
+      return humanizeTechnicalMessage(statusText.trim())
+    }
+    const relative = formatRelativeTime(lastUpdatedAt)
+    return relative ? `Last update ${relative}` : "Ready for the next message."
+  }, [lastUpdatedAt, statusText, workflowDetail])
 
   useEffect(() => {
     if (hasActiveInteraction && voiceChat.isSpeaking) {
       voiceChat.stopSpeaking()
     }
   }, [hasActiveInteraction, voiceChat])
-
-  useEffect(() => {
-    const activeInteraction = messages.some(
-      (message) =>
-        message.role === "assistant"
-        && Boolean(detectInteractionRequest(message.content, message.structuredPayload))
-        && !respondedInteractions.has(message.id),
-    )
-    setHasActiveInteraction(activeInteraction)
-  }, [messages, respondedInteractions])
 
   function scrollToBottom() {
     endRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -210,7 +390,7 @@ export default function AgentChat({
       setCopiedMessageId(messageId)
       setTimeout(() => setCopiedMessageId(null), 2000)
     } catch (err) {
-      console.error("Failed to copy message:", err)
+      void err
     }
   }
 
@@ -219,7 +399,7 @@ export default function AgentChat({
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `ai-message-${Date.now()}.txt`
+    a.download = `ai-message-${createLocalId()}.txt`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -246,6 +426,7 @@ export default function AgentChat({
       autocomplete_selection: { color: "bg-violet-50 border-violet-200", textColor: "text-violet-700", icon: "⚡" },
       comparison_view: { color: "bg-rose-50 border-rose-200", textColor: "text-rose-700", icon: "⚖️" },
       bulk_action_selector: { color: "bg-slate-50 border-slate-200", textColor: "text-slate-700", icon: "⚡" },
+      marketplace_results: { color: "bg-amber-50 border-amber-200", textColor: "text-amber-700", icon: "🛍️" },
       dashboard_builder: { color: "bg-blue-50 border-blue-200", textColor: "text-blue-700", icon: "📊" },
       master_detail_table: { color: "bg-indigo-50 border-indigo-200", textColor: "text-indigo-700", icon: "📋" },
       alert_manager: { color: "bg-yellow-50 border-yellow-200", textColor: "text-yellow-700", icon: "🔔" },
@@ -264,6 +445,7 @@ export default function AgentChat({
 
   const renderInlineInteraction = (type: string, data: any, messageId: string) => {
     const isDisabled = respondedInteractions.has(messageId)
+    const interactionKey = `${messageId}:${JSON.stringify(data?.current_values || {})}:${JSON.stringify(data?.fields || [])}:${JSON.stringify(data?.existing_responses || {})}:${data?.current_step ?? ""}`
 
     const commonProps = {
       data,
@@ -284,9 +466,9 @@ export default function AgentChat({
       case "data_table_review":
         return <DataTableReviewHandler {...commonProps} />
       case "dynamic_form":
-        return <DynamicFormHandler {...commonProps} />
+        return <DynamicFormHandler key={interactionKey} {...commonProps} />
       case "update_form":
-        return <UpdateFormHandler {...commonProps} />
+        return <UpdateFormHandler key={interactionKey} {...commonProps} />
       case "date_time_picker":
         return <DateTimePickerHandler {...commonProps} />
       case "slider_input":
@@ -307,6 +489,8 @@ export default function AgentChat({
         return <ComparisonViewHandler {...commonProps} />
       case "bulk_action_selector":
         return <BulkActionSelectorHandler {...commonProps} />
+      case "marketplace_results":
+        return <MarketplaceResultsHandler {...commonProps} />
       case "dashboard_builder":
         return <DashboardBuilderHandler {...commonProps} />
       case "master_detail_table":
@@ -320,7 +504,7 @@ export default function AgentChat({
       case "approval_workflow":
         return <ApprovalWorkflowHandler {...commonProps} />
       case "wizard_flow":
-        return <WizardFlowHandler {...commonProps} />
+        return <WizardFlowHandler key={interactionKey} {...commonProps} />
       case "conditional_form":
         return <ConditionalFormHandler {...commonProps} />
       case "report_builder":
@@ -388,40 +572,20 @@ export default function AgentChat({
   }
 
   return (
-    <>
+    <div className="flex h-full min-h-0 flex-col">
       {showHeader && (
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 min-w-0">
-            <Bot className="h-5 w-5 text-white shrink-0" aria-hidden strokeWidth={2.2} />
-
-            <div className="ml-3 flex items-center gap-2 text-xs">
-              <span className="inline-flex whitespace-nowrap items-center gap-1 rounded-full bg-white/15 px-2 py-1">
-                <Radio
-                  className={`h-4 w-4 ${pendingCount > 0 ? "animate-pulse text-yellow-300" : "text-white"}`}
-                  aria-hidden
-                  strokeWidth={2.4}
-                />
-                <span>{pendingCount > 0 ? `${pendingCount} pending` : "Idle"}</span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <Bot className="h-5 w-5 text-white shrink-0" aria-hidden strokeWidth={2.2} />
+              <span className="truncate text-sm font-semibold uppercase tracking-[0.22em] text-blue-100">
+                {activeAgentName}
               </span>
-              <span className="inline-flex whitespace-nowrap items-center gap-1 rounded-full bg-white/15 px-2 py-1">
-                <ListChecks className="h-4 w-4 text-white" aria-hidden strokeWidth={2.4} />
-                <span>{taskCount} tasks</span>
+              <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${statusTone.chipClass}`}>
+                {statusTone.label}
               </span>
-              <span className="hidden whitespace-nowrap sm:inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1">
-                <Clock className="h-4 w-4 text-white" aria-hidden strokeWidth={2.4} />
-                <span>{eventCount} events</span>
-              </span>
-              <span className="hidden whitespace-nowrap md:inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1">
-                <Bot className="h-4 w-4 text-white" aria-hidden strokeWidth={2.4} />
-                <span>{activeAgentName}</span>
-              </span>
-              {awaitingInput && (
-                <span className="hidden whitespace-nowrap md:inline-flex items-center gap-1 rounded-full bg-amber-100/95 px-2 py-1 text-amber-900">
-                  <Clock className="h-4 w-4" aria-hidden strokeWidth={2.4} />
-                  <span>Awaiting input</span>
-                </span>
-              )}
             </div>
+            <p className="mt-2 max-w-[28rem] truncate text-sm text-blue-50/90">{headerDetail}</p>
           </div>
 
           {showWindowControls ? (
@@ -460,25 +624,27 @@ export default function AgentChat({
       {/* Messages area */}
       <div
         ref={scrollRef}
-        className="relative flex-1 overflow-y-auto p-4 bg-gray-50 custom-scrollbar"
+        className="relative min-h-0 flex-1 overflow-y-auto bg-gray-50 p-4 custom-scrollbar"
         onMouseMove={handleUserInterruption}
         onClick={handleUserInterruption}
       >
-        {statusText && (
+        {workflowSummary ? <WorkflowSummaryStrip summary={workflowSummary} /> : null}
+        {statusText && statusText.trim() !== workflowSummary?.detail?.trim() && (
           <div className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${
-            awaitingInput ? "border-amber-200 bg-amber-50 text-amber-800" : "border-blue-200 bg-blue-50 text-blue-800"
+            statusTone.borderClass
           }`}>
             <div className="flex items-center gap-2 font-medium">
               <Bot className="h-4 w-4" />
               <span>{activeAgentName}</span>
             </div>
-            <p className="mt-1">{statusText}</p>
+            <p className="mt-1">{humanizeTechnicalMessage(statusText)}</p>
           </div>
         )}
         {messages.length === 0 ? (
           <div className="text-center h-full flex flex-col items-center justify-center text-gray-500">
             <Bot className="h-12 w-12 mb-3 text-blue-500" aria-hidden strokeWidth={2.2} />
-            <p>{"How can I help you today?"}</p>
+            <p className="text-base font-medium text-slate-700">{emptyTitle}</p>
+            {emptyDescription ? <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">{emptyDescription}</p> : null}
           </div>
         ) : (
           messages.map((m) => {
@@ -557,6 +723,10 @@ export default function AgentChat({
               )
             }
 
+            const interactionResponseSummary =
+              m.role === "user" ? detectInteractionResponseSummary(m.content) : null
+            const displayContent = m.role === "assistant" ? humanizeTechnicalMessage(m.content) : m.content
+
             return (
               <div key={m.id} className={`mb-8 flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div
@@ -590,12 +760,23 @@ export default function AgentChat({
                       </button>
                     )}
                   </div>
-                  <MessageContent
-                    content={m.content}
-                    role={m.role}
-                    onCopy={() => handleCopyMessage(m.id, m.content)}
-                    onExport={() => handleExportMessage(m.content)}
-                  />
+                  {interactionResponseSummary ? (
+                    <div className="space-y-1">
+                      <p className="text-base font-semibold">{interactionResponseSummary.title}</p>
+                      {interactionResponseSummary.detail ? (
+                        <p className={`text-sm leading-6 ${m.role === "user" ? "text-blue-50" : "text-slate-600"}`}>
+                          {interactionResponseSummary.detail}
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <MessageContent
+                      content={displayContent}
+                      role={m.role}
+                      onCopy={() => handleCopyMessage(m.id, m.content)}
+                      onExport={() => handleExportMessage(m.content)}
+                    />
+                  )}
                 </div>
               </div>
             )
@@ -630,7 +811,7 @@ export default function AgentChat({
       </div>
 
       {/* Input */}
-      <form onSubmit={handleSubmit} className="border-t border-gray-200 p-3 bg-white">
+      <form onSubmit={handleSubmit} className="shrink-0 border-t border-gray-200 bg-white p-3">
         <div className="flex gap-2 items-end">
           <div className="flex-1 relative">
             <textarea
@@ -650,11 +831,14 @@ export default function AgentChat({
               onKeyDown={handleKeyDown}
               rows={1}
               placeholder={
+                inputPlaceholder ||
                 isVoiceModeEnabled
                   ? voiceChat.isListening
                     ? "Listening... (speak now or type)"
                     : "Voice mode active (click mic or type)"
-                  : "Type your message..."
+                  : awaitingInput
+                    ? "Provide the requested answer, approval, or follow-up..."
+                    : "Type your message..."
               }
               className={`w-full  text-gray-800 bg-gray-200/70 border border-gray-300 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none leading-6 max-h-[160px] ${
                 isVoiceModeEnabled && voiceChat.isListening ? "ring-2 ring-green-400" : ""
@@ -710,11 +894,18 @@ export default function AgentChat({
             className="bg-blue-600 text-white p-3 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50"
             disabled={isBusy || !input.trim()}
             aria-label="Send message"
-            title="Send"
+            title={sendLabel}
             onClick={onActivity}
           >
             <Send className="h-5 w-5 text-white" strokeWidth={2.2} />
           </button>
+        </div>
+
+        <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
+          <span>
+            {awaitingInput ? "The active agent is waiting for your reply to continue this task." : "Enter sends. Shift+Enter adds a new line."}
+          </span>
+          <span className="font-medium text-slate-600">{sendLabel}</span>
         </div>
 
         {isVoiceModeEnabled && (
@@ -748,6 +939,6 @@ export default function AgentChat({
           onClose={() => setConfirmationDialog(null)}
         />
       )}
-    </>
+    </div>
   )
 }

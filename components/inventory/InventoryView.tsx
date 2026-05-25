@@ -195,14 +195,12 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
         onClose={() =>setIsCreateOpen(true)} 
       />
 
-      {/* Always render CustomCreateCard but control visibility */}
-      <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>
+      {isCreateOpen ? (
         <CustomCreateCard
           defaultValues={defaultValues}
-          onClose={() => {setIsCreateOpen(false)
-          
+          onClose={() => {
+            setIsCreateOpen(false)
           }}
-          
           onSubmit={handleCreate}
           isLoading={inventoryCreateLoading}
           selectOptions={selectOptions}
@@ -212,7 +210,7 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
           optionalFields={['description','inventory_category','stock_uom_code']}
           itemTitle={'Create Inventory Item'}
         />
-      </div>
+      ) : null}
     </div>
   );
 }

@@ -120,28 +120,26 @@ function CompanyAddressView({company_id}:CompanyProps) {
         onClose={() => setIsCreateOpen(true)}
       />
 
-      {(isCreateOpen || editingAddress) && (
-        <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50`}>
-          <CustomCreateCard
-            defaultValues={editingAddress || AdrssDefaultValues}
-            onClose={() => {
-              setIsCreateOpen(false);
-              setEditingAddress(null);
-            }}
-            onSubmit={editingAddress ? handleUpdate : handleCreate}
-            isLoading={createLoading || updateLoading}
-            selectOptions={selectOptions}
-            keyInfo={CompanyAddressKeyInfo}
-            notEditableFields={notEditableCompanyFields}
-            interfaceKeys={CompanyAddressInterfaceKeys}
-            optionalFields={['primary','city','link', 'subregion','shipping_notes']}
-            hiddenFields={{
-            company:company_id
-            }}
-            itemTitle={editingAddress ? 'Update Address' : 'Create Address'}
-          />
-        </div>
-      )}
+      {(isCreateOpen || editingAddress) ? (
+        <CustomCreateCard
+          defaultValues={editingAddress || AdrssDefaultValues}
+          onClose={() => {
+            setIsCreateOpen(false);
+            setEditingAddress(null);
+          }}
+          onSubmit={editingAddress ? handleUpdate : handleCreate}
+          isLoading={createLoading || updateLoading}
+          selectOptions={selectOptions}
+          keyInfo={CompanyAddressKeyInfo}
+          notEditableFields={notEditableCompanyFields}
+          interfaceKeys={CompanyAddressInterfaceKeys}
+          optionalFields={['primary','city','link', 'subregion','shipping_notes']}
+          hiddenFields={{
+          company:company_id
+          }}
+          itemTitle={editingAddress ? 'Update Address' : 'Create Address'}
+        />
+      ) : null}
     </div>
   );
 }

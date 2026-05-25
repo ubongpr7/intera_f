@@ -5,6 +5,7 @@ import { useForm, Controller, Path, DefaultValues } from 'react-hook-form';
 import dynamic from 'next/dynamic';
 import LoadingAnimation from './LoadingAnimation';
 import { FieldInfo } from './fileFieldInfor';
+import { buildFieldGuidance } from './fieldInfoGuidance';
 import { isValidPhoneNumber } from 'libphonenumber-js';
 import { useGetContactPersonQuery, useGetCompanyDataQuery } from '../../redux/features/company/companyAPISlice';
 import {
@@ -177,6 +178,14 @@ export default function CustomCreateForm<T extends Record<string, any>>({
   const fields = interfaceKeys.filter(key => !notEditableFields.includes(key));
   const regularFields = fields.filter(key => String(key) !== 'description');
   const hasDescription = fields.some(key => String(key) === 'description');
+  const descriptionInfoText =
+    keyInfo?.description ??
+    buildFieldGuidance({
+      fieldName: 'description',
+      label: 'Description',
+      inputType: 'text',
+      isOptional: optionalFields.includes('description' as keyof T),
+    });
 
   return (
     <div className="">
@@ -210,15 +219,24 @@ export default function CustomCreateForm<T extends Record<string, any>>({
                 const isOptional = optionalFields.includes(key);
                 const geoConfig = isGeoField ? geoFields[keyStr as keyof typeof geoFields] : null;
                 const isDisabled = geoConfig?.dependsOn ? !watch(geoConfig.dependsOn as Path<Partial<T>>) : false;
+                const fieldInfoText =
+                  keyInfo?.[key] ??
+                  buildFieldGuidance({
+                    fieldName: String(key),
+                    label: formatLabel(String(key)),
+                    inputType,
+                    isOptional,
+                    isSelect: inputType === 'select' || inputType === 'geo-select' || key === 'contact',
+                  });
 
                 const isContactField = key === 'contact';
                 const isSupplierSelected = !!selectedSupplier;
 
                 return (
-                  <div key={`field-${String(key)}`} className="space-y-2 min-w-[200px]">
+                  <div key={`field-${String(key)}`} className="relative z-0 min-w-[200px] space-y-2 hover:z-20 focus-within:z-20">
                     <label className="block text-sm font-medium text-gray-700">
                       {formatLabel(String(key))}
-                      {keyInfo?.[key] && <FieldInfo info={keyInfo[key]} displayBelow={true} />}
+                      <FieldInfo info={fieldInfoText} displayBelow={true} />
                     </label>
                     <div className="relative">
                       <Controller
@@ -403,7 +421,7 @@ export default function CustomCreateForm<T extends Record<string, any>>({
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
                     Description
-                    {keyInfo?.description && <FieldInfo info={keyInfo.description} displayBelow={true} />}
+                    <FieldInfo info={descriptionInfoText} displayBelow={true} />
                   </label>
                   <div className="relative">
                     <Controller

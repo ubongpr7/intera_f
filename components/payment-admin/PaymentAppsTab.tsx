@@ -94,7 +94,7 @@ export function PaymentAppsTab() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Payment Apps</h2>
-            <p className="text-muted-foreground">Manage applications that can accept payments through your system.</p>
+            <p className="text-gray-500">Manage applications that can accept payments through your system.</p>
           </div>
           <Button onClick={() => setIsDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
@@ -141,7 +141,7 @@ export function PaymentAppsTab() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Payment Apps</h2>
-          <p className="text-muted-foreground">Manage applications that can accept payments through your system.</p>
+          <p className="text-gray-500">Manage applications that can accept payments through your system.</p>
         </div>
         <Button onClick={() => setIsDialogOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
@@ -157,12 +157,12 @@ export function PaymentAppsTab() {
         <CardContent>
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="text-muted-foreground">Loading payment apps...</div>
+              <div className="text-gray-500">Loading payment apps...</div>
             </div>
           ) : apps.length === 0 ? (
             <div className="flex items-center justify-center py-8">
               <div className="text-center">
-                <p className="text-muted-foreground mb-2">No payment apps found</p>
+                <p className="mb-2 text-gray-500">No payment apps found</p>
                 <Button onClick={() => setIsDialogOpen(true)} variant="outline">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Your First App

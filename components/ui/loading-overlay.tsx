@@ -18,8 +18,8 @@ export function LoadingOverlay({ isLoading, message = "Loading...", className }:
         className,
       )}
     >
-      <div className="flex items-center gap-3 bg-card p-4 rounded-lg shadow-lg border">
-        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+      <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-lg">
+        <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-blue-600"></div>
         <span className="text-sm font-medium">{message}</span>
       </div>
     </div>

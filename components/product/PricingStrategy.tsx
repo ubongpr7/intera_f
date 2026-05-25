@@ -217,46 +217,43 @@ export default function ProductPricingStrategies({ productId,product }: ProductP
       />
 
       {/* Create/Edit Pricing Strategy Modal */}
-      {isCreateOpen && (
-
-        <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>
-          <CustomCreateCard
-            defaultValues={ editingStrategy || defaultValues}
-            onClose={() => {
-              setIsCreateOpen(false)
-            }}
-            onSubmit={editingStrategy?handleUpdate:handleCreate}
-            isLoading={editingStrategy?updateLoading:createLoading }
-            selectOptions={selectOptions}
-            keyInfo={{
-              margin_percentage: 'Required for Cost-Plus Margin strategy',
-              market_multiplier: 'Required for Market Multiplier strategy',
-              min_price: 'Optional price floor for calculations',
-              max_price: 'Optional price ceiling for calculations',
-              demand_factor: 'Multiplier for demand-based pricing (Dynamic strategy)',
-              seasonal_factor: 'Multiplier for seasonal pricing (Dynamic strategy)',
-              tier_1_quantity: 'Minimum quantity for Tier 1 discount (Tiered strategy)',
-              tier_1_discount: 'Discount percentage for Tier 1 (Tiered strategy)',
-              tier_2_quantity: 'Minimum quantity for Tier 2 discount (Tiered strategy)',
-              tier_2_discount: 'Discount percentage for Tier 2 (Tiered strategy)',
-              tier_3_quantity: 'Minimum quantity for Tier 3 discount (Tiered strategy)',
-              tier_3_discount: 'Discount percentage for Tier 3 (Tiered strategy)',
-            }}
-            notEditableFields={notEditableFields}
-            interfaceKeys={interfaceKeys}
-            optionalFields={[
-              'margin_percentage',
-              'market_multiplier',
-              'min_price',
-              'max_price',
-              'demand_factor',
-              'seasonal_factor',
-              
-            ]}
-              itemTitle={`${editingStrategy?'Update':'Create'} Strategy`}
-          />
-        </div>
-      )}
+      {isCreateOpen ? (
+        <CustomCreateCard
+          defaultValues={ editingStrategy || defaultValues}
+          onClose={() => {
+            setIsCreateOpen(false)
+          }}
+          onSubmit={editingStrategy?handleUpdate:handleCreate}
+          isLoading={editingStrategy?updateLoading:createLoading }
+          selectOptions={selectOptions}
+          keyInfo={{
+            margin_percentage: 'Required for Cost-Plus Margin strategy',
+            market_multiplier: 'Required for Market Multiplier strategy',
+            min_price: 'Optional price floor for calculations',
+            max_price: 'Optional price ceiling for calculations',
+            demand_factor: 'Multiplier for demand-based pricing (Dynamic strategy)',
+            seasonal_factor: 'Multiplier for seasonal pricing (Dynamic strategy)',
+            tier_1_quantity: 'Minimum quantity for Tier 1 discount (Tiered strategy)',
+            tier_1_discount: 'Discount percentage for Tier 1 (Tiered strategy)',
+            tier_2_quantity: 'Minimum quantity for Tier 2 discount (Tiered strategy)',
+            tier_2_discount: 'Discount percentage for Tier 2 (Tiered strategy)',
+            tier_3_quantity: 'Minimum quantity for Tier 3 discount (Tiered strategy)',
+            tier_3_discount: 'Discount percentage for Tier 3 (Tiered strategy)',
+          }}
+          notEditableFields={notEditableFields}
+          interfaceKeys={interfaceKeys}
+          optionalFields={[
+            'margin_percentage',
+            'market_multiplier',
+            'min_price',
+            'max_price',
+            'demand_factor',
+            'seasonal_factor',
+            
+          ]}
+            itemTitle={`${editingStrategy?'Update':'Create'} Strategy`}
+        />
+      ) : null}
     </div>
   )
 }

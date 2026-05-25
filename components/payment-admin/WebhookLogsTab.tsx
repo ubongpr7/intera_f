@@ -86,7 +86,7 @@ export function WebhookLogsTab() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Webhook Logs</h2>
-          <p className="text-muted-foreground">Monitor webhook events from payment providers.</p>
+          <p className="text-gray-500">Monitor webhook events from payment providers.</p>
         </div>
         <Button onClick={() => refetch()}>
           <RefreshCw className="h-4 w-4 mr-2" />

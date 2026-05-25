@@ -16,14 +16,18 @@ import {
 import { toast } from "react-toastify";
 import { extractErrorMessage } from "@/lib/utils";
 import { ReactSelectField, type SelectOption } from "@/components/ui/react-select-field";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { getCurrencySymbolForProfile } from "@/lib/currency-utils";
+import { buildFieldGuidance } from "./fieldInfoGuidance";
 
 const PhoneInput = dynamic(
   () => import("react-phone-number-input"),
   { 
     ssr: false,
-    loading: () => <input className="border rounded p-2" placeholder="Loading phone input..." />
+    loading: () => <input className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-500" placeholder="Loading phone input..." />
   }
 );
 
@@ -290,21 +294,52 @@ export default function CustomCreateCard<T extends Record<string, any>>({
   const fields = interfaceKeys.filter((key) => !notEditableFields.includes(key));
   const regularFields = fields.filter((key) => String(key) !== "description");
   const hasDescription = fields.some((key) => String(key) === "description");
+  const visibleFieldCount = regularFields.length + (hasDescription ? 1 : 0);
+  const useSideFormLayout = visibleFieldCount > 6;
+  const panelTitle = itemTitle || "Create Item";
+  const actionText = panelTitle.toLowerCase().startsWith("update") ? "Save changes" : panelTitle;
+  const loadingText = panelTitle.toLowerCase().startsWith("update") ? "Saving..." : "Creating...";
+  const descriptionInfoText =
+    keyInfo?.description ??
+    buildFieldGuidance({
+      fieldName: "description",
+      label: "Description",
+      inputType: "text",
+      isOptional: optionalFields.includes("description" as keyof T),
+    });
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="fixed inset-0" onClick={onClose} />
-     
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl relative flex flex-col  max-h-[90vh]">
+    <div
+      className={cn(
+        "fixed inset-0 z-50",
+        useSideFormLayout ? "flex items-stretch justify-end" : "flex items-center justify-center p-4 md:p-8",
+      )}
+    >
+      <div className="absolute inset-0 bg-slate-950/55 backdrop-blur-sm" onClick={onClose} />
+
+      <div
+        className={cn(
+          "relative flex w-full flex-col overflow-hidden border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] shadow-[0_32px_80px_rgba(15,23,42,0.22)] dark:border-slate-800/90 dark:bg-[linear-gradient(180deg,#020617_0%,#0f172a_58%,#111827_100%)] dark:shadow-[0_40px_90px_rgba(2,6,23,0.82)]",
+          useSideFormLayout
+            ? "ml-auto h-full max-w-[min(56rem,100vw)] rounded-none border-y-0 border-r-0 sm:rounded-l-[34px]"
+            : "max-h-[92vh] max-w-5xl rounded-[32px]",
+        )}
+      >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 z-10"
+          className="absolute right-5 top-5 z-10 rounded-full border border-white/70 bg-white/85 p-2.5 text-slate-500 shadow-sm backdrop-blur transition hover:bg-white hover:text-slate-800 dark:border-slate-700 dark:bg-slate-950/85 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white"
         >
-          <X className="w-5 h-5 text-gray-500" />
+          <X className="h-5 w-5 text-gray-500 dark:text-slate-300" />
         </button>
-        <form onSubmit={handleSubmit(onSubmitHandler)} className="flex flex-col overflow-y-auto  h-full">
-         <div className="p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold">{itemTitle?itemTitle:'Create Item'}</h2>
+        <form onSubmit={handleSubmit(onSubmitHandler)} className="flex h-full flex-col overflow-hidden">
+         <div className="border-b border-slate-200/80 bg-gradient-to-r from-slate-50 via-white to-blue-50/70 px-7 pb-6 pt-7 md:px-8 dark:border-slate-800/80 dark:bg-[linear-gradient(115deg,rgba(15,23,42,0.98),rgba(17,24,39,0.96),rgba(30,41,59,0.96))]">
+            <div className="mb-3 inline-flex rounded-full border border-blue-100 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-700 shadow-sm dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200">
+              {useSideFormLayout ? "Side form workspace" : "Quick create form"}
+            </div>
+            <div className="pr-14">
+              <h2 className="text-2xl font-semibold tracking-tight text-blue-200">{panelTitle}</h2>
+              
+            </div>
           </div>
  
         <div>
@@ -324,8 +359,8 @@ export default function CustomCreateCard<T extends Record<string, any>>({
             ))}
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
+          <div className="flex-1 overflow-y-auto bg-[linear-gradient(180deg,rgba(255,255,255,0.82)_0%,rgba(248,251,255,0.96)_100%)] px-7 py-6 md:px-8 dark:bg-[radial-gradient(circle_at_top,rgba(30,41,59,0.96)_0%,rgba(15,23,42,0.98)_52%,rgba(2,6,23,1)_100%)]">
+            <div className="grid grid-cols-1 gap-4 pb-4 md:grid-cols-2">
               {regularFields.map((key) => {
                 const isReadOnly = readOnlyFields.includes(key);
                 const keyStr = String(key).toLowerCase();
@@ -334,17 +369,36 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                 const isOptional = optionalFields.includes(key);
                 const geoConfig = isGeoField ? geoFields[keyStr as keyof typeof geoFields] : null;
                 const isDisabled = geoConfig?.dependsOn ? !watch(geoConfig.dependsOn as Path<Partial<T>>) : false;
-                const readonlyStyles = "bg-gray-100 cursor-not-allowed ring-gray-300 text-gray-700";
+                const readonlyStyles = "cursor-not-allowed border-slate-200 bg-slate-100/90 text-slate-500 dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-400";
+                const fieldInfoText =
+                  keyInfo?.[key] ??
+                  buildFieldGuidance({
+                    fieldName: String(key),
+                    label: formatLabel(String(key)),
+                    inputType,
+                    isOptional,
+                    isReadOnly,
+                    isSelect: inputType === "select" || inputType === "geo-select" || key === "contact",
+                  });
 
                 const isContactField = key === "contact";
                 const isSupplierSelected = !!selectedSupplier;
+                const isCheckbox = inputType === "checkbox";
 
                 return (
-                  <div key={`field-${String(key)}`} className="space-y-2 min-w-[200px]">
-                    <label className="block text-sm font-medium text-gray-700">
-                      {formatLabel(String(key))} {String(key).toLocaleLowerCase().includes('price')?getCurrencySymbolForProfile():''}
-                       {isOptional && <span className="text-gray-500">(Optional)</span>}
-                      {keyInfo?.[key] && <FieldInfo info={keyInfo[key]} displayBelow={true} />}
+                  <div
+                    key={`field-${String(key)}`}
+                    className={cn(
+                      "relative z-0 min-w-[220px] rounded-[26px] border border-slate-200/80 bg-white/85 p-4 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.45)] backdrop-blur hover:z-30 focus-within:z-30 dark:border-slate-800 dark:bg-slate-950/72 dark:shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]",
+                      isCheckbox ? "md:col-span-2" : "",
+                    )}
+                  >
+                    <label className="mb-2 flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                      <span>
+                        {formatLabel(String(key))} {String(key).toLocaleLowerCase().includes('price') ? getCurrencySymbolForProfile() : ''}
+                      </span>
+                       {isOptional && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] tracking-[0.14em] text-slate-500 dark:bg-slate-800 dark:text-slate-300">(Optional)</span>}
+                      <FieldInfo info={fieldInfoText} displayBelow={true} />
                     </label>
                     <div className="relative">
                       <Controller
@@ -396,7 +450,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                           if (inputType === "percentage") {
                             return (
                               <div className="relative">
-                                <input
+                                <Input
                                   type="number"
                                   min={1}
                                   max={100}
@@ -404,24 +458,22 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                                   value={field.value?.toString() ?? ""}
                                   onChange={(e) => field.onChange(e.target.valueAsNumber)}
                                   onBlur={field.onBlur}
-                                  className={`w-full bg-gray-50 px-3 border-2  border-gray-300 focus:outline-none
-                                    focus:border-blue-500 py-2 rounded-md ${
-                                      errors[key as string]
-                                        ? "border-red-500 ring-red-500"
-                                        : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                                    }`}
+                                  className={cn(
+                                    "h-12 rounded-2xl border-slate-200 bg-slate-50/80 pr-10 text-sm shadow-none focus:bg-white focus-visible:border-blue-400 focus-visible:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-800",
+                                    errors[key as string] ? "border-red-400 focus-visible:ring-red-500/20" : "",
+                                  )}
                                 />
-                                <span className="absolute right-3 top-2.5 text-gray-500">%</span>
+                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400 dark:text-slate-500">%</span>
                               </div>
                             );
                           }
                           if (isReadOnly) {
                             return (
-                              <input
+                              <Input
                                 type="text"
                                 readOnly
                                 value={field.value?.toString() ?? ""}
-                                className={`w-full px-3 border-2 py-2 rounded ${readonlyStyles}`}
+                                className={cn("h-12 rounded-2xl px-4 text-sm shadow-none", readonlyStyles)}
                               />
                             );
                           }
@@ -519,15 +571,21 @@ export default function CustomCreateCard<T extends Record<string, any>>({
 
                           if (inputType === "checkbox") {
                             return (
-                              <input
-                                type="checkbox"
-                                checked={!!field.value}
-                                onChange={(e) => field.onChange(e.target.checked)}
-                                onBlur={field.onBlur}
-                                name={field.name}
-                                ref={field.ref}
-                                className="w-5 h-5"
-                              />
+                              <div className="flex min-h-[54px] items-center justify-between rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-800/80">
+                                <div className="pr-4">
+                                  <p className="text-sm font-medium text-slate-700 dark:text-slate-100">{field.value ? "Enabled" : "Disabled"}</p>
+                                  <p className="text-xs text-slate-500 dark:text-slate-400">Toggle this option for the record you are creating.</p>
+                                </div>
+                                <input
+                                  type="checkbox"
+                                  checked={!!field.value}
+                                  onChange={(e) => field.onChange(e.target.checked)}
+                                  onBlur={field.onBlur}
+                                  name={field.name}
+                                  ref={field.ref}
+                                  className="h-5 w-5 rounded-md border-slate-300 text-blue-600 shadow-sm focus:ring-4 focus:ring-blue-500/20 dark:border-slate-600 dark:bg-slate-900"
+                                />
+                              </div>
                             );
                           }
 
@@ -541,27 +599,23 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                                 name={field.name}
                                 international
                                 defaultCountry="NG"
-                                className={`w-full text-inherit  bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none 
-                                  focus:border-blue-500 py-2 rounded-md ${
-                                    errors[key as string]
-                                      ? "border-red-500 ring-red-500"
-                                      : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                                  }`}
+                                className={cn(
+                                  "w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-900 shadow-none transition focus-within:border-blue-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100 dark:focus-within:bg-slate-800",
+                                  errors[key as string] ? "border-red-400 focus-within:ring-red-500/20" : "",
+                                )}
                               />
                             );
                           }
 
                           return (
-                            <input
+                            <Input
                               type={inputType}
                               {...field}
                               value={field.value as string | number | readonly string[] | undefined}
-                              className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
-                                focus:border-blue-500 py-2 rounded-md ${
-                                  errors[key as string]
-                                    ? "border-red-500 ring-red-500"
-                                    : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                                }`}
+                              className={cn(
+                                "h-12 rounded-2xl border-slate-200 bg-slate-50/80 px-4 text-sm shadow-none focus:bg-white focus-visible:border-blue-400 focus-visible:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-800",
+                                errors[key as string] ? "border-red-400 focus-visible:ring-red-500/20" : "",
+                              )}
                             />
                           );
                         }}
@@ -578,11 +632,12 @@ export default function CustomCreateCard<T extends Record<string, any>>({
             </div>
 
             {hasDescription && (
-              <div className="mt-4 col-span-full">
+              <div className="col-span-full mt-2 rounded-[26px] border border-slate-200/80 bg-white/85 p-4 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.45)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/72 dark:shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="mb-2 flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                     Description
-                    {keyInfo?.description && <FieldInfo info={keyInfo.description} displayBelow={true} />}
+                    {optionalFields.includes("description" as keyof T) && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] tracking-[0.14em] text-slate-500 dark:bg-slate-800 dark:text-slate-300">(Optional)</span>}
+                    <FieldInfo info={descriptionInfoText} displayBelow={true} />
                   </label>
                   <div className="relative">
                     <Controller
@@ -590,19 +645,17 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                       control={control}
                       rules={{ required: optionalFields.includes("description" as keyof T) ? false : "This field is required" }}
                       render={({ field }) => (
-                        <textarea
-                          rows={4}
+                        <Textarea
+                          rows={6}
                           value={field.value?.toString() ?? ""}
                           onChange={(e) => field.onChange(e.target.value)}
                           onBlur={field.onBlur}
                           name={field.name}
                           ref={field.ref}
-                          className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
-                            focus:border-blue-500 py-2 rounded-md ${
-                              errors.description
-                                ? "border-red-500 ring-red-500"
-                                : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                            }`}
+                          className={cn(
+                            "min-h-[180px] rounded-[24px] border-slate-200 bg-slate-50/80 px-4 py-3 text-sm shadow-none focus:bg-white focus-visible:border-blue-400 focus-visible:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-800",
+                            errors.description ? "border-red-400 focus-visible:ring-red-500/20" : "",
+                          )}
                         />
                       )}
                     />
@@ -618,25 +671,26 @@ export default function CustomCreateCard<T extends Record<string, any>>({
 
           </div>
 
-          <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6">
-            <div className="flex justify-end gap-3">
-              <button
+          <div className="sticky bottom-0 border-t border-slate-200/80 bg-white/90 px-7 py-5 backdrop-blur md:px-8 dark:border-slate-800 dark:bg-slate-950/88">
+            <div className="flex flex-col-reverse justify-end gap-3 sm:flex-row">
+              <Button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-100"
+                variant="outline"
+                className="h-11 rounded-2xl border-slate-200 px-5 text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900 dark:hover:text-white"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500"
+                className="h-11 rounded-2xl px-5 mr-20 shadow-[0_18px_40px_-24px_rgba(37,99,235,0.65)]"
               >
                 {isLoading ? (
-                  <LoadingAnimation text="Creating..." ringColor="#3b82f6" />
+                  <LoadingAnimation text={loadingText} ringColor="#ffffff" />
                 ) : (
-                  `${itemTitle}`
+                  actionText
                 )}
-              </button>
+              </Button>
             </div>
           </div>
         </form>

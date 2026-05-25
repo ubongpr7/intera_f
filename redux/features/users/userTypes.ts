@@ -56,6 +56,7 @@ export interface ActivityLogResponse {
 
 export interface StaffAssignment {
   id: string;
+  membership_role?: string | null;
   role?: {
     id?: string;
     name?: string;

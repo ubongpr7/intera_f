@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { ArrowLeft, ClipboardCheck, PackageX, Truck, XCircle } from "lucide-react"
 import { toast } from "react-toastify"
 import OperationalStepSection from "@/components/setup/OperationalStepSection"
@@ -22,7 +22,7 @@ import {
   useGetReturnOrderQuery,
 } from "@/redux/features/orders/orderAPISlice"
 import { ReturnOrderStatus, type ReturnOrderInterface, type ReturnOrderLineItem } from "@/redux/features/orders/orderTypes"
-import { useGetStockItemDataLocationQuery } from "@/redux/features/stock/stockAPISlice"
+import { useListStockLocationsQuery } from "@/redux/features/stock/stockAPISlice"
 
 const statusStyles: Record<string, string> = {
   pending: "border-amber-200 bg-amber-50 text-amber-800",
@@ -62,13 +62,13 @@ export default function ReturnOrderOperationsWorkspace({ returnOrderId }: Return
   const [cancelNotes, setCancelNotes] = useState("")
 
   const { data: order, isLoading, refetch } = useGetReturnOrderQuery(returnOrderId)
-  const { data: locations = [] } = useGetStockItemDataLocationQuery()
+  const { data: locations = [] } = useListStockLocationsQuery()
 
   const [dispatchReturnOrder, { isLoading: dispatchingOrder }] = useDispatchReturnOrderMutation()
   const [completeReturnOrder, { isLoading: completingOrder }] = useCompleteReturnOrderMutation()
   const [cancelReturnOrder, { isLoading: cancellingOrder }] = useCancelReturnOrderMutation()
 
-  const lineItems = order?.line_items || []
+  const lineItems = useMemo(() => order?.line_items || [], [order])
   const activeCurrency = order?.order_currency || "NGN"
   const totalReturnedQuantity = lineItems.reduce((sum, lineItem) => sum + asNumber(lineItem.quantity_returned), 0)
   const processedQuantity = lineItems.reduce((sum, lineItem) => sum + asNumber(lineItem.quantity_processed), 0)
@@ -77,18 +77,6 @@ export default function ReturnOrderOperationsWorkspace({ returnOrderId }: Return
     () => lineItems.filter((lineItem) => asNumber(lineItem.remaining_quantity) > 0),
     [lineItems],
   )
-
-  useEffect(() => {
-    setDispatchEntries((current) => {
-      const next = { ...current }
-      for (const lineItem of lineItems) {
-        if (!next[String(lineItem.id)]) {
-          next[String(lineItem.id)] = buildDispatchEntry(lineItem)
-        }
-      }
-      return next
-    })
-  }, [lineItems])
 
   const setDispatchField = (lineItemId: string, field: keyof DispatchEntry, value: string) => {
     const lineItem = lineItems.find((entry) => String(entry.id) === lineItemId)
@@ -121,7 +109,7 @@ export default function ReturnOrderOperationsWorkspace({ returnOrderId }: Return
     }
 
     const return_items = dispatchableLineItems.flatMap((lineItem) => {
-        const entry = dispatchEntries[String(lineItem.id)]
+        const entry = dispatchEntries[String(lineItem.id)] || buildDispatchEntry(lineItem)
         const quantity = Number(entry?.quantity || "0")
         if (!entry || quantity <= 0 || !entry.location_id) {
           return []

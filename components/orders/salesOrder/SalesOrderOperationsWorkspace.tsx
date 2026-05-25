@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import {
   ArrowLeft,
   CheckCircle2,
@@ -47,7 +47,7 @@ import {
   useGetInventoryDataQuery,
 } from "@/redux/features/inventory/inventoryAPiSlice"
 import {
-  useGetStockItemDataLocationQuery,
+  useListStockLocationsQuery,
   useListReservationsQuery,
 } from "@/redux/features/stock/stockAPISlice"
 import type { StockReservation } from "@/redux/features/stock/stockTypes"
@@ -166,7 +166,7 @@ const buildShipmentEntry = (lineItem: SalesOrderLineItem): ShipmentEntry => ({
 })
 
 export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrderOperationsWorkspaceProps) {
-  const [headerForm, setHeaderForm] = useState<SalesOrderHeaderForm>(buildHeaderForm())
+  const [headerFormDraft, setHeaderFormDraft] = useState<Partial<SalesOrderHeaderForm>>({})
   const [lineItemForm, setLineItemForm] = useState<LineItemForm>(emptyLineItemForm)
   const [editingLineItemId, setEditingLineItemId] = useState<string | null>(null)
   const [reservationEntries, setReservationEntries] = useState<Record<string, ReservationEntry>>({})
@@ -179,7 +179,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
   const { data: customers = [] } = useGetCustomerQuery()
   const { data: users = [] } = useGetCompanyUsersQuery()
   const { data: inventoryItems = [] } = useGetInventoryDataQuery()
-  const { data: locations = [] } = useGetStockItemDataLocationQuery()
+  const { data: locations = [] } = useListStockLocationsQuery()
   const { data: reservations = [], refetch: refetchReservations } = useListReservationsQuery(
     {
       external_order_type: "sales_order_line",
@@ -200,8 +200,9 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
   const [completeSalesOrder, { isLoading: completingOrder }] = useCompleteSalesOrderMutation()
   const [cancelSalesOrder, { isLoading: cancellingOrder }] = useCancelSalesOrderMutation()
 
-  const lineItems = order?.line_items || []
-  const shipments = order?.shipments || []
+  const headerForm = useMemo(() => ({ ...buildHeaderForm(order), ...headerFormDraft }), [order, headerFormDraft])
+  const lineItems = useMemo(() => order?.line_items || [], [order])
+  const shipments = useMemo(() => order?.shipments || [], [order])
   const activeCurrency = order?.order_currency || headerForm.order_currency || "NGN"
   const totalQuantity = lineItems.reduce((sum, lineItem) => sum + asNumber(lineItem.quantity), 0)
   const reservedQuantity = lineItems.reduce((sum, lineItem) => sum + asNumber(lineItem.reserved_quantity), 0)
@@ -243,46 +244,6 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
     () => inventoryItems.find((item) => String(item.id) === lineItemForm.inventory_item),
     [inventoryItems, lineItemForm.inventory_item],
   )
-
-  useEffect(() => {
-    if (order) {
-      setHeaderForm(buildHeaderForm(order))
-    }
-  }, [order])
-
-  useEffect(() => {
-    setReservationEntries((current) => {
-      const next = { ...current }
-      for (const lineItem of lineItems) {
-        if (!next[String(lineItem.id)]) {
-          next[String(lineItem.id)] = buildReservationEntry(lineItem)
-        }
-      }
-      return next
-    })
-
-    setShipmentEntries((current) => {
-      const next = { ...current }
-      for (const lineItem of lineItems) {
-        if (!next[String(lineItem.id)]) {
-          next[String(lineItem.id)] = buildShipmentEntry(lineItem)
-        }
-      }
-      return next
-    })
-  }, [lineItems])
-
-  useEffect(() => {
-    setReservationActionEntries((current) => {
-      const next = { ...current }
-      for (const reservation of reservations) {
-        if (!next[String(reservation.id)]) {
-          next[String(reservation.id)] = buildReservationActionEntry(reservation)
-        }
-      }
-      return next
-    })
-  }, [reservations])
 
   const setReservationField = (lineItemId: string, field: keyof ReservationEntry, value: string) => {
     setReservationEntries((current) => ({
@@ -351,6 +312,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
           delivery_date: headerForm.delivery_date || undefined,
         },
       }).unwrap()
+      setHeaderFormDraft({})
       toast.success("Sales order updated")
       await refreshOrderScope()
     } catch (error) {
@@ -438,7 +400,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
         if (lineItem.id === undefined) {
           return []
         }
-        const entry = reservationEntries[String(lineItem.id)]
+        const entry = reservationEntries[String(lineItem.id)] || buildReservationEntry(lineItem)
         const quantity = Number(entry?.quantity || "0")
         if (!entry || quantity <= 0 || !entry.location_id) {
           return []
@@ -476,7 +438,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
     }
 
     const reservation_items = reservations.flatMap((reservation) => {
-        const entry = reservationActionEntries[String(reservation.id)]
+        const entry = reservationActionEntries[String(reservation.id)] || buildReservationActionEntry(reservation)
         const quantity = Number(entry?.quantity || "0")
         if (!entry || quantity <= 0) {
           return []
@@ -513,7 +475,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
     }
 
     const reservedShipments = reservations.flatMap((reservation) => {
-        const entry = reservationActionEntries[String(reservation.id)]
+        const entry = reservationActionEntries[String(reservation.id)] || buildReservationActionEntry(reservation)
         const quantity = Number(entry?.quantity || "0")
         if (!entry || quantity <= 0) {
           return []
@@ -529,7 +491,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
         if (lineItem.id === undefined) {
           return []
         }
-        const entry = shipmentEntries[String(lineItem.id)]
+        const entry = shipmentEntries[String(lineItem.id)] || buildShipmentEntry(lineItem)
         const quantity = Number(entry?.quantity || "0")
         if (!entry || quantity <= 0 || !entry.location_id) {
           return []
@@ -654,7 +616,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="so-customer">Customer</Label>
-            <Select value={headerForm.customer} onValueChange={(value) => setHeaderForm((current) => ({ ...current, customer: value }))}>
+            <Select value={headerForm.customer} onValueChange={(value) => setHeaderFormDraft((current) => ({ ...current, customer: value }))}>
               <SelectTrigger id="so-customer">
                 <SelectValue placeholder="Select customer" />
               </SelectTrigger>
@@ -669,7 +631,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
           </div>
           <div className="space-y-2">
             <Label htmlFor="so-responsible">Responsible owner</Label>
-            <Select value={headerForm.responsible} onValueChange={(value) => setHeaderForm((current) => ({ ...current, responsible: value }))}>
+            <Select value={headerForm.responsible} onValueChange={(value) => setHeaderFormDraft((current) => ({ ...current, responsible: value }))}>
               <SelectTrigger id="so-responsible">
                 <SelectValue placeholder="Select owner" />
               </SelectTrigger>
@@ -684,7 +646,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
           </div>
           <div className="space-y-2">
             <Label htmlFor="so-currency">Order currency</Label>
-            <Select value={headerForm.order_currency} onValueChange={(value) => setHeaderForm((current) => ({ ...current, order_currency: value }))}>
+            <Select value={headerForm.order_currency} onValueChange={(value) => setHeaderFormDraft((current) => ({ ...current, order_currency: value }))}>
               <SelectTrigger id="so-currency">
                 <SelectValue placeholder="Select currency" />
               </SelectTrigger>
@@ -702,7 +664,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
             <Input
               id="so-customer-reference"
               value={headerForm.customer_reference}
-              onChange={(event) => setHeaderForm((current) => ({ ...current, customer_reference: event.target.value }))}
+              onChange={(event) => setHeaderFormDraft((current) => ({ ...current, customer_reference: event.target.value }))}
             />
           </div>
           <div className="space-y-2 xl:col-span-2">
@@ -710,7 +672,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
             <Input
               id="so-description"
               value={headerForm.description}
-              onChange={(event) => setHeaderForm((current) => ({ ...current, description: event.target.value }))}
+              onChange={(event) => setHeaderFormDraft((current) => ({ ...current, description: event.target.value }))}
               placeholder="What is this order for?"
             />
           </div>
@@ -720,7 +682,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
               id="so-delivery-date"
               type="date"
               value={headerForm.delivery_date}
-              onChange={(event) => setHeaderForm((current) => ({ ...current, delivery_date: event.target.value }))}
+              onChange={(event) => setHeaderFormDraft((current) => ({ ...current, delivery_date: event.target.value }))}
             />
           </div>
           <div className="space-y-2 xl:col-span-3">
@@ -728,7 +690,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
             <Input
               id="so-link"
               value={headerForm.link}
-              onChange={(event) => setHeaderForm((current) => ({ ...current, link: event.target.value }))}
+              onChange={(event) => setHeaderFormDraft((current) => ({ ...current, link: event.target.value }))}
               placeholder="Optional sales portal or quote link"
             />
           </div>
@@ -738,7 +700,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
               id="so-notes"
               rows={4}
               value={headerForm.notes}
-              onChange={(event) => setHeaderForm((current) => ({ ...current, notes: event.target.value }))}
+              onChange={(event) => setHeaderFormDraft((current) => ({ ...current, notes: event.target.value }))}
               placeholder="Capture fulfillment instructions, customer notes, or delivery context"
             />
           </div>

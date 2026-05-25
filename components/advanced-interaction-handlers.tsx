@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import Image from "next/image"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
@@ -16,11 +17,17 @@ import {
   Zap,
   CheckCircle,
   X,
+  ArrowUpRight,
+  Globe,
+  ShoppingBag,
+  Star,
 } from "lucide-react"
 
 interface AdvancedInteractionProps {
   data: any
   onResponse: (response: any) => void
+  compact?: boolean
+  disabled?: boolean
 }
 
 export function SearchableSelectionHandler({ data, onResponse }: AdvancedInteractionProps) {
@@ -96,10 +103,13 @@ export function SearchableSelectionHandler({ data, onResponse }: AdvancedInterac
             >
               <div className="flex items-start gap-3">
                 { item.image && (
-                  <img
+                  <Image
                     src={item.image || "/placeholder.svg"}
                     alt={item.name}
-                    className="w-12 h-12 object-cover rounded"
+                    width={48}
+                    height={48}
+                    className="h-12 w-12 rounded object-cover"
+                    unoptimized
                   />
                 )}
                 <div className="flex-1">
@@ -404,6 +414,276 @@ export function ComparisonViewHandler({ data, onResponse }: AdvancedInteractionP
             Confirm Selection
           </Button>
         )}
+      </CardContent>
+    </Card>
+  )
+}
+
+export function MarketplaceResultsHandler({ data, onResponse, disabled = false }: AdvancedInteractionProps) {
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [sortBy, setSortBy] = useState<"relevance" | "price">("relevance")
+
+  const products = useMemo(() => (Array.isArray(data.products) ? data.products : []), [data.products])
+  const maxSelection = typeof data.max_selection === "number" ? data.max_selection : 4
+
+  const filteredProducts = useMemo(() => {
+    const normalizedTerm = searchTerm.trim().toLowerCase()
+    let next = products.filter((item: any) => {
+      if (!normalizedTerm) return true
+      return [
+        item.title,
+        item.description,
+        item.marketplace,
+        item.source_domain,
+      ]
+        .filter(Boolean)
+        .some((value: any) => String(value).toLowerCase().includes(normalizedTerm))
+    })
+
+    next = [...next].sort((a: any, b: any) => {
+      if (sortBy === "price") {
+        const left = typeof a.total_price_value === "number" ? a.total_price_value : Number.POSITIVE_INFINITY
+        const right = typeof b.total_price_value === "number" ? b.total_price_value : Number.POSITIVE_INFINITY
+        return left - right
+      }
+      const left = typeof a.score === "number" ? a.score : 0
+      const right = typeof b.score === "number" ? b.score : 0
+      return right - left
+    })
+
+    return next
+  }, [products, searchTerm, sortBy])
+
+  const selectedProducts = useMemo(
+    () => products.filter((item: any) => selectedIds.includes(String(item.id))),
+    [products, selectedIds],
+  )
+
+  const toggleSelection = (productId: string) => {
+    if (disabled) return
+    setSelectedIds((prev) => {
+      if (prev.includes(productId)) {
+        return prev.filter((item) => item !== productId)
+      }
+      return [...prev, productId].slice(0, maxSelection)
+    })
+  }
+
+  const openProduct = (url?: string) => {
+    if (!url || typeof window === "undefined") return
+    window.open(url, "_blank", "noopener,noreferrer")
+  }
+
+  const handleSubmit = (action: "share_selected" | "compare_selected") => {
+    onResponse({
+      type: "marketplace_results_response",
+      action,
+      query: data.query || "",
+      selected_items: selectedProducts,
+    })
+  }
+
+  const cheapestOffer = data.summary?.cheapest_offer
+  const marketplaceLabels = Array.isArray(data.available_marketplaces) ? data.available_marketplaces : []
+
+  return (
+    <Card className="w-full max-w-6xl border-slate-200 shadow-sm">
+      <CardHeader className="space-y-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <ShoppingBag className="h-5 w-5 text-amber-600" />
+              <CardTitle>{data.title}</CardTitle>
+            </div>
+            <CardDescription>{data.description}</CardDescription>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {marketplaceLabels.map((label: string) => (
+              <Badge key={label} variant="secondary" className="bg-slate-100 text-slate-700">
+                {label}
+              </Badge>
+            ))}
+          </div>
+        </div>
+
+        {cheapestOffer ? (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+            <span className="font-semibold">Cheapest visible offer:</span> {cheapestOffer.title} on{" "}
+            {cheapestOffer.marketplace} at {cheapestOffer.price}
+          </div>
+        ) : null}
+
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              placeholder="Filter these marketplace results"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              className="pl-10"
+              disabled={disabled}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant={sortBy === "relevance" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSortBy("relevance")}
+              disabled={disabled}
+            >
+              Best match
+            </Button>
+            <Button
+              type="button"
+              variant={sortBy === "price" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSortBy("price")}
+              disabled={disabled}
+            >
+              Lowest price
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
+          <span>{filteredProducts.length} results</span>
+          <span>{selectedIds.length} selected</span>
+        </div>
+
+        {filteredProducts.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center text-sm text-slate-500">
+            No products match the current filter.
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {filteredProducts.map((product: any) => {
+              const selected = selectedIds.includes(String(product.id))
+              return (
+                <div
+                  key={product.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => openProduct(product.product_url)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault()
+                      openProduct(product.product_url)
+                    }
+                  }}
+                  className={`group overflow-hidden rounded-[24px] border bg-white text-left transition-all hover:-translate-y-0.5 hover:shadow-lg ${
+                    selected ? "border-blue-300 ring-2 ring-blue-100" : "border-slate-200"
+                  }`}
+                >
+                  <div className="relative h-44 overflow-hidden bg-slate-100">
+                    {product.image_url ? (
+                      <Image
+                        src={product.image_url}
+                        alt={product.title}
+                        fill
+                        sizes="(min-width: 1280px) 24rem, (min-width: 768px) 32rem, 100vw"
+                        className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-slate-400">
+                        <Globe className="h-10 w-10" />
+                      </div>
+                    )}
+                    <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">
+                      {product.favicon_url ? (
+                        <Image
+                          src={product.favicon_url}
+                          alt=""
+                          width={16}
+                          height={16}
+                          className="h-4 w-4 rounded-full"
+                          unoptimized
+                        />
+                      ) : null}
+                      <span>{product.marketplace}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 p-4">
+                    <div className="space-y-1">
+                      <h4 className="line-clamp-2 text-sm font-semibold leading-6 text-slate-900">{product.title}</h4>
+                      {product.description ? (
+                        <p className="line-clamp-3 text-xs leading-5 text-slate-500">{product.description}</p>
+                      ) : null}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 text-xs text-slate-600">
+                      <div>
+                        <p className="font-medium uppercase tracking-[0.16em] text-slate-400">Price</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-900">{product.total_price || product.price || "—"}</p>
+                      </div>
+                      <div>
+                        <p className="font-medium uppercase tracking-[0.16em] text-slate-400">Rating</p>
+                        <p className="mt-1 flex items-center gap-1 text-sm font-semibold text-slate-900">
+                          <Star className="h-3.5 w-3.5 fill-current text-amber-500" />
+                          {product.rating || "—"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          openProduct(product.product_url)
+                        }}
+                      >
+                        Open listing
+                        <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={selected ? "default" : "secondary"}
+                        size="sm"
+                        className="flex-1"
+                        disabled={disabled}
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          toggleSelection(String(product.id))
+                        }}
+                      >
+                        {selected ? "Selected" : "Select"}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        <div className="flex flex-col gap-2 border-t border-slate-100 pt-4 md:flex-row">
+          <Button
+            type="button"
+            variant="secondary"
+            className="md:flex-1"
+            disabled={disabled || selectedProducts.length === 0}
+            onClick={() => handleSubmit("share_selected")}
+          >
+            Send selected to assistant
+          </Button>
+          <Button
+            type="button"
+            className="md:flex-1"
+            disabled={disabled || selectedProducts.length < 2}
+            onClick={() => handleSubmit("compare_selected")}
+          >
+            Compare selected
+          </Button>
+        </div>
       </CardContent>
     </Card>
   )

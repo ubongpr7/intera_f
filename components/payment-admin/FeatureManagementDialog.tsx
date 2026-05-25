@@ -185,7 +185,7 @@ export function FeatureManagementDialog({ open, onOpenChange, plan, onSuccess }:
 
               {selectedFeatures.length > 0 && (
                 <div className="flex items-center justify-between pt-2">
-                  <span className="text-sm text-muted-foreground">{selectedFeatures.length} feature(s) selected</span>
+                  <span className="text-sm text-gray-500">{selectedFeatures.length} feature(s) selected</span>
                   <Button onClick={handleAddFeatures} disabled={isAdding} size="sm">
                     <Plus className="h-4 w-4 mr-2" />
                     {isAdding ? "Adding..." : "Add Features"}
@@ -205,7 +205,7 @@ export function FeatureManagementDialog({ open, onOpenChange, plan, onSuccess }:
             </CardHeader>
             <CardContent>
               {planFeatures.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="py-8 text-center text-gray-500">
                   <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No features added to this plan yet</p>
                   <p className="text-sm">Add features using the section above</p>
@@ -215,7 +215,7 @@ export function FeatureManagementDialog({ open, onOpenChange, plan, onSuccess }:
                   {planFeatures.map((feature: Feature) => (
                     <div
                       key={feature.id}
-                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors"
+                      className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-gray-100/50"
                     >
                       <div className="flex items-center gap-3">
                         <div>
@@ -225,7 +225,7 @@ export function FeatureManagementDialog({ open, onOpenChange, plan, onSuccess }:
                               {feature.feature_type}
                             </Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground mt-1">{feature.description}</p>
+                          <p className="mt-1 text-sm text-gray-500">{feature.description}</p>
                         </div>
                       </div>
                       <Button
@@ -233,7 +233,7 @@ export function FeatureManagementDialog({ open, onOpenChange, plan, onSuccess }:
                         size="sm"
                         onClick={() => handleRemoveFeature(feature.id, feature.name)}
                         disabled={isRemoving}
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        className="text-red-600 hover:bg-red-50 hover:text-red-600"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

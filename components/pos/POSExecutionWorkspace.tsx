@@ -591,7 +591,7 @@ export default function POSExecutionWorkspace() {
       <div className="space-y-5">
         <POSCashierHeader
           hasCurrentSession={hasCurrentSession}
-          currentSession={currentSession}
+          currentSession={currentSession ?? undefined}
           currentOrder={currentOrder}
           terminalName={terminalName}
           currencyCode={currentConfiguration?.currency || currencyCode}

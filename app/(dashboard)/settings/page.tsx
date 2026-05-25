@@ -2,31 +2,40 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import {
-  ArrowRightLeft,
   Bot,
   Building2,
   KeyRound,
   Loader2,
   Save,
+  Settings2,
+  ShieldCheck,
   Sparkles,
-  Workflow,
+  Wrench,
 } from "lucide-react"
 import { toast } from "react-toastify"
+
+import AgentSettingsControlPanel from "@/components/agents/agent-settings-control-panel"
+import { WorkspaceSetupShell } from "@/components/onboarding/WorkspaceSetupShell"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
-import { WorkspaceSetupShell } from "@/components/onboarding/WorkspaceSetupShell"
+import { hasTokenPermission, isWorkspaceOwner } from "@/lib/agentPermissions"
 import { useGetUserCompaniesQuery, useRefreshMutation } from "@/redux/features/auth/authApiSlice"
 import {
   useGetCompanyAgentSetupQuery,
   useSaveCompanyAgentSetupMutation,
 } from "@/redux/features/management/companyProfileApiSlice"
-import type { SaveCompanyAgentSetupPayload } from "@/redux/features/management/companyProfileTypes"
+import type {
+  CompanyAgentSetupResponse,
+  SaveCompanyAgentSetupPayload,
+} from "@/redux/features/management/companyProfileTypes"
 
 type AgentSetupFormState = {
   name: string
@@ -67,15 +76,23 @@ const parseApiError = (error: unknown): string => {
   }
 
   if (typedError?.status === 403) {
-    return "You do not have permission to manage company AI settings."
+    return "You do not have permission to manage workspace agent settings."
   }
-  return "Unable to save agent setup. Please try again."
+  return "Unable to save workspace AI settings. Please try again."
+}
+
+const renderMaskedPreview = (value?: string | null) => {
+  if (!value) {
+    return "Not set"
+  }
+  const prefix = value.slice(0, 4)
+  return `${prefix}****`
 }
 
 const AgentSetupLoading = () => (
   <div className="space-y-4">
-    <div className="h-24 animate-pulse rounded-2xl border border-gray-200 bg-white" />
-    <div className="h-96 animate-pulse rounded-2xl border border-gray-200 bg-white" />
+    <div className="h-24 animate-pulse rounded-[28px] border border-gray-200 bg-white" />
+    <div className="h-[32rem] animate-pulse rounded-[28px] border border-gray-200 bg-white" />
   </div>
 )
 
@@ -88,16 +105,13 @@ const AgentSetupEmptyState = ({ profilesCount }: { profilesCount: number }) => (
       </div>
       <CardTitle className="mt-3 text-2xl font-semibold text-gray-900">Select or create a company first</CardTitle>
       <CardDescription className="mt-2 text-sm leading-6 text-gray-600">
-        Agent setup is scoped to your active company profile. Switch into a workspace before managing API keys, model
-        versions, and instructions.
+        Agent settings are scoped to the active workspace. Switch into a company before configuring models, instructions,
+        or default agents.
       </CardDescription>
     </CardHeader>
     <CardContent className="flex flex-wrap gap-3 p-6 pt-0">
       <Button asChild>
-        <Link href="/dashboard">
-          <ArrowRightLeft className="mr-2 h-4 w-4" />
-          Choose company
-        </Link>
+        <Link href="/dashboard">Choose company</Link>
       </Button>
       {profilesCount === 0 ? (
         <Button asChild variant="outline">
@@ -108,9 +122,207 @@ const AgentSetupEmptyState = ({ profilesCount }: { profilesCount: number }) => (
   </Card>
 )
 
-export default function Settings() {
+const AgentSetupAccessDenied = ({ ownerOverride }: { ownerOverride: boolean }) => (
+  <Card className="border-amber-200 bg-amber-50 shadow-sm">
+    <CardContent className="flex items-start gap-4 p-6">
+      <div className="rounded-2xl bg-amber-100 p-3 text-amber-700">
+        <ShieldCheck className="h-5 w-5" />
+      </div>
+      <div className="space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-700">Setup Access Required</p>
+        <h2 className="text-2xl font-semibold text-amber-950">
+          Only the workspace owner or someone with agent setup permission can manage this area.
+        </h2>
+        <p className="max-w-3xl text-sm leading-6 text-amber-900/80">
+          This settings workspace is reserved for <span className="font-semibold">manage_agent_settings</span> or owner
+          access. Runtime conversations still happen on <span className="font-semibold">/agent</span>.
+        </p>
+        {ownerOverride ? (
+          <p className="text-sm font-medium text-amber-900">Owner override is active for this workspace.</p>
+        ) : null}
+      </div>
+    </CardContent>
+  </Card>
+)
+
+const WorkspaceAiSetupSheet = ({
+  open,
+  onOpenChange,
+  form,
+  updateField,
+  setupResponse,
+  savingSetup,
+  onSave,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  form: AgentSetupFormState
+  updateField: <T extends keyof AgentSetupFormState>(field: T, value: AgentSetupFormState[T]) => void
+  setupResponse?: CompanyAgentSetupResponse
+  savingSetup: boolean
+  onSave: () => Promise<void>
+}) => {
+  const availableVersions = setupResponse?.available_versions ?? []
+  const selectedVersion = availableVersions.find((version) => String(version.id) === form.version)
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="right"
+        className="w-full max-w-3xl border-slate-800 bg-[linear-gradient(180deg,#020617_0%,#0f172a_58%,#111827_100%)] p-0 text-white shadow-[0_40px_90px_rgba(2,6,23,0.82)] sm:max-w-3xl"
+      >
+        <div className="flex h-full flex-col">
+          <SheetHeader className="border-b border-slate-800/80 bg-[linear-gradient(115deg,rgba(15,23,42,0.98),rgba(17,24,39,0.96),rgba(30,41,59,0.96))] px-7 py-7 text-left md:px-8">
+            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-200">
+              Side Form Workspace
+            </div>
+            <SheetTitle className="mt-4 text-3xl font-semibold tracking-tight text-white">
+              {setupResponse?.configured ? "Update workspace AI" : "Configure workspace AI"}
+            </SheetTitle>
+            <SheetDescription className="max-w-2xl text-sm leading-6 text-slate-300">
+              Keep the page compact. Model selection, encrypted keys, and instruction layers are managed here in a side
+              form instead of inline.
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(30,41,59,0.96)_0%,rgba(15,23,42,0.98)_52%,rgba(2,6,23,1)_100%)] px-7 py-6 md:px-8">
+            <div className="grid gap-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Agent name</span>
+                  <Input
+                    className="h-12 rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                    value={form.name}
+                    onChange={(event) => updateField("name", event.target.value)}
+                    placeholder="Intera workspace copilot"
+                  />
+                </label>
+                <div className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Model version</span>
+                  <Select value={form.version || undefined} onValueChange={(value) => updateField("version", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select provider and model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableVersions.map((version) => (
+                        <SelectItem key={version.id} value={String(version.id)}>
+                          {version.provider_label} · {version.model_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedVersion ? (
+                    <p className="text-xs text-slate-400">
+                      Selected: {selectedVersion.provider_label} · {selectedVersion.model_name}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                  <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    <KeyRound className="h-4 w-4 text-slate-500" />
+                    LLM API key
+                  </span>
+                  <Input
+                    className="h-12 rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                    type="password"
+                    value={form.apiKey}
+                    onChange={(event) => updateField("apiKey", event.target.value)}
+                    placeholder={
+                      setupResponse?.agent?.has_api_key ? "Enter new key to rotate current value" : "Enter provider API key"
+                    }
+                  />
+                </label>
+                <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                  <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    <KeyRound className="h-4 w-4 text-slate-500" />
+                    Tavily API key
+                  </span>
+                  <Input
+                    className="h-12 rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                    type="password"
+                    value={form.tavilyApiKey}
+                    onChange={(event) => updateField("tavilyApiKey", event.target.value)}
+                    placeholder={
+                      setupResponse?.agent?.has_tavily_api_key
+                        ? "Enter new key to rotate current value"
+                        : "Enter Tavily API key"
+                    }
+                  />
+                </label>
+              </div>
+
+              <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Special instruction</span>
+                <Textarea
+                  className="min-h-[140px] rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                  value={form.specialInstruction}
+                  onChange={(event) => updateField("specialInstruction", event.target.value)}
+                  placeholder="Organization-level guidance for how the workspace AI should behave."
+                  rows={4}
+                />
+              </label>
+
+              <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">System instruction</span>
+                <Textarea
+                  className="min-h-[160px] rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                  value={form.systemInstruction}
+                  onChange={(event) => updateField("systemInstruction", event.target.value)}
+                  placeholder="Base operating instruction used by the workspace AI."
+                  rows={4}
+                />
+              </label>
+
+              <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Assistant instruction</span>
+                <Textarea
+                  className="min-h-[160px] rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                  value={form.assistantInstruction}
+                  onChange={(event) => updateField("assistantInstruction", event.target.value)}
+                  placeholder="Response style, formatting, and interaction guidance."
+                  rows={4}
+                />
+              </label>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-800 bg-slate-950/95 px-7 py-4 md:px-8">
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="button" onClick={() => void onSave()} disabled={savingSetup}>
+                {savingSetup ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save workspace AI
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  )
+}
+
+export default function SettingsPage() {
   const router = useRouter()
+  const [activeTab, setActiveTab] = useState("workspace-ai")
+  const [setupSheetOpen, setSetupSheetOpen] = useState(false)
   const [form, setForm] = useState<AgentSetupFormState>(EMPTY_FORM)
+  const canManageAgentSettings = useMemo(() => hasTokenPermission("manage_agent_settings"), [])
+  const ownerOverride = useMemo(() => isWorkspaceOwner(), [])
+
   const { data: companies, isLoading: loadingCompanies } = useGetUserCompaniesQuery()
   const activeProfileId = companies?.active_profile_id ?? null
 
@@ -121,27 +333,19 @@ export default function Settings() {
     isError: setupHasError,
     refetch,
   } = useGetCompanyAgentSetupQuery(undefined, {
-    skip: !activeProfileId,
+    skip: !activeProfileId || !canManageAgentSettings,
   })
+
   const [saveCompanyAgentSetup, { isLoading: savingSetup }] = useSaveCompanyAgentSetupMutation()
   const [refreshSession] = useRefreshMutation()
 
-  useEffect(() => {
+  const baseForm = useMemo(() => {
     const agent = setupResponse?.agent
     if (!agent) {
-      setForm((prev) => ({
-        ...prev,
-        name: "",
-        version: "",
-        specialInstruction: "",
-        systemInstruction: "",
-        assistantInstruction: "",
-      }))
-      return
+      return EMPTY_FORM
     }
 
-    setForm((prev) => ({
-      ...prev,
+    return {
       name: agent.name ?? "",
       version: agent.version ? String(agent.version) : "",
       specialInstruction: agent.special_instruction ?? "",
@@ -149,17 +353,16 @@ export default function Settings() {
       assistantInstruction: agent.assistant_instruction ?? "",
       apiKey: "",
       tavilyApiKey: "",
-    }))
+    }
   }, [setupResponse?.agent])
-
-  const availableVersions = setupResponse?.available_versions
-  const selectedVersion = useMemo(
-    () => (availableVersions ?? []).find((version) => String(version.id) === form.version),
-    [availableVersions, form.version],
-  )
 
   const updateField = <T extends keyof AgentSetupFormState>(field: T, value: AgentSetupFormState[T]) => {
     setForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const openSetupSheet = () => {
+    setForm(baseForm)
+    setSetupSheetOpen(true)
   }
 
   const handleSave = async () => {
@@ -189,12 +392,13 @@ export default function Settings() {
 
     try {
       await saveCompanyAgentSetup(payload).unwrap()
-      toast.success(setupResponse?.configured ? "Agent setup updated." : "Agent setup created.")
+      toast.success(setupResponse?.configured ? "Workspace AI updated." : "Workspace AI configured.")
       setForm((prev) => ({ ...prev, apiKey: "", tavilyApiKey: "" }))
+      setSetupSheetOpen(false)
       try {
         await refreshSession().unwrap()
       } catch {
-        toast.warning("Setup was saved, but the session token could not be refreshed automatically.")
+        toast.warning("Settings were saved, but the session token could not be refreshed automatically.")
       }
       await refetch()
       router.refresh()
@@ -203,7 +407,7 @@ export default function Settings() {
     }
   }
 
-  if (loadingCompanies || (activeProfileId && loadingSetup)) {
+  if (loadingCompanies || (activeProfileId && canManageAgentSettings && loadingSetup)) {
     return (
       <div className="p-2">
         <AgentSetupLoading />
@@ -215,230 +419,236 @@ export default function Settings() {
     return (
       <WorkspaceSetupShell
         activeStage="agent"
-        title="Configure the company AI workspace"
-        description="Save the company-level model, API credentials, and instruction set here. This becomes the agent context for the active workspace."
+        title="Manage workspace settings"
+        description="Keep agent configuration here. Runtime conversations stay on the agent console, but setup, model selection, and default-agent installs live in this settings workspace."
       >
         <AgentSetupEmptyState profilesCount={companies?.profiles?.length ?? 0} />
       </WorkspaceSetupShell>
     )
   }
 
+  if (!canManageAgentSettings) {
+    return (
+      <WorkspaceSetupShell
+        activeStage="agent"
+        title="Manage workspace settings"
+        description="Agent setup is restricted to the workspace owner or a staff member with explicit setup permission."
+      >
+        <AgentSetupAccessDenied ownerOverride={ownerOverride} />
+      </WorkspaceSetupShell>
+    )
+  }
+
+  const configuredAgent = setupResponse?.agent
+  const aiConfigured = Boolean(setupResponse?.configured && configuredAgent)
+
   return (
     <WorkspaceSetupShell
       activeStage="agent"
-      title="Configure the company AI workspace"
-      description="This is the final onboarding layer for the workspace. Save the company-level model version, encrypted keys, and reusable instructions so the agent system stays scoped to the active company."
+      title="Manage workspace settings"
+      description="Keep setup separate from runtime. Configure workspace AI, install default agents, and manage custom agents here. Live conversations stay on the agent console."
     >
-      <div className="grid w-full gap-6">
-        <Card className="border-blue-100 bg-white/95 shadow-sm">
+      <div className="grid gap-6">
+        <Card className="border-gray-200 bg-white shadow-sm">
           <CardHeader className="gap-3 p-6 text-left">
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
-              <Sparkles className="h-3.5 w-3.5" />
-              Company Agent Setup
+              <Settings2 className="h-3.5 w-3.5" />
+              Settings Workspace
             </div>
-            <CardTitle className="text-3xl font-semibold tracking-tight text-gray-900">Configure your AI workspace</CardTitle>
-            <CardDescription className="text-sm leading-6 text-gray-600">
-              Save per-company LLM configuration, encrypted API keys, and reusable instruction prompts. This setup is
-              applied whenever your team works in this company context.
+            <CardTitle className="text-3xl font-semibold tracking-tight text-gray-900">Agentic settings</CardTitle>
+            <CardDescription className="max-w-4xl text-sm leading-6 text-gray-600">
+              This page is for setup only. Workspace AI configuration, default-agent installs, and custom agent management
+              happen here. The chat and runtime console stay on <span className="font-semibold">/agent</span>.
             </CardDescription>
           </CardHeader>
+          <CardContent className="flex flex-col gap-4 p-6 pt-0 lg:flex-row lg:items-center lg:justify-between">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-[24px] border border-blue-100 bg-blue-50 px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">Access Mode</p>
+                <p className="mt-2 text-lg font-semibold text-slate-900">
+                  {ownerOverride ? "Workspace owner" : "Permission-based"}
+                </p>
+              </div>
+              <div className="rounded-[24px] border border-emerald-100 bg-emerald-50 px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">Workspace AI</p>
+                <p className="mt-2 text-lg font-semibold text-slate-900">{aiConfigured ? "Configured" : "Not configured"}</p>
+              </div>
+              <div className="rounded-[24px] border border-violet-100 bg-violet-50 px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-700">Runtime Surface</p>
+                <p className="mt-2 text-lg font-semibold text-slate-900">Separated from setup</p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Button type="button" variant="outline" onClick={openSetupSheet}>
+                <Bot className="mr-2 h-4 w-4" />
+                Configure workspace AI
+              </Button>
+              <Button asChild>
+                <Link href="/agent">
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Open runtime console
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
         </Card>
 
-        {setupHasError ? (
-          <Card className="border-red-200 bg-red-50 shadow-sm">
-            <CardHeader className="p-6 text-left">
-              <CardTitle className="text-lg font-semibold text-red-900">Unable to load setup</CardTitle>
-              <CardDescription className="text-sm text-red-700">
-                Check company context and permissions, then retry.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-6 pt-0">
-              <Button variant="outline" onClick={() => void refetch()}>
-                Retry
-              </Button>
-            </CardContent>
-          </Card>
-        ) : null}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsList className="h-auto flex-wrap justify-start gap-2 rounded-[24px] bg-slate-100 p-1">
+            <TabsTrigger
+              value="workspace-ai"
+              className="rounded-[18px] border-transparent bg-transparent px-4 py-2.5 data-[state=active]:border-blue-300 data-[state=active]:bg-white data-[state=active]:text-blue-700"
+            >
+              Workspace AI
+            </TabsTrigger>
+            <TabsTrigger
+              value="workspace-agents"
+              className="rounded-[18px] border-transparent bg-transparent px-4 py-2.5 data-[state=active]:border-blue-300 data-[state=active]:bg-white data-[state=active]:text-blue-700"
+            >
+              Agent Setup
+            </TabsTrigger>
+          </TabsList>
 
-        {!setupHasError ? (
-          <div className="grid gap-6 xl:grid-cols-2">
-            <Card className="border-gray-200 shadow-sm">
-              <CardHeader className="p-6 text-left">
-                <CardTitle className="flex items-center gap-2 text-xl text-gray-900">
-                  <Bot className="h-5 w-5 text-blue-600" />
-                  Current setup
-                </CardTitle>
-                <CardDescription className="text-sm text-gray-600">
-                  Review what is active for this company profile.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 p-6 pt-0">
-                {setupResponse?.configured && setupResponse.agent ? (
-                  <>
-                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Agent Name</p>
-                      <p className="mt-1 text-sm font-semibold text-gray-900">{setupResponse.agent.name}</p>
-                    </div>
-                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Model</p>
-                      <p className="mt-1 text-sm font-semibold text-gray-900">
-                        {setupResponse.agent.provider_label} · {setupResponse.agent.model_name}
-                      </p>
-                    </div>
-                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Credentials</p>
-                      <div className="mt-2 space-y-1 text-sm text-gray-700">
-                        <p>Base URL: {setupResponse.agent.effective_base_url || "Provider default not set"}</p>
-                        <p>LLM API Key: {setupResponse.agent.api_key_masked?.slice(0, 4) + "****" || "Not set"}</p>
-                        <p>Tavily API Key: {setupResponse.agent.tavily_api_key_masked?.slice(0, 4) + "****" || "Not set"}</p>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-sm text-gray-600">
-                    No agent setup yet. Complete the form to create it.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="border-gray-200 shadow-sm">
-              <CardHeader className="p-6 text-left">
-                <CardTitle className="flex items-center gap-2 text-xl text-gray-900">
-                  <Workflow className="h-5 w-5 text-blue-600" />
-                  Create or update setup
-                </CardTitle>
-                <CardDescription className="text-sm text-gray-600">
-                  API keys are encrypted server-side. Leave API key fields empty to keep existing values.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-5 p-6 pt-0">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="agent-name">Agent name</Label>
-                    <Input
-                      id="agent-name"
-                      value={form.name}
-                      onChange={(event) => updateField("name", event.target.value)}
-                      placeholder="e.g. Intera Inventory Copilot"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="agent-version">Model version</Label>
-                    <Select value={form.version || undefined} onValueChange={(value) => updateField("version", value)}>
-                      <SelectTrigger id="agent-version">
-                        <SelectValue placeholder="Select provider and model" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(availableVersions ?? []).map((version) => (
-                          <SelectItem key={version.id} value={String(version.id)}>
-                            {version.provider_label} · {version.model_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {selectedVersion ? (
-                      <p className="text-xs text-gray-500">
-                        Active selection: {selectedVersion.provider_label} · {selectedVersion.model_name}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="llm-api-key" className="flex items-center gap-1.5">
-                      <KeyRound className="h-3.5 w-3.5 text-gray-500" />
-                      LLM API key
-                    </Label>
-                    <Input
-                      id="llm-api-key"
-                      type="password"
-                      value={form.apiKey}
-                      onChange={(event) => updateField("apiKey", event.target.value)}
-                      placeholder={
-                        setupResponse?.agent?.has_api_key
-                          ? "Enter new key to rotate current value"
-                          : "Enter provider API key"
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="tavily-api-key" className="flex items-center gap-1.5">
-                      <KeyRound className="h-3.5 w-3.5 text-gray-500" />
-                      Tavily API key
-                    </Label>
-                    <Input
-                      id="tavily-api-key"
-                      type="password"
-                      value={form.tavilyApiKey}
-                      onChange={(event) => updateField("tavilyApiKey", event.target.value)}
-                      placeholder={
-                        setupResponse?.agent?.has_tavily_api_key
-                          ? "Enter new key to rotate current value"
-                          : "Enter Tavily API key"
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="special-instruction">Special instruction</Label>
-                  <Textarea
-                    id="special-instruction"
-                    value={form.specialInstruction}
-                    onChange={(event) => updateField("specialInstruction", event.target.value)}
-                    placeholder="Organization-level guidance for how the agent should behave."
-                    className="min-h-24"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="system-instruction">System instruction</Label>
-                  <Textarea
-                    id="system-instruction"
-                    value={form.systemInstruction}
-                    onChange={(event) => updateField("systemInstruction", event.target.value)}
-                    placeholder="System prompt used as the base operating instruction."
-                    className="min-h-24"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="assistant-instruction">Assistant instruction</Label>
-                  <Textarea
-                    id="assistant-instruction"
-                    value={form.assistantInstruction}
-                    onChange={(event) => updateField("assistantInstruction", event.target.value)}
-                    placeholder="Assistant persona and response style preferences."
-                    className="min-h-24"
-                  />
-                </div>
-
-                <div className="flex flex-wrap gap-3 pt-2">
-                  <Button onClick={() => void handleSave()} disabled={savingSetup || fetchingSetup}>
-                    {savingSetup ? (
+          <TabsContent value="workspace-ai" className="mt-0 bg-transparent">
+            {setupHasError ? (
+              <Card className="border-red-200 bg-red-50 shadow-sm">
+                <CardHeader className="p-6 text-left">
+                  <CardTitle className="text-lg font-semibold text-red-900">Unable to load workspace AI settings</CardTitle>
+                  <CardDescription className="text-sm text-red-700">
+                    Check company context and permissions, then retry.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-6 pt-0">
+                  <Button variant="outline" onClick={() => void refetch()}>
+                    Retry
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+                <Card className="border-gray-200 shadow-sm">
+                  <CardHeader className="p-6 text-left">
+                    <CardTitle className="flex items-center gap-2 text-xl text-gray-900">
+                      <Bot className="h-5 w-5 text-blue-600" />
+                      Current workspace AI
+                    </CardTitle>
+                    <CardDescription className="text-sm text-gray-600">
+                      Keep the live summary here. Open the side form to change anything.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4 p-6 pt-0">
+                    {aiConfigured && configuredAgent ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
+                        <div className="rounded-[24px] border border-gray-200 bg-gray-50 p-4">
+                          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Agent Name</p>
+                          <p className="mt-1 text-sm font-semibold text-gray-900">{configuredAgent.name}</p>
+                        </div>
+                        <div className="rounded-[24px] border border-gray-200 bg-gray-50 p-4">
+                          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Model</p>
+                          <p className="mt-1 text-sm font-semibold text-gray-900">
+                            {configuredAgent.provider_label} · {configuredAgent.model_name}
+                          </p>
+                        </div>
+                        <div className="rounded-[24px] border border-gray-200 bg-gray-50 p-4">
+                          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Credentials</p>
+                          <div className="mt-2 space-y-1 text-sm text-gray-700">
+                            <p>Base URL: {configuredAgent.effective_base_url || "Provider default not set"}</p>
+                            <p>LLM API Key: {renderMaskedPreview(configuredAgent.api_key_masked)}</p>
+                            <p>Tavily API Key: {renderMaskedPreview(configuredAgent.tavily_api_key_masked)}</p>
+                          </div>
+                        </div>
                       </>
                     ) : (
-                      <>
-                        <Save className="mr-2 h-4 w-4" />
-                        Save setup
-                      </>
+                      <div className="rounded-[24px] border border-dashed border-gray-300 bg-gray-50 p-6 text-sm text-gray-600">
+                        No workspace AI setup yet. Use the side form to configure the company-level model and instruction
+                        stack.
+                      </div>
                     )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    disabled={savingSetup || fetchingSetup}
-                    onClick={() => setForm((prev) => ({ ...prev, apiKey: "", tavilyApiKey: "" }))}
-                  >
-                    Clear entered keys
-                  </Button>
+
+                    <div className="flex flex-wrap gap-3 pt-2">
+                      <Button type="button" onClick={openSetupSheet}>
+                        <Save className="mr-2 h-4 w-4" />
+                        {aiConfigured ? "Update workspace AI" : "Configure workspace AI"}
+                      </Button>
+                      <Button type="button" variant="outline" onClick={() => void refetch()} disabled={fetchingSetup}>
+                        Refresh
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="grid gap-6">
+                  <Card className="border-gray-200 shadow-sm">
+                    <CardHeader className="p-6 text-left">
+                      <CardTitle className="flex items-center gap-2 text-xl text-gray-900">
+                        <KeyRound className="h-5 w-5 text-blue-600" />
+                        Instruction and key layers
+                      </CardTitle>
+                      <CardDescription className="text-sm text-gray-600">
+                        The workspace AI record stores one model selection and three instruction layers.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-3 p-6 pt-0 sm:grid-cols-2">
+                      <div className="rounded-[24px] border border-gray-200 bg-gray-50 p-4">
+                        <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Special instruction</p>
+                        <p className="mt-2 text-sm text-gray-700">
+                          {configuredAgent?.special_instruction ? "Configured" : "Not configured"}
+                        </p>
+                      </div>
+                      <div className="rounded-[24px] border border-gray-200 bg-gray-50 p-4">
+                        <p className="text-xs font-medium uppercase tracking-wide text-gray-500">System instruction</p>
+                        <p className="mt-2 text-sm text-gray-700">
+                          {configuredAgent?.system_instruction ? "Configured" : "Not configured"}
+                        </p>
+                      </div>
+                      <div className="rounded-[24px] border border-gray-200 bg-gray-50 p-4 sm:col-span-2">
+                        <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Assistant instruction</p>
+                        <p className="mt-2 text-sm text-gray-700">
+                          {configuredAgent?.assistant_instruction ? "Configured" : "Not configured"}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-gray-200 shadow-sm">
+                    <CardHeader className="p-6 text-left">
+                      <CardTitle className="flex items-center gap-2 text-xl text-gray-900">
+                        <Wrench className="h-5 w-5 text-blue-600" />
+                        Agent setup stays on the next tab
+                      </CardTitle>
+                      <CardDescription className="text-sm text-gray-600">
+                        Default installs, custom agents, and tool bindings are managed separately to keep this view clean.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-wrap gap-3 p-6 pt-0">
+                      <Button type="button" onClick={() => setActiveTab("workspace-agents")}>
+                        Open agent setup
+                      </Button>
+                      <Button asChild variant="outline">
+                        <Link href="/agent">Go to runtime console</Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        ) : null}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="workspace-agents" className="mt-0 bg-transparent">
+            <AgentSettingsControlPanel />
+          </TabsContent>
+        </Tabs>
+
+        <WorkspaceAiSetupSheet
+          open={setupSheetOpen}
+          onOpenChange={setSetupSheetOpen}
+          form={form}
+          updateField={updateField}
+          setupResponse={setupResponse}
+          savingSetup={savingSetup}
+          onSave={handleSave}
+        />
       </div>
     </WorkspaceSetupShell>
   )

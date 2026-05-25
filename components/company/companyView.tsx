@@ -115,8 +115,7 @@ function CompanyView() {
         onClose={() => setIsCreateOpen(true)}
       />
 
-      {/* Always render CustomCreateCard but control visibility */}
-      <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>
+      {isCreateOpen ? (
         <CustomCreateCard
           defaultValues={defaultValues}
           onClose={() => setIsCreateOpen(false)}
@@ -128,7 +127,7 @@ function CompanyView() {
           interfaceKeys={CompanyInterfaceKeys}
           optionalFields={['is_supplier', 'is_customer','is_manufacturer']}
         />
-      </div>
+      ) : null}
     </div>
   );
 }

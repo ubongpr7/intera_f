@@ -257,7 +257,7 @@ const defaultValues: Partial<PricingRule> = {
       />
 
       {/* Create/Edit Pricing Rule Modal */}
-      <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>
+      {isCreateOpen ? (
         <CustomCreateCard
           defaultValues={editingRule|| defaultValues}
           onClose={() => {
@@ -287,10 +287,8 @@ const defaultValues: Partial<PricingRule> = {
           ]}
         readOnlyFields={[]}
           itemTitle={`${editingRule?'Update':'Create'} Pricing Rule`}
-
-            
         />
-      </div>
+      ) : null}
     </div>
   )
 }

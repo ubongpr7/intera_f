@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { toast } from "react-toastify"
+import { useOverlayDismiss } from "@/components/common/useOverlayDismiss"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -27,6 +28,27 @@ type StockLocationInspectorProps = {
   onUpdated?: () => unknown
 }
 
+const resolveSummaryValue = (summary: Record<string, unknown> | undefined, key: string, fallback = "0") => {
+  const value = summary?.[key]
+  if (typeof value === "number" || typeof value === "string") {
+    return String(value)
+  }
+  return fallback
+}
+
+const resolveTopInventoryTypes = (summary: Record<string, unknown> | undefined) => {
+  const rows = summary?.top_inventory_types
+  if (!Array.isArray(rows)) {
+    return []
+  }
+  return rows
+    .filter((row): row is Record<string, unknown> => Boolean(row && typeof row === "object"))
+    .map((row) => ({
+      inventoryType: String(row.inventory_type || "Unclassified"),
+      count: String(row.count || 0),
+    }))
+}
+
 const getErrorMessage = (error: unknown) => {
   if (error && typeof error === "object" && "data" in error) {
     const data = (error as { data?: Record<string, unknown> }).data
@@ -43,6 +65,8 @@ export default function StockLocationInspector({
   onClose,
   onUpdated,
 }: StockLocationInspectorProps) {
+  useOverlayDismiss({ onClose })
+
   const { data: location, isLoading } = useGetStockLocationQuery(locationId)
   const { data: stockItems = [], refetch } = useGetLocationInventoryItemsQuery(locationId)
   const [transferStock, { isLoading: isTransferring }] = useTransferLocationStockMutation()
@@ -55,6 +79,18 @@ export default function StockLocationInspector({
     () => allLocations.filter((entry) => String(entry.id) !== locationId && !entry.structural),
     [allLocations, locationId],
   )
+  const stockSummary = (location?.stock_summary && typeof location.stock_summary === "object"
+    ? location.stock_summary
+    : undefined) as Record<string, unknown> | undefined
+  const topInventoryTypes = resolveTopInventoryTypes(stockSummary)
+  const locationMode = location?.structural ? "Structural" : location?.external ? "External" : "Operational"
+  const officialName = [
+    location?.official_details?.first_name,
+    location?.official_details?.last_name,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .trim()
 
   const handleTransfer = async () => {
     if (!targetLocationId || !inventoryItemId || !quantity) {
@@ -87,8 +123,11 @@ export default function StockLocationInspector({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <Card className="max-h-[90vh] w-full max-w-5xl overflow-y-auto border-gray-200 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <Card
+        className="max-h-[90vh] w-full max-w-5xl overflow-y-auto border-gray-200 shadow-xl"
+        onClick={(event) => event.stopPropagation()}
+      >
         <CardHeader className="border-b border-gray-100 p-6 text-left text-inherit">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -103,14 +142,14 @@ export default function StockLocationInspector({
           </div>
         </CardHeader>
         <CardContent className="space-y-6 p-6">
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Code</div>
               <div className="mt-2 text-2xl font-semibold text-gray-900">{location?.code || "N/A"}</div>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-              <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Type</div>
-              <div className="mt-2 text-2xl font-semibold text-gray-900">{location?.location_type_name || "N/A"}</div>
+              <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Mode</div>
+              <div className="mt-2 text-2xl font-semibold text-gray-900">{locationMode}</div>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Parent</div>
@@ -119,6 +158,54 @@ export default function StockLocationInspector({
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Inventory items</div>
               <div className="mt-2 text-2xl font-semibold text-gray-900">{stockItems.length}</div>
+            </div>
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+              <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Quantity on hand</div>
+              <div className="mt-2 text-2xl font-semibold text-gray-900">{resolveSummaryValue(stockSummary, "total_quantity")}</div>
+            </div>
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+              <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Expiring soon</div>
+              <div className="mt-2 text-2xl font-semibold text-gray-900">{resolveSummaryValue(stockSummary, "expiring_soon_count")}</div>
+            </div>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+              <h3 className="text-sm font-semibold text-gray-900">Location posture</h3>
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <div className="rounded-xl border border-gray-200 bg-white px-3 py-3">
+                  <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Type</div>
+                  <div className="mt-2 text-sm font-semibold text-gray-900">{location?.location_type_name || "Unclassified"}</div>
+                </div>
+                <div className="rounded-xl border border-gray-200 bg-white px-3 py-3">
+                  <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Address</div>
+                  <div className="mt-2 text-sm font-semibold text-gray-900">{location?.physical_address || "No physical address set"}</div>
+                </div>
+                <div className="rounded-xl border border-gray-200 bg-white px-3 py-3 md:col-span-2">
+                  <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Responsible official</div>
+                  <div className="mt-2 text-sm font-semibold text-gray-900">
+                    {officialName || location?.official_details?.email || "No official assigned"}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+              <h3 className="text-sm font-semibold text-gray-900">Top inventory mix</h3>
+              <div className="mt-3 space-y-2">
+                {topInventoryTypes.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-gray-200 bg-white px-3 py-4 text-sm text-gray-600">
+                    No inventory-type distribution is available yet for this location.
+                  </div>
+                ) : (
+                  topInventoryTypes.map((row) => (
+                    <div key={`${row.inventoryType}-${row.count}`} className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-3 py-3">
+                      <span className="text-sm text-gray-700">{row.inventoryType}</span>
+                      <span className="text-sm font-semibold text-gray-900">{row.count}</span>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
 

@@ -174,7 +174,7 @@ export function CustomDatePicker({
           variant="outline"
           className={cn(
             "w-full justify-start text-left font-normal",
-            !value && "text-muted-foreground",
+            !value && "text-gray-500",
             error && "border-red-500",
             className,
           )}

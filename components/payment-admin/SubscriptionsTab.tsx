@@ -90,7 +90,7 @@ export function SubscriptionsTab() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Subscriptions</h2>
-          <p className="text-muted-foreground">Manage customer subscriptions and billing cycles.</p>
+          <p className="text-gray-500">Manage customer subscriptions and billing cycles.</p>
         </div>
         <Button onClick={() => refetch()}>
           <RefreshCw className="h-4 w-4 mr-2" />

@@ -15,12 +15,12 @@ export default function PaymentAdminPage() {
   const [activeTab, setActiveTab] = useState("analytics")
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">Payment System Administration</h1>
-          <p className="text-muted-foreground">
+          <p className="text-gray-500">
             Manage payment providers, subscription plans, and monitor payment activities across all your applications.
           </p>
         </div>

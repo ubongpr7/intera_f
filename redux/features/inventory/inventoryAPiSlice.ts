@@ -159,7 +159,7 @@ export const inventoryApiSlice = apiSlice.injectEndpoints({
 
     getInventoryAnalytics: builder.query<InventoryAnalytics, void>({
       query: () => ({
-        url: `/${inventoryApi}/items/analytics/`,
+        url: `/stock_api/inventory-items/analytics/`,
         service,
       }),
     }),

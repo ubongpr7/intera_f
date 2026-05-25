@@ -328,7 +328,7 @@ export function InventoryPolicyManagement({profileId}:InventoryPolicyManagementP
       <div className="grid gap-4">
         {policies.length === 0 ? (
           <Card>
-            <CardContent className="p-6 text-center text-muted-foreground">
+            <CardContent className="p-6 text-center text-gray-500">
               No inventory policies found. Create your first policy to get started.
             </CardContent>
           </Card>
@@ -339,7 +339,7 @@ export function InventoryPolicyManagement({profileId}:InventoryPolicyManagementP
                 <div className="flex justify-between items-start">
                   <div className="space-y-2">
                     <h4 className="font-medium">{policy.name}</h4>
-                    <p className="text-sm text-muted-foreground">{policy.description}</p>
+                    <p className="text-sm text-gray-500">{policy.description}</p>
                     <div className="flex gap-2">
                       <Badge variant={policy.is_active ? "default" : "secondary"}>
                         {policy.is_active ? "Active" : "Inactive"}
@@ -353,7 +353,7 @@ export function InventoryPolicyManagement({profileId}:InventoryPolicyManagementP
                         <Badge variant="outline">Specific Categories</Badge>
                       )}
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-gray-500">
                       Effective: {new Date(policy.effective_date).toLocaleDateString()}
                       {policy.expiry_date && ` - ${new Date(policy.expiry_date).toLocaleDateString()}`}
                     </div>

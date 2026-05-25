@@ -34,7 +34,10 @@ type ContinueTaskStreamArgs = {
 const stripTrailingSlash = (value: string) => value.replace(/\/+$/, "");
 
 const getGatewayBaseUrl = () => {
-  const base = (process.env.NEXT_PUBLIC_KA2A_GATEWAY_URL || "http://localhost:8000").trim();
+  const base =
+    typeof window === "undefined"
+      ? (process.env.KA2A_GATEWAY_INTERNAL_URL || process.env.NEXT_PUBLIC_KA2A_GATEWAY_URL || "http://localhost:7006").trim()
+      : (process.env.NEXT_PUBLIC_KA2A_GATEWAY_URL || "http://localhost:7006").trim();
   return stripTrailingSlash(base);
 };
 

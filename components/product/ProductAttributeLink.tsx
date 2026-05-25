@@ -170,31 +170,29 @@ const interfaceKeys: (keyof ProductAttributeLink)[] = [
       />
 
 
-      {isCreateOpen && (
-        <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>
-          <CustomCreateCard
-            defaultValues={editingAttributeLink || defaultValues}
-            onClose={() => {
-              setIsCreateOpen(false)
-              setEditingAttributeLink(null)
-            }}
-            onSubmit={editingAttributeLink ? handleUpdate : handleCreate}
-            isLoading={editingAttributeLink ? updateLoading : createLoading}
-            selectOptions={selectOptions}
-            keyInfo={{
-              attribute: 'The attribute to link to this product',
-              required: 'Is this attribute required for variants?',
-              order: 'Priority order for display',
-              default_modifier: 'Default price adjustment for this attribute',
-              is_visible_in_pos: 'Show this attribute in POS interface',
-            }}
-            notEditableFields={['id', 'product','attribute_type']}
-            interfaceKeys={interfaceKeys}
-            optionalFields={['order', 'default_modifier','required','is_visible_in_pos']}
-            itemTitle={`${editingAttributeLink ? 'Update' : 'Create'}  Attribute Link`}
-          />
-        </div>
-      )}
+      {isCreateOpen ? (
+        <CustomCreateCard
+          defaultValues={editingAttributeLink || defaultValues}
+          onClose={() => {
+            setIsCreateOpen(false)
+            setEditingAttributeLink(null)
+          }}
+          onSubmit={editingAttributeLink ? handleUpdate : handleCreate}
+          isLoading={editingAttributeLink ? updateLoading : createLoading}
+          selectOptions={selectOptions}
+          keyInfo={{
+            attribute: 'The attribute to link to this product',
+            required: 'Is this attribute required for variants?',
+            order: 'Priority order for display',
+            default_modifier: 'Default price adjustment for this attribute',
+            is_visible_in_pos: 'Show this attribute in POS interface',
+          }}
+          notEditableFields={['id', 'product','attribute_type']}
+          interfaceKeys={interfaceKeys}
+          optionalFields={['order', 'default_modifier','required','is_visible_in_pos']}
+          itemTitle={`${editingAttributeLink ? 'Update' : 'Create'}  Attribute Link`}
+        />
+      ) : null}
     </div>
   )
 }

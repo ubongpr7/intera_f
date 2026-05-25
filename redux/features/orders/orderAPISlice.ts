@@ -1,6 +1,8 @@
 import { apiSlice } from "../../services/apiSlice";
 import { buildQuery } from "../common/queryParams";
 import type {
+  GoodsReceiptInterface,
+  GoodsReceiptListParams,
   OrderListParams,
   PurchaseOrderAnalyticsResponse,
   PurchaseOrderDashboardSummary,
@@ -17,6 +19,7 @@ import type {
   SalesOrderReservePayload,
   SalesOrderShipPayload,
   SalesOrderShipmentInterface,
+  SalesOrderShipmentListParams,
 } from "./orderTypes";
 
 const orderApi = "order_api";
@@ -26,6 +29,27 @@ type EntityId = string | number;
 
 export const orderApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
+    listGoodsReceipts: builder.query<GoodsReceiptInterface[], GoodsReceiptListParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${orderApi}/goods-receipts/`, params),
+        service,
+      }),
+    }),
+
+    getGoodsReceipt: builder.query<GoodsReceiptInterface, EntityId>({
+      query: (id) => ({
+        url: `/${orderApi}/goods-receipts/${id}/`,
+        service,
+      }),
+    }),
+
+    listSalesOrderShipments: builder.query<SalesOrderShipmentInterface[], SalesOrderShipmentListParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${orderApi}/sales-order-shipments/`, params),
+        service,
+      }),
+    }),
+
     listPurchaseOrders: builder.query<PurchaseOrderInterface[], OrderListParams | string | void>({
       query: (params) => ({
         url:
@@ -381,6 +405,9 @@ export const purchaseOderApiSlice = orderApiSlice;
 export const purchaseOderManagementApiSlice = orderApiSlice;
 
 export const {
+  useListGoodsReceiptsQuery,
+  useGetGoodsReceiptQuery,
+  useListSalesOrderShipmentsQuery,
   useListPurchaseOrdersQuery,
   useCreatePurchaseOrderMutation,
   useGetPurchaseOrderQuery,

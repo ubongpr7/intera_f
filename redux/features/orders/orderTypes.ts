@@ -114,6 +114,7 @@ export interface PurchaseOrderInterface extends BaseOrder, TotalPriceMixin {
   status: string;
   issue_date?: string | null;
   complete_date?: string | null;
+  line_items_count?: number;
   attachments?: Attachment[];
   line_items?: PurchaseOrderLineItem[];
   order_analytics?: {
@@ -123,6 +124,44 @@ export interface PurchaseOrderInterface extends BaseOrder, TotalPriceMixin {
     total_discount: string | number;
     total_tax: string | number;
   };
+}
+
+export interface GoodsReceiptLineInterface {
+  id: EntityId;
+  goods_receipt?: EntityId;
+  purchase_order_line?: EntityId | null;
+  purchase_order_line_id?: EntityId | null;
+  inventory_item?: EntityId | null;
+  inventory_item_name?: string;
+  stock_location?: EntityId | null;
+  location_name?: string | null;
+  received_quantity: string | number;
+  unit_cost: string | number;
+  lot_number?: string | null;
+  manufactured_date?: string | null;
+  expiry_date?: string | null;
+  created_at?: string;
+}
+
+export interface GoodsReceiptInterface {
+  id: EntityId;
+  reference: string;
+  purchase_order?: EntityId | null;
+  purchase_order_reference?: string | null;
+  supplier?: EntityId | null;
+  supplier_name?: string | null;
+  received_at?: string | null;
+  received_by_user_id?: EntityId | null;
+  received_by_details?: Partial<UserData> | null;
+  line_count?: number;
+  total_quantity?: string | number;
+  location_count?: number;
+  inventory_preview?: string[];
+  location_preview?: string[];
+  notes?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  lines?: GoodsReceiptLineInterface[];
 }
 
 export const notEditableFields: (keyof PurchaseOrderInterface)[] = [
@@ -180,6 +219,9 @@ export interface SalesOrderShipmentLineInterface {
 export interface SalesOrderShipmentInterface {
   id: EntityId;
   order: EntityId;
+  order_reference?: string | null;
+  customer_name?: string | null;
+  order_status?: string | null;
   reference: string;
   shipment_date?: string | null;
   delivery_date?: string | null;
@@ -190,6 +232,11 @@ export interface SalesOrderShipmentInterface {
   invoice_number?: string | null;
   link?: string | null;
   notes?: string | null;
+  line_count?: number;
+  total_quantity?: string | number;
+  location_count?: number;
+  inventory_preview?: string[];
+  location_preview?: string[];
   lines?: SalesOrderShipmentLineInterface[];
   created_at?: string;
   updated_at?: string;
@@ -205,6 +252,7 @@ export interface SalesOrderInterface extends BaseOrder, TotalPriceMixin {
   issue_date?: string | null;
   shipment_date?: string | null;
   complete_date?: string | null;
+  line_items_count?: number;
   attachments?: Attachment[];
   line_items?: SalesOrderLineItem[];
   shipments?: SalesOrderShipmentInterface[];
@@ -342,6 +390,28 @@ export interface PurchaseOrderAnalyticsResponse {
 
 export interface PurchaseOrderDashboardSummary {
   [key: string]: unknown;
+}
+
+export interface GoodsReceiptListParams {
+  purchase_order?: string;
+  supplier?: string;
+  stock_location?: string;
+  inventory_item?: string;
+  date_from?: string;
+  date_to?: string;
+  search?: string;
+  ordering?: string;
+}
+
+export interface SalesOrderShipmentListParams {
+  order?: string;
+  customer?: string;
+  stock_location?: string;
+  inventory_item?: string;
+  date_from?: string;
+  date_to?: string;
+  search?: string;
+  ordering?: string;
 }
 
 export interface OrderListParams {

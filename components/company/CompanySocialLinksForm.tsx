@@ -154,7 +154,7 @@ export function CompanySocialLinksForm({ profile, onUpdate, submitLabel = "Save 
         <div className="flex items-center gap-2 mb-4">
           <Link2 className="h-5 w-5 text-blue-600" />
           <h3 className="text-lg font-medium">Social Media & Links</h3>
-          <span className="text-sm text-muted-foreground">(All optional)</span>
+          <span className="text-sm text-gray-500">(All optional)</span>
         </div>
 
         <div className="space-y-2">

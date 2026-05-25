@@ -1,7 +1,7 @@
 'use client'
 import { StockLocation } from "@/redux/features/stock/stockTypes";
 import { Column, DataTable, ActionButton } from "../common/DataTable/DataTable";
-import { useGetStockItemDataLocationQuery, useCreateStockItemLocationMutation, useGetStockLocationTypesQuery, useDeleteStockItemLocationMutation, useUpdateStockItemLocationMutation } from "../../redux/features/stock/stockAPISlice";
+import { useListStockLocationsQuery, useCreateStockLocationMutation, useGetStockLocationTypesQuery, useDeleteStockLocationMutation, useUpdateStockLocationMutation } from "../../redux/features/stock/stockAPISlice";
 import { useState } from "react";
 import CustomCreateCard from '../common/createCard';
 import { useGetCompanyUsersQuery } from "../../redux/features/users/userApiSlice";
@@ -32,6 +32,33 @@ const inventoryColumns: Column<StockLocation>[] = [
     className: 'font-medium',
   },
   {
+    header: 'Mode',
+    accessor: (row) => {
+      if (row.structural) {
+        return 'Structural';
+      }
+      if (row.external) {
+        return 'External';
+      }
+      return 'Operational';
+    },
+    render: (value) => {
+      const label = String(value);
+      const tone =
+        label === 'Structural'
+          ? 'border-indigo-200 bg-indigo-50 text-indigo-800'
+          : label === 'External'
+            ? 'border-amber-200 bg-amber-50 text-amber-900'
+            : 'border-green-200 bg-green-50 text-green-800';
+      return <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${tone}`}>{label}</span>;
+    },
+  },
+  {
+    header: 'Stocked Items',
+    accessor: 'stock_count',
+    className: 'font-medium text-right',
+  },
+  {
     header: 'Physical Location',
     accessor: 'physical_address',
     className: 'font-medium',
@@ -39,10 +66,10 @@ const inventoryColumns: Column<StockLocation>[] = [
 ];
 
 function StockLocations({refetchData, setRefetchData}:RefetchDataProp) {
-    const {data:StockLocationData,isLoading:stockItemsLoading,refetch,error}=useGetStockItemDataLocationQuery()
-    const [createStockLocation, { isLoading: stockItemCreateLoading }] = useCreateStockItemLocationMutation();
-    const [updateStockLocation, { isLoading: stockItemUpdateLoading }] = useUpdateStockItemLocationMutation();
-    const [deleteStockLocation, { isLoading: stockItemDeleteLoading }] = useDeleteStockItemLocationMutation();
+    const {data:locations,isLoading:loadingLocations,refetch}=useListStockLocationsQuery()
+    const [createStockLocation, { isLoading: creatingLocation }] = useCreateStockLocationMutation();
+    const [updateStockLocation, { isLoading: updatingLocation }] = useUpdateStockLocationMutation();
+    const [deleteStockLocation, { isLoading: deletingLocation }] = useDeleteStockLocationMutation();
     const [isCreateOpen, setIsCreateOpen] = useState(false); 
     const [editingStockLocation, setEditingStockLocation] = useState<StockLocation | null>(null);
     const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
@@ -53,9 +80,9 @@ function StockLocations({refetchData, setRefetchData}:RefetchDataProp) {
         text: `${locationType.name } (${locationType.description})`,
         value: locationType.id.toString(),
       })) || [];
-    const locationOptions = StockLocationData?.map((StockLocationItem) => ({
-        text: `${StockLocationItem.name } (${StockLocationItem.code})`,
-        value: StockLocationItem.id.toString(),
+    const locationOptions = locations?.map((location) => ({
+        text: `${location.name } (${location.code})`,
+        value: location.id.toString(),
       })) || [];
       
     const userOptions = userData?.map((assignment) => ({
@@ -136,43 +163,41 @@ function StockLocations({refetchData, setRefetchData}:RefetchDataProp) {
     <div>
       <DataTable<StockLocation>
               columns={inventoryColumns}
-              data={StockLocationData || []}
-              isLoading={stockItemsLoading}
+              data={locations || []}
+              isLoading={loadingLocations}
               onRowClick={handleRowClick}
               actionButtons={actionButtons}
               searchableFields={['name', 'code', 'physical_address']}
               filterableFields={['location_type_name', 'parent_name']}
-              sortableFields={['name', 'code', 'physical_address']}
+              sortableFields={['name', 'code', 'stock_count', 'physical_address']}
               title="Stock Locations"
             onClose={() => setIsCreateOpen(true)} 
             />
 
-        {(isCreateOpen || editingStockLocation) && (
-          <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50`}>
-            <CustomCreateCard
-              defaultValues={editingStockLocation || {external:false,structural:true}}
-              onClose={() => {
-                setIsCreateOpen(false);
-                setEditingStockLocation(null);
-              }}
-              onSubmit={editingStockLocation ? handleUpdate : handleCreate}
-              isLoading={stockItemCreateLoading || stockItemUpdateLoading}
-              selectOptions={selectionOpions}
-              keyInfo={{'physical_address':`Optional, takes parent's address by default`}}
-              notEditableFields={[]}
-              interfaceKeys={interfaceKeys}
-              dateFields={[]}
-              optionalFields={['parent','external','structural','physical_address']}
-              readOnlyFields={[]}
-              itemTitle={editingStockLocation ? 'Update Location' : 'Create Location'}
-            />
-          </div>
-        )}
+        {(isCreateOpen || editingStockLocation) ? (
+          <CustomCreateCard
+            defaultValues={editingStockLocation || {external:false,structural:true}}
+            onClose={() => {
+              setIsCreateOpen(false);
+              setEditingStockLocation(null);
+            }}
+            onSubmit={editingStockLocation ? handleUpdate : handleCreate}
+            isLoading={creatingLocation || updatingLocation}
+            selectOptions={selectionOpions}
+            keyInfo={{'physical_address':`Optional, takes parent's address by default`}}
+            notEditableFields={[]}
+            interfaceKeys={interfaceKeys}
+            dateFields={[]}
+            optionalFields={['parent','external','structural','physical_address']}
+            readOnlyFields={[]}
+            itemTitle={editingStockLocation ? 'Update Location' : 'Create Location'}
+          />
+        ) : null}
 
         {selectedLocationId ? (
-          <StockLocationInspector
+            <StockLocationInspector
             locationId={selectedLocationId}
-            allLocations={StockLocationData || []}
+            allLocations={locations || []}
             onClose={() => setSelectedLocationId(null)}
             onUpdated={refetch}
           />

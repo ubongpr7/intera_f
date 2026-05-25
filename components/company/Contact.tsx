@@ -115,28 +115,26 @@ function ContactPersonView({company_id}:CompanyProps) {
         onClose={() => setIsCreateOpen(true)}
       />
 
-      {(isCreateOpen || editingContact) && (
-        <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50`}>
-          <CustomCreateCard
-            defaultValues={editingContact || {}}
-            onClose={() => {
-              setIsCreateOpen(false);
-              setEditingContact(null);
-            }}
-            onSubmit={editingContact ? handleUpdate : handleCreate}
-            isLoading={createLoading || updateLoading}
-            selectOptions={{}}
-            keyInfo={{}}
-            notEditableFields={notEditableCompanyFields}
-            interfaceKeys={contactPersonInterfaceKeys}
-            optionalFields={[]}
-            hiddenFields={{
-            company:company_id
-            }}
-            itemTitle={editingContact ? 'Update Contact' : 'Create Contact'}
-          />
-        </div>
-      )}
+      {(isCreateOpen || editingContact) ? (
+        <CustomCreateCard
+          defaultValues={editingContact || {}}
+          onClose={() => {
+            setIsCreateOpen(false);
+            setEditingContact(null);
+          }}
+          onSubmit={editingContact ? handleUpdate : handleCreate}
+          isLoading={createLoading || updateLoading}
+          selectOptions={{}}
+          keyInfo={{}}
+          notEditableFields={notEditableCompanyFields}
+          interfaceKeys={contactPersonInterfaceKeys}
+          optionalFields={[]}
+          hiddenFields={{
+          company:company_id
+          }}
+          itemTitle={editingContact ? 'Update Contact' : 'Create Contact'}
+        />
+      ) : null}
     </div>
   );
 }

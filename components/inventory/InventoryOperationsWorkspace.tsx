@@ -15,7 +15,7 @@ import {
   useGetInventoryQuery,
   useGetInventoryStockSummaryQuery,
 } from "@/redux/features/inventory/inventoryAPiSlice"
-import { useGetStockItemDataLocationQuery } from "@/redux/features/stock/stockAPISlice"
+import { useListStockLocationsQuery } from "@/redux/features/stock/stockAPISlice"
 
 type InventoryOperationsWorkspaceProps = {
   inventoryId: string
@@ -26,7 +26,7 @@ const toNumber = (value: string | number | undefined) => Number(value ?? 0)
 export default function InventoryOperationsWorkspace({ inventoryId }: InventoryOperationsWorkspaceProps) {
   const { data: inventory, isLoading: loadingInventory, refetch: refetchInventory } = useGetInventoryQuery(inventoryId)
   const { data: summary, isLoading: loadingSummary, refetch: refetchSummary } = useGetInventoryStockSummaryQuery(inventoryId)
-  const { data: locations = [], refetch: refetchLocations } = useGetStockItemDataLocationQuery()
+  const { data: locations = [], refetch: refetchLocations } = useListStockLocationsQuery()
 
   const refreshOperationalData = async () => {
     await Promise.all([refetchInventory(), refetchSummary(), refetchLocations()])

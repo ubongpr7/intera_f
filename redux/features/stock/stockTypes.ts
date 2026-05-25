@@ -44,7 +44,9 @@ export interface StockMovement {
   reference_type?: string | null;
   reference_id?: string | null;
   occurred_at?: string;
+  from_location_id?: string | null;
   from_location_name?: string | null;
+  to_location_id?: string | null;
   to_location_name?: string | null;
   lot_number?: string | null;
   serial_number?: string | null;
@@ -201,6 +203,16 @@ export interface StockReservation {
   updated_at?: string;
 }
 
+export interface StockReservationListParams {
+  inventory?: string;
+  inventory_item?: string;
+  stock_location?: string;
+  status?: string;
+  external_order_type?: string;
+  external_order_id?: string;
+  external_order_line_id?: string;
+}
+
 export interface StockReservationPayload {
   inventory_item_id: string;
   location_id: string;
@@ -327,6 +339,7 @@ export interface StockMovementListParams {
   movement_type?: string;
   reference_type?: string;
   reference_id?: string;
+  stock_location?: string;
   from_location?: string;
   to_location?: string;
   stock_lot?: string;

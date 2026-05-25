@@ -4,13 +4,38 @@ import { setAuth, logout } from "../features/authSlice"
 import { Mutex } from "async-mutex"
 import { setCookie, getCookie, deleteCookie } from "cookies-next"
 import { AUTH_COOKIE_NAMES, AUTH_COOKIE_KEYS, readCookieValue } from "@/lib/authCookies"
-const BACKEND_HOST_URL = process.env.NEXT_PUBLIC_BACKEND_HOST_URL ?? ''
-const COMMON_BACKEND_URL = process.env.NEXT_PUBLIC_COMMON_BACKEND_URL ?? ''
-const INVENNTORY_BACKEND_URL = process.env.NEXT_PUBLIC_INVENNTORY_BACKEND_URL ?? ''
-const PRODUCT_BACKEND_URL = process.env.NEXT_PUBLIC_PRODUCT_BACKEND_URL ?? ''
-const POS_BACKEND_URL = process.env.NEXT_PUBLIC_POS_BACKEND_URL ?? ''
-const AGENT_BACKEND_URL = process.env.NEXT_PUBLIC_AGENT_BACKEND_URL ?? ''
-const PAYMENT_BACKEND_URL = process.env.NEXT_PUBLIC_PAYMENT_BACKEND_URL ?? ''
+
+const resolveBaseUrl = (publicUrl: string, internalUrl?: string) =>
+  typeof window === "undefined" ? (internalUrl ?? publicUrl) : publicUrl
+
+const BACKEND_HOST_URL = resolveBaseUrl(
+  process.env.NEXT_PUBLIC_BACKEND_HOST_URL ?? "",
+  process.env.USERS_INTERNAL_URL,
+)
+const COMMON_BACKEND_URL = resolveBaseUrl(
+  process.env.NEXT_PUBLIC_COMMON_BACKEND_URL ?? "",
+  process.env.COMMON_INTERNAL_URL,
+)
+const INVENNTORY_BACKEND_URL = resolveBaseUrl(
+  process.env.NEXT_PUBLIC_INVENNTORY_BACKEND_URL ?? "",
+  process.env.INVENTORY_INTERNAL_URL,
+)
+const PRODUCT_BACKEND_URL = resolveBaseUrl(
+  process.env.NEXT_PUBLIC_PRODUCT_BACKEND_URL ?? "",
+  process.env.PRODUCT_INTERNAL_URL,
+)
+const POS_BACKEND_URL = resolveBaseUrl(
+  process.env.NEXT_PUBLIC_POS_BACKEND_URL ?? "",
+  process.env.POS_INTERNAL_URL,
+)
+const AGENT_BACKEND_URL = resolveBaseUrl(
+  process.env.NEXT_PUBLIC_AGENT_BACKEND_URL ?? "",
+  process.env.AGENT_INTERNAL_URL,
+)
+const PAYMENT_BACKEND_URL = resolveBaseUrl(
+  process.env.NEXT_PUBLIC_PAYMENT_BACKEND_URL ?? "",
+  process.env.PAYMENT_INTERNAL_URL,
+)
 
 export type serviceType = "users" | "inventory"| "common"|"product"|'pos'| "agent"|'payment'
 const accessAge = 60*60*24
@@ -318,7 +343,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
 export const apiSlice = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["User", "Inventory", "Category"], // Add tag types for caching
+  tagTypes: ["User", "Inventory", "Category", "Agent", "AgentConversation"], // Add tag types for caching
   endpoints: (builder) => ({}),
 })
 

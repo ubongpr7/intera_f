@@ -70,7 +70,7 @@ export function SubscriptionPlansTab() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Subscription Plans</h2>
-            <p className="text-muted-foreground">
+            <p className="text-gray-500">
               Create and manage subscription plans with different features and pricing.
             </p>
           </div>
@@ -119,7 +119,7 @@ export function SubscriptionPlansTab() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Subscription Plans</h2>
-          <p className="text-muted-foreground">
+          <p className="text-gray-500">
             Create and manage subscription plans with different features and pricing.
           </p>
         </div>
@@ -137,12 +137,12 @@ export function SubscriptionPlansTab() {
         <CardContent>
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="text-muted-foreground">Loading subscription plans...</div>
+              <div className="text-gray-500">Loading subscription plans...</div>
             </div>
           ) : plans.length === 0 ? (
             <div className="flex items-center justify-center py-8">
               <div className="text-center">
-                <p className="text-muted-foreground mb-2">No subscription plans found</p>
+                <p className="mb-2 text-gray-500">No subscription plans found</p>
                 <Button onClick={() => setIsDialogOpen(true)} variant="outline">
                   <Plus className="h-4 w-4 mr-2" />
                   Create Your First Plan
@@ -166,13 +166,13 @@ export function SubscriptionPlansTab() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <p className="text-sm text-muted-foreground mb-2">{plan.description}</p>
+                      <p className="mb-2 text-sm text-gray-500">{plan.description}</p>
                       <div className="flex items-baseline gap-1">
                         <span className="text-2xl font-bold">${plan.price}</span>
-                        <span className="text-sm text-muted-foreground">/{plan.billing_cycle}</span>
+                        <span className="text-sm text-gray-500">/{plan.billing_cycle}</span>
                       </div>
                       {plan.intera_coins_reward && (
-                        <p className="text-sm text-muted-foreground mt-1">{plan.intera_coins_reward} Intera Coins</p>
+                        <p className="mt-1 text-sm text-gray-500">{plan.intera_coins_reward} Intera Coins</p>
                       )}
                     </div>
 
@@ -196,7 +196,7 @@ export function SubscriptionPlansTab() {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDelete(plan.id)}
-                        className="text-destructive hover:text-destructive"
+                        className="text-red-600 hover:text-red-600"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

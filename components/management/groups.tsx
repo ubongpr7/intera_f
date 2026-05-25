@@ -114,7 +114,7 @@ const StaffGroup =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
             
             />
 
-            <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>
+            {isCreateOpen ? (
                 <CustomCreateCard
                     defaultValues={{}}
                     onClose={() => setIsCreateOpen(false)}
@@ -126,7 +126,7 @@ const StaffGroup =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
                     interfaceKeys={['name', 'description' ]}
                     optionalFields={[]}
                 />
-                </div>
+            ) : null}
 
                 
             <div className={`fixed  inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${openTabs ? 'block' : 'hidden'}`}>

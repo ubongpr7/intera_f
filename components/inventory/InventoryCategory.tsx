@@ -5,7 +5,7 @@ import { useCreateCategoryMutation, useGetInventoryCategoriesQuery, useUpdateCat
 import { CategoryData } from "@/redux/features/inventory/inventoryTypes";
 import CustomCreateCard from '../common/createCard';
 import { toast } from 'react-toastify';
-import { useGetStockItemDataLocationQuery } from '@/redux/features/stock/stockAPISlice';
+import { useListStockLocationsQuery } from '@/redux/features/stock/stockAPISlice';
 import { RefetchDataProp } from "@/redux/features/common/commonTypes";
 import { Edit, Trash2 } from 'lucide-react';
 
@@ -32,7 +32,7 @@ const inventoryColumns: Column<CategoryData>[] = [
 function InventoryCategoryView({ refetchData, setRefetchData }: RefetchDataProp) {
   const { data, isLoading, error, refetch } = useGetInventoryCategoriesQuery();
   const [createCategory, { isLoading: creatingCategory }] = useCreateCategoryMutation();
-  const { data: stockLocationData, refetch: refetchLocation } = useGetStockItemDataLocationQuery();
+  const { data: stockLocationData, refetch: refetchLocation } = useListStockLocationsQuery();
   const [categoryDetail, setCategoryDetail] = useState<CategoryData | null>(null);
   const [updateCategory, { isLoading: isUpdatingCategory }] = useUpdateCategoryMutation();
   const [deleteCategory] = useDeleteCategoryMutation();
@@ -135,25 +135,23 @@ function InventoryCategoryView({ refetchData, setRefetchData }: RefetchDataProp)
         sortableFields={['name', 'parent_name']}
         title="Inventory Categories" onClose={() => setIsCreateOpen(true)} 
       />
-      {isCreateOpen && (
-        <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>
-          <CustomCreateCard
-            defaultValues={categoryDetail || { structural: false }}
-            onClose={() => {
-              setIsCreateOpen(false);
-              setCategoryDetail(null); // Clear editing state on close
-            }}
-            onSubmit={categoryDetail ? handleUpdate : handleCreate}
-            isLoading={categoryDetail ? isUpdatingCategory : creatingCategory}
-            selectOptions={selectOptions}
-            keyInfo={{ default_location: 'Optional, defaults to parent\'s location' }}
-            notEditableFields={notEditableFields}
-            interfaceKeys={CategoryInterfaceKeys}
-            optionalFields={['description', 'parent', 'structural', 'default_location']}
-            itemTitle={`${categoryDetail ? 'Update' : 'Create'} Inventory Category`}
-          />
-        </div>
-      )}
+      {isCreateOpen ? (
+        <CustomCreateCard
+          defaultValues={categoryDetail || { structural: false }}
+          onClose={() => {
+            setIsCreateOpen(false);
+            setCategoryDetail(null); // Clear editing state on close
+          }}
+          onSubmit={categoryDetail ? handleUpdate : handleCreate}
+          isLoading={categoryDetail ? isUpdatingCategory : creatingCategory}
+          selectOptions={selectOptions}
+          keyInfo={{ default_location: 'Optional, defaults to parent\'s location' }}
+          notEditableFields={notEditableFields}
+          interfaceKeys={CategoryInterfaceKeys}
+          optionalFields={['description', 'parent', 'structural', 'default_location']}
+          itemTitle={`${categoryDetail ? 'Update' : 'Create'} Inventory Category`}
+        />
+      ) : null}
     </div>
   );
 }
