@@ -8,8 +8,6 @@ export const ProductFormKeys: (keyof Product)[] = [
   "pos_category",
   "base_price",
   "cost_price",
-  "barcode",
-  "sku",
   "unit",
   "weight",
   "dimensions",

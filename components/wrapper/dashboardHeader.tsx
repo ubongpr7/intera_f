@@ -36,7 +36,15 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
     <ToastContainer position="top-right" autoClose={3000} />
     
     {!shouldHideDashboardUI(pathname) && <SideBar user={user} />}
-    <main className={`flex flex-col w-full h-full py-7 px-2 bg-gray-50 ${((SidebarCollapsed) ? "md:pl-24": "md:pl-4")}`}>
+    <main
+      className={`flex min-h-screen flex-1 flex-col bg-gray-50 px-3 py-4 transition-[margin] duration-300 ${
+        shouldHideDashboardUI(pathname)
+          ? ""
+          : SidebarCollapsed
+            ? "md:ml-16 md:px-4"
+            : "md:ml-64 md:px-5"
+      }`}
+    >
     
     {!shouldHideDashboardUI(pathname) &&  <Navbar user={user} />}
     

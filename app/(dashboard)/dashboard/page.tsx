@@ -35,13 +35,11 @@ import {
   useListReturnOrdersQuery,
   useListSalesOrdersQuery,
 } from "@/redux/features/orders/orderAPISlice"
-import { useGetCurrentSessionQuery, useGetDailySalesQuery, useGetHeldOrdersQuery } from "@/redux/features/pos/posAPISlice"
+import { useGetCurrentSessionQuery, useGetHeldOrdersQuery, useGetSessionCloseoutSummaryQuery } from "@/redux/features/pos/posAPISlice"
 import { useGetDashboardStatsQuery } from "@/redux/features/product/productAPISlice"
 import { useGetLowStockItemsQuery } from "@/redux/features/stock/stockAPISlice"
 import { readCookieValue } from "@/lib/authCookies"
 import { formatCurrencyCompact } from "@/lib/currency-utils"
-
-const today = new Date().toISOString().slice(0, 10)
 
 const formatDateTime = (value?: string | null) => {
   if (!value) {
@@ -161,7 +159,10 @@ export default function DashboardPage() {
   const { data: lowStockItems = [] } = useGetLowStockItemsQuery()
   const { data: currentSession } = useGetCurrentSessionQuery()
   const { data: heldOrders = [] } = useGetHeldOrdersQuery()
-  const { data: dailySales } = useGetDailySalesQuery(today)
+  const { data: sessionCloseout } = useGetSessionCloseoutSummaryQuery(
+    { sessionId: currentSession?.id || "" },
+    { skip: !currentSession?.id },
+  )
   const { data: purchaseAnalytics } = useGetPurchaseOrderAnalyticsQuery()
   const { data: openSalesOrders = [] } = useListSalesOrdersQuery({ status: "pending" })
   const { data: openReturnOrders = [] } = useListReturnOrdersQuery({ status: "pending" })
@@ -172,6 +173,8 @@ export default function DashboardPage() {
   const currencyCode = activeMembership?.currency || "NGN"
   const inventoryItemCount = inventoryAnalytics?.total_inventory_items ?? inventoryAnalytics?.total_inventories ?? 0
   const activeInventoryItemCount = inventoryAnalytics?.active_inventories ?? inventoryItemCount
+  const posSalesCount = sessionCloseout?.paid_orders_count ?? 0
+  const posSalesTotal = Number(sessionCloseout?.total_sales ?? currentSession?.total_sales ?? 0)
 
   const handleSwitchCompany = async (profile: CompanyProfileContext) => {
     try {
@@ -275,8 +278,8 @@ export default function DashboardPage() {
             />
             <StatTile
               label="Today sales"
-              value={formatCurrencyCompact(currencyCode, Number(dailySales?.total_sales ?? 0))}
-              description={`${dailySales?.total_orders ?? 0} POS orders today`}
+              value={formatCurrencyCompact(currencyCode, posSalesTotal)}
+              description={`${posSalesCount} paid POS orders in the live session`}
               icon={CreditCard}
               tone="green"
             />
@@ -331,7 +334,7 @@ export default function DashboardPage() {
           facts={[
             { label: "Session", value: currentSession ? "Live" : "Closed" },
             { label: "Held carts", value: heldOrders.length },
-            { label: "Today orders", value: dailySales?.total_orders ?? 0 },
+            { label: "Paid orders", value: posSalesCount },
           ]}
         />
 
@@ -354,7 +357,7 @@ export default function DashboardPage() {
           icon={ShoppingCart}
           facts={[
             { label: "Open", value: openSalesOrders.length },
-            { label: "Today POS sales", value: dailySales?.total_orders ?? 0 },
+            { label: "POS paid sales", value: posSalesCount },
             { label: "Held carts", value: heldOrders.length },
           ]}
           ctaLabel="Open sales orders"
@@ -488,7 +491,7 @@ export default function DashboardPage() {
                   <Link href="/profile/staff">Manage staff and roles</Link>
                 </Button>
                 <Button asChild variant="outline" className="justify-between bg-white">
-                  <Link href="/settings">Open AI workspace settings</Link>
+                  <Link href="/agent/settings">Open AI workspace settings</Link>
                 </Button>
                 <Button asChild variant="outline" className="justify-between bg-white">
                   <Link href="/realtime-dashboard">Open realtime monitor</Link>

@@ -23,6 +23,7 @@ interface POSCustomerDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   customers: POSCustomer[]
+  isLoading?: boolean
   onAssignCustomer: (customerId: string | null) => Promise<void>
 }
 
@@ -37,6 +38,7 @@ export default function POSCustomerDialog({
   open,
   onOpenChange,
   customers,
+  isLoading = false,
   onAssignCustomer,
 }: POSCustomerDialogProps) {
   const [searchTerm, setSearchTerm] = useState("")
@@ -154,7 +156,19 @@ export default function POSCustomerDialog({
                     </button>
                   ))}
 
-                  {filteredCustomers.length === 0 ? (
+                  {isLoading ? (
+                    <div className="space-y-2">
+                      {Array.from({ length: 5 }).map((_, index) => (
+                        <div
+                          key={`customer-skeleton-${index}`}
+                          className="rounded-xl border border-gray-200 bg-white px-4 py-4 animate-pulse"
+                        >
+                          <div className="h-4 w-32 rounded bg-gray-200" />
+                          <div className="mt-2 h-3 w-48 rounded bg-gray-100" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : filteredCustomers.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center text-sm text-gray-500">
                       No customers match this search.
                     </div>

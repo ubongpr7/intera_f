@@ -15,6 +15,8 @@ export type POSInventoryStatus =
   | "failed";
 export type POSPaymentMethod = "cash" | "card" | "mobile" | "qr" | "loyalty" | "gift_card";
 export type POSDiscountType = "percentage" | "fixed";
+export type POSRemittanceStatus = "pending_handover" | "handed_over" | "received" | "deposited" | "reconciled" | "disputed";
+export type POSRemittanceDestinationType = "branch_safe" | "central_vault" | "bank" | "owner" | "other";
 
 export interface POSAuditFields {
   id: string;
@@ -81,6 +83,54 @@ export interface POSSession extends POSAuditFields {
   closing_balance?: DecimalValue | null;
   expected_balance: DecimalValue;
   total_sales?: DecimalValue;
+  completed_total_sales?: DecimalValue;
+  closeout_variance?: DecimalValue | null;
+}
+
+export interface POSSessionCloseoutOrder {
+  id: string;
+  order_number: string;
+  status: POSOrderStatus;
+  payment_status: POSPaymentStatus;
+  inventory_status: POSInventoryStatus;
+  total_amount: DecimalValue;
+  created_at: string;
+}
+
+export interface POSSessionCloseoutPaymentMethodTotal {
+  payment_method: POSPaymentMethod;
+  total: DecimalValue;
+  count: number;
+}
+
+export interface POSSessionCloseoutSummary {
+  session_id: string;
+  session_sync_identifier: string;
+  status: POSSessionStatus;
+  opening_time: string;
+  closing_time?: string | null;
+  opening_balance: DecimalValue;
+  expected_balance: DecimalValue;
+  closing_balance?: DecimalValue | null;
+  variance?: DecimalValue | null;
+  total_sales: DecimalValue;
+  paid_orders_count: number;
+  completed_total_sales: DecimalValue;
+  cash_payments_total: DecimalValue;
+  non_cash_payments_total: DecimalValue;
+  change_given_total: DecimalValue;
+  completed_orders_count: number;
+  unresolved_orders_count: number;
+  unresolved_orders: POSSessionCloseoutOrder[];
+  payment_method_totals: POSSessionCloseoutPaymentMethodTotal[];
+  can_close: boolean;
+}
+
+export interface POSSessionOpeningDefaults {
+  recommended_opening_balance: DecimalValue;
+  carry_forward_balance?: DecimalValue | null;
+  last_closed_session_id?: string | null;
+  last_closed_session_closed_at?: string | null;
 }
 
 export interface POSOrderItem extends POSAuditFields {
@@ -170,6 +220,42 @@ export interface POSDiscount extends POSAuditFields {
   requires_approval: boolean;
   min_order_amount?: DecimalValue | null;
   max_discount_amount?: DecimalValue | null;
+}
+
+export interface POSRemittance extends POSAuditFields {
+  session: string;
+  terminal: string;
+  terminal_name?: string;
+  cashier_user_id?: number | null;
+  expected_amount: DecimalValue;
+  counted_amount: DecimalValue;
+  variance_amount: DecimalValue;
+  handover_amount: DecimalValue;
+  received_amount: DecimalValue;
+  deposited_amount: DecimalValue;
+  status: POSRemittanceStatus;
+  destination_type: POSRemittanceDestinationType;
+  destination_reference: string;
+  notes: string;
+  dispute_reason: string;
+  handed_over_at?: string | null;
+  received_at?: string | null;
+  deposited_at?: string | null;
+  reconciled_at?: string | null;
+  disputed_at?: string | null;
+  handed_over_by_user_id?: number | null;
+  received_by_user_id?: number | null;
+  deposited_by_user_id?: number | null;
+  reconciled_by_user_id?: number | null;
+  disputed_by_user_id?: number | null;
+}
+
+export interface POSRemittanceActionPayload {
+  amount?: DecimalValue;
+  notes?: string;
+  destination_type?: POSRemittanceDestinationType;
+  destination_reference?: string;
+  reason?: string;
 }
 
 export interface POSReceipt extends POSAuditFields {
@@ -277,6 +363,8 @@ export interface POSDailySalesPaymentMethodBreakdown {
 export interface POSDailySalesAnalytics {
   total_orders: number;
   total_sales: DecimalValue;
+  completed_orders_count?: number;
+  completed_total_sales?: DecimalValue;
   average_order_value: DecimalValue;
   total_tax: DecimalValue;
   total_discounts: DecimalValue;

@@ -1,7 +1,7 @@
 "use client"
 
 import { formatCurrency } from "@/lib/currency-utils"
-import type { POSConfiguration, POSTerminal } from "@/redux/features/pos/posTypes"
+import type { POSConfiguration, POSSessionOpeningDefaults, POSTerminal } from "@/redux/features/pos/posTypes"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -20,6 +20,7 @@ interface POSSessionDialogProps {
   onOpenChange: (open: boolean) => void
   terminals: POSTerminal[]
   currentConfiguration?: POSConfiguration
+  openingDefaults?: POSSessionOpeningDefaults
   currencyCode: string
   terminalId: string
   openingBalance: string
@@ -34,6 +35,7 @@ export default function POSSessionDialog({
   onOpenChange,
   terminals,
   currentConfiguration,
+  openingDefaults,
   currencyCode,
   terminalId,
   openingBalance,
@@ -83,6 +85,11 @@ export default function POSSessionDialog({
                 className="bg-white"
                 placeholder="0.00"
               />
+              {openingDefaults?.carry_forward_balance !== undefined && openingDefaults?.carry_forward_balance !== null ? (
+                <p className="text-xs text-gray-500">
+                  Suggested from the last closed session on this terminal: {formatCurrency(resolvedCurrency, Number(openingDefaults.carry_forward_balance))}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-2">
               <Label>Session currency</Label>

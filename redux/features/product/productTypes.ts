@@ -164,9 +164,9 @@ export interface Product extends ProfileMixin {
   };
 }
 
-export interface ProductData extends Product {}
+export type ProductData = Product;
 
-export interface ProductCategoryData extends ProductCategory {}
+export type ProductCategoryData = ProductCategory;
 
 export interface ProductAttributeLink {
   id: string;
@@ -215,6 +215,7 @@ export interface ProductVariant extends UUIDBaseModel {
     available: number;
     low_stock: boolean;
   };
+  
   attribute_details: ProductVariantAttribute[];
   selling_price: number;
   pos_price?: number;
@@ -336,6 +337,7 @@ export interface PricingRule {
   updated_at: string;
   is_active_now?: boolean;
   usage_percentage?: number;
+  is_default_rule?: boolean;
 }
 
 export interface BulkTaskStatus {
@@ -345,6 +347,20 @@ export interface BulkTaskStatus {
   result_file?: string;
   created_at: string;
   updated_at?: string;
+  created_product_count?: number;
+  created_products?: Array<{
+    id: string;
+    name: string;
+    category?: string;
+    base_price?: string;
+    variants?: Array<{
+      id: string;
+      name: string;
+      sku?: string;
+      selling_price?: string;
+      price_override?: string | null;
+    }>;
+  }>;
 }
 
 export interface ProductDashboardStats {
@@ -372,8 +388,16 @@ export interface ProductAnalyticsResponse {
   };
   stock_stats: {
     total_stock: number;
+    tracked_variants?: number;
     low_stock_variants: number;
     out_of_stock_variants: number;
+    alerts?: Array<{
+      variant_id: string;
+      name: string;
+      available: number;
+      threshold: number;
+      status?: string;
+    }>;
   };
   price_stats: {
     min_price: number;

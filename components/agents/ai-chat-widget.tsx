@@ -5,6 +5,7 @@ import { MessageSquareText, X } from "lucide-react"
 import { toast } from "react-toastify"
 
 import AgentChat from "./agent-chat"
+import { humanizeAgentDisplayName } from "@/lib/agent-display"
 import { deriveWorkflowSummary } from "@/lib/agent-structured-output"
 import { createSessionWithConfig, type ChatMessage } from "@/redux/features/ka2a/ka2aSlice"
 import { sendStreamMessage } from "@/redux/features/ka2a/ka2aThunks"
@@ -50,7 +51,7 @@ export default function AIChatWidget() {
     const ts = new Date(latest).getTime()
     return Number.isNaN(ts) ? undefined : ts
   }, [session?.eventLog])
-  const activeAgentName = session?.activeSpecialist || session?.agentName || "host"
+  const activeAgentName = humanizeAgentDisplayName(session?.activeSpecialist || session?.agentName || "host")
   const statusText = session?.awaitingInput
     ? "Waiting for your answer to continue"
     : session?.currentStatusText || undefined
@@ -58,8 +59,8 @@ export default function AIChatWidget() {
     () =>
       deriveWorkflowSummary({
         messages,
-        activeAgentName: session?.agentName || "host",
-        activeSpecialistName: session?.activeSpecialist || null,
+        activeAgentName: humanizeAgentDisplayName(session?.agentName || "host"),
+        activeSpecialistName: humanizeAgentDisplayName(session?.activeSpecialist || null),
         currentTaskState: session?.currentTaskState || null,
         awaitingInput: session?.awaitingInput,
         statusText,
@@ -166,6 +167,43 @@ export default function AIChatWidget() {
 
   const handleUserActivity = () => markActivity()
 
+  const handleDownloadConversation = () => {
+    if (!session) {
+      toast.error("No AI conversation is available to download.")
+      return
+    }
+    try {
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        source: "ai-chat-widget",
+        sessionId: session.sessionId,
+        title: session.title,
+        agentName: session.agentName,
+        activeSpecialist: session.activeSpecialist,
+        contextId: session.contextId,
+        lastTaskId: session.lastTaskId,
+        currentTaskState: session.currentTaskState,
+        awaitingInput: session.awaitingInput,
+        messages: session.messages,
+        runs: session.runs,
+        eventLog: session.eventLog,
+      }
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" })
+      const url = URL.createObjectURL(blob)
+      const anchor = document.createElement("a")
+      anchor.href = url
+      anchor.download = `ai-widget-conversation-${session.sessionId}.json`
+      document.body.appendChild(anchor)
+      anchor.click()
+      document.body.removeChild(anchor)
+      URL.revokeObjectURL(url)
+      toast.success("Conversation JSON downloaded.")
+    } catch (error) {
+      void error
+      toast.error("Unable to download conversation JSON.")
+    }
+  }
+
   const chatWindowClasses = isFullScreen
     ? "fixed inset-0 w-full h-full rounded-none"
     : "absolute bottom-20 right-0  w-[90vw] sm:w-[520px] h-[600px]   rounded-xl border border-gray-200"
@@ -205,6 +243,7 @@ export default function AIChatWidget() {
             statusText={statusText}
             awaitingInput={session?.awaitingInput ?? false}
             workflowSummary={workflowSummary}
+            onDownloadConversation={handleDownloadConversation}
           />
         </div>
       )}

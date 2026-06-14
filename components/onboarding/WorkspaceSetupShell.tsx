@@ -110,7 +110,7 @@ export const useWorkspaceSetupProgress = () => {
         id: "agent",
         title: "AI workspace",
         description: "Save the company-level model and instruction setup",
-        href: "/settings",
+        href: "/agent/settings",
         icon: Bot,
         complete: readiness.agentComplete,
         helper: readiness.agentComplete ? "Company agent setup is active" : "Configure the company agent and model",

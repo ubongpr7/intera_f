@@ -385,10 +385,10 @@ export function DataTable<T>({
   };
 
   return (
-    <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_50px_-34px_rgba(15,23,42,0.28)] dark:border-slate-800 dark:bg-slate-950">
+    <div className="overflow-hidden rounded-[28px] border border-border bg-card text-card-foreground shadow-[0_18px_50px_-34px_rgba(15,23,42,0.28)]">
       {(title || onClose) && (
-        <div className="flex items-center justify-between border-b border-slate-200 bg-white/90 px-5 py-4 backdrop-blur dark:border-slate-800 dark:bg-slate-950/88">
-          {title && <h1 className="text-lg font-semibold text-slate-950 dark:text-slate-50 md:text-xl">{title}</h1>}
+        <div className="flex items-center justify-between border-b border-border bg-card/90 px-5 py-4 backdrop-blur">
+          {title && <h1 className="text-lg font-semibold text-foreground md:text-xl">{title}</h1>}
           {onClose && (
             <Button
               type="button"
@@ -403,22 +403,22 @@ export function DataTable<T>({
           )}
         </div>
       )}
-      <div className="border-b border-slate-200 bg-slate-50/88 p-4 dark:border-slate-800 dark:bg-slate-900/70">
+      <div className="border-b border-border bg-muted/70 p-4">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
             <div className="relative min-w-0 flex-1 md:max-w-sm">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder="Search records"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-11 rounded-full border-slate-200 bg-white pl-11 pr-10 text-sm shadow-none dark:border-slate-700 dark:bg-slate-950"
+                className="h-11 rounded-full border-border bg-card pl-11 pr-10 text-sm text-foreground shadow-none"
               />
               {searchTerm && (
                 <button
                   type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
                   onClick={() => setSearchTerm("")}
                   aria-label="Clear search"
                 >
@@ -431,7 +431,7 @@ export function DataTable<T>({
               <Button
                 type="button"
                 variant="outline"
-                className="h-11 rounded-full border-slate-200 bg-white px-4 dark:border-slate-700 dark:bg-slate-950"
+                className="h-11 rounded-full border-border bg-card px-4"
                 onClick={() => setFilterDropdownOpen((open) => !open)}
               >
                 <SlidersHorizontal className="h-4 w-4" />
@@ -444,11 +444,11 @@ export function DataTable<T>({
               </Button>
 
               {filterDropdownOpen && (
-                <div className="absolute right-0 top-[calc(100%+0.75rem)] z-50 w-[min(92vw,320px)] rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_22px_50px_-24px_rgba(15,23,42,0.35)] dark:border-slate-700 dark:bg-slate-950">
+                <div className="absolute right-0 top-[calc(100%+0.75rem)] z-50 w-[min(92vw,320px)] rounded-[24px] border border-border bg-card p-4 text-card-foreground shadow-[0_22px_50px_-24px_rgba(15,23,42,0.35)]">
                   <div className="mb-3 flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Filter workspace</p>
-                      <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Narrow the current list without leaving the table.</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Filter workspace</p>
+                      <p className="mt-1 text-sm text-muted-foreground">Narrow the current list without leaving the table.</p>
                     </div>
                     {hasActiveSearchOrFilters ? (
                       <Button type="button" variant="ghost" size="sm" className="rounded-full px-3" onClick={clearAllFilters}>
@@ -460,13 +460,13 @@ export function DataTable<T>({
                   <div className="max-h-[360px] space-y-3 overflow-y-auto pr-1">
                     {filterableFields.map((field) => (
                       <div key={field as string}>
-                        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
+                        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                           {humanizeFieldName(String(field))}
                         </label>
                         <select
                           value={filters[field] || ""}
                           onChange={(e) => setFilters({ ...filters, [field]: e.target.value })}
-                          className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/15 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                          className="h-11 w-full rounded-2xl border border-border bg-card px-3 text-sm text-foreground outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/15"
                         >
                           <option value="">All {humanizeFieldName(String(field))}</option>
                           {filterOptions[field]?.map((option) => (
@@ -480,7 +480,7 @@ export function DataTable<T>({
 
                     {rangeFilterFields.map((field) => (
                       <div key={field as string}>
-                        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
+                        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                           {humanizeFieldName(String(field))} Range
                         </label>
                         <div className="grid grid-cols-2 gap-2">
@@ -495,7 +495,7 @@ export function DataTable<T>({
                                 from: e.target.value,
                               },
                             })}
-                            className="rounded-2xl border-slate-200 bg-white text-sm shadow-none dark:border-slate-700 dark:bg-slate-900"
+                            className="rounded-2xl border-border bg-card text-sm shadow-none"
                           />
                           <Input
                             type="number"
@@ -508,7 +508,7 @@ export function DataTable<T>({
                                 to: e.target.value,
                               },
                             })}
-                            className="rounded-2xl border-slate-200 bg-white text-sm shadow-none dark:border-slate-700 dark:bg-slate-900"
+                            className="rounded-2xl border-border bg-card text-sm shadow-none"
                           />
                         </div>
                       </div>
@@ -569,7 +569,7 @@ export function DataTable<T>({
 
       {/* Render secondary button outside the table */}
       {secondaryButton && !secondaryButton.hidden && (
-        <div className="border-b border-slate-200 bg-slate-50/88 p-4 dark:border-slate-800 dark:bg-slate-900/70">
+        <div className="border-b border-border bg-muted/70 p-4">
           <button
             onClick={handleSecondaryClick}
             disabled={secondaryButton.disabled || false}
@@ -588,28 +588,28 @@ export function DataTable<T>({
       )}
 
       <div className="overflow-x-auto overflow-y-visible">
-        <table className="min-w-full table-auto divide-y divide-slate-200 dark:divide-slate-800">
-          <thead className="sticky top-0 bg-slate-50/96 backdrop-blur dark:bg-slate-900/96">
+        <table className="min-w-full table-auto divide-y divide-border">
+          <thead className="sticky top-0 bg-muted/90 backdrop-blur">
             <tr>
               {hasGeneralButtons && (
-                <th className="w-12 whitespace-nowrap px-2 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <th className="w-12 whitespace-nowrap px-2 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   <input
                     type="checkbox"
                     checked={allVisibleSelected}
                     onChange={(e) => handleSelectAll(e.target.checked)}
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-700"
+                    className="rounded border-border text-blue-600 focus:ring-blue-500"
                   />
                 </th>
               )}
               {showRowNumbers && (
-                <th className="w-16 whitespace-nowrap px-2 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <th className="w-16 whitespace-nowrap px-2 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   {rowNumberHeader}
                 </th>
               )}
               {columns.map((column, idx) => (
                 <th
                   key={idx}
-                  className={`px-3 whitespace-nowrap py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400 ${
+                  className={`px-3 whitespace-nowrap py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground ${
                     column.headerClassName || ""
                   }`}
                   onClick={() => sortableFields.includes(column.accessor as keyof T) && requestSort(column.accessor as keyof T)}
@@ -625,19 +625,19 @@ export function DataTable<T>({
               ))}
               {hasActions && (
                 <th
-                  className={`px-3 whitespace-nowrap py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400 ${actionsColumnWidth}`}
+                  className={`px-3 whitespace-nowrap py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground ${actionsColumnWidth}`}
                 >
                   {actionsColumnHeader}
                 </th>
               )}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-900 dark:bg-slate-950">
+          <tbody className="divide-y divide-border bg-card">
             {filteredAndSortedData.map((row, rowIndex) => (
               <tr
                 key={rowIndex}
                 onClick={() => onRowClick?.(row)}
-                className={`${onRowClick ? "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/70" : ""} relative transition-colors`}
+                className={`${onRowClick ? "cursor-pointer hover:bg-muted/60" : ""} relative transition-colors`}
               >
                 {hasGeneralButtons && (
                   <td className="w-12 whitespace-nowrap px-4 py-4">
@@ -648,18 +648,18 @@ export function DataTable<T>({
                         e.stopPropagation()
                         handleRowSelect(getRowId!(row), e.target.checked)
                       }}
-                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-700"
+                      className="rounded border-border text-blue-600 focus:ring-blue-500"
                     />
                   </td>
                 )}
                 {showRowNumbers && (
-                  <td className="w-16 whitespace-nowrap px-4 py-4 text-sm font-medium text-slate-500 dark:text-slate-400">{startNumberFrom + rowIndex}</td>
+                  <td className="w-16 whitespace-nowrap px-4 py-4 text-sm font-medium text-muted-foreground">{startNumberFrom + rowIndex}</td>
                 )}
                 {columns.map((column, colIndex) => {
                   const value =
                     typeof column.accessor === "function" ? column.accessor(row) : row[column.accessor as keyof T]
                   return (
-                    <td key={colIndex} className={`px-3 py-3 text-sm text-slate-900 dark:text-slate-100 relativewhitespace-nowrap ${column.className || ""}`}>
+                    <td key={colIndex} className={`relative whitespace-nowrap px-3 py-3 text-sm text-foreground ${column.className || ""}`}>
                       {column.render ? column.render(value, row) : (value as React.ReactNode)}
                     </td>
                   )
@@ -673,10 +673,10 @@ export function DataTable<T>({
         </table>
         {!isLoading && filteredAndSortedData.length === 0 && (
           <div className="flex flex-col items-center justify-center gap-3 px-4 py-12 text-center">
-            <p className="text-base font-semibold text-slate-700 dark:text-slate-200">
+            <p className="text-base font-semibold text-foreground">
               {hasActiveSearchOrFilters ? "No records match the current view." : "No records found."}
             </p>
-            <p className="max-w-md text-sm text-slate-500 dark:text-slate-400">
+            <p className="max-w-md text-sm text-muted-foreground">
               {hasActiveSearchOrFilters
                 ? "Adjust the search or filters to widen the result set."
                 : "This table will populate once records are available."}
@@ -689,7 +689,7 @@ export function DataTable<T>({
           </div>
         )}
         {isLoading && filteredAndSortedData.length === 0 && (
-          <div className="flex items-center justify-center py-10 text-center text-slate-500 dark:text-slate-400">
+          <div className="flex items-center justify-center py-10 text-center text-muted-foreground">
             <LoadingAnimation text="Loading..." ringColor="#3b82f6" />
           </div>
         )}

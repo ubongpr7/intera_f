@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
@@ -11,7 +12,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ReactSelectField, type SelectOption } from "@/components/ui/react-select-field"
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 import { CURRENCY_CODES } from "@/lib/currencyCode"
@@ -89,6 +91,12 @@ type ReturnEntry = {
   reason: string
 }
 
+type InventorySelectOption = SelectOption & {
+  sku?: string
+  imageUrl?: string
+  reorderQuantity?: string | number
+}
+
 const formatStatus = (value: string) =>
   value
     .split("_")
@@ -96,6 +104,74 @@ const formatStatus = (value: string) =>
     .join(" ")
 
 const asNumber = (value: string | number | undefined | null) => Number(value ?? 0)
+const todayIso = () => new Date().toISOString().slice(0, 10)
+const tomorrowIso = () => {
+  const date = new Date()
+  date.setDate(date.getDate() + 1)
+  return date.toISOString().slice(0, 10)
+}
+
+const getSingleOption = (option: SelectOption | readonly SelectOption[] | null): SelectOption | null => {
+  if (Array.isArray(option)) {
+    return null
+  }
+  return option as SelectOption | null
+}
+
+const inventoryImage = (imageUrl?: string | null, label?: string) =>
+  imageUrl ? (
+    <Image
+      src={imageUrl}
+      alt={label || "Inventory item"}
+      width={44}
+      height={44}
+      unoptimized
+      className="h-11 w-11 rounded-2xl object-cover ring-1 ring-gray-200"
+    />
+  ) : (
+    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gray-100 text-xs font-semibold text-gray-400 ring-1 ring-gray-200">
+      IMG
+    </div>
+  )
+
+const renderInventoryOption = (option: InventorySelectOption) => {
+  const imageUrl = option.imageUrl
+  const sku = option.sku || ""
+  const reorderQuantity = asNumber(option.reorderQuantity)
+
+  return (
+    <div className="flex items-center gap-3">
+      {inventoryImage(imageUrl, option.label)}
+      <div className="min-w-0">
+        <div className="truncate text-sm font-semibold text-gray-900">{option.label}</div>
+        <div className="truncate text-xs text-gray-500">
+          {sku || "No SKU"}
+          {reorderQuantity > 0 ? ` • Reorder qty ${reorderQuantity}` : ""}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const validateInventoryDates = ({
+  manufacturedDate,
+  expiryDate,
+}: {
+  manufacturedDate?: string
+  expiryDate?: string
+}) => {
+  const today = todayIso()
+  if (manufacturedDate && manufacturedDate > today) {
+    return "Manufactured date cannot be in the future."
+  }
+  if (expiryDate && expiryDate <= today) {
+    return "Expiry date must be in the future."
+  }
+  if (manufacturedDate && expiryDate && expiryDate <= manufacturedDate) {
+    return "Expiry date must be later than the manufactured date."
+  }
+  return null
+}
 
 const buildHeaderForm = (order?: PurchaseOrderInterface | null): PurchaseOrderHeaderForm => ({
   supplier: order?.supplier ? String(order.supplier) : "",
@@ -137,6 +213,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
   const [headerFormDraft, setHeaderFormDraft] = useState<Partial<PurchaseOrderHeaderForm>>({})
   const [lineItemForm, setLineItemForm] = useState<LineItemForm>(emptyLineItemForm)
   const [editingLineItemId, setEditingLineItemId] = useState<string | null>(null)
+  const [isLineItemSheetOpen, setIsLineItemSheetOpen] = useState(false)
   const [receiveEntries, setReceiveEntries] = useState<Record<string, ReceiveEntry>>({})
   const [returnEntries, setReturnEntries] = useState<Record<string, ReturnEntry>>({})
   const [notifySupplier, setNotifySupplier] = useState(true)
@@ -180,6 +257,72 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
       })),
     [lineItems],
   )
+  const supplierOptions = useMemo<SelectOption[]>(
+    () =>
+      suppliers.map((supplier) => ({
+        value: String(supplier.id),
+        label: supplier.name,
+      })),
+    [suppliers],
+  )
+  const userOptions = useMemo<SelectOption[]>(
+    () =>
+      users.map((user) => ({
+        value: String(user.id),
+        label: [user.user?.first_name, user.user?.last_name].filter(Boolean).join(" ") || user.user?.email || "Unknown user",
+      })),
+    [users],
+  )
+  const currencyOptions = useMemo<SelectOption[]>(
+    () => CURRENCY_CODES.map((currency) => ({ value: currency, label: currency })),
+    [],
+  )
+  const inventoryOptions = useMemo<InventorySelectOption[]>(
+    () =>
+      inventoryItems.map((inventoryItem) => ({
+        value: String(inventoryItem.id),
+        label: inventoryItem.name || inventoryItem.inventory_name || String(inventoryItem.id),
+        sku: inventoryItem.sku || inventoryItem.barcode_snapshot || "",
+        imageUrl: inventoryItem.product_variant_image_url || inventoryItem.display_image || "",
+        reorderQuantity: inventoryItem.reorder_quantity || 0,
+      })),
+    [inventoryItems],
+  )
+  const locationOptions = useMemo<SelectOption[]>(
+    () =>
+      locations.map((location) => ({
+        value: String(location.id),
+        label: location.name,
+      })),
+    [locations],
+  )
+  const selectedInventoryItem = useMemo(
+    () => inventoryItems.find((item) => String(item.id) === lineItemForm.inventory_item) || null,
+    [inventoryItems, lineItemForm.inventory_item],
+  )
+  const selectedInventoryMinimumQuantity = Math.max(asNumber(selectedInventoryItem?.reorder_quantity), 0)
+
+  const resetLineItemEditor = () => {
+    setEditingLineItemId(null)
+    setLineItemForm(emptyLineItemForm)
+    setIsLineItemSheetOpen(false)
+  }
+
+  const openCreateLineItemSheet = () => {
+    setEditingLineItemId(null)
+    setLineItemForm(emptyLineItemForm)
+    setIsLineItemSheetOpen(true)
+  }
+
+  const handleInventoryItemSelection = (value: string) => {
+    const nextItem = inventoryItems.find((item) => String(item.id) === value)
+    const reorderQuantity = Math.max(asNumber(nextItem?.reorder_quantity), 0)
+    setLineItemForm((current) => ({
+      ...current,
+      inventory_item: value,
+      quantity: reorderQuantity > 0 ? String(reorderQuantity) : current.quantity || "1",
+    }))
+  }
 
   const setReceiveField = (lineItemId: string, field: keyof ReceiveEntry, value: string) => {
     setReceiveEntries((current) => ({
@@ -237,9 +380,24 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
       return
     }
 
+    const dateValidationError = validateInventoryDates({
+      manufacturedDate: lineItemForm.manufactured_date,
+      expiryDate: lineItemForm.expiry_date,
+    })
+    if (dateValidationError) {
+      toast.error(dateValidationError)
+      return
+    }
+
+    const requestedQuantity = Number(lineItemForm.quantity || "0")
+    if (selectedInventoryMinimumQuantity > 0 && requestedQuantity < selectedInventoryMinimumQuantity) {
+      toast.error(`Quantity cannot be lower than the reorder quantity of ${selectedInventoryMinimumQuantity}.`)
+      return
+    }
+
     const payload = {
       inventory_item: lineItemForm.inventory_item,
-      quantity: Number(lineItemForm.quantity || "0"),
+      quantity: requestedQuantity,
       unit_price: Number(lineItemForm.unit_price || "0"),
       discount_rate: Number(lineItemForm.discount_rate || "0"),
       tax_rate: Number(lineItemForm.tax_rate || "0"),
@@ -263,8 +421,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
         }).unwrap()
         toast.success("Line item added")
       }
-      setEditingLineItemId(null)
-      setLineItemForm(emptyLineItemForm)
+      resetLineItemEditor()
       await refetch()
     } catch (error) {
       toast.error(extractErrorMessage(error, ["inventory_item", "quantity", "unit_price"]))
@@ -283,6 +440,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
       expiry_date: lineItem.expiry_date || "",
       manufactured_date: lineItem.manufactured_date || "",
     })
+    setIsLineItemSheetOpen(true)
   }
 
   const handleDeleteLineItem = async (lineItemId: string) => {
@@ -315,6 +473,25 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
   const handleReceiveItems = async () => {
     if (!order) {
       return
+    }
+
+    for (const lineItem of lineItems) {
+      if (lineItem.id === undefined) {
+        continue
+      }
+      const entry = receiveEntries[String(lineItem.id)] || buildReceiveEntry(lineItem)
+      const quantity = Number(entry?.quantity_received || "0")
+      if (quantity <= 0) {
+        continue
+      }
+      const dateValidationError = validateInventoryDates({
+        manufacturedDate: entry.manufactured_date,
+        expiryDate: entry.expiry_date,
+      })
+      if (dateValidationError) {
+        toast.error(dateValidationError)
+        return
+      }
     }
 
     const received_items = lineItems.flatMap((lineItem) => {
@@ -528,54 +705,50 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="po-supplier">Supplier</Label>
-            <Select value={headerForm.supplier} onValueChange={(value) => setHeaderFormDraft((current) => ({ ...current, supplier: value }))}>
-              <SelectTrigger id="po-supplier">
-                <SelectValue placeholder="Select supplier" />
-              </SelectTrigger>
-              <SelectContent>
-                {suppliers.map((supplier) => (
-                  <SelectItem key={supplier.id} value={String(supplier.id)}>
-                    {supplier.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ReactSelectField
+              inputId="po-supplier"
+              options={supplierOptions}
+              value={supplierOptions.find((option) => option.value === headerForm.supplier) || null}
+              onChange={(option) => {
+                const nextOption = getSingleOption(option)
+                setHeaderFormDraft((current) => ({ ...current, supplier: nextOption ? String(nextOption.value) : "" }))
+              }}
+              placeholder="Select supplier"
+              isSearchable
+              isClearable
+              menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="po-responsible">Responsible owner</Label>
-            <Select
-              value={headerForm.responsible}
-              onValueChange={(value) => setHeaderFormDraft((current) => ({ ...current, responsible: value }))}
-            >
-              <SelectTrigger id="po-responsible">
-                <SelectValue placeholder="Select responsible owner" />
-              </SelectTrigger>
-              <SelectContent>
-                {users.map((user) => (
-                  <SelectItem key={user.id} value={String(user.id)}>
-                    {[user.user?.first_name, user.user?.last_name].filter(Boolean).join(" ") || user.user?.email || "Unknown user"}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ReactSelectField
+              inputId="po-responsible"
+              options={userOptions}
+              value={userOptions.find((option) => option.value === headerForm.responsible) || null}
+              onChange={(option) => {
+                const nextOption = getSingleOption(option)
+                setHeaderFormDraft((current) => ({ ...current, responsible: nextOption ? String(nextOption.value) : "" }))
+              }}
+              placeholder="Select responsible owner"
+              isSearchable
+              isClearable
+              menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="po-currency">Order currency</Label>
-            <Select
-              value={headerForm.order_currency}
-              onValueChange={(value) => setHeaderFormDraft((current) => ({ ...current, order_currency: value }))}
-            >
-              <SelectTrigger id="po-currency">
-                <SelectValue placeholder="Select currency" />
-              </SelectTrigger>
-              <SelectContent>
-                {CURRENCY_CODES.map((currency) => (
-                  <SelectItem key={currency} value={currency}>
-                    {currency}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ReactSelectField
+              inputId="po-currency"
+              options={currencyOptions}
+              value={currencyOptions.find((option) => option.value === headerForm.order_currency) || null}
+              onChange={(option) => {
+                const nextOption = getSingleOption(option)
+                setHeaderFormDraft((current) => ({ ...current, order_currency: nextOption ? String(nextOption.value) : "" }))
+              }}
+              placeholder="Select currency"
+              isSearchable
+              menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
+            />
           </div>
           <div className="space-y-2 xl:col-span-2">
             <Label htmlFor="po-description">Description</Label>
@@ -635,111 +808,16 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
           { label: "Average unit price", value: formatCurrencyCompact(activeCurrency, asNumber(order.order_analytics?.average_unit_price)) },
         ]}
       >
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div className="space-y-2 xl:col-span-2">
-            <Label htmlFor="line-inventory-item">Inventory item</Label>
-            <Select
-              value={lineItemForm.inventory_item}
-              onValueChange={(value) => setLineItemForm((current) => ({ ...current, inventory_item: value }))}
-            >
-              <SelectTrigger id="line-inventory-item">
-                <SelectValue placeholder="Select inventory item" />
-              </SelectTrigger>
-              <SelectContent>
-                {inventoryItems.map((inventoryItem) => (
-                  <SelectItem key={inventoryItem.id} value={String(inventoryItem.id)}>
-                    {inventoryItem.name || inventoryItem.inventory_name || String(inventoryItem.id)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-[28px] border border-gray-200 bg-gradient-to-r from-slate-50 via-white to-emerald-50 p-5">
           <div className="space-y-2">
-            <Label htmlFor="line-quantity">Quantity</Label>
-            <Input
-              id="line-quantity"
-              type="number"
-              min="1"
-              value={lineItemForm.quantity}
-              onChange={(event) => setLineItemForm((current) => ({ ...current, quantity: event.target.value }))}
-            />
+            <div className="text-sm font-semibold text-gray-900">Line item editor</div>
+            <p className="max-w-2xl text-sm leading-6 text-gray-600">
+              Add or refine one line at a time in a focused side panel. Inventory images and reorder quantities stay visible while you work.
+            </p>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="line-unit-price">Unit price</Label>
-            <Input
-              id="line-unit-price"
-              type="number"
-              min="0"
-              step="0.01"
-              value={lineItemForm.unit_price}
-              onChange={(event) => setLineItemForm((current) => ({ ...current, unit_price: event.target.value }))}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="line-tax-rate">Tax rate (%)</Label>
-            <Input
-              id="line-tax-rate"
-              type="number"
-              min="0"
-              step="0.01"
-              value={lineItemForm.tax_rate}
-              onChange={(event) => setLineItemForm((current) => ({ ...current, tax_rate: event.target.value }))}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="line-discount-rate">Discount rate (%)</Label>
-            <Input
-              id="line-discount-rate"
-              type="number"
-              min="0"
-              step="0.01"
-              value={lineItemForm.discount_rate}
-              onChange={(event) => setLineItemForm((current) => ({ ...current, discount_rate: event.target.value }))}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="line-manufactured-date">Manufactured date</Label>
-            <Input
-              id="line-manufactured-date"
-              type="date"
-              value={lineItemForm.manufactured_date}
-              onChange={(event) => setLineItemForm((current) => ({ ...current, manufactured_date: event.target.value }))}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="line-expiry-date">Expiry date</Label>
-            <Input
-              id="line-expiry-date"
-              type="date"
-              value={lineItemForm.expiry_date}
-              onChange={(event) => setLineItemForm((current) => ({ ...current, expiry_date: event.target.value }))}
-            />
-          </div>
-          <div className="space-y-2 xl:col-span-4">
-            <Label htmlFor="line-description">Line description</Label>
-            <Textarea
-              id="line-description"
-              value={lineItemForm.description}
-              onChange={(event) => setLineItemForm((current) => ({ ...current, description: event.target.value }))}
-              rows={3}
-              placeholder="Optional line-specific note"
-            />
-          </div>
-        </div>
-
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Button onClick={handleSubmitLineItem} disabled={creatingLineItem || updatingLineItem}>
-            {editingLineItemId ? "Save line item" : "Add line item"}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setEditingLineItemId(null)
-              setLineItemForm(emptyLineItemForm)
-            }}
-            disabled={creatingLineItem || updatingLineItem}
-          >
-            {editingLineItemId ? "Cancel edit" : "Reset form"}
+          <Button onClick={openCreateLineItemSheet} className="rounded-2xl bg-gray-900 text-white hover:bg-gray-800">
+            <PackagePlus className="mr-2 h-4 w-4" />
+            Add line item
           </Button>
         </div>
 
@@ -749,6 +827,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
               <TableRow>
                 <TableHead>Item</TableHead>
                 <TableHead>Quantity</TableHead>
+                <TableHead>Reorder qty</TableHead>
                 <TableHead>Received</TableHead>
                 <TableHead>Unit price</TableHead>
                 <TableHead>Total</TableHead>
@@ -759,15 +838,26 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
             <TableBody>
               {editableLineItems.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="py-10 text-center text-sm text-gray-500">
+                  <TableCell colSpan={8} className="py-10 text-center text-sm text-gray-500">
                     No line items yet. Add the goods you plan to purchase before approving or issuing the order.
                   </TableCell>
                 </TableRow>
               ) : (
                 editableLineItems.map((lineItem) => (
                   <TableRow key={lineItem.id}>
-                    <TableCell className="font-medium text-gray-900">{lineItem.displayName}</TableCell>
+                    <TableCell className="min-w-[260px]">
+                      <div className="flex items-center gap-3">
+                        {inventoryImage(lineItem.inventory_item_image_url || lineItem.inventory_item_details?.display_image || null, lineItem.displayName)}
+                        <div className="min-w-0">
+                          <div className="truncate font-medium text-gray-900">{lineItem.displayName}</div>
+                          <div className="truncate text-xs text-gray-500">
+                            {lineItem.inventory_item_details?.sku || "No SKU"}
+                          </div>
+                        </div>
+                      </div>
+                    </TableCell>
                     <TableCell>{lineItem.quantity_w_unit || lineItem.quantity}</TableCell>
+                    <TableCell>{lineItem.inventory_item_details?.reorder_quantity || "Not set"}</TableCell>
                     <TableCell>{lineItem.quantity_received ?? 0}</TableCell>
                     <TableCell>{formatCurrencyCompact(activeCurrency, asNumber(lineItem.unit_price))}</TableCell>
                     <TableCell>{formatCurrencyCompact(activeCurrency, asNumber(lineItem.total_price))}</TableCell>
@@ -793,6 +883,145 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
             </TableBody>
           </Table>
         </div>
+
+        <Sheet open={isLineItemSheetOpen} onOpenChange={(open) => (!open ? resetLineItemEditor() : setIsLineItemSheetOpen(true))}>
+          <SheetContent side="right" className="w-full overflow-y-auto border-gray-200 bg-white p-0 text-gray-900 sm:max-w-2xl">
+            <div className="flex h-full flex-col">
+              <SheetHeader className="border-b border-gray-100 px-6 py-5">
+                <SheetTitle>{editingLineItemId ? "Edit purchase line item" : "Add purchase line item"}</SheetTitle>
+                <SheetDescription>
+                  Select the tracked inventory item, confirm the reorder-aware quantity, then capture pricing and shelf-life details.
+                </SheetDescription>
+              </SheetHeader>
+
+              <div className="flex-1 space-y-6 px-6 py-5">
+                <div className="space-y-2">
+                  <Label htmlFor="line-inventory-item">Inventory item</Label>
+                  <ReactSelectField
+                    inputId="line-inventory-item"
+                    options={inventoryOptions}
+                    value={inventoryOptions.find((option) => option.value === lineItemForm.inventory_item) || null}
+                    onChange={(option) => {
+                      const nextOption = getSingleOption(option)
+                      handleInventoryItemSelection(nextOption ? String(nextOption.value) : "")
+                    }}
+                    placeholder="Select inventory item"
+                    isSearchable
+                    formatOptionLabel={renderInventoryOption}
+                    menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
+                  />
+                </div>
+
+                {selectedInventoryItem ? (
+                  <div className="rounded-[24px] border border-gray-200 bg-gray-50 p-4">
+                    <div className="flex items-center gap-3">
+                      {inventoryImage(selectedInventoryItem.product_variant_image_url || selectedInventoryItem.display_image || null, selectedInventoryItem.name)}
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-semibold text-gray-900">
+                          {selectedInventoryItem.name || selectedInventoryItem.inventory_name}
+                        </div>
+                        <div className="truncate text-xs text-gray-500">
+                          {selectedInventoryItem.sku || selectedInventoryItem.barcode_snapshot || "No SKU"} • Reorder qty{" "}
+                          {selectedInventoryMinimumQuantity > 0 ? selectedInventoryMinimumQuantity : "Not set"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="line-quantity">Quantity</Label>
+                    <Input
+                      id="line-quantity"
+                      type="number"
+                      min={selectedInventoryMinimumQuantity > 0 ? String(selectedInventoryMinimumQuantity) : "1"}
+                      value={lineItemForm.quantity}
+                      onChange={(event) => setLineItemForm((current) => ({ ...current, quantity: event.target.value }))}
+                    />
+                    <p className="text-xs text-gray-500">
+                      {selectedInventoryMinimumQuantity > 0
+                        ? `This cannot be lower than the reorder quantity of ${selectedInventoryMinimumQuantity}.`
+                        : "Set the ordered quantity for this purchase line."}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="line-unit-price">Unit price</Label>
+                    <Input
+                      id="line-unit-price"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={lineItemForm.unit_price}
+                      onChange={(event) => setLineItemForm((current) => ({ ...current, unit_price: event.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="line-tax-rate">Tax rate (%)</Label>
+                    <Input
+                      id="line-tax-rate"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={lineItemForm.tax_rate}
+                      onChange={(event) => setLineItemForm((current) => ({ ...current, tax_rate: event.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="line-discount-rate">Discount rate (%)</Label>
+                    <Input
+                      id="line-discount-rate"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={lineItemForm.discount_rate}
+                      onChange={(event) => setLineItemForm((current) => ({ ...current, discount_rate: event.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="line-manufactured-date">Manufactured date</Label>
+                    <Input
+                      id="line-manufactured-date"
+                      type="date"
+                      max={todayIso()}
+                      value={lineItemForm.manufactured_date}
+                      onChange={(event) => setLineItemForm((current) => ({ ...current, manufactured_date: event.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="line-expiry-date">Expiry date</Label>
+                    <Input
+                      id="line-expiry-date"
+                      type="date"
+                      min={tomorrowIso()}
+                      value={lineItemForm.expiry_date}
+                      onChange={(event) => setLineItemForm((current) => ({ ...current, expiry_date: event.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="line-description">Line description</Label>
+                    <Textarea
+                      id="line-description"
+                      value={lineItemForm.description}
+                      onChange={(event) => setLineItemForm((current) => ({ ...current, description: event.target.value }))}
+                      rows={4}
+                      placeholder="Optional line-specific note"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <SheetFooter className="border-t border-gray-100 px-6 py-4">
+                <Button variant="outline" onClick={resetLineItemEditor} disabled={creatingLineItem || updatingLineItem}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSubmitLineItem} disabled={creatingLineItem || updatingLineItem}>
+                  {editingLineItemId ? "Save line item" : "Add line item"}
+                </Button>
+              </SheetFooter>
+            </div>
+          </SheetContent>
+        </Sheet>
       </OperationalStepSection>
 
       <OperationalStepSection
@@ -936,21 +1165,17 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
                         </div>
                         <div className="space-y-2">
                           <Label>Receiving location</Label>
-                          <Select
-                            value={entry.location_id}
-                            onValueChange={(value) => setReceiveField(String(lineItem.id), "location_id", value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select location" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {locations.map((location) => (
-                                <SelectItem key={location.id} value={String(location.id)}>
-                                  {location.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <ReactSelectField
+                            options={locationOptions}
+                            value={locationOptions.find((option) => option.value === entry.location_id) || null}
+                            onChange={(option) => {
+                              const nextOption = getSingleOption(option)
+                              setReceiveField(String(lineItem.id), "location_id", nextOption ? String(nextOption.value) : "")
+                            }}
+                            placeholder="Select location"
+                            isSearchable
+                            menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label>Lot / batch number</Label>
@@ -964,6 +1189,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
                           <Label>Manufactured date</Label>
                           <Input
                             type="date"
+                            max={todayIso()}
                             value={entry.manufactured_date}
                             onChange={(event) => setReceiveField(String(lineItem.id), "manufactured_date", event.target.value)}
                           />
@@ -972,6 +1198,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
                           <Label>Expiry date</Label>
                           <Input
                             type="date"
+                            min={tomorrowIso()}
                             value={entry.expiry_date}
                             onChange={(event) => setReceiveField(String(lineItem.id), "expiry_date", event.target.value)}
                           />

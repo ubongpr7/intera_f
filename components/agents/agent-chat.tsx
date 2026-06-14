@@ -13,9 +13,11 @@ import {
   Mic,
   MicOff,
   Volume2,
+  Download,
 } from "lucide-react"
 import MessageContent from "@/components/message-content"
 import ConfirmationDialog from "@/components/confirmation-dialog"
+import { humanizeAgentDisplayName } from "@/lib/agent-display"
 import {
   MultipleChoiceHandler,
   FileUploadHandler,
@@ -77,6 +79,7 @@ interface AgentChatProps {
   emptyDescription?: string
   sendLabel?: string
   workflowSummary?: AgentWorkflowSummary | null
+  onDownloadConversation?: () => void
 }
 
 const asText = (value: unknown): string => (typeof value === "string" ? value : "")
@@ -110,7 +113,9 @@ const formatRelativeTime = (timestamp?: number) => {
 }
 
 const humanizeTechnicalMessage = (content: string) => {
-  const trimmed = content.trim()
+  const trimmed = content
+    .trim()
+    .replace(/\bwa-p\d+-[a-z0-9_]+-[0-9a-f]{8,}\b/gi, (match) => humanizeAgentDisplayName(match))
   if (!trimmed) {
     return ""
   }
@@ -138,28 +143,28 @@ const workflowToneStyles: Record<
   }
 > = {
   ready: {
-    card: "border-slate-200 bg-white",
-    badge: "bg-slate-100 text-slate-700",
+    card: "border-gray-200 bg-white",
+    badge: "bg-gray-100 text-gray-700",
     dot: "bg-emerald-500",
-    stepCompleted: "border-slate-200 bg-slate-100 text-slate-700",
+    stepCompleted: "border-gray-200 bg-gray-100 text-gray-700",
     stepCurrent: "border-blue-200 bg-blue-50 text-blue-700",
-    stepPending: "border-slate-200 bg-white text-slate-500",
+    stepPending: "border-gray-200 bg-white text-gray-500",
   },
   working: {
-    card: "border-slate-200 bg-white",
-    badge: "bg-slate-100 text-slate-700",
+    card: "border-gray-200 bg-white",
+    badge: "bg-gray-100 text-gray-700",
     dot: "bg-blue-500",
-    stepCompleted: "border-slate-200 bg-slate-100 text-slate-700",
+    stepCompleted: "border-gray-200 bg-gray-100 text-gray-700",
     stepCurrent: "border-blue-200 bg-blue-50 text-blue-700",
-    stepPending: "border-slate-200 bg-white text-slate-500",
+    stepPending: "border-gray-200 bg-white text-gray-500",
   },
   awaiting: {
-    card: "border-slate-200 bg-white",
-    badge: "bg-slate-100 text-slate-700",
-    dot: "bg-amber-500",
-    stepCompleted: "border-slate-200 bg-slate-100 text-slate-700",
-    stepCurrent: "border-amber-200 bg-amber-50 text-amber-700",
-    stepPending: "border-slate-200 bg-white text-slate-500",
+    card: "border-gray-200 bg-white",
+    badge: "bg-gray-100 text-gray-700",
+    dot: "bg-yellow-500",
+    stepCompleted: "border-gray-200 bg-gray-100 text-gray-700",
+    stepCurrent: "border-yellow-200 bg-yellow-50 text-yellow-700",
+    stepPending: "border-gray-200 bg-white text-gray-500",
   },
 }
 
@@ -180,27 +185,27 @@ function WorkflowSummaryStrip({ summary }: { summary: AgentWorkflowSummary }) {
     <div className={`mb-4 rounded-[22px] border px-4 py-3 shadow-[0_12px_28px_-26px_rgba(15,23,42,0.18)] ${tone.card}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Workflow</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Workflow</p>
           <div className="mt-1 flex items-center gap-2">
             <span className={`inline-flex h-2.5 w-2.5 shrink-0 rounded-full ${tone.dot}`} />
-            <p className="truncate text-sm font-semibold text-slate-900">{summary.title}</p>
+            <p className="truncate text-sm font-semibold text-gray-900">{summary.title}</p>
           </div>
-          {summary.detail ? <p className="mt-1 text-xs leading-5 text-slate-600">{summary.detail}</p> : null}
+          {summary.detail ? <p className="mt-1 text-xs leading-5 text-gray-600">{summary.detail}</p> : null}
         </div>
         <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${tone.badge}`}>
           {summary.statusLabel}
         </span>
       </div>
       {summary.currentAgentLabel || summary.nextAgentLabel ? (
-        <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-600">
+        <div className="mt-3 flex flex-wrap gap-4 text-xs text-gray-600">
           {summary.currentAgentLabel ? (
             <p>
-              <span className="font-medium text-slate-900">Now:</span> {summary.currentAgentLabel}
+              <span className="font-medium text-gray-900">Now:</span> {summary.currentAgentLabel}
             </p>
           ) : null}
           {summary.nextAgentLabel ? (
             <p>
-              <span className="font-medium text-slate-900">Next:</span> {summary.nextAgentLabel}
+              <span className="font-medium text-gray-900">Next:</span> {summary.nextAgentLabel}
             </p>
           ) : null}
         </div>
@@ -242,6 +247,7 @@ export default function AgentChat({
   emptyDescription = "",
   sendLabel = "Send",
   workflowSummary = null,
+  onDownloadConversation,
 }: AgentChatProps) {
   const [input, setInput] = useState("")
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
@@ -307,8 +313,8 @@ export default function AgentChat({
     if (awaitingInput) {
       return {
         label: "Awaiting your reply",
-        chipClass: "bg-amber-100 text-amber-900",
-        borderClass: "border-amber-200 bg-amber-50 text-amber-800",
+        chipClass: "bg-yellow-100 text-yellow-900",
+        borderClass: "border-yellow-200 bg-yellow-50 text-yellow-800",
       }
     }
     if (isBusy || pendingCount > 0) {
@@ -374,6 +380,7 @@ export default function AgentChat({
     onActivity?.()
     setInput("")
     if (textareaRef.current) textareaRef.current.style.height = "auto"
+    requestAnimationFrame(() => textareaRef.current?.focus())
     requestAnimationFrame(scrollToBottom)
   }
 
@@ -408,7 +415,7 @@ export default function AgentChat({
 
   const getInteractionStyle = (type: string) => {
     const styles = {
-      confirmation: { color: "bg-amber-50 border-amber-200", textColor: "text-amber-700", icon: "⚠️" },
+      confirmation: { color: "bg-yellow-50 border-yellow-200", textColor: "text-yellow-700", icon: "⚠️" },
       multiple_choice: { color: "bg-blue-50 border-blue-200", textColor: "text-blue-700", icon: "❓" },
       file_upload: { color: "bg-green-50 border-green-200", textColor: "text-green-700", icon: "📁" },
       progress_tracker: { color: "bg-purple-50 border-purple-200", textColor: "text-purple-700", icon: "⏳" },
@@ -425,8 +432,8 @@ export default function AgentChat({
       hierarchical_selection: { color: "bg-emerald-50 border-emerald-200", textColor: "text-emerald-700", icon: "🌳" },
       autocomplete_selection: { color: "bg-violet-50 border-violet-200", textColor: "text-violet-700", icon: "⚡" },
       comparison_view: { color: "bg-rose-50 border-rose-200", textColor: "text-rose-700", icon: "⚖️" },
-      bulk_action_selector: { color: "bg-slate-50 border-slate-200", textColor: "text-slate-700", icon: "⚡" },
-      marketplace_results: { color: "bg-amber-50 border-amber-200", textColor: "text-amber-700", icon: "🛍️" },
+      bulk_action_selector: { color: "bg-gray-50 border-gray-200", textColor: "text-gray-700", icon: "⚡" },
+      marketplace_results: { color: "bg-yellow-50 border-yellow-200", textColor: "text-yellow-700", icon: "🛍️" },
       dashboard_builder: { color: "bg-blue-50 border-blue-200", textColor: "text-blue-700", icon: "📊" },
       master_detail_table: { color: "bg-indigo-50 border-indigo-200", textColor: "text-indigo-700", icon: "📋" },
       alert_manager: { color: "bg-yellow-50 border-yellow-200", textColor: "text-yellow-700", icon: "🔔" },
@@ -591,6 +598,20 @@ export default function AgentChat({
           {showWindowControls ? (
             <div className="flex items-center gap-2">
               <button
+                type="button"
+                onClick={() => {
+                  onDownloadConversation?.()
+                  onActivity?.()
+                }}
+                className="p-1 rounded-full hover:bg-white/20 transition-colors shrink-0"
+                aria-label="Download conversation JSON"
+                title="Download conversation JSON"
+                disabled={!onDownloadConversation}
+              >
+                <Download className="h-5 w-5 text-white" strokeWidth={2.2} />
+              </button>
+              <button
+                type="button"
                 onClick={() => {
                   toggleFullScreen()
                   onActivity?.()
@@ -606,6 +627,7 @@ export default function AgentChat({
                 )}
               </button>
               <button
+                type="button"
                 onClick={() => {
                   onClose()
                   onActivity?.()
@@ -643,8 +665,8 @@ export default function AgentChat({
         {messages.length === 0 ? (
           <div className="text-center h-full flex flex-col items-center justify-center text-gray-500">
             <Bot className="h-12 w-12 mb-3 text-blue-500" aria-hidden strokeWidth={2.2} />
-            <p className="text-base font-medium text-slate-700">{emptyTitle}</p>
-            {emptyDescription ? <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">{emptyDescription}</p> : null}
+            <p className="text-base font-medium text-gray-700">{emptyTitle}</p>
+            {emptyDescription ? <p className="mt-2 max-w-md text-sm leading-6 text-gray-500">{emptyDescription}</p> : null}
           </div>
         ) : (
           messages.map((m) => {
@@ -764,7 +786,7 @@ export default function AgentChat({
                     <div className="space-y-1">
                       <p className="text-base font-semibold">{interactionResponseSummary.title}</p>
                       {interactionResponseSummary.detail ? (
-                        <p className={`text-sm leading-6 ${m.role === "user" ? "text-blue-50" : "text-slate-600"}`}>
+                        <p className={`text-sm leading-6 ${m.role === "user" ? "text-blue-50" : "text-gray-600"}`}>
                           {interactionResponseSummary.detail}
                         </p>
                       ) : null}
@@ -843,7 +865,6 @@ export default function AgentChat({
               className={`w-full  text-gray-800 bg-gray-200/70 border border-gray-300 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none leading-6 max-h-[160px] ${
                 isVoiceModeEnabled && voiceChat.isListening ? "ring-2 ring-green-400" : ""
               }`}
-              disabled={isBusy}
               aria-label="Type your message"
             />
 
@@ -892,7 +913,7 @@ export default function AgentChat({
           <button
             type="submit"
             className="bg-blue-600 text-white p-3 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50"
-            disabled={isBusy || !input.trim()}
+            disabled={!input.trim()}
             aria-label="Send message"
             title={sendLabel}
             onClick={onActivity}
@@ -901,18 +922,18 @@ export default function AgentChat({
           </button>
         </div>
 
-        <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
+        <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
           <span>
             {awaitingInput ? "The active agent is waiting for your reply to continue this task." : "Enter sends. Shift+Enter adds a new line."}
           </span>
-          <span className="font-medium text-slate-600">{sendLabel}</span>
+          <span className="font-medium text-gray-600">{sendLabel}</span>
         </div>
 
         {isVoiceModeEnabled && (
           <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
             <div className="flex items-center gap-2">
               <span>Voice mode active</span>
-              {hasActiveInteraction && <span className="text-amber-600">• Interaction detected - voice paused</span>}
+              {hasActiveInteraction && <span className="text-yellow-600">• Interaction detected - voice paused</span>}
             </div>
             <div className="flex items-center gap-2">
               <span>Auto-send after 6s silence</span>

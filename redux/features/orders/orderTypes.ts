@@ -69,8 +69,10 @@ export interface InventoryItemReference {
   track_serial?: boolean;
   minimum_stock_level?: string | number;
   reorder_point?: string | number;
+  reorder_quantity?: string | number;
   status?: string;
   unit_code?: string;
+  display_image?: string | null;
 }
 
 export interface PurchaseOrderLineItem {
@@ -78,6 +80,7 @@ export interface PurchaseOrderLineItem {
   purchase_order?: EntityId;
   inventory_item?: EntityId | null;
   inventory_item_name?: string;
+  inventory_item_image_url?: string | null;
   inventory_item_details?: InventoryItemReference | null;
   quantity: string | number;
   unit_price: string | number;

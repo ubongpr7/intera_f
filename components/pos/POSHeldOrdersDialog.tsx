@@ -16,16 +16,18 @@ interface POSHeldOrdersDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   heldOrders: POSHoldOrder[]
+  isLoading?: boolean
   onRestore: (heldOrder: POSHoldOrder) => Promise<void>
-  isRestoring: boolean
+  restoringHoldOrderIds: Record<string, boolean>
 }
 
 export default function POSHeldOrdersDialog({
   open,
   onOpenChange,
   heldOrders,
+  isLoading = false,
   onRestore,
-  isRestoring,
+  restoringHoldOrderIds,
 }: POSHeldOrdersDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -51,13 +53,30 @@ export default function POSHeldOrdersDialog({
                       Stored {new Date(heldOrder.created_at).toLocaleString()}
                     </p>
                   </div>
-                  <Button size="sm" variant="outline" onClick={() => void onRestore(heldOrder)} disabled={isRestoring}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => void onRestore(heldOrder)}
+                    disabled={!!restoringHoldOrderIds[heldOrder.id]}
+                  >
                     Restore cart
                   </Button>
                 </div>
               ))}
 
-              {heldOrders.length === 0 ? (
+              {isLoading ? (
+                <div className="space-y-3 p-1">
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <div
+                      key={`held-order-skeleton-${index}`}
+                      className="rounded-xl border border-gray-200 bg-white px-4 py-4 animate-pulse"
+                    >
+                      <div className="h-4 w-40 rounded bg-gray-200" />
+                      <div className="mt-2 h-3 w-52 rounded bg-gray-100" />
+                    </div>
+                  ))}
+                </div>
+              ) : heldOrders.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-10 text-center text-sm text-gray-500">
                   No held carts are waiting to be restored.
                 </div>

@@ -58,14 +58,16 @@ const  selectOptions = {
       interfaceKeys={ProductFormKeys}
     
       data={productData}
-      notEditableFields={['id', 'created_at','updated_at', ]}
+      notEditableFields={['id', 'created_at','updated_at',]}
       updateMutation={handleUpdate}
-      excludeFields={['id', 'category_details', 'display_image', 'price_range', 'attribute_links', 'quick_sale_variants', 'pricing_strategy_details', 'created_by_details']}
+      excludeFields={['id','sku','category_details', "barcode",'display_image', 'price_range', 'attribute_links', 'quick_sale_variants', 'pricing_strategy_details', 'created_by_details']}
       selectOptions={selectOptions}
       isLoading={updateIsLoading}
       policyFields={['description', 'short_description', 'meta_title', 'meta_description']}
       keyInfo={{}}
-      optionalFields={['description', 'short_description', 'cost_price', 'barcode', 'sku', 'pos_category', 'unit', 'dimensions', 'weight', 'meta_title', 'meta_description']}
+
+
+      optionalFields={['description',"is_featured", "quick_sale", 'short_description','tax_inclusive', 'cost_price','is_template','allow_backorder', 'pos_category', 'unit', 'dimensions', 'weight', 'meta_title', 'meta_description']}
 
 
     />

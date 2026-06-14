@@ -8,6 +8,7 @@ import type {
   InventoryCategoryListParams,
   InventoryData,
   InventoryListParams,
+  InventorySetupSummary,
   InventoryStockSummary,
   InventorySummary,
 } from "./inventoryTypes";
@@ -134,6 +135,13 @@ export const inventoryApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
+    getInventorySetupSummary: builder.query<InventorySetupSummary, void>({
+      query: () => ({
+        url: `/${inventoryApi}/items/summary/`,
+        service,
+      }),
+    }),
+
     getInventoryStockSummary: builder.query<InventoryStockSummary, EntityId>({
       query: (id) => ({
         url: `/${inventoryApi}/items/${id}/stock_summary/`,
@@ -182,6 +190,7 @@ export const {
   useDeleteInventoryMutation,
   useGetLowStockInventoriesQuery,
   useGetInventoriesNeedingReorderQuery,
+  useGetInventorySetupSummaryQuery,
   useGetInventoryStockSummaryQuery,
   useGetMinimalInventoryQuery,
   useAdjustInventoryStockMutation,

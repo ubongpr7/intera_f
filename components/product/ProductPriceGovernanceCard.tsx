@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   useApprovePriceChangeMutation,
-  useLazyExportVariantsCsvQuery,
-  useLazyExportPriceHistoryCsvQuery,
+  useExportPriceHistoryCsvMutation,
+  useExportVariantsCsvMutation,
   useGetPendingPriceApprovalsQuery,
   useGetPriceChangeHistoryQuery,
   useGetProductVariantsQuery,
@@ -37,9 +37,9 @@ export default function ProductPriceGovernanceCard({
   const { data: variants = [] } = useGetProductVariantsQuery(productId)
   const { data: priceHistory = [], refetch: refetchHistory } = useGetPriceChangeHistoryQuery({ product: productId })
   const { data: pendingApprovals = [], refetch: refetchPending } = useGetPendingPriceApprovalsQuery()
-  const { data: purchaseHistory = [] } = useGetPurchasePriceHistoryQuery()
-  const [exportVariants, { isFetching: isExportingVariants }] = useLazyExportVariantsCsvQuery()
-  const [exportPriceHistory, { isFetching: isExportingPriceHistory }] = useLazyExportPriceHistoryCsvQuery()
+  const { data: purchaseHistory = [] } = useGetPurchasePriceHistoryQuery({ product: productId })
+  const [exportVariants, { isLoading: isExportingVariants }] = useExportVariantsCsvMutation()
+  const [exportPriceHistory, { isLoading: isExportingPriceHistory }] = useExportPriceHistoryCsvMutation()
   const [approvePriceChange, { isLoading: isApproving }] = useApprovePriceChangeMutation()
   const [rejectPriceChange, { isLoading: isRejecting }] = useRejectPriceChangeMutation()
 
@@ -59,7 +59,8 @@ export default function ProductPriceGovernanceCard({
     [purchaseHistory, variantIds],
   )
 
-  const downloadBlob = (blob: Blob, filename: string) => {
+  const downloadCsv = (csv: string, filename: string) => {
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" })
     const downloadUrl = window.URL.createObjectURL(blob)
     const link = document.createElement("a")
     link.href = downloadUrl
@@ -72,8 +73,8 @@ export default function ProductPriceGovernanceCard({
 
   const handleExportVariants = async () => {
     try {
-      const blob = await exportVariants({ product: productId }).unwrap()
-      downloadBlob(blob, `${productName || "product"}-variants.csv`)
+      const csv = await exportVariants({ product: productId }).unwrap()
+      downloadCsv(csv, `${productName || "product"}-variants.csv`)
       toast.success("Variant export started.")
     } catch {
       toast.error("Failed to export variants.")
@@ -82,8 +83,8 @@ export default function ProductPriceGovernanceCard({
 
   const handleExportPriceHistory = async () => {
     try {
-      const blob = await exportPriceHistory({ product: productId }).unwrap()
-      downloadBlob(blob, `${productName || "product"}-price-history.csv`)
+      const csv = await exportPriceHistory({ product: productId }).unwrap()
+      downloadCsv(csv, `${productName || "product"}-price-history.csv`)
       toast.success("Price history export started.")
     } catch {
       toast.error("Failed to export price history.")
@@ -191,7 +192,7 @@ export default function ProductPriceGovernanceCard({
                   <div key={entry.id} className="rounded-xl border border-gray-200 bg-white px-3 py-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-sm font-semibold text-gray-900">{entry.variant_name || entry.product_name || "Pending change"}</p>
-                      <span className="text-xs uppercase tracking-wide text-amber-600">pending</span>
+                      <span className="text-xs uppercase tracking-wide text-yellow-600">pending</span>
                     </div>
                     <p className="mt-2 text-sm text-gray-600">
                       {formatPrice(entry.old_price, currencyCode)} → {formatPrice(entry.new_price, currencyCode)}

@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { ArrowLeft, ArrowRight, Bot, Building2, CheckCircle2, Link2, Loader2, MapPin, ShieldCheck, Users } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -64,12 +64,7 @@ export default function CompanyProfileContainer() {
   const [activeTab, setActiveTab] = useState<CompanySetupStep>(
     isCompanySetupStep(initialStep) ? initialStep : "basic-info",
   )
-
-  useEffect(() => {
-    if (isCompanySetupStep(initialStep) && initialStep !== activeTab) {
-      setActiveTab(initialStep)
-    }
-  }, [activeTab, initialStep])
+  const resolvedActiveTab = isCompanySetupStep(initialStep) ? initialStep : activeTab
 
   const goToStep = useCallback(
     (nextStep: CompanySetupStep) => {
@@ -98,7 +93,7 @@ export default function CompanyProfileContainer() {
     return Math.round((completed / Object.keys(stepCompletion).length) * 100)
   }, [stepCompletion])
 
-  const activeStepIndex = tabConfig.findIndex((tab) => tab.value === activeTab)
+  const activeStepIndex = tabConfig.findIndex((tab) => tab.value === resolvedActiveTab)
   const activeStep = tabConfig[activeStepIndex] ?? tabConfig[0]
   const nextStep = tabConfig[activeStepIndex + 1]
   const previousStep = tabConfig[activeStepIndex - 1]
@@ -174,7 +169,7 @@ export default function CompanyProfileContainer() {
                     onClick={() => goToStep(tab.value)}
                     className={cn(
                       "w-full rounded-2xl border p-4 text-left transition-colors",
-                      activeTab === tab.value ? "border-blue-300 bg-blue-50" : "border-gray-200 bg-white hover:border-gray-300",
+                      resolvedActiveTab === tab.value ? "border-blue-300 bg-blue-50" : "border-gray-200 bg-white hover:border-gray-300",
                       requiresProfileContext ? "cursor-not-allowed opacity-60" : "",
                     )}
                   >
@@ -182,7 +177,7 @@ export default function CompanyProfileContainer() {
                       <div
                         className={cn(
                           "rounded-xl px-2 py-1 text-xs font-semibold",
-                          isComplete ? "bg-green-100 text-green-700" : activeTab === tab.value ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600",
+                          isComplete ? "bg-green-100 text-green-700" : resolvedActiveTab === tab.value ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600",
                         )}
                       >
                         {isComplete ? <CheckCircle2 className="h-4 w-4" /> : index + 1}
@@ -206,7 +201,7 @@ export default function CompanyProfileContainer() {
               Invite staff and assign roles
               <Users className="h-4 w-4 text-gray-500" />
             </Link>
-            <Link href="/settings" className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-900 transition-colors hover:border-blue-300">
+            <Link href="/agent/settings" className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-900 transition-colors hover:border-blue-300">
               Configure the company agent
               <Bot className="h-4 w-4 text-gray-500" />
             </Link>
@@ -228,7 +223,7 @@ export default function CompanyProfileContainer() {
             </div>
           </CardHeader>
           <CardContent className="p-5">
-            {activeTab === "basic-info" ? (
+            {resolvedActiveTab === "basic-info" ? (
               <CompanyBasicInfoForm
                 profile={typedProfile}
                 onSuccess={handleBasicInfoSuccess}
@@ -236,7 +231,7 @@ export default function CompanyProfileContainer() {
               />
             ) : null}
 
-            {activeTab === "address" ? (
+            {resolvedActiveTab === "address" ? (
               typedProfile?.id ? (
                 <CompanyAddressForm profile={typedProfile} onUpdate={handleAddressSuccess} submitLabel="Save and continue" />
               ) : (
@@ -246,7 +241,7 @@ export default function CompanyProfileContainer() {
               )
             ) : null}
 
-            {activeTab === "social" ? (
+            {resolvedActiveTab === "social" ? (
               typedProfile?.id ? (
                 <CompanySocialLinksForm profile={typedProfile} onUpdate={handleSocialSuccess} submitLabel="Save and continue" />
               ) : (
@@ -256,7 +251,7 @@ export default function CompanyProfileContainer() {
               )
             ) : null}
 
-            {activeTab === "policies" ? (
+            {resolvedActiveTab === "policies" ? (
               typedProfile?.id ? (
                 <div className="space-y-4">
                   <PolicyManagement profileId={Number(typedProfile.id)} />
@@ -268,7 +263,7 @@ export default function CompanyProfileContainer() {
                       </Link>
                     </Button>
                     <Button asChild variant="outline">
-                      <Link href="/settings">Open AI workspace setup</Link>
+                      <Link href="/agent/settings">Open AI workspace setup</Link>
                     </Button>
                   </div>
                 </div>

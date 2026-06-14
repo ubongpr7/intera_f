@@ -43,8 +43,6 @@ const defaultValues: Partial<ProductVariant> = {
   active: ProductData.is_active,
   pos_visible: ProductData.quick_sale ?? false,
   is_featured: false,
-  price_override: ProductData.base_price,
-  cost_override: ProductData?.cost_price,
   weight_override: ProductData?.weight,
   dimensions_override: ProductData?.dimensions||'',
   track_stock_override: ProductData?.track_stock,
@@ -89,6 +87,7 @@ const defaultValues: Partial<ProductVariant> = {
         'pos_visible',
         'active'
       ]}
+      
     />
   )
 }

@@ -141,15 +141,19 @@ export default function ProductOperationsWorkspace({ productId }: ProductOperati
           { label: "Featured", value: loadingVariants ? "..." : featuredVariants },
         ]}
       >
-        <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-          <ProductVariantManager
-            productId={productId}
-            ProductData={minimalProduct || product || {}}
-          />
-          <ProductAttributeLinks
-            productId={productId}
-            product={minimalProduct || product || {}}
-          />
+        <div className="space-y-6">
+          <div className="min-w-0 overflow-hidden">
+            <ProductVariantManager
+              productId={productId}
+              ProductData={minimalProduct || product || {}}
+            />
+          </div>
+          <div className="min-w-0 overflow-hidden">
+            <ProductAttributeLinks
+              productId={productId}
+              product={minimalProduct || product || {}}
+            />
+          </div>
         </div>
       </OperationalStepSection>
 
@@ -186,9 +190,13 @@ export default function ProductOperationsWorkspace({ productId }: ProductOperati
         ]}
       >
         <div className="space-y-6">
-          <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-            <ProductPricingStrategies productId={productId} product={minimalProduct || product || {}} />
-            <ProductPricing productId={productId} product={minimalProduct || product || {}} />
+          <div className="space-y-6">
+            <div className="min-w-0 overflow-hidden">
+              <ProductPricingStrategies productId={productId} product={minimalProduct || product || {}} />
+            </div>
+            <div className="min-w-0 overflow-hidden">
+              <ProductPricing productId={productId} product={minimalProduct || product || {}} />
+            </div>
           </div>
           <ProductPriceGovernanceCard productId={productId} productName={product?.name} />
         </div>

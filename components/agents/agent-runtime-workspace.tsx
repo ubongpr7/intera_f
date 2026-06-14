@@ -26,6 +26,7 @@ import {
 import { toast } from "react-toastify"
 
 import AgentChat from "@/components/agents/agent-chat"
+import { humanizeAgentDisplayName } from "@/lib/agent-display"
 import { hasTokenPermission } from "@/lib/agentPermissions"
 import { deriveWorkflowSummary } from "@/lib/agent-structured-output"
 import { cn, formatRelativeTime, truncateText } from "@/lib/utils"
@@ -113,6 +114,28 @@ const quickStartPrompts = [
   "Help me investigate a stuck workflow and propose the fastest resolution path.",
 ]
 
+const extractGatewayErrorMessage = (error: unknown, fallback: string) => {
+  if (typeof error !== "object" || !error) {
+    return fallback
+  }
+  const raw = "data" in error ? (error as { data?: unknown }).data : undefined
+  if (typeof raw === "string" && raw.trim()) {
+    try {
+      const parsed = JSON.parse(raw) as { detail?: Array<{ msg?: string }> | string }
+      if (typeof parsed.detail === "string" && parsed.detail.trim()) {
+        return parsed.detail
+      }
+      if (Array.isArray(parsed.detail) && parsed.detail[0]?.msg) {
+        return parsed.detail[0].msg
+      }
+      return raw
+    } catch {
+      return raw
+    }
+  }
+  return fallback
+}
+
 const eventLabel = (event: Record<string, unknown>): string => {
   const kind = asString(event.kind)
   if (kind === "task") {
@@ -161,15 +184,15 @@ function MetricCard({
   hint: string
 }) {
   return (
-    <div className="rounded-[24px] border border-slate-200 bg-white/95 p-4 shadow-[0_16px_32px_-28px_rgba(15,23,42,0.35)]">
+    <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 shadow-sm">
       <div className="flex items-center gap-3">
-        <div className="rounded-2xl bg-blue-50 p-2.5 text-blue-700">{icon}</div>
+        <div className="rounded-2xl bg-white p-2.5 text-gray-700 shadow-sm">{icon}</div>
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{label}</p>
-          <p className="mt-1 text-lg font-semibold text-slate-950">{value}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500">{label}</p>
+          <p className="mt-1 text-lg font-semibold text-gray-950">{value}</p>
         </div>
       </div>
-      <p className="mt-3 text-xs text-slate-500">{hint}</p>
+      <p className="mt-3 text-xs text-gray-500">{hint}</p>
     </div>
   )
 }
@@ -452,25 +475,34 @@ export default function AgentRuntimeWorkspace() {
   const selectedAgent =
     (resolvedSelectedAgentSlug ? runtimeAgentMap.get(resolvedSelectedAgentSlug) : undefined) ??
     (preferredAgentSlug ? runtimeAgentMap.get(preferredAgentSlug) : undefined)
+  const activeAgentDisplayName = useMemo(
+    () =>
+      humanizeAgentDisplayName(
+        activeConversation?.agentName || activeRuntimeAgent?.name || selectedAgent?.name || "Host",
+      ),
+    [activeConversation?.agentName, activeRuntimeAgent?.name, selectedAgent?.name],
+  )
+  const activeSpecialistDisplayName = useMemo(
+    () => humanizeAgentDisplayName(activeConversation?.activeSpecialistSlug || null),
+    [activeConversation?.activeSpecialistSlug],
+  )
   const workflowSummary = useMemo(
     () =>
       deriveWorkflowSummary({
         messages: chatMessages,
-        activeAgentName: activeRuntimeAgent?.name || activeConversation?.agentName || selectedAgent?.name || "Host",
-        activeSpecialistName: activeConversation?.activeSpecialistSlug || null,
+        activeAgentName: activeAgentDisplayName,
+        activeSpecialistName: activeSpecialistDisplayName || null,
         currentTaskState: activeConversation?.currentTaskState || null,
         awaitingInput: activeConversation?.awaitingInput,
         statusText: liveStatusText,
       }),
     [
-      activeConversation?.activeSpecialistSlug,
-      activeConversation?.agentName,
+      activeAgentDisplayName,
       activeConversation?.awaitingInput,
       activeConversation?.currentTaskState,
-      activeRuntimeAgent?.name,
+      activeSpecialistDisplayName,
       chatMessages,
       liveStatusText,
-      selectedAgent?.name,
     ],
   )
 
@@ -605,7 +637,7 @@ export default function AgentRuntimeWorkspace() {
   }
 
   const createBlankConversation = async (initialText?: string) => {
-    const targetAgentSlug = activeConversation?.agentSlug || resolvedSelectedAgentSlug || preferredAgentSlug
+    const targetAgentSlug = selectedAgentSlug || preferredAgentSlug
     if (!targetAgentSlug) {
       toast.error("Install or select an agent before starting a conversation.")
       return null
@@ -619,7 +651,6 @@ export default function AgentRuntimeWorkspace() {
       setLiveConversation(detail.conversation)
       setLiveMessages(detail.messages)
       setLiveActivities(detail.activities)
-      setSelectedAgentSlug(detail.conversation.agentSlug)
       await refetchConversations()
       if (initialText) {
         pendingOutboundMessageRef.current = {
@@ -629,9 +660,7 @@ export default function AgentRuntimeWorkspace() {
       }
       return detail
     } catch (error) {
-      const message =
-        typeof error === "object" && error && "data" in error ? String((error as { data?: unknown }).data) : "Unable to create conversation."
-      toast.error(message)
+      toast.error(extractGatewayErrorMessage(error, "Unable to create conversation."))
       return null
     }
   }
@@ -677,9 +706,7 @@ export default function AgentRuntimeWorkspace() {
         setRuntimeEvents([])
       }
     } catch (error) {
-      const message =
-        typeof error === "object" && error && "data" in error ? String((error as { data?: unknown }).data) : "Unable to delete conversation."
-      toast.error(message)
+      toast.error(extractGatewayErrorMessage(error, "Unable to delete conversation."))
     }
   }
 
@@ -695,31 +722,27 @@ export default function AgentRuntimeWorkspace() {
       }
       await refetchConversations()
     } catch (error) {
-      const message =
-        typeof error === "object" && error && "data" in error
-          ? String((error as { data?: unknown }).data)
-          : "Unable to update conversation."
-      toast.error(message)
+      toast.error(extractGatewayErrorMessage(error, "Unable to update conversation."))
     }
   }
 
   if (!canInteractWithAgent) {
     return (
-      <div className="rounded-[32px] border border-slate-200 bg-white/95 p-8 shadow-[0_22px_40px_-30px_rgba(15,23,42,0.45)]">
+      <div className="rounded-[32px] border border-gray-200 bg-white/95 p-8 shadow-[0_22px_40px_-30px_rgba(15,23,42,0.45)]">
         <div className="max-w-2xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-amber-700">
+          <div className="inline-flex items-center gap-2 rounded-full border border-yellow-200 bg-yellow-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-yellow-700">
             <ShieldCheck className="h-4 w-4" />
             Agent Access Required
           </div>
-          <h1 className="mt-5 text-3xl font-semibold tracking-tight text-slate-950">Agent runtime is locked for this workspace.</h1>
-          <p className="mt-3 max-w-xl text-sm leading-7 text-slate-600">
+          <h1 className="mt-5 text-3xl font-semibold tracking-tight text-gray-950">Agent runtime is locked for this workspace.</h1>
+          <p className="mt-3 max-w-xl text-sm leading-7 text-gray-600">
             You need the workspace owner override or the <code>interact_with_agent</code> permission before this runtime
             surface becomes available.
           </p>
           {canManageAgentSettings && (
             <Link
-              href="/settings?tab=agents"
-              className="mt-6 inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+              href="/agent/settings?tab=workspace-agents"
+              className="mt-6 inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
             >
               <Settings2 className="h-4 w-4" />
               Open Agent Settings
@@ -731,10 +754,10 @@ export default function AgentRuntimeWorkspace() {
   }
 
   return (
-    <div className="flex min-h-0 flex-col gap-6 xl:h-[calc(100vh-9.5rem)]">
+    <div className="flex min-h-0 flex-col gap-4 xl:h-[calc(100vh-9.5rem)]">
       <div
         ref={overviewRef}
-        className="rounded-[32px] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.14),_transparent_38%),linear-gradient(135deg,_rgba(255,255,255,0.98),_rgba(248,250,252,0.96))] p-4 shadow-[0_28px_60px_-36px_rgba(15,23,42,0.35)]"
+        className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm"
       >
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
@@ -742,21 +765,21 @@ export default function AgentRuntimeWorkspace() {
               type="button"
               onClick={() => setIsOverviewOpen((current) => !current)}
               aria-expanded={isOverviewOpen}
-              className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50/90 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.26em] text-blue-700 transition hover:border-blue-300 hover:bg-blue-100"
-            >
+              className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-700 transition hover:border-gray-300 hover:bg-gray-100"
+              >
               <Radio className="h-4 w-4" />
               Workspace Agent Runtime
               {isOverviewOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </button>
             {!isOverviewOpen ? (
-              <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-600">
-                <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-700">
+              <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-gray-600">
+                <span className="rounded-full border border-gray-200 bg-white px-3 py-1.5 font-medium text-gray-700">
                   {runtimeAgents.length} agents
                 </span>
-                <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-700">
+                <span className="rounded-full border border-gray-200 bg-white px-3 py-1.5 font-medium text-gray-700">
                   {conversations.length} threads
                 </span>
-                <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-700">
+                <span className="rounded-full border border-gray-200 bg-white px-3 py-1.5 font-medium text-gray-700">
                   {gatewayOnline ? "Gateway online" : isCheckingGateway ? "Checking gateway" : "Gateway offline"}
                 </span>
               </div>
@@ -770,15 +793,15 @@ export default function AgentRuntimeWorkspace() {
                 void refetchConversations()
                 void refetchGateway()
               }}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-950"
+              className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:text-gray-950"
             >
               <RefreshCcw className={cn("h-4 w-4", (isFetchingRuntimeRegistry || isFetchingConversations || isCheckingGateway) && "animate-spin")} />
               Refresh
             </button>
             {canManageAgentSettings && (
               <Link
-                href="/settings?tab=agents"
-                className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+                href="/agent/settings?tab=workspace-agents"
+                className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
               >
                 <Settings2 className="h-4 w-4" />
                 Agent Settings
@@ -791,8 +814,8 @@ export default function AgentRuntimeWorkspace() {
           <>
             <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-2xl">
-                <h1 className="text-3xl font-semibold tracking-tight text-slate-950">Persistent conversations for the active workspace.</h1>
-                <p className="mt-3 text-sm leading-7 text-slate-600">
+                <h1 className="text-3xl font-semibold tracking-tight text-gray-950">Persistent conversations for the active workspace.</h1>
+                <p className="mt-3 text-sm leading-7 text-gray-600">
                   Installed workspace agents are the only chat targets here. Threads are persisted in the A2A runtime,
                   not the users service, and the gateway streams live task progress over the active conversation socket.
                 </p>
@@ -801,7 +824,7 @@ export default function AgentRuntimeWorkspace() {
                 <button
                   type="button"
                   onClick={() => void handleCopyDebugSnapshot()}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-950"
+                  className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:text-gray-950"
                 >
                   <Copy className="h-4 w-4" />
                   Copy Debug JSON
@@ -809,7 +832,7 @@ export default function AgentRuntimeWorkspace() {
                 <button
                   type="button"
                   onClick={handleDownloadDebugSnapshot}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-950"
+                  className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:text-gray-950"
                 >
                   <Download className="h-4 w-4" />
                   Download JSON
@@ -845,13 +868,13 @@ export default function AgentRuntimeWorkspace() {
                   type="button"
                   onClick={() => void createBlankConversation(prompt)}
                   disabled={!preferredAgentSlug || isCreatingConversation}
-                  className="rounded-[24px] border border-slate-200 bg-white/80 p-4 text-left transition hover:border-blue-200 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-[24px] border border-gray-200 bg-white/80 p-4 text-left transition hover:border-blue-200 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <div className="flex items-center gap-2 text-blue-700">
                     <Sparkles className="h-4 w-4" />
                     <span className="text-[11px] font-semibold uppercase tracking-[0.2em]">Quick Start</span>
                   </div>
-                  <p className="mt-3 text-sm font-medium leading-6 text-slate-900">{prompt}</p>
+                  <p className="mt-3 text-sm font-medium leading-6 text-gray-900">{prompt}</p>
                 </button>
               ))}
             </div>
@@ -859,20 +882,20 @@ export default function AgentRuntimeWorkspace() {
         ) : null}
       </div>
 
-      <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[280px_minmax(0,1fr)_280px]">
+      <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[300px_minmax(0,1fr)_300px]">
         <aside className="min-h-0 overflow-hidden">
-          <div className="flex h-full min-h-0 flex-col gap-6 overflow-y-auto pr-1">
-          <section className="shrink-0 rounded-[28px] border border-slate-200 bg-white/95 p-5 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.32)]">
+          <div className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto pr-1">
+          <section className="shrink-0 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Installed Agents</p>
-                <h2 className="mt-2 text-lg font-semibold text-slate-950">Workspace registry</h2>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500">Installed Agents</p>
+                <h2 className="mt-2 text-lg font-semibold text-gray-950">Workspace registry</h2>
               </div>
               <button
                 type="button"
                 onClick={() => void createBlankConversation()}
                 disabled={!resolvedSelectedAgentSlug || isCreatingConversation}
-                className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Plus className="h-3.5 w-3.5" />
                 New
@@ -888,50 +911,53 @@ export default function AgentRuntimeWorkspace() {
                       key={agent.id}
                       onClick={() => setSelectedAgentSlug(agent.slug)}
                       className={cn(
-                        "w-full rounded-[22px] border px-4 py-4 text-left transition",
+                        "w-full rounded-2xl border px-4 py-4 text-left transition",
                         active
-                          ? "border-blue-300 bg-blue-50/80 shadow-[0_16px_30px_-28px_rgba(37,99,235,0.7)]"
-                          : "border-slate-200 bg-slate-50/70 hover:border-slate-300 hover:bg-white",
+                          ? "border-blue-200 bg-blue-50"
+                          : "border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-white",
                       )}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="text-sm font-semibold text-slate-950">{agent.name}</p>
-                          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">{humanize(agent.slug)}</p>
+                          <p className="text-sm font-semibold text-gray-950">{agent.name}</p>
+                          <p className={cn("mt-1 text-xs uppercase tracking-[0.14em]", active ? "text-blue-700" : "text-gray-500")}>{humanize(agent.slug)}</p>
                         </div>
-                        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600">
+                        <span className={cn(
+                          "rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]",
+                          active ? "border-blue-200 bg-white text-blue-700" : "border-gray-200 bg-white text-gray-600",
+                        )}>
                           {humanize(agent.visibility)}
                         </span>
                       </div>
-                      <p className="mt-3 text-xs leading-6 text-slate-600">{truncateText(agentSummary(agent), 110)}</p>
+                      <p className={cn("mt-3 text-xs leading-6", active ? "text-gray-700" : "text-gray-600")}>{truncateText(agentSummary(agent), 110)}</p>
                     </button>
                   )
                 })
               ) : (
-                <div className="rounded-[24px] border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
+                <div className="rounded-[24px] border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-600">
                   No installed agents yet. Add them from the agent settings page first.
                 </div>
               )}
             </div>
           </section>
 
-          <section className="flex min-h-0 flex-1 flex-col rounded-[28px] border border-slate-200 bg-white/95 p-5 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.32)]">
+          <section className="flex min-h-0 flex-1 flex-col rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Conversations</p>
-                <h2 className="mt-2 text-lg font-semibold text-slate-950">Persistent threads</h2>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500">Conversations</p>
+                <h2 className="mt-2 text-lg font-semibold text-gray-950">Persistent threads</h2>
               </div>
-              <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600">
+              <span className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-600">
                 {filteredConversations.length}
               </span>
             </div>
             <label className="relative mt-4 block">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
                 value={conversationSearch}
                 onChange={(event) => setConversationSearch(event.target.value)}
                 placeholder="Search conversations"
-                className="h-12 w-full rounded-full border border-slate-200 bg-slate-50/80 pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white"
+                className="h-12 w-full rounded-full border border-gray-200 bg-gray-50/80 pl-11 pr-4 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-blue-300 focus:bg-white"
               />
             </label>
             <div className="mt-4 flex flex-wrap gap-2">
@@ -950,8 +976,8 @@ export default function AgentRuntimeWorkspace() {
                     className={cn(
                       "rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] transition",
                       active
-                        ? "bg-slate-950 text-white"
-                        : "border border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:text-slate-900",
+                        ? "border border-blue-200 bg-blue-50 text-blue-700"
+                        : "border border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300 hover:text-gray-900",
                     )}
                   >
                     {filter.label}
@@ -967,32 +993,32 @@ export default function AgentRuntimeWorkspace() {
                     <div
                       key={conversation.id}
                       className={cn(
-                        "rounded-[22px] border px-4 py-4 transition",
+                        "rounded-2xl border px-4 py-4 transition",
                         active
-                          ? "border-slate-900 bg-slate-950 text-white shadow-[0_22px_34px_-28px_rgba(15,23,42,0.8)]"
-                          : "border-slate-200 bg-slate-50/60 hover:border-slate-300 hover:bg-white",
+                          ? "border-blue-200 bg-blue-50"
+                          : "border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-white",
                       )}
                     >
                       <button type="button" onClick={() => setActiveConversationId(conversation.id)} className="w-full text-left">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <p className={cn("truncate text-sm font-semibold", active ? "text-white" : "text-slate-950")}>
+                            <p className="truncate text-sm font-semibold text-gray-950">
                               {conversation.title || `${conversation.agentName} conversation`}
                             </p>
-                            <p className={cn("mt-1 text-xs uppercase tracking-[0.16em]", active ? "text-slate-300" : "text-slate-500")}>
+                            <p className={cn("mt-1 text-xs uppercase tracking-[0.14em]", active ? "text-blue-700" : "text-gray-500")}>
                               {conversation.agentName}
                             </p>
                           </div>
                           {conversation.awaitingInput && (
-                            <span className={cn("rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]", active ? "bg-white/10 text-white" : "bg-amber-100 text-amber-700")}>
+                            <span className={cn("rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]", active ? "bg-white text-blue-700" : "bg-yellow-100 text-yellow-700")}>
                               Awaiting input
                             </span>
                           )}
                         </div>
-                        <p className={cn("mt-3 text-xs leading-6", active ? "text-slate-200" : "text-slate-600")}>
+                        <p className={cn("mt-3 text-xs leading-6", active ? "text-gray-700" : "text-gray-600")}>
                           {truncateText(messagePreview(conversation), 110)}
                         </p>
-                        <div className={cn("mt-3 flex items-center gap-2 text-[11px]", active ? "text-slate-300" : "text-slate-500")}>
+                        <div className="mt-3 flex items-center gap-2 text-[11px] text-gray-500">
                           <Clock3 className="h-3.5 w-3.5" />
                           {conversation.lastMessageAt ? formatRelativeTime(conversation.lastMessageAt) : "New thread"}
                         </div>
@@ -1005,8 +1031,8 @@ export default function AgentRuntimeWorkspace() {
                           className={cn(
                             "mr-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition",
                             active
-                              ? "text-slate-300 hover:bg-white/10 hover:text-white"
-                              : "text-slate-500 hover:bg-slate-100 hover:text-slate-900",
+                              ? "text-gray-600 hover:bg-white hover:text-gray-900"
+                              : "text-gray-500 hover:bg-gray-100 hover:text-gray-900",
                           )}
                         >
                           {conversation.status === "archived" ? (
@@ -1028,8 +1054,8 @@ export default function AgentRuntimeWorkspace() {
                           className={cn(
                             "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition",
                             active
-                              ? "text-slate-300 hover:bg-white/10 hover:text-white"
-                              : "text-slate-500 hover:bg-slate-100 hover:text-slate-900",
+                              ? "text-gray-600 hover:bg-white hover:text-gray-900"
+                              : "text-gray-500 hover:bg-gray-100 hover:text-gray-900",
                           )}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -1040,7 +1066,7 @@ export default function AgentRuntimeWorkspace() {
                   )
                 })
               ) : (
-                <div className="rounded-[24px] border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
+                <div className="rounded-[24px] border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-600">
                   {isFetchingConversations ? "Loading conversations..." : "No conversations match this filter."}
                 </div>
               )}
@@ -1049,24 +1075,24 @@ export default function AgentRuntimeWorkspace() {
           </div>
         </aside>
 
-        <section className="min-w-0 min-h-0 overflow-hidden rounded-[30px] border border-slate-200 bg-white/95 p-5 shadow-[0_22px_48px_-34px_rgba(15,23,42,0.35)]">
+        <section className="min-w-0 min-h-0 overflow-hidden rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="flex h-full min-h-0 flex-col">
-          <div className="shrink-0 flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="shrink-0 flex flex-col gap-3 border-b border-gray-200 pb-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Live Conversation</p>
-              <h2 className="mt-2 truncate text-2xl font-semibold tracking-tight text-slate-950">
-                {activeConversation?.title || activeRuntimeAgent?.name || "Select or start a conversation"}
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500">Live Conversation</p>
+              <h2 className="mt-2 truncate text-2xl font-semibold tracking-tight text-gray-950">
+                {activeConversation?.title || activeAgentDisplayName || "Select or start a conversation"}
               </h2>
-              <p className="mt-2 text-sm text-slate-600">
+              <p className="mt-2 text-sm text-gray-600">
                 {activeConversation
-                  ? `Runtime target: ${activeRuntimeAgent?.name || activeConversation.agentName}`
+                  ? `Runtime target: ${activeAgentDisplayName}`
                   : "Pick an installed agent and start a new persistent conversation."}
               </p>
               {latestHeaderUpdate ? (
-                <div className="mt-3 inline-flex max-w-full items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                <div className="mt-3 inline-flex max-w-full items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
                   <Activity className="h-3.5 w-3.5 shrink-0 text-blue-600" />
                   <span className="truncate">{truncateText(latestHeaderUpdate.label, 120)}</span>
-                  <span className="shrink-0 text-[11px] text-slate-400">{formatRelativeTime(latestHeaderUpdate.receivedAt)}</span>
+                  <span className="shrink-0 text-[11px] text-gray-400">{formatRelativeTime(latestHeaderUpdate.receivedAt)}</span>
                   {isBusy ? <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-emerald-500" /> : null}
                 </div>
               ) : null}
@@ -1074,7 +1100,7 @@ export default function AgentRuntimeWorkspace() {
             <div className="hidden sm:block" />
           </div>
 
-          <div className="mt-5 min-h-0 flex-1 overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50/70">
+          <div className="mt-5 min-h-0 flex-1 overflow-hidden rounded-[26px] border border-gray-200 bg-white">
             <AgentChat
               onClose={() => undefined}
               isFullScreen={false}
@@ -1083,7 +1109,7 @@ export default function AgentRuntimeWorkspace() {
               onSend={(text) => void handleSend(text)}
               isBusy={isBusy || isCreatingConversation || isFetchingConversationDetail}
               pendingCount={activeConversation?.awaitingInput ? 1 : 0}
-              activeAgentName={activeRuntimeAgent?.name || activeConversation?.agentName || selectedAgent?.name || "Host"}
+              activeAgentName={activeAgentDisplayName}
               statusText={liveStatusText}
               awaitingInput={Boolean(activeConversation?.awaitingInput)}
               showHeader={false}
@@ -1109,26 +1135,26 @@ export default function AgentRuntimeWorkspace() {
         </section>
 
         <aside className="min-h-0 overflow-hidden">
-          <div className="flex h-full min-h-0 flex-col gap-6 overflow-y-auto pr-1">
-          <section className="shrink-0 rounded-[28px] border border-slate-200 bg-white/95 p-5 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.32)]">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Selected Agent</p>
-            <h2 className="mt-2 text-lg font-semibold text-slate-950">{activeRuntimeAgent?.name || selectedAgent?.name || "No agent selected"}</h2>
-            <p className="mt-3 text-sm leading-7 text-slate-600">
+          <div className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto pr-1">
+          <section className="shrink-0 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500">Selected Agent</p>
+            <h2 className="mt-2 text-lg font-semibold text-gray-950">{activeRuntimeAgent?.name || selectedAgent?.name || "No agent selected"}</h2>
+            <p className="mt-3 text-sm leading-7 text-gray-600">
               {activeRuntimeAgent?.description || selectedAgent?.description || "Choose an installed agent to start a new conversation."}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               {activeRuntimeAgent && (
                 <>
-                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600">
+                  <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-600">
                     {humanize(activeRuntimeAgent.origin)}
                   </span>
-                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600">
+                  <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-600">
                     {humanize(activeRuntimeAgent.visibility)}
                   </span>
-                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600">
+                  <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-600">
                     {activeRuntimeAgent.tool_count} tools
                   </span>
-                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600">
+                  <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-600">
                     {activeRuntimeAgent.skill_count} skills
                   </span>
                 </>
@@ -1138,32 +1164,32 @@ export default function AgentRuntimeWorkspace() {
               type="button"
               onClick={() => void createBlankConversation()}
               disabled={!resolvedSelectedAgentSlug || isCreatingConversation}
-              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Plus className="h-4 w-4" />
               Start New Conversation
             </button>
           </section>
 
-          <section className="shrink-0 rounded-[28px] border border-slate-200 bg-white/95 p-5 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.32)]">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Current Flow</p>
-            <div className="mt-4 rounded-[22px] border border-slate-200 bg-white p-4 shadow-[0_10px_24px_-24px_rgba(15,23,42,0.28)]">
-              <p className="text-sm font-semibold text-slate-950">
+          <section className="shrink-0 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500">Current Flow</p>
+            <div className="mt-4 rounded-[22px] border border-gray-200 bg-white p-4 shadow-[0_10px_24px_-24px_rgba(15,23,42,0.28)]">
+              <p className="text-sm font-semibold text-gray-950">
                 {workflowSummary?.title || "Ready for the next message"}
               </p>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
+              <p className="mt-2 text-sm leading-6 text-gray-600">
                 {workflowSummary?.detail || "The chat surface will summarize the current step here whenever a task is active."}
               </p>
               {workflowSummary?.currentAgentLabel || workflowSummary?.nextAgentLabel ? (
-                <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-600">
+                <div className="mt-3 flex flex-wrap gap-4 text-xs text-gray-600">
                   {workflowSummary.currentAgentLabel ? (
                     <p>
-                      <span className="font-medium text-slate-900">Now:</span> {workflowSummary.currentAgentLabel}
+                      <span className="font-medium text-gray-900">Now:</span> {workflowSummary.currentAgentLabel}
                     </p>
                   ) : null}
                   {workflowSummary.nextAgentLabel ? (
                     <p>
-                      <span className="font-medium text-slate-900">Next:</span> {workflowSummary.nextAgentLabel}
+                      <span className="font-medium text-gray-900">Next:</span> {workflowSummary.nextAgentLabel}
                     </p>
                   ) : null}
                 </div>
@@ -1177,7 +1203,7 @@ export default function AgentRuntimeWorkspace() {
                         "rounded-full border px-2.5 py-1 text-[11px] font-medium",
                         step.status === "completed" && "border-emerald-200 bg-emerald-100 text-emerald-900",
                         step.status === "current" && "border-blue-200 bg-blue-100 text-blue-900",
-                        step.status === "pending" && "border-slate-200 bg-white text-slate-500",
+                        step.status === "pending" && "border-gray-200 bg-white text-gray-500",
                       )}
                     >
                       {step.label}
@@ -1187,81 +1213,81 @@ export default function AgentRuntimeWorkspace() {
               ) : null}
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-[18px] border border-slate-200 bg-white p-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Task state</p>
-                <p className="mt-2 text-sm font-medium text-slate-900">{humanize(activeConversation?.currentTaskState || "idle")}</p>
+              <div className="rounded-[18px] border border-gray-200 bg-white p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">Task state</p>
+                <p className="mt-2 text-sm font-medium text-gray-900">{humanize(activeConversation?.currentTaskState || "idle")}</p>
               </div>
-              <div className="rounded-[18px] border border-slate-200 bg-white p-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Specialist</p>
-                <p className="mt-2 text-sm font-medium text-slate-900">
-                  {activeConversation?.activeSpecialistSlug ? humanize(activeConversation.activeSpecialistSlug) : "Host"}
+              <div className="rounded-[18px] border border-gray-200 bg-white p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">Specialist</p>
+                <p className="mt-2 text-sm font-medium text-gray-900">
+                  {activeConversation?.activeSpecialistSlug ? humanizeAgentDisplayName(activeConversation.activeSpecialistSlug) : "Host"}
                 </p>
               </div>
-              <div className="rounded-[18px] border border-slate-200 bg-white p-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Needs reply</p>
-                <p className="mt-2 text-sm font-medium text-slate-900">{activeConversation?.awaitingInput ? "Yes" : "No"}</p>
+              <div className="rounded-[18px] border border-gray-200 bg-white p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">Needs reply</p>
+                <p className="mt-2 text-sm font-medium text-gray-900">{activeConversation?.awaitingInput ? "Yes" : "No"}</p>
               </div>
-              <div className="rounded-[18px] border border-slate-200 bg-white p-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Last update</p>
-                <p className="mt-2 text-sm font-medium text-slate-900">
+              <div className="rounded-[18px] border border-gray-200 bg-white p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">Last update</p>
+                <p className="mt-2 text-sm font-medium text-gray-900">
                   {activeConversation?.updatedAt ? formatRelativeTime(activeConversation.updatedAt) : "No activity yet"}
                 </p>
               </div>
             </div>
           </section>
 
-          <section className="shrink-0 rounded-[28px] border border-slate-200 bg-white/95 p-5 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.32)]">
+          <section className="shrink-0 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Delegation Mode</p>
-              <h2 className="mt-2 text-lg font-semibold text-slate-950">Runtime routing</h2>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500">Delegation Mode</p>
+              <h2 className="mt-2 text-lg font-semibold text-gray-950">Runtime routing</h2>
             </div>
-            <div className="mt-4 rounded-[20px] border border-slate-200 bg-slate-50/80 p-4">
-              <div className="flex items-center gap-2 text-slate-900">
+            <div className="mt-4 rounded-[20px] border border-gray-200 bg-gray-50/80 p-4">
+              <div className="flex items-center gap-2 text-gray-900">
                 <Workflow className="h-4 w-4 text-blue-700" />
                 <p className="text-sm font-medium">
                   {humanize(activeRuntimeAgent?.routing_policy || selectedAgent?.routing_policy || "direct")}
                 </p>
               </div>
-              <p className="mt-3 text-xs leading-6 text-slate-600">
+              <p className="mt-3 text-xs leading-6 text-gray-600">
                 The host agent can stay direct, orchestrate to specialists, or remain specialist-only depending on the
                 workspace configuration.
               </p>
             </div>
           </section>
 
-          <section className="flex min-h-0 flex-1 flex-col rounded-[28px] border border-slate-200 bg-white/95 p-5 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.32)]">
+          <section className="flex min-h-0 flex-1 flex-col rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Runtime Activity</p>
-                <h2 className="mt-2 text-lg font-semibold text-slate-950">Latest events</h2>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500">Runtime Activity</p>
+                <h2 className="mt-2 text-lg font-semibold text-gray-950">Latest events</h2>
               </div>
-              <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600">
+              <span className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-600">
                 {activityFeed.length}
               </span>
             </div>
             <div className="mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
               {activityFeed.length ? (
                 activityFeed.map((event) => (
-                  <div key={event.id} className="rounded-[20px] border border-slate-200 bg-slate-50/80 p-4">
+                  <div key={event.id} className="rounded-[20px] border border-gray-200 bg-gray-50/80 p-4">
                     <div className="flex items-start justify-between gap-3">
-                      <p className="text-sm font-medium text-slate-900">{event.label}</p>
+                      <p className="text-sm font-medium text-gray-900">{event.label}</p>
                       {event.state ? (
-                        <span className="rounded-full border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+                        <span className="rounded-full border border-gray-200 bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-600">
                           {humanize(event.state)}
                         </span>
                       ) : null}
                     </div>
-                    {event.detail ? <p className="mt-2 text-xs leading-6 text-slate-600">{truncateText(event.detail, 140)}</p> : null}
+                    {event.detail ? <p className="mt-2 text-xs leading-6 text-gray-600">{truncateText(event.detail, 140)}</p> : null}
                     {event.specialistSlug ? (
                       <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.16em] text-blue-700">
                         Specialist: {humanize(event.specialistSlug)}
                       </p>
                     ) : null}
-                    <p className="mt-2 text-xs text-slate-500">{formatRelativeTime(event.receivedAt)}</p>
+                    <p className="mt-2 text-xs text-gray-500">{formatRelativeTime(event.receivedAt)}</p>
                   </div>
                 ))
               ) : (
-                <div className="rounded-[20px] border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
+                <div className="rounded-[20px] border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-600">
                   Runtime activity will appear here during and after conversation processing.
                 </div>
               )}

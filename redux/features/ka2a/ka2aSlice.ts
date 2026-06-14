@@ -37,6 +37,7 @@ export type TaskRun = {
   submittedAt?: string;
   completedAt?: string;
   resultText?: string;
+  structuredPayload?: AgentStructuredPayload;
 };
 
 export type Ka2aSession = {
@@ -115,6 +116,54 @@ const extractPrimaryData = (value: unknown): Record<string, unknown> | undefined
   return Object.keys(data).length ? data : undefined;
 };
 
+const hasMeaningfulValue = (value: unknown): boolean => {
+  if (Array.isArray(value)) {
+    return value.length > 0;
+  }
+  if (value && typeof value === "object") {
+    return Object.keys(value as Record<string, unknown>).length > 0;
+  }
+  if (typeof value === "string") {
+    return value.trim().length > 0;
+  }
+  return value !== undefined && value !== null;
+};
+
+const mergeStructuredPayload = (
+  previous?: AgentStructuredPayload,
+  incoming?: AgentStructuredPayload,
+): AgentStructuredPayload | undefined => {
+  if (!previous) {
+    return incoming;
+  }
+  if (!incoming) {
+    return previous;
+  }
+
+  const merged: AgentStructuredPayload = {
+    ...previous,
+    ...incoming,
+  };
+
+  for (const key of [
+    "existing_responses",
+    "current_values",
+    "fields",
+    "steps",
+    "options",
+    "choices",
+    "workflow_plan",
+    "completed_agents",
+    "next_agents",
+  ]) {
+    if (!hasMeaningfulValue(incoming[key]) && hasMeaningfulValue(previous[key])) {
+      merged[key] = previous[key];
+    }
+  }
+
+  return merged;
+};
+
 const upsertAssistantMessage = (
   session: Ka2aSession,
   payload: {
@@ -139,7 +188,7 @@ const upsertAssistantMessage = (
   if (existing) {
     existing.content = content;
     existing.timestamp = payload.timestamp;
-    existing.structuredPayload = payload.structuredPayload ?? existing.structuredPayload;
+    existing.structuredPayload = mergeStructuredPayload(existing.structuredPayload, payload.structuredPayload);
     return;
   }
 
@@ -334,8 +383,12 @@ const ka2aSlice = createSlice({
           const run = session.runs[taskId] || { taskId };
           run.contextId = run.contextId || contextId;
           run.state = stateValue || run.state;
+          const effectiveStructuredPayload = mergeStructuredPayload(run.structuredPayload, structuredPayload);
           if (finalText && statusMessageRole !== "user") {
             run.resultText = finalText;
+          }
+          if (effectiveStructuredPayload) {
+            run.structuredPayload = effectiveStructuredPayload;
           }
           if (isFinal) {
             run.completedAt = timestamp || run.completedAt;
@@ -350,13 +403,16 @@ const ka2aSlice = createSlice({
           const awaitingInput = stateValue === "input-required" || stateValue === "auth-required";
           session.awaitingInput = awaitingInput;
           session.resumeTaskId = awaitingInput ? taskId || undefined : undefined;
-          if (finalText && statusMessageRole !== "user") {
+          const run = taskId ? session.runs[taskId] : undefined;
+          const effectiveStructuredPayload = mergeStructuredPayload(run?.structuredPayload, structuredPayload);
+          const effectiveFinalText = finalText || summarizeStructuredPayload(effectiveStructuredPayload);
+          if (effectiveFinalText && statusMessageRole !== "user") {
             upsertAssistantMessage(session, {
               taskId: taskId || undefined,
-              content: finalText,
+              content: effectiveFinalText,
               timestamp: timestamp || nowIso(),
               serverMessageId: statusMessageId,
-              structuredPayload,
+              structuredPayload: effectiveStructuredPayload,
             });
           }
         }
@@ -388,6 +444,7 @@ const ka2aSlice = createSlice({
             const run = session.runs[taskId] || { taskId };
             run.contextId = run.contextId || contextId;
             run.resultText = resultText || run.resultText;
+            run.structuredPayload = mergeStructuredPayload(run.structuredPayload, structuredPayload);
             session.runs[taskId] = run;
             session.lastTaskId = taskId;
           }

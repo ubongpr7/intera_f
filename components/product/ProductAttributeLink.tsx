@@ -12,6 +12,7 @@ import type { ProductAttributeLink, ProductAttribute, Product } from "@/redux/fe
 import { Column, DataTable } from "../common/DataTable/DataTable"
 import CustomCreateCard from "../common/createCard"
 import LoadingAnimation from "../common/LoadingAnimation"
+import { toast } from "react-toastify"
 
 interface ProductAttributeLinksProps {
   productId: string;
@@ -99,8 +100,8 @@ export default function ProductAttributeLinks({ productId, product }: ProductAtt
       await createAttributeLink({ productId, data }).unwrap()
       setIsCreateOpen(false)
       refetchAttributeLinks()
-    } catch (error) {
-      console.error('Failed to create attribute link:', error)
+    } catch {
+      toast.error("Failed to link attribute to product.")
     }
   }
 
@@ -111,8 +112,8 @@ export default function ProductAttributeLinks({ productId, product }: ProductAtt
       setEditingAttributeLink(null)
       setIsCreateOpen(false)
       refetchAttributeLinks()
-    } catch (error) {
-      console.error('Failed to update attribute link:', error)
+    } catch {
+      toast.error("Failed to update product attribute link.")
     }
   }
 
@@ -120,8 +121,8 @@ export default function ProductAttributeLinks({ productId, product }: ProductAtt
     try {
       await deleteAttributeLink({ productId, id: attributeLinkId }).unwrap()
       refetchAttributeLinks()
-    } catch (error) {
-      console.error('Failed to delete attribute link:', error)
+    } catch {
+      toast.error("Failed to remove product attribute link.")
     }
   }
 
@@ -154,9 +155,16 @@ const interfaceKeys: (keyof ProductAttributeLink)[] = [
   }
 
   return (
-    <div className="p-4">
-      
-      
+    <div className="space-y-4 p-4">
+      <div className="rounded-[24px] border border-blue-100 bg-blue-50 p-4">
+        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">Current product attributes</div>
+        <h3 className="mt-2 text-lg font-semibold text-gray-900">Attributes linked to {product?.name || "this product"}</h3>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
+          This table is the product-specific list. Only attributes linked here should drive this product’s variants, POS display, pricing
+          modifiers, or required product data. The shared library below is just the pool of reusable templates.
+        </p>
+      </div>
+
       <DataTable<ProductAttributeLink>
         columns={attributeLinkColumns}
         data={attributeLinks || []}
@@ -165,7 +173,7 @@ const interfaceKeys: (keyof ProductAttributeLink)[] = [
         searchableFields={['attribute_name']}
         filterableFields={['attribute_type']}
         sortableFields={['attribute_name', 'attribute_type']}
-        title={`Attribute Links for ${product?.name || 'Product'}`}
+        title={`Linked attributes for ${product?.name || 'Product'}`}
         onClose={() => setIsCreateOpen(true)}
       />
 
@@ -190,7 +198,7 @@ const interfaceKeys: (keyof ProductAttributeLink)[] = [
           notEditableFields={['id', 'product','attribute_type']}
           interfaceKeys={interfaceKeys}
           optionalFields={['order', 'default_modifier','required','is_visible_in_pos']}
-          itemTitle={`${editingAttributeLink ? 'Update' : 'Create'}  Attribute Link`}
+          itemTitle={`${editingAttributeLink ? 'Update' : 'Link'} Attribute to Product`}
         />
       ) : null}
     </div>

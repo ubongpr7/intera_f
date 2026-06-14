@@ -399,14 +399,18 @@ const latestWorkflowPayload = (
 ): AgentStructuredPayload | undefined => {
   for (let index = messages.length - 1; index >= 0; index -= 1) {
     const message = messages[index]
-    if (message.role !== "assistant" || !message.structuredPayload) {
+    if (message.role !== "assistant") {
       continue
+    }
+    if (!message.structuredPayload) {
+      return undefined
     }
     const workflow = asString(message.structuredPayload.workflow).trim()
     const workflowStage = asString(message.structuredPayload.workflow_stage).trim()
     if (workflow || workflowStage) {
       return message.structuredPayload
     }
+    return undefined
   }
   return undefined
 }

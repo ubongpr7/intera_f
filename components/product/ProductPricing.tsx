@@ -2,6 +2,8 @@
 
 import type React from "react"
 import { useState } from "react"
+import { getCookie } from "cookies-next"
+import { toast } from "react-toastify"
 import {
   useGetPricingRulesQuery,
   useCreatePricingRuleMutation,
@@ -14,66 +16,14 @@ import type { PricingRule, Product, ProductVariant } from "@/redux/features/prod
 import { Column, DataTable } from "../common/DataTable/DataTable"
 import CustomCreateCard from "../common/createCard"
 import LoadingAnimation from "../common/LoadingAnimation"
+import { readCookieValue } from "@/lib/authCookies"
+import { formatCurrencyCompact } from "@/lib/currency-utils"
 
 interface ProductPricingProps {
   productId: string;
   product:Partial<Product>
   
 }
-
-const pricingRuleColumns: Column<PricingRule>[] = [
-  {
-    header: 'Name',
-    accessor: 'name',
-    className: 'font-medium',
-  },
-  {
-    header: 'Rule Type',
-    accessor: 'rule_type',
-    render: (value) => value || 'N/A',
-    info: 'Type of pricing rule',
-  },
-  {
-    header: 'Discount Type',
-    accessor: 'discount_type',
-    render: (value) => value || 'N/A',
-    info: 'Type of discount applied',
-  },
-  {
-    header: 'Value',
-    accessor: 'value',
-    render: (value) => {
-      if (!value) return 'N/A'
-      return value ? `$${Number(value).toFixed(2)}` : '0.00'
-    },
-    info: 'Discount value or percentage',
-  },
-  {
-    header: 'Active',
-    accessor: 'is_active',
-    render: (value) => (value ? 'Yes' : 'No'),
-    info: 'Is the rule currently active?',
-  },
-  {
-    header: 'Active Now',
-    accessor: 'is_active_now',
-    render: (value) => (value ? 'Yes' : 'No'),
-    info: 'Is the rule currently applicable?',
-  },
-  {
-    header: 'Priority',
-    accessor: 'priority',
-    render: (value) => value || '0',
-    info: 'Rule application priority',
-  },
-  {
-    header: 'Usage',
-    accessor: 'usage_percentage',
-    render: (value) => value ? `${Number(value).toFixed(1)}%` : '0%',
-    info: 'Percentage of usage limit consumed',
-  },
-]
-
 
 const interfaceKeys: (keyof PricingRule)[] = [
   'name',
@@ -98,6 +48,7 @@ const interfaceKeys: (keyof PricingRule)[] = [
 export default function ProductPricing({ productId,product }: ProductPricingProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [editingRule, setEditingRule] = useState<PricingRule | null>(null)
+  const currencyCode = readCookieValue("currency", getCookie) || "NGN"
 
   const { 
     data: pricingRules, 
@@ -159,6 +110,72 @@ const defaultValues: Partial<PricingRule> = {
     discount_type: discountTypeOptions,
   }
 
+  const pricingRuleColumns: Column<PricingRule>[] = [
+    {
+      header: 'Name',
+      accessor: 'name',
+      className: 'font-medium',
+      render: (value, row) => (
+        <div className="flex items-center gap-2">
+          <span>{value}</span>
+          {row.is_default_rule ? (
+            <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+              Default
+            </span>
+          ) : null}
+        </div>
+      ),
+    },
+    {
+      header: 'Rule Type',
+      accessor: 'rule_type',
+      render: (value) => value || 'N/A',
+      info: 'Type of pricing rule',
+    },
+    {
+      header: 'Discount Type',
+      accessor: 'discount_type',
+      render: (value) => value || 'N/A',
+      info: 'Type of discount applied',
+    },
+    {
+      header: 'Value',
+      accessor: 'value',
+      render: (value, row) => {
+        if (value === null || value === undefined) return 'N/A'
+        if (row.discount_type === 'PERCENTAGE') {
+          return `${Number(value).toFixed(2)}%`
+        }
+        return formatCurrencyCompact(currencyCode, Number(value))
+      },
+      info: 'Discount value or percentage',
+    },
+    {
+      header: 'Active',
+      accessor: 'is_active',
+      render: (value) => (value ? 'Yes' : 'No'),
+      info: 'Is the rule currently active?',
+    },
+    {
+      header: 'Active Now',
+      accessor: 'is_active_now',
+      render: (value) => (value ? 'Yes' : 'No'),
+      info: 'Is the rule currently applicable?',
+    },
+    {
+      header: 'Priority',
+      accessor: 'priority',
+      render: (value) => value || '0',
+      info: 'Rule application priority',
+    },
+    {
+      header: 'Usage',
+      accessor: 'usage_percentage',
+      render: (value) => value ? `${Number(value).toFixed(1)}%` : '0%',
+      info: 'Percentage of usage limit consumed',
+    },
+  ]
+
 
   const handleCreate = async (data: Partial<PricingRule>) => {
       const ruleData = { ...data, product: productId }
@@ -180,8 +197,8 @@ const defaultValues: Partial<PricingRule> = {
     try {
       await deletePricingRule(ruleId).unwrap()
       refetch()
-    } catch (error) {
-      console.error('Failed to delete pricing rule:', error)
+    } catch {
+      toast.error("Failed to delete pricing rule.")
     }
   }
 
@@ -189,8 +206,8 @@ const defaultValues: Partial<PricingRule> = {
     try {
       await toggleActive({ id: ruleId, is_active: !isActive }).unwrap()
       refetch()
-    } catch (error) {
-      console.error('Failed to toggle active status:', error)
+    } catch {
+      toast.error("Failed to update pricing rule status.")
     }
   }
 
@@ -225,6 +242,7 @@ const defaultValues: Partial<PricingRule> = {
       label: 'Delete',
       onClick: (row: PricingRule) => handleDelete(row.id),
       className: 'text-red-500',
+      hidden: (row: PricingRule) => row.is_default_rule === true,
     },
   ]
 

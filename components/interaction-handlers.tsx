@@ -38,6 +38,22 @@ interface InteractionHandlerProps {
 export function MultipleChoiceHandler({ data, onResponse, compact = false }: InteractionHandlerProps) {
   const [selectedOptions, setSelectedOptions] = useState<string[]>([])
   const [additionalInput, setAdditionalInput] = useState("")
+  const getOptionValue = (option: any, index: number): string => {
+    const rawValue = option?.value ?? option?.id ?? option?.label ?? option?.title ?? index
+    return String(rawValue)
+  }
+  const visibleOptions = Array.isArray(data.options)
+    ? data.options.filter((option: any) => {
+        if (
+          data.workflow === "inventory_onboarding" &&
+          typeof option?.value === "string" &&
+          option.value === "revise_answers"
+        ) {
+          return false
+        }
+        return true
+      })
+    : []
 
   const handleOptionToggle = (value: string) => {
     if (data.multiple) {
@@ -64,23 +80,26 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
         </div>
 
         <div className="space-y-2">
-          {data.options.map((option: any, index: number) => (
-            <div
-              key={index}
-              className={`p-2 border rounded cursor-pointer transition-colors text-sm ${
-                selectedOptions.includes(option.value)
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
-              onClick={() => handleOptionToggle(option.value)}
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-medium">{option.label}</span>
-                {selectedOptions.includes(option.value) && <CheckCircle className="h-3 w-3 text-blue-500" />}
+          {visibleOptions.map((option: any, index: number) => {
+            const optionValue = getOptionValue(option, index)
+            return (
+              <div
+                key={`${optionValue}-${index}`}
+                className={`p-2 border rounded cursor-pointer transition-colors text-sm ${
+                  selectedOptions.includes(optionValue)
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+                onClick={() => handleOptionToggle(optionValue)}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">{option.label}</span>
+                  {selectedOptions.includes(optionValue) && <CheckCircle className="h-3 w-3 text-blue-500" />}
+                </div>
+                {option.description && <p className="text-xs text-gray-600 mt-1">{option.description}</p>}
               </div>
-              {option.description && <p className="text-xs text-gray-600 mt-1">{option.description}</p>}
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         {data.allow_additional_input && (
@@ -114,23 +133,26 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          {data.options.map((option: any, index: number) => (
-            <div
-              key={index}
-              className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                selectedOptions.includes(option.value)
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
-              onClick={() => handleOptionToggle(option.value)}
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-medium">{option.label}</span>
-                {selectedOptions.includes(option.value) && <CheckCircle className="h-4 w-4 text-blue-500" />}
+          {visibleOptions.map((option: any, index: number) => {
+            const optionValue = getOptionValue(option, index)
+            return (
+              <div
+                key={`${optionValue}-${index}`}
+                className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                  selectedOptions.includes(optionValue)
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+                onClick={() => handleOptionToggle(optionValue)}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">{option.label}</span>
+                  {selectedOptions.includes(optionValue) && <CheckCircle className="h-4 w-4 text-blue-500" />}
+                </div>
+                {option.description && <p className="text-sm text-gray-600 mt-1">{option.description}</p>}
               </div>
-              {option.description && <p className="text-sm text-gray-600 mt-1">{option.description}</p>}
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         {data.allow_additional_input && (

@@ -113,8 +113,14 @@ export function getInitials(name: string): string {
 
 export const extractErrorMessage = (error: any, listOfKeys: string[]): string => {
     if (!error) return "An unknown error occurred";
+    if (error instanceof Error && error.message) {
+        return error.message;
+    }
+    if (typeof error === "string" && error.trim()) {
+        return error;
+    }
 
-    const errorData = error.data || {};
+    const errorData = error?.data || {};
 
     // Check for field-specific errors
     for (const key of listOfKeys) {
@@ -137,13 +143,13 @@ export const extractErrorMessage = (error: any, listOfKeys: string[]): string =>
     if (!navigator.onLine) {
         return "Network error: Please check your internet connection";
     }
-    if (error.data.error ) {
+    if (error?.data?.error ) {
         return `Error: ${error.data.error}`;
     }
 
 
     // Default error messages based on status code
-    switch (error.status) {
+    switch (error?.status) {
 
         case 400:
             return "Invalid request: Please check your information";

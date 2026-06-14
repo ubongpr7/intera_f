@@ -53,6 +53,20 @@ const VariantDetailsTab = ({ variant, onSuccess }: VariantDetailsTabProps) => {
           "pos_visible",
           "is_featured",
         ]}
+        optionalFields={[
+        "variant_barcode",
+        "variant_sku",
+        "pos_name",
+        "price_override",
+        "cost_override",
+        "weight_override",
+        "dimensions_override",
+        "track_stock_override",
+        "low_stock_threshold_override",
+        'is_featured',
+        'pos_visible',
+        'active'
+      ]}
         selectOptions={{}}
         keyInfo={{
           pos_name: "Custom name for POS display",

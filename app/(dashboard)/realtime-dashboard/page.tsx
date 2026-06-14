@@ -17,13 +17,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useWorkspaceSetupProgress } from "@/components/onboarding/WorkspaceSetupShell"
 import { useGetInventoryAnalyticsQuery } from "@/redux/features/inventory/inventoryAPiSlice"
 import { useGetPurchaseOrderAnalyticsQuery } from "@/redux/features/orders/orderAPISlice"
-import { useGetCurrentSessionQuery, useGetDailySalesQuery, useGetHeldOrdersQuery } from "@/redux/features/pos/posAPISlice"
+import { useGetCurrentSessionQuery, useGetHeldOrdersQuery, useGetSessionCloseoutSummaryQuery } from "@/redux/features/pos/posAPISlice"
 import type { POSDailySalesPaymentMethodBreakdown } from "@/redux/features/pos/posTypes"
 import { useGetDashboardStatsQuery } from "@/redux/features/product/productAPISlice"
 import { useGetLowStockItemsQuery, useGetStockAnalyticsQuery } from "@/redux/features/stock/stockAPISlice"
 import { formatCurrencyCompact } from "@/lib/currency-utils"
-
-const today = new Date().toISOString().slice(0, 10)
 
 const formatDateTime = (value?: string | null) => {
   if (!value) {
@@ -41,12 +39,23 @@ export default function RealtimeDashboardPage() {
   const { data: lowStockItems = [] } = useGetLowStockItemsQuery()
   const { data: currentSession } = useGetCurrentSessionQuery()
   const { data: heldOrders = [] } = useGetHeldOrdersQuery()
-  const { data: dailySales } = useGetDailySalesQuery(today)
+  const { data: sessionCloseout } = useGetSessionCloseoutSummaryQuery(
+    { sessionId: currentSession?.id || "" },
+    { skip: !currentSession?.id },
+  )
   const { data: purchaseAnalytics } = useGetPurchaseOrderAnalyticsQuery()
 
   const currencyCode = activeMembership?.currency || "NGN"
   const inventoryItemCount = inventoryAnalytics?.total_inventory_items ?? inventoryAnalytics?.total_inventories ?? 0
   const trackedInventoryItemCount = stockAnalytics?.total_inventory_items ?? stockAnalytics?.total_stock_items ?? 0
+  const posSalesCount = sessionCloseout?.paid_orders_count ?? 0
+  const posSalesTotal = Number(sessionCloseout?.total_sales ?? currentSession?.total_sales ?? 0)
+  const posAverageOrderValue = posSalesCount ? posSalesTotal / posSalesCount : 0
+  const posPaymentMethods: POSDailySalesPaymentMethodBreakdown[] = (sessionCloseout?.payment_method_totals || []).map((row) => ({
+    payments__payment_method: row.payment_method,
+    count: row.count,
+    total: row.total,
+  }))
 
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-6 px-4 py-6 lg:px-8">
@@ -82,8 +91,8 @@ export default function RealtimeDashboardPage() {
           <div className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-6">
             <StatTile
               label="Today sales"
-              value={formatCurrencyCompact(currencyCode, Number(dailySales?.total_sales ?? 0))}
-              description={`${dailySales?.total_orders ?? 0} completed orders today`}
+              value={formatCurrencyCompact(currencyCode, posSalesTotal)}
+              description={`${posSalesCount} paid orders in the live session`}
               icon={CreditCard}
               tone="green"
             />
@@ -177,18 +186,18 @@ export default function RealtimeDashboardPage() {
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
                 <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">Orders today</div>
-                <div className="mt-2 text-xl font-semibold text-gray-900">{dailySales?.total_orders ?? 0}</div>
+                <div className="mt-2 text-xl font-semibold text-gray-900">{posSalesCount}</div>
               </div>
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
                 <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">Average order</div>
                 <div className="mt-2 text-xl font-semibold text-gray-900">
-                  {formatCurrencyCompact(currencyCode, Number(dailySales?.average_order_value ?? 0))}
+                  {formatCurrencyCompact(currencyCode, posAverageOrderValue)}
                 </div>
               </div>
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
-                <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">Tax captured</div>
+                <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">Unresolved POS orders</div>
                 <div className="mt-2 text-xl font-semibold text-gray-900">
-                  {formatCurrencyCompact(currencyCode, Number(dailySales?.total_tax ?? 0))}
+                  {sessionCloseout?.unresolved_orders_count ?? 0}
                 </div>
               </div>
             </div>
@@ -206,17 +215,17 @@ export default function RealtimeDashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {dailySales?.payment_methods?.map((paymentBreakdown: POSDailySalesPaymentMethodBreakdown) => (
+                  {posPaymentMethods.map((paymentBreakdown: POSDailySalesPaymentMethodBreakdown) => (
                     <TableRow key={paymentBreakdown.payments__payment_method || "unknown"}>
                       <TableCell className="capitalize">{paymentBreakdown.payments__payment_method || "unknown"}</TableCell>
                       <TableCell>{paymentBreakdown.count}</TableCell>
                       <TableCell>{formatCurrencyCompact(currencyCode, Number(paymentBreakdown.total ?? 0))}</TableCell>
                     </TableRow>
                   ))}
-                  {!dailySales?.payment_methods?.length ? (
+                  {!posPaymentMethods.length ? (
                     <TableRow>
                       <TableCell colSpan={3} className="text-sm text-gray-500">
-                        No payment activity recorded for this date yet.
+                        No payment activity has been recorded in the live session yet.
                       </TableCell>
                     </TableRow>
                   ) : null}

@@ -17,6 +17,7 @@ const columns: Column<POSConfiguration>[] = [
   { header: "Name", accessor: "name" },
   { header: "Currency", accessor: "currency", render: (value) => `${getCurrencySymbol(String(value))} ${value}` },
   { header: "Tax mode", accessor: "tax_inclusive", render: (value) => (value ? "Inclusive" : "Exclusive") },
+  { header: "Split payments", accessor: "allow_split_payment", render: (value) => (value ? "Enabled" : "Disabled") },
   { header: "Default tax", accessor: "default_tax_rate" },
 ]
 
@@ -54,7 +55,7 @@ export default function Configurations() {
         "max_discount_percent",
       ]}
       selectOptions={{ currency: currencyOptions }}
-      optionalFields={["receipt_header", "receipt_footer"]}
+      optionalFields={["receipt_header", "receipt_footer", "default_tax_rate","tax_inclusive", "max_discount_percent", "allow_negative_stock", "require_customer", "auto_print_receipt", "allow_split_payment"]}
       onCreate={async (data) => {
         await createConfiguration(data).unwrap()
         await refetch()

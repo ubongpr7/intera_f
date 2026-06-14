@@ -82,6 +82,7 @@ const  selectOptions = {
         'default_supplier',
         'product_template_id',
         'product_variant_id',
+        'product_variant_image_url',
       ]}
       selectOptions={selectOptions}
       isLoading={updateIsLoading}

@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react';
 
+import Image from 'next/image';
 import { useRouter } from 'nextjs-toploader/app';
 import { ActionButton, Column, DataTable } from "../common/DataTable/DataTable";
 import { InventoryData, inventoryTypes } from "@/redux/features/inventory/inventoryTypes";
@@ -15,10 +16,31 @@ import { formatCurrencyCompact } from '@/lib/currency-utils';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
+const renderInventoryThumbnail = (imageUrl: string | null | undefined, name: string) => (
+  <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-white">
+    {imageUrl ? (
+      <Image src={imageUrl} alt={name} fill className="object-cover" sizes="44px" />
+    ) : (
+      <div className="flex h-full w-full items-center justify-center bg-gray-100 text-[10px] font-semibold uppercase tracking-wide text-gray-500">
+        Inv
+      </div>
+    )}
+  </div>
+)
+
 const inventoryColumns: Column<InventoryData>[] = [
   {
     header: 'Name',
     accessor: 'name',
+    render: (value, row) => (
+      <div className="flex items-center gap-3">
+        {renderInventoryThumbnail(row.display_image || row.product_variant_image_url, row.name)}
+        <div className="min-w-0">
+          <div className="truncate font-medium text-gray-900">{value}</div>
+          <div className="truncate text-xs text-gray-500">{row.category_name || row.inventory_type || 'Inventory item'}</div>
+        </div>
+      </div>
+    ),
     className: 'font-medium',
   },
   {
@@ -163,7 +185,9 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
     'modified_by_details',
     'updated_by_details',
     'stock_analytics',
-    'category_details'
+    'category_details',
+    'display_image',
+    'product_variant_image_url'
   ];
 
   const actionButtons: ActionButton<InventoryData>[] = [

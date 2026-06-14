@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { extractErrorMessage } from "@/lib/utils"
 import { Plus } from "lucide-react"
 import { toast } from "react-toastify"
+import { POSConfiguration } from "@/redux/features/product/productTypes"
 
 type SelectOptions<T extends { id: string }> = Partial<Record<keyof T, Array<{ value: string; text: string }>>>
 
@@ -55,6 +56,15 @@ export default function POSResourceManager<T extends { id: string }>({
   const [isEditorOpen, setEditorOpen] = useState(false)
   const [editingRow, setEditingRow] = useState<T | null>(null)
   const [isSubmitting, setSubmitting] = useState(false)
+  const defaultValues = {
+    tax_inclusive: false,
+    allow_negative_stock: false,
+    require_customer: false,
+    auto_print_receipt: false,
+    allow_split_payment: false,
+    is_active: true,
+  } as Partial<POSConfiguration>
+
 
   const handleCreate = async (formData: Partial<T>) => {
     setSubmitting(true)
@@ -153,7 +163,7 @@ export default function POSResourceManager<T extends { id: string }>({
 
       {isEditorOpen ? (
         <CustomCreateCard<T>
-          defaultValues={(editingRow ?? {}) as Partial<T>}
+          defaultValues={(editingRow ?? defaultValues) as Partial<T>}
           onClose={() => {
             setEditorOpen(false)
             setEditingRow(null)

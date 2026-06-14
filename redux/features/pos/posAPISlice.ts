@@ -13,8 +13,12 @@ import type {
   POSOrderInventorySummary,
   POSOrderItem,
   POSProcessPaymentPayload,
+  POSRemittance,
+  POSRemittanceActionPayload,
   POSRetrieveHeldOrderPayload,
   POSSession,
+  POSSessionCloseoutSummary,
+  POSSessionOpeningDefaults,
   POSTable,
   POSTerminal,
   POSUpdateOrderItemPayload,
@@ -38,6 +42,20 @@ export const posAPISlice = apiSlice.injectEndpoints({
         service,
       }),
     }),
+    getSessionOpeningDefaults: builder.query<POSSessionOpeningDefaults, string | void>({
+      query: (terminalId) => ({
+        url: `/${pos_api}/sessions/opening_defaults/`,
+        params: terminalId ? { terminal: terminalId } : undefined,
+        service,
+      }),
+    }),
+    getSessionCloseoutSummary: builder.query<POSSessionCloseoutSummary, { sessionId: string; closingBalance?: DecimalValue | null }>({
+      query: ({ sessionId, closingBalance }) => ({
+        url: `/${pos_api}/sessions/${sessionId}/closeout_summary/`,
+        params: closingBalance !== undefined && closingBalance !== null && closingBalance !== "" ? { closing_balance: closingBalance } : undefined,
+        service,
+      }),
+    }),
     openSession: builder.mutation<POSSession, Partial<POSSession>>({
       query: (data) => ({
         url: `/${pos_api}/sessions/open_session/`,
@@ -46,11 +64,11 @@ export const posAPISlice = apiSlice.injectEndpoints({
         service,
       }),
     }),
-    closeSession: builder.mutation<POSSession, { sessionId: string; closingBalance: DecimalValue }>({
-      query: ({ sessionId, closingBalance }) => ({
+    closeSession: builder.mutation<POSSession, { sessionId: string; closingBalance: DecimalValue; force?: boolean }>({
+      query: ({ sessionId, closingBalance, force }) => ({
         url: `/${pos_api}/sessions/${sessionId}/close_session/`,
         method: "POST",
-        body: { closing_balance: closingBalance },
+        body: { closing_balance: closingBalance, force },
         service,
       }),
     }),
@@ -108,6 +126,13 @@ export const posAPISlice = apiSlice.injectEndpoints({
     getCurrentDraftOrder: builder.query<POSOrder, string>({
       query: (sessionId) => ({
         url: `/${pos_api}/orders/current_draft/`,
+        params: { session_id: sessionId },
+        service,
+      }),
+    }),
+    getCurrentActiveOrder: builder.query<POSOrder, string>({
+      query: (sessionId) => ({
+        url: `/${pos_api}/orders/current_active/`,
         params: { session_id: sessionId },
         service,
       }),
@@ -284,7 +309,7 @@ export const posAPISlice = apiSlice.injectEndpoints({
     getDailySales: builder.query<POSDailySalesAnalytics, string | void>({
       query: (date) => ({
         url: `/${pos_api}/analytics/daily-sales/`,
-        params: date ? { date } : undefined,
+        params: date ? { date_value: date } : undefined,
         service,
       }),
     }),
@@ -387,6 +412,54 @@ export const posAPISlice = apiSlice.injectEndpoints({
       query: (id) => ({
         url: `/${pos_api}/discounts/${id}/`,
         method: "DELETE",
+        service,
+      }),
+    }),
+
+    getRemittances: builder.query<POSRemittance[], Record<string, unknown> | void>({
+      query: (params) => ({
+        url: `/${pos_api}/remittances/`,
+        params: params || undefined,
+        service,
+      }),
+    }),
+    handoverRemittance: builder.mutation<POSRemittance, { id: string } & POSRemittanceActionPayload>({
+      query: ({ id, ...data }) => ({
+        url: `/${pos_api}/remittances/${id}/handover/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+    receiveRemittance: builder.mutation<POSRemittance, { id: string } & POSRemittanceActionPayload>({
+      query: ({ id, ...data }) => ({
+        url: `/${pos_api}/remittances/${id}/receive/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+    depositRemittance: builder.mutation<POSRemittance, { id: string } & POSRemittanceActionPayload>({
+      query: ({ id, ...data }) => ({
+        url: `/${pos_api}/remittances/${id}/deposit/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+    reconcileRemittance: builder.mutation<POSRemittance, { id: string } & POSRemittanceActionPayload>({
+      query: ({ id, ...data }) => ({
+        url: `/${pos_api}/remittances/${id}/reconcile/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+    disputeRemittance: builder.mutation<POSRemittance, { id: string } & POSRemittanceActionPayload>({
+      query: ({ id, ...data }) => ({
+        url: `/${pos_api}/remittances/${id}/dispute/`,
+        method: "POST",
+        body: data,
         service,
       }),
     }),
@@ -562,6 +635,8 @@ export const posAPISlice = apiSlice.injectEndpoints({
 
 export const {
   useGetCurrentSessionQuery,
+  useGetSessionOpeningDefaultsQuery,
+  useGetSessionCloseoutSummaryQuery,
   useOpenSessionMutation,
   useCloseSessionMutation,
   useGetSessionsQuery,
@@ -572,6 +647,7 @@ export const {
   useDeleteSessionMutation,
   useGetCurrentOrderQuery,
   useGetCurrentDraftOrderQuery,
+  useGetCurrentActiveOrderQuery,
   useCreateOrGetDraftOrderMutation,
   useAddItemToOrderMutation,
   useUpdateOrderItemMutation,
@@ -609,6 +685,12 @@ export const {
   useUpdateDiscountMutation,
   usePartialUpdateDiscountMutation,
   useDeleteDiscountMutation,
+  useGetRemittancesQuery,
+  useHandoverRemittanceMutation,
+  useReceiveRemittanceMutation,
+  useDepositRemittanceMutation,
+  useReconcileRemittanceMutation,
+  useDisputeRemittanceMutation,
   useGetOrdersQuery,
   useCreateOrderMutation,
   useGetOrderQuery,

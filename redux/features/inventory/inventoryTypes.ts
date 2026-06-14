@@ -87,6 +87,8 @@ export interface InventoryData {
   allow_negative_stock?: boolean;
   product_template_id?: string | null;
   product_variant_id?: string | null;
+  display_image?: string | null;
+  product_variant_image_url?: string | null;
   created_by_details?: InventoryUserReference | null;
   modified_by_details?: InventoryUserReference | null;
   updated_by_details?: InventoryUserReference | null;
@@ -137,6 +139,14 @@ export interface InventoryAnalytics {
   stock_status_distribution: Record<string, number>;
   top_value_items: Array<Record<string, unknown>>;
   expiring_soon: Array<Record<string, unknown>>;
+}
+
+export interface InventorySetupSummary {
+  total_locations: number;
+  total_categories: number;
+  total_inventory_items: number;
+  total_stock_value: string | number;
+  low_stock_count: number;
 }
 
 export interface StockAnalytics {

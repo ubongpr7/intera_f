@@ -27,8 +27,8 @@ import { formatCurrencyCompact } from "@/lib/currency-utils"
 import { toast } from "react-toastify"
 import { useGetInventoryDataQuery } from "@/redux/features/inventory/inventoryAPiSlice"
 import {
+  useExportProductsCsvMutation,
   useGetDashboardStatsQuery,
-  useLazyExportProductsCsvQuery,
   useGetInventorySummaryQuery,
   useGetProductCategoriesQuery,
   useGetProductDataQuery,
@@ -60,7 +60,7 @@ export default function ProductPage() {
   const { data: dashboardStats, isLoading: loadingDashboard } = useGetDashboardStatsQuery()
   const { data: inventorySummary, isLoading: loadingInventorySummary } = useGetInventorySummaryQuery()
   const { data: stockAlerts, isLoading: loadingStockAlerts } = useGetStockAlertsQuery()
-  const [exportProductsCsv, { isFetching: isExportingProducts }] = useLazyExportProductsCsvQuery()
+  const [exportProductsCsv, { isLoading: isExportingProducts }] = useExportProductsCsvMutation()
 
   const inventoryCount = inventories?.length ?? 0
   const productCount = products?.length ?? dashboardStats?.total_products ?? 0
@@ -108,7 +108,8 @@ export default function ProductPage() {
 
   const handleExportCatalog = async () => {
     try {
-      const blob = await exportProductsCsv().unwrap()
+      const csv = await exportProductsCsv().unwrap()
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" })
       const downloadUrl = window.URL.createObjectURL(blob)
       const link = document.createElement("a")
       link.href = downloadUrl
@@ -249,7 +250,7 @@ export default function ProductPage() {
               <p className="mt-1">Quick-sale and POS behavior should be enabled after pricing and variant structure are defined.</p>
             </div>
             {!readiness.teamComplete || !readiness.agentComplete ? (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-900">
+              <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-3 text-yellow-900">
                 <p className="font-medium">Workspace setup is still in progress</p>
                 <p className="mt-1 text-sm">
                   Product setup can continue now, but finish
@@ -281,10 +282,18 @@ export default function ProductPage() {
                   form system, then continue inside each product to define variants, pricing, and POS behavior.
                 </CardDescription>
               </div>
-              <Button variant="outline" onClick={handleExportCatalog} disabled={isExportingProducts}>
-                <Download className="mr-2 h-4 w-4" />
-                {isExportingProducts ? "Exporting..." : "Export catalog CSV"}
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button asChild variant="outline">
+                  <Link href="/product/attributes">
+                    <Tag className="mr-2 h-4 w-4" />
+                    Manage attribute templates
+                  </Link>
+                </Button>
+                <Button variant="outline" onClick={handleExportCatalog} disabled={isExportingProducts}>
+                  <Download className="mr-2 h-4 w-4" />
+                  {isExportingProducts ? "Exporting..." : "Export catalog CSV"}
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-4">
@@ -345,7 +354,7 @@ export default function ProductPage() {
           ]}
           notice={
             inventoryCount === 0 ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-900">
                 No inventory items exist yet. Set up inventory first so the catalog can connect cleanly to the real stock model once variants go live.
               </div>
             ) : productCategoryCount === 0 ? (
@@ -397,7 +406,7 @@ export default function ProductPage() {
           ]}
           notice={
             inventoryCount === 0 ? (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-900">
               You can view the table now, but product creation will be much smoother after inventory setup is complete.
             </div>
             ) : undefined

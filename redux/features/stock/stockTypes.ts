@@ -118,6 +118,7 @@ export interface InventoryItem {
   quantity_w_unit?: string;
   product_variant?: string | null;
   display_image?: string | null;
+  product_variant_image_url?: string | null;
   inventory_type?: string | null;
   inventory_category?: string | null;
   default_supplier?: string | null;

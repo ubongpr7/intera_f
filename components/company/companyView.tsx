@@ -125,7 +125,9 @@ function CompanyView() {
           keyInfo={CompanyKeyInfo}
           notEditableFields={notEditableCompanyFields}
           interfaceKeys={CompanyInterfaceKeys}
-          optionalFields={['is_supplier', 'is_customer','is_manufacturer']}
+          itemTitle='Create Company'
+
+          optionalFields={['is_supplier', 'is_customer','is_manufacturer','description', 'short_address', 'phone', 'email', 'company_type']}
         />
       ) : null}
     </div>

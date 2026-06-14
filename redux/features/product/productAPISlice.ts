@@ -204,6 +204,14 @@ export const productApiSlice = apiSlice.injectEndpoints({
         service: service,
       }),
     }),
+
+    retryBulkTask: builder.mutation<{ task_id: string; status: string; message: string }, string>({
+      query: (taskId) => ({
+        url: `/${product_api}/products/retry_bulk_task/?task_id=${taskId}`,
+        method: "POST",
+        service: service,
+      }),
+    }),
     // Product Variants
     createProductVariant: builder.mutation<ProductVariant, Partial<ProductVariant>>({
       query: (variantData) => ({
@@ -847,30 +855,30 @@ export const productApiSlice = apiSlice.injectEndpoints({
     }),
 
     // Export Operations
-    exportProductsCsv: builder.query<Blob, Record<string, unknown> | void>({
+    exportProductsCsv: builder.mutation<string, Record<string, unknown> | void>({
       query: (params) => ({
         url: `/${product_api}/export/products/csv/`,
         params: normalizeQueryParams(params),
         service: service,
-        responseHandler: (response: Response) => response.blob(),
+        responseHandler: (response: Response) => response.text(),
       }),
     }),
 
-    exportVariantsCsv: builder.query<Blob, Record<string, unknown> | void>({
+    exportVariantsCsv: builder.mutation<string, Record<string, unknown> | void>({
       query: (params) => ({
         url: `/${product_api}/export/variants/csv/`,
         params: normalizeQueryParams(params),
         service: service,
-        responseHandler: (response: Response) => response.blob(),
+        responseHandler: (response: Response) => response.text(),
       }),
     }),
     
-    exportPriceHistoryCsv: builder.query<Blob, Record<string, unknown> | void>({
+    exportPriceHistoryCsv: builder.mutation<string, Record<string, unknown> | void>({
       query: (params) => ({
         url: `/${product_api}/export/price-history/csv/`,
         params: normalizeQueryParams(params),
         service: service,
-        responseHandler: (response: Response) => response.blob(),
+        responseHandler: (response: Response) => response.text(),
       }),
     }),
   }),
@@ -907,6 +915,7 @@ export const {
   useGetBulkTaskStatusQuery,
   useLazyGetBulkTaskStatusQuery,
   useListBulkTasksQuery,
+  useRetryBulkTaskMutation,
   // Product Variants
   useCreateProductVariantMutation,
   useUpdateProductVariantMutation,
@@ -940,6 +949,7 @@ export const {
   useUpdateProductAttributeMutation,
   useDeleteProductAttributeMutation,
   useGetProductAttributesQuery,
+  useLazyGetProductAttributesQuery,
   useGetAttributeValuesQuery,
   useAddAttributeValueMutation,
   useGetVariantAttributesQuery,
@@ -1014,10 +1024,7 @@ export const {
   useGetDashboardStatsQuery,
 
   // Export Operations
-  useExportProductsCsvQuery,
-  useLazyExportProductsCsvQuery,
-  useExportVariantsCsvQuery,
-  useLazyExportVariantsCsvQuery,
-  useExportPriceHistoryCsvQuery,
-  useLazyExportPriceHistoryCsvQuery,
+  useExportProductsCsvMutation,
+  useExportVariantsCsvMutation,
+  useExportPriceHistoryCsvMutation,
 } = productApiSlice

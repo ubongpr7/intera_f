@@ -239,6 +239,46 @@ export interface RuntimeAgentRegistryResponse {
   agents: WorkspaceAgentRuntimeSummary[];
 }
 
+export interface BulkPriceResearchRequest {
+  task_id: string;
+  currency?: string;
+  apply?: boolean;
+  max_products?: number;
+  max_results_per_variant?: number;
+}
+
+export interface BulkPriceResearchResult {
+  product_id: string;
+  product_name: string;
+  variant_id: string;
+  variant_name: string;
+  sku?: string;
+  category?: string;
+  query: string;
+  currency: string;
+  status: "not_found" | "suggested" | "applied" | "failed";
+  applied: boolean;
+  suggested_price?: string;
+  suggested_currency?: string;
+  source_title?: string;
+  source_url?: string;
+  matches_requested_currency?: boolean;
+  error?: string;
+}
+
+export interface BulkPriceResearchResponse {
+  task_id: string;
+  currency: string;
+  apply: boolean;
+  product_count: number;
+  variant_count: number;
+  suggested_count: number;
+  applied_count: number;
+  skipped_count: number;
+  failed_count: number;
+  results: BulkPriceResearchResult[];
+}
+
 export interface CreateWorkspaceAgentPayload {
   slug: string;
   name: string;

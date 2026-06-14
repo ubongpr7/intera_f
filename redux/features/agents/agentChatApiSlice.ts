@@ -80,6 +80,18 @@ const requestJson = async <T>(
   }
 }
 
+const toCreateConversationBody = (body: CreateAgentConversationRequest) => ({
+  agent_slug: body.agentSlug,
+  title: body.title,
+  history_length: body.historyLength,
+})
+
+const toUpdateConversationBody = (body: Omit<UpdateAgentConversationRequest, "conversationId">) => ({
+  title: body.title,
+  status: body.status,
+  history_length: body.historyLength,
+})
+
 export const agentChatApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     listAgentConversations: builder.query<AgentConversation[], { status?: string; limit?: number } | void>({
@@ -112,7 +124,7 @@ export const agentChatApiSlice = apiSlice.injectEndpoints({
         requestJson<AgentConversationDetail>("/conversations", {
           method: "POST",
           headers: buildGatewayHeaders(true),
-          body: JSON.stringify(body),
+          body: JSON.stringify(toCreateConversationBody(body)),
         }),
       invalidatesTags: ["AgentConversation"],
     }),
@@ -121,7 +133,7 @@ export const agentChatApiSlice = apiSlice.injectEndpoints({
         requestJson<AgentConversation>(`/conversations/${encodeURIComponent(conversationId)}`, {
           method: "PATCH",
           headers: buildGatewayHeaders(true),
-          body: JSON.stringify(body),
+          body: JSON.stringify(toUpdateConversationBody(body)),
         }),
       invalidatesTags: (_result, _error, arg) => [
         "AgentConversation",

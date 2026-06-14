@@ -8,6 +8,8 @@ import type {
   RuntimeAgentRegistryResponse,
   SaveWorkspaceToolConnectionPayload,
   ToolServerRecord,
+  BulkPriceResearchRequest,
+  BulkPriceResearchResponse,
   WorkspaceAgentRecord,
   WorkspaceToolConnectionRecord,
   WorkspaceToolConnectionTestResponse,
@@ -206,6 +208,15 @@ export const agentControlApiSlice = apiSlice.injectEndpoints({
       }),
       providesTags: ["Agent"],
     }),
+
+    researchBulkTaskPrices: builder.mutation<BulkPriceResearchResponse, BulkPriceResearchRequest>({
+      query: (body) => ({
+        url: `/${agentApi}/price-research/bulk-task/`,
+        method: "POST",
+        body,
+        service: controlPlaneService,
+      }),
+    }),
   }),
 });
 
@@ -229,4 +240,5 @@ export const {
   useAttachWorkspaceAgentSkillMutation,
   useDetachWorkspaceAgentSkillMutation,
   useGetRuntimeAgentRegistryQuery,
+  useResearchBulkTaskPricesMutation,
 } = agentControlApiSlice;

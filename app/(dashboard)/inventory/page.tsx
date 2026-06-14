@@ -22,16 +22,16 @@ import OperationalStepSection from "@/components/setup/OperationalStepSection"
 import StockLocations from "@/components/stock/stockLoation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import { formatCurrencyCompact } from "@/lib/currency-utils"
 import {
-  useGetInventoryAnalyticsQuery,
-  useGetInventoryCategoriesQuery,
   useGetInventoryDataQuery,
   useGetInventoriesNeedingReorderQuery,
   useGetLowStockInventoriesQuery,
+  useGetInventorySetupSummaryQuery,
 } from "@/redux/features/inventory/inventoryAPiSlice"
-import { useGetExpiringInventoryItemsQuery, useGetLowStockItemsQuery, useListStockLocationsQuery } from "@/redux/features/stock/stockAPISlice"
+import { useGetExpiringInventoryItemsQuery, useListStockLocationsQuery } from "@/redux/features/stock/stockAPISlice"
 
 type InventorySetupStep = {
   id: string
@@ -40,6 +40,8 @@ type InventorySetupStep = {
   complete: boolean
   icon: typeof MapPin
 }
+
+type InventoryTab = "overview" | "locations" | "categories" | "inventories" | "insights"
 
 const displayCount = (value: number | undefined, isLoading: boolean) => {
   if (isLoading) {
@@ -51,24 +53,37 @@ const displayCount = (value: number | undefined, isLoading: boolean) => {
 
 export default function InventoryPage() {
   const [refetchData, setRefetchData] = useState(false)
+  const [activeTab, setActiveTab] = useState<InventoryTab>("overview")
+  const [loadedTabs, setLoadedTabs] = useState<Record<InventoryTab, boolean>>({
+    overview: true,
+    locations: false,
+    categories: false,
+    inventories: false,
+    insights: false,
+  })
   const { activeMembership, nextRecommendedStage, profile, readiness } = useWorkspaceSetupProgress()
 
-  const { data: locations, isLoading: loadingLocations } = useListStockLocationsQuery()
-  const { data: categories, isLoading: loadingCategories } = useGetInventoryCategoriesQuery()
-  const { data: inventories, isLoading: loadingInventories } = useGetInventoryDataQuery()
-  const { data: inventoryAnalytics, isLoading: loadingAnalytics } = useGetInventoryAnalyticsQuery()
-  const { data: lowStockItems, isLoading: loadingLowStock } = useGetLowStockItemsQuery()
+  const shouldLoadLocations = loadedTabs.locations || loadedTabs.insights
+  const shouldLoadInventories = loadedTabs.inventories || loadedTabs.insights
+
+  const { data: locations } = useListStockLocationsQuery(undefined, {
+    skip: !shouldLoadLocations,
+  })
+  const { data: inventories } = useGetInventoryDataQuery(undefined, {
+    skip: !shouldLoadInventories,
+  })
+  const { data: summary, isLoading: loadingSummary } = useGetInventorySetupSummaryQuery()
   const { data: lowStockInventories = [], isLoading: loadingLowStockInventories } = useGetLowStockInventoriesQuery()
   const { data: inventoriesNeedingReorder = [], isLoading: loadingReorderInventories } = useGetInventoriesNeedingReorderQuery()
   const { data: expiringStockItems = [], isLoading: loadingExpiringStock } = useGetExpiringInventoryItemsQuery({ days: 30 })
 
-  const locationCount = locations?.length ?? 0
-  const categoryCount = categories?.length ?? 0
-  const inventoryCount = inventories?.length ?? 0
-  const lowStockCount = inventoryAnalytics?.low_stock_count ?? lowStockItems?.length ?? 0
-  const totalStockValue = Number(inventoryAnalytics?.total_stock_value ?? 0)
+  const locationCount = summary?.total_locations ?? 0
+  const categoryCount = summary?.total_categories ?? 0
+  const inventoryCount = summary?.total_inventory_items ?? 0
+  const lowStockCount = summary?.low_stock_count ?? 0
+  const totalStockValue = Number(summary?.total_stock_value ?? 0)
   const currencyCode = profile?.currency || "NGN"
-  const inventoryItemCount = inventoryAnalytics?.total_inventory_items ?? inventoryCount
+  const inventoryItemCount = inventoryCount
 
   const setupSteps: InventorySetupStep[] = useMemo(
     () => [
@@ -100,9 +115,17 @@ export default function InventoryPage() {
   const completedSetupSteps = setupSteps.filter((step) => step.complete).length
   const completionPercentage = Math.round((completedSetupSteps / setupSteps.length) * 100)
   const nextInventoryStep = setupSteps.find((step) => !step.complete) ?? null
+  const nextInventoryTab: InventoryTab | null = nextInventoryStep
+    ? nextInventoryStep.id === "locations"
+      ? "locations"
+      : nextInventoryStep.id === "categories"
+        ? "categories"
+        : "inventories"
+    : null
   const lowStockInventoryItems = (lowStockInventories || []).slice(0, 4).map((inventory) => ({
     id: inventory.id,
     title: inventory.name,
+    imageUrl: inventory.display_image || inventory.product_variant_image_url,
     supporting: inventory.category_name || "Inventory item",
     detail: `Current stock: ${inventory.current_stock_level ?? 0} • Minimum: ${inventory.minimum_stock_level ?? 0}`,
     href: `/inventory/${inventory.id}`,
@@ -111,6 +134,7 @@ export default function InventoryPage() {
   const reorderInventoryItems = (inventoriesNeedingReorder || []).slice(0, 4).map((inventory) => ({
     id: inventory.id,
     title: inventory.name,
+    imageUrl: inventory.display_image || inventory.product_variant_image_url,
     supporting: inventory.category_name || "Reorder required",
     detail: `Reorder point: ${inventory.reorder_point ?? 0} • Suggested quantity: ${inventory.reorder_quantity ?? 0}`,
     href: `/inventory/${inventory.id}`,
@@ -119,6 +143,7 @@ export default function InventoryPage() {
   const expiringInventoryItems = (expiringStockItems || []).slice(0, 4).map((item) => ({
     id: item.id,
     title: item.name || "Inventory item",
+    imageUrl: item.display_image || item.product_variant_image_url,
     supporting: item.inventory_name || "Inventory item",
     detail: `Expiry: ${item.expiry_date || "Unknown"} • Quantity: ${item.quantity ?? 0}`,
     badge: item.days_to_expiry ?? "watch",
@@ -157,7 +182,7 @@ export default function InventoryPage() {
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[310px_1fr] lg:px-8">
+    <div className="grid w-full gap-6 py-2 lg:grid-cols-[290px_minmax(0,1fr)]">
       <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="p-5 text-left text-inherit">
@@ -184,14 +209,15 @@ export default function InventoryPage() {
               </div>
             </div>
 
-            {nextInventoryStep ? (
-              <a
-                href={`#${nextInventoryStep.id}`}
+            {nextInventoryStep && nextInventoryTab ? (
+              <button
+                type="button"
+                onClick={() => setActiveTab(nextInventoryTab)}
                 className="flex w-full items-center justify-between rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
               >
                 Continue with {nextInventoryStep.title}
                 <ArrowRight className="h-4 w-4" />
-              </a>
+              </button>
             ) : (
               <div className="rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-800">
                 Inventory foundations are in place. You can move forward into products, stock control, and POS execution.
@@ -202,11 +228,16 @@ export default function InventoryPage() {
               {setupSteps.map((step, index) => {
                 const isActive = nextInventoryStep?.id === step.id
                 return (
-                  <a
+                  <button
+                    type="button"
                     key={step.id}
-                    href={`#${step.id}`}
+                    onClick={() =>
+                      setActiveTab(
+                        step.id === "locations" ? "locations" : step.id === "categories" ? "categories" : "inventories",
+                      )
+                    }
                     className={cn(
-                      "block rounded-2xl border p-4 transition-colors",
+                      "block w-full rounded-2xl border p-4 text-left transition-colors",
                       step.complete
                         ? "border-green-200 bg-green-50"
                         : isActive
@@ -230,7 +261,7 @@ export default function InventoryPage() {
                         <p className="mt-1 text-xs leading-5 text-gray-600">{step.description}</p>
                       </div>
                     </div>
-                  </a>
+                  </button>
                 )
               })}
             </div>
@@ -290,7 +321,7 @@ export default function InventoryPage() {
                 <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Locations</p>
                 <MapPin className="h-4 w-4 text-gray-400" />
               </div>
-              <div className="mt-3 text-3xl font-semibold text-gray-900">{displayCount(locationCount, loadingLocations)}</div>
+              <div className="mt-3 text-3xl font-semibold text-gray-900">{displayCount(locationCount, loadingSummary)}</div>
               <p className="mt-2 text-sm text-gray-600">Warehouses, stores, shelves, and external stock positions.</p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
@@ -298,7 +329,7 @@ export default function InventoryPage() {
                 <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Categories</p>
                 <FolderTree className="h-4 w-4 text-gray-400" />
               </div>
-              <div className="mt-3 text-3xl font-semibold text-gray-900">{displayCount(categoryCount, loadingCategories)}</div>
+              <div className="mt-3 text-3xl font-semibold text-gray-900">{displayCount(categoryCount, loadingSummary)}</div>
               <p className="mt-2 text-sm text-gray-600">Operational groupings that inventory items can inherit from.</p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
@@ -306,7 +337,7 @@ export default function InventoryPage() {
                 <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Inventory items</p>
                 <Warehouse className="h-4 w-4 text-gray-400" />
               </div>
-              <div className="mt-3 text-3xl font-semibold text-gray-900">{displayCount(inventoryItemCount, loadingInventories)}</div>
+              <div className="mt-3 text-3xl font-semibold text-gray-900">{displayCount(inventoryItemCount, loadingSummary)}</div>
               <p className="mt-2 text-sm text-gray-600">Operational records with replenishment, value, and stock rules.</p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
@@ -315,7 +346,7 @@ export default function InventoryPage() {
                 <ShieldCheck className="h-4 w-4 text-gray-400" />
               </div>
               <div className="mt-3 text-3xl font-semibold text-gray-900">
-                {loadingAnalytics ? "..." : formatCurrencyCompact(currencyCode, totalStockValue)}
+                {loadingSummary ? "..." : formatCurrencyCompact(currencyCode, totalStockValue)}
               </div>
               <p className="mt-2 text-sm text-gray-600">
                 {lowStockCount > 0 ? `${lowStockCount} items currently need attention.` : "No low-stock alerts at the moment."}
@@ -324,129 +355,178 @@ export default function InventoryPage() {
           </CardContent>
         </Card>
 
-        <section className="grid gap-4 xl:grid-cols-3">
-          <InventoryAttentionCard
-            title="Low-stock inventory items"
-            description="These inventory items need a replenishment review before the stock situation becomes disruptive."
-            emptyMessage={loadingLowStockInventories ? "Loading low-stock inventory items..." : "No inventory item is currently flagged as low stock."}
-            items={lowStockInventoryItems}
-          />
-          <InventoryAttentionCard
-            title="Needs reorder"
-            description="These inventory items already crossed their reorder point and should be planned next."
-            emptyMessage={loadingReorderInventories ? "Loading reorder candidates..." : "No inventory item is currently flagged for reorder."}
-            items={reorderInventoryItems}
-          />
-          <InventoryAttentionCard
-            title="Expiring stock watch"
-            description="Time-sensitive stock that should be reviewed before it turns into a write-off or forced discount."
-            emptyMessage={loadingExpiringStock ? "Loading expiring stock..." : "No expiring stock items are currently flagged."}
-            items={expiringInventoryItems}
-          />
-        </section>
-
-        <OperationalStepSection
-          id="locations"
-          step={1}
-          title="Define your stock location structure"
-          description="Start with the physical map of your operation: warehouses, branches, backrooms, shelves, and external fulfillment points."
-          helper="If a category or inventory item should default into a location later, define that location here first."
-          status={locationCount > 0 ? "complete" : "in_progress"}
-          facts={[
-            { label: "Current locations", value: displayCount(locationCount, loadingLocations) },
-            { label: "Low-stock alerts", value: displayCount(lowStockCount, loadingLowStock || loadingAnalytics) },
-            { label: "Next outcome", value: locationCount > 0 ? "Structure ready" : "Create first location" },
-          ]}
-          notice={
-            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-              Use structural locations for hierarchy and external locations for suppliers, third-party storage, or consignment partners.
-            </div>
-          }
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => {
+            const nextTab = value as InventoryTab
+            setActiveTab(nextTab)
+            setLoadedTabs((current) => (current[nextTab] ? current : { ...current, [nextTab]: true }))
+          }}
+          className="space-y-5"
         >
-          <StockLocations refetchData={refetchData} setRefetchData={setRefetchData} />
-        </OperationalStepSection>
+          <TabsList className="h-auto flex-wrap justify-start gap-2 bg-transparent p-0">
+            <TabsTrigger value="overview" className="rounded-xl bg-white px-4 py-2.5">
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="locations" className="rounded-xl bg-white px-4 py-2.5">
+              Stock locations
+            </TabsTrigger>
+            <TabsTrigger value="categories" className="rounded-xl bg-white px-4 py-2.5">
+              Inventory categories
+            </TabsTrigger>
+            <TabsTrigger value="inventories" className="rounded-xl bg-white px-4 py-2.5">
+              Inventory items
+            </TabsTrigger>
+            <TabsTrigger value="insights" className="rounded-xl bg-white px-4 py-2.5">
+              Stock operations
+            </TabsTrigger>
+          </TabsList>
 
-        <OperationalStepSection
-          id="categories"
-          step={2}
-          title="Create inventory categories that match operations"
-          description="Categories define how inventory items are grouped and where they naturally belong, which keeps reporting and replenishment cleaner."
-          helper="Categories can still be created without default locations, but they become much more useful once the location map already exists."
-          status={categoryCount > 0 ? "complete" : locationCount > 0 ? "in_progress" : "pending"}
-          facts={[
-            { label: "Categories", value: displayCount(categoryCount, loadingCategories) },
-            { label: "Location map", value: locationCount > 0 ? "Ready" : "Still needed" },
-            { label: "Next outcome", value: categoryCount > 0 ? "Grouping ready" : "Create first category" },
-          ]}
-          notice={
-            locationCount === 0 ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                You can create categories now, but set up at least one stock location first if you want cleaner defaults.
-              </div>
-            ) : undefined
-          }
-        >
-          <InventoryCategoryView refetchData={refetchData} setRefetchData={setRefetchData} />
-        </OperationalStepSection>
+          <TabsContent value="overview" className="mt-0 space-y-6 bg-transparent">
+            <section className="grid gap-4 xl:grid-cols-3">
+              <InventoryAttentionCard
+                title="Low-stock inventory items"
+                description="These inventory items need a replenishment review before the stock situation becomes disruptive."
+                emptyMessage={loadingLowStockInventories ? "Loading low-stock inventory items..." : "No inventory item is currently flagged as low stock."}
+                items={lowStockInventoryItems}
+              />
+              <InventoryAttentionCard
+                title="Needs reorder"
+                description="These inventory items already crossed their reorder point and should be planned next."
+                emptyMessage={loadingReorderInventories ? "Loading reorder candidates..." : "No inventory item is currently flagged for reorder."}
+                items={reorderInventoryItems}
+              />
+              <InventoryAttentionCard
+                title="Expiring stock watch"
+                description="Time-sensitive stock that should be reviewed before it turns into a write-off or forced discount."
+                emptyMessage={loadingExpiringStock ? "Loading expiring stock..." : "No expiring stock items are currently flagged."}
+                items={expiringInventoryItems}
+              />
+            </section>
 
-        <OperationalStepSection
-          id="inventories"
-          step={3}
-          title="Create the inventory items your team will manage"
-          description="Each inventory item becomes an operational record with ownership, reorder rules, stock thresholds, and valuation details."
-          helper="By the time you create inventory items, your location and category model should already describe where the stock belongs and who is responsible."
-          status={inventoryItemCount > 0 ? "complete" : categoryCount > 0 ? "in_progress" : "pending"}
-          facts={[
-            { label: "Inventory items", value: displayCount(inventoryItemCount, loadingInventories) },
-            { label: "Categories ready", value: categoryCount > 0 ? "Yes" : "No" },
-            { label: "Stock value", value: loadingAnalytics ? "..." : formatCurrencyCompact(currencyCode, totalStockValue) },
-          ]}
-          notice={
-            categoryCount === 0 ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                Create at least one inventory category before creating inventory items, otherwise your stock model will become hard to scale.
-              </div>
-            ) : inventoryItemCount === 0 ? (
-              <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-                Once the first inventory item exists, you can move into products, stock tracking, and replenishment flows with much less friction.
-              </div>
-            ) : undefined
-          }
-        >
-          <InventoryView refetchData={refetchData} setRefetchData={setRefetchData} />
-        </OperationalStepSection>
+            <Card className="border-gray-200 shadow-sm">
+              <CardHeader className="p-6 text-left text-inherit">
+                <CardTitle className="text-xl">What comes after inventory setup</CardTitle>
+                <CardDescription className="text-sm leading-6 text-gray-600">
+                  After these three steps are stable, the next frontend flow should guide users into products and then POS using the same
+                  workflow-first pattern.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-4 p-6 pt-0 md:grid-cols-2">
+                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                    <PackageSearch className="h-4 w-4 text-blue-600" />
+                    Product setup next
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-gray-600">
+                    Move from inventory items into product templates, variants, pricing, and sellable catalog structure.
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                    <TriangleAlert className="h-4 w-4 text-blue-600" />
+                    POS after product readiness
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-gray-600">
+                    POS should come after product and inventory foundations so selling, reservations, and stock movement stay trustworthy.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        <InventoryOperationalInsights inventoryOptions={inventoryOptions} locationOptions={locationOptions} locations={locations || []} />
+          <TabsContent value="locations" className="mt-0 bg-transparent">
+            {loadedTabs.locations ? (
+              <OperationalStepSection
+                id="locations"
+                step={1}
+                title="Define your stock location structure"
+                description="Start with the physical map of your operation: warehouses, branches, backrooms, shelves, and external fulfillment points."
+                helper="If a category or inventory item should default into a location later, define that location here first."
+                status={locationCount > 0 ? "complete" : "in_progress"}
+                facts={[
+                  { label: "Current locations", value: displayCount(locationCount, loadingSummary) },
+                  { label: "Low-stock alerts", value: displayCount(lowStockCount, loadingSummary) },
+                  { label: "Next outcome", value: locationCount > 0 ? "Structure ready" : "Create first location" },
+                ]}
+                notice={
+                  <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+                    Use structural locations for hierarchy and external locations for suppliers, third-party storage, or consignment partners.
+                  </div>
+                }
+              >
+                <StockLocations refetchData={refetchData} setRefetchData={setRefetchData} />
+              </OperationalStepSection>
+            ) : null}
+          </TabsContent>
 
-        <Card className="border-gray-200 shadow-sm">
-          <CardHeader className="p-6 text-left text-inherit">
-            <CardTitle className="text-xl">What comes after inventory setup</CardTitle>
-            <CardDescription className="text-sm leading-6 text-gray-600">
-              After these three steps are stable, the next frontend flow should guide users into products and then POS using the same
-              workflow-first pattern.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4 p-6 pt-0 md:grid-cols-2">
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-              <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
-                <PackageSearch className="h-4 w-4 text-blue-600" />
-                Product setup next
-              </div>
-              <p className="mt-2 text-sm leading-6 text-gray-600">
-                Move from inventory items into product templates, variants, pricing, and sellable catalog structure.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-              <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
-                <TriangleAlert className="h-4 w-4 text-blue-600" />
-                POS after product readiness
-              </div>
-              <p className="mt-2 text-sm leading-6 text-gray-600">
-                POS should come after product and inventory foundations so selling, reservations, and stock movement stay trustworthy.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+          <TabsContent value="categories" className="mt-0 bg-transparent">
+            {loadedTabs.categories ? (
+              <OperationalStepSection
+                id="categories"
+                step={2}
+                title="Create inventory categories that match operations"
+                description="Categories define how inventory items are grouped and where they naturally belong, which keeps reporting and replenishment cleaner."
+                helper="Categories can still be created without default locations, but they become much more useful once the location map already exists."
+                status={categoryCount > 0 ? "complete" : locationCount > 0 ? "in_progress" : "pending"}
+                facts={[
+                  { label: "Categories", value: displayCount(categoryCount, loadingSummary) },
+                  { label: "Location map", value: locationCount > 0 ? "Ready" : "Still needed" },
+                  { label: "Next outcome", value: categoryCount > 0 ? "Grouping ready" : "Create first category" },
+                ]}
+                notice={
+                  locationCount === 0 ? (
+                    <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-900">
+                      You can create categories now, but set up at least one stock location first if you want cleaner defaults.
+                    </div>
+                  ) : undefined
+                }
+              >
+                <InventoryCategoryView refetchData={refetchData} setRefetchData={setRefetchData} />
+              </OperationalStepSection>
+            ) : null}
+          </TabsContent>
+
+          <TabsContent value="inventories" className="mt-0 bg-transparent">
+            {loadedTabs.inventories ? (
+              <OperationalStepSection
+                id="inventories"
+                step={3}
+                title="Create the inventory items your team will manage"
+                description="Each inventory item becomes an operational record with ownership, reorder rules, stock thresholds, and valuation details."
+                helper="By the time you create inventory items, your location and category model should already describe where the stock belongs and who is responsible."
+                status={inventoryItemCount > 0 ? "complete" : categoryCount > 0 ? "in_progress" : "pending"}
+                facts={[
+                  { label: "Inventory items", value: displayCount(inventoryItemCount, loadingSummary) },
+                  { label: "Categories ready", value: categoryCount > 0 ? "Yes" : "No" },
+                  {
+                    label: "Stock value",
+                    value: loadingSummary ? "..." : formatCurrencyCompact(currencyCode, totalStockValue),
+                  },
+                ]}
+                notice={
+                  categoryCount === 0 ? (
+                    <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-900">
+                      Create at least one inventory category before creating inventory items, otherwise your stock model will become hard to scale.
+                    </div>
+                  ) : inventoryItemCount === 0 ? (
+                    <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+                      Once the first inventory item exists, you can move into products, stock tracking, and replenishment flows with much less friction.
+                    </div>
+                  ) : undefined
+                }
+              >
+                <InventoryView refetchData={refetchData} setRefetchData={setRefetchData} />
+              </OperationalStepSection>
+            ) : null}
+          </TabsContent>
+
+          <TabsContent value="insights" className="mt-0 bg-transparent">
+            {loadedTabs.insights ? (
+              <InventoryOperationalInsights inventoryOptions={inventoryOptions} locationOptions={locationOptions} locations={locations || []} />
+            ) : null}
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   )

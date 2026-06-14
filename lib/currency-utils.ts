@@ -136,6 +136,10 @@ export function getCurrencySymbolForProfile() {
   return config?.symbol || currencyCode.toUpperCase()
 }
 
+export function getCurrencyCodeForProfile() {
+  return `${readCookieValue("currency", getCookie) || "USD"}`.toUpperCase()
+}
+
 export function formatMoneyCompactForProfile(amount:string|number){
   const currencyCode = `${readCookieValue("currency", getCookie) || "USD"}`
   return formatCurrency(currencyCode,amount,{compact:true})

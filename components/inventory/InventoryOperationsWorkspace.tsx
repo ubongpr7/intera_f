@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { getCookie } from "cookies-next"
 import { ArrowLeft, Boxes, Clock3, PackageCheck, ShieldAlert } from "lucide-react"
 import InventoryDetail from "@/components/inventory/Detail"
@@ -23,6 +24,18 @@ type InventoryOperationsWorkspaceProps = {
 
 const toNumber = (value: string | number | undefined) => Number(value ?? 0)
 
+const inventoryImage = (imageUrl: string | null | undefined, name: string) => (
+  <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
+    {imageUrl ? (
+      <Image src={imageUrl} alt={name} fill className="object-cover" sizes="96px" />
+    ) : (
+      <div className="flex h-full w-full items-center justify-center bg-gray-100 text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">
+        Inv
+      </div>
+    )}
+  </div>
+)
+
 export default function InventoryOperationsWorkspace({ inventoryId }: InventoryOperationsWorkspaceProps) {
   const { data: inventory, isLoading: loadingInventory, refetch: refetchInventory } = useGetInventoryQuery(inventoryId)
   const { data: summary, isLoading: loadingSummary, refetch: refetchSummary } = useGetInventoryStockSummaryQuery(inventoryId)
@@ -43,17 +56,24 @@ export default function InventoryOperationsWorkspace({ inventoryId }: InventoryO
       <Card className="border-gray-200 shadow-sm">
         <CardHeader className="border-b border-gray-100 p-6 text-left text-inherit">
           <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="space-y-3">
-              <Link href="/inventory" className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900">
-                <ArrowLeft className="h-4 w-4" />
-                Back to inventory items
-              </Link>
-              <div>
-                <CardTitle className="text-3xl tracking-tight">{loadingInventory ? "Loading inventory item..." : inventory?.name || "Inventory item operations"}</CardTitle>
-                <CardDescription className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
-                  Run the full operational cycle for this inventory item: keep the record healthy, review the live stock picture, then handle
-                  reservations and stock actions without leaving the workspace.
-                </CardDescription>
+            <div className="flex min-w-0 items-start gap-4">
+              {inventoryImage(inventory?.display_image || inventory?.product_variant_image_url, inventory?.name || "Inventory item")}
+              <div className="space-y-3">
+                <Link href="/inventory" className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900">
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to inventory items
+                </Link>
+                <div>
+                  <CardTitle className="text-3xl tracking-tight">{loadingInventory ? "Loading inventory item..." : inventory?.name || "Inventory item operations"}</CardTitle>
+                  <CardDescription className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
+                    Run the full operational cycle for this inventory item: keep the record healthy, review the live stock picture, then handle
+                    reservations and stock actions without leaving the workspace.
+                  </CardDescription>
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+                    <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1">{inventory?.inventory_type || "Inventory item"}</span>
+                    <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1">{inventory?.category_name || "No category"}</span>
+                  </div>
+                </div>
               </div>
             </div>
 

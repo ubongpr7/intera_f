@@ -1,9 +1,7 @@
 'use client'
-import classNames from 'classnames'
 import React, { useRef, useState } from 'react'
-import {Menu, Bell, Search,Sun,Moon,Settings as SettingsIcon,  User, Monitor} from 'lucide-react'
+import {Menu, Bell,Sun,Moon,Settings as SettingsIcon,  User, Monitor, Wallet, MonitorSpeaker, Bot } from 'lucide-react'
 import Link from 'next/link'
-import { Settings } from 'http2'
 import { useAppSelector, useAppDispatch } from "../../redux/store";
 import { setIsDarkMode, setIsSidebarCollapsed,resetToSystemTheme } from "@/redux/state";
 import { UserData } from "@/redux/features/users/userTypes"
@@ -15,20 +13,22 @@ interface NavbarProps{
     user?:UserData
 }
 
-const  Navbar = ({user}:NavbarProps) => {
+const  Navbar = ({}:NavbarProps) => {
     // const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
     const dispatch = useAppDispatch();
   const [themeMenuOpen, setThemeMenuOpen] = useState(false)
   const { isDarkMode, isSystemTheme } = useAppSelector((state) => state.global)
 
-    const SidebarCollapsed = useAppSelector((state) => state.global.isSidebarCollapsed);
+  const SidebarCollapsed = useAppSelector((state) => state.global.isSidebarCollapsed);
         const toggleSidebar = () => {
             dispatch(setIsSidebarCollapsed(!SidebarCollapsed))
         }
   const themeMenuRef = useRef<HTMLDivElement>(null)
+  const settingsMenuRef = useRef<HTMLDivElement>(null)
   const { data: companyMemberships } = useGetUserCompaniesQuery();
   const [switchCompany, { isLoading: isSwitchingCompany }] = useSwitchCompanyMutation();
   const [selectedCompanyCode, setSelectedCompanyCode] = useState<string>("");
+  const [settingsMenuOpen, setSettingsMenuOpen] = useState(false)
 
   React.useEffect(() => {
     if (!companyMemberships?.profiles?.length) return;
@@ -63,20 +63,26 @@ const  Navbar = ({user}:NavbarProps) => {
     }
   };
 
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (themeMenuRef.current && !themeMenuRef.current.contains(event.target as Node)) {
+        setThemeMenuOpen(false)
+      }
+      if (settingsMenuRef.current && !settingsMenuRef.current.contains(event.target as Node)) {
+        setSettingsMenuOpen(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
   return (
-    <div className={`flex justify-between items-center w-full mb-7`}> 
+    <div className={`sticky top-0 z-30 mb-5 flex w-full items-center justify-between rounded-2xl   px-4 py-3 shadow-sm backdrop-blur`}> 
     {/* Left Side */}
         <div className={`flex justify-between items-center gap-5`}> 
         <div className={`flex items-center gap-5`}>
-            <button 
-            className={`px-3 py-3 bg-gray-100
-                rounded-full hover:bg-blue-100`
-            } 
-            onClick={()=>{
-                toggleSidebar()
-            }} > 
-            <Menu className={`w-4 h-4 `} />
-            </button>
+           
         </div>
         {/* 
         <div className={`relative`}> 
@@ -104,7 +110,7 @@ const  Navbar = ({user}:NavbarProps) => {
                         value={selectedCompanyCode}
                         onChange={(e) => handleSwitchCompany(e.target.value)}
                         disabled={isSwitchingCompany}
-                        className="bg-white border border-gray-300 text-sm rounded-md px-2 py-1 text-gray-700"
+                        className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700"
                       >
                         {companyMemberships.profiles.map((profile) => (
                           <option key={`${profile.id}`} value={profile.company_code}>
@@ -115,7 +121,7 @@ const  Navbar = ({user}:NavbarProps) => {
                     ) : null}
                      <div className="relative" ref={themeMenuRef}>
           <button
-            className="p-2 rounded-full hover:bg-gray-200 "
+            className="rounded-full p-2 transition-colors hover:bg-gray-100"
             onClick={() => setThemeMenuOpen(!themeMenuOpen)}
             aria-label="Change theme"
           >
@@ -123,7 +129,7 @@ const  Navbar = ({user}:NavbarProps) => {
           </button>
 
           {themeMenuOpen && (
-            <div className={`absolute right-0 mt-2 w-48 bg-white  rounded-md shadow-lg py-1 z-10 border `}>
+            <div className={`absolute right-0 z-10 mt-2 w-48 rounded-xl border bg-white py-1 shadow-lg`}>
               <button
                 className={`block px-4 py-2 text-sm w-full ${!isDarkMode && !isSystemTheme ? "bg-gray-100 " : ""} text-left text-gray-900`}
                 onClick={() => toggleTheme("light")}
@@ -160,7 +166,7 @@ const  Navbar = ({user}:NavbarProps) => {
                         onClick={()=>{}}>
                         <Bell  size={24} className={`cursor-pointer text-gray-500`}/>
                         <div 
-                            className={`absolute -top-2  -right-2 bg-blue-500 rounded-full inline-flex px-[0.4rem] py-1 text-xs font-semibold leading-none text-red-100 `}>
+                            className={`absolute -top-2  -right-2 inline-flex rounded-full bg-blue-500 px-[0.4rem] py-1 text-xs font-semibold leading-none text-white`}>
                             <span>16</span></div>
 
                     </button>
@@ -175,11 +181,43 @@ const  Navbar = ({user}:NavbarProps) => {
                     </div>
                     
                     
-                    <div>
-                        <Link 
-                            href={`/settings`}>
-                            <SettingsIcon  size={24} className={`cursor-pointer text-gray-500`}/>
-                        </Link>
+                    <div className="relative" ref={settingsMenuRef}>
+                        <button
+                          type="button"
+                          onClick={() => setSettingsMenuOpen((current) => !current)}
+                          className="rounded-full p-2 transition-colors hover:bg-gray-100"
+                          aria-label="Open settings menu"
+                        >
+                          <SettingsIcon  size={24} className={`cursor-pointer text-gray-500`}/>
+                        </button>
+                        {settingsMenuOpen ? (
+                          <div className="absolute right-0 z-10 mt-2 w-56 rounded-xl border bg-white py-1 shadow-lg">
+                            <Link href="/settings" onClick={() => setSettingsMenuOpen(false)}>
+                              <div className="flex items-center gap-2 px-4 py-2 text-sm text-gray-900 hover:bg-gray-100">
+                                <SettingsIcon size={16} />
+                                Settings hub
+                              </div>
+                            </Link>
+                            <Link href="/agent/settings" onClick={() => setSettingsMenuOpen(false)}>
+                              <div className="flex items-center gap-2 px-4 py-2 text-sm text-gray-900 hover:bg-gray-100">
+                                <Bot size={16} />
+                                Agent settings
+                              </div>
+                            </Link>
+                            <Link href="/pos/settings" onClick={() => setSettingsMenuOpen(false)}>
+                              <div className="flex items-center gap-2 px-4 py-2 text-sm text-gray-900 hover:bg-gray-100">
+                                <MonitorSpeaker size={16} />
+                                POS settings
+                              </div>
+                            </Link>
+                            <Link href="/pos/remittances" onClick={() => setSettingsMenuOpen(false)}>
+                              <div className="flex items-center gap-2 px-4 py-2 text-sm text-gray-900 hover:bg-gray-100">
+                                <Wallet size={16} />
+                                POS remittances
+                              </div>
+                            </Link>
+                          </div>
+                        ) : null}
                     </div>
                     <LogoutButton />
         </div>

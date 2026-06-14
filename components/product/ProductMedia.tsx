@@ -5,7 +5,6 @@ import type React from "react"
 import { useState } from "react"
 import {
   useGetAttachmentsQuery,
-  useCreateAttachmentMutation,
   useUpdateAttachmentMutation,
   useDeleteAttachmentMutation,
   useSetPrimaryAttachmentMutation,
@@ -21,18 +20,15 @@ interface ProductMediaProps {
 export default function ProductMedia({ productId }: ProductMediaProps) {
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [editingAttachment, setEditingAttachment] = useState<any>(null)
-  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null)
 
   const {
     data: attachments = [],
     isLoading,
     refetch,
   } = useGetAttachmentsQuery({
-    content_type: "product",
-    object_id: productId,
+    product_id: productId,
   })
 
-  const [createAttachment, { isLoading: isCreating }] = useCreateAttachmentMutation()
   const [updateAttachment, { isLoading: isUpdating }] = useUpdateAttachmentMutation()
   const [deleteAttachment] = useDeleteAttachmentMutation()
   const [setPrimary] = useSetPrimaryAttachmentMutation()
@@ -45,13 +41,12 @@ export default function ProductMedia({ productId }: ProductMediaProps) {
       formData.append("files", file)
     })
 
-    formData.append("content_type_id", "1") // Product content type
+    formData.append("content_type", "product")
     formData.append("object_id", productId)
     formData.append("purpose", purpose)
 
     try {
       await bulkUpload(formData).unwrap()
-      setSelectedFiles(null)
       setShowUploadModal(false)
       refetch()
     } catch (error) {
@@ -61,14 +56,15 @@ export default function ProductMedia({ productId }: ProductMediaProps) {
 
   const handleSingleUpload = async (file: File, purpose: string, description: string) => {
     const formData = new FormData()
-    formData.append("file", file)
-    formData.append("content_type_id", "1") // Product content type
+    formData.append("files", file)
+    formData.append("content_type", "product")
     formData.append("object_id", productId)
     formData.append("purpose", purpose)
     formData.append("description", description)
 
     try {
-      await createAttachment(formData).unwrap()
+      await bulkUpload(formData).unwrap()
+      setShowUploadModal(false)
       refetch()
     } catch (error) {
       console.error("Error uploading file:", error)
@@ -228,7 +224,7 @@ export default function ProductMedia({ productId }: ProductMediaProps) {
           onUpload={handleFileUpload}
           onSingleUpload={handleSingleUpload}
           onCancel={() => setShowUploadModal(false)}
-          isLoading={isBulkUploading || isCreating}
+          isLoading={isBulkUploading}
         />
       </Modal>
 
@@ -281,7 +277,7 @@ function MediaUploadForm({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       {/* Upload Mode Toggle */}
       <div className="flex space-x-4">
         <button
@@ -391,7 +387,7 @@ function AttachmentEditForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5 p-6">
       {/* File Preview */}
       <div className="text-center">
           {attachment.file_type === "IMAGE" ? (
