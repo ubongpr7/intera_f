@@ -29,7 +29,7 @@ export const dashboardApiSlice = apiSlice.injectEndpoints({
     getDashboardRecentSales: builder.query({
         query: (date) => ({
             url: `/pos_api/analytics/daily-sales/`,
-            params: date ? { date_value: date } : undefined,
+            params: date ? { date } : undefined,
             service: "pos" ,
           }),
     }),

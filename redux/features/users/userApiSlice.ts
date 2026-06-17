@@ -2,7 +2,7 @@ import { getCookie } from "cookies-next";
 
 import { readCookieValue } from "@/lib/authCookies";
 
-import { apiSlice } from "../../services/apiSlice";
+import { apiSlice, persistUserIdentity } from "../../services/apiSlice";
 import type {
   CompanyInvitation,
   CompanyInvitationAcceptResponse,
@@ -69,6 +69,32 @@ export const userApiSlice = apiSlice.injectEndpoints({
         url: `/${accountsApi}/users/me/`,
         service,
       }),
+      async onQueryStarted(_arg, { queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          persistUserIdentity(data);
+        } catch {
+          // Ignore cookie persistence failures.
+        }
+      },
+    }),
+
+    updateLoggedInUser: builder.mutation<UserData, FormData | Partial<UserData>>({
+      query: (data) => ({
+        url: `/${accountsApi}/users/me/`,
+        method: "PATCH",
+        body: data,
+        meta: data instanceof FormData ? { isFileUpload: true } : undefined,
+        service,
+      }),
+      async onQueryStarted(_arg, { queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          persistUserIdentity(data);
+        } catch {
+          // Ignore cookie persistence failures.
+        }
+      },
     }),
 
     searchUsers: builder.query<UserSummary[], string>({
@@ -255,6 +281,7 @@ export const {
   useUpdateUserMutation,
   useDeleteUserMutation,
   useGetLoggedInUserQuery,
+  useUpdateLoggedInUserMutation,
   useSearchUsersQuery,
   useLazySearchUsersQuery,
   useGetQuotaMetadataQuery,

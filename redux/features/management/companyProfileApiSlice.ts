@@ -1,3 +1,6 @@
+import { getCookie } from "cookies-next";
+import { readCookieValue } from "@/lib/authCookies";
+import { persistWorkspaceBranding } from "../../services/apiSlice";
 import type { Address } from "../common/commonTypes";
 import { normalizeQueryParams } from "../common/queryParams";
 import { apiSlice } from "../../services/apiSlice";
@@ -13,6 +16,7 @@ import type {
   CompanyProfileListItem,
   CompanyProfilePoliciesResponse,
   InventoryPolicy,
+  PopulateDefaultStaffAccessResponse,
   RecallPolicy,
   RemoveStaffPayload,
   ReorderStrategy,
@@ -29,6 +33,35 @@ const managementApi = "management";
 const service = "users";
 const aiService = "agent";
 
+const buildCompanyProfileFormData = (data: Partial<CompanyFormData>) => {
+  const formData = new FormData();
+  Object.entries(data).forEach(([key, rawValue]) => {
+    if (rawValue === undefined || rawValue === null || rawValue === "") return;
+    if (key === "headquarters_address" && typeof rawValue === "object") {
+      formData.append(key, JSON.stringify(rawValue));
+      return;
+    }
+    if (rawValue instanceof File) {
+      formData.append(key, rawValue);
+      return;
+    }
+    formData.append(key, String(rawValue));
+  });
+  return formData;
+};
+
+const persistActiveCompanyBrandingIfNeeded = (profile?: CompanyProfile | null) => {
+  const activeProfileId = readCookieValue("profileId", getCookie) ?? readCookieValue("profile", getCookie);
+  if (!profile || !activeProfileId || `${profile.id}` !== `${activeProfileId}`) return;
+  persistWorkspaceBranding({
+    id: profile.id,
+    name: profile.name,
+    company_code: "",
+    logo: profile.logo ?? null,
+    currency: profile.currency ?? null,
+  });
+};
+
 export const companyApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     listCompanyProfiles: builder.query<CompanyProfileListItem[], void>({
@@ -42,18 +75,36 @@ export const companyApiSlice = apiSlice.injectEndpoints({
       query: (companyData) => ({
         url: `/${managementApi}/profiles/`,
         method: "POST",
-        body: companyData,
+        body: buildCompanyProfileFormData(companyData),
+        meta: { isFileUpload: true },
         service,
       }),
+      async onQueryStarted(_arg, { queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          persistActiveCompanyBrandingIfNeeded(data);
+        } catch {
+          // Ignore cookie persistence failures.
+        }
+      },
     }),
 
     updateCompanyProfile: builder.mutation<CompanyProfile, { id: string; data: Partial<CompanyFormData> }>({
       query: ({ id, data }) => ({
         url: `/${managementApi}/profiles/${id}/`,
         method: "PATCH",
-        body: data,
+        body: buildCompanyProfileFormData(data),
+        meta: { isFileUpload: true },
         service,
       }),
+      async onQueryStarted(_arg, { queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          persistActiveCompanyBrandingIfNeeded(data);
+        } catch {
+          // Ignore cookie persistence failures.
+        }
+      },
     }),
 
     getCompanyProfile: builder.query<CompanyProfile, string>({
@@ -61,6 +112,14 @@ export const companyApiSlice = apiSlice.injectEndpoints({
         url: `/${managementApi}/profiles/${id}/`,
         service,
       }),
+      async onQueryStarted(_arg, { queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          persistActiveCompanyBrandingIfNeeded(data);
+        } catch {
+          // Ignore cookie persistence failures.
+        }
+      },
     }),
 
     deleteCompanyProfile: builder.mutation<void, string>({
@@ -109,6 +168,14 @@ export const companyApiSlice = apiSlice.injectEndpoints({
     getCompanyProfileGroups: builder.query<StaffGroup[], string>({
       query: (profileId) => ({
         url: `/${managementApi}/profiles/${profileId}/groups/`,
+        service,
+      }),
+    }),
+
+    populateCompanyProfileDefaultAccess: builder.mutation<PopulateDefaultStaffAccessResponse, string>({
+      query: (profileId) => ({
+        url: `/${managementApi}/profiles/${profileId}/populate-default-access/`,
+        method: "POST",
         service,
       }),
     }),
@@ -594,6 +661,7 @@ export const {
   useRemoveStaffFromCompanyProfileMutation,
   useGetCompanyProfileRolesQuery,
   useGetCompanyProfileGroupsQuery,
+  usePopulateCompanyProfileDefaultAccessMutation,
   useGetCompanyProfileAddressesQuery,
   useAddAddressToCompanyProfileMutation,
   useGetCompanyProfilePoliciesQuery,

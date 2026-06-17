@@ -22,6 +22,10 @@ interface POSTableDialogProps {
   onOpenChange: (open: boolean) => void
   tables: POSTable[]
   onAssignTable: (tableId: string | null) => Promise<void>
+  accessNotice?: {
+    requiredPermission: string
+    message: string
+  }
 }
 
 export default function POSTableDialog({
@@ -29,6 +33,7 @@ export default function POSTableDialog({
   onOpenChange,
   tables,
   onAssignTable,
+  accessNotice,
 }: POSTableDialogProps) {
   const [searchTerm, setSearchTerm] = useState("")
 
@@ -70,6 +75,14 @@ export default function POSTableDialog({
         </DialogHeader>
 
         <div className="space-y-4 px-6 py-5">
+          {accessNotice ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-red-600">Permission required</div>
+              <div className="mt-2 font-mono text-sm font-semibold text-red-900">{accessNotice.requiredPermission}</div>
+              <div className="mt-2 text-sm text-red-800">{accessNotice.message}</div>
+            </div>
+          ) : null}
+
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <Input
@@ -77,6 +90,7 @@ export default function POSTableDialog({
               onChange={(event) => setSearchTerm(event.target.value)}
               className="pl-10"
               placeholder="Search table number or name"
+              disabled={!!accessNotice}
             />
           </div>
 
@@ -85,7 +99,8 @@ export default function POSTableDialog({
               <button
                 type="button"
                 onClick={() => void handleAssign(null)}
-                className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-left transition-colors hover:border-blue-300 hover:bg-blue-50"
+                disabled={!!accessNotice}
+                className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-left transition-colors hover:border-blue-300 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <p className="text-sm font-semibold text-gray-900">No table</p>
                 <p className="mt-1 text-xs text-gray-500">Use counter, takeout, or delivery flow.</p>
@@ -96,7 +111,7 @@ export default function POSTableDialog({
                   key={table.id}
                   type="button"
                   onClick={() => void handleAssign(table.sync_identifier || table.id)}
-                  disabled={!table.is_active}
+                  disabled={!table.is_active || !!accessNotice}
                   className="rounded-xl border border-gray-200 bg-white p-4 text-left transition-colors hover:border-blue-300 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <p className="text-sm font-semibold text-gray-900">{table.name || `Table ${table.number}`}</p>

@@ -15,6 +15,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { getDecodedToken } from "@/lib/utils"
 import { useGetUserCompaniesQuery } from "@/redux/features/auth/authApiSlice"
 import {
   useGetCompanyAgentSetupQuery,
@@ -43,6 +44,21 @@ type WorkspaceReadiness = {
   agentComplete: boolean
 }
 
+type DecodedToken = {
+  id?: string | number | null
+  sub?: string | number | null
+  user_id?: string | number | null
+}
+
+const normalizeId = (value: string | number | null | undefined): string | null => {
+  if (value === null || value === undefined) {
+    return null
+  }
+
+  const normalized = `${value}`.trim()
+  return normalized.length ? normalized : null
+}
+
 export const useWorkspaceSetupProgress = () => {
   const { data: companies, isLoading: loadingCompanies } = useGetUserCompaniesQuery()
   const activeProfileId = companies?.active_profile_id ?? null
@@ -61,6 +77,14 @@ export const useWorkspaceSetupProgress = () => {
     () => companies?.profiles?.find((entry) => `${entry.id}` === `${activeProfileId}`) ?? null,
     [activeProfileId, companies?.profiles],
   )
+  const token = getDecodedToken() as DecodedToken | null
+  const currentUserId = normalizeId(token?.id) ?? normalizeId(token?.user_id) ?? normalizeId(token?.sub)
+  const isOwner = useMemo(() => {
+    const membershipRole = `${activeMembership?.role ?? ""}`.trim().toLowerCase()
+    const membershipOwnerId = normalizeId(activeMembership?.owner_id)
+
+    return membershipRole === "owner" || (membershipOwnerId !== null && currentUserId !== null && membershipOwnerId === currentUserId)
+  }, [activeMembership?.owner_id, activeMembership?.role, currentUserId])
 
   const readiness: WorkspaceReadiness = useMemo(() => {
     const address = profile?.headquarters_address
@@ -133,6 +157,7 @@ export const useWorkspaceSetupProgress = () => {
   return {
     activeProfileId,
     activeMembership,
+    isOwner,
     profile,
     analytics,
     readiness,
@@ -157,11 +182,11 @@ export function WorkspaceSetupShell({
   description: string
   children: ReactNode
 }) {
-  const { activeMembership, completionPercentage, nextRecommendedStage, stages } = useWorkspaceSetupProgress()
+  const { activeMembership, completionPercentage, isOwner, nextRecommendedStage, stages } = useWorkspaceSetupProgress()
 
   return (
-    <div className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6  lg:px-8">
-      <aside className="space-y-4">
+    <div className={cn("mx-auto w-full max-w-7xl gap-6 px-4 py-6 lg:px-8", isOwner ? "grid lg:grid-cols-[290px_minmax(0,1fr)]" : "block")}>
+      {isOwner ? <aside className="space-y-4">
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="p-5 text-left text-inherit">
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
@@ -238,7 +263,7 @@ export function WorkspaceSetupShell({
             )
           })}
         </div>
-      </aside>
+      </aside> : null}
 
       <main className="min-w-0">
         <Card className="border-gray-200 shadow-sm">
@@ -254,7 +279,11 @@ export function WorkspaceSetupShell({
 }
 
 export function WorkspaceSetupOverview() {
-  const { activeMembership, completionPercentage, nextRecommendedStage, readiness, stages } = useWorkspaceSetupProgress()
+  const { activeMembership, completionPercentage, isOwner, nextRecommendedStage, readiness, stages } = useWorkspaceSetupProgress()
+
+  if (!isOwner) {
+    return null
+  }
 
   return (
     <Card className="border-gray-200 shadow-sm">

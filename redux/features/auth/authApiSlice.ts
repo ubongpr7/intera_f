@@ -2,7 +2,7 @@ import { getCookie } from "cookies-next";
 
 import { readCookieValue } from "@/lib/authCookies";
 
-import { apiSlice } from "../../services/apiSlice";
+import { apiSlice, persistWorkspaceBranding } from "../../services/apiSlice";
 import type {
   AuthSessionResponse,
   AuthUser,
@@ -119,6 +119,16 @@ export const authApiSlice = apiSlice.injectEndpoints({
         method: "GET",
         service: "users",
       }),
+      async onQueryStarted(_arg, { queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          const activeProfile =
+            data.profiles.find((profile) => `${profile.id}` === `${data.active_profile_id}`) ?? null;
+          persistWorkspaceBranding(activeProfile);
+        } catch {
+          // Ignore cache persistence failures.
+        }
+      },
     }),
 
     switchCompany: builder.mutation<AuthSessionResponse, SwitchCompanyPayload>({
@@ -159,6 +169,15 @@ export const authApiSlice = apiSlice.injectEndpoints({
         service: "users",
       }),
     }),
+
+    setPassword: builder.mutation<unknown, { current_password: string; new_password: string; re_new_password: string }>({
+      query: ({ current_password, new_password, re_new_password }) => ({
+        url: "/djoser/users/set_password/",
+        method: "POST",
+        body: { current_password, new_password, re_new_password },
+        service: "users",
+      }),
+    }),
   }),
 });
 
@@ -179,6 +198,7 @@ export const {
   useActivationMutation,
   useResetPasswordMutation,
   useResetPasswordConfirmMutation,
+  useSetPasswordMutation,
 } = authApiSlice;
 
 export type { CompanyProfileContext };

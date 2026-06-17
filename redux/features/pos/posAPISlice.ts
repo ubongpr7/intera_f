@@ -20,6 +20,7 @@ import type {
   POSSessionCloseoutSummary,
   POSSessionOpeningDefaults,
   POSTable,
+  POSTerminalDeviceBinding,
   POSTerminal,
   POSUpdateOrderItemPayload,
 } from "./posTypes"
@@ -309,7 +310,7 @@ export const posAPISlice = apiSlice.injectEndpoints({
     getDailySales: builder.query<POSDailySalesAnalytics, string | void>({
       query: (date) => ({
         url: `/${pos_api}/analytics/daily-sales/`,
-        params: date ? { date_value: date } : undefined,
+        params: date ? { date } : undefined,
         service,
       }),
     }),
@@ -589,6 +590,36 @@ export const posAPISlice = apiSlice.injectEndpoints({
         service,
       }),
     }),
+    getCurrentTerminalBinding: builder.query<POSTerminalDeviceBinding | null, void>({
+      query: () => ({
+        url: `/${pos_api}/terminals/device_binding/`,
+        service,
+      }),
+    }),
+    assignCurrentDeviceTerminal: builder.mutation<POSTerminalDeviceBinding, { terminal_id: string; device_label?: string }>({
+      query: (body) => ({
+        url: `/${pos_api}/terminals/assign_device/`,
+        method: "POST",
+        body,
+        service,
+      }),
+    }),
+    detachCurrentDeviceTerminal: builder.mutation<{ detail: string }, void>({
+      query: () => ({
+        url: `/${pos_api}/terminals/detach_device/`,
+        method: "POST",
+        body: {},
+        service,
+      }),
+    }),
+    detachTerminalBinding: builder.mutation<{ detail: string }, string>({
+      query: (id) => ({
+        url: `/${pos_api}/terminals/${id}/detach_terminal_binding/`,
+        method: "POST",
+        body: {},
+        service,
+      }),
+    }),
     createTerminal: builder.mutation<POSTerminal, Partial<POSTerminal>>({
       query: (data) => ({
         url: `/${pos_api}/terminals/`,
@@ -707,6 +738,10 @@ export const {
   useMarkOrderInventoryFailedMutation,
   useCancelOrderMutation,
   useGetTerminalsQuery,
+  useGetCurrentTerminalBindingQuery,
+  useAssignCurrentDeviceTerminalMutation,
+  useDetachCurrentDeviceTerminalMutation,
+  useDetachTerminalBindingMutation,
   useCreateTerminalMutation,
   useGetTerminalQuery,
   useUpdateTerminalMutation,

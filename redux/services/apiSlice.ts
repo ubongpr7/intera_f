@@ -4,6 +4,7 @@ import { setAuth, logout } from "../features/authSlice"
 import { Mutex } from "async-mutex"
 import { setCookie, getCookie, deleteCookie } from "cookies-next"
 import { AUTH_COOKIE_NAMES, AUTH_COOKIE_KEYS, readCookieValue } from "@/lib/authCookies"
+import { getOrCreatePosDeviceId } from "@/lib/deviceIdentity"
 
 const resolveBaseUrl = (publicUrl: string, internalUrl?: string) =>
   typeof window === "undefined" ? (internalUrl ?? publicUrl) : publicUrl
@@ -62,6 +63,8 @@ interface FetchArgs extends OriginalFetchArgs {
 interface ProfileContext {
   id?: string | number | null
   company_code?: string | null
+  name?: string | null
+  logo?: string | null
   currency?: string | null
 }
 
@@ -75,6 +78,10 @@ interface AuthResponsePayload {
   model_name?: string | null
   provider?: string | null
   agent_name?: string | null
+  email?: string | null
+  first_name?: string | null
+  last_name?: string | null
+  picture?: string | null
 }
 
 const AUTH_RESPONSE_URLS = new Set(["/auth/login/", "/auth/refresh/", "/auth/switch-company/", "/accounts/mfa/verify/"])
@@ -96,6 +103,62 @@ const deleteAuthCookie = (key: keyof typeof AUTH_COOKIE_NAMES) => {
   deleteCookie(currentName)
   if (currentName !== key) {
     deleteCookie(key)
+  }
+}
+
+type UserIdentityPayload = {
+  first_name?: string | null
+  last_name?: string | null
+  email?: string | null
+  picture?: string | null
+}
+
+export const persistWorkspaceBranding = (profileContext?: ProfileContext | null) => {
+  const companyName = profileContext?.name ?? null
+  const companyLogo = profileContext?.logo ?? null
+  if (companyName) {
+    setAuthCookie("companyName", companyName, refreshAge)
+  } else {
+    deleteAuthCookie("companyName")
+  }
+  if (companyLogo) {
+    setAuthCookie("companyLogo", companyLogo, refreshAge)
+  } else {
+    deleteAuthCookie("companyLogo")
+  }
+}
+
+export const persistUserIdentity = (user?: UserIdentityPayload | null) => {
+  const hasField = (field: keyof UserIdentityPayload) =>
+    Boolean(user) && Object.prototype.hasOwnProperty.call(user, field)
+
+  if (hasField("first_name")) {
+    if (user?.first_name) {
+      setAuthCookie("userFirstName", user.first_name, refreshAge)
+    } else {
+      deleteAuthCookie("userFirstName")
+    }
+  }
+  if (hasField("last_name")) {
+    if (user?.last_name) {
+      setAuthCookie("userLastName", user.last_name, refreshAge)
+    } else {
+      deleteAuthCookie("userLastName")
+    }
+  }
+  if (hasField("email")) {
+    if (user?.email) {
+      setAuthCookie("userEmail", user.email, refreshAge)
+    } else {
+      deleteAuthCookie("userEmail")
+    }
+  }
+  if (hasField("picture")) {
+    if (user?.picture) {
+      setAuthCookie("userPicture", user.picture, refreshAge)
+    } else {
+      deleteAuthCookie("userPicture")
+    }
   }
 }
 
@@ -126,11 +189,13 @@ const persistAuthSession = (response: AuthResponsePayload) => {
   } else {
     deleteAuthCookie("companyCode")
   }
+  persistWorkspaceBranding(profileContext)
   if (currency) {
     setAuthCookie("currency", currency, refreshAge)
   } else {
     deleteAuthCookie("currency")
   }
+  persistUserIdentity(response)
   if (response.model_name) {
     setAuthCookie("model_name", response.model_name, accessAge)
   } else {
@@ -167,6 +232,11 @@ const createBaseQuery = (baseUrl: string, isFileUpload = false) => {
      
       if (token) {
         headers.set("Authorization", `Bearer ${token}`)
+      }
+
+      const posDeviceId = getOrCreatePosDeviceId()
+      if (posDeviceId) {
+        headers.set("X-Device-ID", posDeviceId)
       }
 
 

@@ -45,6 +45,10 @@ interface POSCatalogPanelProps {
   productVariants: Record<string, ProductVariant[]>
   searchingCatalog: boolean
   catalogUnavailable?: boolean
+  addToOrderNotice?: {
+    requiredPermission: string
+    message: string
+  }
   variantQuantities: Record<string, string>
   onVariantQuantityChange: (variantId: string, value: string) => void
   onAddVariant: (variantId: string) => Promise<void>
@@ -324,6 +328,7 @@ export default function POSCatalogPanel({
   productVariants,
   searchingCatalog,
   catalogUnavailable = false,
+  addToOrderNotice,
   variantQuantities,
   onVariantQuantityChange,
   onAddVariant,
@@ -421,6 +426,14 @@ export default function POSCatalogPanel({
                   </div>
                 </div>
               </div>
+
+              {addToOrderNotice ? (
+                <div className="rounded-[24px] border border-red-200 bg-red-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-red-600">Selling actions restricted</p>
+                  <p className="mt-2 font-mono text-sm font-semibold text-red-900">{addToOrderNotice.requiredPermission}</p>
+                  <p className="mt-2 text-sm text-red-800">{addToOrderNotice.message}</p>
+                </div>
+              ) : null}
 
               {showSearchResults ? (
                 <div className="flex items-center justify-between gap-3 rounded-[24px] border border-gray-200 bg-gray-50 p-4">

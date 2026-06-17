@@ -12,8 +12,29 @@ import { Textarea } from "@/components/ui/textarea"
 interface POSCartPanelProps {
   currentOrder?: POSOrder
   currencyCode: string
+  supportsTables?: boolean
   isHydrating?: boolean
   cartUnavailable?: boolean
+  sessionReadNotice?: {
+    requiredPermission: string
+    message: string
+  }
+  cartOperateNotice?: {
+    requiredPermission: string
+    message: string
+  }
+  customerAccessNotice?: {
+    requiredPermission: string
+    message: string
+  }
+  tableAccessNotice?: {
+    requiredPermission: string
+    message: string
+  }
+  heldOrdersAccessNotice?: {
+    requiredPermission: string
+    message: string
+  }
   customerLabel: string
   tableLabel: string
   heldOrderCount: number
@@ -53,12 +74,45 @@ interface POSCartPanelProps {
 }
 
 const asNumber = (value: string | number | undefined | null) => Number(value ?? 0)
+const noticeCardClassName = "rounded-2xl border border-red-200 bg-red-50 p-4"
+const sanitizeIntegerInput = (value: string) => value.replace(/\D/g, "")
+const sanitizeDecimalInput = (value: string) => {
+  const filtered = value.replace(/[^\d.]/g, "")
+  const [whole = "", ...rest] = filtered.split(".")
+  const fraction = rest.join("").slice(0, 2)
+  if (filtered.startsWith(".")) {
+    return fraction ? `0.${fraction}` : "0."
+  }
+  return rest.length > 0 ? `${whole}.${fraction}` : whole
+}
+
+const PermissionNoticeCard = ({
+  title,
+  requiredPermission,
+  message,
+}: {
+  title: string
+  requiredPermission: string
+  message: string
+}) => (
+  <div className={noticeCardClassName}>
+    <div className="text-[11px] font-semibold uppercase tracking-wide text-red-600">{title}</div>
+    <div className="mt-2 font-mono text-sm font-semibold text-red-900">{requiredPermission}</div>
+    <div className="mt-2 text-sm text-red-800">{message}</div>
+  </div>
+)
 
 export default function POSCartPanel({
   currentOrder,
   currencyCode,
+  supportsTables = true,
   isHydrating = false,
   cartUnavailable = false,
+  sessionReadNotice,
+  cartOperateNotice,
+  customerAccessNotice,
+  tableAccessNotice,
+  heldOrdersAccessNotice,
   customerLabel,
   tableLabel,
   heldOrderCount,
@@ -97,11 +151,13 @@ export default function POSCartPanel({
   isCheckoutBlocked,
 }: POSCartPanelProps) {
   const items = currentOrder?.items || []
+  const isCartReadOnly = !!cartOperateNotice || currentOrder?.payment_status === "paid"
   const canCheckout =
     items.length > 0 &&
     currentOrder?.payment_status !== "paid" &&
     ["draft", "pending"].includes(currentOrder?.status || "") &&
-    !isCheckoutBlocked
+    !isCheckoutBlocked &&
+    !cartOperateNotice
 
   return (
     <Card className="h-full overflow-hidden border-gray-200 shadow-sm">
@@ -111,7 +167,7 @@ export default function POSCartPanel({
             <ShoppingCart className="h-4 w-4 text-blue-600" />
             Current sale
           </CardTitle>
-          <Button variant="outline" size="sm" onClick={onOpenHeldOrders}>
+          <Button variant="outline" size="sm" onClick={onOpenHeldOrders} disabled={!!heldOrdersAccessNotice}>
             Held carts ({heldOrderCount})
           </Button>
         </div>
@@ -121,35 +177,58 @@ export default function POSCartPanel({
         {!currentOrder ? (
           <div className="space-y-4 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
             <p className="text-lg font-semibold text-gray-900">
-              {isHydrating ? "Loading cashier workspace" : cartUnavailable ? "Unable to load cashier session" : "No live sale yet"}
+              {isHydrating
+                ? "Loading cashier workspace"
+                : sessionReadNotice
+                  ? "POS session access denied"
+                  : cartUnavailable
+                    ? "Unable to load cashier session"
+                    : "No live sale yet"}
             </p>
             <p className="text-sm text-gray-600">
               {isHydrating
                 ? "Loading the session, draft order, and cart state before the cashier can start selling."
+                : sessionReadNotice
+                  ? sessionReadNotice.message
                 : cartUnavailable
                   ? "The POS page could not load session or cart data right now. Reload after the backend becomes available."
-                  : "Choose customer or table if needed, then start selling. Adding a product can also create the sale automatically."}
+                  : supportsTables
+                    ? "Choose customer or table if needed, then start selling. Adding a product can also create the sale automatically."
+                    : "Choose customer if needed, then start selling. Adding a product can also create the sale automatically."}
             </p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Button variant="outline" onClick={onOpenCustomer}>
+            {sessionReadNotice ? (
+              <PermissionNoticeCard
+                title="Permission required"
+                requiredPermission={sessionReadNotice.requiredPermission}
+                message={sessionReadNotice.message}
+              />
+            ) : null}
+            <div className={`grid gap-3 ${supportsTables ? "sm:grid-cols-2" : ""}`}>
+              <Button variant="outline" onClick={onOpenCustomer} disabled={!!customerAccessNotice}>
                 <UserRound className="h-4 w-4" />
                 Customer: {customerLabel}
               </Button>
-              <Button variant="outline" onClick={onOpenTable}>
-                <Rows3 className="h-4 w-4" />
-                Table: {tableLabel}
-              </Button>
+              {supportsTables ? (
+                <Button variant="outline" onClick={onOpenTable} disabled={!!tableAccessNotice}>
+                  <Rows3 className="h-4 w-4" />
+                  Table: {tableLabel}
+                </Button>
+              ) : null}
             </div>
-            <Button onClick={() => void onStartDraft()} disabled={isHydrating || cartUnavailable || !canStartDraft || isCreatingDraft}>
+            <Button
+              onClick={() => void onStartDraft()}
+              disabled={isHydrating || cartUnavailable || !!sessionReadNotice || !!cartOperateNotice || !canStartDraft || isCreatingDraft}
+            >
               Start sale
             </Button>
           </div>
         ) : (
           <>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className={`grid gap-3 ${supportsTables ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
               <button
                 type="button"
                 onClick={onOpenCustomer}
+                disabled={!!customerAccessNotice}
                 className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-left transition-colors hover:border-blue-300 hover:bg-blue-50"
               >
                 <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-gray-500">
@@ -158,17 +237,20 @@ export default function POSCartPanel({
                 </div>
                 <div className="mt-2 text-sm font-semibold text-gray-900">{customerLabel}</div>
               </button>
-              <button
-                type="button"
-                onClick={onOpenTable}
-                className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-left transition-colors hover:border-blue-300 hover:bg-blue-50"
-              >
-                <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-gray-500">
-                  <Rows3 className="h-3.5 w-3.5" />
-                  Table
-                </div>
-                <div className="mt-2 text-sm font-semibold text-gray-900">{tableLabel}</div>
-              </button>
+              {supportsTables ? (
+                <button
+                  type="button"
+                  onClick={onOpenTable}
+                  disabled={!!tableAccessNotice}
+                  className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-left transition-colors hover:border-blue-300 hover:bg-blue-50"
+                >
+                  <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+                    <Rows3 className="h-3.5 w-3.5" />
+                    Table
+                  </div>
+                  <div className="mt-2 text-sm font-semibold text-gray-900">{tableLabel}</div>
+                </button>
+              ) : null}
               <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
                 <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-gray-500">
                   <ReceiptText className="h-3.5 w-3.5" />
@@ -177,6 +259,38 @@ export default function POSCartPanel({
                 <div className="mt-2 text-sm font-semibold text-gray-900">{currentOrder.order_number}</div>
               </div>
             </div>
+
+            {cartOperateNotice ? (
+              <PermissionNoticeCard
+                title="Selling actions restricted"
+                requiredPermission={cartOperateNotice.requiredPermission}
+                message={cartOperateNotice.message}
+              />
+            ) : null}
+
+            {customerAccessNotice ? (
+              <PermissionNoticeCard
+                title="Customer assignment restricted"
+                requiredPermission={customerAccessNotice.requiredPermission}
+                message={customerAccessNotice.message}
+              />
+            ) : null}
+
+            {supportsTables && tableAccessNotice ? (
+              <PermissionNoticeCard
+                title="Table assignment restricted"
+                requiredPermission={tableAccessNotice.requiredPermission}
+                message={tableAccessNotice.message}
+              />
+            ) : null}
+
+            {heldOrdersAccessNotice ? (
+              <PermissionNoticeCard
+                title="Held carts restricted"
+                requiredPermission={heldOrdersAccessNotice.requiredPermission}
+                message={heldOrdersAccessNotice.message}
+              />
+            ) : null}
 
             <ScrollArea className="h-[280px] rounded-2xl border border-gray-200">
               <div className="space-y-3 p-3">
@@ -194,19 +308,19 @@ export default function POSCartPanel({
 
                     <div className="mt-3 flex items-center gap-2">
                       <Input
-                        type="number"
-                        min="0"
-                        step="1"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         value={itemQuantities[item.id] || String(item.quantity)}
-                        onChange={(event) => onItemQuantityChange(item.id, event.target.value)}
+                        onChange={(event) => onItemQuantityChange(item.id, sanitizeIntegerInput(event.target.value))}
                         className="w-24"
-                        disabled={currentOrder?.payment_status === "paid"}
+                        disabled={isCartReadOnly}
                       />
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => void onRemoveItem(item)}
-                        disabled={!!removingItemIds[item.id]}
+                        disabled={!!removingItemIds[item.id] || isCartReadOnly}
                       >
                         Remove
                       </Button>
@@ -272,6 +386,7 @@ export default function POSCartPanel({
                           onDiscountPercentChange(String(value))
                           onDiscountAmountChange("")
                         }}
+                        disabled={!!cartOperateNotice}
                       >
                         {value}%
                       </Button>
@@ -280,24 +395,24 @@ export default function POSCartPanel({
                 </div>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     value={discountPercent}
-                    onChange={(event) => onDiscountPercentChange(event.target.value)}
+                    onChange={(event) => onDiscountPercentChange(sanitizeDecimalInput(event.target.value))}
                     placeholder="Discount %"
                     className="h-11 bg-white"
+                    disabled={!!cartOperateNotice}
                   />
                   <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     value={discountAmount}
-                    onChange={(event) => onDiscountAmountChange(event.target.value)}
+                    onChange={(event) => onDiscountAmountChange(sanitizeDecimalInput(event.target.value))}
                     placeholder="Discount amount"
                     className="h-11 bg-white"
+                    disabled={!!cartOperateNotice}
                   />
-                  <Button className="sm:col-span-2 h-11" onClick={() => void onApplyDiscount()} disabled={isApplyingDiscount}>
+                  <Button className="sm:col-span-2 h-11" onClick={() => void onApplyDiscount()} disabled={isApplyingDiscount || !!cartOperateNotice}>
                     Apply
                   </Button>
                 </div>
@@ -320,6 +435,7 @@ export default function POSCartPanel({
                           onTipPercentChange(String(value))
                           onTipAmountChange("")
                         }}
+                        disabled={!!cartOperateNotice}
                       >
                         {value}%
                       </Button>
@@ -328,24 +444,24 @@ export default function POSCartPanel({
                 </div>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     value={tipPercent}
-                    onChange={(event) => onTipPercentChange(event.target.value)}
+                    onChange={(event) => onTipPercentChange(sanitizeDecimalInput(event.target.value))}
                     placeholder="Tip %"
                     className="h-11 bg-white"
+                    disabled={!!cartOperateNotice}
                   />
                   <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     value={tipAmount}
-                    onChange={(event) => onTipAmountChange(event.target.value)}
+                    onChange={(event) => onTipAmountChange(sanitizeDecimalInput(event.target.value))}
                     placeholder="Tip amount"
                     className="h-11 bg-white"
+                    disabled={!!cartOperateNotice}
                   />
-                  <Button className="sm:col-span-2 h-11" onClick={() => void onApplyTip()} disabled={isAddingTip}>
+                  <Button className="sm:col-span-2 h-11" onClick={() => void onApplyTip()} disabled={isAddingTip || !!cartOperateNotice}>
                     Apply
                   </Button>
                 </div>
@@ -359,19 +475,20 @@ export default function POSCartPanel({
                 onChange={(event) => onHoldReasonChange(event.target.value)}
                 className="mt-3 min-h-[88px] bg-white"
                 placeholder="Optional reason for holding this cart"
+                disabled={!!cartOperateNotice}
               />
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <Button variant="outline" onClick={() => void onHoldOrder()} disabled={isHoldingOrder}>
+                <Button variant="outline" onClick={() => void onHoldOrder()} disabled={isHoldingOrder || !!cartOperateNotice}>
                   Hold cart
                 </Button>
-                <Button variant="outline" onClick={() => void onCancelOrder()} disabled={isCancellingOrder}>
+                <Button variant="outline" onClick={() => void onCancelOrder()} disabled={isCancellingOrder || !!cartOperateNotice}>
                   Cancel order
                 </Button>
               </div>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <Button className="w-full" onClick={onOpenPayment} disabled={!canCheckout}>
+              <Button className="w-full" onClick={onOpenPayment} disabled={!canCheckout || !!cartOperateNotice}>
                 <ReceiptText className="h-4 w-4" />
                 Checkout
               </Button>

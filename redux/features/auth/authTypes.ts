@@ -17,6 +17,8 @@ export interface CompanyProfileContext {
   id: string;
   name: string;
   company_code: string;
+  logo?: string | null;
+  industry?: string | null;
   owner_id?: string | null;
   currency?: string | null;
   role?: string | null;

@@ -8,6 +8,23 @@ import { Card, CardContent } from "@/components/ui/card"
 
 interface POSCashierHeaderProps {
   isLoading?: boolean
+  isCloseoutSummaryLoading?: boolean
+  sessionConstraintNotice?: {
+    title: string
+    message: string
+  }
+  sessionReadNotice?: {
+    requiredPermission: string
+    message: string
+  }
+  sessionOperateNotice?: {
+    requiredPermission: string
+    message: string
+  }
+  heldOrdersNotice?: {
+    requiredPermission: string
+    message: string
+  }
   hasCurrentSession: boolean
   currentSession?: POSSession
   currentOrder?: POSOrder
@@ -37,6 +54,11 @@ const formatTime = (value?: string | null) => {
 
 export default function POSCashierHeader({
   isLoading = false,
+  isCloseoutSummaryLoading = false,
+  sessionConstraintNotice,
+  sessionReadNotice,
+  sessionOperateNotice,
+  heldOrdersNotice,
   hasCurrentSession,
   currentSession,
   currentOrder,
@@ -145,15 +167,30 @@ export default function POSCashierHeader({
                     Loading session...
                   </Button>
                 </>
+              ) : sessionReadNotice ? (
+                <>
+                  <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                    <div className="text-[11px] font-medium uppercase tracking-wide text-red-600">Permission required</div>
+                    <div className="mt-2 text-base font-semibold text-red-900">{sessionReadNotice.requiredPermission}</div>
+                    <div className="mt-2 text-xs">{sessionReadNotice.message}</div>
+                  </div>
+                  <Button className="w-full" disabled>
+                    Session access denied
+                  </Button>
+                </>
               ) : hasCurrentSession ? (
                 <>
                   <div className="rounded-2xl border border-gray-200 bg-white p-3 text-sm text-gray-600">
                     <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">Expected close balance</div>
                     <div className="mt-2 text-base font-semibold text-gray-900">
-                      {formatCurrencyCompact(currencyCode, asNumber(closeoutSummary?.expected_balance))}
+                      {isCloseoutSummaryLoading
+                        ? "Loading..."
+                        : formatCurrencyCompact(currencyCode, asNumber(closeoutSummary?.expected_balance))}
                     </div>
                     <div className="mt-2 text-xs">
-                      {closeoutSummary?.unresolved_orders_count
+                      {isCloseoutSummaryLoading
+                        ? "Updating session closeout totals."
+                        : closeoutSummary?.unresolved_orders_count
                         ? `${closeoutSummary.unresolved_orders_count} unresolved order${closeoutSummary.unresolved_orders_count === 1 ? "" : "s"} still need attention`
                         : "Session is clear for closeout"}
                     </div>
@@ -161,13 +198,17 @@ export default function POSCashierHeader({
                       <div className="rounded-xl bg-gray-50 px-3 py-2">
                         <div className="uppercase tracking-wide text-gray-500">Paid sales</div>
                         <div className="mt-1 font-semibold text-gray-900">
-                          {closeoutSummary?.paid_orders_count ?? 0} • {formatCurrencyCompact(currencyCode, asNumber(closeoutSummary?.total_sales))}
+                          {isCloseoutSummaryLoading
+                            ? "Loading..."
+                            : `${closeoutSummary?.paid_orders_count ?? 0} • ${formatCurrencyCompact(currencyCode, asNumber(closeoutSummary?.total_sales))}`}
                         </div>
                       </div>
                       <div className="rounded-xl bg-gray-50 px-3 py-2">
                         <div className="uppercase tracking-wide text-gray-500">Completed</div>
                         <div className="mt-1 font-semibold text-gray-900">
-                          {closeoutSummary?.completed_orders_count ?? 0} • {formatCurrencyCompact(currencyCode, asNumber(closeoutSummary?.completed_total_sales))}
+                          {isCloseoutSummaryLoading
+                            ? "Loading..."
+                            : `${closeoutSummary?.completed_orders_count ?? 0} • ${formatCurrencyCompact(currencyCode, asNumber(closeoutSummary?.completed_total_sales))}`}
                         </div>
                       </div>
                     </div>
@@ -177,13 +218,33 @@ export default function POSCashierHeader({
                   </Button>
                 </>
               ) : (
-                <Button className="w-full" onClick={onOpenSession}>
-                  <PlayCircle className="h-4 w-4" />
-                  Open a new session
-                </Button>
+                <>
+                  {sessionConstraintNotice ? (
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                      <div className="text-[11px] font-medium uppercase tracking-wide text-amber-700">{sessionConstraintNotice.title}</div>
+                      <div className="mt-2 text-xs">{sessionConstraintNotice.message}</div>
+                    </div>
+                  ) : null}
+                  {sessionOperateNotice ? (
+                    <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                      <div className="text-[11px] font-medium uppercase tracking-wide text-red-600">Permission required</div>
+                      <div className="mt-2 text-base font-semibold text-red-900">{sessionOperateNotice.requiredPermission}</div>
+                      <div className="mt-2 text-xs">{sessionOperateNotice.message}</div>
+                    </div>
+                  ) : null}
+                  <Button className="w-full" onClick={onOpenSession} disabled={!!sessionOperateNotice || !!sessionConstraintNotice}>
+                    <PlayCircle className="h-4 w-4" />
+                    Open a new session
+                  </Button>
+                </>
               )}
 
-              <Button variant="outline" className="w-full bg-white" onClick={onOpenHeldOrders} disabled={isLoading}>
+              <Button
+                variant="outline"
+                className="w-full bg-white"
+                onClick={onOpenHeldOrders}
+                disabled={isLoading || !!heldOrdersNotice}
+              >
                 Recover held carts ({heldOrderCount})
               </Button>
             </div>

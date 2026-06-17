@@ -416,7 +416,7 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
         </div>
       </div>
 
-      <div className={`fixed inset-0 z-50 items-center justify-center bg-black/50 p-4 ${openTabs ? "flex" : "hidden"}`}>
+      {openTabs ? (
         <VerticalTabs
           items={[
             {
@@ -486,7 +486,7 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
           onClose={() => setOpenTabs(false)}
           className="rounded-lg border p-4"
         />
-      </div>
+      ) : null}
     </div>
   );
 };

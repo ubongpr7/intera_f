@@ -53,6 +53,21 @@ export interface POSTerminal extends POSAuditFields {
   location: string;
   is_active: boolean;
   configuration: string;
+  assigned_device_identifier?: string | null;
+  assigned_device_label?: string;
+  is_bound_to_current_device?: boolean;
+}
+
+export interface POSTerminalDeviceBinding extends POSAuditFields {
+  terminal: string;
+  terminal_name?: string;
+  device_identifier: string;
+  device_label?: string;
+  is_active: boolean;
+  assigned_by_user_id?: number | null;
+  detached_by_user_id?: number | null;
+  detached_at?: string | null;
+  last_seen_at?: string | null;
 }
 
 export interface POSCustomer extends POSAuditFields {
@@ -72,6 +87,7 @@ export interface POSTable extends POSAuditFields {
 
 export interface POSSession extends POSAuditFields {
   terminal: string;
+  previous_session?: string | null;
   user?: string | null;
   session_user_id?: number | null;
   opened_by_user_id?: number | null;
@@ -80,6 +96,11 @@ export interface POSSession extends POSAuditFields {
   opening_time: string;
   closing_time?: string | null;
   opening_balance: DecimalValue;
+  expected_opening_balance?: DecimalValue;
+  opening_variance_amount?: DecimalValue;
+  opening_variance_reason?: string;
+  opening_verified_at?: string | null;
+  opening_verified_by_user_id?: number | null;
   closing_balance?: DecimalValue | null;
   expected_balance: DecimalValue;
   total_sales?: DecimalValue;
@@ -128,9 +149,15 @@ export interface POSSessionCloseoutSummary {
 
 export interface POSSessionOpeningDefaults {
   recommended_opening_balance: DecimalValue;
+  expected_opening_balance: DecimalValue;
+  expected_opening_balance_source: string;
   carry_forward_balance?: DecimalValue | null;
   last_closed_session_id?: string | null;
   last_closed_session_closed_at?: string | null;
+  last_remittance_id?: string | null;
+  last_remittance_status?: POSRemittanceStatus | null;
+  last_handover_amount?: DecimalValue | null;
+  last_counted_amount?: DecimalValue | null;
 }
 
 export interface POSOrderItem extends POSAuditFields {
@@ -248,6 +275,15 @@ export interface POSRemittance extends POSAuditFields {
   deposited_by_user_id?: number | null;
   reconciled_by_user_id?: number | null;
   disputed_by_user_id?: number | null;
+  next_session_id?: string | null;
+  next_session_user_id?: number | null;
+  next_session_opening_time?: string | null;
+  next_session_opening_balance?: DecimalValue | null;
+  next_session_expected_opening_balance?: DecimalValue | null;
+  next_session_opening_variance_amount?: DecimalValue | null;
+  next_session_opening_variance_reason?: string | null;
+  next_session_opening_verified_at?: string | null;
+  next_session_opening_verified_by_user_id?: number | null;
 }
 
 export interface POSRemittanceActionPayload {

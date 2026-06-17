@@ -1,13 +1,13 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ReactSelectField, type SelectOption } from "@/components/ui/react-select-field"
-import { Building2, Calendar, Users, FileText } from "lucide-react"
+import { Building2, Calendar, Users, FileText, ImageIcon, Upload } from "lucide-react"
 import {
   useCreateCompanyProfileMutation,
   useUpdateCompanyProfileMutation,
@@ -51,6 +51,7 @@ const INDUSTRY_OPTIONS: SelectOption[] = [
 ]
 
 export function CompanyBasicInfoForm({ profile, onSuccess, submitLabel = "Save Changes" }: CompanyBasicInfoFormProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const getSingleOption = (option: SelectOption | readonly SelectOption[] | null): SelectOption | null => {
     if (Array.isArray(option)) {
       return null;
@@ -61,7 +62,6 @@ export function CompanyBasicInfoForm({ profile, onSuccess, submitLabel = "Save C
   const [updateProfile, updateState] = useUpdateCompanyProfileMutation()
   const [createProfile, createState] = useCreateCompanyProfileMutation()
   const isLoading = updateState.isLoading || createState.isLoading
-  const isSuccess = updateState.isSuccess || createState.isSuccess
   const isError = updateState.isError || createState.isError
   const error = updateState.error || createState.error
 
@@ -83,11 +83,22 @@ export function CompanyBasicInfoForm({ profile, onSuccess, submitLabel = "Save C
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const [showSuccessMessage, setShowSuccessMessage] = useState(false)
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+
+  const logoPreviewUrl = useMemo(() => {
+    if (logoFile) return URL.createObjectURL(logoFile)
+    if (!profile?.logo) return null
+    if (/^https?:\/\//i.test(profile.logo)) return profile.logo
+    const base = (process.env.NEXT_PUBLIC_BACKEND_HOST_URL ?? "").replace(/\/+$/, "")
+    return `${base}${profile.logo.startsWith("/") ? profile.logo : `/${profile.logo}`}`
+  }, [logoFile, profile?.logo])
 
   useEffect(() => {
     if (profile) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         name: profile.name || "",
+        logo: profile.logo || null,
         industry: profile.industry || "",
         currency:profile?.currency,
         description: profile.description || "",
@@ -100,9 +111,9 @@ export function CompanyBasicInfoForm({ profile, onSuccess, submitLabel = "Save C
       })
       return
     }
-
     setFormData({
       name: "",
+      logo: null,
       industry: "",
       currency: "",
       description: "",
@@ -116,16 +127,12 @@ export function CompanyBasicInfoForm({ profile, onSuccess, submitLabel = "Save C
   }, [profile])
 
   useEffect(() => {
-    if (isSuccess) {
-      setShowSuccessMessage(true)
-
-      const timer = setTimeout(() => {
-        setShowSuccessMessage(false)
-      }, 3000)
-
-      return () => clearTimeout(timer)
+    return () => {
+      if (logoFile && logoPreviewUrl?.startsWith("blob:")) {
+        URL.revokeObjectURL(logoPreviewUrl)
+      }
     }
-  }, [isSuccess, onSuccess])
+  }, [logoFile, logoPreviewUrl])
 
   const updateFormData = (data: Partial<CompanyFormData>) => {
     setFormData((prev) => ({ ...prev, ...data }))
@@ -192,9 +199,13 @@ export function CompanyBasicInfoForm({ profile, onSuccess, submitLabel = "Save C
       } else {
         savedProfile = await createProfile(formData).unwrap()
       }
+      setShowSuccessMessage(true)
+      setTimeout(() => {
+        setShowSuccessMessage(false)
+      }, 3000)
       await onSuccess?.(savedProfile)
-    } catch (err) {
-      console.error("Failed to update company profile:", err)
+    } catch {
+      setShowSuccessMessage(false)
     }
   }
 
@@ -206,7 +217,7 @@ export function CompanyBasicInfoForm({ profile, onSuccess, submitLabel = "Save C
         </Alert>
       )}
 
-      {isError && (
+          {isError && (
         <Alert className="bg-red-50 border-red-200">
           <AlertDescription className="text-red-800">
             {error ? `Error: ${JSON.stringify(error)}` : "Failed to update company information. Please try again."}
@@ -215,6 +226,58 @@ export function CompanyBasicInfoForm({ profile, onSuccess, submitLabel = "Save C
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+        <div className="space-y-2 md:col-span-3">
+          <Label className="flex items-center gap-2">
+            <ImageIcon className="h-4 w-4" />
+            Company Logo
+          </Label>
+          <div className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-white">
+                {logoPreviewUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={logoPreviewUrl} alt={formData.name || "Company logo"} className="h-full w-full object-cover" />
+                ) : (
+                  <span className="text-xl font-bold text-gray-700">{(formData.name || "C").trim().charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-900">Brand logo</p>
+                <p className="text-sm text-gray-500">This logo will appear in the sidebar and workspace branding areas.</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(event) => {
+                  const nextFile = event.target.files?.[0] ?? null
+                  setLogoFile(nextFile)
+                  updateFormData({ logo: nextFile })
+                }}
+              />
+              <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                <Upload className="mr-2 h-4 w-4" />
+                {logoFile ? "Change logo" : "Upload logo"}
+              </Button>
+              {(logoFile || profile?.logo) ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setLogoFile(null)
+                    updateFormData({ logo: null })
+                    if (fileInputRef.current) fileInputRef.current.value = ""
+                  }}
+                >
+                  Remove logo
+                </Button>
+              ) : null}
+            </div>
+          </div>
+        </div>
         <div className="space-y-2">
           <Label htmlFor="name" className="flex items-center gap-2">
             <Building2 className="h-4 w-4" />

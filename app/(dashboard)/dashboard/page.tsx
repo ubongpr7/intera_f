@@ -29,13 +29,14 @@ import {
   useGetUserCompaniesQuery,
   useSwitchCompanyMutation,
 } from "@/redux/features/auth/authApiSlice"
+import { hasPermission } from "@/lib/permissionsGuard"
 import { useGetInventoryAnalyticsQuery } from "@/redux/features/inventory/inventoryAPiSlice"
 import {
   useGetPurchaseOrderAnalyticsQuery,
   useListReturnOrdersQuery,
   useListSalesOrdersQuery,
 } from "@/redux/features/orders/orderAPISlice"
-import { useGetCurrentSessionQuery, useGetHeldOrdersQuery, useGetSessionCloseoutSummaryQuery } from "@/redux/features/pos/posAPISlice"
+import { useGetCurrentSessionQuery, useGetDailySalesQuery, useGetHeldOrdersQuery, useGetSessionCloseoutSummaryQuery } from "@/redux/features/pos/posAPISlice"
 import { useGetDashboardStatsQuery } from "@/redux/features/product/productAPISlice"
 import { useGetLowStockItemsQuery } from "@/redux/features/stock/stockAPISlice"
 import { readCookieValue } from "@/lib/authCookies"
@@ -55,6 +56,77 @@ const DashboardLoadingState = () => (
       <div key={`dashboard-loading-${index}`} className="h-36 animate-pulse rounded-2xl border border-gray-200 bg-white" />
     ))}
   </div>
+)
+
+const PermissionMetricTile = ({
+  label,
+  requiredPermission,
+}: {
+  label: string
+  requiredPermission: string
+}) => (
+  <Card className="border-red-200 bg-red-50 shadow-sm">
+    <CardContent className="space-y-3 p-5">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-red-600">Access restricted</div>
+      <div className="text-lg font-semibold text-red-950">{label}</div>
+      <div className="text-sm text-red-800">You do not have access to this dashboard metric.</div>
+      <div className="inline-flex items-center rounded-xl border border-red-200 bg-white px-3 py-2 font-mono text-xs font-semibold text-red-700">
+        {requiredPermission}
+      </div>
+    </CardContent>
+  </Card>
+)
+
+const PermissionSectionCard = ({
+  title,
+  description,
+  requiredPermission,
+}: {
+  title: string
+  description: string
+  requiredPermission: string
+}) => (
+  <Card className="border-red-200 bg-red-50 shadow-sm">
+    <CardHeader className="border-b border-red-100 p-5 text-left text-inherit">
+      <CardTitle className="text-xl tracking-tight text-red-950">{title}</CardTitle>
+      <CardDescription className="text-sm leading-6 text-red-800">{description}</CardDescription>
+    </CardHeader>
+    <CardContent className="p-5">
+      <div className="rounded-2xl border border-red-200 bg-white px-4 py-4">
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-red-600">Permission required</div>
+        <div className="mt-2 font-mono text-sm font-semibold text-red-900">{requiredPermission}</div>
+        <div className="mt-2 text-sm text-red-800">
+          This dashboard section exists in the workspace, but your current access does not include this resource.
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+)
+
+const PermissionLaunchCard = ({
+  title,
+  description,
+  requiredPermission,
+}: {
+  title: string
+  description: string
+  requiredPermission: string
+}) => (
+  <Card className="border-red-200 bg-red-50 shadow-sm">
+    <CardHeader className="p-6 text-left">
+      <div className="rounded-full border border-red-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-red-600">
+        Restricted
+      </div>
+      <CardTitle className="mt-4 text-2xl tracking-tight text-red-950">{title}</CardTitle>
+      <CardDescription className="mt-2 text-sm leading-6 text-red-800">{description}</CardDescription>
+    </CardHeader>
+    <CardContent className="p-6 pt-0">
+      <div className="rounded-2xl border border-red-200 bg-white px-4 py-4">
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-red-600">Permission required</div>
+        <div className="mt-2 font-mono text-sm font-semibold text-red-900">{requiredPermission}</div>
+      </div>
+    </CardContent>
+  </Card>
 )
 
 const NoProfileState = ({
@@ -152,20 +224,52 @@ export default function DashboardPage() {
   const [switchingProfileId, setSwitchingProfileId] = useState<string | null>(null)
   const { data: companyMemberships, isLoading, isError, refetch } = useGetUserCompaniesQuery()
   const [switchCompany] = useSwitchCompanyMutation()
-  const { activeMembership, nextRecommendedStage } = useWorkspaceSetupProgress()
+  const { activeMembership, isOwner, nextRecommendedStage } = useWorkspaceSetupProgress()
 
-  const { data: inventoryAnalytics } = useGetInventoryAnalyticsQuery()
-  const { data: productStats } = useGetDashboardStatsQuery()
-  const { data: lowStockItems = [] } = useGetLowStockItemsQuery()
-  const { data: currentSession } = useGetCurrentSessionQuery()
-  const { data: heldOrders = [] } = useGetHeldOrdersQuery()
+  const canReadInventory = hasPermission("read_inventory")
+  const canViewInventoryReports = hasPermission("view_inventory_reports")
+  const canReadPos = hasPermission("read_pos")
+  const canViewPosReports = hasPermission("view_pos_reports")
+  const canReadPurchaseOrders = hasPermission("read_purchase_order")
+  const canReadSalesOrders = hasPermission("read_sales_order")
+  const canReadReturnOrders = hasPermission("read_return_order")
+  const canManageCompanySettings = hasPermission("manage_company_settings")
+  const canManageAgentSettings = hasPermission("manage_agent_settings")
+  const canReadProductDashboard = canReadInventory || canViewInventoryReports
+
+  const { data: inventoryAnalytics } = useGetInventoryAnalyticsQuery(undefined, {
+    skip: !canReadInventory && !canViewInventoryReports,
+  })
+  const { data: productStats } = useGetDashboardStatsQuery(undefined, {
+    skip: !canReadProductDashboard,
+  })
+  const { data: lowStockItems = [] } = useGetLowStockItemsQuery(undefined, {
+    skip: !canReadInventory && !canViewInventoryReports,
+  })
+  const { data: currentSession } = useGetCurrentSessionQuery(undefined, {
+    skip: !canReadPos,
+  })
+  const { data: heldOrders = [] } = useGetHeldOrdersQuery(undefined, {
+    skip: !canReadPos,
+  })
+  const { data: dailyPosSales } = useGetDailySalesQuery(undefined, {
+    skip: !canReadPos || !canViewPosReports,
+  })
   const { data: sessionCloseout } = useGetSessionCloseoutSummaryQuery(
     { sessionId: currentSession?.id || "" },
-    { skip: !currentSession?.id },
+    { skip: !canReadPos || !currentSession?.id },
   )
-  const { data: purchaseAnalytics } = useGetPurchaseOrderAnalyticsQuery()
-  const { data: openSalesOrders = [] } = useListSalesOrdersQuery({ status: "pending" })
-  const { data: openReturnOrders = [] } = useListReturnOrdersQuery({ status: "pending" })
+  const { data: purchaseAnalytics } = useGetPurchaseOrderAnalyticsQuery(undefined, {
+    skip: !canReadPurchaseOrders,
+  })
+  const { data: openSalesOrders = [] } = useListSalesOrdersQuery(
+    { status: "pending" },
+    { skip: !canReadSalesOrders },
+  )
+  const { data: openReturnOrders = [] } = useListReturnOrdersQuery(
+    { status: "pending" },
+    { skip: !canReadReturnOrders },
+  )
 
   const activeProfileId = companyMemberships?.active_profile_id ?? null
   const profiles = companyMemberships?.profiles ?? []
@@ -173,8 +277,11 @@ export default function DashboardPage() {
   const currencyCode = activeMembership?.currency || "NGN"
   const inventoryItemCount = inventoryAnalytics?.total_inventory_items ?? inventoryAnalytics?.total_inventories ?? 0
   const activeInventoryItemCount = inventoryAnalytics?.active_inventories ?? inventoryItemCount
-  const posSalesCount = sessionCloseout?.paid_orders_count ?? 0
-  const posSalesTotal = Number(sessionCloseout?.total_sales ?? currentSession?.total_sales ?? 0)
+  const posSalesCount = dailyPosSales?.total_orders ?? sessionCloseout?.paid_orders_count ?? 0
+  const posSalesTotal = Number(dailyPosSales?.total_sales ?? sessionCloseout?.total_sales ?? currentSession?.total_sales ?? 0)
+  const posSalesDescription = dailyPosSales
+    ? `${posSalesCount} completed POS order${posSalesCount === 1 ? "" : "s"} today`
+    : `${posSalesCount} paid POS order${posSalesCount === 1 ? "" : "s"} in the live session`
 
   const handleSwitchCompany = async (profile: CompanyProfileContext) => {
     try {
@@ -237,147 +344,222 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div className="min-w-[280px] rounded-3xl border border-white/80 bg-white/90 p-5 shadow-sm">
-                <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Recommended next move</div>
-                <div className="mt-2 text-lg font-semibold text-gray-900">
-                  {nextRecommendedStage ? nextRecommendedStage.title : "Operational setup is complete"}
+              {isOwner ? (
+                <div className="min-w-[280px] rounded-3xl border border-white/80 bg-white/90 p-5 shadow-sm">
+                  <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Recommended next move</div>
+                  <div className="mt-2 text-lg font-semibold text-gray-900">
+                    {nextRecommendedStage ? nextRecommendedStage.title : "Operational setup is complete"}
+                  </div>
+                  <p className="mt-2 text-sm text-gray-600">
+                    {nextRecommendedStage ? nextRecommendedStage.helper : "Move into day-to-day inventory, POS, and order execution."}
+                  </p>
+                  {nextRecommendedStage ? (
+                    <Button asChild className="mt-4 w-full">
+                      <Link href={nextRecommendedStage.href}>Continue setup</Link>
+                    </Button>
+                  ) : null}
                 </div>
-                <p className="mt-2 text-sm text-gray-600">
-                  {nextRecommendedStage ? nextRecommendedStage.helper : "Move into day-to-day inventory, POS, and order execution."}
-                </p>
-                {nextRecommendedStage ? (
-                  <Button asChild className="mt-4 w-full">
-                    <Link href={nextRecommendedStage.href}>Continue setup</Link>
-                  </Button>
-                ) : null}
-              </div>
+              ) : null}
             </div>
           </div>
 
           <div className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-6">
-            <StatTile
-              label="Products"
-              value={productStats?.total_products ?? 0}
-              description={`${productStats?.quick_sale_products ?? 0} POS-ready products`}
-              icon={PackageOpen}
-              tone="amber"
-            />
-            <StatTile
-              label="Inventory items"
-              value={inventoryItemCount}
-              description={`${activeInventoryItemCount} active items`}
-              icon={Boxes}
-              tone="blue"
-            />
-            <StatTile
-              label="Low stock"
-              value={lowStockItems.length}
-              description={`${inventoryAnalytics?.out_of_stock_count ?? 0} currently out of stock`}
-              icon={Truck}
-              tone={lowStockItems.length > 0 ? "amber" : "green"}
-            />
-            <StatTile
-              label="Today sales"
-              value={formatCurrencyCompact(currencyCode, posSalesTotal)}
-              description={`${posSalesCount} paid POS orders in the live session`}
-              icon={CreditCard}
-              tone="green"
-            />
-            <StatTile
-              label="Held carts"
-              value={heldOrders.length}
-              description={currentSession ? "Session is live" : "No live POS session"}
-              icon={ShoppingCart}
-            />
-            <StatTile
-              label="Pending POs"
-              value={purchaseAnalytics?.pending_orders ?? 0}
-              description={`${purchaseAnalytics?.approved_orders ?? 0} approved and waiting issue`}
-              icon={ReceiptText}
-            />
+            {canReadProductDashboard ? (
+              <StatTile
+                label="Products"
+                value={productStats?.total_products ?? 0}
+                description={`${productStats?.quick_sale_products ?? 0} POS-ready products`}
+                icon={PackageOpen}
+                tone="amber"
+              />
+            ) : (
+              <PermissionMetricTile label="Products" requiredPermission="read_inventory" />
+            )}
+            {canReadInventory || canViewInventoryReports ? (
+              <StatTile
+                label="Inventory items"
+                value={inventoryItemCount}
+                description={`${activeInventoryItemCount} active items`}
+                icon={Boxes}
+                tone="blue"
+              />
+            ) : (
+              <PermissionMetricTile label="Inventory items" requiredPermission="read_inventory" />
+            )}
+            {canReadInventory || canViewInventoryReports ? (
+              <StatTile
+                label="Low stock"
+                value={lowStockItems.length}
+                description={`${inventoryAnalytics?.out_of_stock_count ?? 0} currently out of stock`}
+                icon={Truck}
+                tone={lowStockItems.length > 0 ? "amber" : "green"}
+              />
+            ) : (
+              <PermissionMetricTile label="Low stock" requiredPermission="view_inventory_reports" />
+            )}
+            {canReadPos ? (
+              <StatTile
+                label="Today sales"
+                value={formatCurrencyCompact(currencyCode, posSalesTotal)}
+                description={posSalesDescription}
+                icon={CreditCard}
+                tone="green"
+              />
+            ) : (
+              <PermissionMetricTile label="Today sales" requiredPermission="read_pos" />
+            )}
+            {canReadPos ? (
+              <StatTile
+                label="Held carts"
+                value={heldOrders.length}
+                description={currentSession ? "Session is live" : "No live POS session"}
+                icon={ShoppingCart}
+              />
+            ) : (
+              <PermissionMetricTile label="Held carts" requiredPermission="read_pos" />
+            )}
+            {canReadPurchaseOrders ? (
+              <StatTile
+                label="Pending POs"
+                value={purchaseAnalytics?.pending_orders ?? 0}
+                description={`${purchaseAnalytics?.approved_orders ?? 0} approved and waiting issue`}
+                icon={ReceiptText}
+              />
+            ) : (
+              <PermissionMetricTile label="Pending POs" requiredPermission="read_purchase_order" />
+            )}
           </div>
         </CardContent>
       </Card>
 
-      <WorkspaceSetupOverview />
+      {isOwner ? <WorkspaceSetupOverview /> : null}
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <DomainLaunchCard
-          title="Inventory"
-          description="Manage locations, inventory items, stock attention queues, adjustments, reservations, and tracked stock."
-          href="/inventory"
-          icon={Boxes}
-          facts={[
-            { label: "Items", value: inventoryItemCount },
-            { label: "Low stock", value: inventoryAnalytics?.low_stock_count ?? 0 },
-            { label: "Stock value", value: formatCurrencyCompact(currencyCode, Number(inventoryAnalytics?.total_stock_value ?? 0)) },
-          ]}
-        />
+        {canReadInventory || canViewInventoryReports ? (
+          <DomainLaunchCard
+            title="Inventory"
+            description="Manage locations, inventory items, stock attention queues, adjustments, reservations, and tracked stock."
+            href="/inventory"
+            icon={Boxes}
+            facts={[
+              { label: "Items", value: inventoryItemCount },
+              { label: "Low stock", value: inventoryAnalytics?.low_stock_count ?? 0 },
+              { label: "Stock value", value: formatCurrencyCompact(currencyCode, Number(inventoryAnalytics?.total_stock_value ?? 0)) },
+            ]}
+          />
+        ) : (
+          <PermissionLaunchCard
+            title="Inventory"
+            description="Manage locations, inventory items, stock attention queues, adjustments, reservations, and tracked stock."
+            requiredPermission="read_inventory"
+          />
+        )}
 
-        <DomainLaunchCard
-          title="Product catalog"
-          description="Create products, shape variants, manage pricing, control POS visibility, and export catalog data."
-          href="/product"
-          icon={PackageOpen}
-          facts={[
-            { label: "Products", value: productStats?.total_products ?? 0 },
-            { label: "Quick sale", value: productStats?.quick_sale_products ?? 0 },
-            { label: "New this week", value: productStats?.recent_activity?.new_products_this_week ?? 0 },
-          ]}
-        />
+        {canReadProductDashboard ? (
+          <DomainLaunchCard
+            title="Product catalog"
+            description="Create products, shape variants, manage pricing, control POS visibility, and export catalog data."
+            href="/product"
+            icon={PackageOpen}
+            facts={[
+              { label: "Products", value: productStats?.total_products ?? 0 },
+              { label: "Quick sale", value: productStats?.quick_sale_products ?? 0 },
+              { label: "New this week", value: productStats?.recent_activity?.new_products_this_week ?? 0 },
+            ]}
+          />
+        ) : (
+          <PermissionLaunchCard
+            title="Product catalog"
+            description="Create products, shape variants, manage pricing, control POS visibility, and export catalog data."
+            requiredPermission="read_inventory"
+          />
+        )}
 
-        <DomainLaunchCard
-          title="POS floor"
-          description="Run the cashier flow: sessions, held carts, customer assignment, inventory confirmation, and checkout."
-          href="/pos"
-          icon={CreditCard}
-          facts={[
-            { label: "Session", value: currentSession ? "Live" : "Closed" },
-            { label: "Held carts", value: heldOrders.length },
-            { label: "Paid orders", value: posSalesCount },
-          ]}
-        />
+        {canReadPos ? (
+          <DomainLaunchCard
+            title="POS floor"
+            description="Run the cashier flow: sessions, held carts, customer assignment, inventory confirmation, and checkout."
+            href="/pos"
+            icon={CreditCard}
+            facts={[
+              { label: "Session", value: currentSession ? "Live" : "Closed" },
+              { label: "Held carts", value: heldOrders.length },
+              { label: "Orders today", value: posSalesCount },
+            ]}
+          />
+        ) : (
+          <PermissionLaunchCard
+            title="POS floor"
+            description="Run the cashier flow: sessions, held carts, customer assignment, inventory confirmation, and checkout."
+            requiredPermission="read_pos"
+          />
+        )}
 
-        <DomainLaunchCard
-          title="Purchasing"
-          description="Create, approve, issue, receive, and complete supplier orders from the rebuilt purchase-order workflow."
-          href="/order/purchase"
-          icon={Truck}
-          facts={[
-            { label: "Total POs", value: purchaseAnalytics?.total_purchase_orders ?? 0 },
-            { label: "Pending", value: purchaseAnalytics?.pending_orders ?? 0 },
-            { label: "Completed", value: purchaseAnalytics?.completed_orders ?? 0 },
-          ]}
-        />
+        {canReadPurchaseOrders ? (
+          <DomainLaunchCard
+            title="Purchasing"
+            description="Create, approve, issue, receive, and complete supplier orders from the rebuilt purchase-order workflow."
+            href="/order/purchase"
+            icon={Truck}
+            facts={[
+              { label: "Total POs", value: purchaseAnalytics?.total_purchase_orders ?? 0 },
+              { label: "Pending", value: purchaseAnalytics?.pending_orders ?? 0 },
+              { label: "Completed", value: purchaseAnalytics?.completed_orders ?? 0 },
+            ]}
+          />
+        ) : (
+          <PermissionLaunchCard
+            title="Purchasing"
+            description="Create, approve, issue, receive, and complete supplier orders from the rebuilt purchase-order workflow."
+            requiredPermission="read_purchase_order"
+          />
+        )}
 
-        <DomainLaunchCard
-          title="Sales orders"
-          description="Coordinate reservations, releases, shipments, and delivery completion from the sales-order workspace."
-          href="/order/sales"
-          icon={ShoppingCart}
-          facts={[
-            { label: "Open", value: openSalesOrders.length },
-            { label: "POS paid sales", value: posSalesCount },
-            { label: "Held carts", value: heldOrders.length },
-          ]}
-          ctaLabel="Open sales orders"
-        />
+        {canReadSalesOrders ? (
+          <DomainLaunchCard
+            title="Sales orders"
+            description="Coordinate reservations, releases, shipments, and delivery completion from the sales-order workspace."
+            href="/order/sales"
+            icon={ShoppingCart}
+            facts={[
+              { label: "Open", value: openSalesOrders.length },
+              { label: "POS sales today", value: posSalesCount },
+              { label: "Held carts", value: heldOrders.length },
+            ]}
+            ctaLabel="Open sales orders"
+          />
+        ) : (
+          <PermissionLaunchCard
+            title="Sales orders"
+            description="Coordinate reservations, releases, shipments, and delivery completion from the sales-order workspace."
+            requiredPermission="read_sales_order"
+          />
+        )}
 
-        <DomainLaunchCard
-          title="Returns"
-          description="Track supplier-facing return flows and keep operational visibility on pending return work."
-          href="/order/returns"
-          icon={Users}
-          facts={[
-            { label: "Pending", value: openReturnOrders.length },
-            { label: "Issued POs", value: purchaseAnalytics?.issued_orders ?? 0 },
-            { label: "Received POs", value: purchaseAnalytics?.received_orders ?? 0 },
-          ]}
-          ctaLabel="Open returns workspace"
-        />
+        {canReadReturnOrders ? (
+          <DomainLaunchCard
+            title="Returns"
+            description="Track supplier-facing return flows and keep operational visibility on pending return work."
+            href="/order/returns"
+            icon={Users}
+            facts={[
+              { label: "Pending", value: openReturnOrders.length },
+              { label: "Issued POs", value: purchaseAnalytics?.issued_orders ?? 0 },
+              { label: "Received POs", value: purchaseAnalytics?.received_orders ?? 0 },
+            ]}
+            ctaLabel="Open returns workspace"
+          />
+        ) : (
+          <PermissionLaunchCard
+            title="Returns"
+            description="Track supplier-facing return flows and keep operational visibility on pending return work."
+            requiredPermission="read_return_order"
+          />
+        )}
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        {canReadInventory || canViewInventoryReports ? (
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="border-b border-gray-100 p-5 text-left text-inherit">
             <CardTitle className="text-xl tracking-tight">Attention queue</CardTitle>
@@ -450,6 +632,13 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
+        ) : (
+          <PermissionSectionCard
+            title="Attention queue"
+            description="These are the most immediate things worth checking before diving deeper into the domain workspaces."
+            requiredPermission="view_inventory_reports"
+          />
+        )}
 
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="border-b border-gray-100 p-5 text-left text-inherit">
@@ -459,40 +648,62 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 p-5">
-            <div className="rounded-2xl border border-gray-200 bg-blue-50 p-4">
-              <p className="text-sm font-semibold text-blue-950">Current POS session</p>
-              <p className="mt-2 text-lg font-semibold text-blue-950">{currentSession ? "Open and selling" : "No active session"}</p>
-              <p className="mt-1 text-sm text-blue-900">
-                {currentSession
-                  ? `Started ${formatDateTime(currentSession.opening_time)}`
-                  : "Open the POS floor to start a selling session."}
-              </p>
-              <div className="mt-4">
-                <Button asChild variant="outline" className="border-blue-300 bg-white text-blue-950 hover:bg-blue-100">
-                  <Link href="/pos">Open POS floor</Link>
-                </Button>
+            {canReadPos ? (
+              <div className="rounded-2xl border border-gray-200 bg-blue-50 p-4">
+                <p className="text-sm font-semibold text-blue-950">Current POS session</p>
+                <p className="mt-2 text-lg font-semibold text-blue-950">{currentSession ? "Open and selling" : "No active session"}</p>
+                <p className="mt-1 text-sm text-blue-900">
+                  {currentSession
+                    ? `Started ${formatDateTime(currentSession.opening_time)}`
+                    : "Open the POS floor to start a selling session."}
+                </p>
+                <div className="mt-4">
+                  <Button asChild variant="outline" className="border-blue-300 bg-white text-blue-950 hover:bg-blue-100">
+                    <Link href="/pos">Open POS floor</Link>
+                  </Button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-red-600">Permission required</div>
+                <div className="mt-2 font-mono text-sm font-semibold text-red-900">read_pos</div>
+                <div className="mt-2 text-sm text-red-800">You do not have access to live POS session data.</div>
+              </div>
+            )}
 
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-              <p className="text-sm font-semibold text-gray-900">Held cart recovery</p>
-              <p className="mt-2 text-2xl font-semibold text-gray-900">{heldOrders.length}</p>
-              <p className="mt-1 text-sm text-gray-600">
-                {heldOrders.length > 0
-                  ? "There are suspended sales ready to be restored into the active session."
-                  : "No carts are waiting on hold."}
-              </p>
-            </div>
+            {canReadPos ? (
+              <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                <p className="text-sm font-semibold text-gray-900">Held cart recovery</p>
+                <p className="mt-2 text-2xl font-semibold text-gray-900">{heldOrders.length}</p>
+                <p className="mt-1 text-sm text-gray-600">
+                  {heldOrders.length > 0
+                    ? "There are suspended sales ready to be restored into the active session."
+                    : "No carts are waiting on hold."}
+                </p>
+              </div>
+            ) : null}
 
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <p className="text-sm font-semibold text-gray-900">Workspace actions</p>
               <div className="mt-4 grid gap-3">
-                <Button asChild variant="outline" className="justify-between bg-white">
-                  <Link href="/profile/staff">Manage staff and roles</Link>
-                </Button>
-                <Button asChild variant="outline" className="justify-between bg-white">
-                  <Link href="/agent/settings">Open AI workspace settings</Link>
-                </Button>
+                {canManageCompanySettings ? (
+                  <Button asChild variant="outline" className="justify-between bg-white">
+                    <Link href="/profile/staff">Manage staff and roles</Link>
+                  </Button>
+                ) : (
+                  <div className="rounded-xl border border-red-200 bg-white px-4 py-3 text-sm text-red-800">
+                    Staff and roles requires <span className="font-mono font-semibold text-red-900">manage_company_settings</span>
+                  </div>
+                )}
+                {canManageAgentSettings ? (
+                  <Button asChild variant="outline" className="justify-between bg-white">
+                    <Link href="/agent/settings">Open AI workspace settings</Link>
+                  </Button>
+                ) : (
+                  <div className="rounded-xl border border-red-200 bg-white px-4 py-3 text-sm text-red-800">
+                    AI workspace settings requires <span className="font-mono font-semibold text-red-900">manage_agent_settings</span>
+                  </div>
+                )}
                 <Button asChild variant="outline" className="justify-between bg-white">
                   <Link href="/realtime-dashboard">Open realtime monitor</Link>
                 </Button>

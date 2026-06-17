@@ -9,6 +9,7 @@ import { extractErrorMessage } from "@/lib/utils"
 import { Plus } from "lucide-react"
 import { toast } from "react-toastify"
 import { POSConfiguration } from "@/redux/features/product/productTypes"
+import type { ActionButton } from "@/components/common/DataTable/DataTable"
 
 type SelectOptions<T extends { id: string }> = Partial<Record<keyof T, Array<{ value: string; text: string }>>>
 
@@ -31,6 +32,7 @@ type POSResourceManagerProps<T extends { id: string }> = {
   readOnlyFields?: (keyof T)[]
   emptyState?: string
   confirmDeleteMessage?: (row: T) => string
+  actionButtons?: ActionButton<T>[]
 }
 
 export default function POSResourceManager<T extends { id: string }>({
@@ -52,6 +54,7 @@ export default function POSResourceManager<T extends { id: string }>({
   readOnlyFields,
   emptyState = "No records have been created yet.",
   confirmDeleteMessage,
+  actionButtons = [],
 }: POSResourceManagerProps<T>) {
   const [isEditorOpen, setEditorOpen] = useState(false)
   const [editingRow, setEditingRow] = useState<T | null>(null)
@@ -155,6 +158,7 @@ export default function POSResourceManager<T extends { id: string }>({
                 variant: "danger",
                 onClick: (row) => void handleDelete(row),
               },
+              ...actionButtons,
             ]}
             showActionsColumn
           />

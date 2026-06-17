@@ -1,7 +1,8 @@
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
-import { ChevronDown, LucideIcon } from  "lucide-react";
+import { ChevronDown, LucideIcon, Lock } from  "lucide-react";
 import Link from "next/link";
+import { canAccessPath, getPermissionRequirementLabel } from "@/lib/permissionsGuard";
 
 interface SidebarSubLink {
     href: string;
@@ -25,6 +26,8 @@ interface SidebarLinkProps {
   }: SidebarLinkProps) => {
     const pathname = usePathname();
     const hasSubLinks = subLinks.length > 0;
+    const access = canAccessPath(href);
+    const accessLabel = getPermissionRequirementLabel(access);
     const isActive =
       pathname === href ||
       (pathname === "/" && href === "/dashboard") ||
@@ -54,9 +57,18 @@ interface SidebarLinkProps {
         >
           {label}
         </span>
+        {!access.allowed && !isCollapsed ? (
+          <div
+            className="ml-auto inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-700"
+            title={`Requires ${accessLabel}`}
+          >
+            <Lock className="h-3 w-3" />
+            Restricted
+          </div>
+        ) : null}
         {hasSubLinks && !isCollapsed ? (
           <ChevronDown
-            className={`ml-auto h-4 w-4 transition-transform ${expanded ? "rotate-180 text-blue-700" : "text-gray-400"}`}
+            className={`h-4 w-4 transition-transform ${expanded ? "rotate-180 text-blue-700" : "text-gray-400"} ${!access.allowed && !isCollapsed ? "hidden" : "ml-auto"}`}
           />
         ) : null}
       </div>
@@ -78,6 +90,8 @@ interface SidebarLinkProps {
           <div className="ml-6 space-y-1 border-l border-gray-200 pl-3">
             {subLinks.map((subLink) => {
               const subActive = pathname === subLink.href || pathname.startsWith(`${subLink.href}/`);
+              const subAccess = canAccessPath(subLink.href);
+              const subAccessLabel = getPermissionRequirementLabel(subAccess);
               return (
                 <Link key={subLink.href} href={subLink.href}>
                   <div
@@ -87,7 +101,17 @@ interface SidebarLinkProps {
                         : "text-gray-600 hover:bg-blue-50 hover:text-blue-700"
                     }`}
                   >
-                    {subLink.label}
+                    <div className="flex items-center justify-between gap-2">
+                      <span>{subLink.label}</span>
+                      {!subAccess.allowed ? (
+                        <div
+                          className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-700"
+                          title={`Requires ${subAccessLabel}`}
+                        >
+                          <Lock className="h-3 w-3" />
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
                 </Link>
               );

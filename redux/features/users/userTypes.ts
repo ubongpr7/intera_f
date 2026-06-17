@@ -8,14 +8,17 @@ export interface UserData {
   profile_image?: string;
   first_name: string;
   last_name: string;
-  sex?: "male" | "female" | "other" | "prefer_not_to_say" | null;
+  get_full_name?: string;
+  role?: string | null;
+  sex?: "male" | "female" | "not_to_mention" | null;
   is_verified: boolean;
   is_staff: boolean;
+  mfa_enabled?: boolean;
+  has_setup_mfa?: boolean;
   date_of_birth?: Date | string | null;
   profile?: number | null;
-  date_joined: Date | string;
+  date_joined?: Date | string;
   last_login?: Date | string | null;
-  password: string;
   roles?: RoleAssignment[];
 }
 

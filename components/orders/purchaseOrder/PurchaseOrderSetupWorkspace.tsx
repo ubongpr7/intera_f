@@ -99,7 +99,7 @@ const quickSummary = (summary?: PurchaseOrderDashboardSummary, analytics?: Purch
 
 export default function PurchaseOrderSetupWorkspace() {
   const router = useRouter()
-  const { activeMembership, profile } = useWorkspaceSetupProgress()
+  const { activeMembership, isOwner, profile } = useWorkspaceSetupProgress()
   const defaultCurrency = profile?.currency || "NGN"
   const [formState, setFormState] = useState<PurchaseOrderFormState>(() => buildInitialForm(defaultCurrency))
   const [statusFilter, setStatusFilter] = useState<string>("all")
@@ -178,12 +178,16 @@ export default function PurchaseOrderSetupWorkspace() {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-6 pt-0">
-            <Button asChild>
-              <Link href="/profile">
-                Go to workspace setup
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
+            {isOwner ? (
+              <Button asChild>
+                <Link href="/profile">
+                  Go to workspace setup
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            ) : (
+              <p className="text-sm text-gray-600">Ask the workspace owner to complete the company setup before purchase ordering continues.</p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -191,8 +195,8 @@ export default function PurchaseOrderSetupWorkspace() {
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[310px_1fr] lg:px-8">
-      <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+    <div className={isOwner ? "mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[310px_1fr] lg:px-8" : "mx-auto w-full max-w-7xl space-y-6 px-4 py-6 lg:px-8"}>
+      {isOwner ? <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="p-5 text-left text-inherit">
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
@@ -301,7 +305,7 @@ export default function PurchaseOrderSetupWorkspace() {
             </div>
           </CardContent>
         </Card>
-      </aside>
+      </aside> : null}
 
       <main className="min-w-0 space-y-6">
         <Card className="border-gray-200 shadow-sm">

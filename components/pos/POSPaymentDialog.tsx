@@ -60,6 +60,16 @@ const paymentMethods: Array<{
 const asNumber = (value: string | number | undefined | null) =>
   Number(value ?? 0);
 
+const sanitizeDecimalInput = (value: string) => {
+  const filtered = value.replace(/[^\d.]/g, "");
+  const [whole = "", ...rest] = filtered.split(".");
+  const fraction = rest.join("").slice(0, 2);
+  if (filtered.startsWith(".")) {
+    return fraction ? `0.${fraction}` : "0.";
+  }
+  return rest.length > 0 ? `${whole}.${fraction}` : whole;
+};
+
 const createPaymentLine = (
   amount: string,
   paymentMethod: POSPaymentMethod = "cash",
@@ -349,13 +359,12 @@ export default function POSPaymentDialog({
                               Amount
                             </label>
                             <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
+                              type="text"
+                              inputMode="decimal"
                               value={line.amount}
                               onChange={(event) =>
                                 updatePaymentLine(line.id, {
-                                  amount: event.target.value,
+                                  amount: sanitizeDecimalInput(event.target.value),
                                 })
                               }
                             />
@@ -366,13 +375,12 @@ export default function POSPaymentDialog({
                                 Cash received
                               </label>
                               <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
+                                type="text"
+                                inputMode="decimal"
                                 value={line.cashReceived}
                                 onChange={(event) =>
                                   updatePaymentLine(line.id, {
-                                    cashReceived: event.target.value,
+                                    cashReceived: sanitizeDecimalInput(event.target.value),
                                   })
                                 }
                               />

@@ -94,6 +94,9 @@ export default function POSRemittances({ currencyCode }: { currencyCode: string 
   const openItems = remittances.filter((item) => item.status !== "reconciled").length
   const expectedTotal = remittances.reduce((sum, item) => sum + Number(item.expected_amount ?? 0), 0)
   const depositedTotal = remittances.reduce((sum, item) => sum + Number(item.deposited_amount ?? 0), 0)
+  const openingMismatchCount = remittances.filter(
+    (item) => Math.abs(Number(item.next_session_opening_variance_amount ?? 0)) > 0.0001,
+  ).length
 
   const resetForm = () => {
     setAmount("")
@@ -118,8 +121,9 @@ export default function POSRemittances({ currencyCode }: { currencyCode: string 
       { label: "Open remittances", value: openItems, icon: Wallet },
       { label: "Expected cash", value: formatCurrency(currencyCode, expectedTotal), icon: ArrowRightLeft },
       { label: "Deposited", value: formatCurrency(currencyCode, depositedTotal), icon: Landmark },
+      { label: "Opening mismatches", value: openingMismatchCount, icon: ShieldAlert },
     ],
-    [currencyCode, depositedTotal, expectedTotal, openItems],
+    [currencyCode, depositedTotal, expectedTotal, openItems, openingMismatchCount],
   )
 
   const submitAction = async () => {
@@ -181,7 +185,7 @@ export default function POSRemittances({ currencyCode }: { currencyCode: string 
           </div>
         </CardHeader>
         <CardContent className="space-y-6 p-6">
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {summaryCards.map((item) => {
               const Icon = item.icon
               return (
@@ -252,6 +256,59 @@ export default function POSRemittances({ currencyCode }: { currencyCode: string 
                     </Button>
                   ) : null}
                 </div>
+
+                {remittance.next_session_id ? (
+                  <div
+                    className={`mt-4 rounded-2xl border px-4 py-3 ${
+                      Math.abs(Number(remittance.next_session_opening_variance_amount ?? 0)) > 0.0001
+                        ? "border-amber-200 bg-amber-50"
+                        : "border-green-200 bg-green-50"
+                    }`}
+                  >
+                    <div className="text-[11px] font-medium uppercase tracking-wide text-gray-600">Next session verification</div>
+                    <div className="mt-2 text-sm text-gray-900">
+                      Cashier {remittance.next_session_user_id ?? "Unknown"} opened the next session with{" "}
+                      {formatCurrency(currencyCode, Number(remittance.next_session_opening_balance ?? 0))}.
+                    </div>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                      <div>
+                        <div className="text-[11px] uppercase tracking-wide text-gray-500">Expected</div>
+                        <div className="mt-1 text-sm font-semibold text-gray-900">
+                          {formatCurrency(currencyCode, Number(remittance.next_session_expected_opening_balance ?? 0))}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[11px] uppercase tracking-wide text-gray-500">Counted</div>
+                        <div className="mt-1 text-sm font-semibold text-gray-900">
+                          {formatCurrency(currencyCode, Number(remittance.next_session_opening_balance ?? 0))}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[11px] uppercase tracking-wide text-gray-500">Variance</div>
+                        <div
+                          className={`mt-1 text-sm font-semibold ${
+                            Math.abs(Number(remittance.next_session_opening_variance_amount ?? 0)) > 0.0001
+                              ? "text-amber-800"
+                              : "text-green-800"
+                          }`}
+                        >
+                          {formatCurrency(currencyCode, Number(remittance.next_session_opening_variance_amount ?? 0))}
+                        </div>
+                      </div>
+                    </div>
+                    {remittance.next_session_opening_variance_reason ? (
+                      <div className="mt-3 text-sm text-gray-700">
+                        <span className="font-medium">Reason:</span> {remittance.next_session_opening_variance_reason}
+                      </div>
+                    ) : Math.abs(Number(remittance.next_session_opening_variance_amount ?? 0)) <= 0.0001 ? (
+                      <div className="mt-3 text-sm text-green-800">The next cashier confirmed the opening cash matched the prior close or handover.</div>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="mt-4 rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+                    No next-session opening verification has been recorded for this terminal yet.
+                  </div>
+                )}
               </div>
             ))}
 

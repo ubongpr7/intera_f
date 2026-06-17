@@ -129,7 +129,7 @@ const StaffGroup =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
             ) : null}
 
                 
-            <div className={`fixed  inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${openTabs ? 'block' : 'hidden'}`}>
+            {openTabs ? (
                 <VerticalTabs
                     items={[
                 
@@ -161,8 +161,7 @@ const StaffGroup =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
                     onClose={() => setOpenTabs(false)}
                     className="border rounded-lg p-4"
                   />
-
-                </div>
+            ) : null}
         </div>
     )
 }

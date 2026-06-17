@@ -3,6 +3,7 @@ import type { Address } from "../common/commonTypes";
 export interface CompanyProfile {
   id: string;
   name: string;
+  logo?: string | null;
   industry?: string;
   description?: string;
   founded_date?: string;
@@ -178,8 +179,22 @@ export interface CompanyProfileAnalytics {
   profile_age_days: number;
 }
 
+export interface WorkspaceDefaultSyncSummary {
+  created_count: number;
+  updated_count: number;
+  preset_names: string[];
+}
+
+export interface PopulateDefaultStaffAccessResponse {
+  profile_id: string;
+  profile_name: string;
+  roles: WorkspaceDefaultSyncSummary;
+  groups: WorkspaceDefaultSyncSummary;
+}
+
 export interface CompanyFormData {
   name: string;
+  logo?: File | string | null;
   industry?: string;
   description?: string;
   founded_date?: string;

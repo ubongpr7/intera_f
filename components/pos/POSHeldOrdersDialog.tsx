@@ -19,6 +19,10 @@ interface POSHeldOrdersDialogProps {
   isLoading?: boolean
   onRestore: (heldOrder: POSHoldOrder) => Promise<void>
   restoringHoldOrderIds: Record<string, boolean>
+  accessNotice?: {
+    requiredPermission: string
+    message: string
+  }
 }
 
 export default function POSHeldOrdersDialog({
@@ -28,6 +32,7 @@ export default function POSHeldOrdersDialog({
   isLoading = false,
   onRestore,
   restoringHoldOrderIds,
+  accessNotice,
 }: POSHeldOrdersDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -40,6 +45,14 @@ export default function POSHeldOrdersDialog({
         </DialogHeader>
 
         <div className="px-6 py-5">
+          {accessNotice ? (
+            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-red-600">Permission required</div>
+              <div className="mt-2 font-mono text-sm font-semibold text-red-900">{accessNotice.requiredPermission}</div>
+              <div className="mt-2 text-sm text-red-800">{accessNotice.message}</div>
+            </div>
+          ) : null}
+
           <ScrollArea className="h-[360px] rounded-xl border border-gray-200">
             <div className="space-y-3 p-3">
               {heldOrders.map((heldOrder) => (
@@ -57,7 +70,7 @@ export default function POSHeldOrdersDialog({
                     size="sm"
                     variant="outline"
                     onClick={() => void onRestore(heldOrder)}
-                    disabled={!!restoringHoldOrderIds[heldOrder.id]}
+                    disabled={!!restoringHoldOrderIds[heldOrder.id] || !!accessNotice}
                   >
                     Restore cart
                   </Button>

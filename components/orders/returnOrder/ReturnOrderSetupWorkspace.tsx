@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useDeferredValue, useMemo, useState } from "react"
+import { useDeferredValue, useState } from "react"
 import { ArrowRight, CheckCircle2, ClipboardCheck, PackageX, ReceiptText, Undo2 } from "lucide-react"
 import { useWorkspaceSetupProgress } from "@/components/onboarding/WorkspaceSetupShell"
 import OperationalStepSection from "@/components/setup/OperationalStepSection"
@@ -33,7 +33,7 @@ const formatStatus = (value: string) =>
 const asNumber = (value: string | number | undefined | null) => Number(value ?? 0)
 
 export default function ReturnOrderSetupWorkspace() {
-  const { activeMembership } = useWorkspaceSetupProgress()
+  const { activeMembership, isOwner } = useWorkspaceSetupProgress()
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [searchQuery, setSearchQuery] = useState("")
   const deferredSearchQuery = useDeferredValue(searchQuery.trim())
@@ -50,13 +50,9 @@ export default function ReturnOrderSetupWorkspace() {
   const completedOrders = returnOrders.filter((order) => order.status === ReturnOrderStatus.completed).length
   const totalValue = returnOrders.reduce((sum, order) => sum + asNumber(order.total_price), 0)
 
-  const recentOrders = useMemo(() => returnOrders.slice(0, 8), [returnOrders])
-  const attentionOrders = useMemo(
-    () =>
-      returnOrders.filter((order) =>
-        [ReturnOrderStatus.pending, ReturnOrderStatus.awaiting_pickup, ReturnOrderStatus.in_transit].includes(order.status as never),
-      ),
-    [returnOrders],
+  const recentOrders = returnOrders.slice(0, 8)
+  const attentionOrders = returnOrders.filter((order) =>
+    [ReturnOrderStatus.pending, ReturnOrderStatus.awaiting_pickup, ReturnOrderStatus.in_transit].includes(order.status as never),
   )
 
   const createStepReady = totalOrders > 0
@@ -75,12 +71,16 @@ export default function ReturnOrderSetupWorkspace() {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-6 pt-0">
-            <Button asChild>
-              <Link href="/profile">
-                Go to workspace setup
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
+            {isOwner ? (
+              <Button asChild>
+                <Link href="/profile">
+                  Go to workspace setup
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            ) : (
+              <p className="text-sm text-gray-600">Ask the workspace owner to complete the company setup before supplier returns continue.</p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -88,8 +88,8 @@ export default function ReturnOrderSetupWorkspace() {
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[310px_1fr] lg:px-8">
-      <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+    <div className={isOwner ? "mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[310px_1fr] lg:px-8" : "mx-auto w-full max-w-7xl space-y-6 px-4 py-6 lg:px-8"}>
+      {isOwner ? <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="p-5 text-left text-inherit">
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
@@ -178,7 +178,7 @@ export default function ReturnOrderSetupWorkspace() {
             </div>
           </CardContent>
         </Card>
-      </aside>
+      </aside> : null}
 
       <div className="space-y-6">
         <Card className="border-gray-200 shadow-sm">

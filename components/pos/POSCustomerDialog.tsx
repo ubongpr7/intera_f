@@ -25,6 +25,10 @@ interface POSCustomerDialogProps {
   customers: POSCustomer[]
   isLoading?: boolean
   onAssignCustomer: (customerId: string | null) => Promise<void>
+  accessNotice?: {
+    requiredPermission: string
+    message: string
+  }
 }
 
 const emptyCustomerForm = {
@@ -40,6 +44,7 @@ export default function POSCustomerDialog({
   customers,
   isLoading = false,
   onAssignCustomer,
+  accessNotice,
 }: POSCustomerDialogProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [showCreateForm, setShowCreateForm] = useState(false)
@@ -107,6 +112,14 @@ export default function POSCustomerDialog({
         </DialogHeader>
 
         <div className="space-y-4 px-6 py-5">
+          {accessNotice ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-red-600">Permission required</div>
+              <div className="mt-2 font-mono text-sm font-semibold text-red-900">{accessNotice.requiredPermission}</div>
+              <div className="mt-2 text-sm text-red-800">{accessNotice.message}</div>
+            </div>
+          ) : null}
+
           {!showCreateForm ? (
             <>
               <div className="relative">
@@ -116,6 +129,7 @@ export default function POSCustomerDialog({
                   onChange={(event) => setSearchTerm(event.target.value)}
                   className="pl-10"
                   placeholder="Search customer name, email, phone, or address"
+                  disabled={!!accessNotice}
                 />
               </div>
 
@@ -124,6 +138,7 @@ export default function POSCustomerDialog({
                   <button
                     type="button"
                     onClick={() => void handleAssign(null)}
+                    disabled={!!accessNotice}
                     className="flex w-full items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-left transition-colors hover:border-blue-300 hover:bg-blue-50"
                   >
                     <div className="flex items-center gap-3">
@@ -143,6 +158,7 @@ export default function POSCustomerDialog({
                       key={customer.id}
                       type="button"
                       onClick={() => void handleAssign(customer.sync_identifier || customer.id)}
+                      disabled={!!accessNotice}
                       className="flex w-full items-start justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 text-left transition-colors hover:border-blue-300 hover:bg-blue-50"
                     >
                       <div>
@@ -182,23 +198,27 @@ export default function POSCustomerDialog({
                 value={formData.name}
                 onChange={(event) => setFormData((current) => ({ ...current, name: event.target.value }))}
                 placeholder="Customer name"
+                disabled={!!accessNotice}
               />
               <Input
                 value={formData.email}
                 onChange={(event) => setFormData((current) => ({ ...current, email: event.target.value }))}
                 placeholder="Email address"
                 type="email"
+                disabled={!!accessNotice}
               />
               <Input
                 value={formData.phone}
                 onChange={(event) => setFormData((current) => ({ ...current, phone: event.target.value }))}
                 placeholder="Phone number"
+                disabled={!!accessNotice}
               />
               <Textarea
                 value={formData.address}
                 onChange={(event) => setFormData((current) => ({ ...current, address: event.target.value }))}
                 className="min-h-[96px]"
                 placeholder="Address"
+                disabled={!!accessNotice}
               />
             </div>
           )}
@@ -210,7 +230,7 @@ export default function POSCustomerDialog({
               <Button variant="outline" onClick={() => closeDialog(false)}>
                 Close
               </Button>
-              <Button variant="outline" onClick={() => setShowCreateForm(true)}>
+              <Button variant="outline" onClick={() => setShowCreateForm(true)} disabled={!!accessNotice}>
                 <Plus className="h-4 w-4" />
                 New customer
               </Button>
@@ -220,7 +240,7 @@ export default function POSCustomerDialog({
               <Button variant="outline" onClick={() => setShowCreateForm(false)}>
                 Back
               </Button>
-              <Button onClick={() => void handleCreateCustomer()} disabled={creatingCustomer}>
+              <Button onClick={() => void handleCreateCustomer()} disabled={creatingCustomer || !!accessNotice}>
                 Create and assign
               </Button>
             </>

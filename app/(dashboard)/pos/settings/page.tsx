@@ -7,36 +7,41 @@ import Customers from "@/components/pos/Customers"
 import Discounts from "@/components/pos/Discounts"
 import Tables from "@/components/pos/Tables"
 import Terminals from "@/components/pos/Terminals"
+import { useCompanyProfile } from "@/hooks/useCompanyProfile"
+import { supportsPosTables } from "@/lib/posExperience"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useGetCurrentConfigurationQuery } from "@/redux/features/pos/posAPISlice"
 
-const settingCards = [
-  {
-    title: "Checkout policy",
-    description: "Currency, tax, receipts, split payments, and discount boundaries.",
-    icon: CreditCard,
-  },
-  {
-    title: "Terminal setup",
-    description: "Selling terminals and service tables for live checkout operations.",
-    icon: MonitorSpeaker,
-  },
-  {
-    title: "Discount controls",
-    description: "Reusable cashier-safe discount rules and approval thresholds.",
-    icon: BadgePercent,
-  },
-  {
-    title: "Cash remittance",
-    description: "Handled from a dedicated remittance workspace, separate from POS policy configuration.",
-    icon: Wallet,
-  },
-]
-
 export default function POSSettingsPage() {
   const { data: currentConfiguration } = useGetCurrentConfigurationQuery()
+  const { profile } = useCompanyProfile()
+  const tablesEnabled = supportsPosTables(profile?.industry)
+  const settingCards = [
+    {
+      title: "Checkout policy",
+      description: "Currency, tax, receipts, split payments, and discount boundaries.",
+      icon: CreditCard,
+    },
+    {
+      title: "Terminal setup",
+      description: tablesEnabled
+        ? "Selling terminals and service tables for live checkout operations."
+        : "Selling terminals and device assignments for live checkout operations.",
+      icon: MonitorSpeaker,
+    },
+    {
+      title: "Discount controls",
+      description: "Reusable cashier-safe discount rules and approval thresholds.",
+      icon: BadgePercent,
+    },
+    {
+      title: "Cash remittance",
+      description: "Handled from a dedicated remittance workspace, separate from POS policy configuration.",
+      icon: Wallet,
+    },
+  ]
 
   return (
     <div className="space-y-6">
@@ -121,7 +126,7 @@ export default function POSSettingsPage() {
             value="terminals"
             className="rounded-[18px] px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-blue-700"
           >
-            Terminals and tables
+            {tablesEnabled ? "Terminals and tables" : "Terminals"}
           </TabsTrigger>
           <TabsTrigger
             value="customers"
@@ -142,9 +147,9 @@ export default function POSSettingsPage() {
         </TabsContent>
 
         <TabsContent value="terminals" className="mt-0 space-y-4">
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className={`grid gap-4 ${tablesEnabled ? "xl:grid-cols-2" : ""}`}>
             <Terminals />
-            <Tables />
+            {tablesEnabled ? <Tables /> : null}
           </div>
         </TabsContent>
 

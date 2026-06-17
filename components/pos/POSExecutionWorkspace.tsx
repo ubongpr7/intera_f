@@ -3,7 +3,11 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react"
 import { getCookie } from "cookies-next"
 import { readCookieValue } from "@/lib/authCookies"
+import { getOrCreatePosDeviceId } from "@/lib/deviceIdentity"
+import { hasPermission } from "@/lib/permissionsGuard"
+import { supportsPosTables } from "@/lib/posExperience"
 import { extractErrorMessage } from "@/lib/utils"
+import { useCompanyProfile } from "@/hooks/useCompanyProfile"
 import type {
   POSConfiguration,
   POSCustomer,
@@ -17,6 +21,7 @@ import type {
   POSSessionCloseoutSummary,
   POSSessionOpeningDefaults,
   POSTable,
+  POSTerminalDeviceBinding,
   POSTerminal,
 } from "@/redux/features/pos/posTypes"
 import type { Product, ProductVariant } from "@/redux/features/product/productTypes"
@@ -81,6 +86,7 @@ type CashierCatalogSnapshot = {
 
 type CashierBootstrap = {
   configuration?: POSConfiguration | null
+  device_binding?: POSTerminalDeviceBinding | null
   session?: POSSession | null
   sessions?: POSSession[]
   terminals?: POSTerminal[]
@@ -101,6 +107,12 @@ type CashierEnvelope<T = unknown> = {
   type?: string
   payload?: T
   request_id?: string
+}
+
+type PermissionNotice = {
+  resource: string
+  requiredPermission: string
+  message: string
 }
 
 type BusyAction =
@@ -154,6 +166,16 @@ const getProductHttpBaseUrl = () => {
 
 const isAlreadyPaidError = (error: unknown) =>
   error instanceof Error && error.message.toLowerCase().includes("already fully paid")
+
+const buildPermissionNotice = (
+  resource: string,
+  requiredPermission: string,
+  message?: string,
+): PermissionNotice => ({
+  resource,
+  requiredPermission,
+  message: message || `You do not have permission to access ${resource.toLowerCase()}.`,
+})
 
 const defaultProduct = (product: CashierCatalogProduct, variants: ProductVariant[]): Product => {
   const representativeVariant = variants[0]
@@ -371,6 +393,7 @@ const resolveSessionForeignKey = (session?: POSSession | null) => session?.sync_
 export default function POSExecutionWorkspace() {
   const [terminalId, setTerminalId] = useState("")
   const [openingBalance, setOpeningBalance] = useState("0")
+  const [openingVarianceReason, setOpeningVarianceReason] = useState("")
   const [closingBalance, setClosingBalance] = useState("0")
   const [customerId, setCustomerId] = useState("")
   const [tableId, setTableId] = useState("")
@@ -406,6 +429,7 @@ export default function POSExecutionWorkspace() {
   const [terminals, setTerminals] = useState<POSTerminal[]>([])
   const [customers, setCustomers] = useState<POSCustomer[]>([])
   const [tables, setTables] = useState<POSTable[]>([])
+  const [deviceBinding, setDeviceBinding] = useState<POSTerminalDeviceBinding>()
   const [currentSession, setCurrentSession] = useState<POSSession>()
   const [sessions, setSessions] = useState<POSSession[]>([])
   const [currentOrder, setCurrentOrder] = useState<POSOrder>()
@@ -425,12 +449,87 @@ export default function POSExecutionWorkspace() {
   const quantitySyncInFlightRef = useRef<Record<string, boolean>>({})
   const quantityPendingValuesRef = useRef<Record<string, string>>({})
   const currentOrderRef = useRef<POSOrder | undefined>(undefined)
+  const sessionOpenInFlightRef = useRef(false)
 
   const deferredCatalogQuery = useDeferredValue(catalogQuery.trim())
+  const { profile } = useCompanyProfile()
+  const tablesEnabled = supportsPosTables(profile?.industry)
+  const canReadPos = hasPermission("read_pos")
+  const canOperatePos = hasPermission("operate_pos")
   const currencyCode = readCookieValue("currency", getCookie) || "NGN"
+  const sessionReadNotice = !canReadPos
+    ? buildPermissionNotice("POS session data", "read_pos", "You do not have permission to load POS session data.")
+    : undefined
+  const sessionOperateNotice = !canOperatePos
+    ? buildPermissionNotice(
+        "POS session actions",
+        "operate_pos",
+        "You do not have permission to open or close POS sessions.",
+      )
+    : undefined
+  const cartOperateNotice = !canOperatePos
+    ? buildPermissionNotice(
+        "POS cart actions",
+        "operate_pos",
+        "You do not have permission to create drafts, edit the cart, or check out.",
+      )
+    : undefined
+  const customerNotice = !canReadPos
+    ? buildPermissionNotice("POS customers", "read_pos", "You do not have permission to load POS customers.")
+    : undefined
+  const tableNotice = tablesEnabled && !canReadPos
+    ? buildPermissionNotice("POS tables", "read_pos", "You do not have permission to load POS tables.")
+    : undefined
+  const heldOrdersNotice = !canReadPos
+    ? buildPermissionNotice("held carts", "read_pos", "You do not have permission to load held carts.")
+    : undefined
+  const catalogActionNotice = !canOperatePos
+    ? buildPermissionNotice(
+        "POS selling actions",
+        "operate_pos",
+        "You can browse products, but you do not have permission to add items to the cart.",
+      )
+    : undefined
   const terminalMap = useMemo(() => buildLookup<POSTerminal>(terminals), [terminals])
   const customerMap = useMemo(() => buildLookup<POSCustomer>(customers), [customers])
   const tableMap = useMemo(() => buildLookup<POSTable>(tables), [tables])
+  const boundTerminalId = deviceBinding?.terminal || ""
+  const boundTerminal = boundTerminalId ? terminalMap[boundTerminalId] : undefined
+  const availableTerminals = useMemo(() => {
+    const occupiedTerminalIds = new Set(
+      sessions
+        .filter((session) => session.status === "open")
+        .map((session) => session.terminal)
+        .filter(Boolean),
+    )
+
+    return terminals.filter((terminal) => {
+      const terminalKeys = [terminal.sync_identifier, terminal.id].filter((key): key is string => Boolean(key))
+      const isAvailable = terminalKeys.every((key) => !occupiedTerminalIds.has(key))
+      if (!isAvailable) {
+        return false
+      }
+      if (!boundTerminalId) {
+        return true
+      }
+      return terminalKeys.includes(boundTerminalId)
+    })
+  }, [boundTerminalId, sessions, terminals])
+  const deviceBindingNotice =
+    !bootstrapLoading && canReadPos && !deviceBinding
+      ? {
+          title: "Terminal setup required",
+          message:
+            "This browser is not assigned to any POS terminal yet. An administrator must bind this device to a terminal before cashiers can sell from it.",
+        }
+      : undefined
+  const inactiveBindingNotice =
+    !bootstrapLoading && canReadPos && deviceBinding && boundTerminal && !boundTerminal.is_active
+      ? {
+          title: "Assigned terminal is inactive",
+          message: `${boundTerminal.name} is bound to this browser, but it is inactive. Ask an administrator to reactivate or reassign it before opening a session.`,
+        }
+      : undefined
   const resolveTerminalForeignKey = useCallback(
     (terminalRef?: string | null) => {
       if (!terminalRef) {
@@ -487,10 +586,31 @@ export default function POSExecutionWorkspace() {
     const nextSessions = (bootstrap.sessions || [])
       .map((session) => normalizeSession(session))
       .filter((session): session is POSSession => Boolean(session))
+    const nextDeviceBinding = bootstrap.device_binding !== undefined ? bootstrap.device_binding || undefined : deviceBinding
+    const nextTerminals = bootstrap.terminals !== undefined ? bootstrap.terminals : terminals
+    const occupiedTerminalIds = new Set(
+      nextSessions
+        .filter((session) => session.status === "open")
+        .map((session) => session.terminal)
+        .filter(Boolean),
+    )
+    const nextBoundTerminalId = nextDeviceBinding?.terminal || ""
+    const nextAvailableTerminals = nextTerminals.filter((terminal) => {
+      const terminalKeys = [terminal.sync_identifier, terminal.id].filter((key): key is string => Boolean(key))
+      const isAvailable = terminalKeys.every((key) => !occupiedTerminalIds.has(key))
+      if (!isAvailable) {
+        return false
+      }
+      if (!nextBoundTerminalId) {
+        return true
+      }
+      return terminalKeys.includes(nextBoundTerminalId)
+    })
 
     setCurrentConfiguration((current) =>
       bootstrap.configuration !== undefined ? bootstrap.configuration || undefined : current,
     )
+    setDeviceBinding((current) => (bootstrap.device_binding !== undefined ? bootstrap.device_binding || undefined : current))
     setTerminals((current) => (bootstrap.terminals !== undefined ? bootstrap.terminals : current))
     setCustomers((current) => (bootstrap.customers !== undefined ? bootstrap.customers : current))
     setTables((current) => (bootstrap.tables !== undefined ? bootstrap.tables : current))
@@ -503,7 +623,15 @@ export default function POSExecutionWorkspace() {
     setInventorySummary((current) =>
       bootstrap.inventory_summary !== undefined ? bootstrap.inventory_summary || undefined : current,
     )
-    setCloseoutSummary(undefined)
+    setCloseoutSummary((current) => {
+      if (!nextSession?.id) {
+        return undefined
+      }
+      if (current?.session_id === nextSession.id) {
+        return current
+      }
+      return undefined
+    })
 
     if (bootstrap.catalog !== undefined) {
       const normalizedCatalog = normalizeCatalog(bootstrap.catalog)
@@ -515,13 +643,19 @@ export default function POSExecutionWorkspace() {
       if (nextSession?.terminal) {
         return nextSession.terminal
       }
-      if (current) {
+      if (nextBoundTerminalId) {
+        return nextBoundTerminalId
+      }
+      const currentStillAvailable = current
+        ? nextAvailableTerminals.some((terminal) => terminal.sync_identifier === current || terminal.id === current)
+        : false
+      if (currentStillAvailable) {
         return current
       }
-      const firstTerminal = bootstrap.terminals?.[0]
+      const firstTerminal = nextAvailableTerminals[0]
       return firstTerminal?.sync_identifier || firstTerminal?.id || ""
     })
-  }, [])
+  }, [deviceBinding, terminals])
 
   const fetchJson = useCallback(
     async <T,>(
@@ -550,6 +684,7 @@ export default function POSExecutionWorkspace() {
         method: init?.method || "GET",
         headers: {
           Authorization: `Bearer ${accessToken}`,
+          ...(getOrCreatePosDeviceId() ? { "X-Device-ID": getOrCreatePosDeviceId() as string } : {}),
           ...(init?.body ? { "Content-Type": "application/json" } : {}),
         },
         ...(init?.body ? { body: JSON.stringify(init.body) } : {}),
@@ -625,6 +760,7 @@ export default function POSExecutionWorkspace() {
 
           const [
             configurationResult,
+            deviceBindingResult,
             currentSessionResult,
             sessionsResult,
             terminalsResult,
@@ -635,11 +771,12 @@ export default function POSExecutionWorkspace() {
             variantsResult,
           ] = await Promise.all([
             settle(fetchPosJson<POSConfiguration>("/pos_api/configurations/current/")),
+            settle(fetchOptionalPosJson<POSTerminalDeviceBinding>("/pos_api/terminals/device_binding/")),
             settle(fetchOptionalPosJson<POSSession>("/pos_api/sessions/current/")),
             settle(fetchPosJson<POSSession[]>("/pos_api/sessions/")),
             settle(fetchPosJson<POSTerminal[]>("/pos_api/terminals/")),
             settle(fetchPosJson<POSCustomer[]>("/pos_api/customers/")),
-            settle(fetchPosJson<POSTable[]>("/pos_api/tables/")),
+            settle(tablesEnabled ? fetchPosJson<POSTable[]>("/pos_api/tables/") : Promise.resolve([])),
             settle(fetchPosJson<POSHoldOrder[]>("/pos_api/orders/held_orders/")),
             settle(
               fetchProductJson<Record<string, unknown>[]>("/product_api/pos/products/", {
@@ -695,7 +832,7 @@ export default function POSExecutionWorkspace() {
             !sessionsResult.ok &&
             !terminalsResult.ok &&
             !customersResult.ok &&
-            !tablesResult.ok &&
+            (!tablesEnabled ? false : !tablesResult.ok) &&
             !heldOrdersResult.ok
 
           const catalogUnavailable = !productsResult.ok
@@ -704,11 +841,12 @@ export default function POSExecutionWorkspace() {
             type: "bootstrap.ready",
             payload: {
               configuration: configurationResult.ok ? configurationResult.value : undefined,
+              device_binding: deviceBindingResult.ok ? deviceBindingResult.value || undefined : undefined,
               session,
               sessions: sessionsResult.ok ? sessionsData : undefined,
               terminals: terminalsResult.ok ? terminalsResult.value : undefined,
               customers: customersResult.ok ? customersResult.value : undefined,
-              tables: tablesResult.ok ? tablesResult.value : undefined,
+              tables: tablesEnabled ? (tablesResult.ok ? tablesResult.value : undefined) : [],
               held_orders: heldOrdersResult.ok ? heldOrdersResult.value : undefined,
               catalog: productsResult.ok
                 ? buildCatalogSnapshotFromDjango(
@@ -752,6 +890,7 @@ export default function POSExecutionWorkspace() {
               body: {
                 terminal: payload.terminal,
                 opening_balance: payload.opening_balance,
+                opening_variance_reason: payload.opening_variance_reason,
               },
             }),
           }
@@ -993,7 +1132,7 @@ export default function POSExecutionWorkspace() {
           throw new Error(`No HTTP fallback is configured for ${type}.`)
       }
     },
-    [fetchOptionalPosJson, fetchPosJson, fetchProductJson, resolveTerminalForeignKey],
+    [fetchOptionalPosJson, fetchPosJson, fetchProductJson, resolveTerminalForeignKey, tablesEnabled],
   )
 
   const sendCommand = useCallback(async (type: string, payload: Record<string, unknown> = {}) => {
@@ -1025,6 +1164,42 @@ export default function POSExecutionWorkspace() {
 
   const refreshBootstrap = useCallback(async () => {
     try {
+      if (!canReadPos) {
+        const [productsResult, variantsResult] = await Promise.allSettled([
+          fetchProductJson<Record<string, unknown>[]>("/product_api/pos/products/", {
+            params: { page_size: 200 },
+          }),
+          fetchProductJson<Record<string, unknown>[]>("/product_api/pos/variants/"),
+        ])
+
+        const productsOk = productsResult.status === "fulfilled"
+        const variantsOk = variantsResult.status === "fulfilled"
+
+        applyBootstrap({
+          configuration: null,
+          session: null,
+          sessions: [],
+          terminals: [],
+          customers: [],
+          tables: [],
+          held_orders: [],
+          current_order: null,
+          inventory_summary: null,
+          catalog: productsOk
+            ? buildCatalogSnapshotFromDjango(
+                productsResult.value,
+                variantsOk ? variantsResult.value : [],
+              )
+            : undefined,
+          pos_unavailable: false,
+          catalog_unavailable: !productsOk,
+        })
+        setSocketReady(true)
+        setBootstrapUnavailable(false)
+        setCatalogUnavailable(!productsOk)
+        return
+      }
+
       const response = await sendCommand("bootstrap")
       if (response.payload) {
         const bootstrap = response.payload as CashierBootstrap
@@ -1037,10 +1212,10 @@ export default function POSExecutionWorkspace() {
       setBootstrapLoading(false)
       setCatalogLoading(false)
     }
-  }, [applyBootstrap, sendCommand])
+  }, [applyBootstrap, canReadPos, fetchProductJson, sendCommand])
 
   const refreshOpeningDefaults = useCallback(async (nextTerminalId: string) => {
-    if (!nextTerminalId) {
+    if (!nextTerminalId || !canReadPos) {
       return
     }
     const response = await sendCommand("session.opening_defaults", {
@@ -1048,13 +1223,14 @@ export default function POSExecutionWorkspace() {
     })
     const nextDefaults = response.payload as POSSessionOpeningDefaults
     setOpeningDefaults(nextDefaults)
+    setOpeningVarianceReason("")
     if (nextDefaults?.recommended_opening_balance !== undefined && nextDefaults?.recommended_opening_balance !== null) {
       setOpeningBalance(String(nextDefaults.recommended_opening_balance))
     }
-  }, [sendCommand])
+  }, [canReadPos, sendCommand])
 
   const refreshCloseoutSummary = useCallback(async (sessionId: string, nextClosingBalance?: string) => {
-    if (!sessionId) {
+    if (!sessionId || !canReadPos) {
       return
     }
     const response = await sendCommand("session.closeout_summary", {
@@ -1062,7 +1238,7 @@ export default function POSExecutionWorkspace() {
       closing_balance: nextClosingBalance || undefined,
     })
     setCloseoutSummary(response.payload as POSSessionCloseoutSummary)
-  }, [sendCommand])
+  }, [canReadPos, sendCommand])
 
   const handleMutationError = useCallback((error: unknown, fallback: string) => {
     toast.error(extractErrorMessage(error, ["detail"]) || fallback)
@@ -1175,16 +1351,35 @@ export default function POSExecutionWorkspace() {
   )
 
   const handleOpenSession = async () => {
+    if (sessionBlockingNotice) {
+      toast.error(sessionBlockingNotice.message)
+      return
+    }
     if (!terminalId) {
-      toast.error("Select a terminal before opening a session.")
+      toast.error(boundTerminalId ? "This browser does not have a usable POS terminal right now." : "Select a terminal before opening a session.")
+      return
+    }
+    if (!canOperatePos) {
+      toast.error(sessionOperateNotice?.message || "You do not have permission to open POS sessions.")
       return
     }
 
+    if (requiresOpeningVarianceReason && !openingVarianceReason.trim()) {
+      toast.error("Explain the opening cash mismatch before opening the session.")
+      return
+    }
+
+    if (sessionOpenInFlightRef.current || busyActions.openingSession) {
+      return
+    }
+
+    sessionOpenInFlightRef.current = true
     try {
       await runBusy("openingSession", async () => {
         await sendCommand("session.open", {
-          terminal: resolveTerminalForeignKey(terminalId),
+          terminal: resolveTerminalForeignKey(boundTerminalId || terminalId),
           opening_balance: openingBalance || "0",
+          opening_variance_reason: openingVarianceReason || undefined,
         })
       })
       await refreshBootstrap()
@@ -1193,6 +1388,8 @@ export default function POSExecutionWorkspace() {
     } catch (error) {
       handleMutationError(error, "Unable to open POS session.")
       throw error
+    } finally {
+      sessionOpenInFlightRef.current = false
     }
   }
 
@@ -1220,12 +1417,20 @@ export default function POSExecutionWorkspace() {
   }
 
   const ensureDraftOrder = async () => {
-    if (currentOrder) {
+    if (currentOrder?.id) {
       return currentOrder
+    }
+
+    if (currentOrder && !currentOrder.id) {
+      setCurrentOrder(undefined)
     }
 
     if (!currentSession) {
       toast.error("Open a session before adding items.")
+      return null
+    }
+    if (!canOperatePos) {
+      toast.error(cartOperateNotice?.message || "You do not have permission to create POS draft orders.")
       return null
     }
 
@@ -1235,6 +1440,9 @@ export default function POSExecutionWorkspace() {
       table_id: tableId || undefined,
     })
     const nextOrder = response.payload as POSOrder
+    if (!nextOrder?.id) {
+      throw new Error("Draft order could not be created.")
+    }
     setCurrentOrder(nextOrder)
     return nextOrder
   }
@@ -1253,6 +1461,10 @@ export default function POSExecutionWorkspace() {
   }
 
   const handleAssignCustomer = async (nextCustomerId: string | null) => {
+    if (!canReadPos) {
+      toast.error(customerNotice?.message || "You do not have permission to access POS customers.")
+      return
+    }
     if (!currentOrder) {
       setCustomerId(nextCustomerId || "")
       toast.success(nextCustomerId ? "Customer saved for the next draft order." : "Walk-in sale selected.")
@@ -1273,6 +1485,10 @@ export default function POSExecutionWorkspace() {
   }
 
   const handleAssignTable = async (nextTableId: string | null) => {
+    if (!canReadPos) {
+      toast.error(tableNotice?.message || "You do not have permission to access POS tables.")
+      return
+    }
     if (!currentOrder) {
       setTableId(nextTableId || "")
       toast.success(nextTableId ? "Table saved for the next draft order." : "Counter service selected.")
@@ -1293,6 +1509,10 @@ export default function POSExecutionWorkspace() {
   }
 
   const handleRetrieveHeldOrder = async (heldOrder: POSHoldOrder) => {
+    if (!canReadPos) {
+      toast.error(heldOrdersNotice?.message || "You do not have permission to access held carts.")
+      return
+    }
     if (!currentSession) {
       toast.error("Open a session before retrieving a held order.")
       return
@@ -1377,6 +1597,10 @@ export default function POSExecutionWorkspace() {
 
   const handleAddVariant = async (variantId: string) => {
     try {
+      if (!canOperatePos) {
+        toast.error(catalogActionNotice?.message || "You do not have permission to add POS items.")
+        return
+      }
       if (currentOrder?.payment_status === "paid") {
         toast.error("This sale is already paid and is being finalized.")
         return
@@ -1411,7 +1635,9 @@ export default function POSExecutionWorkspace() {
       setPendingAddVariantIds((current) => ({ ...current, [variantId]: true }))
 
       const draftOrder = await ensureDraftOrder()
-      if (!draftOrder) {
+      if (!draftOrder?.id) {
+        void refreshBootstrap().catch(() => undefined)
+        toast.error("The draft order is still being prepared. Try again.")
         return
       }
 
@@ -1722,11 +1948,32 @@ export default function POSExecutionWorkspace() {
   }
 
   const hasCurrentSession = Boolean(currentSession?.id && currentSession?.status === "open")
-  const activeTerminalId = (hasCurrentSession ? currentSession?.terminal : undefined) || terminalId
+  const occupiedBindingNotice =
+    !bootstrapLoading && canReadPos && deviceBinding && boundTerminal && !hasCurrentSession && availableTerminals.length === 0
+      ? {
+          title: "Assigned terminal is busy",
+          message: `${boundTerminal.name} is already running another open session. Close that session before starting a new one on this browser.`,
+        }
+      : undefined
+  const sessionBlockingNotice = deviceBindingNotice || inactiveBindingNotice || occupiedBindingNotice
+  const expectedOpeningBalance = Number(
+    openingDefaults?.expected_opening_balance ?? openingDefaults?.recommended_opening_balance ?? 0,
+  )
+  const resolvedOpeningBalance = Number(openingBalance || 0)
+  const requiresOpeningVarianceReason =
+    Boolean(openingDefaults?.last_closed_session_id) &&
+    Number.isFinite(expectedOpeningBalance) &&
+    Number.isFinite(resolvedOpeningBalance) &&
+    Math.abs(resolvedOpeningBalance - expectedOpeningBalance) > 0.0001
+  const activeTerminalId = (hasCurrentSession ? currentSession?.terminal : undefined) || boundTerminalId || terminalId
   const activeCustomerId = currentOrder?.customer || customerId
-  const activeTableId = currentOrder?.table || tableId
+  const activeTableId = tablesEnabled ? currentOrder?.table || tableId : ""
   const sessionId = hasCurrentSession ? currentSession?.id : undefined
-  const sessionDialogVisible = !bootstrapLoading && (sessionDialogOpen || (!hasCurrentSession && terminals.length > 0))
+  const sessionDialogVisible =
+    !bootstrapLoading &&
+    canReadPos &&
+    !sessionBlockingNotice &&
+    (sessionDialogOpen || (!hasCurrentSession && availableTerminals.length > 0))
 
   const liveSessionCount = sessions.filter((session) => session.status === "open").length
   const orderHasInventory = inventorySummary?.items?.some((item) => !!item.inventory_item_id) ?? false
@@ -1752,13 +1999,16 @@ export default function POSExecutionWorkspace() {
     (activeCustomerId ? customerMap[activeCustomerId]?.name || "Saved customer" : "Walk-in")
 
   const tableLookup = activeTableId ? tableMap[activeTableId] : undefined
-  const tableLabel = currentOrder?.table_number
-    ? `Table ${currentOrder.table_number}`
-    : tableLookup?.name || (tableLookup?.number ? `Table ${tableLookup.number}` : "Counter")
+  const tableLabel = tablesEnabled
+    ? currentOrder?.table_number
+      ? `Table ${currentOrder.table_number}`
+      : tableLookup?.name || (tableLookup?.number ? `Table ${tableLookup.number}` : "Counter")
+    : "Counter"
 
   const terminalName = hasCurrentSession && currentSession?.terminal
     ? terminalMap[currentSession.terminal]?.name || currentSession.terminal
     : terminalMap[terminalId]?.name
+  const isCloseoutSummaryLoading = hasCurrentSession && !closeoutSummary
 
   useEffect(() => {
     const timers = quantitySyncTimers.current
@@ -1918,6 +2168,8 @@ export default function POSExecutionWorkspace() {
       <div className="space-y-5">
         <POSCashierHeader
           isLoading={bootstrapLoading}
+          isCloseoutSummaryLoading={isCloseoutSummaryLoading}
+          sessionConstraintNotice={sessionBlockingNotice}
           hasCurrentSession={hasCurrentSession}
           currentSession={currentSession}
           currentOrder={currentOrder}
@@ -1926,6 +2178,9 @@ export default function POSExecutionWorkspace() {
           heldOrderCount={heldOrders.length}
           liveSessionCount={liveSessionCount}
           closeoutSummary={closeoutSummary}
+          sessionReadNotice={sessionReadNotice}
+          sessionOperateNotice={sessionOperateNotice}
+          heldOrdersNotice={heldOrdersNotice}
           onOpenSession={() => setSessionDialogOpen(true)}
           onOpenHeldOrders={() => setHeldOrdersDialogOpen(true)}
           onOpenCloseout={() => {
@@ -1952,12 +2207,13 @@ export default function POSExecutionWorkspace() {
               productVariants={productVariants}
               searchingCatalog={catalogLoading}
               catalogUnavailable={catalogUnavailable}
+              addToOrderNotice={catalogActionNotice}
               variantQuantities={variantQuantities}
               onVariantQuantityChange={(variantId, value) =>
                 setVariantQuantities((current) => ({ ...current, [variantId]: value }))
               }
               onAddVariant={handleAddVariant}
-              canAddToOrder={hasCurrentSession && !bootstrapLoading && !catalogLoading && !bootstrapUnavailable}
+              canAddToOrder={hasCurrentSession && canOperatePos && !bootstrapLoading && !catalogLoading && !bootstrapUnavailable}
               pendingAddVariantIds={pendingAddVariantIds}
             />
           </div>
@@ -1966,8 +2222,14 @@ export default function POSExecutionWorkspace() {
             <POSCartPanel
               currentOrder={currentOrder}
               currencyCode={currentConfiguration?.currency || currencyCode}
+              supportsTables={tablesEnabled}
               isHydrating={bootstrapLoading}
               cartUnavailable={bootstrapUnavailable}
+              sessionReadNotice={sessionReadNotice}
+              cartOperateNotice={cartOperateNotice}
+              customerAccessNotice={customerNotice}
+              tableAccessNotice={tableNotice}
+              heldOrdersAccessNotice={heldOrdersNotice}
               customerLabel={customerLabel}
               tableLabel={tableLabel}
               heldOrderCount={heldOrders.length}
@@ -2004,7 +2266,7 @@ export default function POSExecutionWorkspace() {
               onHoldOrder={handleHoldOrder}
               onCancelOrder={handleCancelOrder}
               hasInventoryControls={orderHasInventory}
-              canStartDraft={hasCurrentSession && !bootstrapLoading && !bootstrapUnavailable}
+              canStartDraft={hasCurrentSession && canOperatePos && !bootstrapLoading && !bootstrapUnavailable}
               isCreatingDraft={!!busyActions.creatingDraft}
               syncingItemIds={syncingItemIds}
               removingItemIds={removingItemIds}
@@ -2021,16 +2283,22 @@ export default function POSExecutionWorkspace() {
       <POSSessionDialog
         open={sessionDialogVisible}
         onOpenChange={setSessionDialogOpen}
-        terminals={terminals}
+        terminals={availableTerminals}
+        terminalLocked={!!boundTerminalId}
         currentConfiguration={currentConfiguration}
         openingDefaults={openingDefaults}
         currencyCode={currencyCode}
         terminalId={activeTerminalId}
         openingBalance={openingBalance}
+        openingVarianceReason={openingVarianceReason}
+        requiresVarianceReason={requiresOpeningVarianceReason}
+        blockingNotice={sessionBlockingNotice}
         onTerminalChange={setTerminalId}
         onOpeningBalanceChange={setOpeningBalance}
+        onOpeningVarianceReasonChange={setOpeningVarianceReason}
         onOpenSession={() => void handleOpenSession()}
         isOpening={!!busyActions.openingSession}
+        accessNotice={sessionOperateNotice || sessionReadNotice}
       />
 
       <POSCustomerDialog
@@ -2039,14 +2307,18 @@ export default function POSExecutionWorkspace() {
         customers={customers}
         isLoading={bootstrapLoading}
         onAssignCustomer={handleAssignCustomer}
+        accessNotice={customerNotice}
       />
 
-      <POSTableDialog
-        open={tableDialogOpen}
-        onOpenChange={setTableDialogOpen}
-        tables={tables}
-        onAssignTable={handleAssignTable}
-      />
+      {tablesEnabled ? (
+        <POSTableDialog
+          open={tableDialogOpen}
+          onOpenChange={setTableDialogOpen}
+          tables={tables}
+          onAssignTable={handleAssignTable}
+          accessNotice={tableNotice}
+        />
+      ) : null}
 
       <POSHeldOrdersDialog
         open={heldOrdersDialogOpen}
@@ -2055,6 +2327,7 @@ export default function POSExecutionWorkspace() {
         isLoading={bootstrapLoading}
         onRestore={handleRetrieveHeldOrder}
         restoringHoldOrderIds={restoringHoldOrderIds}
+        accessNotice={heldOrdersNotice}
       />
 
       <POSPaymentDialog
