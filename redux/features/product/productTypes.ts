@@ -249,6 +249,129 @@ export interface ProductVariantAttribute {
   effective_modifier: number;
 }
 
+export interface GlobalCatalogVariant {
+  id: string;
+  global_product?: string;
+  display_name: string;
+  variant_number: number;
+  barcode?: string | null;
+  sku?: string | null;
+  attributes_snapshot: Record<string, unknown>;
+  price_override?: number | null;
+  image_url_override?: string;
+  display_image?: string | null;
+  version?: number;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface GlobalCatalogProduct {
+  id: string;
+  name: string;
+  brand?: string;
+  short_description?: string;
+  description?: string;
+  category_name?: string;
+  base_price: number;
+  unit?: string;
+  variant_count: number;
+  display_image?: string | null;
+  imported: boolean;
+  workspace_product_id?: string | null;
+  imported_variant_count?: number;
+  variants?: GlobalCatalogVariant[];
+}
+
+export interface GlobalCatalogAdminProduct {
+  id: string;
+  name: string;
+  slug: string;
+  brand?: string;
+  description?: string;
+  short_description?: string;
+  category_name?: string;
+  base_price: number;
+  unit?: string;
+  track_stock: boolean;
+  allow_backorder: boolean;
+  low_stock_threshold: number;
+  source_status: "draft" | "published" | "archived";
+  version: number;
+  search_text?: string;
+  display_image?: string | null;
+  variant_count: number;
+  variants?: GlobalCatalogVariant[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GlobalCatalogImport {
+  id: string;
+  profile_id: number;
+  global_product_id: string;
+  global_product_name: string;
+  workspace_product_id: string;
+  workspace_product_name: string;
+  import_mode: "initial_import" | "sync";
+  status: "imported" | "synced" | "failed";
+  last_synced_at?: string | null;
+  last_source_version: number;
+  imported_variant_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GlobalCatalogImportResult {
+  global_product_id: string;
+  global_product_name: string;
+  workspace_product_id: string;
+  workspace_product_name: string;
+  created_workspace_product: boolean;
+  imported_variants: number;
+  skipped_variants: number;
+  inherited_images: number;
+  barcode_conflicts: string[];
+  sku_conflicts: string[];
+  import_id: string;
+  status: "imported" | "synced" | "failed";
+}
+
+export interface GlobalCatalogImportResponse {
+  requested_count: number;
+  results: GlobalCatalogImportResult[];
+}
+
+export type GlobalCatalogSyncResult = GlobalCatalogImportResult;
+
+export interface GlobalCatalogImportPreview {
+  global_product_id: string;
+  global_product_name: string;
+  workspace_product_id?: string | null;
+  import_id?: string | null;
+  imported: boolean;
+  source_version: number;
+  last_synced_version?: number | null;
+  active_variant_count: number;
+  imported_variant_count: number;
+  missing_variant_count: number;
+  up_to_date: boolean;
+  missing_variants: GlobalCatalogVariant[];
+}
+
+export interface GlobalCatalogBulkIngestResult {
+  requested_count: number;
+  created_products: number;
+  updated_products: number;
+  created_variants: number;
+  updated_variants: number;
+  errors: Array<{
+    index?: number | null;
+    variant_index?: number;
+    detail: string;
+  }>;
+}
+
 export interface PriceChangeHistory {
   id: string;
   product: string;

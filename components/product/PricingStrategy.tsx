@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
+import { toast } from "react-toastify"
 import {
   useGetPricingStrategiesQuery,
   useCreatePricingStrategyMutation,
@@ -14,6 +15,7 @@ import { Column, DataTable } from "../common/DataTable/DataTable"
 import { PricingStrategy, Product } from "@/redux/features/product/productTypes"
 import CustomCreateCard from "../common/createCard"
 import LoadingAnimation from "../common/LoadingAnimation"
+import { extractErrorMessage } from "@/lib/utils"
 
 interface ProductPricingStrategiesProps {
   productId: string;
@@ -159,8 +161,8 @@ export default function ProductPricingStrategies({ productId,product }: ProductP
     try {
       await deletePricingStrategy(strategyId).unwrap()
       refetch()
-    } catch (error) {
-      console.error('Failed to delete pricing strategy:', error)
+    } catch {
+      toast.error('Failed to delete pricing strategy.')
     }
   }
 
@@ -191,7 +193,7 @@ export default function ProductPricingStrategies({ productId,product }: ProductP
   if (error) {
     return (
       <div className="p-4 text-red-500">
-        Error loading pricing strategies: {(error as any).message || 'Unknown error'}
+        Unable to load pricing strategies: {extractErrorMessage(error, ["detail", "error"])}
       </div>
     )
   }
@@ -210,8 +212,9 @@ export default function ProductPricingStrategies({ productId,product }: ProductP
         isLoading={isLoading}
         onRowClick={handleRowClick}
         searchableFields={['name']}
-        filterableFields={['strategy']}
-        sortableFields={['name', 'strategy']}
+        filterableFields={['strategy', 'is_active']}
+        sortableFields={['name', 'strategy', 'margin_percentage', 'market_multiplier', 'min_price', 'max_price', 'calculated_price_example']}
+        rangeFilterFields={['margin_percentage', 'market_multiplier', 'min_price', 'max_price', 'demand_factor', 'seasonal_factor', 'calculated_price_example']}
         title={`Pricing Strategies for ${product?.name || 'Product'}`}
         onClose={() => setIsCreateOpen(true)}
       />

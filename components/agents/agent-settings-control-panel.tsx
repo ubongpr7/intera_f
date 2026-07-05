@@ -18,7 +18,9 @@ import {
 import { toast } from "react-toastify";
 
 import { hasTokenPermission, isWorkspaceOwner } from "@/lib/agentPermissions";
+import { formatMachineLabel } from "@/lib/displayLabels";
 import { extractErrorMessage, formatDate } from "@/lib/utils";
+import { confirmAction } from "@/components/common/confirmAction";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -1181,9 +1183,14 @@ export default function AgentSettingsControlPanel() {
   };
 
   const handleDeleteAgent = async (agent: WorkspaceAgentRecord) => {
-    if (!window.confirm(`Delete ${agent.name}? This removes it from the workspace control plane.`)) {
-      return;
-    }
+    const confirmed = await confirmAction({
+      title: "Delete workspace agent?",
+      description: `Delete ${agent.name}? This removes it from the workspace control plane.`,
+      confirmText: "Delete agent",
+      destructive: true,
+    });
+    if (!confirmed) return;
+
     try {
       await deleteWorkspaceAgent(agent.id).unwrap();
       toast.success(`Deleted ${agent.name}.`);
@@ -1354,9 +1361,14 @@ export default function AgentSettingsControlPanel() {
   };
 
   const handleDeleteToolConnection = async (connection: WorkspaceToolConnectionRecord) => {
-    if (!window.confirm(`Delete ${connection.name}?`)) {
-      return;
-    }
+    const confirmed = await confirmAction({
+      title: "Delete tool connection?",
+      description: `Delete ${connection.name}? Agents using this connection may lose access to external tools.`,
+      confirmText: "Delete connection",
+      destructive: true,
+    });
+    if (!confirmed) return;
+
     try {
       await deleteWorkspaceToolConnection(connection.id).unwrap();
       toast.success(`Deleted ${connection.name}.`);
@@ -1732,12 +1744,12 @@ export default function AgentSettingsControlPanel() {
                               : "bg-amber-100 text-amber-700"
                         }`}
                       >
-                        {connection.status}
+                        {formatMachineLabel(connection.status)}
                       </span>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2 text-xs">
                       <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">{connection.slug}</span>
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">{connection.auth_type || "unspecified auth"}</span>
+                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">{formatMachineLabel(connection.auth_type, "Unspecified auth")}</span>
                       <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">
                         {connection.has_credential_payload ? "credential JSON present" : "no credential JSON"}
                       </span>

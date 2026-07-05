@@ -6,6 +6,7 @@ import CustomCreateCard from "@/components/common/createCard"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { extractErrorMessage } from "@/lib/utils"
+import { confirmAction } from "@/components/common/confirmAction"
 import { Plus } from "lucide-react"
 import { toast } from "react-toastify"
 import { POSConfiguration } from "@/redux/features/product/productTypes"
@@ -102,9 +103,13 @@ export default function POSResourceManager<T extends { id: string }>({
 
   const handleDelete = async (row: T) => {
     const message = confirmDeleteMessage?.(row) ?? `Delete this ${itemTitle.toLowerCase()}?`
-    if (!window.confirm(message)) {
-      return
-    }
+    const confirmed = await confirmAction({
+      title: `Delete ${itemTitle.toLowerCase()}?`,
+      description: message,
+      confirmText: "Delete",
+      destructive: true,
+    })
+    if (!confirmed) return
 
     setSubmitting(true)
     try {

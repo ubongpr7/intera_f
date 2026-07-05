@@ -3,6 +3,7 @@
 import { useState } from "react"
 import {
   useDeleteProductVariantMutation,
+  useGetProductDataQuery,
   useGetProductVariantsQuery,
   useToggleVariantFeaturedMutation,
   useToggleVariantPosVisibleMutation,
@@ -17,6 +18,9 @@ import { getCurrencySymbolForProfile } from "@/lib/currency-utils"
 import { TableImageHover } from '@/components/common/table-image-render';
 import { Eye, ScanBarcode, Star, Trash2 } from "lucide-react"
 import { toast } from "react-toastify"
+import { extractErrorMessage } from "@/lib/utils"
+import { confirmAction } from "@/components/common/confirmAction"
+import { useSubscriptionQuota } from "@/hooks/useSubscriptionQuota"
 
 interface ProductVariantManagerProps {
   productId: string
@@ -27,12 +31,16 @@ const variantColumns: Column<ProductVariant>[] = [
   {
     header: "Display Name",
     accessor: "pos_display_name",
+    render: (value) =>
+  String(value).length > 21
+    ? `${String(value).slice(0, 20)}...`
+    : String(value),
     className: "font-medium",
   },
   {
     header: "Barcode",
     accessor: "variant_barcode",
-    render: (value) => value || "N/A",
+    render: (value) => value || "Not set",
     className: "font-medium",
   },
   {
@@ -49,7 +57,7 @@ const variantColumns: Column<ProductVariant>[] = [
   {
     header: "SKU",
     accessor: "variant_sku",
-    render: (value) => value || "N/A",
+    render: (value) => value || "Not set",
     info: "Stock Keeping Unit for the variant",
   },
   {
@@ -75,6 +83,9 @@ const variantColumns: Column<ProductVariant>[] = [
 const ProductVariantManager = ({ productId, ProductData }: ProductVariantManagerProps) => {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
+  const { data: products = [] } = useGetProductDataQuery()
+  const workspaceVariantCount = products.reduce((total, product) => total + Number(product.variant_count ?? 0), 0)
+  const variantQuota = useSubscriptionQuota("product-variants", workspaceVariantCount)
 
   const {
     data: variants,
@@ -96,9 +107,14 @@ const ProductVariantManager = ({ productId, ProductData }: ProductVariantManager
   }
 
   const handleDeleteVariant = async (variant: ProductVariant) => {
-    if (!window.confirm(`Delete variant "${variant.pos_display_name || variant.display_name || variant.variant_sku || variant.id}"?`)) {
-      return
-    }
+    const variantName = variant.pos_display_name || variant.display_name || variant.variant_sku || variant.id
+    const confirmed = await confirmAction({
+      title: "Delete product variant?",
+      description: `Delete variant "${variantName}"?`,
+      confirmText: "Delete variant",
+      destructive: true,
+    })
+    if (!confirmed) return
 
     try {
       await deleteVariant(variant.id).unwrap()
@@ -168,7 +184,7 @@ const ProductVariantManager = ({ productId, ProductData }: ProductVariantManager
   if (variantsError) {
     return (
       <div className="p-4 text-red-500">
-        Error loading variants: {(variantsError as any).message || "Unknown error"}
+        Unable to load product variants: {extractErrorMessage(variantsError, ["detail", "error"])}
       </div>
     )
   }
@@ -184,11 +200,18 @@ const ProductVariantManager = ({ productId, ProductData }: ProductVariantManager
         data={variants || []}
         isLoading={isVariantsFetching}
         onRowClick={handleRowClick}
-        searchableFields={["pos_display_name", "variant_sku"]}
-        filterableFields={["active", "pos_visible"]}
-        sortableFields={["pos_display_name", "variant_sku"]}
+        searchableFields={["pos_display_name", "display_name", "variant_sku", "variant_barcode"]}
+        filterableFields={["active", "pos_visible", "is_featured"]}
+        sortableFields={["pos_display_name", "variant_sku", "selling_price", "variant_number", "price_override", "cost_override"]}
+        rangeFilterFields={["selling_price", "pos_price", "variant_number", "price_override", "cost_override", "low_stock_threshold_override"]}
         actionButtons={actionButtons}
-        title="Product Variants" onClose={() => setIsCreateOpen(true)}
+        title="Product Variants" onClose={() => {
+          if (!variantQuota.canCreate) {
+            toast.error(variantQuota.message)
+            return
+          }
+          setIsCreateOpen(true)
+        }}
       />
 
       {isCreateOpen && (

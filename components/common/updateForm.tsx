@@ -17,6 +17,9 @@ import {
   useGetSubregionsQuery,
   useGetCitiesQuery,
 } from '../../redux/features/common/typeOF';
+import { toast } from 'react-toastify';
+import { extractErrorMessage } from '@/lib/utils';
+import { normalizeFormPayload } from '@/lib/formPayload';
 
 
 
@@ -24,7 +27,7 @@ const PhoneInput = dynamic(
   () => import('react-phone-number-input'),
   { 
     ssr: false,
-    loading: () => <input className="border rounded p-2" placeholder="Loading phone input..." />
+    loading: () => <input className="rounded-2xl border border-border bg-muted px-3 py-2 text-sm text-muted-foreground" placeholder="Loading phone input..." />
   }
 );
 
@@ -176,9 +179,18 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
 
   const onSubmitHandler = async (formData: Partial<T>) => {
     try {
-      await onSubmit(formData);
+      await onSubmit(
+        normalizeFormPayload(formData, {
+          optionalFields,
+          hiddenFields,
+          dateFields,
+          datetimeFields,
+        }),
+      );
+      toast.success('Changes saved.');
       setEdit(false);
     } catch (error) {
+      toast.error(extractErrorMessage(error, editableFields.map(String)));
     }
   };
 
@@ -209,13 +221,13 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
 
       />
       
-      <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6">
+      <div className="sticky bottom-0 border-t border-border bg-card p-6">
       <div className="flex justify-end gap-3">
         
         <button
           type="button"
           onClick={() => setEdit(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500"
+          className="rounded-2xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-ring"
         >
         Edit    
       </button>
@@ -227,7 +239,7 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
       {edit && (
       <form 
         onSubmit={handleSubmit(onSubmitHandler)} 
-        className={`flex flex-col overflow-y-auto h-full `}
+        className={`flex h-full flex-col overflow-y-auto`}
       >
           <div>
             {Object.entries(hiddenFields).map(([fieldName, fieldValue]) => (
@@ -266,8 +278,8 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
                 const isSupplierSelected = !!selectedSupplier;
 
                 return (
-                  <div key={`field-${String(key)}`} className="relative z-0 min-w-[200px] space-y-2 hover:z-20 focus-within:z-20">
-                    <label className="block text-sm font-medium text-gray-700">
+                  <div key={`field-${String(key)}`} className="relative z-0 min-w-[200px] space-y-2 rounded-2xl border border-border bg-card p-4 hover:z-20 focus-within:z-20">
+                    <label className="block text-sm font-medium text-foreground">
                       {formatLabel(String(key))}
                       <FieldInfo info={fieldInfoText} displayBelow={true} />
                     </label>
@@ -311,11 +323,10 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
                                 {...field}
                                 value={field.value as string | number | undefined}
                                 disabled={isDisabled}
-                                className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
-                                  focus:border-blue-500 py-2 rounded-md ${
+                                className={`w-full rounded-2xl border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
                                   errors[key as string] 
                                     ? 'border-red-500 ring-red-500' 
-                                    : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                                    : ''
                                 }`}
                               >
                                 <option value="">Select {formatLabel(String(key))}</option>
@@ -333,11 +344,10 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
                             return (
                               <select
                                 disabled={!isSupplierSelected}
-                                className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
-                                  focus:border-blue-500 py-2 rounded-md ${
+                                className={`w-full rounded-2xl border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
                                   errors[key as string] 
                                     ? 'border-red-500 ring-red-500' 
-                                    : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                                    : ''
                                 }`}
                                 // Explicitly set select props instead of spreading field
                                 value={field.value as string}  // Convert to string
@@ -365,11 +375,10 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
                               name={field.name}
                               ref={field.ref}
 
-                                className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
-                                  focus:border-blue-500 py-2 rounded-md ${
+                                className={`w-full rounded-2xl border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
                                   errors[key as string] 
                                     ? 'border-red-500 ring-red-500' 
-                                    : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                                    : ''
                                 }`}
                               >
                                 <option value="">Select {formatLabel(String(key))}</option>
@@ -392,7 +401,7 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
                               onBlur={field.onBlur}
                               name={field.name}
                               ref={field.ref}
-                              className="w-5 h-5"
+                              className="h-5 w-5 rounded border-border text-primary focus:ring-ring"
                             />
                             );
                           }
@@ -408,11 +417,10 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
                         
                                 international
                                 defaultCountry="NG"
-                                className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none 
-                                  focus:border-blue-500 py-2 rounded-md ${
+                                className={`w-full rounded-2xl border border-border bg-background px-3 py-2 text-foreground focus-within:ring-2 focus-within:ring-ring ${
                                   errors[key as string] 
                                     ? 'border-red-500 ring-red-500' 
-                                    : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                                    : ''
                                 }`}
                               />
                             );
@@ -422,11 +430,10 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
                               type={inputType}
                               {...field}
                               value={field.value as string | number | undefined}
-                              className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
-                                focus:border-blue-500 py-2 rounded-md ${
+                              className={`w-full rounded-2xl border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
                                 errors[key as string] 
                                   ? 'border-red-500 ring-red-500' 
-                                  : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                                  : ''
                               }`}
                             />
                           );
@@ -446,7 +453,7 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
             {hasDescription && (
               <div className="mt-4 col-span-full">
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-foreground">
                     Description
                     <FieldInfo info={descriptionInfoText} displayBelow={true} />
                   </label>
@@ -460,11 +467,10 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
                           {...field}
                           value={field.value as string || ''}
                           rows={4}
-                          className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
-                            focus:border-blue-500 py-2 rounded-md ${
+                          className={`w-full rounded-2xl border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
                             errors.description 
                               ? 'border-red-500 ring-red-500' 
-                              : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                              : ''
                           }`}
                         />
                       )}
@@ -480,12 +486,12 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
             )}
           </div>
 
-          <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6">
+          <div className="sticky bottom-0 border-t border-border bg-card p-6">
             <div className="flex justify-end gap-3">
               
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500"
+                className="rounded-2xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-ring"
               >
                 {isLoading ? (
                   <LoadingAnimation text="Updating..." ringColor="#3b82f6" />
@@ -533,26 +539,26 @@ export  function ResponsiveDataGrid<T extends Record<string, any>>({
           <div
             key={String(key)}
             className={clsx(
-              'bg-white p-4 rounded-lg border border-gray-200 shadow-sm',
+              'rounded-2xl border border-border bg-card p-4 shadow-sm',
               {
                 'col-span-full': isDescription,
                 'break-words': isDescription,
               }
             )}
           >
-            <div className="text-sm font-medium text-gray-500 mb-1 capitalize">
+            <div className="mb-1 text-sm font-medium capitalize text-muted-foreground">
               {formatLabel(String(key))}
             </div>
-            <div className={clsx('text-gray-900', { 'text-sm': isDescription })}>
+            <div className={clsx('text-foreground', { 'text-sm': isDescription })}>
             {
               String(key).toLocaleLowerCase().endsWith('price')?(
-                <span className="text-blue-600">{getCurrencySymbolForProfile()} {value}</span>
+                <span className="text-primary">{getCurrencySymbolForProfile()} {value}</span>
               ) :typeof value === 'boolean' ? (
-                  <span className="text-blue-600">{value ? <Check/> : <X/>}</span>
+                  <span className="text-primary">{value ? <Check/> : <X/>}</span>
                 ) : value ? (
                   String(value)
                 ) : (
-                  <span className="text-gray-400">N/A</span>
+                  <span className="text-muted-foreground">N/A</span>
                 )
             }
             </div>

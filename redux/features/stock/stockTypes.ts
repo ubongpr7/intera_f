@@ -11,12 +11,16 @@ export interface StockLocationSummary {
   id: number | string;
   name: string;
   code?: string;
+  parent?: string | number | null;
   parent_name?: string;
   location_type_name?: string;
   stock_count?: number;
   structural?: boolean;
+  is_default_structural_location?: boolean;
   external?: boolean;
   physical_address?: string | null;
+  structural_location_id?: string | number | null;
+  structural_location_name?: string | null;
 }
 
 export interface StockLocation extends StockLocationSummary {
@@ -60,6 +64,8 @@ export interface StockBalanceRow {
   inventory_item_name?: string | null;
   stock_location_id?: string | null;
   stock_location_name?: string | null;
+  structural_location_id?: string | null;
+  structural_location_name?: string | null;
   stock_lot_id?: string | null;
   lot_number?: string | null;
   quantity_on_hand?: string | number;
@@ -90,6 +96,8 @@ export interface StockSerial {
   status?: string | null;
   stock_location_id?: string | null;
   stock_location_name?: string | null;
+  structural_location_id?: string | null;
+  structural_location_name?: string | null;
   stock_lot_id?: string | null;
   lot_number?: string | null;
   created_at?: string;
@@ -192,6 +200,8 @@ export interface StockReservation {
   serial_number?: string | null;
   stock_location: string;
   location_name?: string;
+  structural_location_id?: string | null;
+  structural_location_name?: string | null;
   external_order_type: string;
   external_order_id: string;
   external_order_line_id?: string | null;
@@ -208,6 +218,9 @@ export interface StockReservationListParams {
   inventory?: string;
   inventory_item?: string;
   stock_location?: string;
+  structural_location_id?: string;
+  structural_location_ids?: string[];
+  scope?: "all" | "all_locations";
   status?: string;
   external_order_type?: string;
   external_order_id?: string;
@@ -217,6 +230,7 @@ export interface StockReservationListParams {
 export interface StockReservationPayload {
   inventory_item_id: string;
   location_id: string;
+  structural_location_id?: string;
   quantity: string | number;
   external_order_type: string;
   external_order_id: string;
@@ -235,6 +249,7 @@ export interface StockReservationMutationPayload {
 
 export interface StockTransferPayload {
   to_location_id: string;
+  structural_location_id?: string;
   quantity: string | number;
   inventory_item_id?: string;
   stock_lot_id?: string;
@@ -298,6 +313,9 @@ export interface InventoryItemListParams {
   inventory_item?: string;
   inventory_category?: string;
   location?: string;
+  structural_location_id?: string;
+  structural_location_ids?: string[];
+  scope?: "all" | "all_locations";
   purchase_order?: string;
   sales_order?: string;
   product_variant?: string;
@@ -313,6 +331,9 @@ export type StockItemListParams = InventoryItemListParams;
 export interface StockBalanceListParams {
   inventory_item?: string;
   stock_location?: string;
+  structural_location_id?: string;
+  structural_location_ids?: string[];
+  scope?: "all" | "all_locations";
   stock_lot?: string;
   search?: string;
   ordering?: string;
@@ -329,6 +350,9 @@ export interface StockLotListParams {
 export interface StockSerialListParams {
   inventory_item?: string;
   stock_location?: string;
+  structural_location_id?: string;
+  structural_location_ids?: string[];
+  scope?: "all" | "all_locations";
   stock_lot?: string;
   status?: string;
   search?: string;
@@ -341,6 +365,9 @@ export interface StockMovementListParams {
   reference_type?: string;
   reference_id?: string;
   stock_location?: string;
+  structural_location_id?: string;
+  structural_location_ids?: string[];
+  scope?: "all" | "all_locations";
   from_location?: string;
   to_location?: string;
   stock_lot?: string;

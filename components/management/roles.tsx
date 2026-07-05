@@ -73,7 +73,7 @@ const StaffRole =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
       refetch();
       setRefetchData(false);
     }
-    },[refetchData])
+    },[refetch, refetchData, setRefetchData])
  
   const handleCreate = async (createdData: Partial<RoleData>) => {
     await createGroup(createdData).unwrap();
@@ -113,7 +113,8 @@ const StaffRole =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
             onRowClick={handleRowClick}
             searchableFields={['name', 'description']}
             filterableFields={[]}
-            sortableFields={['name', 'description']}
+            sortableFields={['name', 'description', 'permission_count', 'assignments_count']}
+            rangeFilterFields={['permission_count', 'assignments_count']}
              title="Roles"
             onClose={() => setIsCreateOpen(true)}
             />

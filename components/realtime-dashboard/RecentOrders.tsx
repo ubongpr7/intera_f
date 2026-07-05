@@ -1,15 +1,21 @@
 'use client';
 import { useGetDashboardRecentOrdersQuery } from '@/redux/features/dashboard/dashboardApiSlice';
 import { ShoppingCart, Clock, CheckCircle } from 'lucide-react';
-import LoadingAnimation from '../common/LoadingAnimation';
+import { QueryStateBoundary } from '../common/QueryStateBoundary';
+import { formatMachineLabel } from '@/lib/displayLabels';
 
 const RecentOrders = () => {
-  const { data, error, isLoading } = useGetDashboardRecentOrdersQuery('');
-
-  if (isLoading) return <div className="h-full flex justify-center items-center"><LoadingAnimation /></div>;
-  if (error) return <div>Error loading recent orders</div>;
+  const { data, error, isLoading, isFetching, refetch } = useGetDashboardRecentOrdersQuery('');
 
   return (
+    <QueryStateBoundary
+      isLoading={isLoading}
+      isFetching={isFetching}
+      error={error}
+      onRetry={refetch}
+      loadingText="Loading recent purchase orders..."
+      errorTitle="Unable to load recent purchase orders"
+    >
     <div className="rounded-xl bg-white p-6 shadow-sm border border-gray-100">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold">Recent Purchase Orders</h2>
@@ -29,7 +35,7 @@ const RecentOrders = () => {
                 <div className="flex items-center space-x-1 text-sm">
                   {order.status === 'pending' && <Clock className="w-4 h-4 text-yellow-600" />}
                   {order.status === 'completed' && <CheckCircle className="w-4 h-4 text-green-600" />}
-                  <span>{order.status}</span>
+                  <span>{formatMachineLabel(order.status)}</span>
                 </div>
               </div>
             </div>
@@ -39,6 +45,7 @@ const RecentOrders = () => {
         )}
       </div>
     </div>
+    </QueryStateBoundary>
   );
 };
 

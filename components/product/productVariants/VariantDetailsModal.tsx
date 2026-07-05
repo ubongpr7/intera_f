@@ -7,6 +7,7 @@ import VariantDetailsTab from "./tabs/VariantDetailsTab"
 import VariantStatisticsTab from "./tabs/VariantStatisticsTab"
 import VariantMediaTab from "./tabs/VariantMediaTab"
 import VariantAttributesTab from "./tabs/VariantAttributesTab"
+import { extractErrorMessage } from "@/lib/utils"
 
 interface VariantDetailsModalProps {
   variantId: string
@@ -26,7 +27,7 @@ const VariantDetailsModal = ({ variantId, onClose, onSuccess }: VariantDetailsMo
         <div className="w-full max-w-md rounded-lg bg-white p-6" onClick={(event) => event.stopPropagation()}>
           <h3 className="text-lg font-semibold text-red-600 mb-2">Error</h3>
           <p className="text-gray-700 mb-4">
-            Failed to load variant details: {(error as any).message || "Unknown error"}
+            Failed to load variant details: {extractErrorMessage(error, ["detail", "error"])}
           </p>
           <button onClick={onClose} className="w-full bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
             Close

@@ -17,6 +17,8 @@ import {
 import { useCreateCompanyProfileAddressMutation,useUpdateCompanyProfileAddressMutation } from "@/redux/features/management/companyProfileApiSlice"
 import { Address } from "@/redux/features/common/commonTypes"
 import { CompanyProfile } from "@/redux/features/management/companyProfileTypes"
+import { extractErrorMessage } from "@/lib/utils"
+import { toast } from "react-toastify"
 
 
 
@@ -199,7 +201,7 @@ export function CompanyAddressForm({ profile, onUpdate, submitLabel = "Save Addr
       await addressAction.unwrap()
       await onUpdate()
     } catch (error) {
-      console.error("Failed to update company address:", error)
+      toast.error(extractErrorMessage(error, ["street", "city", "detail"]))
     } finally {
       setIsLoading(false)
     }

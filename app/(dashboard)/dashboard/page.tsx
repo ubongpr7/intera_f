@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { getCookie } from "cookies-next"
 import {
   Boxes,
@@ -22,6 +22,7 @@ import { toast } from "react-toastify"
 import DomainLaunchCard from "@/components/dashboard/DomainLaunchCard"
 import StatTile from "@/components/dashboard/StatTile"
 import { WorkspaceSetupOverview, useWorkspaceSetupProgress } from "@/components/onboarding/WorkspaceSetupShell"
+import StructuralLocationScopeSelect from "@/components/stock/StructuralLocationScopeSelect"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -29,6 +30,8 @@ import {
   useGetUserCompaniesQuery,
   useSwitchCompanyMutation,
 } from "@/redux/features/auth/authApiSlice"
+import { buildStructuralLocationScopeParams } from "@/lib/structuralLocationScope"
+import { useStructuralLocationScope } from "@/hooks/useStructuralLocationScope"
 import { hasPermission } from "@/lib/permissionsGuard"
 import { useGetInventoryAnalyticsQuery } from "@/redux/features/inventory/inventoryAPiSlice"
 import {
@@ -192,6 +195,11 @@ const NoProfileState = ({
               {profile.role ? (
                 <p className="mt-1 text-xs uppercase tracking-wide text-blue-700">Role: {profile.role}</p>
               ) : null}
+              {profile.support_access ? (
+                <p className="mt-1 text-xs uppercase tracking-wide text-amber-700">
+                  Temporary support access
+                </p>
+              ) : null}
             </div>
             <Button onClick={() => void onSwitchCompany(profile)} disabled={switchingProfileId === profile.id} className="w-full">
               {switchingProfileId === profile.id ? (
@@ -222,9 +230,14 @@ const NoProfileState = ({
 export default function DashboardPage() {
   const router = useRouter()
   const [switchingProfileId, setSwitchingProfileId] = useState<string | null>(null)
+  const [selectedStructuralLocationIds, setSelectedStructuralLocationIds] = useStructuralLocationScope()
   const { data: companyMemberships, isLoading, isError, refetch } = useGetUserCompaniesQuery()
   const [switchCompany] = useSwitchCompanyMutation()
   const { activeMembership, isOwner, nextRecommendedStage } = useWorkspaceSetupProgress()
+  const structuralScopeParams = useMemo(
+    () => buildStructuralLocationScopeParams(selectedStructuralLocationIds),
+    [selectedStructuralLocationIds],
+  )
 
   const canReadInventory = hasPermission("read_inventory")
   const canViewInventoryReports = hasPermission("view_inventory_reports")
@@ -237,37 +250,37 @@ export default function DashboardPage() {
   const canManageAgentSettings = hasPermission("manage_agent_settings")
   const canReadProductDashboard = canReadInventory || canViewInventoryReports
 
-  const { data: inventoryAnalytics } = useGetInventoryAnalyticsQuery(undefined, {
+  const { data: inventoryAnalytics } = useGetInventoryAnalyticsQuery(structuralScopeParams, {
     skip: !canReadInventory && !canViewInventoryReports,
   })
   const { data: productStats } = useGetDashboardStatsQuery(undefined, {
     skip: !canReadProductDashboard,
   })
-  const { data: lowStockItems = [] } = useGetLowStockItemsQuery(undefined, {
+  const { data: lowStockItems = [] } = useGetLowStockItemsQuery(structuralScopeParams, {
     skip: !canReadInventory && !canViewInventoryReports,
   })
   const { data: currentSession } = useGetCurrentSessionQuery(undefined, {
     skip: !canReadPos,
   })
-  const { data: heldOrders = [] } = useGetHeldOrdersQuery(undefined, {
+  const { data: heldOrders = [] } = useGetHeldOrdersQuery(structuralScopeParams, {
     skip: !canReadPos,
   })
-  const { data: dailyPosSales } = useGetDailySalesQuery(undefined, {
+  const { data: dailyPosSales } = useGetDailySalesQuery(structuralScopeParams, {
     skip: !canReadPos || !canViewPosReports,
   })
   const { data: sessionCloseout } = useGetSessionCloseoutSummaryQuery(
     { sessionId: currentSession?.id || "" },
     { skip: !canReadPos || !currentSession?.id },
   )
-  const { data: purchaseAnalytics } = useGetPurchaseOrderAnalyticsQuery(undefined, {
+  const { data: purchaseAnalytics } = useGetPurchaseOrderAnalyticsQuery(structuralScopeParams, {
     skip: !canReadPurchaseOrders,
   })
   const { data: openSalesOrders = [] } = useListSalesOrdersQuery(
-    { status: "pending" },
+    structuralScopeParams ? { status: "pending", ...structuralScopeParams } : { status: "pending" },
     { skip: !canReadSalesOrders },
   )
   const { data: openReturnOrders = [] } = useListReturnOrdersQuery(
-    { status: "pending" },
+    structuralScopeParams ? { status: "pending", ...structuralScopeParams } : { status: "pending" },
     { skip: !canReadReturnOrders },
   )
 
@@ -326,6 +339,14 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-6 px-4 py-6 lg:px-8">
+      <StructuralLocationScopeSelect
+        allowMultiSelect
+        className="max-w-sm"
+        id="dashboard-structural-scope"
+        values={selectedStructuralLocationIds}
+        onValuesChange={setSelectedStructuralLocationIds}
+        description="Focus dashboard metrics on one structural location when you need store-specific operations visibility."
+      />
       <Card className="overflow-hidden border-gray-200 shadow-sm">
         <CardContent className="p-0">
           <div className="border-b border-gray-100 bg-gray-100/50 px-6 py-6">
@@ -650,15 +671,15 @@ export default function DashboardPage() {
           <CardContent className="space-y-4 p-5">
             {canReadPos ? (
               <div className="rounded-2xl border border-gray-200 bg-blue-50 p-4">
-                <p className="text-sm font-semibold text-blue-950">Current POS session</p>
-                <p className="mt-2 text-lg font-semibold text-blue-950">{currentSession ? "Open and selling" : "No active session"}</p>
-                <p className="mt-1 text-sm text-blue-900">
+                <p className="text-sm font-semibold text-gray-900">Current POS session</p>
+                <p className="mt-2 text-lg font-semibold text-gray-900">{currentSession ? "Open and selling" : "No active session"}</p>
+                <p className="mt-1 text-sm text-gray-900">
                   {currentSession
                     ? `Started ${formatDateTime(currentSession.opening_time)}`
                     : "Open the POS floor to start a selling session."}
                 </p>
                 <div className="mt-4">
-                  <Button asChild variant="outline" className="border-blue-300 bg-white text-blue-950 hover:bg-blue-100">
+                  <Button asChild variant="outline" className="border-blue-300 bg-gray-900 text-blue-950 hover:bg-blue-100">
                     <Link href="/pos">Open POS floor</Link>
                   </Button>
                 </div>

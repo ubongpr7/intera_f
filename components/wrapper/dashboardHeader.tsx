@@ -1,4 +1,5 @@
 'use client'
+import { useEffect, useState } from 'react';
 import Navbar from './navbar'
 import SideBar from './sideBar'
 import { useAppSelector } from "../../redux/store";
@@ -14,6 +15,7 @@ import { readCookieValue } from '@/lib/authCookies';
 const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
 
   const SidebarCollapsed = useAppSelector((state) => state.global.isSidebarCollapsed);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const pathname = usePathname();
   const isPublic = publicRoutes.includes(pathname);
 
@@ -29,13 +31,38 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
   };
 
   const shouldShowLegacyAgentWidget = pathname !== "/agent" && Boolean(readCookieValue("accessToken", getCookie));
+
+  useEffect(() => {
+    if (!mobileSidebarOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mobileSidebarOpen]);
   
   return (
     <div className={`flex bg-gray-50 text-gray-900 w-full min-h-screen`}>
     
     <ToastContainer position="top-right" autoClose={3000} />
     
-    {!shouldHideDashboardUI(pathname) && <SideBar user={user} />}
+    {!shouldHideDashboardUI(pathname) ? (
+      <>
+        <SideBar
+          user={user}
+          mobileOpen={mobileSidebarOpen}
+          onMobileClose={() => setMobileSidebarOpen(false)}
+        />
+        {mobileSidebarOpen ? (
+          <button
+            type="button"
+            aria-label="Close navigation menu"
+            className="fixed inset-0 z-40 bg-slate-950/45 backdrop-blur-[2px] md:hidden"
+            onClick={() => setMobileSidebarOpen(false)}
+          />
+        ) : null}
+      </>
+    ) : null}
     <main
       className={`flex min-h-screen flex-1 flex-col bg-gray-50 px-3 py-4 transition-[margin] duration-300 ${
         shouldHideDashboardUI(pathname)
@@ -46,7 +73,9 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
       }`}
     >
     
-    {!shouldHideDashboardUI(pathname) &&  <Navbar user={user} />}
+    {!shouldHideDashboardUI(pathname) && (
+      <Navbar user={user} onOpenMobileSidebar={() => setMobileSidebarOpen(true)} />
+    )}
     
     {children}
     

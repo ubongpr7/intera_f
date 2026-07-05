@@ -17,8 +17,11 @@ import {
   TriangleAlert,
   Warehouse,
 } from "lucide-react"
-import { useWorkspaceSetupProgress } from "@/components/onboarding/WorkspaceSetupShell"
+import { WorkspaceSetupLoadingCard, useWorkspaceSetupProgress } from "@/components/onboarding/WorkspaceSetupShell"
 import ProductView from "@/components/product/productView"
+import GlobalCatalogAdminWorkspace from "@/components/product/GlobalCatalogAdminWorkspace"
+import GlobalProductLibrary from "@/components/product/GlobalProductLibrary"
+import ImportedGlobalProductsPanel from "@/components/product/ImportedGlobalProductsPanel"
 import OperationalStepSection from "@/components/setup/OperationalStepSection"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -52,7 +55,7 @@ const displayCount = (value: number | undefined, isLoading: boolean) => {
 }
 
 export default function ProductPage() {
-  const { activeMembership, isOwner, nextRecommendedStage, profile, readiness } = useWorkspaceSetupProgress()
+  const { activeMembership, isLoading: loadingWorkspaceSetup, isOwner, nextRecommendedStage, profile, readiness } = useWorkspaceSetupProgress()
 
   const { data: inventories, isLoading: loadingInventories } = useGetInventoryDataQuery()
   const { data: products, isLoading: loadingProducts } = useGetProductDataQuery()
@@ -74,6 +77,7 @@ export default function ProductPage() {
   const currencyCode = profile?.currency || "NGN"
 
   const featuredProducts = useMemo(() => (products ?? []).slice(0, 3), [products])
+  const loadingProductSetupState = loadingInventories || loadingProducts || loadingInventorySummary
 
   const setupSteps: ProductSetupStep[] = useMemo(
     () => [
@@ -102,9 +106,8 @@ export default function ProductPage() {
     [inventoryCount, posReadyProducts, productCount, totalVariants],
   )
 
-  const completedSteps = setupSteps.filter((step) => step.complete).length
-  const completionPercentage = Math.round((completedSteps / setupSteps.length) * 100)
   const nextProductStep = setupSteps.find((step) => !step.complete) ?? null
+  const productSetupComplete = !loadingProductSetupState && setupSteps.every((step) => step.complete)
 
   const handleExportCatalog = async () => {
     try {
@@ -122,6 +125,15 @@ export default function ProductPage() {
     } catch {
       toast.error("Failed to export the product catalog.")
     }
+  }
+
+  if (loadingWorkspaceSetup) {
+    return (
+      <WorkspaceSetupLoadingCard
+        title="Loading product workspace"
+        description="Checking your active company and catalog setup state before showing setup guidance or product controls."
+      />
+    )
   }
 
   if (!activeMembership) {
@@ -153,8 +165,8 @@ export default function ProductPage() {
   }
 
   return (
-    <div className={cn("mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 lg:px-8", isOwner ? "lg:grid-cols-[310px_1fr]" : "grid-cols-1")}>
-      {isOwner ? <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+    <div className={cn("mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 lg:px-8", isOwner && !loadingProductSetupState && !productSetupComplete ? "lg:grid-cols-[310px_1fr]" : "grid-cols-1")}>
+      {isOwner && !loadingProductSetupState && !productSetupComplete ? <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="p-5 text-left text-inherit">
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
@@ -167,19 +179,6 @@ export default function ProductPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 p-5 pt-0">
-            <div>
-              <div className="mb-2 flex items-center justify-between text-xs font-medium uppercase tracking-wide text-gray-500">
-                <span>Product readiness</span>
-                <span>{completionPercentage}%</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-gray-100">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 transition-all duration-300"
-                  style={{ width: `${completionPercentage}%` }}
-                />
-              </div>
-            </div>
-
             {nextProductStep ? (
               <a
                 href={`#${nextProductStep.id}`}
@@ -280,10 +279,11 @@ export default function ProductPage() {
           <CardHeader className="border-b border-gray-100 p-6 text-left text-inherit">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <CardTitle className="text-3xl tracking-tight">Product catalog setup</CardTitle>
+                <CardTitle className="text-3xl tracking-tight">{productSetupComplete ? "Product catalog" : "Product catalog setup"}</CardTitle>
                 <CardDescription className="max-w-3xl text-sm leading-6 text-gray-600">
-                  This page now follows the real catalog-building journey: confirm inventory foundations, create product templates with the shared
-                  form system, then continue inside each product to define variants, pricing, and POS behavior.
+                  {productSetupComplete
+                    ? "Manage products, variants, pricing, POS readiness, imported global products, and catalog exports from one workspace."
+                    : "This page follows the catalog-building journey: confirm inventory foundations, create product templates, then finish variants, pricing, and POS behavior."}
                 </CardDescription>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -344,6 +344,7 @@ export default function ProductPage() {
           </CardContent>
         </Card>
 
+        {!loadingProductSetupState && !productSetupComplete ? (
         <OperationalStepSection
           id="dependency"
           step={1}
@@ -395,13 +396,18 @@ export default function ProductPage() {
             </div>
           </div>
         </OperationalStepSection>
+        ) : null}
 
         <OperationalStepSection
           id="products"
           step={2}
-          title="Create product templates with the shared form system"
-          description="Add products manually or through bulk generation, define their commercial defaults, and establish the base catalog record."
-          helper="This step uses the existing custom create form and bulk-create flow. The page around it now makes the intended sequence obvious."
+          title={productSetupComplete ? "Manage product templates and global catalog imports" : "Create product templates with the shared form system"}
+          description={
+            productSetupComplete
+              ? "Maintain catalog records, import global products, export CSV data, and open products for variant, pricing, and POS changes."
+              : "Add products manually or through bulk generation, define their commercial defaults, and establish the base catalog record."
+          }
+          helper={productSetupComplete ? undefined : "This step uses the existing custom create form and bulk-create flow. The page around it now makes the intended sequence obvious."}
           status={productCount > 0 ? "complete" : inventoryCount > 0 ? "in_progress" : "pending"}
           facts={[
             { label: "Products", value: displayCount(productCount, loadingProducts || loadingDashboard) },
@@ -416,9 +422,15 @@ export default function ProductPage() {
             ) : undefined
           }
         >
-          <ProductView />
+          <div className="space-y-6">
+            <GlobalCatalogAdminWorkspace />
+            <GlobalProductLibrary />
+            <ImportedGlobalProductsPanel />
+            <ProductView />
+          </div>
         </OperationalStepSection>
 
+        {!loadingProductSetupState && !productSetupComplete ? (
         <OperationalStepSection
           id="enablement"
           step={3}
@@ -512,7 +524,9 @@ export default function ProductPage() {
             </div>
           </div>
         </OperationalStepSection>
+        ) : null}
 
+        {!loadingProductSetupState && !productSetupComplete ? (
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="p-6 text-left text-inherit">
             <CardTitle className="text-xl">What comes after product setup</CardTitle>
@@ -541,6 +555,7 @@ export default function ProductPage() {
             </div>
           </CardContent>
         </Card>
+        ) : null}
       </main>
     </div>
   )

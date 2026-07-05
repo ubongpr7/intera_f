@@ -12,6 +12,9 @@ import {
 } from "@/redux/features/product/productAPISlice"
 import LoadingAnimation from "../common/LoadingAnimation"
 import Modal from "../common/Modal"
+import { extractErrorMessage } from "@/lib/utils"
+import { toast } from "react-toastify"
+import { confirmAction } from "../common/confirmAction"
 
 interface ProductMediaProps {
   productId: string
@@ -50,7 +53,7 @@ export default function ProductMedia({ productId }: ProductMediaProps) {
       setShowUploadModal(false)
       refetch()
     } catch (error) {
-      console.error("Error uploading files:", error)
+      toast.error(extractErrorMessage(error, ["files", "detail"]))
     }
   }
 
@@ -67,7 +70,7 @@ export default function ProductMedia({ productId }: ProductMediaProps) {
       setShowUploadModal(false)
       refetch()
     } catch (error) {
-      console.error("Error uploading file:", error)
+      toast.error(extractErrorMessage(error, ["files", "description", "detail"]))
     }
   }
 
@@ -77,18 +80,24 @@ export default function ProductMedia({ productId }: ProductMediaProps) {
       setEditingAttachment(null)
       refetch()
     } catch (error) {
-      console.error("Error updating attachment:", error)
+      toast.error(extractErrorMessage(error, ["description", "purpose", "detail"]))
     }
   }
 
   const handleDeleteAttachment = async (attachmentId: string) => {
-    if (confirm("Are you sure you want to delete this attachment?")) {
-      try {
-        await deleteAttachment(attachmentId).unwrap()
-        refetch()
-      } catch (error) {
-        console.error("Error deleting attachment:", error)
-      }
+    const confirmed = await confirmAction({
+      title: "Delete attachment?",
+      description: "This removes the media file from the product record.",
+      confirmText: "Delete attachment",
+      destructive: true,
+    })
+    if (!confirmed) return
+
+    try {
+      await deleteAttachment(attachmentId).unwrap()
+      refetch()
+    } catch (error) {
+      toast.error(extractErrorMessage(error, ["detail"]))
     }
   }
 
@@ -97,7 +106,7 @@ export default function ProductMedia({ productId }: ProductMediaProps) {
       await setPrimary(attachmentId).unwrap()
       refetch()
     } catch (error) {
-      console.error("Error setting primary:", error)
+      toast.error(extractErrorMessage(error, ["detail"]))
     }
   }
 
@@ -144,11 +153,14 @@ export default function ProductMedia({ productId }: ProductMediaProps) {
                 {/* Media Preview */}
                 <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
                   {attachment.file_type === "IMAGE" ? (
-                    <img
-                      src={attachment.file_url || "/placeholder.svg"}
-                      alt={attachment.description || "Product image"}
-                      className="w-full h-full object-cover"
-                    />
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={attachment.file_url || "/placeholder.svg"}
+                        alt={attachment.description || "Product image"}
+                        className="w-full h-full object-cover"
+                      />
+                    </>
                   ) : attachment.file_type === "VIDEO" ? (
                     <video src={attachment.file_url} className="w-full h-full object-cover" controls />
                   ) : (
@@ -391,11 +403,14 @@ function AttachmentEditForm({
       {/* File Preview */}
       <div className="text-center">
           {attachment.file_type === "IMAGE" ? (
-          <img
-            src={attachment.file_url || "/placeholder.svg"}
-            alt={attachment.description || attachment.file || "Attachment"}
-            className="max-w-full max-h-48 mx-auto rounded-lg"
-          />
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={attachment.file_url || "/placeholder.svg"}
+              alt={attachment.description || attachment.file || "Attachment"}
+              className="max-w-full max-h-48 mx-auto rounded-lg"
+            />
+          </>
         ) : (
           <div className="w-24 h-24 mx-auto bg-gray-100 rounded-lg flex items-center justify-center">
             <span className="text-2xl">📄</span>

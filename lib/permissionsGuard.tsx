@@ -9,17 +9,21 @@ import { getDecodedToken } from "./utils"
 
 type DecodedToken = {
   permissions?: string[]
+  is_staff?: boolean
   email?: string | null
   owner_id?: string | number | null
   id?: string | number | null
   sub?: string | number | null
   user_id?: string | number | null
+  membership_role?: string | null
+  role?: string | null
 }
 
 type RouteGuardRule = {
   pattern: RegExp
   anyPermissions?: string[]
   ownerOnly?: boolean
+  staffOnly?: boolean
   message: string
   resource: string
 }
@@ -30,6 +34,7 @@ type AccessResult = {
   resource: string
   requiredPermissions: string[]
   ownerOnly: boolean
+  staffOnly: boolean
 }
 
 const normalizeId = (value: string | number | null | undefined): string | null => {
@@ -47,11 +52,14 @@ export const getPermissionSnapshot = () => {
   )
   const ownerId = normalizeId(token?.owner_id)
   const currentUserId = normalizeId(token?.id) ?? normalizeId(token?.user_id) ?? normalizeId(token?.sub)
-  const isOwner = ownerId !== null && currentUserId !== null && ownerId === currentUserId
+  const membershipRole = `${token?.membership_role ?? token?.role ?? ""}`.trim().toLowerCase()
+  const isOwner = (ownerId !== null && currentUserId !== null && ownerId === currentUserId) || membershipRole === "owner"
+  const isStaff = Boolean(token?.is_staff)
 
   return {
     permissions,
     isOwner,
+    isStaff,
   }
 }
 
@@ -66,6 +74,29 @@ export const hasAnyPermission = (requiredPermissions: string[]) => {
 }
 
 const ROUTE_GUARDS: RouteGuardRule[] = [
+  {
+    pattern: /^\/product\/global-catalog-admin(?:\/|$)/,
+    staffOnly: true,
+    message: "Only Intera IMS staff can curate the platform-owned global product catalog.",
+    resource: "Global catalog administration",
+  },
+  {
+    pattern: /^\/audit(?:\/|$)/,
+    anyPermissions: ["view_audit_trail"],
+    message: "You need audit-trail permission to inspect the workspace audit history.",
+    resource: "Audit trail",
+  },
+  {
+    pattern: /^\/profile\/support-access(?:\/|$)/,
+    anyPermissions: [
+      "read_support_access_grant",
+      "create_support_access_grant",
+      "update_support_access_grant",
+      "revoke_support_access_grant",
+    ],
+    message: "You need support-access permission to review or manage temporary workspace support grants.",
+    resource: "Support access",
+  },
   {
     pattern: /^\/settings(?:\/|$)/,
     ownerOnly: true,
@@ -110,9 +141,13 @@ const OPEN_ACCESS: AccessResult = {
   resource: "",
   requiredPermissions: [],
   ownerOnly: false,
+  staffOnly: false,
 }
 
-export const getPermissionRequirementLabel = (access: Pick<AccessResult, "ownerOnly" | "requiredPermissions">) => {
+export const getPermissionRequirementLabel = (access: Pick<AccessResult, "ownerOnly" | "requiredPermissions" | "staffOnly">) => {
+  if (access.staffOnly) {
+    return "interaims_staff"
+  }
   if (access.ownerOnly) {
     return "workspace_owner"
   }
@@ -131,6 +166,16 @@ export const canAccessPath = (pathname: string): AccessResult => {
   if (!matchedRule) {
     return OPEN_ACCESS
   }
+  if (matchedRule.staffOnly && !snapshot.isStaff) {
+    return {
+      allowed: false,
+      message: matchedRule.message,
+      resource: matchedRule.resource,
+      requiredPermissions: [],
+      ownerOnly: false,
+      staffOnly: true,
+    }
+  }
   if (snapshot.isOwner) {
     return OPEN_ACCESS
   }
@@ -141,6 +186,7 @@ export const canAccessPath = (pathname: string): AccessResult => {
       resource: matchedRule.resource,
       requiredPermissions: [],
       ownerOnly: true,
+      staffOnly: false,
     }
   }
   if (matchedRule.anyPermissions?.length) {
@@ -151,6 +197,7 @@ export const canAccessPath = (pathname: string): AccessResult => {
       resource: matchedRule.resource,
       requiredPermissions: matchedRule.anyPermissions,
       ownerOnly: false,
+      staffOnly: false,
     }
   }
   return OPEN_ACCESS
@@ -242,6 +289,7 @@ export default function PermissionGuard({
           resource,
           requiredPermissions: [],
           ownerOnly: true,
+          staffOnly: false,
         }}
       />
     )
@@ -257,6 +305,7 @@ export default function PermissionGuard({
           resource,
           requiredPermissions: anyOf,
           ownerOnly: false,
+          staffOnly: false,
         }}
       />
     )

@@ -23,10 +23,27 @@ const formatMetric = (value: string | number | undefined, isLoading?: boolean) =
 }
 
 const resolveLocationLabel = (entry: Record<string, unknown>) =>
-  String(entry.location_name ?? entry.location ?? entry.name ?? entry.code ?? "Location")
+  String(
+    entry.structural_location_name ??
+      entry.location_name ??
+      entry.location ??
+      entry.name ??
+      entry.code ??
+      "Location",
+  )
 
 const resolveLocationQuantity = (entry: Record<string, unknown>) =>
   String(entry.quantity_available ?? entry.quantity_on_hand ?? entry.quantity ?? entry.total_quantity ?? "0")
+
+const resolveLeafLocations = (entry: Record<string, unknown>) => {
+  const rows = entry.leaf_locations
+  if (!Array.isArray(rows)) {
+    return []
+  }
+  return rows
+    .filter((row): row is Record<string, unknown> => Boolean(row && typeof row === "object"))
+    .slice(0, 2)
+}
 
 export default function InventoryStockSummaryCard({
   summary,
@@ -76,7 +93,21 @@ export default function InventoryStockSummaryCard({
               {locationBreakdown.length ? (
                 locationBreakdown.map((entry, index) => (
                   <div key={`${resolveLocationLabel(entry)}-${index}`} className="flex items-center justify-between rounded-xl bg-gray-50 px-3 py-2">
-                    <span className="text-sm text-gray-700">{resolveLocationLabel(entry)}</span>
+                    <div className="min-w-0">
+                      <div className="truncate text-sm text-gray-700">{resolveLocationLabel(entry)}</div>
+                      {Number(entry.leaf_location_count ?? 0) > 0 ? (
+                        <div className="text-xs text-gray-500">
+                          {Number(entry.leaf_location_count)} mapped shelf{Number(entry.leaf_location_count) > 1 ? "s" : ""}
+                        </div>
+                      ) : null}
+                      {resolveLeafLocations(entry).length ? (
+                        <div className="mt-1 text-xs text-gray-500">
+                          {resolveLeafLocations(entry)
+                            .map((leaf) => `${String(leaf.stock_location_name || "Leaf")} (${resolveLocationQuantity(leaf)})`)
+                            .join(" • ")}
+                        </div>
+                      ) : null}
+                    </div>
                     <span className="text-sm font-semibold text-gray-900">{resolveLocationQuantity(entry)}</span>
                   </div>
                 ))

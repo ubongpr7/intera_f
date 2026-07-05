@@ -95,9 +95,7 @@
 //       a.click()
 //       window.URL.revokeObjectURL(url)
 //       document.body.removeChild(a)
-//     } catch (error) {
-//       console.error("Failed to export activity logs:", error)
-//     }
+//     } catch {}
 //   }
 
 //   const getActionBadgeVariant = (action: string) => {

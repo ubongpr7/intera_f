@@ -15,8 +15,9 @@ import {
   Truck,
 } from "lucide-react"
 import { toast } from "react-toastify"
-import { useWorkspaceSetupProgress } from "@/components/onboarding/WorkspaceSetupShell"
+import { WorkspaceSetupLoadingCard, useWorkspaceSetupProgress } from "@/components/onboarding/WorkspaceSetupShell"
 import OperationalStepSection from "@/components/setup/OperationalStepSection"
+import StructuralLocationScopeSelect from "@/components/stock/StructuralLocationScopeSelect"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -27,6 +28,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { CURRENCY_CODES } from "@/lib/currencyCode"
 import { formatCurrencyCompact } from "@/lib/currency-utils"
+import { buildStructuralLocationScopeParams } from "@/lib/structuralLocationScope"
+import { useStructuralLocationScope } from "@/hooks/useStructuralLocationScope"
 import { extractErrorMessage } from "@/lib/utils"
 import { useGetSupplersQuery } from "@/redux/features/company/companyAPISlice"
 import {
@@ -99,25 +102,38 @@ const quickSummary = (summary?: PurchaseOrderDashboardSummary, analytics?: Purch
 
 export default function PurchaseOrderSetupWorkspace() {
   const router = useRouter()
-  const { activeMembership, isOwner, profile } = useWorkspaceSetupProgress()
+  const { activeMembership, isLoading: loadingWorkspaceSetup, isOwner, profile } = useWorkspaceSetupProgress()
   const defaultCurrency = profile?.currency || "NGN"
   const [formState, setFormState] = useState<PurchaseOrderFormState>(() => buildInitialForm(defaultCurrency))
+  const [selectedStructuralLocationIds, setSelectedStructuralLocationIds] = useStructuralLocationScope()
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [searchQuery, setSearchQuery] = useState("")
   const deferredSearchQuery = useDeferredValue(searchQuery.trim())
+  const structuralScopeParams = useMemo(
+    () => buildStructuralLocationScopeParams(selectedStructuralLocationIds),
+    [selectedStructuralLocationIds],
+  )
 
   const { data: suppliers = [] } = useGetSupplersQuery()
   const { data: users = [] } = useGetCompanyUsersQuery()
-  const { data: summary } = useGetPurchaseOrderDashboardSummaryQuery()
-  const { data: analytics } = useGetPurchaseOrderAnalyticsQuery()
+  const { data: summary } = useGetPurchaseOrderDashboardSummaryQuery(structuralScopeParams)
+  const { data: analytics } = useGetPurchaseOrderAnalyticsQuery(structuralScopeParams)
   const {
     data: purchaseOrders = [],
     isLoading: loadingOrders,
     refetch: refetchOrders,
-  } = useListPurchaseOrdersQuery({
-    search: deferredSearchQuery || undefined,
-    status: statusFilter === "all" ? undefined : statusFilter,
-  })
+  } = useListPurchaseOrdersQuery(
+    structuralScopeParams
+      ? {
+          ...structuralScopeParams,
+          search: deferredSearchQuery || undefined,
+          status: statusFilter === "all" ? undefined : statusFilter,
+        }
+      : {
+          search: deferredSearchQuery || undefined,
+          status: statusFilter === "all" ? undefined : statusFilter,
+        },
+  )
   const [createPurchaseOrder, { isLoading: creatingOrder }] = useCreatePurchaseOrderMutation()
 
   const quickMetrics = quickSummary(summary, analytics)
@@ -164,6 +180,15 @@ export default function PurchaseOrderSetupWorkspace() {
     } catch (error) {
       toast.error(extractErrorMessage(error, ["supplier", "delivery_date", "description"]))
     }
+  }
+
+  if (loadingWorkspaceSetup) {
+    return (
+      <WorkspaceSetupLoadingCard
+        title="Loading purchase-order workspace"
+        description="Checking your active company before showing purchase-order setup and replenishment controls."
+      />
+    )
   }
 
   if (!activeMembership) {
@@ -308,6 +333,14 @@ export default function PurchaseOrderSetupWorkspace() {
       </aside> : null}
 
       <main className="min-w-0 space-y-6">
+        <StructuralLocationScopeSelect
+          allowMultiSelect
+          className="max-w-sm"
+          id="purchase-order-structural-scope"
+          values={selectedStructuralLocationIds}
+          onValuesChange={setSelectedStructuralLocationIds}
+          description="Focus purchase-order setup, metrics, and order lists on one structural location when you need store-level replenishment visibility."
+        />
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="border-b border-gray-100 p-6 text-left text-inherit">
             <CardTitle className="text-3xl tracking-tight">Purchase order operations</CardTitle>

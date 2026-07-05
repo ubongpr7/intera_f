@@ -1,4 +1,11 @@
 import { apiSlice } from '../../services/apiSlice';
+import { buildQuery } from '../common/queryParams';
+import type { StructuralLocationScopeParams } from '@/lib/structuralLocationScope';
+
+type DashboardStructuralScopeParams = StructuralLocationScopeParams & {
+  date?: string;
+  stock_status?: string;
+};
 
 export const dashboardApiSlice = apiSlice.injectEndpoints({
   endpoints: builder => ({
@@ -27,9 +34,8 @@ export const dashboardApiSlice = apiSlice.injectEndpoints({
       }),
     }),
     getDashboardRecentSales: builder.query({
-        query: (date) => ({
-            url: `/pos_api/analytics/daily-sales/`,
-            params: date ? { date } : undefined,
+        query: (params?: string | DashboardStructuralScopeParams) => ({
+            url: typeof params === "string" ? buildQuery(`/pos_api/analytics/daily-sales/`, { date: params }) : buildQuery(`/pos_api/analytics/daily-sales/`, params),
             service: "pos" ,
           }),
     }),
@@ -53,8 +59,8 @@ export const dashboardApiSlice = apiSlice.injectEndpoints({
         }),
       }),
       getDashboardHeldOrders: builder.query({
-        query: () => ({
-          url: `/pos_api/orders/held_orders/`,
+        query: (params?: StructuralLocationScopeParams) => ({
+          url: buildQuery(`/pos_api/orders/held_orders/`, params),
           service: 'pos',
         }),
       }),
@@ -101,26 +107,26 @@ export const dashboardApiSlice = apiSlice.injectEndpoints({
         }),
       }),
       getDashboardStockAnalytics: builder.query({
-        query: () => ({
-          url: `/stock_api/inventory-items/analytics/`,
+        query: (params?: StructuralLocationScopeParams) => ({
+          url: buildQuery(`/stock_api/inventory-items/analytics/`, params),
           service: 'inventory',
         }),
       }),
       getDashboardPurchaseOrderAnalytics: builder.query({
-        query: () => ({
-          url: `/order_api/purchase-orders/analytics/`,
+        query: (params?: StructuralLocationScopeParams) => ({
+          url: buildQuery(`/order_api/purchase-orders/analytics/`, params),
           service: 'inventory',
         }),
       }),
       getPurchaseOrderSummary: builder.query({
-        query: () => ({
-          url: `/order_api/purchase-orders/dashboard_summary/`,
+        query: (params?: StructuralLocationScopeParams) => ({
+          url: buildQuery(`/order_api/purchase-orders/dashboard_summary/`, params),
           service: 'inventory',
         }),
       }),
       getDashboardLowStockItems: builder.query({
-        query: (params={}) => ({
-          url: `/stock_api/inventory-items/low_stock/?${new URLSearchParams(params)}`,
+        query: (params: DashboardStructuralScopeParams = {}) => ({
+          url: buildQuery(`/stock_api/inventory-items/low_stock/`, params),
           service: 'inventory',
         }),
       }),

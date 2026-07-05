@@ -118,9 +118,10 @@ export function useVoiceChat({
     if (typeof window !== "undefined") {
       const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition
       let loadVoices: (() => void) | undefined
+      let supportTimerId: number | undefined
 
       if (SpeechRecognitionAPI && window.speechSynthesis) {
-        setIsSupported(true)
+        supportTimerId = window.setTimeout(() => setIsSupported(true), 0)
 
         speechSynthesisRef.current = window.speechSynthesis
 
@@ -157,8 +158,7 @@ export function useVoiceChat({
           setIsListening(false)
         }
 
-        recognition.onerror = (event: any) => {
-          console.error("Voice recognition error:", event.error)
+        recognition.onerror = () => {
           setIsListening(false)
         }
 
@@ -204,10 +204,13 @@ export function useVoiceChat({
 
         recognitionRef.current = recognition
       } else {
-        console.warn("Speech recognition or synthesis not supported in this browser")
+        supportTimerId = window.setTimeout(() => setIsSupported(false), 0)
       }
 
       return () => {
+        if (supportTimerId) {
+          window.clearTimeout(supportTimerId)
+        }
         if (speechSynthesisRef.current && loadVoices) {
           speechSynthesisRef.current.removeEventListener("voiceschanged", loadVoices)
         }
@@ -231,8 +234,8 @@ export function useVoiceChat({
     if (recognitionRef.current && !isListening) {
       try {
         recognitionRef.current.start()
-      } catch (error) {
-        console.error("Failed to start voice recognition:", error)
+      } catch {
+        setIsListening(false)
       }
     }
   }, [isListening])
@@ -294,8 +297,7 @@ export function useVoiceChat({
         }
       }
 
-      utterance.onerror = (error) => {
-        console.error("Speech synthesis error:", error)
+      utterance.onerror = () => {
         setIsSpeaking(false)
         currentUtteranceRef.current = null
 
@@ -309,8 +311,7 @@ export function useVoiceChat({
 
       try {
         speechSynthesisRef.current.speak(utterance)
-      } catch (error) {
-        console.error("Error calling speak():", error)
+      } catch {
         setIsSpeaking(false)
         currentUtteranceRef.current = null
       }

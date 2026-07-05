@@ -138,6 +138,8 @@ export interface GoodsReceiptLineInterface {
   inventory_item_name?: string;
   stock_location?: EntityId | null;
   location_name?: string | null;
+  structural_location_id?: EntityId | null;
+  structural_location_name?: string | null;
   received_quantity: string | number;
   unit_cost: string | number;
   lot_number?: string | null;
@@ -161,6 +163,7 @@ export interface GoodsReceiptInterface {
   location_count?: number;
   inventory_preview?: string[];
   location_preview?: string[];
+  structural_location_preview?: string[];
   notes?: string | null;
   created_at?: string;
   updated_at?: string;
@@ -209,6 +212,8 @@ export interface SalesOrderShipmentLineInterface {
   inventory_name?: string;
   stock_location?: EntityId | null;
   location_name?: string | null;
+  structural_location_id?: EntityId | null;
+  structural_location_name?: string | null;
   stock_lot?: EntityId | null;
   lot_number?: string | null;
   stock_serial?: EntityId | null;
@@ -240,6 +245,7 @@ export interface SalesOrderShipmentInterface {
   location_count?: number;
   inventory_preview?: string[];
   location_preview?: string[];
+  structural_location_preview?: string[];
   lines?: SalesOrderShipmentLineInterface[];
   created_at?: string;
   updated_at?: string;
@@ -294,6 +300,7 @@ export interface PurchaseOrderWorkflowPayload {
 }
 
 export interface PurchaseOrderReceiveItemsPayload {
+  structural_location_id?: EntityId;
   received_items: Array<{
     line_item_id: EntityId;
     quantity_received: string | number;
@@ -315,6 +322,7 @@ export interface PurchaseOrderReturnPayload {
 }
 
 export interface SalesOrderReservePayload {
+  structural_location_id?: EntityId;
   reservation_items: Array<{
     line_item_id: EntityId;
     location_id: EntityId;
@@ -329,6 +337,7 @@ export interface SalesOrderReservePayload {
 }
 
 export interface SalesOrderReleasePayload {
+  structural_location_id?: EntityId;
   reservation_items: Array<{
     reservation_id: EntityId;
     quantity?: string | number;
@@ -338,6 +347,7 @@ export interface SalesOrderReleasePayload {
 }
 
 export interface SalesOrderShipPayload {
+  structural_location_id?: EntityId;
   shipment_items: Array<{
     reservation_id?: EntityId;
     line_item_id?: EntityId;
@@ -399,6 +409,9 @@ export interface GoodsReceiptListParams {
   purchase_order?: string;
   supplier?: string;
   stock_location?: string;
+  structural_location_id?: string;
+  structural_location_ids?: string[];
+  scope?: "all" | "all_locations";
   inventory_item?: string;
   date_from?: string;
   date_to?: string;
@@ -410,6 +423,9 @@ export interface SalesOrderShipmentListParams {
   order?: string;
   customer?: string;
   stock_location?: string;
+  structural_location_id?: string;
+  structural_location_ids?: string[];
+  scope?: "all" | "all_locations";
   inventory_item?: string;
   date_from?: string;
   date_to?: string;
@@ -422,6 +438,10 @@ export interface OrderListParams {
   status_filter?: string;
   supplier?: string;
   customer?: string;
+  stock_location?: string;
+  structural_location_id?: string;
+  structural_location_ids?: string[];
+  scope?: "all" | "all_locations";
   issue_date?: string;
   shipment_date?: string;
   delivery_date?: string;

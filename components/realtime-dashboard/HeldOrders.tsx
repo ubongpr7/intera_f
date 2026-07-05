@@ -3,16 +3,13 @@
 import { useGetDashboardHeldOrdersQuery } from '@/redux/features/dashboard/dashboardApiSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PauseCircle } from 'lucide-react';
-import LoadingAnimation from '../common/LoadingAnimation';
-import { HeldOrder } from '../interfaces/dashboard';
+import { QueryStateBoundary } from '../common/QueryStateBoundary';
 
 const HeldOrders = () => {
-  const { data, error, isLoading } = useGetDashboardHeldOrdersQuery('');
-
-  if (isLoading) return <div className="h-full flex justify-center items-center"><LoadingAnimation /></div>;
-  if (error) return <div>Error loading held orders</div>;
+  const { data, error, isLoading, isFetching, refetch } = useGetDashboardHeldOrdersQuery(undefined);
 
   return (
+    <QueryStateBoundary isLoading={isLoading} isFetching={isFetching} error={error} onRetry={refetch} loadingText="Loading held orders..." errorTitle="Unable to load held orders">
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">Held Orders</CardTitle>
@@ -22,6 +19,7 @@ const HeldOrders = () => {
         <p className="text-2xl font-bold">{data?.length || 0}</p>
       </CardContent>
     </Card>
+    </QueryStateBoundary>
   );
 };
 

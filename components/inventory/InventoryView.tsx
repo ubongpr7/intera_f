@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import Image from 'next/image';
 import { useRouter } from 'nextjs-toploader/app';
@@ -13,8 +13,15 @@ import { useGetUnitsQuery } from "../../redux/features/common/typeOF";
 import { useGetInventoryCategoriesQuery } from "../../redux/features/inventory/inventoryAPiSlice";
 import { RefetchDataProp } from "@/redux/features/common/commonTypes";
 import { formatCurrencyCompact } from '@/lib/currency-utils';
+import { buildStructuralLocationScopeParams } from '@/lib/structuralLocationScope';
+import { formatMachineLabel } from '@/lib/displayLabels';
+import { useStructuralLocationScope } from '@/hooks/useStructuralLocationScope';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import StructuralLocationScopeSelect from '@/components/stock/StructuralLocationScopeSelect';
+import { useGetSupplersQuery } from '@/redux/features/company/companyAPISlice';
+import { extractErrorMessage } from '@/lib/utils';
+import { confirmAction } from '../common/confirmAction';
 
 const renderInventoryThumbnail = (imageUrl: string | null | undefined, name: string) => (
   <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-white">
@@ -37,7 +44,7 @@ const inventoryColumns: Column<InventoryData>[] = [
         {renderInventoryThumbnail(row.display_image || row.product_variant_image_url, row.name)}
         <div className="min-w-0">
           <div className="truncate font-medium text-gray-900">{value}</div>
-          <div className="truncate text-xs text-gray-500">{row.category_name || row.inventory_type || 'Inventory item'}</div>
+          <div className="truncate text-xs text-gray-500">{row.category_name || formatMachineLabel(row.inventory_type, 'Inventory item')}</div>
         </div>
       </div>
     ),
@@ -46,7 +53,7 @@ const inventoryColumns: Column<InventoryData>[] = [
   {
     header: 'SKU',
     accessor: 'sku_snapshot',
-    render: (value) => value || 'N/A',
+    render: (value) => value || 'Not set',
     className: 'font-medium',
   },
   {
@@ -60,6 +67,22 @@ const inventoryColumns: Column<InventoryData>[] = [
     className: 'font-medium',
   },
   {
+    header: 'Store',
+    accessor: 'location_name',
+    render: (value, row) => {
+      const locations = Array.isArray(row.location_breakdown) ? row.location_breakdown : [];
+      const extraCount = Math.max(locations.length - 1, 0);
+      return (
+        <div className="min-w-[180px]">
+          <div className="font-medium text-gray-900">{String(value || "Unassigned")}</div>
+          <div className="text-xs text-gray-500">
+            {extraCount > 0 ? `+${extraCount} more store${extraCount > 1 ? "s" : ""}` : "Primary structural store"}
+          </div>
+        </div>
+      );
+    },
+  },
+  {
     header: 'Stock Value',
     accessor: 'total_stock_value',
     render:(value)=>formatCurrencyCompact('NGN',value),
@@ -68,13 +91,13 @@ const inventoryColumns: Column<InventoryData>[] = [
   {
     header: 'Inventory Type',
     accessor: 'inventory_type',
-    render: (value) => value || 'N/A',
+    render: (value) => formatMachineLabel(value, 'Not set'),
     className: 'font-medium',
   },
   {
     header: 'Category',
     accessor: 'category_name',
-    render: (value) => value || 'N/A',
+    render: (value) => value || 'Uncategorized',
     info: 'Operational category assigned to the inventory item',
   },
   {
@@ -85,8 +108,26 @@ const inventoryColumns: Column<InventoryData>[] = [
 ];
 
 
-function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
-  const { data, isLoading, refetch, error } = useGetInventoryDataQuery();
+type InventoryViewProps = RefetchDataProp & {
+  selectedLocationIds?: string[];
+  onSelectedLocationIdsChange?: (value: string[]) => void;
+};
+
+function InventoryView({
+  refetchData,
+  setRefetchData,
+  selectedLocationIds: controlledSelectedLocationIds,
+  onSelectedLocationIdsChange,
+}: InventoryViewProps) {
+  const [internalSelectedLocationIds, setInternalSelectedLocationIds] = useStructuralLocationScope();
+  const isLocationScopeControlled = controlledSelectedLocationIds !== undefined || onSelectedLocationIdsChange !== undefined;
+  const selectedLocationIds = controlledSelectedLocationIds ?? internalSelectedLocationIds;
+  const handleSelectedLocationIdsChange = onSelectedLocationIdsChange ?? setInternalSelectedLocationIds;
+  const inventoryQuery = useMemo(
+    () => buildStructuralLocationScopeParams(selectedLocationIds),
+    [selectedLocationIds],
+  );
+  const { data, isLoading, refetch, error } = useGetInventoryDataQuery(inventoryQuery);
   const [createInventory, { isLoading: inventoryCreateLoading }] = useCreateInventoryMutation();
   const [deleteInventory] = useDeleteInventoryMutation();
   const [isCreateOpen, setIsCreateOpen] = useState(false); // Renamed for clarity
@@ -101,15 +142,18 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
     //////////////////////////////
     const { data: categories = [], refetch:refetchCategory } = useGetInventoryCategoriesQuery();
       const { data: units=[] } = useGetUnitsQuery();
+      const { data: suppliers=[] } = useGetSupplersQuery();
       
 
       
-  useEffect(()=>{
-    if (categories){
-      refetchCategory()
-      setRefetchData(false)
+  useEffect(() => {
+    if (!refetchData) {
+      return;
     }
-  },[refetchData])
+
+    refetchCategory();
+    setRefetchData(false);
+  }, [refetchCategory, refetchData, setRefetchData]);
 
      const unitOptions = units.map((unit: any) => ({
    value: unit.code,
@@ -119,6 +163,10 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
         value: inventory_type.id,
         text: inventory_type.text,
       })) : [];
+      const supplierOptions = suppliers.map((supplier) => ({
+        value: String(supplier.id),
+        text: supplier.name,
+      }));
     
       const categoryOptions = categories.map((cat: any) => ({
         value: cat.id,
@@ -130,6 +178,7 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
           
             inventory_category:categoryOptions,
             inventory_type:typeOptions,
+            default_supplier:supplierOptions,
             default_uom_code:unitOptions,
             stock_uom_code:unitOptions,
             status: [
@@ -148,23 +197,27 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
   };
 
   const handleDelete = async (row: InventoryData) => {
-    if (!window.confirm(`Delete inventory "${row.name}"?`)) {
-      return;
-    }
+    const confirmed = await confirmAction({
+      title: "Delete inventory item?",
+      description: `Delete inventory "${row.name}"? This can affect stock operations and reporting for this item.`,
+      confirmText: "Delete inventory",
+      destructive: true,
+    })
+    if (!confirmed) return
 
     try {
       await deleteInventory(row.id).unwrap();
       toast.success("Inventory item deleted successfully.");
       await refetch();
     } catch (error) {
-      toast.error("Failed to delete inventory item.");
+      toast.error(extractErrorMessage(error, ["detail"]) || "Failed to delete inventory item.");
     }
   };
 
   if (error) {
     return (
       <div className="p-4 text-red-500">
-        Error loading inventory data: {(error as any).message || 'Unknown error'}
+        Unable to load inventory items: {extractErrorMessage(error, ["detail", "error"])}
       </div>
     );
   }
@@ -205,6 +258,15 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
 
   return (
     <div>
+      {!isLocationScopeControlled ? (
+        <StructuralLocationScopeSelect
+          allowMultiSelect
+          className="mb-4 max-w-sm"
+          id="inventory-structural-location-filter"
+          values={selectedLocationIds}
+          onValuesChange={handleSelectedLocationIdsChange}
+        />
+      ) : null}
       
       <DataTable<InventoryData>
         columns={inventoryColumns}
@@ -212,9 +274,21 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
         isLoading={isLoading}
         onRowClick={handleRowClick}
         actionButtons={actionButtons}
-        searchableFields={['name', 'sku_snapshot', 'barcode_snapshot']}
-        filterableFields={['category_name']}
-        sortableFields={['name', 'sku_snapshot', 'inventory_type']}
+        searchableFields={['name', 'sku_snapshot', 'barcode_snapshot', 'location_name', 'default_supplier_name']}
+        filterableFields={[
+          'category_name',
+          'inventory_type',
+          'stock_status',
+          'status',
+          'location_name',
+          'default_supplier_name',
+          'track_stock',
+          'track_lot',
+          'track_serial',
+          'track_expiry',
+        ]}
+        sortableFields={['name', 'sku_snapshot', 'inventory_type', 'current_stock_level', 'quantity_available', 'total_stock_value']}
+        rangeFilterFields={['current_stock_level', 'quantity_available', 'quantity_reserved', 'total_stock_value', 'minimum_stock_level', 'reorder_point']}
          title="Inventory Items"
         onClose={() =>setIsCreateOpen(true)} 
       />
@@ -231,7 +305,7 @@ function InventoryView({refetchData, setRefetchData}:RefetchDataProp) {
           keyInfo={InventoryKeyInfo}
           notEditableFields={notEditableFields}
           interfaceKeys={InventoryInterfaceKeys}
-          optionalFields={['description','inventory_category','stock_uom_code']}
+          optionalFields={['description','inventory_category','default_supplier','stock_uom_code']}
           itemTitle={'Create Inventory Item'}
         />
       ) : null}

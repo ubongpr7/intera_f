@@ -7,6 +7,7 @@ import { useMemo, useState } from "react"
 import { ArrowLeft, CheckCircle2, ClipboardCheck, Mail, PackagePlus, ReceiptText, Truck, Undo2, XCircle } from "lucide-react"
 import { toast } from "react-toastify"
 import OperationalStepSection from "@/components/setup/OperationalStepSection"
+import StructuralLocationScopeSelect from "@/components/stock/StructuralLocationScopeSelect"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,6 +19,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { CURRENCY_CODES } from "@/lib/currencyCode"
 import { formatCurrencyCompact } from "@/lib/currency-utils"
+import { buildStructuralLocationScopeParams, getSingleStructuralLocationId, matchesStructuralLocationScope } from "@/lib/structuralLocationScope"
+import { useStructuralLocationScope } from "@/hooks/useStructuralLocationScope"
 import { extractErrorMessage } from "@/lib/utils"
 import { useGetSupplersQuery } from "@/redux/features/company/companyAPISlice"
 import {
@@ -153,6 +156,26 @@ const renderInventoryOption = (option: InventorySelectOption) => {
   )
 }
 
+const formatStructuralLocationLabel = (location: { name?: string | null; parent_name?: string | null }) =>
+  [location.parent_name, location.name].filter((value) => value && String(value).trim().length > 0).join(" / ") || location.name || "Unknown location"
+
+const formatOperationalLocationLabel = (location: {
+  name?: string | null
+  structural_location_name?: string | null
+  parent_name?: string | null
+}) => {
+  const structuralName = location.structural_location_name?.trim()
+  const parentName = location.parent_name?.trim()
+  const currentName = location.name?.trim() || "Unknown location"
+  if (structuralName && structuralName !== currentName) {
+    return `${structuralName} / ${currentName}`
+  }
+  if (parentName && parentName !== currentName) {
+    return `${parentName} / ${currentName}`
+  }
+  return currentName
+}
+
 const validateInventoryDates = ({
   manufacturedDate,
   expiryDate,
@@ -210,6 +233,7 @@ const buildReturnEntry = (lineItem: PurchaseOrderLineItem): ReturnEntry => ({
 
 export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: PurchaseOrderOperationsWorkspaceProps) {
   const router = useRouter()
+  const [selectedStructuralLocationIds, setSelectedStructuralLocationIds] = useStructuralLocationScope()
   const [headerFormDraft, setHeaderFormDraft] = useState<Partial<PurchaseOrderHeaderForm>>({})
   const [lineItemForm, setLineItemForm] = useState<LineItemForm>(emptyLineItemForm)
   const [editingLineItemId, setEditingLineItemId] = useState<string | null>(null)
@@ -223,8 +247,17 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
   const { data: order, isLoading, refetch } = useGetPurchaseOrderQuery(purchaseOrderId)
   const { data: suppliers = [] } = useGetSupplersQuery()
   const { data: users = [] } = useGetCompanyUsersQuery()
-  const { data: inventoryItems = [] } = useListInventoryItemsQuery()
+  const inventoryQuery = useMemo(
+    () => buildStructuralLocationScopeParams(selectedStructuralLocationIds),
+    [selectedStructuralLocationIds],
+  )
+  const { data: inventoryItems = [] } = useListInventoryItemsQuery(inventoryQuery)
   const { data: locations = [] } = useListStockLocationsQuery()
+  const selectedSingleStructuralLocationId = useMemo(
+    () => getSingleStructuralLocationId(selectedStructuralLocationIds),
+    [selectedStructuralLocationIds],
+  )
+  const hasScopedStructuralSelection = selectedStructuralLocationIds.length > 0
 
   const [updatePurchaseOrder, { isLoading: savingHeader }] = useUpdatePurchaseOrderMutation()
   const [createLineItem, { isLoading: creatingLineItem }] = useCreatePurchaseOrderLineItemMutation()
@@ -290,11 +323,18 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
   )
   const locationOptions = useMemo<SelectOption[]>(
     () =>
-      locations.map((location) => ({
-        value: String(location.id),
-        label: location.name,
-      })),
-    [locations],
+      locations
+        .filter((location) => {
+          if (location.structural) {
+            return false
+          }
+          return matchesStructuralLocationScope(String(location.structural_location_id ?? ""), selectedStructuralLocationIds)
+        })
+        .map((location) => ({
+          value: String(location.id),
+          label: formatOperationalLocationLabel(location),
+        })),
+    [locations, selectedStructuralLocationIds],
   )
   const selectedInventoryItem = useMemo(
     () => inventoryItems.find((item) => String(item.id) === lineItemForm.inventory_item) || null,
@@ -523,7 +563,10 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
       () =>
         receivePurchaseOrderItems({
           id: order.id,
-          data: { received_items },
+          data: {
+            structural_location_id: selectedSingleStructuralLocationId,
+            received_items,
+          },
         }).unwrap(),
       "Items received and stock updated",
       ["error", "received_items", "detail"],
@@ -686,6 +729,25 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
             <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Remaining</div>
             <div className="mt-2 text-lg font-semibold text-gray-900">{remainingQuantity}</div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-blue-100 bg-blue-50/70 shadow-sm">
+        <CardContent className="grid gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] lg:items-end">
+          <div className="space-y-1">
+            <div className="text-sm font-semibold text-gray-900">Working location scope</div>
+            <p className="text-sm leading-6 text-gray-600">
+              Filter inventory visibility and receiving targets by structural store so purchase receipts update the correct stock bucket.
+            </p>
+          </div>
+          <StructuralLocationScopeSelect
+            allowMultiSelect
+            className="space-y-2"
+            id="po-structural-location-scope"
+            values={selectedStructuralLocationIds}
+            onValuesChange={setSelectedStructuralLocationIds}
+            description="Choose one or more structural locations to narrow receiving targets and visible inventory."
+          />
         </CardContent>
       </Card>
 
@@ -1127,6 +1189,11 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {hasScopedStructuralSelection ? (
+                <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+                  Receiving locations are limited to the selected structural scope.
+                </div>
+              ) : null}
               {editableLineItems.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-gray-200 p-4 text-sm text-gray-500">
                   Add line items before attempting to receive goods.

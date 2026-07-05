@@ -9,6 +9,8 @@ import { CompanyAddressInterfaceKeys } from './selectOptions';
 import { CompanyAddressKeyInfo } from './selectOptions';
 import { toast } from 'react-toastify';
 import { Edit, Trash2 } from 'lucide-react';
+import { extractErrorMessage } from '@/lib/utils';
+import { confirmAction } from '../common/confirmAction';
 
 const inventoryColumns: Column<CompanyAddressDataInterface>[] = [
   {
@@ -59,14 +61,20 @@ function CompanyAddressView({company_id}:CompanyProps) {
   };
 
   const handleDelete = async (id: string | number) => {
-    if (window.confirm("Are you sure you want to delete this address?")) {
-      try {
-        await deleteAddress(id).unwrap();
-        await refetch();
-        toast.success("Address deleted successfully!");
-      } catch (error) {
-        toast.error("Failed to delete address.");
-      }
+    const confirmed = await confirmAction({
+      title: "Delete address?",
+      description: "This removes the address from the company record.",
+      confirmText: "Delete address",
+      destructive: true,
+    });
+    if (!confirmed) return;
+
+    try {
+      await deleteAddress(id).unwrap();
+      await refetch();
+      toast.success("Address deleted successfully!");
+    } catch (error) {
+      toast.error(extractErrorMessage(error, ["detail"]) || "Failed to delete address.");
     }
   };
 
@@ -94,7 +102,7 @@ function CompanyAddressView({company_id}:CompanyProps) {
   if (error) {
     return (
       <div className="p-4 text-red-500">
-        Error loading address data: {(error as any).message || 'Unknown error'}
+        Unable to load address records: {extractErrorMessage(error, ["detail", "error"])}
       </div>
     );
   }
@@ -116,7 +124,7 @@ function CompanyAddressView({company_id}:CompanyProps) {
         searchableFields={['title', 'postal_code', 'full_address']}
         filterableFields={['title', 'postal_code']}
         sortableFields={['title', 'postal_code', 'full_address']}
-        title="Company Adress"
+        title="Company Address"
         onClose={() => setIsCreateOpen(true)}
       />
 

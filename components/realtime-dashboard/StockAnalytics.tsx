@@ -3,10 +3,10 @@ import React, { useState } from 'react';
 import { useGetDashboardStockAnalyticsQuery, useGetDashboardStockValueByLocationQuery } from '@/redux/features/dashboard/dashboardApiSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import Spinner from '@/components/common/Spinner';
-import { MapPin, Box, Warehouse, TrendingUp, AlertCircle, ChevronDown, ChevronUp, BarChart3 } from 'lucide-react';
+import { MapPin, Box, Warehouse, TrendingUp, ChevronDown, ChevronUp, BarChart3 } from 'lucide-react';
 import { formatMoneyCompactForProfile } from '@/lib/currency-utils';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, PieChart, Pie, Cell, CartesianGrid } from 'recharts';
+import { QueryStateBoundary } from '@/components/common/QueryStateBoundary';
 
 // Custom tooltip for charts
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -44,27 +44,40 @@ const StatusBadge = ({ status }: { status: string }) => {
 
 // Combined Stock Analytics Dashboard
 const StockAnalyticsDashboard = () => {
-  const { data: analyticsData, error: analyticsError, isLoading: analyticsLoading } = useGetDashboardStockAnalyticsQuery(undefined);
-  const { data: locationData, error: locationError, isLoading: locationLoading } = useGetDashboardStockValueByLocationQuery('');
+  const {
+    data: analyticsData,
+    error: analyticsError,
+    isLoading: analyticsLoading,
+    isFetching: analyticsFetching,
+    refetch: refetchAnalytics,
+  } = useGetDashboardStockAnalyticsQuery(undefined);
+  const {
+    data: locationData,
+    error: locationError,
+    isLoading: locationLoading,
+    isFetching: locationFetching,
+    refetch: refetchLocations,
+  } = useGetDashboardStockValueByLocationQuery('');
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
-  if (analyticsLoading || locationLoading) return (
-    <div className="rounded-2xl bg-white p-6 shadow-lg border border-gray-100 h-96 flex items-center justify-center">
-      <Spinner />
-    </div>
-  );
-
-  if (analyticsError || locationError) return (
-    <div className="rounded-2xl bg-white p-6 shadow-lg border border-gray-100">
-      <div className="flex flex-col items-center justify-center py-10">
-        <div className="rounded-full bg-red-100 p-4 mb-4">
-          <AlertCircle className="w-8 h-8 text-red-600" />
-        </div>
-        <h3 className="text-lg font-medium text-gray-900 mb-1">Error Loading Stock Data</h3>
-        <p className="text-gray-500 text-sm">Please try refreshing the page</p>
-      </div>
-    </div>
-  );
+  if (analyticsLoading || locationLoading || analyticsError || locationError) {
+    return (
+      <QueryStateBoundary
+        isLoading={analyticsLoading || locationLoading}
+        isFetching={analyticsFetching || locationFetching}
+        error={analyticsError || locationError}
+        onRetry={() => {
+          refetchAnalytics();
+          refetchLocations();
+        }}
+        loadingText="Loading stock analytics..."
+        errorTitle="Unable to load stock analytics"
+        className="rounded-2xl bg-white p-6 shadow-lg border border-gray-100 min-h-96"
+      >
+        <div />
+      </QueryStateBoundary>
+    );
+  }
 
   if (!analyticsData || !locationData) return null;
 

@@ -1,5 +1,5 @@
 'use client';
-import { useForm, SubmitHandler } from 'react-hook-form';
+import { useForm, SubmitHandler, useWatch } from 'react-hook-form';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import { useResendCodeMutation, useVerifyCodeMutation } from '@/redux/features/auth/authApiSlice';
@@ -12,11 +12,11 @@ export default function VerificationForm({ email,redirectTo }: VerificationProps
   const [cooldown, setCooldown] = useState(120);
   const inputsRef = useRef<HTMLInputElement[]>([]);
   const router=useRouter();
-  const { register, handleSubmit, setValue, watch } = useForm<VerifyFormData>({
+  const { register, control, handleSubmit, setValue } = useForm<VerifyFormData>({
     defaultValues: { code: '', userId: '' }
   });
 
-  const codeValue = watch('code', '');
+  const codeValue = useWatch({ control, name: 'code', defaultValue: '' });
 // email: verifiedEmail,
 //         code: data.code,
 //         action: 'verify_code'

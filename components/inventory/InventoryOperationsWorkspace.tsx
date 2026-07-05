@@ -12,6 +12,7 @@ import OperationalStepSection from "@/components/setup/OperationalStepSection"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { readCookieValue } from "@/lib/authCookies"
 import { formatCurrencyCompact } from "@/lib/currency-utils"
+import { formatMachineLabel } from "@/lib/displayLabels"
 import {
   useGetInventoryQuery,
   useGetInventoryStockSummaryQuery,
@@ -50,6 +51,11 @@ export default function InventoryOperationsWorkspace({ inventoryId }: InventoryO
   const totalQuantity = toNumber(summary?.total_quantity)
   const totalValue = toNumber(summary?.total_value ?? inventory?.total_stock_value)
   const currencyCode = readCookieValue("currency", getCookie) || "NGN"
+  const structuralSpread = Array.isArray(summary?.location_breakdown)
+    ? summary.location_breakdown
+        .map((entry) => String(entry.structural_location_name || entry.location_name || "Location"))
+        .slice(0, 3)
+    : []
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 lg:px-8">
@@ -70,8 +76,13 @@ export default function InventoryOperationsWorkspace({ inventoryId }: InventoryO
                     reservations and stock actions without leaving the workspace.
                   </CardDescription>
                   <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-wide text-gray-500">
-                    <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1">{inventory?.inventory_type || "Inventory item"}</span>
+                    <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1">{formatMachineLabel(inventory?.inventory_type, "Inventory item")}</span>
                     <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1">{inventory?.category_name || "No category"}</span>
+                    {structuralSpread.map((locationName) => (
+                      <span key={locationName} className="rounded-full border border-gray-200 bg-white px-3 py-1">
+                        {locationName}
+                      </span>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -115,7 +126,7 @@ export default function InventoryOperationsWorkspace({ inventoryId }: InventoryO
               <ShieldAlert className="h-4 w-4" />
               Stock status
             </div>
-            <div className="mt-2 text-2xl font-semibold text-gray-900">{loadingSummary ? "..." : summary?.stock_status || inventory?.stock_status || "unknown"}</div>
+            <div className="mt-2 text-2xl font-semibold text-gray-900">{loadingSummary ? "..." : formatMachineLabel(summary?.stock_status || inventory?.stock_status, "Unknown")}</div>
           </div>
           <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
             <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-gray-500">
@@ -137,9 +148,9 @@ export default function InventoryOperationsWorkspace({ inventoryId }: InventoryO
         helper="Update the inventory item metadata here before working on live stock operations."
         status={inventory ? "complete" : "in_progress"}
         facts={[
-          { label: "Inventory type", value: inventory?.inventory_type || "Not set" },
+          { label: "Inventory type", value: formatMachineLabel(inventory?.inventory_type) },
           { label: "Category", value: inventory?.category_name || "Not set" },
-          { label: "Status", value: inventory?.status || "Not set" },
+          { label: "Status", value: formatMachineLabel(inventory?.status) },
         ]}
       >
         <InventoryDetail id={inventoryId} />

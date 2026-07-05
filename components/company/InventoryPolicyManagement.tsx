@@ -18,6 +18,8 @@ import { useCreateInventoryPolicyMutation,
   useDeleteInventoryPolicyMutation,
    useGetInventoryPoliciesQuery, 
    useUpdateInventoryPolicyMutation } from "@/redux/features/management/companyProfileApiSlice"
+import { extractErrorMessage } from "@/lib/utils"
+import { confirmAction } from "@/components/common/confirmAction"
 
 interface InventoryPolicyManagementProps {
   profileId: number
@@ -71,8 +73,8 @@ export function InventoryPolicyManagement({profileId}:InventoryPolicyManagementP
 
   // Reset form when editing policy changes
   useEffect(() => {
-    if (editingPolicy) {
-      setFormData({
+    const nextFormData = editingPolicy
+      ? {
         name: editingPolicy.name,
         description: editingPolicy.description,
         policy_type: editingPolicy.policy_type,
@@ -84,9 +86,8 @@ export function InventoryPolicyManagement({profileId}:InventoryPolicyManagementP
         is_active: editingPolicy.is_active,
         profile:profileId
 
-      })
-    } else {
-      setFormData({
+      }
+      : {
         name: "",
         description: "",
         policy_type: "other",
@@ -98,19 +99,26 @@ export function InventoryPolicyManagement({profileId}:InventoryPolicyManagementP
         is_active: true,
         profile:profileId
 
-      })
-    }
-  }, [editingPolicy])
+      }
+    const timer = window.setTimeout(() => setFormData(nextFormData), 0)
+    return () => window.clearTimeout(timer)
+  }, [editingPolicy, profileId])
 
   // Handle errors
   useEffect(() => {
     const error = fetchError || createError || updateError || deleteError
     if (error) {
-      setErrorMessage(JSON.stringify(error))
+      const errorTimer = window.setTimeout(
+        () => setErrorMessage(extractErrorMessage(error, ["name", "policy_type", "details", "effective_date", "expiry_date", "detail"])),
+        0,
+      )
       const timer = setTimeout(() => {
         setErrorMessage(null)
       }, 5000)
-      return () => clearTimeout(timer)
+      return () => {
+        window.clearTimeout(errorTimer)
+        clearTimeout(timer)
+      }
     }
   }, [fetchError, createError, updateError, deleteError])
 
@@ -133,7 +141,7 @@ export function InventoryPolicyManagement({profileId}:InventoryPolicyManagementP
         setSuccessMessage(null)
       }, 3000)
     } catch (error) {
-      console.error("Failed to save inventory policy:", error)
+      setErrorMessage(extractErrorMessage(error, ["name", "policy_type", "details", "effective_date", "expiry_date", "detail"]))
     }
   }
 
@@ -143,18 +151,24 @@ export function InventoryPolicyManagement({profileId}:InventoryPolicyManagementP
   }
 
   const handleDelete = async (policyId: string) => {
-    if (confirm("Are you sure you want to delete this inventory policy?")) {
-      try {
-        await deletePolicy(policyId).unwrap()
-        setSuccessMessage("Policy deleted successfully")
-        await refetch()
-        // Clear success message after 3 seconds
-        setTimeout(() => {
-          setSuccessMessage(null)
-        }, 3000)
-      } catch (error) {
-        console.error("Failed to delete policy:", error)
-      }
+    const confirmed = await confirmAction({
+      title: "Delete inventory policy?",
+      description: "This removes the policy from this company profile.",
+      confirmText: "Delete policy",
+      destructive: true,
+    })
+    if (!confirmed) return
+
+    try {
+      await deletePolicy(policyId).unwrap()
+      setSuccessMessage("Policy deleted successfully")
+      await refetch()
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage(null)
+      }, 3000)
+    } catch (error) {
+      setErrorMessage(extractErrorMessage(error, ["detail", "error"]))
     }
   }
 
@@ -171,7 +185,7 @@ export function InventoryPolicyManagement({profileId}:InventoryPolicyManagementP
         setSuccessMessage(null)
       }, 3000)
     } catch (error) {
-      console.error("Failed to toggle policy status:", error)
+      setErrorMessage(extractErrorMessage(error, ["is_active", "detail", "error"]))
     }
   }
 

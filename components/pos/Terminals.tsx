@@ -6,6 +6,7 @@ import { type Column } from "@/components/common/DataTable/DataTable"
 import POSResourceManager from "@/components/pos/POSResourceManager"
 import { getPosDeviceLabel } from "@/lib/deviceIdentity"
 import { extractErrorMessage } from "@/lib/utils"
+import { confirmAction } from "@/components/common/confirmAction"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -25,6 +26,7 @@ import type { POSTerminal } from "@/redux/features/pos/posTypes"
 import { useListStockLocationsQuery } from "@/redux/features/stock/stockAPISlice"
 import type { StockLocation } from "@/redux/features/stock/stockTypes"
 import { toast } from "react-toastify"
+import { useSubscriptionQuota } from "@/hooks/useSubscriptionQuota"
 
 const columns: Column<POSTerminal>[] = [
   { header: "Name", accessor: "name" },
@@ -46,6 +48,31 @@ const columns: Column<POSTerminal>[] = [
 const formatStructuralLocationLabel = (location: StockLocation) =>
   [location.parent_name, location.name].filter((value) => value && String(value).trim().length > 0).join(" / ") || location.name
 
+const normalizeTerminalLocationPayload = (
+  input: Partial<POSTerminal>,
+  structuralLocations: StockLocation[],
+): Partial<POSTerminal> => {
+  const selectedLocationLabel = typeof input.location === "string" ? input.location.trim() : ""
+  if (!selectedLocationLabel) {
+    throw new Error("Choose a structural location for this terminal.")
+  }
+
+  const structuralLocation = structuralLocations.find(
+    (location) => formatStructuralLocationLabel(location) === selectedLocationLabel,
+  )
+  if (!structuralLocation) {
+    throw new Error("Choose a valid structural location for this terminal.")
+  }
+
+  const structuralLocationId = String(structuralLocation.id)
+  return {
+    ...input,
+    location: selectedLocationLabel,
+    location_sync_identifier: structuralLocationId,
+    structural_location_sync_identifier: structuralLocationId,
+  }
+}
+
 export default function Terminals() {
   const { data: terminals = [], isLoading, refetch } = useGetTerminalsQuery()
   const { data: configurations = [] } = useGetConfigurationsQuery()
@@ -58,6 +85,7 @@ export default function Terminals() {
   const [detachCurrentDeviceTerminal, { isLoading: isDetachingTerminal }] = useDetachCurrentDeviceTerminalMutation()
   const [detachTerminalBinding, { isLoading: isForceDetachingTerminal }] = useDetachTerminalBindingMutation()
   const [selectedTerminalId, setSelectedTerminalId] = useState("")
+  const terminalQuota = useSubscriptionQuota("pos-terminals", terminals.length)
 
   const availableAssignmentTargets = useMemo(
     () =>
@@ -70,28 +98,15 @@ export default function Terminals() {
 
   const terminalLocationOptions = useMemo(() => {
     const seen = new Set<string>()
-    const options: Array<{ value: string; text: string }> = []
-
-    structuralLocations.forEach((location) => {
+    return structuralLocations.flatMap((location) => {
       const label = formatStructuralLocationLabel(location)
       if (!label || seen.has(label)) {
-        return
+        return []
       }
       seen.add(label)
-      options.push({ value: label, text: label })
+      return [{ value: label, text: label }]
     })
-
-    terminals.forEach((terminal) => {
-      const label = terminal.location?.trim()
-      if (!label || seen.has(label)) {
-        return
-      }
-      seen.add(label)
-      options.push({ value: label, text: label })
-    })
-
-    return options
-  }, [structuralLocations, terminals])
+  }, [structuralLocations])
 
   const bindingTerminalName = useMemo(() => {
     if (!currentBinding?.terminal) {
@@ -122,9 +137,13 @@ export default function Terminals() {
   }
 
   const handleDetachCurrentBrowser = async () => {
-    if (!window.confirm("Detach this browser from its assigned terminal? Cashiers on this machine will no longer be able to use POS until an admin reassigns it.")) {
-      return
-    }
+    const confirmed = await confirmAction({
+      title: "Detach this browser?",
+      description: "Cashiers on this machine will no longer be able to use POS until an admin reassigns it.",
+      confirmText: "Detach browser",
+      destructive: true,
+    })
+    if (!confirmed) return
 
     try {
       await detachCurrentDeviceTerminal().unwrap()
@@ -138,13 +157,13 @@ export default function Terminals() {
 
   const handleForceDetachTerminal = async (terminal: POSTerminal) => {
     const assignedLabel = terminal.assigned_device_label?.trim() || terminal.assigned_device_identifier || "the assigned device"
-    if (
-      !window.confirm(
-        `Force-detach ${terminal.name} from ${assignedLabel}? Use this only when the original device is lost or unavailable.`,
-      )
-    ) {
-      return
-    }
+    const confirmed = await confirmAction({
+      title: "Force-detach terminal?",
+      description: `Force-detach ${terminal.name} from ${assignedLabel}? Use this only when the original device is lost or unavailable.`,
+      confirmText: "Force detach",
+      destructive: true,
+    })
+    if (!confirmed) return
 
     try {
       await detachTerminalBinding(terminal.id).unwrap()
@@ -215,7 +234,7 @@ export default function Terminals() {
 
       <POSResourceManager<POSTerminal>
         title="Selling terminals"
-        description="Create the physical checkout endpoints that cashiers will open sessions against."
+        description="Create the physical checkout endpoints that cashiers will open sessions against. Every terminal must be tied to one structural stock location."
         data={terminals}
         isLoading={isLoading}
         columns={columns}
@@ -229,13 +248,16 @@ export default function Terminals() {
           })),
           location: terminalLocationOptions,
         }}
-        optionalFields={["location"]}
         onCreate={async (data) => {
-          await createTerminal(data).unwrap()
+          if (!terminalQuota.canCreate) {
+            toast.error(terminalQuota.message)
+            return
+          }
+          await createTerminal(normalizeTerminalLocationPayload(data, structuralLocations)).unwrap()
           await refetch()
         }}
         onUpdate={async (id, data) => {
-          await updateTerminal({ id, data }).unwrap()
+          await updateTerminal({ id, data: normalizeTerminalLocationPayload(data, structuralLocations) }).unwrap()
           await refetch()
         }}
         onDelete={async (id) => {

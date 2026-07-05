@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { ChevronDown, LucideIcon, Lock } from  "lucide-react";
 import Link from "next/link";
 import { canAccessPath, getPermissionRequirementLabel } from "@/lib/permissionsGuard";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface SidebarSubLink {
     href: string;
@@ -74,17 +75,33 @@ interface SidebarLinkProps {
       </div>
     );
   
-    return (
-      <div className="space-y-1">
-        {hasSubLinks && !isCollapsed ? (
+    const primaryControl = hasSubLinks && !isCollapsed ? (
           <button type="button" className="w-full text-left" onClick={() => setIsOpen((current) => !current)}>
             {linkBody}
           </button>
         ) : (
-          <Link href={href}>
+          <Link href={href} aria-label={isCollapsed ? label : undefined}>
             {linkBody}
           </Link>
-        )}
+        );
+
+    return (
+      <div className="space-y-1">
+        {isCollapsed ? (
+          <Tooltip>
+            <TooltipTrigger asChild>{primaryControl}</TooltipTrigger>
+            <TooltipContent
+              side="right"
+              sideOffset={10}
+              className="border border-slate-200/70 bg-white/85 text-slate-700 shadow-sm backdrop-blur-md dark:border-slate-600/60 dark:bg-slate-800/85 dark:text-slate-100"
+            >
+              <div className="flex items-center gap-2">
+                <span>{label}</span>
+                {!access.allowed ? <Lock className="h-3.5 w-3.5 text-amber-300" /> : null}
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        ) : primaryControl}
 
         {showSubLinks ? (
           <div className="ml-6 space-y-1 border-l border-gray-200 pl-3">

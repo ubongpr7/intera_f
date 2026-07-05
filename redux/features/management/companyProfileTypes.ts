@@ -78,10 +78,14 @@ export interface StaffRoleAssignment {
   id: string;
   user: number;
   role: string;
+  role_name?: string;
   start_date: string;
   end_date?: string;
   is_active: boolean;
   assigned_at: string;
+  assigned_by?: number | string | null;
+  assigned_by_email?: string | null;
+  profile?: string | number | null;
 }
 
 export interface StaffAssignment {

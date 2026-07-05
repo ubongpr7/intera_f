@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import { ArrowRightLeft, Landmark, ShieldAlert, Wallet } from "lucide-react"
 import { formatCurrency } from "@/lib/currency-utils"
+import { formatMachineLabel } from "@/lib/displayLabels"
 import {
   useDepositRemittanceMutation,
   useDisputeRemittanceMutation,
@@ -207,11 +208,11 @@ export default function POSRemittances({ currencyCode }: { currencyCode: string 
                   <div>
                     <div className="text-sm font-semibold text-gray-900">{remittance.terminal_name || "Terminal remittance"}</div>
                     <div className="mt-1 text-xs uppercase tracking-wide text-gray-500">
-                      Session {remittance.session.slice(0, 8)} • destination {remittance.destination_type.replaceAll("_", " ")}
+                      Session {remittance.session.slice(0, 8)} • destination {formatMachineLabel(remittance.destination_type)}
                     </div>
                   </div>
                   <div className={`rounded-full px-3 py-1 text-xs font-semibold ${statusTone(remittance.status)}`}>
-                    {remittance.status.replaceAll("_", " ")}
+                    {formatMachineLabel(remittance.status)}
                   </div>
                 </div>
 

@@ -17,6 +17,7 @@ import {
 import { toast } from "react-toastify";
 
 import { readCookieValue } from "@/lib/authCookies";
+import { formatMachineLabel } from "@/lib/displayLabels";
 import { extractErrorMessage, formatDate } from "@/lib/utils";
 import { useSwitchCompanyMutation } from "@/redux/features/auth/authApiSlice";
 import {
@@ -59,7 +60,7 @@ function InvitationSummary({
             </div>
           </div>
           <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
-            {invitation.status}
+            {formatMachineLabel(invitation.status)}
           </Badge>
         </div>
       </CardHeader>

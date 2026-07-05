@@ -3,6 +3,7 @@ import type { BaseQueryFn, FetchArgs as OriginalFetchArgs, FetchBaseQueryError }
 import { setAuth, logout } from "../features/authSlice"
 import { Mutex } from "async-mutex"
 import { setCookie, getCookie, deleteCookie } from "cookies-next"
+import { jwtDecode } from "jwt-decode"
 import { AUTH_COOKIE_NAMES, AUTH_COOKIE_KEYS, readCookieValue } from "@/lib/authCookies"
 import { getOrCreatePosDeviceId } from "@/lib/deviceIdentity"
 
@@ -37,8 +38,16 @@ const PAYMENT_BACKEND_URL = resolveBaseUrl(
   process.env.NEXT_PUBLIC_PAYMENT_BACKEND_URL ?? "",
   process.env.PAYMENT_INTERNAL_URL,
 )
+const AUDIT_BACKEND_URL = resolveBaseUrl(
+  process.env.NEXT_PUBLIC_AUDIT_BACKEND_URL ?? "http://localhost:8091",
+  process.env.AUDIT_INTERNAL_URL ?? "http://localhost:8091",
+)
+const NOTIFICATION_BACKEND_URL = resolveBaseUrl(
+  process.env.NEXT_PUBLIC_NOTIFICATION_BACKEND_URL ?? "http://localhost:8092",
+  process.env.NOTIFICATION_INTERNAL_URL ?? "http://localhost:8092",
+)
 
-export type serviceType = "users" | "inventory"| "common"|"product"|'pos'| "agent"|'payment'
+export type serviceType = "users" | "inventory"| "common"|"product"|'pos'| "agent"|'payment' | "audit" | "notification"
 const accessAge = 60*60*24
 const refreshAge = 60*60*24
 export const serviceMap: Record<serviceType, string> = {
@@ -49,6 +58,8 @@ export const serviceMap: Record<serviceType, string> = {
   pos: POS_BACKEND_URL,
   agent: AGENT_BACKEND_URL,
   payment: PAYMENT_BACKEND_URL,
+  audit: AUDIT_BACKEND_URL,
+  notification: NOTIFICATION_BACKEND_URL,
 }
 
 const mutex = new Mutex()
@@ -82,6 +93,12 @@ interface AuthResponsePayload {
   first_name?: string | null
   last_name?: string | null
   picture?: string | null
+}
+
+interface AuthTokenClaims {
+  mfa_verified?: boolean
+  mfa_enabled?: boolean
+  has_setup_mfa?: boolean
 }
 
 const AUTH_RESPONSE_URLS = new Set(["/auth/login/", "/auth/refresh/", "/auth/switch-company/", "/accounts/mfa/verify/"])
@@ -162,11 +179,20 @@ export const persistUserIdentity = (user?: UserIdentityPayload | null) => {
   }
 }
 
-const persistAuthSession = (response: AuthResponsePayload) => {
+export const persistAuthSession = (response: AuthResponsePayload) => {
   const profileContext = response.profile_context ?? {}
   const activeProfileId = profileContext.id ?? response.profile ?? null
   const companyCode = profileContext.company_code ?? null
   const currency = response.currency ?? profileContext.currency ?? null
+  let tokenClaims: AuthTokenClaims | null = null
+
+  if (response.access) {
+    try {
+      tokenClaims = jwtDecode<AuthTokenClaims>(response.access)
+    } catch {
+      tokenClaims = null
+    }
+  }
 
   if (response.access) {
     setAuthCookie("accessToken", response.access, accessAge)
@@ -211,6 +237,24 @@ const persistAuthSession = (response: AuthResponsePayload) => {
   } else {
     deleteAuthCookie("agent_name")
   }
+
+  if (tokenClaims?.mfa_verified === true) {
+    setAuthCookie("mfaVerified", "true", refreshAge)
+    setAuthCookie("mfaSetupRequired", "false", refreshAge)
+  } else if (
+    tokenClaims?.mfa_enabled === true ||
+    tokenClaims?.has_setup_mfa === true
+  ) {
+    setAuthCookie("mfaVerified", "false", refreshAge)
+    setAuthCookie("mfaSetupRequired", "false", refreshAge)
+  } else if (
+    tokenClaims?.mfa_enabled === false &&
+    tokenClaims?.has_setup_mfa === false
+  ) {
+    setAuthCookie("mfaVerified", "false", refreshAge)
+    setAuthCookie("mfaSetupRequired", "true", refreshAge)
+  }
+
   deleteAuthCookie("api_key")
   deleteAuthCookie("tavily_api_key")
 }
@@ -258,6 +302,8 @@ const baseQueries = {
   pos: createBaseQuery(serviceMap.pos),
   agent: createBaseQuery(serviceMap.agent),
   payment: createBaseQuery(serviceMap.payment),
+  audit: createBaseQuery(serviceMap.audit),
+  notification: createBaseQuery(serviceMap.notification),
 }
 
 const fileUploadQueries = {
@@ -268,6 +314,8 @@ const fileUploadQueries = {
   pos: createBaseQuery(serviceMap.pos, true),
   agent: createBaseQuery(serviceMap.agent, true),
   payment: createBaseQuery(serviceMap.payment, true),
+  audit: createBaseQuery(serviceMap.audit, true),
+  notification: createBaseQuery(serviceMap.notification, true),
 
 }
 
@@ -337,8 +385,12 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
   if (result?.data && service === "users") {
     const url = enhancedArgs.url
     if (AUTH_RESPONSE_URLS.has(url) || url.startsWith("/auth/o/")) {
-      persistAuthSession(result.data as AuthResponsePayload)
-      api.dispatch(setAuth())
+      try {
+        persistAuthSession(result.data as AuthResponsePayload)
+        api.dispatch(setAuth())
+      } catch {
+        // A local cookie persistence failure must not convert a successful auth response into a failed request.
+      }
     } else if (AUTH_LOGOUT_URLS.has(url)) {
       clearAuthSession()
       api.dispatch(logout())
@@ -413,7 +465,10 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
 export const apiSlice = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["User", "Inventory", "Category", "Agent", "AgentConversation"], // Add tag types for caching
+  refetchOnFocus: true,
+  refetchOnReconnect: true,
+  refetchOnMountOrArgChange: true,
+  tagTypes: ["User", "Inventory", "Category", "Agent", "AgentConversation", "GlobalCatalog"], // Add tag types for caching
   endpoints: (builder) => ({}),
 })
 
@@ -447,4 +502,36 @@ export const createServiceRequest = (
     service,
     mode: "cors",
   }
+}
+
+type ListEnvelope<T> =
+  | T[]
+  | {
+      results?: T[]
+      data?: T[]
+      items?: T[]
+    }
+
+export const unwrapListResponse = <T>(payload: ListEnvelope<T> | unknown): T[] => {
+  if (Array.isArray(payload)) {
+    return payload
+  }
+
+  if (payload && typeof payload === "object") {
+    const record = payload as Record<string, unknown>
+
+    if (Array.isArray(record.results)) {
+      return record.results as T[]
+    }
+
+    if (Array.isArray(record.data)) {
+      return record.data as T[]
+    }
+
+    if (Array.isArray(record.items)) {
+      return record.items as T[]
+    }
+  }
+
+  return []
 }

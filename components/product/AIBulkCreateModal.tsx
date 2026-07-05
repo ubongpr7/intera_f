@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { useDropzone } from "react-dropzone"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,6 +16,8 @@ import {
 import { toast } from "react-toastify"
 import { getCookie } from "cookies-next"
 import { readCookieValue } from "@/lib/authCookies"
+import { formatMachineLabel } from "@/lib/displayLabels"
+import { confirmAction } from "../common/confirmAction"
 
 interface AIBulkCreateModalProps {
   isOpen: boolean
@@ -27,6 +29,7 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
   const [taskId, setTaskId] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
   const [status, setStatus] = useState<"idle" | "processing" | "completed" | "error">("idle")
+  const statusRef = useRef(status)
 
   // RTK Query hooks
   const [aiBulkCreate, { isLoading: isCreating, error: createError }] = useAiBulkCreateProductsMutation()
@@ -69,6 +72,49 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
     setImages((prev) => prev.filter((_, i) => i !== index))
   }
 
+  useEffect(() => {
+    statusRef.current = status
+  }, [status])
+
+  const pollTaskStatus = useCallback(async (nextTaskId: string) => {
+    const pollInterval = window.setInterval(async () => {
+      try {
+        const result = await getTaskStatus(nextTaskId)
+        if (result.data) {
+          const { status: taskStatus, error_message } = result.data
+          if (taskStatus === "COMPLETED") {
+            setStatus("completed")
+            setProgress(100)
+            window.clearInterval(pollInterval)
+            toast.success("AI processing completed successfully!")
+            refetchTasks()
+          } else if (taskStatus === "FAILED") {
+            setStatus("error")
+            window.clearInterval(pollInterval)
+            toast.error(error_message || "Processing failed")
+          } else if (taskStatus === "PROCESSING") {
+            setProgress((prev) => Math.min(prev + 5, 90))
+          }
+        }
+      } catch {
+        setStatus("error")
+        window.clearInterval(pollInterval)
+        toast.error("Failed to check processing status")
+      }
+    }, 3000)
+
+    window.setTimeout(
+      () => {
+        window.clearInterval(pollInterval)
+        if (statusRef.current === "processing") {
+          setStatus("error")
+          toast.error("Processing timeout. Please check the task status manually.")
+        }
+      },
+      10 * 60 * 1000,
+    )
+  }, [getTaskStatus, refetchTasks])
+
   const startProcessing = async () => {
     if (images.length === 0) {
       toast.error("Please upload at least one product image")
@@ -94,8 +140,7 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
       toast.success("AI processing started successfully!")
       // Start polling for status
       pollTaskStatus(result.task_id)
-    } catch (error: any) {
-      console.error("Failed to start AI processing:", error)
+    } catch (error: unknown) {
       setStatus("error")
       const errorMessage =
         typeof error === "object" && error !== null && "data" in error
@@ -105,48 +150,6 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
           : "Failed to start AI processing"
       toast.error(errorMessage)
     }
-  }
-
-  const pollTaskStatus = async (taskId: string) => {
-    const pollInterval = setInterval(async () => {
-      try {
-        const result = await getTaskStatus(taskId)
-        if (result.data) {
-          const { status: taskStatus, error_message } = result.data
-          if (taskStatus === "COMPLETED") {
-            setStatus("completed")
-            setProgress(100)
-            clearInterval(pollInterval)
-            toast.success("AI processing completed successfully!")
-            refetchTasks() // Refresh the tasks list
-          } else if (taskStatus === "FAILED") {
-            setStatus("error")
-            clearInterval(pollInterval)
-            toast.error(error_message || "Processing failed")
-          } else if (taskStatus === "PROCESSING") {
-            // Simulate progress (in real implementation, you might get actual progress)
-            setProgress((prev) => Math.min(prev + 5, 90))
-          }
-        }
-      } catch (err) {
-        console.error("Failed to check processing status:", err)
-        setStatus("error")
-        clearInterval(pollInterval)
-        toast.error("Failed to check processing status")
-      }
-    }, 3000) // Poll every 3 seconds
-
-    // Cleanup interval after 10 minutes to prevent infinite polling
-    setTimeout(
-      () => {
-        clearInterval(pollInterval)
-        if (status === "processing") {
-          setStatus("error")
-          toast.error("Processing timeout. Please check the task status manually.")
-        }
-      },
-      10 * 60 * 1000,
-    ) // 10 minutes
   }
 
   const reset = () => {
@@ -160,11 +163,13 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
     window.open(resultFileUrl, "_blank")
   }
 
-  const handleClose = () => {
+  const handleClose = async () => {
     if (status === "processing") {
-      const confirmClose = window.confirm(
-        "AI processing is still in progress. You can check the status later in the Recent Tasks section. Are you sure you want to close?",
-      )
+      const confirmClose = await confirmAction({
+        title: "Close while processing?",
+        description: "AI processing is still in progress. You can check the status later in the Recent Tasks section.",
+        confirmText: "Close anyway",
+      })
       if (!confirmClose) return
     }
     onClose()
@@ -175,7 +180,7 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
     if (isOpen && taskId && status === "processing") {
       pollTaskStatus(taskId)
     }
-  }, [isOpen, taskId])
+  }, [isOpen, pollTaskStatus, status, taskId])
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -206,7 +211,7 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
                         {task.status === "COMPLETED" && <CheckCircle className="h-4 w-4 text-green-500" />}
                         {task.status === "FAILED" && <XCircle className="h-4 w-4 text-red-500" />}
                         {task.status === "PROCESSING" && <Brain className="h-4 w-4 text-blue-500 animate-pulse" />}
-                        <span className="text-sm">{task.status}</span>
+                        <span className="text-sm">{formatMachineLabel(task.status)}</span>
                         <span className="text-xs text-gray-500">{new Date(task.created_at).toLocaleDateString()}</span>
                       </div>
                       {task.result_file && (
@@ -299,6 +304,7 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
                   {images.map((image, index) => (
                     <div key={index} className="relative group overflow-visible">
                       <div className="relative overflow-hidden rounded border-2 border-gray-200 group-hover:border-blue-400 transition-all duration-300">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={URL.createObjectURL(image) || "/placeholder.svg"}
                           alt={`Product ${index + 1}`}

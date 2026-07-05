@@ -23,6 +23,11 @@ export interface CompanyProfileContext {
   currency?: string | null;
   role?: string | null;
   membership_id?: string | null;
+  support_access?: boolean;
+  support_access_grant_id?: string | null;
+  support_access_expires_at?: string | null;
+  support_access_mode?: string | null;
+  support_actor_type?: string | null;
 }
 
 export interface AuthSessionResponse {
@@ -50,4 +55,5 @@ export interface CompanyMembershipResponse {
 export interface SwitchCompanyPayload {
   profile_id?: string;
   company_code?: string;
+  support_access_grant_id?: string;
 }

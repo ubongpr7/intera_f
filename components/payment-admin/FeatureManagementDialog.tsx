@@ -16,6 +16,7 @@ import {
   useRemoveFeatureFromPlanMutation,
 } from "@/redux/features/payment/paymentAPISlice"
 import { toast } from "react-toastify"
+import { extractErrorMessage } from "@/lib/utils"
 
 interface Feature {
   id: string
@@ -26,6 +27,13 @@ interface Feature {
   app: string
   is_active: boolean
   application_name?: string
+}
+
+interface PlanFeature {
+  id: string
+  feature: Feature
+  limit_value: number | null
+  is_unlimited: boolean
 }
 
 interface SubscriptionPlan {
@@ -73,7 +81,7 @@ export function FeatureManagementDialog({ open, onOpenChange, plan, onSuccess }:
 
   // Convert features to select options
   const availableFeatureOptions: SelectOption[] = appFeatures
-    .filter((feature: Feature) => !planFeatures.some((pf: Feature) => pf.id === feature.id))
+    .filter((feature: Feature) => !planFeatures.some((pf: PlanFeature) => pf.feature.id === feature.id))
     .map((feature: Feature) => ({
       value: feature.id,
       label: `${feature.name} (${feature.feature_type})`,
@@ -83,7 +91,8 @@ export function FeatureManagementDialog({ open, onOpenChange, plan, onSuccess }:
   // Reset selected features when dialog opens/closes
   useEffect(() => {
     if (!open) {
-      setSelectedFeatures([])
+      const timeoutId = window.setTimeout(() => setSelectedFeatures([]), 0)
+      return () => window.clearTimeout(timeoutId)
     }
   }, [open])
 
@@ -104,8 +113,7 @@ export function FeatureManagementDialog({ open, onOpenChange, plan, onSuccess }:
       refetchPlanFeatures()
       onSuccess?.()
     } catch (error) {
-      toast.error("Failed to add features to plan")
-      console.error("Error adding features:", error)
+      toast.error(extractErrorMessage(error, ["features", "detail"]) || "Failed to add features to plan")
     }
   }
 
@@ -122,8 +130,7 @@ export function FeatureManagementDialog({ open, onOpenChange, plan, onSuccess }:
       refetchPlanFeatures()
       onSuccess?.()
     } catch (error) {
-      toast.error("Failed to remove feature from plan")
-      console.error("Error removing feature:", error)
+      toast.error(extractErrorMessage(error, ["feature", "detail"]) || "Failed to remove feature from plan")
     }
   }
 
@@ -212,9 +219,11 @@ export function FeatureManagementDialog({ open, onOpenChange, plan, onSuccess }:
                 </div>
               ) : (
                 <div className="grid gap-3">
-                  {planFeatures.map((feature: Feature) => (
+                  {planFeatures.map((planFeature: PlanFeature) => {
+                    const feature = planFeature.feature
+                    return (
                     <div
-                      key={feature.id}
+                      key={planFeature.id}
                       className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-gray-100/50"
                     >
                       <div className="flex items-center gap-3">
@@ -238,7 +247,8 @@ export function FeatureManagementDialog({ open, onOpenChange, plan, onSuccess }:
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </CardContent>

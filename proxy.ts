@@ -4,6 +4,11 @@ import { getCookieCandidates, type AuthCookieKey } from "./lib/authCookies"
 
 export function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname
+  const isPublicAsset =
+    path.startsWith("/assets/") ||
+    path.startsWith("/landing/") ||
+    path === "/site.webmanifest" ||
+    /\.[a-z0-9]+$/i.test(path)
   const isMfaPath = path.startsWith("/accounts/mfa")
   const isInvitationPath =
     path === "/accounts/invitations" ||
@@ -21,6 +26,7 @@ export function proxy(request: NextRequest) {
   }
 
   const isPublicPath =
+    isPublicAsset ||
     path.startsWith("/accounts") ||
     isActivationPath ||
     path === "/invitations/accept" ||
@@ -73,5 +79,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|.*\\..*).*)"],
 }

@@ -3,10 +3,10 @@ import React, { useState } from 'react';
 import { useGetDashboardPurchaseOrderAnalyticsQuery, useGetPurchaseOrderSummaryQuery } from '@/redux/features/dashboard/dashboardApiSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import Spinner from '@/components/common/Spinner';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import { formatMoneyCompactForProfile } from '@/lib/currency-utils';
 import { TrendingUp, Calendar, Clock, Package, CheckCircle, AlertCircle, ArrowUpRight, ChevronDown, ChevronUp, BarChart3 } from 'lucide-react';
+import { QueryStateBoundary } from '@/components/common/QueryStateBoundary';
 
 // Custom tooltip for charts
 const CustomTooltip = ({ active, payload, label, isCurrency = false }: any) => {
@@ -57,28 +57,41 @@ const formatXAxis = (tickItem: string, timePeriod: string) => {
 
 // Combined Purchase Order Dashboard with Time Series
 const PurchaseOrderDashboard = () => {
-  const { data: analyticsData, error: analyticsError, isLoading: analyticsLoading } = useGetDashboardPurchaseOrderAnalyticsQuery(undefined);
-  const { data: summaryData, error: summaryError, isLoading: summaryLoading } = useGetPurchaseOrderSummaryQuery(undefined);
+  const {
+    data: analyticsData,
+    error: analyticsError,
+    isLoading: analyticsLoading,
+    isFetching: analyticsFetching,
+    refetch: refetchAnalytics,
+  } = useGetDashboardPurchaseOrderAnalyticsQuery(undefined);
+  const {
+    data: summaryData,
+    error: summaryError,
+    isLoading: summaryLoading,
+    isFetching: summaryFetching,
+    refetch: refetchSummary,
+  } = useGetPurchaseOrderSummaryQuery(undefined);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [timePeriod, setTimePeriod] = useState<'weekly' | 'monthly'>('monthly');
 
-  if (analyticsLoading || summaryLoading) return (
-    <div className="col-span-1 lg:col-span-2 rounded-2xl bg-white p-6 shadow-lg border border-gray-100 h-96 flex items-center justify-center">
-      <Spinner />
-    </div>
-  );
-
-  if (analyticsError || summaryError) return (
-    <div className="col-span-1 lg:col-span-2 rounded-2xl bg-white p-6 shadow-lg border border-gray-100">
-      <div className="flex flex-col items-center justify-center py-10">
-        <div className="rounded-full bg-red-100 p-4 mb-4">
-          <AlertCircle className="w-8 h-8 text-red-600" />
-        </div>
-        <h3 className="text-lg font-medium text-gray-900 mb-1">Error Loading Data</h3>
-        <p className="text-gray-500 text-sm">Please try refreshing the page</p>
-      </div>
-    </div>
-  );
+  if (analyticsLoading || summaryLoading || analyticsError || summaryError) {
+    return (
+      <QueryStateBoundary
+        isLoading={analyticsLoading || summaryLoading}
+        isFetching={analyticsFetching || summaryFetching}
+        error={analyticsError || summaryError}
+        onRetry={() => {
+          refetchAnalytics();
+          refetchSummary();
+        }}
+        loadingText="Loading purchase-order analytics..."
+        errorTitle="Unable to load purchase-order analytics"
+        className="col-span-1 lg:col-span-2 rounded-2xl bg-white p-6 shadow-lg border border-gray-100 min-h-96"
+      >
+        <div />
+      </QueryStateBoundary>
+    );
+  }
 
   if (!analyticsData || !summaryData) return null;
 

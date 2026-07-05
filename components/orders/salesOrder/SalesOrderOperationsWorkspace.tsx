@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { toast } from "react-toastify"
 import OperationalStepSection from "@/components/setup/OperationalStepSection"
+import StructuralLocationScopeSelect from "@/components/stock/StructuralLocationScopeSelect"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -24,6 +25,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { CURRENCY_CODES } from "@/lib/currencyCode"
 import { formatCurrencyCompact } from "@/lib/currency-utils"
+import { buildStructuralLocationScopeParams, getSingleStructuralLocationId, matchesStructuralLocationScope } from "@/lib/structuralLocationScope"
+import { useStructuralLocationScope } from "@/hooks/useStructuralLocationScope"
 import { extractErrorMessage } from "@/lib/utils"
 import { useGetCustomerQuery } from "@/redux/features/company/companyAPISlice"
 import {
@@ -119,6 +122,26 @@ const formatStatus = (value: string) =>
 
 const asNumber = (value: string | number | undefined | null) => Number(value ?? 0)
 
+const formatStructuralLocationLabel = (location: { name?: string | null; parent_name?: string | null }) =>
+  [location.parent_name, location.name].filter((value) => value && String(value).trim().length > 0).join(" / ") || location.name || "Unknown location"
+
+const formatOperationalLocationLabel = (location: {
+  name?: string | null
+  structural_location_name?: string | null
+  parent_name?: string | null
+}) => {
+  const structuralName = location.structural_location_name?.trim()
+  const parentName = location.parent_name?.trim()
+  const currentName = location.name?.trim() || "Unknown location"
+  if (structuralName && structuralName !== currentName) {
+    return `${structuralName} / ${currentName}`
+  }
+  if (parentName && parentName !== currentName) {
+    return `${parentName} / ${currentName}`
+  }
+  return currentName
+}
+
 const buildHeaderForm = (order?: SalesOrderInterface | null): SalesOrderHeaderForm => ({
   customer: order?.customer ? String(order.customer) : "",
   responsible: order?.responsible ? String(order.responsible) : "",
@@ -166,6 +189,7 @@ const buildShipmentEntry = (lineItem: SalesOrderLineItem): ShipmentEntry => ({
 })
 
 export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrderOperationsWorkspaceProps) {
+  const [selectedStructuralLocationIds, setSelectedStructuralLocationIds] = useStructuralLocationScope()
   const [headerFormDraft, setHeaderFormDraft] = useState<Partial<SalesOrderHeaderForm>>({})
   const [lineItemForm, setLineItemForm] = useState<LineItemForm>(emptyLineItemForm)
   const [editingLineItemId, setEditingLineItemId] = useState<string | null>(null)
@@ -178,17 +202,28 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
   const { data: order, isLoading, refetch } = useGetSalesOrderQuery(salesOrderId)
   const { data: customers = [] } = useGetCustomerQuery()
   const { data: users = [] } = useGetCompanyUsersQuery()
-  const { data: inventoryItems = [] } = useGetInventoryDataQuery()
-  const { data: locations = [] } = useListStockLocationsQuery()
-  const { data: reservations = [], refetch: refetchReservations } = useListReservationsQuery(
-    {
+  const inventoryQuery = useMemo(
+    () => buildStructuralLocationScopeParams(selectedStructuralLocationIds),
+    [selectedStructuralLocationIds],
+  )
+  const reservationQuery = useMemo(
+    () => ({
       external_order_type: "sales_order_line",
       external_order_id: String(order?.id || ""),
-    },
-    {
-      skip: !order?.id,
-    },
+      ...buildStructuralLocationScopeParams(selectedStructuralLocationIds),
+    }),
+    [order?.id, selectedStructuralLocationIds],
   )
+  const { data: inventoryItems = [] } = useGetInventoryDataQuery(inventoryQuery)
+  const { data: locations = [] } = useListStockLocationsQuery()
+  const { data: reservations = [], refetch: refetchReservations } = useListReservationsQuery(reservationQuery, {
+    skip: !order?.id,
+  })
+  const selectedSingleStructuralLocationId = useMemo(
+    () => getSingleStructuralLocationId(selectedStructuralLocationIds),
+    [selectedStructuralLocationIds],
+  )
+  const hasScopedStructuralSelection = selectedStructuralLocationIds.length > 0
 
   const [updateSalesOrder, { isLoading: savingHeader }] = useUpdateSalesOrderMutation()
   const [createLineItem, { isLoading: creatingLineItem }] = useCreateSalesOrderLineItemMutation()
@@ -243,6 +278,38 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
   const selectedInventoryItem = useMemo(
     () => inventoryItems.find((item) => String(item.id) === lineItemForm.inventory_item),
     [inventoryItems, lineItemForm.inventory_item],
+  )
+  const operationalLocations = useMemo(
+    () =>
+      locations.filter((location) => {
+        if (location.structural) {
+          return false
+        }
+        return matchesStructuralLocationScope(String(location.structural_location_id ?? ""), selectedStructuralLocationIds)
+      }),
+    [locations, selectedStructuralLocationIds],
+  )
+  const scopedOperationalLocationIds = useMemo(
+    () => new Set(operationalLocations.map((location) => String(location.id))),
+    [operationalLocations],
+  )
+  const filteredReservations = useMemo(
+    () =>
+      !hasScopedStructuralSelection
+        ? reservations
+        : reservations.filter((reservation) => scopedOperationalLocationIds.has(String(reservation.stock_location))),
+    [hasScopedStructuralSelection, reservations, scopedOperationalLocationIds],
+  )
+  const filteredShipments = useMemo(
+    () =>
+      !hasScopedStructuralSelection
+        ? shipments
+        : shipments.filter((shipment) =>
+            (shipment.lines || []).some(
+              (line) => line.stock_location !== undefined && line.stock_location !== null && scopedOperationalLocationIds.has(String(line.stock_location)),
+            ),
+          ),
+    [hasScopedStructuralSelection, scopedOperationalLocationIds, shipments],
   )
 
   const setReservationField = (lineItemId: string, field: keyof ReservationEntry, value: string) => {
@@ -424,6 +491,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
           id: order.id,
           data: {
             reservation_items,
+            structural_location_id: selectedSingleStructuralLocationId,
             notes: shipmentMeta.notes || undefined,
           },
         }).unwrap(),
@@ -437,7 +505,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
       return
     }
 
-    const reservation_items = reservations.flatMap((reservation) => {
+    const reservation_items = filteredReservations.flatMap((reservation) => {
         const entry = reservationActionEntries[String(reservation.id)] || buildReservationActionEntry(reservation)
         const quantity = Number(entry?.quantity || "0")
         if (!entry || quantity <= 0) {
@@ -461,6 +529,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
           id: order.id,
           data: {
             reservation_items,
+            structural_location_id: selectedSingleStructuralLocationId,
             notes: shipmentMeta.notes || undefined,
           },
         }).unwrap(),
@@ -474,7 +543,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
       return
     }
 
-    const reservedShipments = reservations.flatMap((reservation) => {
+    const reservedShipments = filteredReservations.flatMap((reservation) => {
         const entry = reservationActionEntries[String(reservation.id)] || buildReservationActionEntry(reservation)
         const quantity = Number(entry?.quantity || "0")
         if (!entry || quantity <= 0) {
@@ -516,6 +585,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
           id: order.id,
           data: {
             shipment_items,
+            structural_location_id: selectedSingleStructuralLocationId,
             shipment_date: shipmentMeta.shipment_date || undefined,
             delivery_date: shipmentMeta.delivery_date || undefined,
             tracking_number: shipmentMeta.tracking_number || undefined,
@@ -597,6 +667,25 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
             <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Remaining</div>
             <div className="mt-2 text-lg font-semibold text-gray-900">{remainingQuantity}</div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-blue-100 bg-blue-50/70 shadow-sm">
+        <CardContent className="grid gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_minmax(260px,340px)] lg:items-end">
+          <div className="space-y-1">
+            <div className="text-sm font-semibold text-gray-900">Working location scope</div>
+            <p className="text-sm leading-6 text-gray-600">
+              Filter inventory visibility and stock actions by structural store so reservations and shipments stay tied to the right location bucket.
+            </p>
+          </div>
+          <StructuralLocationScopeSelect
+            allowMultiSelect
+            className="space-y-2"
+            id="so-structural-location-scope"
+            values={selectedStructuralLocationIds}
+            onValuesChange={setSelectedStructuralLocationIds}
+            description="Choose one or more structural locations to narrow reservation and shipment operations."
+          />
         </CardContent>
       </Card>
 
@@ -889,8 +978,8 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
               : "pending"
         }
         facts={[
-          { label: "Reservations", value: reservations.length },
-          { label: "Shipments", value: shipments.length },
+          { label: "Reservations", value: filteredReservations.length },
+          { label: "Shipments", value: filteredShipments.length },
           { label: "Remaining quantity", value: remainingQuantity },
         ]}
       >
@@ -901,6 +990,11 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
               <CardDescription>Assign a stock location and reserve the quantities that should be held for this customer order.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {hasScopedStructuralSelection ? (
+                <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+                  Reservation and shipment locations are limited to the selected structural scope.
+                </div>
+              ) : null}
               {lineItems.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-gray-200 p-4 text-sm text-gray-500">
                   Add line items before reserving stock.
@@ -927,19 +1021,19 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
                         </div>
                         <div className="space-y-2">
                           <Label>Stock location</Label>
-                          <Select value={entry.location_id} onValueChange={(value) => setReservationField(String(lineItem.id), "location_id", value)}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select location" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {locations.map((location) => (
+                            <Select value={entry.location_id} onValueChange={(value) => setReservationField(String(lineItem.id), "location_id", value)}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select location" />
+                              </SelectTrigger>
+                              <SelectContent>
+                              {operationalLocations.map((location) => (
                                 <SelectItem key={location.id} value={String(location.id)}>
-                                  {location.name}
+                                  {formatOperationalLocationLabel(location)}
                                 </SelectItem>
                               ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                              </SelectContent>
+                            </Select>
+                          </div>
                         <div className="space-y-2 md:col-span-2">
                           <Label>Reservation note</Label>
                           <Input
@@ -1020,19 +1114,22 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
 
               <div className="space-y-4 rounded-2xl border border-gray-200 p-4">
                 <div className="text-sm font-semibold text-gray-900">Active reservations</div>
-                {reservations.length === 0 ? (
+                {filteredReservations.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-gray-200 p-4 text-sm text-gray-500">
                     No active reservations yet. Reserve stock first or ship directly from the lines below.
                   </div>
                 ) : (
-                  reservations.map((reservation) => {
+                  filteredReservations.map((reservation) => {
                     const entry = reservationActionEntries[String(reservation.id)] || buildReservationActionEntry(reservation)
                     const lineItem = reservation.external_order_line_id ? lineItemMap[String(reservation.external_order_line_id)] : undefined
                     return (
                       <div key={reservation.id} className="rounded-2xl border border-gray-200 p-4">
                         <div className="font-semibold text-gray-900">{lineItem?.inventory_name || reservation.inventory_item_name || `Reservation ${reservation.id}`}</div>
                         <div className="mt-1 text-sm text-gray-600">
-                          {reservation.location_name || reservation.stock_location} · Reserved {reservation.reserved_quantity} · Fulfilled {reservation.fulfilled_quantity}
+                          {reservation.structural_location_name
+                            ? `${reservation.structural_location_name} / ${reservation.location_name || reservation.stock_location}`
+                            : reservation.location_name || reservation.stock_location}{" "}
+                          · Reserved {reservation.reserved_quantity} · Fulfilled {reservation.fulfilled_quantity}
                         </div>
                         <div className="mt-4 grid gap-3 md:grid-cols-2">
                           <div className="space-y-2">
@@ -1093,9 +1190,9 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
                                 <SelectValue placeholder="Select location" />
                               </SelectTrigger>
                               <SelectContent>
-                                {locations.map((location) => (
+                                {operationalLocations.map((location) => (
                                   <SelectItem key={location.id} value={String(location.id)}>
-                                    {location.name}
+                                    {formatOperationalLocationLabel(location)}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -1117,11 +1214,11 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
               </div>
 
               <div className="flex flex-wrap gap-3">
-                <Button variant="outline" onClick={handleReleaseReservations} disabled={releasingReservations || reservations.length === 0}>
+                <Button variant="outline" onClick={handleReleaseReservations} disabled={releasingReservations || filteredReservations.length === 0}>
                   <Undo2 className="mr-2 h-4 w-4" />
                   {releasingReservations ? "Releasing..." : "Release selected reservations"}
                 </Button>
-                <Button onClick={handleShipOrder} disabled={shippingOrder || (reservations.length === 0 && directShipmentLineItems.length === 0)}>
+                <Button onClick={handleShipOrder} disabled={shippingOrder || (filteredReservations.length === 0 && directShipmentLineItems.length === 0)}>
                   <Truck className="mr-2 h-4 w-4" />
                   {shippingOrder ? "Shipping..." : "Ship selected items"}
                 </Button>
@@ -1139,7 +1236,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
         helper="Shipment history below is the operational audit trail for the order."
         status={order.status === SalesOrderStatus.completed ? "complete" : shippedQuantity > 0 ? "in_progress" : "pending"}
         facts={[
-          { label: "Shipments", value: shipments.length },
+          { label: "Shipments", value: filteredShipments.length },
           { label: "Current status", value: formatStatus(order.status) },
           { label: "Remaining quantity", value: remainingQuantity },
         ]}
@@ -1151,7 +1248,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
               <CardDescription>Every shipment against this order is captured here.</CardDescription>
             </CardHeader>
             <CardContent>
-              {shipments.length === 0 ? (
+              {filteredShipments.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-gray-200 p-4 text-sm text-gray-500">
                   No shipments have been recorded yet.
                 </div>
@@ -1168,13 +1265,20 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {shipments.map((shipment) => (
+                      {filteredShipments.map((shipment) => (
                         <TableRow key={shipment.id}>
                           <TableCell className="font-medium text-gray-900">{shipment.reference}</TableCell>
                           <TableCell>{shipment.shipment_date || "Not set"}</TableCell>
                           <TableCell>{shipment.tracking_number || "—"}</TableCell>
                           <TableCell>{shipment.invoice_number || "—"}</TableCell>
-                          <TableCell>{shipment.lines?.length ?? 0}</TableCell>
+                          <TableCell>
+                            <div>{shipment.lines?.length ?? 0}</div>
+                            <div className="text-xs text-gray-500">
+                              {shipment.structural_location_preview?.length
+                                ? shipment.structural_location_preview.join(", ")
+                                : shipment.location_preview?.join(", ") || "No location context"}
+                            </div>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

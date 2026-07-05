@@ -4,16 +4,24 @@ import Link from "next/link"
 import {
   Bot,
   Building2,
+  KeyRound,
   Settings2,
   ShieldCheck,
   Sparkles,
   Users,
   Wrench,
+  CreditCard,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 const settingAreas = [
+  {
+    title: "Subscription and limits",
+    description: "Review the active plan, included capabilities, and workspace resource limits.",
+    href: "/subscription",
+    icon: CreditCard,
+  },
   {
     title: "Agent settings",
     description: "Workspace AI configuration, default-agent setup, model selection, and instruction management.",
@@ -31,6 +39,12 @@ const settingAreas = [
     description: "Invite staff, review permissions, and control access across the workspace.",
     href: "/profile/staff",
     icon: Users,
+  },
+  {
+    title: "Support access",
+    description: "Grant, extend, and revoke temporary workspace access for named support accounts.",
+    href: "/profile/support-access",
+    icon: KeyRound,
   },
 ]
 
@@ -127,6 +141,12 @@ export default function SettingsHubPage() {
             <Link href="/profile/staff">
               <Users className="mr-2 h-4 w-4" />
               Open staff and roles
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/profile/support-access">
+              <KeyRound className="mr-2 h-4 w-4" />
+              Open support access
             </Link>
           </Button>
           <Button asChild variant="outline">

@@ -1,17 +1,22 @@
 'use client';
-import React from 'react';
 import { useGetPurchaseOrderSummaryQuery } from '@/redux/features/dashboard/dashboardApiSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import Spinner from '@/components/common/Spinner';
+import { QueryStateBoundary } from '../common/QueryStateBoundary';
 
 const PurchaseOrderSummary = () => {
-  const { data, error, isLoading } = useGetPurchaseOrderSummaryQuery(undefined);
-
-  if (isLoading) return <Spinner />;
-  if (error) return <div>Error loading purchase order summary.</div>;
-  if (!data) return null;
+  const { data, error, isLoading, isFetching, refetch } = useGetPurchaseOrderSummaryQuery(undefined);
 
   return (
+    <QueryStateBoundary
+      isLoading={isLoading}
+      isFetching={isFetching}
+      error={error}
+      isEmpty={!data}
+      onRetry={refetch}
+      loadingText="Loading purchase order summary..."
+      emptyTitle="No purchase order summary yet"
+      errorTitle="Unable to load purchase order summary"
+    >
     <Card>
       <CardHeader>
         <CardTitle>Purchase Order Summary</CardTitle>
@@ -45,6 +50,7 @@ const PurchaseOrderSummary = () => {
         </div>
       </CardContent>
     </Card>
+    </QueryStateBoundary>
   );
 };
 

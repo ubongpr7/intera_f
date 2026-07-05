@@ -5,6 +5,7 @@ import { useMemo, useState } from "react"
 import {
   ArrowRight,
   Boxes,
+  ChevronDown,
   CheckCircle2,
   FolderTree,
   MapPin,
@@ -17,14 +18,17 @@ import InventoryAttentionCard from "@/components/inventory/InventoryAttentionCar
 import InventoryCategoryView from "@/components/inventory/InventoryCategory"
 import InventoryOperationalInsights from "@/components/inventory/InventoryOperationalInsights"
 import InventoryView from "@/components/inventory/InventoryView"
-import { useWorkspaceSetupProgress } from "@/components/onboarding/WorkspaceSetupShell"
+import { WorkspaceSetupLoadingCard, useWorkspaceSetupProgress } from "@/components/onboarding/WorkspaceSetupShell"
 import OperationalStepSection from "@/components/setup/OperationalStepSection"
+import StructuralLocationScopeSelect from "@/components/stock/StructuralLocationScopeSelect"
 import StockLocations from "@/components/stock/stockLoation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import { formatCurrencyCompact } from "@/lib/currency-utils"
+import { buildStructuralLocationScopeParams } from "@/lib/structuralLocationScope"
+import { useStructuralLocationScope } from "@/hooks/useStructuralLocationScope"
 import {
   useGetInventoryDataQuery,
   useGetInventoriesNeedingReorderQuery,
@@ -51,9 +55,33 @@ const displayCount = (value: number | undefined, isLoading: boolean) => {
   return value ?? 0
 }
 
+const toStockNumber = (value: unknown) => {
+  const numericValue = Number(value ?? 0)
+  return Number.isFinite(numericValue) ? numericValue : 0
+}
+
+const formatStockQuantity = (value: unknown) =>
+  new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 2,
+  }).format(toStockNumber(value))
+
+const getCurrentStockLevel = (inventory: { current_stock_level?: unknown; current_stock?: unknown; quantity_available?: unknown }) =>
+  toStockNumber(inventory.current_stock_level ?? inventory.current_stock ?? inventory.quantity_available ?? 0)
+
+const getLowStockBadge = (inventory: { current_stock_level?: unknown; current_stock?: unknown; quantity_available?: unknown; minimum_stock_level?: unknown }) => {
+  const currentStock = getCurrentStockLevel(inventory)
+  const minimumStock = toStockNumber(inventory.minimum_stock_level)
+
+  if (currentStock <= 0) return "Out of stock"
+  if (minimumStock > 0 && currentStock <= minimumStock) return "Below minimum"
+  return "Review stock"
+}
+
 export default function InventoryPage() {
   const [refetchData, setRefetchData] = useState(false)
   const [activeTab, setActiveTab] = useState<InventoryTab>("overview")
+  const [setupGuideOpen, setSetupGuideOpen] = useState(false)
+  const [selectedStructuralLocationIds, setSelectedStructuralLocationIds] = useStructuralLocationScope()
   const [loadedTabs, setLoadedTabs] = useState<Record<InventoryTab, boolean>>({
     overview: true,
     locations: false,
@@ -61,7 +89,15 @@ export default function InventoryPage() {
     inventories: false,
     insights: false,
   })
-  const { activeMembership, isOwner, nextRecommendedStage, profile, readiness } = useWorkspaceSetupProgress()
+  const { activeMembership, isLoading: loadingWorkspaceSetup, isOwner, nextRecommendedStage, profile, readiness } = useWorkspaceSetupProgress()
+  const structuralScopeParams = useMemo(
+    () => buildStructuralLocationScopeParams(selectedStructuralLocationIds),
+    [selectedStructuralLocationIds],
+  )
+  const expiringQueryParams = useMemo(
+    () => (structuralScopeParams ? { days: 30, ...structuralScopeParams } : { days: 30 }),
+    [structuralScopeParams],
+  )
 
   const shouldLoadLocations = loadedTabs.locations || loadedTabs.insights
   const shouldLoadInventories = loadedTabs.inventories || loadedTabs.insights
@@ -69,13 +105,13 @@ export default function InventoryPage() {
   const { data: locations } = useListStockLocationsQuery(undefined, {
     skip: !shouldLoadLocations,
   })
-  const { data: inventories } = useGetInventoryDataQuery(undefined, {
+  const { data: inventories } = useGetInventoryDataQuery(structuralScopeParams, {
     skip: !shouldLoadInventories,
   })
-  const { data: summary, isLoading: loadingSummary } = useGetInventorySetupSummaryQuery()
-  const { data: lowStockInventories = [], isLoading: loadingLowStockInventories } = useGetLowStockInventoriesQuery()
-  const { data: inventoriesNeedingReorder = [], isLoading: loadingReorderInventories } = useGetInventoriesNeedingReorderQuery()
-  const { data: expiringStockItems = [], isLoading: loadingExpiringStock } = useGetExpiringInventoryItemsQuery({ days: 30 })
+  const { data: summary, isLoading: loadingSummary } = useGetInventorySetupSummaryQuery(structuralScopeParams)
+  const { data: lowStockInventories = [], isLoading: loadingLowStockInventories } = useGetLowStockInventoriesQuery(structuralScopeParams)
+  const { data: inventoriesNeedingReorder = [], isLoading: loadingReorderInventories } = useGetInventoriesNeedingReorderQuery(structuralScopeParams)
+  const { data: expiringStockItems = [], isLoading: loadingExpiringStock } = useGetExpiringInventoryItemsQuery(expiringQueryParams)
 
   const locationCount = summary?.total_locations ?? 0
   const categoryCount = summary?.total_categories ?? 0
@@ -112,9 +148,10 @@ export default function InventoryPage() {
     [categoryCount, inventoryItemCount, locationCount],
   )
 
-  const completedSetupSteps = setupSteps.filter((step) => step.complete).length
-  const completionPercentage = Math.round((completedSetupSteps / setupSteps.length) * 100)
   const nextInventoryStep = setupSteps.find((step) => !step.complete) ?? null
+  const inventorySetupComplete = setupSteps.every((step) => step.complete)
+  const showSetupControls = isOwner && !loadingSummary && !inventorySetupComplete
+  const showSetupGuide = showSetupControls && setupGuideOpen
   const nextInventoryTab: InventoryTab | null = nextInventoryStep
     ? nextInventoryStep.id === "locations"
       ? "locations"
@@ -122,23 +159,38 @@ export default function InventoryPage() {
         ? "categories"
         : "inventories"
     : null
-  const lowStockInventoryItems = (lowStockInventories || []).slice(0, 4).map((inventory) => ({
-    id: inventory.id,
-    title: inventory.name,
-    imageUrl: inventory.display_image || inventory.product_variant_image_url,
-    supporting: inventory.category_name || "Inventory item",
-    detail: `Current stock: ${inventory.current_stock_level ?? 0} • Minimum: ${inventory.minimum_stock_level ?? 0}`,
-    href: `/inventory/${inventory.id}`,
-    badge: inventory.stock_status || "low stock",
-  }))
-  const reorderInventoryItems = (inventoriesNeedingReorder || []).slice(0, 4).map((inventory) => ({
+  const validReorderInventories = useMemo(
+    () =>
+      (inventoriesNeedingReorder || []).filter((inventory) => {
+        const reorderPoint = toStockNumber(inventory.reorder_point)
+        return reorderPoint > 0 && getCurrentStockLevel(inventory) <= reorderPoint
+      }),
+    [inventoriesNeedingReorder],
+  )
+  const reorderInventoryIdSet = useMemo(
+    () => new Set(validReorderInventories.map((inventory) => String(inventory.id))),
+    [validReorderInventories],
+  )
+  const lowStockInventoryItems = (lowStockInventories || [])
+    .filter((inventory) => !reorderInventoryIdSet.has(String(inventory.id)))
+    .slice(0, 4)
+    .map((inventory) => ({
+      id: inventory.id,
+      title: inventory.name,
+      imageUrl: inventory.display_image || inventory.product_variant_image_url,
+      supporting: inventory.category_name || "Inventory item",
+      detail: `Available stock: ${formatStockQuantity(getCurrentStockLevel(inventory))} • Minimum: ${formatStockQuantity(inventory.minimum_stock_level)}`,
+      href: `/inventory/${inventory.id}`,
+      badge: getLowStockBadge(inventory),
+    }))
+  const reorderInventoryItems = validReorderInventories.slice(0, 4).map((inventory) => ({
     id: inventory.id,
     title: inventory.name,
     imageUrl: inventory.display_image || inventory.product_variant_image_url,
     supporting: inventory.category_name || "Reorder required",
-    detail: `Reorder point: ${inventory.reorder_point ?? 0} • Suggested quantity: ${inventory.reorder_quantity ?? 0}`,
+    detail: `Available stock: ${formatStockQuantity(getCurrentStockLevel(inventory))} • Reorder point: ${formatStockQuantity(inventory.reorder_point)}`,
     href: `/inventory/${inventory.id}`,
-    badge: inventory.reorder_quantity ?? 0,
+    badge: toStockNumber(inventory.reorder_quantity) > 0 ? `Order ${formatStockQuantity(inventory.reorder_quantity)}` : "Needs order",
   }))
   const expiringInventoryItems = (expiringStockItems || []).slice(0, 4).map((item) => ({
     id: item.id,
@@ -156,6 +208,15 @@ export default function InventoryPage() {
     id: String(location.id),
     name: location.name,
   }))
+
+  if (loadingWorkspaceSetup) {
+    return (
+      <WorkspaceSetupLoadingCard
+        title="Loading inventory workspace"
+        description="Checking your active company and inventory setup state."
+      />
+    )
+  }
 
   if (!activeMembership) {
     return (
@@ -186,130 +247,7 @@ export default function InventoryPage() {
   }
 
   return (
-    <div className={cn("grid w-full gap-6 py-2", isOwner ? "lg:grid-cols-[290px_minmax(0,1fr)]" : "grid-cols-1")}>
-      {isOwner ? <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-        <Card className="border-gray-200 shadow-sm">
-          <CardHeader className="p-5 text-left text-inherit">
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
-              <Boxes className="h-3.5 w-3.5" />
-              Inventory setup
-            </div>
-            <CardTitle className="mt-3 text-xl">Build the operating structure before stock starts moving</CardTitle>
-            <CardDescription className="text-sm leading-6 text-gray-600">
-              The clean order is location structure, then categories, then the inventory items your staff will manage every day.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 p-5 pt-0">
-            <div>
-              <div className="mb-2 flex items-center justify-between text-xs font-medium uppercase tracking-wide text-gray-500">
-                <span>Inventory readiness</span>
-                <span>{completionPercentage}%</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-gray-100">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 transition-all duration-300"
-                  style={{ width: `${completionPercentage}%` }}
-                />
-              </div>
-            </div>
-
-            {nextInventoryStep && nextInventoryTab ? (
-              <button
-                type="button"
-                onClick={() => setActiveTab(nextInventoryTab)}
-                className="flex w-full items-center justify-between rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-              >
-                Continue with {nextInventoryStep.title}
-                <ArrowRight className="h-4 w-4" />
-              </button>
-            ) : (
-              <div className="rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-800">
-                Inventory foundations are in place. You can move forward into products, stock control, and POS execution.
-              </div>
-            )}
-
-            <div className="space-y-3">
-              {setupSteps.map((step, index) => {
-                const isActive = nextInventoryStep?.id === step.id
-                return (
-                  <button
-                    type="button"
-                    key={step.id}
-                    onClick={() =>
-                      setActiveTab(
-                        step.id === "locations" ? "locations" : step.id === "categories" ? "categories" : "inventories",
-                      )
-                    }
-                    className={cn(
-                      "block w-full rounded-2xl border p-4 text-left transition-colors",
-                      step.complete
-                        ? "border-green-200 bg-green-50"
-                        : isActive
-                          ? "border-blue-300 bg-blue-50"
-                          : "border-gray-200 bg-white hover:border-gray-300",
-                    )}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={cn(
-                          "mt-0.5 rounded-xl p-2",
-                          step.complete ? "bg-green-100 text-green-700" : isActive ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600",
-                        )}
-                      >
-                        {step.complete ? <CheckCircle2 className="h-4 w-4" /> : <step.icon className="h-4 w-4" />}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-gray-900">
-                          Step {index + 1}: {step.title}
-                        </p>
-                        <p className="mt-1 text-xs leading-5 text-gray-600">{step.description}</p>
-                      </div>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-gray-200 shadow-sm">
-          <CardHeader className="p-5 text-left text-inherit">
-            <CardTitle className="text-base">Dependency notes</CardTitle>
-            <CardDescription className="text-sm leading-6 text-gray-600">
-              Keep the setup smooth by following the order below.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 p-5 pt-0 text-sm text-gray-600">
-            <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
-              <p className="font-medium text-gray-900">Locations first</p>
-              <p className="mt-1">Categories can reference default locations, so define your structure before building category rules.</p>
-            </div>
-            <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
-              <p className="font-medium text-gray-900">Categories before inventory items</p>
-              <p className="mt-1">Inventory items should land inside a clear operating category so reorder and reporting stay consistent.</p>
-            </div>
-            {!readiness.teamComplete || !readiness.agentComplete ? (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-900">
-                <p className="font-medium">Workspace setup is still in progress</p>
-                <p className="mt-1 text-sm">
-                  You can continue inventory setup now, but complete staff and AI workspace setup in
-                  {" "}
-                  {nextRecommendedStage ? (
-                    <Link href={nextRecommendedStage.href} className="font-semibold underline underline-offset-2">
-                      {nextRecommendedStage.title.toLowerCase()}
-                    </Link>
-                  ) : (
-                    "the onboarding section"
-                  )}
-                  {" "}
-                  afterwards.
-                </p>
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
-      </aside> : null}
-
+    <div className="grid w-full grid-cols-1 gap-6 py-2">
       <main className="min-w-0 space-y-6">
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="border-b border-gray-100 p-6 text-left text-inherit">
@@ -319,7 +257,137 @@ export default function InventoryPage() {
               same rules, then create the inventory records your team will replenish, monitor, and sell against.
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-4">
+          <CardContent className="space-y-4 p-6">
+            <StructuralLocationScopeSelect
+              allowMultiSelect
+              className="max-w-sm"
+              id="inventory-page-structural-scope"
+              values={selectedStructuralLocationIds}
+              onValuesChange={setSelectedStructuralLocationIds}
+              description="Limit inventory setup metrics and listings to one structural location when you want to inspect a specific store."
+            />
+            {showSetupControls ? (
+              <div className="rounded-2xl border border-gray-200 bg-gray-50/80 p-4">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
+                      <Boxes className="h-3.5 w-3.5" />
+                      Inventory setup
+                    </div>
+                    <p className="mt-2 text-sm text-gray-600">
+                      Finish the remaining setup steps before daily stock operations become fully reliable.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setSetupGuideOpen((open) => !open)}
+                    className="w-full justify-between rounded-xl bg-white md:w-auto"
+                  >
+                    {setupGuideOpen ? "Hide setup guide" : "Show setup guide"}
+                    <ChevronDown className={cn("h-4 w-4 transition-transform", setupGuideOpen ? "rotate-180" : "")} />
+                  </Button>
+                </div>
+
+                {showSetupGuide ? (
+                  <div className="mt-4 grid gap-4 xl:grid-cols-[1.4fr_0.9fr]">
+                    <div className="space-y-3">
+                      {nextInventoryStep && nextInventoryTab ? (
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab(nextInventoryTab)}
+                          className="flex w-full items-center justify-between rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                        >
+                          Continue with {nextInventoryStep.title}
+                          <ArrowRight className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                      <div className="grid gap-3 md:grid-cols-3">
+                        {setupSteps.map((step, index) => {
+                          const isActive = nextInventoryStep?.id === step.id
+                          return (
+                            <button
+                              type="button"
+                              key={step.id}
+                              onClick={() =>
+                                setActiveTab(
+                                  step.id === "locations" ? "locations" : step.id === "categories" ? "categories" : "inventories",
+                                )
+                              }
+                              className={cn(
+                                "block rounded-2xl border p-4 text-left transition-colors",
+                                step.complete
+                                  ? "border-green-200 bg-green-50"
+                                  : isActive
+                                    ? "border-blue-300 bg-blue-50"
+                                    : "border-gray-200 bg-white hover:border-gray-300",
+                              )}
+                            >
+                              <div className="flex items-start gap-3">
+                                <div
+                                  className={cn(
+                                    "mt-0.5 rounded-xl p-2",
+                                    step.complete ? "bg-green-100 text-green-700" : isActive ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600",
+                                  )}
+                                >
+                                  {step.complete ? <CheckCircle2 className="h-4 w-4" /> : <step.icon className="h-4 w-4" />}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-semibold text-gray-900">
+                                    Step {index + 1}: {step.title}
+                                  </p>
+                                  <p className="mt-1 text-xs leading-5 text-gray-600">{step.description}</p>
+                                </div>
+                              </div>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4 text-sm text-gray-600">
+                      <p className="font-semibold text-gray-900">Dependency notes</p>
+                      <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                        <p className="font-medium text-gray-900">Locations first</p>
+                        <p className="mt-1">Categories can reference default locations, so define your structure before building category rules.</p>
+                      </div>
+                      <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                        <p className="font-medium text-gray-900">Categories before inventory items</p>
+                        <p className="mt-1">Inventory items should land inside a clear operating category so reorder and reporting stay consistent.</p>
+                      </div>
+                      {!readiness.teamComplete || !readiness.agentComplete ? (
+                        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-900">
+                          <p className="font-medium">Workspace setup is still in progress</p>
+                          <p className="mt-1 text-sm">
+                            You can continue inventory setup now, but complete staff and AI workspace setup in{" "}
+                            {nextRecommendedStage ? (
+                              <Link href={nextRecommendedStage.href} className="font-semibold underline underline-offset-2">
+                                {nextRecommendedStage.title.toLowerCase()}
+                              </Link>
+                            ) : (
+                              "the onboarding section"
+                            )}{" "}
+                            afterwards.
+                          </p>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+            {isOwner && loadingSummary ? (
+              <div className="rounded-2xl border border-gray-200 bg-gray-50/80 p-4">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <div className="h-5 w-40 animate-pulse rounded-full bg-gray-200" />
+                    <p className="mt-3 text-sm text-gray-600">Checking inventory setup status before showing setup guidance.</p>
+                  </div>
+                  <div className="h-10 w-36 animate-pulse rounded-xl bg-gray-200" />
+                </div>
+              </div>
+            ) : null}
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Locations</p>
@@ -356,6 +424,7 @@ export default function InventoryPage() {
                 {lowStockCount > 0 ? `${lowStockCount} items currently need attention.` : "No low-stock alerts at the moment."}
               </p>
             </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -390,8 +459,8 @@ export default function InventoryPage() {
             <section className="grid gap-4 xl:grid-cols-3">
               <InventoryAttentionCard
                 title="Low-stock inventory items"
-                description="These inventory items need a replenishment review before the stock situation becomes disruptive."
-                emptyMessage={loadingLowStockInventories ? "Loading low-stock inventory items..." : "No inventory item is currently flagged as low stock."}
+                description="Inventory items below minimum that are not already in the reorder queue."
+                emptyMessage={loadingLowStockInventories ? "Loading low-stock inventory items..." : "No separate low-stock watchlist item is currently pending."}
                 items={lowStockInventoryItems}
               />
               <InventoryAttentionCard
@@ -520,14 +589,24 @@ export default function InventoryPage() {
                   ) : undefined
                 }
               >
-                <InventoryView refetchData={refetchData} setRefetchData={setRefetchData} />
+                <InventoryView
+                  refetchData={refetchData}
+                  setRefetchData={setRefetchData}
+                  selectedLocationIds={selectedStructuralLocationIds}
+                  onSelectedLocationIdsChange={setSelectedStructuralLocationIds}
+                />
               </OperationalStepSection>
             ) : null}
           </TabsContent>
 
           <TabsContent value="insights" className="mt-0 bg-transparent">
             {loadedTabs.insights ? (
-              <InventoryOperationalInsights inventoryOptions={inventoryOptions} locationOptions={locationOptions} locations={locations || []} />
+              <InventoryOperationalInsights
+                inventoryOptions={inventoryOptions}
+                locationOptions={locationOptions}
+                locations={locations || []}
+                selectedStructuralLocationIds={selectedStructuralLocationIds}
+              />
             ) : null}
           </TabsContent>
         </Tabs>

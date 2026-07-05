@@ -1,9 +1,10 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { toast } from "react-toastify"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import {
   useApprovePriceChangeMutation,
   useExportPriceHistoryCsvMutation,
@@ -42,6 +43,7 @@ export default function ProductPriceGovernanceCard({
   const [exportPriceHistory, { isLoading: isExportingPriceHistory }] = useExportPriceHistoryCsvMutation()
   const [approvePriceChange, { isLoading: isApproving }] = useApprovePriceChangeMutation()
   const [rejectPriceChange, { isLoading: isRejecting }] = useRejectPriceChangeMutation()
+  const [rejectionReasons, setRejectionReasons] = useState<Record<string, string>>({})
 
   const variantIds = useMemo(() => new Set(variants.map((variant) => variant.id)), [variants])
 
@@ -102,10 +104,15 @@ export default function ProductPriceGovernanceCard({
   }
 
   const handleReject = async (id: string) => {
-    const reason = window.prompt("Reason for rejection") || ""
+    const reason = rejectionReasons[id]?.trim() || ""
     try {
       await rejectPriceChange({ id, reason }).unwrap()
       toast.success("Price change rejected.")
+      setRejectionReasons((current) => {
+        const next = { ...current }
+        delete next[id]
+        return next
+      })
       await Promise.all([refetchHistory(), refetchPending()])
     } catch {
       toast.error("Failed to reject price change.")
@@ -197,7 +204,18 @@ export default function ProductPriceGovernanceCard({
                     <p className="mt-2 text-sm text-gray-600">
                       {formatPrice(entry.old_price, currencyCode)} → {formatPrice(entry.new_price, currencyCode)}
                     </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+                      <Input
+                        value={rejectionReasons[entry.id] || ""}
+                        onChange={(event) =>
+                          setRejectionReasons((current) => ({
+                            ...current,
+                            [entry.id]: event.target.value,
+                          }))
+                        }
+                        placeholder="Optional rejection reason"
+                        className="h-9 rounded-xl border-gray-200 bg-gray-50 text-sm shadow-none"
+                      />
                       <Button size="sm" onClick={() => handleApprove(entry.id)} disabled={isApproving}>
                         Approve
                       </Button>

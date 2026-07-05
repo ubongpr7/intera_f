@@ -4,7 +4,6 @@ export interface CompanyDataInterface {
   id: number | string;
   name: string;
   description?: string | null;
-  notes?: string | null;
   website?: string | null;
   phone?: string | null;
   email?: string | null;
@@ -36,7 +35,7 @@ export interface CompanyAddressInterface extends Address {
   updated_at?: string;
 }
 
-export interface CompanyAddressDataInterface extends CompanyAddressInterface {}
+export type CompanyAddressDataInterface = CompanyAddressInterface;
 
 export interface ContactPersonInterface {
   id: number | string;

@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { formatMachineLabel } from "@/lib/displayLabels"
 import {
   useCreateReservationMutation,
   useFulfillReservationMutation,
@@ -60,6 +61,10 @@ export default function InventoryReservationsCard({
   const [notes, setNotes] = useState("")
 
   const actionableLocations = useMemo(() => locations.filter((location) => !location.structural), [locations])
+  const selectedLocation = useMemo(
+    () => actionableLocations.find((location) => String(location.id) === locationId),
+    [actionableLocations, locationId],
+  )
   const activeReservations = reservations.filter((reservation) => reservation.status !== "fulfilled" && reservation.status !== "released")
 
   const handleMutationComplete = async () => {
@@ -79,6 +84,9 @@ export default function InventoryReservationsCard({
       await createReservation({
         inventory_item_id: inventoryItemId,
         location_id: locationId,
+        structural_location_id: selectedLocation?.structural_location_id
+          ? String(selectedLocation.structural_location_id)
+          : undefined,
         quantity,
         external_order_type: externalOrderType,
         external_order_id: externalOrderId,
@@ -143,10 +151,16 @@ export default function InventoryReservationsCard({
                     {actionableLocations.map((location) => (
                       <SelectItem key={String(location.id)} value={String(location.id)}>
                         {location.name}
+                        {location.structural_location_name ? ` • ${location.structural_location_name}` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {selectedLocation?.structural_location_name ? (
+                  <p className="text-xs text-gray-500">
+                    This reservation will stay inside <span className="font-medium text-gray-700">{selectedLocation.structural_location_name}</span>.
+                  </p>
+                ) : null}
               </div>
 
               <div className="space-y-2">
@@ -234,7 +248,7 @@ export default function InventoryReservationsCard({
                             {reservation.location_name || "Unknown location"} • {reservation.inventory_item_name || "Inventory item reservation"}
                           </p>
                           <p className="mt-2 text-xs uppercase tracking-wide text-gray-500">
-                            Status: {reservation.status} • Reserved: {reservation.reserved_quantity} • Remaining: {remaining}
+                            Status: {formatMachineLabel(reservation.status)} • Reserved: {reservation.reserved_quantity} • Remaining: {remaining}
                           </p>
                         </div>
                         <div className="flex flex-wrap gap-2">

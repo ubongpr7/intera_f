@@ -7,6 +7,9 @@ import type {
   PaymentRecord,
   SubscriptionAnalyticsResponse,
   SubscriptionRecord,
+  EntitlementSnapshot,
+  StartTrialResponse,
+  SubscriptionPlanRecord,
 } from "./paymentTypes"
 
 export const paymentApiSlice = apiSlice.injectEndpoints({
@@ -80,9 +83,9 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
     }),
 
     // Subscription Plans
-    getSubscriptionPlans: builder.query({
-      query: (params = {}) => ({
-        url: `subscriptions/?${new URLSearchParams(params).toString()}`,
+    getSubscriptionPlans: builder.query<SubscriptionPlanRecord[], Record<string, string> | void>({
+      query: (params) => ({
+        url: `subscriptions/?${new URLSearchParams(params ?? {}).toString()}`,
         service: "payment",
       }),
     }),
@@ -251,6 +254,33 @@ getFeatures: builder.query({
       }),
     }),
 
+    getCurrentEntitlements: builder.query<EntitlementSnapshot, void>({
+      query: () => ({
+        url: "subscriptions-to-plans/entitlements/?application=intera-ims",
+        service: "payment",
+      }),
+      keepUnusedDataFor: 60,
+    }),
+
+    startSubscriptionTrial: builder.mutation<StartTrialResponse, { plan_slug: string; application?: string }>({
+      query: (body) => ({
+        url: "subscriptions-to-plans/start-trial/",
+        method: "POST",
+        body,
+        service: "payment",
+      }),
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled
+          dispatch(
+            paymentApiSlice.util.updateQueryData("getCurrentEntitlements", undefined, () => data.entitlements),
+          )
+        } catch {
+          // The page-level mutation handler owns user-facing error feedback.
+        }
+      },
+    }),
+
   }),
 })
 
@@ -297,4 +327,6 @@ export const {
   useAddFeatureToPlanMutation,
   useRemoveFeatureFromPlanMutation,
   useGetPlanFeaturesQuery,
+  useGetCurrentEntitlementsQuery,
+  useStartSubscriptionTrialMutation,
 } = paymentApiSlice

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import {
@@ -28,17 +28,25 @@ const formSchema = z.object({
   name: z.string().min(1, "Plan name is required"),
   description: z.string().optional(),
   price: z.number().min(0, "Price must be positive"),
-  billing_cycle: z.enum(["monthly", "yearly", "weekly", "daily"]),
+  billing_cycle: z.enum(["MONTHLY", "QUARTERLY", "YEARLY", "ONE_TIME"]),
   trial_days: z.number().min(0).optional(),
   is_active: z.boolean().default(true),
 })
 
 const billingCycleOptions = [
-  { value: "daily", label: "Daily" },
-  { value: "weekly", label: "Weekly" },
-  { value: "monthly", label: "Monthly" },
-  { value: "yearly", label: "Yearly" },
+  { value: "MONTHLY", label: "Monthly" },
+  { value: "QUARTERLY", label: "Quarterly" },
+  { value: "YEARLY", label: "Yearly" },
+  { value: "ONE_TIME", label: "One time" },
 ]
+
+type BillingCycle = z.infer<typeof formSchema>["billing_cycle"]
+const normalizeBillingCycle = (value: unknown): BillingCycle => {
+  const normalized = String(value ?? "").toUpperCase()
+  return ["MONTHLY", "QUARTERLY", "YEARLY", "ONE_TIME"].includes(normalized)
+    ? (normalized as BillingCycle)
+    : "MONTHLY"
+}
 
 interface SubscriptionPlanDialogProps {
   open: boolean
@@ -57,11 +65,12 @@ export function SubscriptionPlanDialog({ open, onOpenChange, plan, onSuccess }: 
       name: "",
       description: "",
       price: 0,
-      billing_cycle: "monthly",
+      billing_cycle: "MONTHLY",
       trial_days: 0,
       is_active: true,
     },
   })
+  const billingCycle = useWatch({ control: form.control, name: "billing_cycle" })
 
   useEffect(() => {
     if (plan) {
@@ -69,7 +78,7 @@ export function SubscriptionPlanDialog({ open, onOpenChange, plan, onSuccess }: 
         name: plan.name,
         description: plan.description || "",
         price: Number.parseFloat(plan.price),
-        billing_cycle: plan.billing_cycle,
+        billing_cycle: normalizeBillingCycle(plan.billing_cycle),
         trial_days: plan.trial_days || 0,
         is_active: plan.is_active,
       })
@@ -78,7 +87,7 @@ export function SubscriptionPlanDialog({ open, onOpenChange, plan, onSuccess }: 
         name: "",
         description: "",
         price: 0,
-        billing_cycle: "monthly",
+        billing_cycle: "MONTHLY",
         trial_days: 0,
         is_active: true,
       })
@@ -151,7 +160,7 @@ export function SubscriptionPlanDialog({ open, onOpenChange, plan, onSuccess }: 
                 <label className="text-sm font-medium">Billing Cycle</label>
                 <Select
                   options={billingCycleOptions}
-                  value={billingCycleOptions.find((option) => option.value === form.watch("billing_cycle"))}
+                  value={billingCycleOptions.find((option) => option.value === billingCycle)}
                   onChange={(selectedOption) => form.setValue("billing_cycle", selectedOption?.value as any)}
                   placeholder="Select billing cycle..."
                   className="react-select-container"

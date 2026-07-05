@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useMemo, useState } from "react"
 import {
   Activity,
   Boxes,
@@ -11,10 +12,15 @@ import {
   Truck,
 } from "lucide-react"
 import StatTile from "@/components/dashboard/StatTile"
+import AuditRealtimeCommandCenter from "@/components/realtime-dashboard/AuditRealtimeCommandCenter"
+import LiveProductActivity from "@/components/realtime-dashboard/LiveProductActivity"
+import LiveReceivingActivity from "@/components/realtime-dashboard/LiveReceivingActivity"
+import { useAuditRealtimeDashboard } from "@/components/realtime-dashboard/useAuditRealtimeDashboard"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useWorkspaceSetupProgress } from "@/components/onboarding/WorkspaceSetupShell"
+import StructuralLocationScopeSelect from "@/components/stock/StructuralLocationScopeSelect"
 import { useGetInventoryAnalyticsQuery } from "@/redux/features/inventory/inventoryAPiSlice"
 import { useGetPurchaseOrderAnalyticsQuery } from "@/redux/features/orders/orderAPISlice"
 import { useGetCurrentSessionQuery, useGetDailySalesQuery, useGetHeldOrdersQuery, useGetSessionCloseoutSummaryQuery } from "@/redux/features/pos/posAPISlice"
@@ -23,6 +29,8 @@ import { useGetDashboardStatsQuery } from "@/redux/features/product/productAPISl
 import { useGetLowStockItemsQuery, useGetStockAnalyticsQuery } from "@/redux/features/stock/stockAPISlice"
 import { formatCurrencyCompact } from "@/lib/currency-utils"
 import { hasPermission } from "@/lib/permissionsGuard"
+import { buildStructuralLocationScopeParams } from "@/lib/structuralLocationScope"
+import { useStructuralLocationScope } from "@/hooks/useStructuralLocationScope"
 
 const formatDateTime = (value?: string | null) => {
   if (!value) {
@@ -78,40 +86,47 @@ const PermissionSectionCard = ({
 )
 
 export default function RealtimeDashboardPage() {
+  const realtimeDashboard = useAuditRealtimeDashboard()
   const { activeMembership } = useWorkspaceSetupProgress()
+  const [selectedStructuralLocationIds, setSelectedStructuralLocationIds] = useStructuralLocationScope()
+  const structuralScopeParams = useMemo(
+    () => buildStructuralLocationScopeParams(selectedStructuralLocationIds),
+    [selectedStructuralLocationIds],
+  )
   const canReadInventory = hasPermission("read_inventory")
   const canViewInventoryReports = hasPermission("view_inventory_reports")
   const canReadPos = hasPermission("read_pos")
   const canViewPosReports = hasPermission("view_pos_reports")
   const canReadPurchaseOrders = hasPermission("read_purchase_order")
   const canReadProductDashboard = canReadInventory || canViewInventoryReports
+  const canViewAuditTrail = hasPermission("view_audit_trail")
 
   const { data: productStats } = useGetDashboardStatsQuery(undefined, {
     skip: !canReadProductDashboard,
   })
-  const { data: inventoryAnalytics } = useGetInventoryAnalyticsQuery(undefined, {
+  const { data: inventoryAnalytics } = useGetInventoryAnalyticsQuery(structuralScopeParams, {
     skip: !canReadInventory && !canViewInventoryReports,
   })
-  const { data: stockAnalytics } = useGetStockAnalyticsQuery(undefined, {
+  const { data: stockAnalytics } = useGetStockAnalyticsQuery(structuralScopeParams, {
     skip: !canReadInventory && !canViewInventoryReports,
   })
-  const { data: lowStockItems = [] } = useGetLowStockItemsQuery(undefined, {
+  const { data: lowStockItems = [] } = useGetLowStockItemsQuery(structuralScopeParams, {
     skip: !canReadInventory && !canViewInventoryReports,
   })
   const { data: currentSession } = useGetCurrentSessionQuery(undefined, {
     skip: !canReadPos,
   })
-  const { data: heldOrders = [] } = useGetHeldOrdersQuery(undefined, {
+  const { data: heldOrders = [] } = useGetHeldOrdersQuery(structuralScopeParams, {
     skip: !canReadPos,
   })
-  const { data: dailyPosSales } = useGetDailySalesQuery(undefined, {
+  const { data: dailyPosSales } = useGetDailySalesQuery(structuralScopeParams, {
     skip: !canReadPos || !canViewPosReports,
   })
   const { data: sessionCloseout } = useGetSessionCloseoutSummaryQuery(
     { sessionId: currentSession?.id || "" },
     { skip: !canReadPos || !currentSession?.id },
   )
-  const { data: purchaseAnalytics } = useGetPurchaseOrderAnalyticsQuery(undefined, {
+  const { data: purchaseAnalytics } = useGetPurchaseOrderAnalyticsQuery(structuralScopeParams, {
     skip: !canReadPurchaseOrders,
   })
 
@@ -134,6 +149,14 @@ export default function RealtimeDashboardPage() {
 
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-6 px-4 py-6 lg:px-8">
+      <StructuralLocationScopeSelect
+        allowMultiSelect
+        className="max-w-sm"
+        id="realtime-dashboard-structural-scope"
+        values={selectedStructuralLocationIds}
+        onValuesChange={setSelectedStructuralLocationIds}
+        description="Focus the live monitor on one structural location when you want store-level stock and POS pressure."
+      />
       <Card className="overflow-hidden border-gray-200 shadow-sm">
         <CardContent className="p-0">
           <div className="border-b border-gray-100 bg-gray-100/50 px-6 py-6">
@@ -231,6 +254,20 @@ export default function RealtimeDashboardPage() {
           </div>
         </CardContent>
       </Card>
+
+      {canViewAuditTrail ? (
+        <div className="space-y-6">
+          <AuditRealtimeCommandCenter currencyCode={currencyCode} {...realtimeDashboard} />
+          <LiveProductActivity snapshot={realtimeDashboard.snapshot} socketState={realtimeDashboard.socketState} isLoading={realtimeDashboard.isLoading} />
+          <LiveReceivingActivity snapshot={realtimeDashboard.snapshot} socketState={realtimeDashboard.socketState} isLoading={realtimeDashboard.isLoading} />
+        </div>
+      ) : (
+        <PermissionSectionCard
+          title="Realtime product movement"
+          description="Paid POS orders and purchase-order receiving events stream into live audit boards with seller, terminal, warehouse, and location context."
+          requiredPermission="view_audit_trail"
+        />
+      )}
 
       <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         {canReadInventory || canViewInventoryReports ? (

@@ -13,6 +13,7 @@ import UserPermissionForm from "../permissions/customPermission";
 import UserGroupManager from "../permissions/manytomany";
 import CustomUpdateForm from "../common/updateForm";
 import RoleManager from "./roleManager";
+import StaffAccessSummary from "./StaffAccessSummary";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StaffManagementRefetchProp } from "./roles";
@@ -33,6 +34,7 @@ import {
 import { useUpdateUserMutation } from "../../redux/features/users/userApiSlice";
 import { RoleAssignment } from "@/redux/features/management/managementTypes";
 import { useGetUserCompaniesQuery } from "@/redux/features/auth/authApiSlice";
+import { useSubscriptionQuota } from "@/hooks/useSubscriptionQuota";
 
 type StaffRow = UserData & {
   rowType: "member" | "invitation";
@@ -148,20 +150,51 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
         }
         return true;
       })
-      .map((member) => ({
-      id: Number(member.user?.id ?? member.id),
-      first_name: member.user?.first_name ?? "",
-      last_name: member.user?.last_name ?? "",
-      email: member.user?.email ?? "",
-      phone: member.user?.phone ?? null,
-      is_verified: true,
-      is_staff: false,
-      date_joined: new Date().toISOString(),
-      password: "",
-      roles: [],
-      rowType: "member",
-      inviteStatus: "active",
-    }));
+      .map((member) => {
+        const rawMember = member as typeof member & {
+          start_date?: string;
+          end_date?: string | null;
+          is_active?: boolean;
+          assigned_at?: string;
+          assigned_by?: { id?: number | string } | number | string | null;
+          profile?: string;
+        };
+        const assignedBy =
+          typeof rawMember.assigned_by === "object" && rawMember.assigned_by !== null
+            ? rawMember.assigned_by.id
+            : rawMember.assigned_by;
+        const roleAssignment: RoleAssignment[] = member.role?.id
+          ? [
+              {
+                id: Number(member.id),
+                user: `${member.user?.id ?? ""}`,
+                role_name: member.role.name ?? "Assigned role",
+                role: `${member.role.id}`,
+                start_date: rawMember.start_date ?? rawMember.assigned_at ?? new Date().toISOString(),
+                end_date: rawMember.end_date ?? "",
+                is_active: rawMember.is_active ?? true,
+                assigned_by: Number(assignedBy ?? 0),
+                assigned_at: rawMember.assigned_at ?? new Date().toISOString(),
+                profile: rawMember.profile ?? activeProfileId,
+              },
+            ]
+          : [];
+
+        return {
+          id: Number(member.user?.id ?? member.id),
+          first_name: member.user?.first_name ?? "",
+          last_name: member.user?.last_name ?? "",
+          email: member.user?.email ?? "",
+          phone: member.user?.phone ?? null,
+          is_verified: true,
+          is_staff: false,
+          date_joined: new Date().toISOString(),
+          password: "",
+          roles: roleAssignment,
+          rowType: "member",
+          inviteStatus: "active",
+        };
+      });
 
     const inviteRows: StaffRow[] = (pendingInvitations || []).map((invite, idx) => ({
       id: Number(`${invite.id}`.replace(/\D/g, "").slice(0, 9) || idx + 1),
@@ -180,6 +213,7 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
 
     return [...activeRows, ...inviteRows];
   }, [activeProfileId, companyMemberships?.profiles, members, pendingInvitations]);
+  const staffQuota = useSubscriptionQuota("staff-users", tableData.length + 1);
 
   const handleUpdatePermissionSubmit = async (createdData: { permissions: string[] }) => {
     await updatePermission({ id: userId, data: createdData }).unwrap();
@@ -321,11 +355,17 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
         isLoading={isLoading}
         onRowClick={handleRowClick}
         actionButtons={actionButtons}
-        searchableFields={["first_name", "email", "phone"]}
-        filterableFields={[]}
-        sortableFields={["first_name", "email", "phone"]}
+        searchableFields={["first_name", "last_name", "email", "phone", "inviteStatus"]}
+        filterableFields={["rowType", "inviteStatus", "is_verified"]}
+        sortableFields={["first_name", "last_name", "email", "phone", "inviteStatus"]}
         title="Staff"
-        onClose={() => setIsInviteOpen(true)}
+        onClose={() => {
+          if (!staffQuota.canCreate) {
+            toast.error(staffQuota.message);
+            return;
+          }
+          setIsInviteOpen(true);
+        }}
       />
 
       <div className={`fixed inset-0 z-50 items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm ${isInviteOpen ? "flex" : "hidden"}`}>
@@ -370,7 +410,7 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
                 />
                 <Button
                   type="submit"
-                  disabled={singleInviteLoading}
+                  disabled={singleInviteLoading || !staffQuota.canCreate}
                   className="rounded-2xl"
                 >
                   {singleInviteLoading ? "Sending..." : "Send Invite"}
@@ -404,7 +444,7 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
                 </div>
                 <Button
                   type="submit"
-                  disabled={bulkInviteLoading || !bulkFile}
+                  disabled={bulkInviteLoading || !bulkFile || !staffQuota.canCreate}
                   variant="secondary"
                   className="rounded-2xl"
                 >
@@ -419,6 +459,18 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
       {openTabs ? (
         <VerticalTabs
           items={[
+            {
+              id: "access-summary",
+              label: "Access Summary",
+              content: (
+                <StaffAccessSummary
+                  userId={userId}
+                  user={userDetail}
+                  permissionsData={permissionsData}
+                  permissionLoading={permissionDataLoading}
+                />
+              ),
+            },
             {
               id: "activities",
               label: "Staff Activities",

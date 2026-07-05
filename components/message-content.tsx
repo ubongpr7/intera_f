@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Copy, Check, Download } from "lucide-react"
+import { toast } from "react-toastify"
 
 interface MessageContentProps {
   content: string
@@ -288,8 +289,8 @@ function CodeBlock({ content, language }: { content: string; language?: string }
       await navigator.clipboard.writeText(content)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
-      console.error("Failed to copy code:", err)
+    } catch {
+      toast.error("Failed to copy code.")
     }
   }
 

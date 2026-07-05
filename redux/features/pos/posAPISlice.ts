@@ -1,4 +1,5 @@
 import { apiSlice } from "../../services/apiSlice"
+import type { StructuralLocationScopeParams } from "@/lib/structuralLocationScope"
 import type {
   DecimalValue,
   POSAddOrderItemPayload,
@@ -27,6 +28,10 @@ import type {
 
 const pos_api = "pos_api"
 const service = "pos"
+type POSStructuralScopeParams = StructuralLocationScopeParams
+type POSDailySalesQueryParams = POSStructuralScopeParams & {
+  date?: string
+}
 
 const unsupportedEndpoint = (detail: string) => async () => ({
   error: {
@@ -186,9 +191,10 @@ export const posAPISlice = apiSlice.injectEndpoints({
         service,
       }),
     }),
-    getHeldOrders: builder.query<POSHoldOrder[], void | string>({
-      query: () => ({
+    getHeldOrders: builder.query<POSHoldOrder[], POSStructuralScopeParams | void>({
+      query: (params) => ({
         url: `/${pos_api}/orders/held_orders/`,
+        params: params || undefined,
         service,
       }),
     }),
@@ -307,10 +313,13 @@ export const posAPISlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getDailySales: builder.query<POSDailySalesAnalytics, string | void>({
-      query: (date) => ({
+    getDailySales: builder.query<POSDailySalesAnalytics, POSDailySalesQueryParams | string | void>({
+      query: (arg) => ({
         url: `/${pos_api}/analytics/daily-sales/`,
-        params: date ? { date } : undefined,
+        params:
+          typeof arg === "string"
+            ? { date: arg }
+            : arg || undefined,
         service,
       }),
     }),

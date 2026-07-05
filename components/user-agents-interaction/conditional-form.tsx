@@ -21,6 +21,7 @@ export function ConditionalFormHandler({ data, onResponse, compact = false, disa
 
   // Initialize form data with default values
   useEffect(() => {
+    let cancelled = false
     const initialData: Record<string, any> = {}
     data.fields.forEach((field: any) => {
       if (field.type === 'checkbox' || field.type === 'boolean') {
@@ -29,35 +30,47 @@ export function ConditionalFormHandler({ data, onResponse, compact = false, disa
         initialData[field.name] = ''
       }
     })
-    setFormData(initialData)
     
     // Set initial visible fields (first step fields)
     const initialVisible = data.fields
       .filter((field: any) => !data.conditions.some((cond: any) => cond.show.includes(field.name)))
       .map((field: any) => field.name)
-    setVisibleFields(initialVisible)
+    const timeoutId = window.setTimeout(() => {
+      if (cancelled) return
+      setFormData(initialData)
+      setVisibleFields(initialVisible)
+    }, 0)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timeoutId)
+    }
   }, [data])
 
   // Update visible fields when form data changes
   useEffect(() => {
-    let newVisibleFields = [...visibleFields]
-    
-    // Process conditions to determine next steps
+    const conditionalFieldNames = new Set<string>()
+
     data.conditions.forEach((condition: any) => {
       const fieldName = condition.if.field
       const expectedValue = condition.if.equals
       
       if (formData[fieldName] === expectedValue) {
-        // Add fields to show
         condition.show.forEach((field: string) => {
-          if (!newVisibleFields.includes(field)) {
-            newVisibleFields.push(field)
-          }
+          conditionalFieldNames.add(field)
         })
       }
     })
-    
-    setVisibleFields(newVisibleFields)
+
+    const timeoutId = window.setTimeout(() => {
+      setVisibleFields((current) => {
+        const nextFields = Array.from(new Set([...current, ...conditionalFieldNames]))
+        const hasSameFields =
+          current.length === nextFields.length && current.every((field, index) => field === nextFields[index])
+
+        return hasSameFields ? current : nextFields
+      })
+    }, 0)
+    return () => window.clearTimeout(timeoutId)
   }, [formData, data.conditions])
 
   const handleChange = (fieldName: string, value: any) => {

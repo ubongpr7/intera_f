@@ -3,16 +3,22 @@
 import { useGetDashboardBulkTaskStatusQuery } from '@/redux/features/dashboard/dashboardApiSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckSquare } from 'lucide-react';
-import LoadingAnimation from '../common/LoadingAnimation';
 import { BulkTask } from '../interfaces/dashboard';
+import { QueryStateBoundary } from '../common/QueryStateBoundary';
+import { formatMachineLabel } from '@/lib/displayLabels';
 
 const BulkTaskStatus = () => {
-  const { data, error, isLoading } = useGetDashboardBulkTaskStatusQuery('');
-
-  if (isLoading) return <div className="h-full flex justify-center items-center"><LoadingAnimation /></div>;
-  if (error) return <div>Error loading bulk task status</div>;
+  const { data, error, isLoading, isFetching, refetch } = useGetDashboardBulkTaskStatusQuery('');
 
   return (
+    <QueryStateBoundary
+      isLoading={isLoading}
+      isFetching={isFetching}
+      error={error}
+      onRetry={refetch}
+      loadingText="Loading bulk task status..."
+      errorTitle="Unable to load bulk task status"
+    >
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">Bulk Task Status</CardTitle>
@@ -24,7 +30,7 @@ const BulkTaskStatus = () => {
             {data.map((task: BulkTask) => (
               <li key={task.task_id} className="py-3">
                 <p className="text-sm font-medium">{task.task_id}</p>
-                <p className="text-sm text-gray-500">Status: {task.status}</p>
+                <p className="text-sm text-gray-500">Status: {formatMachineLabel(task.status)}</p>
               </li>
             ))}
           </ul>
@@ -33,6 +39,7 @@ const BulkTaskStatus = () => {
         )}
       </CardContent>
     </Card>
+    </QueryStateBoundary>
   );
 };
 

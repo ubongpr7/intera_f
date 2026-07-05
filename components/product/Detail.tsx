@@ -6,6 +6,7 @@ import { useUpdateProductMutation } from '../../redux/features/product/productAP
 import { useGetUnitsQuery } from '../../redux/features/common/typeOF';
 import LoadingAnimation from '../common/LoadingAnimation';
 import { ProductFormKeys } from './selectOptions';
+import { RecordNotFoundCard } from '../common/RecordNotFoundCard';
 
 export default function ProductDetail({ id, }: { id: string }) {
   const { data: product, isLoading, refetch } = useGetProductQuery(id);
@@ -50,12 +51,44 @@ const  selectOptions = {
   <LoadingAnimation text="Loading..." ringColor="#3b82f6" />
   </div>
   </div>;
-  if (!product) return <div>Product not found</div>;
+  if (!product) return <RecordNotFoundCard title="Product not found" description="This product may have been deleted, archived, or is not available in the current workspace." />;
 
   
   return (
     <DetailCard 
       interfaceKeys={ProductFormKeys}
+      displayFields={[
+        'display_image',
+        'description',
+        'short_description',
+        'category',
+        'pos_category',
+        'base_price',
+        'cost_price',
+        'unit',
+        'weight',
+        'dimensions',
+        'tax_rate',
+        'tax_inclusive',
+        'allow_discount',
+        'max_discount_percent',
+        'quick_sale',
+        'is_template',
+        'is_active',
+        'is_featured',
+        'track_stock',
+        'allow_backorder',
+        'low_stock_threshold',
+        'variant_count',
+        'total_stock',
+        'profit_margin',
+        'pos_ready',
+        'average_cost',
+        'low_stock_variants',
+        'out_of_stock_variants',
+        'created_at',
+        'updated_at',
+      ]}
     
       data={productData}
       notEditableFields={['id', 'created_at','updated_at',]}

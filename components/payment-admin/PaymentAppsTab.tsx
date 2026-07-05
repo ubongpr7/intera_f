@@ -10,6 +10,9 @@ import { PaymentAppDialog } from "./PaymentAppDialog"
 import { useGetPaymentAppsQuery, useDeletePaymentAppMutation } from "@/redux/features/payment/paymentAPISlice"
 import { toast } from "react-toastify"
 import type { ColumnDef } from "@tanstack/react-table"
+import { extractErrorMessage } from "@/lib/utils"
+import { confirmAction } from "@/components/common/confirmAction"
+import { QueryStateBoundary } from "@/components/common/QueryStateBoundary"
 
 interface PaymentApp {
   id: string
@@ -28,24 +31,26 @@ export function PaymentAppsTab() {
   const { data: apps = [], isLoading, error, refetch } = useGetPaymentAppsQuery({})
   const [deleteApp] = useDeletePaymentAppMutation()
 
-  console.log("[v0] PaymentAppsTab - apps data:", apps)
-  console.log("[v0] PaymentAppsTab - isLoading:", isLoading)
-  console.log("[v0] PaymentAppsTab - error:", error)
-
   const handleEdit = (app: PaymentApp) => {
     setEditingApp(app)
     setIsDialogOpen(true)
   }
 
   const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this payment app?")) {
-      try {
-        await deleteApp(id).unwrap()
-        toast.success("Payment app deleted successfully")
-        refetch()
-      } catch (error) {
-        toast.error("Failed to delete payment app")
-      }
+    const confirmed = await confirmAction({
+      title: "Delete payment app?",
+      description: "This removes the payment app configuration from the workspace.",
+      confirmText: "Delete app",
+      destructive: true,
+    })
+    if (!confirmed) return
+
+    try {
+      await deleteApp(id).unwrap()
+      toast.success("Payment app deleted successfully")
+      refetch()
+    } catch (error) {
+      toast.error(extractErrorMessage(error, ["detail"]) || "Failed to delete payment app")
     }
   }
 
@@ -102,20 +107,14 @@ export function PaymentAppsTab() {
           </Button>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Error Loading Apps</CardTitle>
-            <CardDescription>Failed to load payment apps. Please check your backend connection.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-red-500">
-              Error: {(error as any)?.message || (error as any)?.data?.message || "Unknown error occurred"}
-            </p>
-            <Button onClick={refetch} className="mt-4">
-              Retry
-            </Button>
-          </CardContent>
-        </Card>
+        <QueryStateBoundary
+          error={error}
+          onRetry={refetch}
+          errorTitle="Unable to load payment apps"
+          errorKeys={["detail", "message", "error"]}
+        >
+          <div />
+        </QueryStateBoundary>
 
         <PaymentAppDialog
           open={isDialogOpen}

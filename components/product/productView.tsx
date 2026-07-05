@@ -2,9 +2,9 @@
 import { useState } from 'react';
 
 import { useRouter } from 'nextjs-toploader/app';
-import { Column, DataTable,ActionButton} from "../common/DataTable/DataTable";
+import { Column, DataTable,ActionButton, GeneralButton } from "../common/DataTable/DataTable";
 import type { BulkTaskStatus, ProductData } from "@/redux/features/product/productTypes";
-import { useGetProductDataQuery, useCreateProductMutation,useDeleteProductMutation,useRemoveTemplateModeMutation, useListBulkTasksQuery, useRetryBulkTaskMutation } from "@/redux/features/product/productAPISlice";
+import { useGetProductDataQuery, useCreateProductMutation,useDeleteProductMutation,useBulkDeleteProductsMutation,useRemoveTemplateModeMutation, useListBulkTasksQuery, useRetryBulkTaskMutation } from "@/redux/features/product/productAPISlice";
 import CustomCreateCard from '../common/createCard';
 import { ProductFormKeys, defaultValues } from './selectOptions';
 import { useGetUnitsQuery } from "@/redux/features/common/typeOF";
@@ -12,9 +12,12 @@ import { useGetProductCategoriesQuery } from "@/redux/features/product/productAP
 import { useResearchBulkTaskPricesMutation } from "@/redux/features/agents/agentControlApiSlice";
 import {AIBulkCreateModal} from './AIBulkCreateModal';
 import { TableImageHover } from '../common/table-image-render';
-import { Trash2, Copy, ToggleLeftIcon, Brain, CheckCircle, Download, RefreshCw, Search, XCircle } from "lucide-react"
+import { Trash2, Copy, ToggleLeftIcon, Brain, CheckCircle, Download, RefreshCw, Search, XCircle, ArrowRight } from "lucide-react"
 import { toast } from 'react-toastify';
 import { getCurrencyCodeForProfile, getCurrencySymbolForProfile } from '@/lib/currency-utils';
+import { extractErrorMessage } from '@/lib/utils';
+import { confirmAction } from '../common/confirmAction';
+import { useSubscriptionQuota } from '@/hooks/useSubscriptionQuota';
 
   
 
@@ -27,19 +30,19 @@ const inventoryColumns: Column<ProductData>[] = [
   {
     header: 'Category',
     accessor: 'category',
-    render: (value) => value || 'N/A',
+    render: (value) => value || 'Uncategorized',
     info: 'Catalog category assigned to the product',
   },
   {
     header: 'Barcode',
     accessor: 'barcode',
-    render: (value) => value || 'N/A',
+    render: (value) => value || 'Not set',
     className: 'font-medium',
   },
   {
     header: 'SKU',
     accessor: 'sku',
-    render: (value) => value || 'N/A',
+    render: (value) => value || 'Not set',
     className: 'font-medium',
   },
  {
@@ -56,7 +59,7 @@ const inventoryColumns: Column<ProductData>[] = [
   {
     header: 'Variants',
     accessor: 'variant_count',
-    render: (value) => value || 'N/A',
+    render: (value) => value ?? 0,
     className: 'font-medium',
   },
   {
@@ -84,37 +87,64 @@ function ProductView() {
   const [isCreateOpen, setIsCreateOpen] = useState(false); // Renamed for clarity
   const router = useRouter();
   const [isAIBulkCreateOpen, setIsAIBulkCreateOpen] = useState(false);
+  const productQuota = useSubscriptionQuota("products", data?.length ?? 0);
 
   const handleCreate = async (createdData: Partial<ProductData>) => {
+    if (!productQuota.canCreate) {
+      toast.error(productQuota.message);
+      return;
+    }
     await createProduct(createdData).unwrap();
     setIsCreateOpen(false); 
     await refetch(); 
   };
   // actions
   const [deleteProduct, { isLoading: deleteLoading }] = useDeleteProductMutation();
+  const [bulkDeleteProducts, { isLoading: bulkDeleteLoading }] = useBulkDeleteProductsMutation();
   const [removeTemplateMode] = useRemoveTemplateModeMutation();
 
-
-  // const handleDelete = async (row: ProductData) => {
-  //   if (window.confirm(`Are you sure you want to delete ${row.name}?`)) {
-  //     try {
-  //       await deleteProduct(row.id).unwrap();
-  //       await refetch(); // Refresh the data after deletion
-  //     } catch (error) {
-  //       console.error('Failed to delete product:', error);
-  //     }
-  //   }
   const handleDelete = async (row: ProductData) => {
-    if (window.confirm(`Are you sure you want to delete ${row.name}?`)) {
-      try {
-        await deleteProduct(row.id).unwrap();
-        await refetch(); // Refresh the data after deletion
-        toast.success("Product deleted successfully!");
-      } catch (error) {
-        console.error('Failed to delete product:', error);
-        toast.error("Failed to delete product");
+    const confirmed = await confirmAction({
+      title: "Delete product?",
+      description: `Delete ${row.name}? Inventory records with non-zero stock may still remain for reconciliation.`,
+      confirmText: "Delete product",
+      destructive: true,
+    })
+    if (!confirmed) return
+
+    try {
+      await deleteProduct(row.id).unwrap();
+      await refetch(); // Refresh the data after deletion
+      toast.success("Product deleted successfully!");
+    } catch (error) {
+      toast.error(extractErrorMessage(error, ["detail"]) || "Failed to delete product");
+    }
+  }
+
+  const handleBulkDelete = async (selectedIds: string[]) => {
+    if (!selectedIds.length) return
+
+    const confirmed = await confirmAction({
+      title: "Delete selected products?",
+      description: `Delete ${selectedIds.length} selected product${selectedIds.length === 1 ? "" : "s"}? This removes them from the catalog and lets inventory keep only non-zero stock records.`,
+      confirmText: "Delete selected",
+      destructive: true,
+    })
+    if (!confirmed) return
+
+    try {
+      const result = await bulkDeleteProducts(selectedIds).unwrap()
+      await refetch()
+      if (result.skipped_ids.length > 0) {
+        toast.warning(
+          `Deleted ${result.deleted_count} product${result.deleted_count === 1 ? "" : "s"}. ${result.skipped_ids.length} item${result.skipped_ids.length === 1 ? " was" : "s were"} skipped because they were not available in your current workspace.`
+        )
+      } else {
+        toast.success(`Deleted ${result.deleted_count} product${result.deleted_count === 1 ? "" : "s"} successfully!`)
       }
-    } 
+    } catch (error) {
+      toast.error("Failed to bulk delete selected products")
+    }
   }
 
     const handleRemoveTemplateMode = async (row: ProductData) => {
@@ -122,7 +152,7 @@ function ProductView() {
         await removeTemplateMode({ id: row.id }).unwrap();
         await refetch(); // Refresh the data after removing template mode
       } catch (error) {
-        console.error('Failed to remove template mode:', error);
+        toast.error("Failed to remove template mode")
       }
     }
       
@@ -148,6 +178,10 @@ function ProductView() {
   };
 
   const handleDuplicate = async (product: ProductData) => {
+    if (!productQuota.canCreate) {
+      toast.error(productQuota.message)
+      return
+    }
     const duplicateData: Partial<ProductData> = {}
     ProductFormKeys.forEach((key) => {
       const value = product[key]
@@ -209,6 +243,14 @@ function ProductView() {
 const actionButtons: ActionButton<ProductData>[] = [
   {
       label: "",
+      icon: ArrowRight,
+      onClick: (row) => handleRowClick(row),
+      className: "text-blue-600 hover:text-blue-800",
+      variant: "secondary",
+      tooltip: "Open Product Details",
+    },
+  {
+      label: "",
       icon:Trash2,
       onClick:async (row) =>await handleDelete(row),
       className: "text-red-600 hover:text-red-800",
@@ -239,6 +281,19 @@ const actionButtons: ActionButton<ProductData>[] = [
   
   ];
 
+  const generalButtons: GeneralButton<ProductData>[] = [
+    {
+      label: "Delete selected",
+      icon: Trash2,
+      onClick: (selectedIds) => {
+        void handleBulkDelete(selectedIds)
+      },
+      variant: "danger",
+      disabled: deleteLoading || bulkDeleteLoading,
+      tooltip: "Delete all selected products",
+    },
+  ]
+
 
 
 
@@ -249,7 +304,7 @@ const actionButtons: ActionButton<ProductData>[] = [
   if (error) {
     return (
       <div className="p-4 text-red-500">
-        Error loading Product data: {(error as any).message || 'Unknown error'}
+        Unable to load product catalog: {extractErrorMessage(error, ["detail", "error"])}
       </div>
     );
   }
@@ -273,25 +328,46 @@ const actionButtons: ActionButton<ProductData>[] = [
         onRetry={handleRetryBulkTask}
         onResearchPrices={handleResearchBulkTaskPrices}
         onOpenReport={openReport}
-        onNewUpload={() => setIsAIBulkCreateOpen(true)}
+        onNewUpload={() => {
+          if (!productQuota.canCreate) return toast.error(productQuota.message)
+          setIsAIBulkCreateOpen(true)
+        }}
       />
       <DataTable<ProductData>
         columns={inventoryColumns}
         data={data || []}
         isLoading={isLoading}
-        onRowClick={handleRowClick}
         actionButtons={actionButtons}
         secondaryButton={{
           label: 'Create Bulk Product',
-          onClick: () => setIsAIBulkCreateOpen(true),
+          onClick: () => {
+            if (!productQuota.canCreate) return toast.error(productQuota.message)
+            setIsAIBulkCreateOpen(true)
+          },
 
         }}
-        searchableFields={['name', 'barcode', 'sku']}
-        filterableFields={['category', 'pos_category']}
-        sortableFields={['name', 'barcode', 'base_price']}
-        rangeFilterFields={['cost_price', 'base_price']}
+        searchableFields={['name', 'barcode', 'sku', 'short_description']}
+        filterableFields={[
+          'category',
+          'pos_category',
+          'is_active',
+          'is_featured',
+          'quick_sale',
+          'pos_ready',
+          'is_template',
+          'allow_discount',
+          'track_stock',
+          'allow_backorder',
+        ]}
+        sortableFields={['name', 'barcode', 'sku', 'base_price', 'cost_price', 'variant_count', 'total_stock', 'profit_margin']}
+        rangeFilterFields={['cost_price', 'base_price', 'tax_rate', 'max_discount_percent', 'variant_count', 'total_stock', 'profit_margin', 'low_stock_threshold']}
+        generalButtons={generalButtons}
+        getRowId={(row) => row.id}
         title="Products"
-        onClose={() =>setIsCreateOpen(true)}
+        onClose={() => {
+          if (!productQuota.canCreate) return toast.error(productQuota.message)
+          setIsCreateOpen(true)
+        }}
       />
 
       {/* Always render CustomCreateCard but control visibility */}

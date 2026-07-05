@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
 import { useGetPaymentsQuery } from "@/redux/features/payment/paymentAPISlice"
 import type { PaymentRecord, PaymentStatus } from "@/redux/features/payment/paymentTypes"
+import { formatMachineLabel } from "@/lib/displayLabels"
 
 export function PaymentsTab() {
   const [filters, setFilters] = useState<Record<string, string>>({})
@@ -21,7 +22,7 @@ export function PaymentsTab() {
       failed: "destructive",
       cancelled: "outline",
     }
-    return <Badge variant={variants[status]}>{status}</Badge>
+    return <Badge variant={variants[status]}>{formatMachineLabel(status)}</Badge>
   }
 
   const columns: ColumnDef<PaymentRecord>[] = [

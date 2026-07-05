@@ -1,10 +1,12 @@
 'use client'
 import { getCookie } from "cookies-next";
 import { readCookieValue } from "@/lib/authCookies";
+import { canAccessPath } from "@/lib/permissionsGuard";
 import { useAppSelector, useAppDispatch } from "../../redux/store";
 import { setIsSidebarCollapsed } from "../../redux/state";
 import { generateColorFromName } from '../utils/colorGenerator';
 import { SidebarLink } from './SideBarLinks';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import {
   Layout,
   Home,
@@ -12,6 +14,8 @@ import {
   Settings,
   Package,
   Gift,
+  Bell,
+  FileSearch,
   ReceiptText,
   CreditCard,
   ShoppingCart,
@@ -19,35 +23,39 @@ import {
   Undo2,
   ChevronLeft,
   ChevronRight,
+  X,
 } from 'lucide-react';
-import { useEffect, useRef } from 'react';
 import { UserData } from "@/redux/features/users/userTypes";
+import { useEffect, useRef } from 'react';
 interface SideBarDataProps{
   user?:UserData
+  mobileOpen: boolean
+  onMobileClose: () => void
 }
-const SideBar = ({}:SideBarDataProps) => {
+const SideBar = ({ mobileOpen, onMobileClose }:SideBarDataProps) => {
   const SidebarCollapsed = useAppSelector((state) => state.global.isSidebarCollapsed);
+    const navigationCollapsed = SidebarCollapsed && !mobileOpen;
     const dispatch = useAppDispatch();
-    const sidebarRef = useRef<HTMLDivElement>(null);
-    
+    const sidebarRef = useRef<HTMLElement>(null);
+
     useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        // Only run if sidebar is expanded
-        if (SidebarCollapsed) return;
-  
+      if (SidebarCollapsed) return;
+
+      const collapseOnDesktopClickAway = (event: MouseEvent) => {
+        if (!window.matchMedia('(min-width: 768px)').matches) return;
         if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
           dispatch(setIsSidebarCollapsed(true));
-        } 
+        }
       };
-  
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+
+      document.addEventListener('mousedown', collapseOnDesktopClickAway);
+      return () => document.removeEventListener('mousedown', collapseOnDesktopClickAway);
     }, [SidebarCollapsed, dispatch]);
   
-    const sideBarClasses = `fixed inset-y-0 left-0 flex flex-col ${SidebarCollapsed ? "w-0 md:w-16" : "w-72 md:w-64"}
-    bg-white transition-all duration-300 ease-in-out min-h-screen
-    border-r border-gray-200 z-40 overflow-visible
-    shadow-sm
+    const sideBarClasses = `fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-white transition-[transform,width] duration-300 ease-out md:z-40 md:translate-x-0 ${
+      mobileOpen ? "translate-x-0" : "-translate-x-full"
+    } ${SidebarCollapsed ? "md:w-16" : "md:w-64"}
+    min-h-screen border-r border-gray-200 shadow-xl md:shadow-sm
     `
     const companyName = readCookieValue("companyName", getCookie) || readCookieValue("companyCode", getCookie) || 'Intera'
     const rawCompanyLogo = readCookieValue("companyLogo", getCookie)
@@ -56,10 +64,30 @@ const SideBar = ({}:SideBarDataProps) => {
         ? rawCompanyLogo
         : `${(process.env.NEXT_PUBLIC_BACKEND_HOST_URL ?? '').replace(/\/+$/, '')}${rawCompanyLogo.startsWith('/') ? rawCompanyLogo : `/${rawCompanyLogo}`}`)
       : null
+    const canViewAuditTrail = canAccessPath("/audit").allowed
   return (
-    <div ref={sidebarRef} className={sideBarClasses}> 
+    <TooltipProvider delayDuration={250}>
+    <aside ref={sidebarRef} className={sideBarClasses} aria-label="Primary navigation"> 
+        <button
+          type="button"
+          onClick={onMobileClose}
+          aria-label="Close navigation menu"
+          className="absolute right-4 top-6 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-50 md:hidden"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => dispatch(setIsSidebarCollapsed(!SidebarCollapsed))}
+          className="absolute -right-3 top-7 z-10 hidden h-7 w-7 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-md transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 md:inline-flex"
+          aria-label={SidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={SidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {SidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        </button>
         
-        <div className={`flex justify-between items-center md:justify-normal pt-6 ${SidebarCollapsed?"px-3":"px-5"}`}>
+        <div className={`flex justify-between items-center md:justify-normal pt-6 ${navigationCollapsed?"px-3":"px-5"}`}>
             <div  className={`flex items-center gap-4`}>
                 <div className={`w-10 h-10 rounded-2xl flex items-center justify-center`}
                 style={{backgroundColor: generateColorFromName(companyName)}}>
@@ -72,7 +100,7 @@ const SideBar = ({}:SideBarDataProps) => {
                   </h1>
                 )}
                 </div>
-                    <h1 className={`${SidebarCollapsed?"hidden":""} text-xl font-extrabold text-gray-800`}>
+                    <h1 className={`${navigationCollapsed?"hidden":""} text-xl font-extrabold text-gray-800`}>
                         {companyName}
                     </h1>
 
@@ -80,48 +108,56 @@ const SideBar = ({}:SideBarDataProps) => {
             
             </div>
             {/* Links */}
-            <div className={`mt-6 flex-grow space-y-1 px-2`}>
-            <SidebarLink href="/dashboard" icon={Home} label="Dashboard" isCollapsed={SidebarCollapsed} />
-            <SidebarLink href="/realtime-dashboard" icon={Layout} label="Realtime Dashboard" isCollapsed={SidebarCollapsed} />
-            <SidebarLink href="/inventory" icon={Package} label="Inventory" isCollapsed={SidebarCollapsed} />
+            <nav
+              className="mt-6 flex-grow space-y-1 overflow-y-auto px-2 pb-4"
+              onClick={(event) => {
+                if ((event.target as HTMLElement).closest('a')) onMobileClose();
+              }}
+            >
+            <SidebarLink href="/dashboard" icon={Home} label="Dashboard" isCollapsed={navigationCollapsed} />
+            <SidebarLink href="/realtime-dashboard" icon={Layout} label="Realtime Dashboard" isCollapsed={navigationCollapsed} />
+            <SidebarLink href="/notifications" icon={Bell} label="Notifications" isCollapsed={navigationCollapsed} />
+            {canViewAuditTrail ? (
+              <SidebarLink href="/audit" icon={FileSearch} label="Audit trail" isCollapsed={navigationCollapsed} />
+            ) : null}
+            <SidebarLink href="/inventory" icon={Package} label="Inventory" isCollapsed={navigationCollapsed} />
             <SidebarLink
               href="/pos"
               icon={CreditCard}
               label="POS"
-              isCollapsed={SidebarCollapsed}
+              isCollapsed={navigationCollapsed}
               subLinks={[
                 { href: "/pos", label: "Cashier POS" },
                 { href: "/pos/remittances", label: "Remittances" },
                 { href: "/pos/settings", label: "POS Settings" },
               ]}
             />
-            <SidebarLink href="/profile/staff" icon={Users} label="Staff" isCollapsed={SidebarCollapsed} />
-            <SidebarLink href="/companies" icon={Truck} label="Partners" isCollapsed={SidebarCollapsed} />
-            <SidebarLink href="/order/purchase" icon={ShoppingCart} label="Purchase Orders" isCollapsed={SidebarCollapsed} />
-            <SidebarLink href="/order/sales" icon={ReceiptText} label="Sales Orders" isCollapsed={SidebarCollapsed} />
-            <SidebarLink href="/order/returns" icon={Undo2} label="Returns" isCollapsed={SidebarCollapsed} />
-            <SidebarLink href="/product" icon={Gift} label="Product" isCollapsed={SidebarCollapsed} />
-            <SidebarLink href="/settings" icon={Settings} label="Workspace settings" isCollapsed={SidebarCollapsed} />
-            </div>
-            <div className="hidden px-2 pb-4 md:block">
-              <button
-                type="button"
-                onClick={() => dispatch(setIsSidebarCollapsed(!SidebarCollapsed))}
-                className={`flex w-full items-center rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 ${
-                  SidebarCollapsed ? "justify-center" : "justify-between"
-                }`}
-                aria-label={SidebarCollapsed ? "" : ""}
-                title={SidebarCollapsed ? "" : ""}
-              >
-                {SidebarCollapsed ? (
-                  <ChevronRight className="h-4 w-4" />
-                ) : (
-                  <>
-                    <ChevronLeft className="h-4 w-4" />
-                  </>
-                )}
-              </button>
-            </div>
+            <SidebarLink
+              href="/profile/staff"
+              icon={Users}
+              label="Staff"
+              isCollapsed={navigationCollapsed}
+              subLinks={[
+                { href: "/profile/staff", label: "Staff and roles" },
+                { href: "/profile/support-access", label: "Support access" },
+              ]}
+            />
+            <SidebarLink href="/companies" icon={Truck} label="Partners" isCollapsed={navigationCollapsed} />
+            <SidebarLink href="/order/purchase" icon={ShoppingCart} label="Purchase Orders" isCollapsed={navigationCollapsed} />
+            <SidebarLink href="/order/sales" icon={ReceiptText} label="Sales Orders" isCollapsed={navigationCollapsed} />
+            <SidebarLink href="/order/returns" icon={Undo2} label="Returns" isCollapsed={navigationCollapsed} />
+            <SidebarLink
+              href="/product"
+              icon={Gift}
+              label="Product"
+              isCollapsed={navigationCollapsed}
+              subLinks={[
+                { href: "/product", label: "Workspace products" },
+                { href: "/product/global-catalog-admin", label: "Global catalog admin" },
+              ]}
+            />
+            <SidebarLink href="/settings" icon={Settings} label="Workspace settings" isCollapsed={navigationCollapsed} />
+            </nav>
             {/* Footer 
             <div className={`text-gray-500 text-xs text-center  ${SidebarCollapsed?"hidden":""} `}>
             &copy; 2025 Intera
@@ -130,7 +166,8 @@ const SideBar = ({}:SideBarDataProps) => {
 
 
 
-    </div>
+    </aside>
+    </TooltipProvider>
   )
 }
 

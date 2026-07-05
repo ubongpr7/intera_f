@@ -43,7 +43,10 @@ export default function MfaSetupCard() {
   }, [router, setupMfa]);
 
   useEffect(() => {
-    void loadSetup(false);
+    const timeoutId = window.setTimeout(() => {
+      void loadSetup(false);
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [loadSetup]);
 
   return (

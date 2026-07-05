@@ -227,9 +227,10 @@ const VariantMediaTab = ({ variantId }: VariantMediaTabProps) => {
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row items-start space-y-4 sm:space-y-0 sm:space-x-4">
                   <div className="flex-shrink-0 w-full sm:w-auto flex justify-center">
-                    {uploadedFile.type.startsWith("image/") ? (
-                      <div className="relative">
-                        <img
+	                    {uploadedFile.type.startsWith("image/") ? (
+	                      <div className="relative">
+	                        {/* eslint-disable-next-line @next/next/no-img-element */}
+	                        <img
                           src={previewUrl || ""}
                           alt="Preview"
                           className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-lg border"

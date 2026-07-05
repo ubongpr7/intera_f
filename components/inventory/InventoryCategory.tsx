@@ -8,6 +8,8 @@ import { toast } from 'react-toastify';
 import { useListStockLocationsQuery } from '@/redux/features/stock/stockAPISlice';
 import { RefetchDataProp } from "@/redux/features/common/commonTypes";
 import { Edit, Trash2 } from 'lucide-react';
+import { extractErrorMessage } from '@/lib/utils';
+import { confirmAction } from '../common/confirmAction';
 
 const inventoryColumns: Column<CategoryData>[] = [
   {
@@ -87,14 +89,20 @@ function InventoryCategoryView({ refetchData, setRefetchData }: RefetchDataProp)
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this category?")) {
-      try {
-        await deleteCategory(id).unwrap();
-        await refetch();
-        toast.success("Category deleted successfully!");
-      } catch (error) {
-        toast.error("Failed to delete category.");
-      }
+    const confirmed = await confirmAction({
+      title: "Delete inventory category?",
+      description: "This removes the category from the inventory setup. Items assigned to it may need review.",
+      confirmText: "Delete category",
+      destructive: true,
+    })
+    if (!confirmed) return
+
+    try {
+      await deleteCategory(id).unwrap();
+      await refetch();
+      toast.success("Category deleted successfully!");
+    } catch (error) {
+      toast.error(extractErrorMessage(error, ["detail"]) || "Failed to delete category.");
     }
   };
 
@@ -118,7 +126,7 @@ function InventoryCategoryView({ refetchData, setRefetchData }: RefetchDataProp)
   if (error) {
     return (
         <div className="p-4 text-red-500">
-        Error loading inventory categories: {(error as any).message || 'Unknown error'}
+        Unable to load inventory categories: {extractErrorMessage(error, ["detail", "error"])}
       </div>
     );
   }
@@ -130,9 +138,10 @@ function InventoryCategoryView({ refetchData, setRefetchData }: RefetchDataProp)
         data={data || []}
         isLoading={isLoading}
         actionButtons={actionButtons}
-        searchableFields={['name', 'parent_name']}
-        filterableFields={['parent_name']}
-        sortableFields={['name', 'parent_name']}
+        searchableFields={['name', 'parent_name', 'description']}
+        filterableFields={['parent_name', 'is_active', 'structural']}
+        sortableFields={['name', 'parent_name', 'inventory_count']}
+        rangeFilterFields={['inventory_count']}
         title="Inventory Categories" onClose={() => setIsCreateOpen(true)} 
       />
       {isCreateOpen ? (

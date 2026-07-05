@@ -3,16 +3,14 @@
 import { useGetDashboardRecentPriceChangesQuery } from '@/redux/features/dashboard/dashboardApiSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tag } from 'lucide-react';
-import LoadingAnimation from '../common/LoadingAnimation';
 import { RecentPriceChange } from '../interfaces/dashboard';
+import { QueryStateBoundary } from '../common/QueryStateBoundary';
 
 const RecentPriceChanges = () => {
-  const { data, error, isLoading } = useGetDashboardRecentPriceChangesQuery('');
-
-  if (isLoading) return <div className="h-full flex justify-center items-center"><LoadingAnimation /></div>;
-  if (error) return <div>Error loading recent price changes</div>;
+  const { data, error, isLoading, isFetching, refetch } = useGetDashboardRecentPriceChangesQuery('');
 
   return (
+    <QueryStateBoundary isLoading={isLoading} isFetching={isFetching} error={error} onRetry={refetch} loadingText="Loading recent price changes..." errorTitle="Unable to load recent price changes">
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">Recent Price Changes</CardTitle>
@@ -35,6 +33,7 @@ const RecentPriceChanges = () => {
         )}
       </CardContent>
     </Card>
+    </QueryStateBoundary>
   );
 };
 

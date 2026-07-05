@@ -3,6 +3,14 @@ import { normalizeQueryParams } from "../common/queryParams"
 import type {
   Attachment,
   BulkTaskStatus,
+  GlobalCatalogImport,
+  GlobalCatalogImportPreview,
+  GlobalCatalogImportResponse,
+  GlobalCatalogBulkIngestResult,
+  GlobalCatalogAdminProduct,
+  GlobalCatalogProduct,
+  GlobalCatalogVariant,
+  GlobalCatalogSyncResult,
   PriceChangeHistory,
   PricingRule,
   PricingStrategy,
@@ -70,6 +78,23 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
+    bulkDeleteProducts: builder.mutation<
+      {
+        requested_count: number
+        deleted_count: number
+        deleted_ids: string[]
+        skipped_ids: string[]
+      },
+      string[]
+    >({
+      query: (productIds) => ({
+        url: `/${product_api}/bulk/products/delete/`,
+        method: "POST",
+        body: { product_ids: productIds },
+        service: service,
+      }),
+    }),
+
     getProduct: builder.query<Product, string>({
       query: (id) => ({
         url: `/${product_api}/products/${id}/`,
@@ -90,6 +115,158 @@ export const productApiSlice = apiSlice.injectEndpoints({
         method: "GET",
         service: service,
       }),
+    }),
+
+    getGlobalCatalogProducts: builder.query<GlobalCatalogProduct[], { q?: string; brand?: string; category?: string } | void>({
+      query: (params = {}) => ({
+        url: `/${product_api}/global-catalog/products/`,
+        method: "GET",
+        params: normalizeQueryParams(params),
+        service: service,
+      }),
+      providesTags: ["GlobalCatalog"],
+    }),
+
+    getGlobalCatalogProduct: builder.query<GlobalCatalogProduct, string>({
+      query: (id) => ({
+        url: `/${product_api}/global-catalog/products/${id}/`,
+        method: "GET",
+        service: service,
+      }),
+      providesTags: ["GlobalCatalog"],
+    }),
+
+    previewGlobalCatalogProductImport: builder.query<GlobalCatalogImportPreview, string>({
+      query: (id) => ({
+        url: `/${product_api}/global-catalog/products/${id}/preview-import/`,
+        method: "GET",
+        service: service,
+      }),
+      providesTags: ["GlobalCatalog"],
+    }),
+
+    listGlobalCatalogImports: builder.query<GlobalCatalogImport[], void>({
+      query: () => ({
+        url: `/${product_api}/global-catalog/imports/`,
+        method: "GET",
+        service: service,
+      }),
+      providesTags: ["GlobalCatalog"],
+    }),
+
+    createGlobalCatalogImport: builder.mutation<GlobalCatalogImportResponse, { global_product_ids: string[] }>({
+      query: (body) => ({
+        url: `/${product_api}/global-catalog/imports/`,
+        method: "POST",
+        body,
+        service: service,
+      }),
+      invalidatesTags: ["GlobalCatalog"],
+    }),
+
+    syncGlobalCatalogImport: builder.mutation<GlobalCatalogSyncResult, string>({
+      query: (importId) => ({
+        url: `/${product_api}/global-catalog/imports/${importId}/sync/`,
+        method: "POST",
+        service: service,
+      }),
+      invalidatesTags: ["GlobalCatalog"],
+    }),
+
+    previewGlobalCatalogImportSync: builder.query<GlobalCatalogImportPreview, string>({
+      query: (importId) => ({
+        url: `/${product_api}/global-catalog/imports/${importId}/preview-sync/`,
+        method: "GET",
+        service: service,
+      }),
+      providesTags: ["GlobalCatalog"],
+    }),
+
+    getGlobalCatalogAdminProducts: builder.query<GlobalCatalogAdminProduct[], { q?: string; source_status?: string } | void>({
+      query: (params = {}) => ({
+        url: `/${product_api}/global-catalog/admin/products/`,
+        method: "GET",
+        params: normalizeQueryParams(params),
+        service: service,
+      }),
+      providesTags: ["GlobalCatalog"],
+    }),
+
+    createGlobalCatalogAdminProduct: builder.mutation<GlobalCatalogAdminProduct, Partial<GlobalCatalogAdminProduct>>({
+      query: (body) => ({
+        url: `/${product_api}/global-catalog/admin/products/`,
+        method: "POST",
+        body,
+        service: service,
+      }),
+      invalidatesTags: ["GlobalCatalog"],
+    }),
+
+    updateGlobalCatalogAdminProduct: builder.mutation<GlobalCatalogAdminProduct, { id: string; data: Partial<GlobalCatalogAdminProduct> }>({
+      query: ({ id, data }) => ({
+        url: `/${product_api}/global-catalog/admin/products/${id}/`,
+        method: "PATCH",
+        body: data,
+        service: service,
+      }),
+      invalidatesTags: ["GlobalCatalog"],
+    }),
+
+    publishGlobalCatalogAdminProduct: builder.mutation<GlobalCatalogAdminProduct, string>({
+      query: (id) => ({
+        url: `/${product_api}/global-catalog/admin/products/${id}/publish/`,
+        method: "POST",
+        service: service,
+      }),
+      invalidatesTags: ["GlobalCatalog"],
+    }),
+
+    archiveGlobalCatalogAdminProduct: builder.mutation<GlobalCatalogAdminProduct, string>({
+      query: (id) => ({
+        url: `/${product_api}/global-catalog/admin/products/${id}/archive/`,
+        method: "POST",
+        service: service,
+      }),
+      invalidatesTags: ["GlobalCatalog"],
+    }),
+
+    bulkIngestGlobalCatalogAdminProducts: builder.mutation<GlobalCatalogBulkIngestResult, { products: unknown[] }>({
+      query: (body) => ({
+        url: `/${product_api}/global-catalog/admin/products/bulk-ingest/`,
+        method: "POST",
+        body,
+        service: service,
+      }),
+      invalidatesTags: ["GlobalCatalog"],
+    }),
+
+    createGlobalCatalogAdminVariant: builder.mutation<GlobalCatalogVariant, Partial<GlobalCatalogVariant> & { global_product: string }>({
+      query: (body) => ({
+        url: `/${product_api}/global-catalog/admin/variants/`,
+        method: "POST",
+        body,
+        service: service,
+      }),
+      invalidatesTags: ["GlobalCatalog"],
+    }),
+
+    updateGlobalCatalogAdminVariant: builder.mutation<GlobalCatalogVariant, { id: string; data: Partial<GlobalCatalogVariant> }>({
+      query: ({ id, data }) => ({
+        url: `/${product_api}/global-catalog/admin/variants/${id}/`,
+        method: "PATCH",
+        body: data,
+        service: service,
+      }),
+      invalidatesTags: ["GlobalCatalog"],
+    }),
+
+    deleteGlobalCatalogAdminVariant: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/${product_api}/global-catalog/admin/variants/${id}/`,
+        method: "DELETE",
+        service: service,
+      }),
+      invalidatesTags: ["GlobalCatalog"],
     }),
 
     toggleProductQuickSale: builder.mutation({
@@ -693,6 +870,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
         body: attachmentData,
         service: service,
       }),
+      invalidatesTags: ["GlobalCatalog"],
     }),
 
     updateAttachment: builder.mutation<Attachment, { id: string; data: Partial<Attachment> }>({
@@ -702,6 +880,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
         body: data,
         service: service,
       }),
+      invalidatesTags: ["GlobalCatalog"],
     }),
 
     deleteAttachment: builder.mutation({
@@ -710,6 +889,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
         method: "DELETE",
         service: service,
       }),
+      invalidatesTags: ["GlobalCatalog"],
     }),
 
     getAttachments: builder.query<Attachment[], Record<string, unknown> | void>({
@@ -726,6 +906,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
         method: "POST",
         service: service,
       }),
+      invalidatesTags: ["GlobalCatalog"],
     }),
 
     bulkUploadAttachments: builder.mutation({
@@ -735,6 +916,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
         body: uploadData,
         service: service,
       }),
+      invalidatesTags: ["GlobalCatalog"],
     }),
 
     // POS Configuration
@@ -890,9 +1072,26 @@ export const {
   useUpdateProductMutation,
   useRemoveTemplateModeMutation,
   useDeleteProductMutation,
+  useBulkDeleteProductsMutation,
   useGetProductQuery,
   useGetMinimalProductQuery,
   useGetProductDataQuery,
+  useGetGlobalCatalogProductsQuery,
+  useGetGlobalCatalogProductQuery,
+  usePreviewGlobalCatalogProductImportQuery,
+  useListGlobalCatalogImportsQuery,
+  useCreateGlobalCatalogImportMutation,
+  useSyncGlobalCatalogImportMutation,
+  usePreviewGlobalCatalogImportSyncQuery,
+  useGetGlobalCatalogAdminProductsQuery,
+  useCreateGlobalCatalogAdminProductMutation,
+  useUpdateGlobalCatalogAdminProductMutation,
+  usePublishGlobalCatalogAdminProductMutation,
+  useArchiveGlobalCatalogAdminProductMutation,
+  useBulkIngestGlobalCatalogAdminProductsMutation,
+  useCreateGlobalCatalogAdminVariantMutation,
+  useUpdateGlobalCatalogAdminVariantMutation,
+  useDeleteGlobalCatalogAdminVariantMutation,
   useToggleProductQuickSaleMutation,
   useToggleProductFeaturedMutation,
   useGetProductVariantsQuery,

@@ -68,6 +68,9 @@ export interface InventoryData {
   quantity_available?: string | number;
   quantity_reserved?: string | number;
   total_stock_value?: string | number;
+  location_name?: string;
+  location_count?: number;
+  location_breakdown?: Array<Record<string, unknown>>;
   minimum_stock_level?: string | number;
   reorder_point?: string | number;
   reorder_quantity?: string | number;
@@ -117,6 +120,7 @@ export interface InventoryStockSummary {
 
 export interface AdjustStockPayload {
   location_id: string;
+  structural_location_id?: string;
   quantity_change: string | number;
   reason?: string;
 }
@@ -172,6 +176,10 @@ export interface InventoryListParams {
   inventory_type?: string;
   inventory_category?: string;
   stock_status?: "low_stock" | "out_of_stock" | "needs_reorder";
+  structural_location_id?: string;
+  structural_location_ids?: string[];
+  scope?: "all" | "all_locations";
+  stock_location_id?: string;
   search?: string;
   ordering?: string;
 }

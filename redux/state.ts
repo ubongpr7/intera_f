@@ -22,9 +22,7 @@ const loadInitialState = () => {
     if (savedState) {
       return JSON.parse(savedState)
     }
-  } catch (error) {
-    console.error("Failed to load state from localStorage:", error)
-  }
+  } catch {}
 
   // Fallback to system theme
   return {
@@ -39,6 +37,8 @@ interface InitialStateTypes {
   isSystemTheme: boolean
 }
 
+type ThemePreferences = Pick<InitialStateTypes, "isDarkMode" | "isSystemTheme">
+
 const initialState: InitialStateTypes = loadInitialState()
 
 export const globalSlice = createSlice({
@@ -50,9 +50,7 @@ export const globalSlice = createSlice({
       if (typeof window !== "undefined") {
         try {
           localStorage.setItem("globalSettings", JSON.stringify(state))
-        } catch (error) {
-          console.error("Failed to save state to localStorage:", error)
-        }
+        } catch {}
       }
     },
     setIsDarkMode: (state, action: PayloadAction<boolean>) => {
@@ -61,9 +59,7 @@ export const globalSlice = createSlice({
       if (typeof window !== "undefined") {
         try {
           localStorage.setItem("globalSettings", JSON.stringify(state))
-        } catch (error) {
-          console.error("Failed to save state to localStorage:", error)
-        }
+        } catch {}
       }
     },
     updateSystemTheme: (state, action: PayloadAction<boolean>) => {
@@ -72,9 +68,7 @@ export const globalSlice = createSlice({
       if (typeof window !== "undefined") {
         try {
           localStorage.setItem("globalSettings", JSON.stringify(state))
-        } catch (error) {
-          console.error("Failed to save state to localStorage:", error)
-        }
+        } catch {}
       }
     },
     resetToSystemTheme: (state) => {
@@ -83,13 +77,21 @@ export const globalSlice = createSlice({
       if (typeof window !== "undefined") {
         try {
           localStorage.setItem("globalSettings", JSON.stringify(state))
-        } catch (error) {
-          console.error("Failed to save state to localStorage:", error)
-        }
+        } catch {}
       }
+    },
+    syncThemePreferences: (state, action: PayloadAction<ThemePreferences>) => {
+      state.isDarkMode = action.payload.isDarkMode
+      state.isSystemTheme = action.payload.isSystemTheme
     },
   },
 })
 
-export const { setIsSidebarCollapsed, setIsDarkMode, updateSystemTheme, resetToSystemTheme } = globalSlice.actions
+export const {
+  setIsSidebarCollapsed,
+  setIsDarkMode,
+  updateSystemTheme,
+  resetToSystemTheme,
+  syncThemePreferences,
+} = globalSlice.actions
 export default globalSlice.reducer

@@ -15,9 +15,12 @@ import {
   Volume2,
   Download,
 } from "lucide-react"
+import { getCookie } from "cookies-next"
+import { toast } from "react-toastify"
 import MessageContent from "@/components/message-content"
 import ConfirmationDialog from "@/components/confirmation-dialog"
 import { humanizeAgentDisplayName } from "@/lib/agent-display"
+import { readCookieValue } from "@/lib/authCookies"
 import {
   MultipleChoiceHandler,
   FileUploadHandler,
@@ -83,6 +86,75 @@ interface AgentChatProps {
 }
 
 const asText = (value: unknown): string => (typeof value === "string" ? value : "")
+const APP_ASSISTANT_AVATAR = "/assets/intera-logo.png"
+
+const buildAbsoluteAssetUrl = (value?: string | null) => {
+  if (!value) return undefined
+  if (/^(https?:)?\/\//i.test(value) || value.startsWith("data:") || value.startsWith("blob:")) {
+    return value
+  }
+  if (value.startsWith("/")) {
+    return value
+  }
+  const base = (process.env.NEXT_PUBLIC_BACKEND_HOST_URL ?? "").replace(/\/+$/, "")
+  return base ? `${base}/${value}` : `/${value}`
+}
+
+const resolveUserIdentity = () => {
+  const firstName = readCookieValue("userFirstName", (name) => getCookie(name)) || ""
+  const lastName = readCookieValue("userLastName", (name) => getCookie(name)) || ""
+  const email = readCookieValue("userEmail", (name) => getCookie(name)) || ""
+  const picture =
+    readCookieValue("userPicture", (name) => getCookie(name)) ||
+    (typeof window !== "undefined"
+      ? window.localStorage.getItem("userPicture") ||
+        window.localStorage.getItem("profile_image") ||
+        window.localStorage.getItem("profileImage")
+      : "")
+  const initials =
+    [firstName, lastName]
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part.trim().charAt(0).toUpperCase())
+      .join("") || email.trim().charAt(0).toUpperCase() || "U"
+
+  return {
+    initials,
+    imageUrl: buildAbsoluteAssetUrl(picture),
+  }
+}
+
+function ChatAvatar({
+  role,
+  userInitials,
+  userImageUrl,
+  className = "",
+}: {
+  role: "user" | "assistant"
+  userInitials: string
+  userImageUrl?: string
+  className?: string
+}) {
+  const isAssistant = role === "assistant"
+  const imageUrl = isAssistant ? APP_ASSISTANT_AVATAR : userImageUrl
+
+  return (
+    <div
+      className={`flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border shadow-sm ${
+        isAssistant ? "border-blue-100 bg-white" : "border-blue-200 bg-blue-600 text-white"
+      } ${className}`}
+      aria-label={isAssistant ? "Intera AI" : "User"}
+      title={isAssistant ? "Intera AI" : "User"}
+    >
+      {imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={imageUrl} alt={isAssistant ? "Intera AI" : "User avatar"} className="h-full w-full object-cover" />
+      ) : (
+        <span className="text-xs font-semibold">{userInitials}</span>
+      )}
+    </div>
+  )
+}
 
 const createLocalId = () => {
   const cryptoAny = globalThis.crypto as { randomUUID?: () => string } | undefined
@@ -330,6 +402,7 @@ export default function AgentChat({
       borderClass: "border-emerald-200 bg-emerald-50 text-emerald-800",
     }
   }, [awaitingInput, isBusy, pendingCount])
+  const userIdentity = useMemo(() => resolveUserIdentity(), [])
 
   const workflowDetail = workflowSummary?.detail?.trim() || ""
 
@@ -515,13 +588,13 @@ export default function AgentChat({
       case "conditional_form":
         return <ConditionalFormHandler {...commonProps} />
       case "report_builder":
-        return <div className="p-4 text-center text-gray-500">Report Builder - Coming Soon</div>
+        return <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-center text-sm text-gray-600">Report builder interaction is not available in this workspace yet.</div>
       case "data_visualization":
-        return <div className="p-4 text-center text-gray-500">Data Visualization - Coming Soon</div>
+        return <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-center text-sm text-gray-600">Data visualization interaction is not available in this workspace yet.</div>
       case "timeline_activity":
-        return <div className="p-4 text-center text-gray-500">Timeline Activity - Coming Soon</div>
+        return <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-center text-sm text-gray-600">Timeline activity interaction is not available in this workspace yet.</div>
       case "kanban_board":
-        return <div className="p-4 text-center text-gray-500">Kanban Board - Coming Soon</div>
+        return <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-center text-sm text-gray-600">Kanban board interaction is not available in this workspace yet.</div>
       default:
         return null
     }
@@ -548,7 +621,7 @@ export default function AgentChat({
 
   const toggleVoiceMode = () => {
     if (!voiceChat.isSupported) {
-      alert("Voice chat is not supported in your browser. Please use Chrome, Edge, or Safari.")
+      toast.info("Voice chat is not supported in this browser. Please use Chrome, Edge, or Safari.")
       return
     }
 
@@ -656,7 +729,7 @@ export default function AgentChat({
             statusTone.borderClass
           }`}>
             <div className="flex items-center gap-2 font-medium">
-              <Bot className="h-4 w-4" />
+              <ChatAvatar role="assistant" userInitials={userIdentity.initials} className="h-6 w-6" />
               <span>{activeAgentName}</span>
             </div>
             <p className="mt-1">{humanizeTechnicalMessage(statusText)}</p>
@@ -664,7 +737,7 @@ export default function AgentChat({
         )}
         {messages.length === 0 ? (
           <div className="text-center h-full flex flex-col items-center justify-center text-gray-500">
-            <Bot className="h-12 w-12 mb-3 text-blue-500" aria-hidden strokeWidth={2.2} />
+            <ChatAvatar role="assistant" userInitials={userIdentity.initials} className="mb-3 h-14 w-14" />
             <p className="text-base font-medium text-gray-700">{emptyTitle}</p>
             {emptyDescription ? <p className="mt-2 max-w-md text-sm leading-6 text-gray-500">{emptyDescription}</p> : null}
           </div>
@@ -680,7 +753,8 @@ export default function AgentChat({
 
               if (type === "confirmation") {
                 return (
-                  <div key={m.id} className="mb-8 flex justify-start">
+                  <div key={m.id} className="mb-8 flex items-end justify-start gap-3">
+                    <ChatAvatar role="assistant" userInitials={userIdentity.initials} />
                     <div
                       className={`max-w-[95%] ${style.color} border text-gray-800 rounded-2xl rounded-bl-none shadow-lg px-4 py-4 ${
                         isInteractionDisabled ? "opacity-60" : ""
@@ -692,7 +766,7 @@ export default function AgentChat({
                         ) : (
                           <Clock className="h-3 w-3" />
                         )}
-                        Assistant - {isInteractionDisabled ? "Response Sent" : "Awaiting Confirmation"}
+                        {isInteractionDisabled ? "Response Sent" : "Awaiting Confirmation"}
                       </div>
                       <div className="space-y-3">
                         <p className="font-medium text-gray-900 text-sm">
@@ -721,7 +795,8 @@ export default function AgentChat({
               }
 
               return (
-                <div key={m.id} className="mb-8 flex justify-start">
+                <div key={m.id} className="mb-8 flex items-end justify-start gap-3">
+                  <ChatAvatar role="assistant" userInitials={userIdentity.initials} />
                   <div
                     className={`max-w-[95%] ${style.color} border text-gray-800 rounded-2xl rounded-bl-none shadow-lg px-4 py-4 ${
                       isInteractionDisabled ? "opacity-60" : ""
@@ -729,7 +804,7 @@ export default function AgentChat({
                   >
                     <div className={`font-semibold text-xs mb-3 ${style.textColor} flex items-center gap-2`}>
                       <span>{style.icon}</span>
-                      Assistant - {type.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                      {type.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase())}
                       {isInteractionDisabled && (
                         <span className="ml-auto text-green-600 flex items-center gap-1">
                           <Check className="h-3 w-3" />
@@ -748,21 +823,24 @@ export default function AgentChat({
             const interactionResponseSummary =
               m.role === "user" ? detectInteractionResponseSummary(m.content) : null
             const displayContent = m.role === "assistant" ? humanizeTechnicalMessage(m.content) : m.content
+            const isUserMessage = m.role === "user"
 
             return (
-              <div key={m.id} className={`mb-8 flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div key={m.id} className={`mb-8 flex items-end gap-3 ${isUserMessage ? "justify-end" : "justify-start"}`}>
+                {!isUserMessage ? (
+                  <ChatAvatar role="assistant" userInitials={userIdentity.initials} />
+                ) : null}
                 <div
                   className={`max-w-[85%] rounded-2xl px-5 py-4 ${
-                    m.role === "user"
+                    isUserMessage
                       ? "bg-blue-500 text-white rounded-br-none"
                       : "bg-white text-gray-800 rounded-bl-none shadow-lg border border-gray-100"
                   }`}
                 >
                   <div
-                    className={`font-semibold text-xs mb-3 flex items-center justify-between ${m.role === "user" ? "text-blue-100" : "text-gray-500"}`}
+                    className={`font-semibold text-xs mb-3 flex items-center justify-between ${isUserMessage ? "text-blue-100" : "text-gray-500"}`}
                   >
                     <div className="flex items-center gap-2">
-                      <span>{m.role === "user" ? "You" : "Assistant"}</span>
                       {copiedMessageId === m.id && (
                         <span className="inline-flex items-center gap-1 text-green-600">
                           <Check className="h-3 w-3" />
@@ -771,7 +849,7 @@ export default function AgentChat({
                       )}
                     </div>
 
-                    {m.role === "assistant" && voiceChat.isSupported && (
+                    {!isUserMessage && voiceChat.isSupported && (
                       <button
                         onClick={() => speakMessage(m.content, m.id)}
                         className="p-1 rounded-full hover:bg-gray-100 transition-colors shrink-0"
@@ -786,7 +864,7 @@ export default function AgentChat({
                     <div className="space-y-1">
                       <p className="text-base font-semibold">{interactionResponseSummary.title}</p>
                       {interactionResponseSummary.detail ? (
-                        <p className={`text-sm leading-6 ${m.role === "user" ? "text-blue-50" : "text-gray-600"}`}>
+                        <p className={`text-sm leading-6 ${isUserMessage ? "text-blue-50" : "text-gray-600"}`}>
                           {interactionResponseSummary.detail}
                         </p>
                       ) : null}
@@ -800,13 +878,17 @@ export default function AgentChat({
                     />
                   )}
                 </div>
+                {isUserMessage ? (
+                  <ChatAvatar role="user" userInitials={userIdentity.initials} userImageUrl={userIdentity.imageUrl} />
+                ) : null}
               </div>
             )
           })
         )}
 
         {pendingCount > 0 && (
-          <div className="flex justify-start mb-4">
+          <div className="mb-4 flex items-end justify-start gap-3">
+            <ChatAvatar role="assistant" userInitials={userIdentity.initials} />
             <div className="bg-white text-gray-800 rounded-2xl rounded-bl-none px-4 py-3 max-w-[80%] shadow-sm border border-gray-100">
               <div className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin text-gray-700" aria-hidden />

@@ -88,11 +88,6 @@ export default function CompanyProfileContainer() {
     }
   }, [analytics?.total_policies, typedProfile])
 
-  const completionPercentage = useMemo(() => {
-    const completed = Object.values(stepCompletion).filter(Boolean).length
-    return Math.round((completed / Object.keys(stepCompletion).length) * 100)
-  }, [stepCompletion])
-
   const activeStepIndex = tabConfig.findIndex((tab) => tab.value === resolvedActiveTab)
   const activeStep = tabConfig[activeStepIndex] ?? tabConfig[0]
   const nextStep = tabConfig[activeStepIndex + 1]
@@ -139,24 +134,12 @@ export default function CompanyProfileContainer() {
       <aside className="space-y-4">
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="p-5 text-left text-inherit">
-            <CardTitle className="text-xl">Step-by-step company setup</CardTitle>
+            <CardTitle className="text-xl">Company profile sections</CardTitle>
             <p className="text-sm text-gray-600">
-              Move through the company profile in order. Save each step and continue into staff and AI setup when ready.
+              Manage each part of the company profile without showing onboarding progress outside the dashboard.
             </p>
           </CardHeader>
           <CardContent className="space-y-4 p-5 pt-0">
-            <div>
-              <div className="mb-2 flex items-center justify-between text-xs font-medium uppercase tracking-wide text-gray-500">
-                <span>Company setup</span>
-                <span>{completionPercentage}%</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-gray-100">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 transition-all duration-300"
-                  style={{ width: `${completionPercentage}%` }}
-                />
-              </div>
-            </div>
             <div className="space-y-2">
               {tabConfig.map((tab, index) => {
                 const isComplete = stepCompletion[tab.value]

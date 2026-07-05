@@ -1,11 +1,11 @@
 'use client';
 import { useGetDashboardLowStockItemsQuery, useGetRealtimeDashboardStatsQuery } from '@/redux/features/dashboard/dashboardApiSlice';
 import { Box, AlertTriangle, ClipboardList, Truck, TrendingUp, ChevronRight } from 'lucide-react';
-import LoadingAnimation from '../common/LoadingAnimation';
 import { useMemo, useState } from 'react';
+import { QueryStateBoundary } from '@/components/common/QueryStateBoundary';
 
 const QuickStats = () => {
-  const { data, error, isLoading } = useGetRealtimeDashboardStatsQuery('');
+  const { data, error, isLoading, isFetching, refetch } = useGetRealtimeDashboardStatsQuery('');
   const { data: lowStockData, error: lowStockError, isLoading: lowStockLoading } = useGetDashboardLowStockItemsQuery({ stock_status: "low_stock" });
   const [expandedCard, setExpandedCard] = useState<number | null>(null);
 
@@ -56,26 +56,17 @@ const QuickStats = () => {
     }
   ];
 
-  if (isLoading) return (
-    <div className="h-full flex justify-center items-center">
-      <LoadingAnimation />
-    </div>
-  );
-  
-  if (error) return (
-    <div className="rounded-xl bg-white p-6 shadow-lg border border-gray-100">
-      <div className="flex flex-col items-center justify-center py-10">
-        <div className="rounded-full bg-red-100 p-4 mb-4">
-          <AlertTriangle className="w-8 h-8 text-red-600" />
-        </div>
-        <h3 className="text-lg font-medium text-gray-900 mb-1">Error Loading Data</h3>
-        <p className="text-gray-500 text-sm">Please try refreshing the page</p>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="rounded-2xl bg-white p-6 shadow-lg border border-gray-100">
+    <QueryStateBoundary
+      isLoading={isLoading}
+      isFetching={isFetching}
+      error={error}
+      onRetry={refetch}
+      loadingText="Loading inventory overview..."
+      errorTitle="Unable to load inventory overview"
+      className="rounded-2xl bg-white p-6 shadow-lg border border-gray-100"
+    >
+      <div className="rounded-2xl bg-white p-6 shadow-lg border border-gray-100">
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-2xl font-bold text-gray-800">Inventory Overview</h2>
         <button className="text-sm font-medium text-indigo-600 hover:text-indigo-800 flex items-center">
@@ -123,12 +114,15 @@ const QuickStats = () => {
       )}
       
       {lowStockError && (
-        <div className="mt-8 p-4 bg-red-50 rounded-xl border border-red-100">
+        <div className="mt-8 rounded-xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-500/30 dark:bg-rose-950/20">
           <div className="flex items-center">
-            <div className="bg-red-100 rounded-full p-2 mr-3">
-              <AlertTriangle className="w-5 h-5 text-red-600" />
+            <div className="mr-3 rounded-full bg-rose-100 p-2 dark:bg-rose-900/50">
+              <AlertTriangle className="h-5 w-5 text-rose-600 dark:text-rose-300" />
             </div>
-            <p className="text-red-700">Error loading low stock items</p>
+            <div>
+              <p className="font-semibold text-rose-900 dark:text-rose-100">Unable to load low-stock items</p>
+              <p className="text-sm text-rose-700 dark:text-rose-200">Refresh the dashboard if this panel does not recover.</p>
+            </div>
           </div>
         </div>
       )}
@@ -150,6 +144,7 @@ const QuickStats = () => {
               >
                 <div className="relative">
                   {item.display_image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img 
                       src={item.display_image} 
                       alt={item.name} 
@@ -197,7 +192,8 @@ const QuickStats = () => {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </QueryStateBoundary>
   );
 };
 

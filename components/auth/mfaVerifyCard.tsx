@@ -8,6 +8,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { Loader2, ShieldCheck, Smartphone } from "lucide-react";
 import { getCookieCandidates, readCookieValue } from "@/lib/authCookies";
+import { persistAuthSession } from "@/redux/services/apiSlice";
+import type { MfaVerifyResponse } from "@/redux/features/users/userTypes";
 
 export default function MfaVerifyCard() {
   const router = useRouter();
@@ -24,17 +26,35 @@ export default function MfaVerifyCard() {
     }
     setErrorMessage("");
 
+    let response: MfaVerifyResponse | null = null;
     try {
-      await verifyMfa({ code }).unwrap();
+      response = await verifyMfa({ code }).unwrap();
+    } catch (error: any) {
+      setErrorMessage(error?.data?.detail || "Unable to verify MFA code.");
+      return;
+    }
+
+    const nextPath = `${readCookieValue("mfaNextPath", getCookie) || "/dashboard"}`;
+
+    try {
+      if (response?.access || response?.refresh) {
+        try {
+          persistAuthSession(response as Parameters<typeof persistAuthSession>[0]);
+        } catch {
+          // The shared API layer also attempts persistence; do not block successful MFA navigation on local cookie write issues.
+        }
+      }
       markMfaVerified();
-      const nextPath = `${readCookieValue("mfaNextPath", getCookie) || "/dashboard"}`;
       for (const name of getCookieCandidates("mfaNextPath")) {
         deleteCookie(name);
       }
-      toast.success("MFA verified successfully.");
-      router.push(nextPath);
-    } catch (error: any) {
-      setErrorMessage(error?.data?.detail || "Unable to verify MFA code.");
+      toast.success(response?.detail || "MFA verified successfully.");
+      router.replace(nextPath);
+      router.refresh();
+    } catch {
+      if (typeof window !== "undefined") {
+        window.location.assign(nextPath);
+      }
     }
   };
 

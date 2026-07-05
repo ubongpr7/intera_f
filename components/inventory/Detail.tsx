@@ -6,6 +6,8 @@ import { useUpdateInventoryMutation } from '../../redux/features/inventory/inven
 import LoadingAnimation from '../common/LoadingAnimation';
 import { InventoryInterfaceKeys, InventoryKeyInfo } from './selectOptions';
 import { useGetUnitsQuery } from '@/redux/features/common/typeOF';
+import { useGetSupplersQuery } from '@/redux/features/company/companyAPISlice';
+import { RecordNotFoundCard } from '../common/RecordNotFoundCard';
 
 
 
@@ -14,6 +16,7 @@ export default function InventoryDetail({ id }: { id: string }) {
   const inventoryData = inventory as InventoryData;
   const [updateInventory,{isLoading:updateIsLoading}] = useUpdateInventoryMutation();
   const { data: units=[] } = useGetUnitsQuery();
+  const { data: suppliers=[] } = useGetSupplersQuery();
 
   
   const handleUpdate = async (updatedData: Partial<InventoryData>) => {
@@ -32,6 +35,10 @@ const unitOptions = units.map((unit: any) => ({
    value: unit.code,
   text: `${unit.name}${unit.abbreviated_name ? ` (${unit.abbreviated_name})` : ""}`,
 }));
+const supplierOptions = suppliers.map((supplier) => ({
+  value: String(supplier.id),
+  text: supplier.name,
+}));
 const typeOptions = inventoryTypes ? inventoryTypes.map((inventory_type: any) => ({
         value: inventory_type.id,
         text: inventory_type.text,
@@ -42,6 +49,7 @@ const  selectOptions = {
       inventory_type:typeOptions,
       default_uom_code:unitOptions,
       stock_uom_code:unitOptions,
+      default_supplier:supplierOptions,
       status: [
         { value: 'draft', text: 'Draft' },
         { value: 'active', text: 'Active' },
@@ -60,19 +68,54 @@ const  selectOptions = {
   <LoadingAnimation text="Loading..." ringColor="#3b82f6" />
   </div>
   </div>;
-  if (!inventory) return <div>Inventory item not found</div>;
+  if (!inventory) return <RecordNotFoundCard title="Inventory item not found" description="This inventory item may have been deleted, archived, or filtered out of the current workspace context." />;
 
   
   return (
     <DetailCard 
       data={inventoryData}
       interfaceKeys={InventoryInterfaceKeys}
+      displayFields={[
+        'display_image',
+        'description',
+        'sku_snapshot',
+        'barcode_snapshot',
+        'inventory_type',
+        'category_name',
+        'default_supplier_name',
+        'default_uom_code',
+        'stock_uom_code',
+        'status',
+        'stock_status',
+        'quantity',
+        'quantity_reserved',
+        'quantity_available',
+        'location_name',
+        'location_count',
+        'purchase_price',
+        'total_stock_value',
+        'lot_count',
+        'serial_count',
+        'minimum_stock_level',
+        'reorder_point',
+        'reorder_quantity',
+        'safety_stock_level',
+        'track_stock',
+        'track_lot',
+        'track_serial',
+        'track_expiry',
+        'allow_negative_stock',
+        'created_at',
+        'updated_at',
+      ]}
       updateMutation={handleUpdate}
       excludeFields={[
         'id',
         'name_snapshot',
         'inventory_category',
         'created_by',
+        'created_by_user_id',
+        'updated_by_user_id',
         'modified_by',
         'created_by_details',
         'modified_by_details',
@@ -86,9 +129,9 @@ const  selectOptions = {
       ]}
       selectOptions={selectOptions}
       isLoading={updateIsLoading}
-      policyFields={['description','stock_analytics']}
+      policyFields={['description']}
       keyInfo={InventoryKeyInfo}
-      optionalFields={['description','inventory_category','stock_uom_code']}
+      optionalFields={['description','inventory_category','default_supplier','stock_uom_code']}
 
     />
   );

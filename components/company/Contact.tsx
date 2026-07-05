@@ -9,6 +9,8 @@ import { contactPersonInterfaceKeys } from './selectOptions';
 import { CompanyAddressKeyInfo } from './selectOptions';
 import { toast } from 'react-toastify';
 import { Edit, Trash2 } from 'lucide-react';
+import { extractErrorMessage } from '@/lib/utils';
+import { confirmAction } from '../common/confirmAction';
 
 const inventoryColumns: Column<ContactPersonInterface>[] = [
   {
@@ -64,14 +66,20 @@ function ContactPersonView({company_id}:CompanyProps) {
   };
 
   const handleDelete = async (id: string | number) => {
-    if (window.confirm("Are you sure you want to delete this contact?")) {
-      try {
-        await deleteContact(id).unwrap();
-        await refetch();
-        toast.success("Contact deleted successfully!");
-      } catch (error) {
-        toast.error("Failed to delete contact.");
-      }
+    const confirmed = await confirmAction({
+      title: "Delete contact?",
+      description: "This removes the contact from the company record.",
+      confirmText: "Delete contact",
+      destructive: true,
+    });
+    if (!confirmed) return;
+
+    try {
+      await deleteContact(id).unwrap();
+      await refetch();
+      toast.success("Contact deleted successfully!");
+    } catch (error) {
+      toast.error(extractErrorMessage(error, ["detail"]) || "Failed to delete contact.");
     }
   };
 
@@ -92,7 +100,7 @@ function ContactPersonView({company_id}:CompanyProps) {
   if (error) {
     return (
       <div className="p-4 text-red-500">
-        Error loading contact data: {(error as any).message || 'Unknown error'}
+        Unable to load contact records: {extractErrorMessage(error, ["detail", "error"])}
       </div>
     );
   }

@@ -20,6 +20,7 @@ import {
   useTransferLocationStockMutation,
 } from "@/redux/features/stock/stockAPISlice"
 import type { StockLocation } from "@/redux/features/stock/stockTypes"
+import { formatMachineLabel } from "@/lib/displayLabels"
 
 type StockLocationInspectorProps = {
   locationId: string
@@ -44,7 +45,7 @@ const resolveTopInventoryTypes = (summary: Record<string, unknown> | undefined) 
   return rows
     .filter((row): row is Record<string, unknown> => Boolean(row && typeof row === "object"))
     .map((row) => ({
-      inventoryType: String(row.inventory_type || "Unclassified"),
+      inventoryType: formatMachineLabel(row.inventory_type, "Unclassified"),
       count: String(row.count || 0),
     }))
 }
@@ -103,6 +104,12 @@ export default function StockLocationInspector({
         id: locationId,
         data: {
           to_location_id: targetLocationId,
+          structural_location_id:
+            location?.structural_location_id
+              ? String(location.structural_location_id)
+              : location?.structural
+                ? String(location.id)
+                : undefined,
           inventory_item_id: inventoryItemId,
           quantity,
           serial_number: serialNumber || undefined,
@@ -145,7 +152,7 @@ export default function StockLocationInspector({
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Code</div>
-              <div className="mt-2 text-2xl font-semibold text-gray-900">{location?.code || "N/A"}</div>
+              <div className="mt-2 text-2xl font-semibold text-gray-900">{location?.code || "Not set"}</div>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Mode</div>
@@ -178,10 +185,20 @@ export default function StockLocationInspector({
                   <div className="mt-2 text-sm font-semibold text-gray-900">{location?.location_type_name || "Unclassified"}</div>
                 </div>
                 <div className="rounded-xl border border-gray-200 bg-white px-3 py-3">
+                  <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Workspace scope</div>
+                  <div className="mt-2 text-sm font-semibold text-gray-900">
+                    {location?.structural
+                      ? location?.is_default_structural_location
+                        ? "Default structural location"
+                        : "Structural location"
+                      : location?.structural_location_name || "Inherited from structural parent"}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-gray-200 bg-white px-3 py-3">
                   <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Address</div>
                   <div className="mt-2 text-sm font-semibold text-gray-900">{location?.physical_address || "No physical address set"}</div>
                 </div>
-                <div className="rounded-xl border border-gray-200 bg-white px-3 py-3 md:col-span-2">
+                <div className="rounded-xl border border-gray-200 bg-white px-3 py-3 md:col-span-2 lg:col-span-3">
                   <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Responsible official</div>
                   <div className="mt-2 text-sm font-semibold text-gray-900">
                     {officialName || location?.official_details?.email || "No official assigned"}

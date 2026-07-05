@@ -3,15 +3,12 @@
 import { useGetDashboardStockValueByLocationQuery } from '@/redux/features/dashboard/dashboardApiSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin } from 'lucide-react';
-import LoadingAnimation from '../common/LoadingAnimation';
 import { StockLocation } from '../interfaces/dashboard';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
+import { QueryStateBoundary } from '../common/QueryStateBoundary';
 
 const StockValueByLocation = () => {
-  const { data, error, isLoading } = useGetDashboardStockValueByLocationQuery('');
-
-  if (isLoading) return <div className="h-full flex justify-center items-center"><LoadingAnimation /></div>;
-  if (error) return <div>Error loading stock value by location</div>;
+  const { data, error, isLoading, isFetching, refetch } = useGetDashboardStockValueByLocationQuery('');
 
   const chartData = data?.map((location: StockLocation) => ({
     name: location.name,
@@ -19,6 +16,7 @@ const StockValueByLocation = () => {
   }));
 
   return (
+    <QueryStateBoundary isLoading={isLoading} isFetching={isFetching} error={error} onRetry={refetch} loadingText="Loading stock value by location..." errorTitle="Unable to load stock value by location">
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">Stock Value By Location</CardTitle>
@@ -37,6 +35,7 @@ const StockValueByLocation = () => {
         </div>
       </CardContent>
     </Card>
+    </QueryStateBoundary>
   );
 };
 

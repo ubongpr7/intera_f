@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { formatCurrencyCompact } from "@/lib/currency-utils"
+import { formatMachineLabel } from "@/lib/displayLabels"
 import {
   useGetInventoryItemQuery,
   useGetInventoryItemTrackingHistoryQuery,
@@ -52,13 +53,29 @@ const getErrorMessage = (error: unknown) => {
 
 const formatDateLabel = (value?: string | null) => {
   if (!value) {
-    return "N/A"
+    return "Not set"
   }
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) {
     return value
   }
   return parsed.toLocaleString()
+}
+
+const asLocationEntry = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === "object" ? (value as Record<string, unknown>) : null
+
+const getLeafLocationCount = (item?: { location_breakdown?: Array<Record<string, unknown>> | null }) =>
+  (item?.location_breakdown || []).reduce((total, entry) => total + Number(entry.leaf_location_count ?? 0), 0)
+
+const getPrimaryStructuralLocationName = (item?: { location_breakdown?: Array<Record<string, unknown>> | null; location_name?: string | null }) =>
+  String(item?.location_breakdown?.[0]?.structural_location_name || item?.location_name || "Not assigned")
+
+const displayValue = (value: unknown, fallback = "Not set") => {
+  if (value === null || value === undefined || `${value}`.trim() === "") {
+    return fallback
+  }
+  return `${value}`
 }
 
 export default function InventoryItemInspector({
@@ -74,6 +91,8 @@ export default function InventoryItemInspector({
   const [updateStatus, { isLoading: isUpdating }] = useUpdateInventoryItemStatusMutation()
   const [status, setStatus] = useState("")
   const [reason, setReason] = useState("")
+  const primaryStructuralLocation = getPrimaryStructuralLocationName(item)
+  const leafLocationCount = getLeafLocationCount(item)
 
   const handleUpdateStatus = async () => {
     if (!status) {
@@ -159,18 +178,61 @@ export default function InventoryItemInspector({
               <div className="rounded-2xl border border-gray-200 bg-white p-4">
                 <h3 className="text-sm font-semibold text-gray-900">Core details</h3>
                 <div className="mt-3 grid gap-3 md:grid-cols-2">
-                  <div className="rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-700">SKU: {item?.sku || "N/A"}</div>
-                  <div className="rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-700">Status: {item?.status || "N/A"}</div>
-                  <div className="rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-700">Location: {item?.location_name || "N/A"}</div>
-                  <div className="rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-700">Variant: {item?.product_variant || "N/A"}</div>
-                  <div className="rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-700">Expiry: {item?.expiry_date || "N/A"}</div>
-                  <div className="rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-700">Serial: {item?.serial || "N/A"}</div>
+                  <div className="rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-700">SKU: {displayValue(item?.sku)}</div>
+                  <div className="rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-700">Status: {formatMachineLabel(item?.status, "Not set")}</div>
+                  <div className="rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-700">Primary structural location: {primaryStructuralLocation}</div>
+                  <div className="rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-700">Variant: {displayValue(item?.product_variant)}</div>
+                  <div className="rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-700">Expiry: {formatDateLabel(item?.expiry_date)}</div>
+                  <div className="rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-700">Serial: {displayValue(item?.serial)}</div>
                   <div className="rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-700">Lot count: {item?.lot_count ?? 0}</div>
                   <div className="rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-700">Serial count: {item?.serial_count ?? 0}</div>
+                  <div className="rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-700">Mapped leaf locations: {leafLocationCount}</div>
                   <div className="rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-700">Tracking flags: {[item?.track_stock ? "stock" : null, item?.track_lot ? "lot" : null, item?.track_serial ? "serial" : null].filter(Boolean).join(", ") || "none"}</div>
                   <div className="rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-700">
                     Purchase price: {formatCurrencyCompact(currencyCode, Number(item?.purchase_price ?? 0))}
                   </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                <h3 className="text-sm font-semibold text-gray-900">Structural location footprint</h3>
+                <div className="mt-3 space-y-3">
+                  {item?.location_breakdown?.length ? (
+                    item.location_breakdown.map((entry, index) => {
+                      const locationEntry = asLocationEntry(entry)
+                      const leafLocations = Array.isArray(locationEntry?.leaf_locations)
+                        ? locationEntry.leaf_locations.filter((leaf): leaf is Record<string, unknown> => Boolean(leaf && typeof leaf === "object"))
+                        : []
+                      return (
+                        <div key={`${String(locationEntry?.structural_location_id || index)}`} className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="text-sm font-semibold text-gray-900">
+                              {String(locationEntry?.structural_location_name || "Unknown structural location")}
+                            </p>
+                            <span className="text-xs uppercase tracking-wide text-gray-500">
+                              {Number(locationEntry?.leaf_location_count ?? leafLocations.length)} leaf location(s)
+                            </span>
+                          </div>
+                          <p className="mt-2 text-sm text-gray-600">
+                            On hand: {String(locationEntry?.quantity ?? locationEntry?.total_quantity ?? 0)} • Reserved: {String(locationEntry?.quantity_reserved ?? 0)} • Available: {String(locationEntry?.quantity_available ?? 0)}
+                          </p>
+                          {leafLocations.length ? (
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {leafLocations.map((leaf, leafIndex) => (
+                                <span key={`${String(leaf.stock_location_id || leafIndex)}`} className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs text-gray-600">
+                                  {String(leaf.stock_location_name || "Leaf")} • {String(leaf.quantity_available ?? leaf.quantity ?? leaf.total_quantity ?? 0)}
+                                </span>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
+                      )
+                    })
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-3 py-4 text-sm text-gray-600">
+                      No structural location grouping is available for this inventory item yet.
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -181,11 +243,16 @@ export default function InventoryItemInspector({
                     item.balances.map((balance) => (
                       <div key={balance.id} className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3">
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                          <p className="text-sm font-semibold text-gray-900">{balance.stock_location_name || "Unknown location"}</p>
+                          <p className="text-sm font-semibold text-gray-900">
+                            {balance.structural_location_name || balance.stock_location_name || "Unknown location"}
+                          </p>
                           <span className="text-xs uppercase tracking-wide text-gray-500">
                             {balance.lot_number ? `Lot ${balance.lot_number}` : "No lot split"}
                           </span>
                         </div>
+                        {balance.structural_location_name && balance.stock_location_name && balance.structural_location_name !== balance.stock_location_name ? (
+                          <p className="mt-2 text-sm text-gray-600">Leaf location: {balance.stock_location_name}</p>
+                        ) : null}
                         <p className="mt-2 text-sm text-gray-600">
                           On hand: {balance.quantity_on_hand ?? 0} • Reserved: {balance.quantity_reserved ?? 0} • Available: {balance.quantity_available ?? 0}
                         </p>
@@ -209,7 +276,7 @@ export default function InventoryItemInspector({
                           <p className="text-sm font-semibold text-gray-900">
                             {reservation.external_order_type}: {reservation.external_order_id}
                           </p>
-                          <span className="text-xs uppercase tracking-wide text-gray-500">{reservation.status}</span>
+                          <span className="text-xs uppercase tracking-wide text-gray-500">{formatMachineLabel(reservation.status)}</span>
                         </div>
                         <p className="mt-2 text-sm text-gray-600">
                           Reserved: {reservation.reserved_quantity} • Fulfilled: {reservation.fulfilled_quantity} • Remaining: {reservation.remaining_quantity ?? reservation.reserved_quantity}
@@ -247,7 +314,7 @@ export default function InventoryItemInspector({
                             Remaining: {lot.remaining_quantity ?? 0} / Received: {lot.received_quantity ?? 0}
                           </p>
                           <p className="mt-2 text-sm text-gray-600">
-                            Expiry: {lot.expiry_date || "N/A"}
+                            Expiry: {formatDateLabel(lot.expiry_date)}
                             {lot.supplier_name ? ` • Supplier: ${lot.supplier_name}` : ""}
                           </p>
                         </div>
@@ -271,7 +338,10 @@ export default function InventoryItemInspector({
                             <span className="text-xs uppercase tracking-wide text-gray-500">{serial.status || "unknown"}</span>
                           </div>
                           <p className="mt-2 text-sm text-gray-600">
-                            Location: {serial.stock_location_name || "Not assigned"}
+                            Location: {serial.structural_location_name || serial.stock_location_name || "Not assigned"}
+                            {serial.structural_location_name && serial.stock_location_name && serial.structural_location_name !== serial.stock_location_name
+                              ? ` • Leaf: ${serial.stock_location_name}`
+                              : ""}
                             {serial.lot_number ? ` • Lot: ${serial.lot_number}` : ""}
                           </p>
                         </div>
@@ -353,7 +423,7 @@ export default function InventoryItemInspector({
                     <SelectContent>
                       {STATUS_OPTIONS.map((option) => (
                         <SelectItem key={option} value={option}>
-                          {option.replaceAll("_", " ")}
+                          {formatMachineLabel(option)}
                         </SelectItem>
                       ))}
                     </SelectContent>

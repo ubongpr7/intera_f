@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import type { ReactNode } from "react"
 import { useMemo } from "react"
 import {
@@ -169,6 +170,31 @@ export const useWorkspaceSetupProgress = () => {
   }
 }
 
+export function WorkspaceSetupLoadingCard({
+  title = "Loading workspace context",
+  description = "Checking your active workspace and setup state before showing operational controls.",
+}: {
+  title?: string
+  description?: string
+}) {
+  return (
+    <div className="mx-auto max-w-4xl px-4 py-8 lg:px-8">
+      <Card className="border-gray-200 shadow-sm">
+        <CardHeader className="p-6 text-left text-inherit">
+          <div className="h-4 w-40 animate-pulse rounded-full bg-gray-200" />
+          <CardTitle className="mt-4 text-3xl tracking-tight">{title}</CardTitle>
+          <CardDescription className="max-w-2xl text-sm leading-6 text-gray-600">{description}</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 p-6 pt-0 md:grid-cols-3">
+          {[0, 1, 2].map((item) => (
+            <div key={item} className="h-24 animate-pulse rounded-2xl border border-gray-200 bg-gray-50" />
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
 export function WorkspaceSetupShell({
   activeStage,
   eyebrow = "Workspace Setup",
@@ -182,11 +208,13 @@ export function WorkspaceSetupShell({
   description: string
   children: ReactNode
 }) {
-  const { activeMembership, completionPercentage, isOwner, nextRecommendedStage, stages } = useWorkspaceSetupProgress()
+  const { activeMembership, completionPercentage, isLoading, isOwner, nextRecommendedStage, stages } = useWorkspaceSetupProgress()
+  const pathname = usePathname()
+  const showSetupProgress = !isLoading && isOwner && pathname === "/dashboard"
 
   return (
-    <div className={cn("mx-auto w-full max-w-7xl gap-6 px-4 py-6 lg:px-8", isOwner ? "grid lg:grid-cols-[290px_minmax(0,1fr)]" : "block")}>
-      {isOwner ? <aside className="space-y-4">
+    <div className={cn("mx-auto w-full max-w-7xl gap-6 px-4 py-6 lg:px-8", showSetupProgress ? "grid lg:grid-cols-[290px_minmax(0,1fr)]" : "block")}>
+      {showSetupProgress ? <aside className="space-y-4">
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="p-5 text-left text-inherit">
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
@@ -279,9 +307,9 @@ export function WorkspaceSetupShell({
 }
 
 export function WorkspaceSetupOverview() {
-  const { activeMembership, completionPercentage, isOwner, nextRecommendedStage, readiness, stages } = useWorkspaceSetupProgress()
+  const { activeMembership, completionPercentage, isLoading, isOwner, nextRecommendedStage, readiness, stages } = useWorkspaceSetupProgress()
 
-  if (!isOwner) {
+  if (isLoading || !isOwner) {
     return null
   }
 

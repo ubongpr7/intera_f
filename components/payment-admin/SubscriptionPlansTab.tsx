@@ -12,6 +12,9 @@ import {
   useDeleteSubscriptionPlanMutation,
 } from "@/redux/features/payment/paymentAPISlice"
 import { toast } from "react-toastify"
+import { extractErrorMessage } from "@/lib/utils"
+import { confirmAction } from "@/components/common/confirmAction"
+import { QueryStateBoundary } from "@/components/common/QueryStateBoundary"
 
 interface SubscriptionPlan {
   id: string
@@ -38,10 +41,6 @@ export function SubscriptionPlansTab() {
   const { data: plans = [], isLoading, error, refetch } = useGetSubscriptionPlansQuery({})
   const [deletePlan] = useDeleteSubscriptionPlanMutation()
 
-  console.log("[v0] SubscriptionPlansTab - plans data:", plans)
-  console.log("[v0] SubscriptionPlansTab - isLoading:", isLoading)
-  console.log("[v0] SubscriptionPlansTab - error:", error)
-
   const handleEdit = (plan: SubscriptionPlan) => {
     setEditingPlan(plan)
     setIsDialogOpen(true)
@@ -53,14 +52,20 @@ export function SubscriptionPlansTab() {
   }
 
   const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this subscription plan?")) {
-      try {
-        await deletePlan(id).unwrap()
-        toast.success("Subscription plan deleted successfully")
-        refetch()
-      } catch (error) {
-        toast.error("Failed to delete subscription plan")
-      }
+    const confirmed = await confirmAction({
+      title: "Delete subscription plan?",
+      description: "This removes the plan from the subscription catalog. Existing references may be affected.",
+      confirmText: "Delete plan",
+      destructive: true,
+    })
+    if (!confirmed) return
+
+    try {
+      await deletePlan(id).unwrap()
+      toast.success("Subscription plan deleted successfully")
+      refetch()
+    } catch (error) {
+      toast.error(extractErrorMessage(error, ["detail"]) || "Failed to delete subscription plan")
     }
   }
 
@@ -80,20 +85,14 @@ export function SubscriptionPlansTab() {
           </Button>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Error Loading Plans</CardTitle>
-            <CardDescription>Failed to load subscription plans. Please check your backend connection.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-red-500">
-              Error: {(error as any)?.message || (error as any)?.data?.message || "Unknown error occurred"}
-            </p>
-            <Button onClick={refetch} className="mt-4">
-              Retry
-            </Button>
-          </CardContent>
-        </Card>
+        <QueryStateBoundary
+          error={error}
+          onRetry={refetch}
+          errorTitle="Unable to load subscription plans"
+          errorKeys={["detail", "message", "error"]}
+        >
+          <div />
+        </QueryStateBoundary>
 
         <SubscriptionPlanDialog
           open={isDialogOpen}

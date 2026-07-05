@@ -11,6 +11,8 @@ import { PaymentProviderDialog } from "./PaymentProviderDialog"
 import { useGetPaymentProvidersQuery, useDeletePaymentProviderMutation } from "@/redux/features/payment/paymentAPISlice"
 import type { PaymentProvider } from "@/redux/features/payment/paymentTypes"
 import { toast } from "react-toastify"
+import { extractErrorMessage } from "@/lib/utils"
+import { confirmAction } from "@/components/common/confirmAction"
 
 export function PaymentProvidersTab() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -26,14 +28,20 @@ export function PaymentProvidersTab() {
   }
 
   const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this payment provider?")) {
-      try {
-        await deleteProvider(id).unwrap()
-        toast.success("Payment provider deleted successfully")
-        refetch()
-      } catch (error) {
-        toast.error("Failed to delete payment provider")
-      }
+    const confirmed = await confirmAction({
+      title: "Delete payment provider?",
+      description: "This removes the provider credentials and configuration from this admin view.",
+      confirmText: "Delete provider",
+      destructive: true,
+    })
+    if (!confirmed) return
+
+    try {
+      await deleteProvider(id).unwrap()
+      toast.success("Payment provider deleted successfully")
+      refetch()
+    } catch (error) {
+      toast.error(extractErrorMessage(error, ["detail"]) || "Failed to delete payment provider")
     }
   }
 

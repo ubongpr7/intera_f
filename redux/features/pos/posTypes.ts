@@ -51,6 +51,8 @@ export interface POSConfiguration extends POSAuditFields {
 export interface POSTerminal extends POSAuditFields {
   name: string;
   location: string;
+  location_sync_identifier?: string | null;
+  structural_location_sync_identifier?: string | null;
   is_active: boolean;
   configuration: string;
   assigned_device_identifier?: string | null;

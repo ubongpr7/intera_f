@@ -9,6 +9,7 @@ import { CompanyInterfaceKeys,defaultValues } from './selectOptions';
 import { CompanyKeyInfo } from './selectOptions';
 import { getCurrencySymbol } from '@/lib/currency-utils';
 import { CURRENCY_CODES } from '@/lib/currencyCode';
+import { extractErrorMessage } from '@/lib/utils';
 
 const inventoryColumns: Column<CompanyDataInterface>[] = [
   {
@@ -84,7 +85,7 @@ function CompanyView() {
   if (error) {
     return (
       <div className="p-4 text-red-500">
-        Error loading inventory data: {(error as any).message || 'Unknown error'}
+        Unable to load company records: {extractErrorMessage(error, ["detail", "error"])}
       </div>
     );
   }

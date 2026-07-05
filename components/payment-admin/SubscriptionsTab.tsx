@@ -10,6 +10,9 @@ import { DataTable } from "@/components/ui/data-table"
 import { useGetSubscriptionsQuery, useCancelSubscriptionMutation } from "@/redux/features/payment/paymentAPISlice"
 import type { SubscriptionRecord, SubscriptionStatus } from "@/redux/features/payment/paymentTypes"
 import { toast } from "react-toastify"
+import { formatMachineLabel } from "@/lib/displayLabels"
+import { extractErrorMessage } from "@/lib/utils"
+import { confirmAction } from "@/components/common/confirmAction"
 
 export function SubscriptionsTab() {
   const [filters, setFilters] = useState<Record<string, string>>({})
@@ -17,14 +20,20 @@ export function SubscriptionsTab() {
   const [cancelSubscription] = useCancelSubscriptionMutation()
 
   const handleCancel = async (id: string) => {
-    if (confirm("Are you sure you want to cancel this subscription?")) {
-      try {
-        await cancelSubscription(id).unwrap()
-        toast.success("Subscription cancelled successfully")
-        refetch()
-      } catch (error) {
-        toast.error("Failed to cancel subscription")
-      }
+    const confirmed = await confirmAction({
+      title: "Cancel subscription?",
+      description: "This cancels the subscription and may stop future billing for the customer.",
+      confirmText: "Cancel subscription",
+      destructive: true,
+    })
+    if (!confirmed) return
+
+    try {
+      await cancelSubscription(id).unwrap()
+      toast.success("Subscription cancelled successfully")
+      refetch()
+    } catch (error) {
+      toast.error(extractErrorMessage(error, ["detail"]) || "Failed to cancel subscription")
     }
   }
 
@@ -35,7 +44,7 @@ export function SubscriptionsTab() {
       expired: "secondary",
       trial: "outline",
     }
-    return <Badge variant={variants[status]}>{status}</Badge>
+    return <Badge variant={variants[status]}>{formatMachineLabel(status)}</Badge>
   }
 
   const columns: ColumnDef<SubscriptionRecord>[] = [

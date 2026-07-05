@@ -1,5 +1,5 @@
 import React, { useDeferredValue, useMemo, useState } from 'react';
-import { Search, Users2 } from 'lucide-react';
+import { AlertTriangle, Search, Users2 } from 'lucide-react';
 import { useGetUserGroupsQuery, useUpdateUserGroupMutation } from '../../redux/features/permission/permit';
 import { toast } from 'react-toastify';
 
@@ -211,7 +211,18 @@ const UserGroupManager: React.FC<UserGroupManagerProps> = ({ userId, setRefetchD
   }
 
   if (isError) {
-    return <div className="p-4 text-red-600">Error loading user groups. Please try again later.</div>;
+    return (
+      <div className="rounded-[24px] border border-rose-200 bg-rose-50 p-6 text-center dark:border-rose-500/30 dark:bg-rose-950/20">
+        <AlertTriangle className="mx-auto h-8 w-8 text-rose-500" />
+        <p className="mt-3 text-base font-semibold text-rose-900 dark:text-rose-100">Unable to load user groups</p>
+        <p className="mt-2 text-sm text-rose-700 dark:text-rose-200">
+          Refresh this panel or try again after confirming the staff member is still available.
+        </p>
+        <Button type="button" variant="outline" className="mt-4" onClick={() => refetchUserGroups()}>
+          Retry
+        </Button>
+      </div>
+    );
   }
 
   if (userGroups.length === 0) {

@@ -16,6 +16,7 @@ import { toast } from "react-toastify";
 
 import { extractErrorMessage } from "@/lib/utils";
 import { hasTokenPermission, isWorkspaceOwner } from "@/lib/agentPermissions";
+import { confirmAction } from "@/components/common/confirmAction";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -438,9 +439,14 @@ export default function AgentWorkspaceManager({
   };
 
   const handleDeleteAgent = async (agent: WorkspaceAgentRecord) => {
-    if (!window.confirm(`Delete ${agent.name}? This removes it from the workspace control plane.`)) {
-      return;
-    }
+    const confirmed = await confirmAction({
+      title: "Delete workspace agent?",
+      description: `Delete ${agent.name}? This removes it from the workspace control plane.`,
+      confirmText: "Delete agent",
+      destructive: true,
+    });
+    if (!confirmed) return;
+
     try {
       await deleteWorkspaceAgent(agent.id).unwrap();
       toast.success(`Deleted ${agent.name}.`);

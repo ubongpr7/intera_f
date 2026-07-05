@@ -22,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { getCurrencySymbolForProfile } from "@/lib/currency-utils";
 import { buildFieldGuidance } from "./fieldInfoGuidance";
+import { normalizeFormPayload } from "@/lib/formPayload";
 
 const PhoneInput = dynamic(
   () => import("react-phone-number-input"),
@@ -213,7 +214,14 @@ export default function CustomCreateCard<T extends Record<string, any>>({
 
   const onSubmitHandler = async (formData: Partial<T>) => {
     try {
-      await onSubmit(formData);
+      await onSubmit(
+        normalizeFormPayload(formData, {
+          optionalFields,
+          hiddenFields,
+          dateFields,
+          datetimeFields,
+        }),
+      );
       toast.success("Operation  Successfully");
       onClose();
       reset();
@@ -337,7 +345,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
               {useSideFormLayout ? "Side form workspace" : "Quick create form"}
             </div>
             <div className="pr-14">
-              <h2 className="text-2xl font-semibold tracking-tight text-blue-200">{panelTitle}</h2>
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-50">{panelTitle}</h2>
               
             </div>
           </div>

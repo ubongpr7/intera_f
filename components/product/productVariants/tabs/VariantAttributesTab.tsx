@@ -23,6 +23,7 @@ import type {
 } from "@/redux/features/product/productTypes"
 import { getCurrencySymbolForProfile } from "@/lib/currency-utils"
 import { toast } from "react-toastify"
+import { extractErrorMessage } from "@/lib/utils"
 
 interface VariantAttributesTabProps {
   variant: ProductVariant
@@ -283,7 +284,7 @@ const VariantAttributesTab = ({ variant, onSuccess }: VariantAttributesTabProps)
   if (attributeLinksError) {
     return (
       <div className="p-4 text-red-500">
-        Error loading attributes: {(attributeLinksError as any).message || "Unknown error"}
+        Unable to load variant attributes: {extractErrorMessage(attributeLinksError, ["detail", "error"])}
       </div>
     )
   }
@@ -339,7 +340,7 @@ const VariantAttributesTab = ({ variant, onSuccess }: VariantAttributesTabProps)
                 ) : attributeValuesError ? (
                   <Alert className="border-red-500 bg-red-50">
                     <AlertDescription className="text-red-700">
-                      Error loading attribute values: {(attributeValuesError as any).message || "Unknown error"}
+                      Unable to load attribute values: {extractErrorMessage(attributeValuesError, ["detail", "error"])}
                     </AlertDescription>
                   </Alert>
                 ) : (
@@ -469,8 +470,7 @@ const VariantAttributesTab = ({ variant, onSuccess }: VariantAttributesTabProps)
                         ) : editAttributeValuesError ? (
                           <Alert className="border-red-500 bg-red-50">
                             <AlertDescription className="text-red-700">
-                              Error loading attribute values:{" "}
-                              {(editAttributeValuesError as any).message || "Unknown error"}
+                              Unable to load attribute values: {extractErrorMessage(editAttributeValuesError, ["detail", "error"])}
                             </AlertDescription>
                           </Alert>
                         ) : (

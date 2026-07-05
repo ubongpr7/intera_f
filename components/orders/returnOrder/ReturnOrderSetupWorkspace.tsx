@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useDeferredValue, useState } from "react"
 import { ArrowRight, CheckCircle2, ClipboardCheck, PackageX, ReceiptText, Undo2 } from "lucide-react"
-import { useWorkspaceSetupProgress } from "@/components/onboarding/WorkspaceSetupShell"
+import { WorkspaceSetupLoadingCard, useWorkspaceSetupProgress } from "@/components/onboarding/WorkspaceSetupShell"
 import OperationalStepSection from "@/components/setup/OperationalStepSection"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -33,7 +33,7 @@ const formatStatus = (value: string) =>
 const asNumber = (value: string | number | undefined | null) => Number(value ?? 0)
 
 export default function ReturnOrderSetupWorkspace() {
-  const { activeMembership, isOwner } = useWorkspaceSetupProgress()
+  const { activeMembership, isLoading: loadingWorkspaceSetup, isOwner } = useWorkspaceSetupProgress()
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [searchQuery, setSearchQuery] = useState("")
   const deferredSearchQuery = useDeferredValue(searchQuery.trim())
@@ -59,6 +59,15 @@ export default function ReturnOrderSetupWorkspace() {
   const dispatchStepReady = returnOrders.some((order) => order.status === ReturnOrderStatus.in_transit)
   const completeStepReady = completedOrders > 0
   const nextStepId = !createStepReady ? "initiate-returns" : !dispatchStepReady ? "dispatch-returns" : !completeStepReady ? "close-returns" : null
+
+  if (loadingWorkspaceSetup) {
+    return (
+      <WorkspaceSetupLoadingCard
+        title="Loading supplier-return workspace"
+        description="Checking your active company before showing supplier-return setup and return controls."
+      />
+    )
+  }
 
   if (!activeMembership) {
     return (

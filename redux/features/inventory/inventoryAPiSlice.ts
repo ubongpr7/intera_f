@@ -1,5 +1,7 @@
 import { apiSlice } from "../../services/apiSlice";
+import { unwrapListResponse } from "../../services/apiSlice";
 import { buildQuery } from "../common/queryParams";
+import type { StructuralLocationScopeParams } from "@/lib/structuralLocationScope";
 import type {
   AdjustStockPayload,
   AdjustStockResponse,
@@ -17,6 +19,7 @@ const inventoryApi = "inventory_api";
 const service = "inventory";
 
 type EntityId = string | number;
+type InventoryScopeParams = StructuralLocationScopeParams & Pick<InventoryListParams, "stock_location_id">;
 
 export const inventoryApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -25,6 +28,7 @@ export const inventoryApiSlice = apiSlice.injectEndpoints({
         url: buildQuery(`/${inventoryApi}/categories/`, params),
         service,
       }),
+      transformResponse: (response: CategoryData[] | { results?: CategoryData[] }) => unwrapListResponse<CategoryData>(response),
     }),
 
     createCategory: builder.mutation<CategoryData, Partial<CategoryData>>({
@@ -72,6 +76,7 @@ export const inventoryApiSlice = apiSlice.injectEndpoints({
         url: `/${inventoryApi}/categories/${id}/children/`,
         service,
       }),
+      transformResponse: (response: CategoryData[] | { results?: CategoryData[] }) => unwrapListResponse<CategoryData>(response),
     }),
 
     getCategoryInventories: builder.query<InventorySummary[], EntityId>({
@@ -79,6 +84,7 @@ export const inventoryApiSlice = apiSlice.injectEndpoints({
         url: `/${inventoryApi}/categories/${id}/items/`,
         service,
       }),
+      transformResponse: (response: InventorySummary[] | { results?: InventorySummary[] }) => unwrapListResponse<InventorySummary>(response),
     }),
 
     listInventories: builder.query<InventorySummary[], InventoryListParams | void>({
@@ -86,6 +92,7 @@ export const inventoryApiSlice = apiSlice.injectEndpoints({
         url: buildQuery(`/${inventoryApi}/items/`, params),
         service,
       }),
+      transformResponse: (response: InventorySummary[] | { results?: InventorySummary[] }) => unwrapListResponse<InventorySummary>(response),
     }),
 
     createInventory: builder.mutation<InventoryData, Partial<InventoryData>>({
@@ -121,23 +128,25 @@ export const inventoryApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getLowStockInventories: builder.query<InventorySummary[], void>({
-      query: () => ({
-        url: `/${inventoryApi}/items/low_stock/`,
+    getLowStockInventories: builder.query<InventorySummary[], InventoryScopeParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${inventoryApi}/items/low_stock/`, params),
         service,
       }),
+      transformResponse: (response: InventorySummary[] | { results?: InventorySummary[] }) => unwrapListResponse<InventorySummary>(response),
     }),
 
-    getInventoriesNeedingReorder: builder.query<InventorySummary[], void>({
-      query: () => ({
-        url: `/${inventoryApi}/items/needs_reorder/`,
+    getInventoriesNeedingReorder: builder.query<InventorySummary[], InventoryScopeParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${inventoryApi}/items/needs_reorder/`, params),
         service,
       }),
+      transformResponse: (response: InventorySummary[] | { results?: InventorySummary[] }) => unwrapListResponse<InventorySummary>(response),
     }),
 
-    getInventorySetupSummary: builder.query<InventorySetupSummary, void>({
-      query: () => ({
-        url: `/${inventoryApi}/items/summary/`,
+    getInventorySetupSummary: builder.query<InventorySetupSummary, InventoryScopeParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${inventoryApi}/items/summary/`, params),
         service,
       }),
     }),
@@ -165,9 +174,9 @@ export const inventoryApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getInventoryAnalytics: builder.query<InventoryAnalytics, void>({
-      query: () => ({
-        url: `/stock_api/inventory-items/analytics/`,
+    getInventoryAnalytics: builder.query<InventoryAnalytics, InventoryScopeParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/stock_api/inventory-items/analytics/`, params),
         service,
       }),
     }),

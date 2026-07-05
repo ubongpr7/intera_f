@@ -18,6 +18,7 @@ import CustomCreateCard from "../common/createCard"
 import LoadingAnimation from "../common/LoadingAnimation"
 import { readCookieValue } from "@/lib/authCookies"
 import { formatCurrencyCompact } from "@/lib/currency-utils"
+import { extractErrorMessage } from "@/lib/utils"
 
 interface ProductPricingProps {
   productId: string;
@@ -249,7 +250,7 @@ const defaultValues: Partial<PricingRule> = {
   if (error) {
     return (
       <div className="p-4 text-red-500">
-        Error loading pricing rules: {(error as any).message || 'Unknown error'}
+        Unable to load pricing rules: {extractErrorMessage(error, ["detail", "error"])}
       </div>
     )
   }
@@ -266,9 +267,10 @@ const defaultValues: Partial<PricingRule> = {
         data={pricingRules || []}
         isLoading={isLoading}
         onRowClick={handleRowClick}
-        searchableFields={['name']}
-        filterableFields={['rule_type', 'discount_type']}
-        sortableFields={['name', 'rule_type', 'discount_type']}
+        searchableFields={['name', 'description', 'category']}
+        filterableFields={['rule_type', 'discount_type', 'category', 'is_active', 'is_active_now', 'is_default_rule']}
+        sortableFields={['name', 'rule_type', 'discount_type', 'value', 'priority', 'usage_count', 'usage_percentage']}
+        rangeFilterFields={['value', 'priority', 'min_quantity', 'max_quantity', 'min_amount', 'usage_limit', 'usage_count', 'usage_percentage']}
         actionButtons={actionButtons}
          title={`Pricing Rules for ${product?.name || 'Product'}`}
         onClose={() => setIsCreateOpen(true)}

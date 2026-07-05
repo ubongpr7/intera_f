@@ -4,6 +4,7 @@ import { AlertTriangle, ArrowRightLeft, BadgeDollarSign, Wallet } from "lucide-r
 import { formatCurrency } from "@/lib/currency-utils"
 import type { POSSessionCloseoutSummary } from "@/redux/features/pos/posTypes"
 import { Button } from "@/components/ui/button"
+import { formatMachineLabel } from "@/lib/displayLabels"
 import { Input } from "@/components/ui/input"
 import {
   Sheet,
@@ -168,7 +169,7 @@ export default function POSSessionCloseoutSheet({
                         <div>
                           <div className="text-sm font-semibold text-gray-900">{order.order_number}</div>
                           <div className="mt-1 text-xs uppercase tracking-wide text-gray-500">
-                            {order.status} • payment {order.payment_status} • inventory {order.inventory_status}
+                            {formatMachineLabel(order.status)} • payment {formatMachineLabel(order.payment_status)} • inventory {formatMachineLabel(order.inventory_status)}
                           </div>
                         </div>
                         <div className="text-sm font-semibold text-gray-900">

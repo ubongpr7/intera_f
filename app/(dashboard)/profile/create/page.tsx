@@ -6,7 +6,7 @@ export default function CreateCompanyPage() {
     <WorkspaceSetupShell
       activeStage="company"
       title="Create and activate your company workspace"
-      description="This onboarding flow is intentionally step-based. Capture your company identity first, then address, social links, and policies so the rest of the inventory platform has a clean operating context."
+      description="Capture the company identity, address, social links, and policies needed by the inventory platform."
     >
       <CompanyProfileContainer />
     </WorkspaceSetupShell>

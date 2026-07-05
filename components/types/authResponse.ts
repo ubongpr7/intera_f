@@ -34,6 +34,11 @@ export interface LoginResponse {
       owner_id?: string | null;
       membership_id?: string | null;
       currency?: string | null;
+      support_access?: boolean;
+      support_access_grant_id?: string | null;
+      support_access_expires_at?: string | null;
+      support_access_mode?: string | null;
+      support_actor_type?: string | null;
     } | null;
     profiles?: Array<{
       id?: string | number;
@@ -43,6 +48,11 @@ export interface LoginResponse {
       owner_id?: string | null;
       membership_id?: string | null;
       currency?: string | null;
+      support_access?: boolean;
+      support_access_grant_id?: string | null;
+      support_access_expires_at?: string | null;
+      support_access_mode?: string | null;
+      support_actor_type?: string | null;
     }>;
     currency?: string | null;
     model_name?: string | null;

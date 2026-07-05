@@ -87,8 +87,8 @@ const useAppConfig = (): AppConfig => {
           parsedConfig.settings.editable = true;
         }
         return parsedConfig;
-      } catch (e) {
-        console.error("Error parsing app config:", e);
+      } catch {
+        return defaultConfig;
       }
     }
     return defaultConfig;
@@ -178,11 +178,20 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const getConfig = useCallback(() => {
-    const appConfigFromSettings = appConfig;
+    const appConfigFromSettings = {
+      ...appConfig,
+      settings: { ...appConfig.settings },
+    };
 
     if (appConfigFromSettings.settings.editable === false) {
       if (localColorOverride) {
-        appConfigFromSettings.settings.theme_color = localColorOverride;
+        return {
+          ...appConfigFromSettings,
+          settings: {
+            ...appConfigFromSettings.settings,
+            theme_color: localColorOverride,
+          },
+        };
       }
       return appConfigFromSettings;
     }
@@ -202,8 +211,10 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
     if (!newCookieSettings) {
       return appConfigFromSettings;
     }
-    appConfigFromSettings.settings = newCookieSettings;
-    return { ...appConfigFromSettings };
+    return {
+      ...appConfigFromSettings,
+      settings: newCookieSettings,
+    };
   }, [
     appConfig,
     getSettingsFromCookies,
@@ -213,10 +224,11 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
     setUrlSettings,
   ]);
 
+  const [config, _setConfig] = useState<AppConfig>(getConfig());
+
   const setUserSettings = useCallback(
     (settings: UserSettings) => {
-      const appConfigFromSettings = appConfig;
-      if (appConfigFromSettings.settings.editable === false) {
+      if (appConfig.settings.editable === false) {
         setLocalColorOverride(settings.theme_color);
         return;
       }
@@ -231,8 +243,6 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
     },
     [appConfig, setCookieSettings, setUrlSettings],
   );
-
-  const [config, _setConfig] = useState<AppConfig>(getConfig());
 
   // Run things client side because we use cookies
   useEffect(() => {

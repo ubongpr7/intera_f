@@ -1,5 +1,6 @@
-import { apiSlice } from "../../services/apiSlice";
+import { apiSlice, unwrapListResponse } from "../../services/apiSlice";
 import { buildQuery } from "../common/queryParams";
+import type { StructuralLocationScopeParams } from "@/lib/structuralLocationScope";
 import type {
   GoodsReceiptInterface,
   GoodsReceiptListParams,
@@ -26,6 +27,7 @@ const orderApi = "order_api";
 const service = "inventory";
 
 type EntityId = string | number;
+type OrderScopeParams = StructuralLocationScopeParams & Pick<OrderListParams, "stock_location">
 
 export const orderApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -34,6 +36,8 @@ export const orderApiSlice = apiSlice.injectEndpoints({
         url: buildQuery(`/${orderApi}/goods-receipts/`, params),
         service,
       }),
+      transformResponse: (response: GoodsReceiptInterface[] | { results?: GoodsReceiptInterface[] }) =>
+        unwrapListResponse<GoodsReceiptInterface>(response),
     }),
 
     getGoodsReceipt: builder.query<GoodsReceiptInterface, EntityId>({
@@ -48,6 +52,8 @@ export const orderApiSlice = apiSlice.injectEndpoints({
         url: buildQuery(`/${orderApi}/sales-order-shipments/`, params),
         service,
       }),
+      transformResponse: (response: SalesOrderShipmentInterface[] | { results?: SalesOrderShipmentInterface[] }) =>
+        unwrapListResponse<SalesOrderShipmentInterface>(response),
     }),
 
     listPurchaseOrders: builder.query<PurchaseOrderInterface[], OrderListParams | string | void>({
@@ -58,6 +64,8 @@ export const orderApiSlice = apiSlice.injectEndpoints({
             : buildQuery(`/${orderApi}/purchase-orders/`, params),
         service,
       }),
+      transformResponse: (response: PurchaseOrderInterface[] | { results?: PurchaseOrderInterface[] }) =>
+        unwrapListResponse<PurchaseOrderInterface>(response),
     }),
 
     createPurchaseOrder: builder.mutation<PurchaseOrderInterface, Partial<PurchaseOrderInterface>>({
@@ -90,6 +98,8 @@ export const orderApiSlice = apiSlice.injectEndpoints({
         url: `/${orderApi}/purchase-orders/${purchaseOrderId}/line_items/`,
         service,
       }),
+      transformResponse: (response: PurchaseOrderLineItem[] | { results?: PurchaseOrderLineItem[] }) =>
+        unwrapListResponse<PurchaseOrderLineItem>(response),
     }),
 
     createPurchaseOrderLineItem: builder.mutation<
@@ -190,16 +200,16 @@ export const orderApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getPurchaseOrderAnalytics: builder.query<PurchaseOrderAnalyticsResponse, void>({
-      query: () => ({
-        url: `/${orderApi}/purchase-orders/analytics/`,
+    getPurchaseOrderAnalytics: builder.query<PurchaseOrderAnalyticsResponse, OrderScopeParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${orderApi}/purchase-orders/analytics/`, params),
         service,
       }),
     }),
 
-    getPurchaseOrderDashboardSummary: builder.query<PurchaseOrderDashboardSummary, void>({
-      query: () => ({
-        url: `/${orderApi}/purchase-orders/dashboard_summary/`,
+    getPurchaseOrderDashboardSummary: builder.query<PurchaseOrderDashboardSummary, OrderScopeParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${orderApi}/purchase-orders/dashboard_summary/`, params),
         service,
       }),
     }),
@@ -239,6 +249,8 @@ export const orderApiSlice = apiSlice.injectEndpoints({
             : buildQuery(`/${orderApi}/sales-orders/`, params),
         service,
       }),
+      transformResponse: (response: SalesOrderInterface[] | { results?: SalesOrderInterface[] }) =>
+        unwrapListResponse<SalesOrderInterface>(response),
     }),
 
     createSalesOrder: builder.mutation<SalesOrderInterface, Partial<SalesOrderInterface>>({
@@ -271,6 +283,8 @@ export const orderApiSlice = apiSlice.injectEndpoints({
         url: `/${orderApi}/sales-orders/${id}/line_items/`,
         service,
       }),
+      transformResponse: (response: SalesOrderLineItem[] | { results?: SalesOrderLineItem[] }) =>
+        unwrapListResponse<SalesOrderLineItem>(response),
     }),
 
     getSalesOrderShipments: builder.query<SalesOrderShipmentInterface[], EntityId>({
@@ -278,6 +292,8 @@ export const orderApiSlice = apiSlice.injectEndpoints({
         url: `/${orderApi}/sales-orders/${id}/shipments/`,
         service,
       }),
+      transformResponse: (response: SalesOrderShipmentInterface[] | { results?: SalesOrderShipmentInterface[] }) =>
+        unwrapListResponse<SalesOrderShipmentInterface>(response),
     }),
 
     createSalesOrderLineItem: builder.mutation<SalesOrderLineItem, { id: EntityId; data: Partial<SalesOrderLineItem> }>({
@@ -361,6 +377,8 @@ export const orderApiSlice = apiSlice.injectEndpoints({
             : buildQuery(`/${orderApi}/return-orders/`, params),
         service,
       }),
+      transformResponse: (response: ReturnOrderInterface[] | { results?: ReturnOrderInterface[] }) =>
+        unwrapListResponse<ReturnOrderInterface>(response),
     }),
 
     getReturnOrder: builder.query<ReturnOrderInterface, EntityId>({

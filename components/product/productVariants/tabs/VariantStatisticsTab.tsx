@@ -1,26 +1,30 @@
 "use client"
 
 import { useGetVariantStatisticsQuery } from "@/redux/features/product/productAPISlice"
-import LoadingAnimation from "@/components/common/LoadingAnimation"
 import type { VariantStatisticsResponse } from "@/redux/features/product/productTypes"
+import { QueryStateBoundary } from "@/components/common/QueryStateBoundary"
 
 interface VariantStatisticsTabProps {
   variantId: string
 }
 
 const VariantStatisticsTab = ({ variantId }: VariantStatisticsTabProps) => {
-  const { data: statistics, isLoading, error } = useGetVariantStatisticsQuery(variantId)
+  const { data: statistics, isLoading, isFetching, error, refetch } = useGetVariantStatisticsQuery(variantId)
 
-  if (isLoading) {
+  if (isLoading || error) {
     return (
-      <div className="p-4 flex items-center justify-center">
-        <LoadingAnimation />
-      </div>
+      <QueryStateBoundary
+        isLoading={isLoading}
+        isFetching={isFetching}
+        error={error}
+        onRetry={refetch}
+        loadingText="Loading variant statistics..."
+        errorTitle="Unable to load variant statistics"
+        className="m-4"
+      >
+        <div />
+      </QueryStateBoundary>
     )
-  }
-
-  if (error) {
-    return <div className="p-4 text-red-500">Error loading statistics: {(error as any).message || "Unknown error"}</div>
   }
 
   if (!statistics) {
@@ -86,7 +90,7 @@ const VariantStatisticsTab = ({ variantId }: VariantStatisticsTabProps) => {
           </div>
           <div className="bg-gray-50 p-4 rounded-lg">
             <p className="text-sm text-gray-600">Last Sale</p>
-            <p className="text-lg font-medium">{sales.last_sale || "N/A"}</p>
+            <p className="text-lg font-medium">{sales.last_sale || "No sales yet"}</p>
           </div>
         </div>
       </div>

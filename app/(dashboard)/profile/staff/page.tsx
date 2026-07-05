@@ -66,8 +66,8 @@ const StaffPage = () => {
   return (
     <WorkspaceSetupShell
       activeStage="team"
-      title="Invite staff and define access"
-      description="This page is the team phase of onboarding. Add members, then refine groups and roles using the existing reusable management forms so permissions stay aligned with the active company workspace."
+      title="Staff access management"
+      description="Add members, manage groups and roles, and keep permissions aligned with the active company workspace."
     >
       <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-3">

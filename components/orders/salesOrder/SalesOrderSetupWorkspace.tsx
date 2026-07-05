@@ -14,7 +14,7 @@ import {
   Users2,
 } from "lucide-react"
 import { toast } from "react-toastify"
-import { useWorkspaceSetupProgress } from "@/components/onboarding/WorkspaceSetupShell"
+import { WorkspaceSetupLoadingCard, useWorkspaceSetupProgress } from "@/components/onboarding/WorkspaceSetupShell"
 import OperationalStepSection from "@/components/setup/OperationalStepSection"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -78,7 +78,7 @@ const asNumber = (value: string | number | undefined | null) => Number(value ?? 
 
 export default function SalesOrderSetupWorkspace() {
   const router = useRouter()
-  const { activeMembership, isOwner, profile } = useWorkspaceSetupProgress()
+  const { activeMembership, isLoading: loadingWorkspaceSetup, isOwner, profile } = useWorkspaceSetupProgress()
   const defaultCurrency = profile?.currency || "NGN"
   const [formState, setFormState] = useState<SalesOrderFormState>(() => buildInitialForm(defaultCurrency))
   const [statusFilter, setStatusFilter] = useState<string>("all")
@@ -140,6 +140,15 @@ export default function SalesOrderSetupWorkspace() {
     } catch (error) {
       toast.error(extractErrorMessage(error, ["customer", "delivery_date", "description"]))
     }
+  }
+
+  if (loadingWorkspaceSetup) {
+    return (
+      <WorkspaceSetupLoadingCard
+        title="Loading sales-order workspace"
+        description="Checking your active company before showing sales-order setup and fulfillment controls."
+      />
+    )
   }
 
   if (!activeMembership) {

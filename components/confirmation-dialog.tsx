@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { AlertTriangle, CheckCircle, Info } from "lucide-react"
 import { useOverlayDismiss } from "@/components/common/useOverlayDismiss"
+import { formatMachineLabel } from "@/lib/displayLabels"
 
 interface ConfirmationData {
   interaction_type: string
@@ -68,7 +69,7 @@ export default function ConfirmationDialog({ data, onResponse, onClose }: Confir
             {getActionIcon()}
             <div>
               <h3 className="text-lg font-semibold text-gray-900">{data.title}</h3>
-              <p className="text-sm text-gray-500 mt-1">Action: {data.action_type.replace(/_/g, " ")}</p>
+              <p className="text-sm text-gray-500 mt-1">Action: {formatMachineLabel(data.action_type)}</p>
             </div>
           </div>
         </div>

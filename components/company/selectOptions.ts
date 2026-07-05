@@ -14,7 +14,6 @@ export const CompanyKeyInfo = {
     email: 'Main contact email address',
     link: 'Secondary URL (e.g., internal wiki page, CRM profile)',
     image: 'URL to company logo or profile image',
-    notes: 'Internal notes or comments about the company',
     is_customer: 'Flag indicating if company purchases from us',
     is_supplier: 'Flag indicating if we purchase from this company',
     is_manufacturer: 'Flag indicating if company manufactures components',
@@ -29,7 +28,6 @@ export const CompanyKeyInfo = {
     'email',
     'short_address',
     'link',
-    'notes',
     'is_supplier',
     'is_customer',
     'is_manufacturer',
@@ -65,7 +63,6 @@ export const defaultValues: Partial<CompanyDataInterface> = {
     phone: '',
     email: '',
     link: '',
-    notes: ''
   };
   
 export const CompanyAddressKeyInfo = {

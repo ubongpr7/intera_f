@@ -1,12 +1,14 @@
 "use client"
 import React from "react"
 import { useState, useEffect, useMemo } from "react"
+import { createPortal } from "react-dom"
 import { type LucideIcon, QrCode, Barcode, Filter, Search, SlidersHorizontal, X } from 'lucide-react'
 import { FieldInfo } from "../fileFieldInfor"
 import LoadingAnimation from "../LoadingAnimation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { formatMachineLabel } from "@/lib/displayLabels"
 
 export interface Column<T> {
   header: string
@@ -110,26 +112,65 @@ export function DataTable<T>({
   onClose,
 }: DataTableProps<T>) {
   const filterDropdownRef = React.useRef<HTMLDivElement>(null)
+  const filterButtonRef = React.useRef<HTMLButtonElement>(null)
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false)
+  const [filterDropdownPosition, setFilterDropdownPosition] = useState<{
+    top: number
+    left: number
+    width: number
+    maxHeight: number
+  } | null>(null)
+
+  const updateFilterDropdownPosition = React.useCallback(() => {
+    if (typeof window === "undefined") return
+    const button = filterButtonRef.current
+    if (!button) return
+
+    const rect = button.getBoundingClientRect()
+    const viewportPadding = 16
+    const gap = 12
+    const width = Math.min(520, window.innerWidth - viewportPadding * 2)
+    const left = Math.min(
+      Math.max(viewportPadding, rect.left),
+      window.innerWidth - width - viewportPadding,
+    )
+    const belowSpace = window.innerHeight - rect.bottom - gap - viewportPadding
+    const aboveSpace = rect.top - gap - viewportPadding
+    const openUpward = belowSpace < 280 && aboveSpace > belowSpace
+    const availableHeight = openUpward ? aboveSpace : belowSpace
+    const maxHeight = Math.max(240, Math.min(560, availableHeight))
+    const top = openUpward
+      ? Math.max(viewportPadding, rect.top - gap - maxHeight)
+      : Math.min(rect.bottom + gap, window.innerHeight - viewportPadding - maxHeight)
+
+    setFilterDropdownPosition({ top, left, width, maxHeight })
+  }, [])
+
   useEffect(() => {
     if (!filterDropdownOpen) return;
     function handleClick(e: MouseEvent) {
-      if (filterDropdownRef.current && !filterDropdownRef.current.contains(e.target as Node)) {
-        setFilterDropdownOpen(false)
-      }
+      const target = e.target as Node
+      if (filterDropdownRef.current?.contains(target) || filterButtonRef.current?.contains(target)) return
+      setFilterDropdownOpen(false)
     }
     function handleKey(e: KeyboardEvent) {
       if (e.key === "Escape") setFilterDropdownOpen(false)
     }
+    updateFilterDropdownPosition()
     document.addEventListener("mousedown", handleClick)
     document.addEventListener("keydown", handleKey)
+    window.addEventListener("resize", updateFilterDropdownPosition)
+    window.addEventListener("scroll", updateFilterDropdownPosition, true)
     return () => {
       document.removeEventListener("mousedown", handleClick)
       document.removeEventListener("keydown", handleKey)
+      window.removeEventListener("resize", updateFilterDropdownPosition)
+      window.removeEventListener("scroll", updateFilterDropdownPosition, true)
     }
-  }, [filterDropdownOpen])
+  }, [filterDropdownOpen, updateFilterDropdownPosition])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState("")
+  const [scanValue, setScanValue] = useState("")
   const [filters, setFilters] = useState<Record<keyof T, string>>({} as Record<keyof T, string>)
   const [rangeFilters, setRangeFilters] = useState<Record<keyof T, {from: string, to: string}>>({} as Record<keyof T, {from: string, to: string}>)
   const [sortConfig, setSortConfig] = useState<{ key: keyof T; direction: "ascending" | "descending" } | null>(null)
@@ -137,7 +178,14 @@ export function DataTable<T>({
   const filterOptions = useMemo(() => {
     const options: Record<keyof T, string[]> = {} as Record<keyof T, string[]>
     filterableFields.forEach((field) => {
-      const uniqueValues = [...new Set(data.map((row) => row[field] as string))]
+      const uniqueValues = [
+        ...new Set(
+          data
+            .map((row) => row[field])
+            .filter((value) => value !== null && value !== undefined && String(value).trim() !== "")
+            .map((value) => String(value)),
+        ),
+      ]
       options[field] = uniqueValues
     })
     return options
@@ -172,7 +220,7 @@ export function DataTable<T>({
     // Handle exact filters
     const exactMatch = Object.entries(filters).every(([field, value]) => {
       if (value === "") return true
-      return row[field as keyof T] === value
+      return String(row[field as keyof T] ?? "") === value
     })
     // Handle range filters
     const rangeMatch = rangeFilterFields.every((field) => {
@@ -349,6 +397,106 @@ export function DataTable<T>({
 
   const hasActions = actionButtons.length > 0 && showActionsColumn
 
+  const filterDropdown =
+    filterDropdownOpen && filterDropdownPosition && typeof document !== "undefined"
+      ? createPortal(
+          <div
+            ref={filterDropdownRef}
+            className="z-[10000] overflow-hidden rounded-[24px] border border-slate-200 bg-white p-4 text-slate-950 shadow-[0_28px_70px_-20px_rgba(2,6,23,0.45)] ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-50 dark:shadow-[0_28px_70px_-20px_rgba(0,0,0,0.85)] dark:ring-white/10"
+            style={{
+              position: "fixed",
+              top: filterDropdownPosition.top,
+              left: filterDropdownPosition.left,
+              width: filterDropdownPosition.width,
+              maxHeight: filterDropdownPosition.maxHeight,
+              boxSizing: "border-box",
+            }}
+          >
+            <div
+              className="flex flex-col"
+              style={{ maxHeight: Math.max(208, filterDropdownPosition.maxHeight - 32) }}
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-300">Filter workspace</p>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Narrow the current list without leaving the table.</p>
+                </div>
+                {hasActiveSearchOrFilters ? (
+                  <Button type="button" variant="ghost" size="sm" className="rounded-full px-3" onClick={clearAllFilters}>
+                    Reset
+                  </Button>
+                ) : null}
+              </div>
+
+              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+                {filterableFields.map((field) => (
+                  <div key={field as string}>
+                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-300">
+                      {humanizeFieldName(String(field))}
+                    </label>
+                    <select
+                      value={filters[field] || ""}
+                      onChange={(e) => setFilters({ ...filters, [field]: e.target.value })}
+                      className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/15 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
+                    >
+                      <option value="">All {humanizeFieldName(String(field))}</option>
+                      {filterOptions[field]?.map((option) => (
+                        <option key={option} value={option}>
+                          {formatMachineLabel(option)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+
+                {rangeFilterFields.map((field) => (
+                  <div key={field as string}>
+                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-300">
+                      {humanizeFieldName(String(field))} Range
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        type="number"
+                        placeholder="From"
+                        value={rangeFilters[field]?.from || ""}
+                        onChange={(e) => setRangeFilters({
+                          ...rangeFilters,
+                          [field]: {
+                            ...rangeFilters[field],
+                            from: e.target.value,
+                          },
+                        })}
+                        className="rounded-2xl border-slate-200 bg-white text-sm text-slate-950 shadow-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
+                      />
+                      <Input
+                        type="number"
+                        placeholder="To"
+                        value={rangeFilters[field]?.to || ""}
+                        onChange={(e) => setRangeFilters({
+                          ...rangeFilters,
+                          [field]: {
+                            ...rangeFilters[field],
+                            to: e.target.value,
+                          },
+                        })}
+                        className="rounded-2xl border-slate-200 bg-white text-sm text-slate-950 shadow-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 flex shrink-0 justify-end border-t border-slate-200/80 pt-3 dark:border-slate-800">
+                <Button type="button" className="rounded-full px-4" onClick={() => setFilterDropdownOpen(false)}>
+                  Apply filters
+                </Button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )
+      : null
+
   const handleScan = (scannedValue: string, scanType: 'qr' | 'barcode') => {
     if (scanType === 'qr' && qrScannableField) {
       setSearchTerm(scannedValue);
@@ -365,23 +513,11 @@ export function DataTable<T>({
     }
   };
 
-  // Mock scan functions - replace with actual scanner integrations
-  const startQrCodeScan = () => {
-    // In a real application, this would open a QR code scanner
-    // For demonstration, we'll simulate a scan result
-    const mockQrData = prompt("Simulate QR Code Scan (enter value):");
-    if (mockQrData) {
-      handleScan(mockQrData, 'qr');
-    }
-  };
-
-  const startBarcodeScan = () => {
-    // In a real application, this would open a barcode scanner
-    // For demonstration, we'll simulate a scan result
-    const mockBarcodeData = prompt("Simulate Barcode Scan (enter value):");
-    if (mockBarcodeData) {
-      handleScan(mockBarcodeData, 'barcode');
-    }
+  const submitScanValue = (scanType: 'qr' | 'barcode') => {
+    const normalizedScanValue = scanValue.trim()
+    if (!normalizedScanValue) return
+    handleScan(normalizedScanValue, scanType)
+    setScanValue("")
   };
 
   return (
@@ -427,12 +563,16 @@ export function DataTable<T>({
               )}
             </div>
 
-            <div className="relative" ref={filterDropdownRef}>
+            <div className="relative">
               <Button
+                ref={filterButtonRef}
                 type="button"
                 variant="outline"
                 className="h-11 rounded-full border-border bg-card px-4"
-                onClick={() => setFilterDropdownOpen((open) => !open)}
+                onClick={() => {
+                  updateFilterDropdownPosition()
+                  setFilterDropdownOpen((open) => !open)
+                }}
               >
                 <SlidersHorizontal className="h-4 w-4" />
                 Filters
@@ -443,85 +583,7 @@ export function DataTable<T>({
                 ) : null}
               </Button>
 
-              {filterDropdownOpen && (
-                <div className="absolute right-0 top-[calc(100%+0.75rem)] z-50 w-[min(92vw,320px)] rounded-[24px] border border-border bg-card p-4 text-card-foreground shadow-[0_22px_50px_-24px_rgba(15,23,42,0.35)]">
-                  <div className="mb-3 flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Filter workspace</p>
-                      <p className="mt-1 text-sm text-muted-foreground">Narrow the current list without leaving the table.</p>
-                    </div>
-                    {hasActiveSearchOrFilters ? (
-                      <Button type="button" variant="ghost" size="sm" className="rounded-full px-3" onClick={clearAllFilters}>
-                        Reset
-                      </Button>
-                    ) : null}
-                  </div>
-
-                  <div className="max-h-[360px] space-y-3 overflow-y-auto pr-1">
-                    {filterableFields.map((field) => (
-                      <div key={field as string}>
-                        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          {humanizeFieldName(String(field))}
-                        </label>
-                        <select
-                          value={filters[field] || ""}
-                          onChange={(e) => setFilters({ ...filters, [field]: e.target.value })}
-                          className="h-11 w-full rounded-2xl border border-border bg-card px-3 text-sm text-foreground outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/15"
-                        >
-                          <option value="">All {humanizeFieldName(String(field))}</option>
-                          {filterOptions[field]?.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    ))}
-
-                    {rangeFilterFields.map((field) => (
-                      <div key={field as string}>
-                        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          {humanizeFieldName(String(field))} Range
-                        </label>
-                        <div className="grid grid-cols-2 gap-2">
-                          <Input
-                            type="number"
-                            placeholder="From"
-                            value={rangeFilters[field]?.from || ""}
-                            onChange={(e) => setRangeFilters({
-                              ...rangeFilters,
-                              [field]: {
-                                ...rangeFilters[field],
-                                from: e.target.value,
-                              },
-                            })}
-                            className="rounded-2xl border-border bg-card text-sm shadow-none"
-                          />
-                          <Input
-                            type="number"
-                            placeholder="To"
-                            value={rangeFilters[field]?.to || ""}
-                            onChange={(e) => setRangeFilters({
-                              ...rangeFilters,
-                              [field]: {
-                                ...rangeFilters[field],
-                                to: e.target.value,
-                              },
-                            })}
-                            className="rounded-2xl border-border bg-card text-sm shadow-none"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-4 flex justify-end">
-                    <Button type="button" className="rounded-full px-4" onClick={() => setFilterDropdownOpen(false)}>
-                      Apply filters
-                    </Button>
-                  </div>
-                </div>
-              )}
+              {filterDropdown}
             </div>
 
             {hasActiveSearchOrFilters ? (
@@ -532,15 +594,30 @@ export function DataTable<T>({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {qrScannableField && (
-              <Button type="button" size="sm" className="rounded-full px-4" onClick={startQrCodeScan} title="Scan QR Code">
-                <QrCode size={14} /> QR Scan
-              </Button>
-            )}
-            {barcodeScannableField && (
-              <Button type="button" size="sm" variant="secondary" className="rounded-full px-4" onClick={startBarcodeScan} title="Scan Barcode">
-                <Barcode size={14} /> Barcode Scan
-              </Button>
+            {(qrScannableField || barcodeScannableField) && (
+              <div className="flex flex-wrap items-center gap-2 rounded-full border border-border bg-card px-2 py-1">
+                <Input
+                  value={scanValue}
+                  onChange={(event) => setScanValue(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key !== "Enter") return
+                    event.preventDefault()
+                    submitScanValue(barcodeScannableField ? "barcode" : "qr")
+                  }}
+                  placeholder="Scan or paste code"
+                  className="h-9 w-44 rounded-full border-0 bg-transparent px-3 text-sm shadow-none focus-visible:ring-0"
+                />
+                {qrScannableField ? (
+                  <Button type="button" size="sm" className="rounded-full px-3" onClick={() => submitScanValue("qr")}>
+                    <QrCode size={14} /> QR
+                  </Button>
+                ) : null}
+                {barcodeScannableField ? (
+                  <Button type="button" size="sm" variant="secondary" className="rounded-full px-3" onClick={() => submitScanValue("barcode")}>
+                    <Barcode size={14} /> Barcode
+                  </Button>
+                ) : null}
+              </div>
             )}
             {hasGeneralButtons && showSelectAll !== false && (
               <>

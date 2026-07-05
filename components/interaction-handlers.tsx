@@ -1191,6 +1191,7 @@ export function ImageAnnotationHandler({
 
         <div className="border rounded p-3 bg-gray-50 min-h-[150px] flex items-center justify-center">
           {data.image_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={data.image_url || "/placeholder.svg"}
               alt="Annotation target"
@@ -1238,6 +1239,7 @@ export function ImageAnnotationHandler({
 
         <div className="border rounded-lg p-4 bg-gray-50 min-h-[300px] flex items-center justify-center">
           {data.image_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={data.image_url || "/placeholder.svg"}
               alt="Annotation target"

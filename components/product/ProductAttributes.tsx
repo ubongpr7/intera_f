@@ -24,6 +24,7 @@ import {
   useUpdateProductAttributeMutation,
 } from "@/redux/features/product/productAPISlice"
 import type { ProductAttribute, ProductAttributeValue } from "@/redux/features/product/productTypes"
+import { confirmAction } from "../common/confirmAction"
 
 interface ProductAttributesProps {
   productId: string
@@ -157,7 +158,13 @@ export default function ProductAttributes({ mode = "embedded" }: ProductAttribut
   }
 
   const handleDeleteAttribute = async (attributeId: string) => {
-    if (!confirm("Delete this shared attribute? Products using it may be affected.")) return
+    const confirmed = await confirmAction({
+      title: "Delete shared attribute?",
+      description: "Products using this attribute may be affected.",
+      confirmText: "Delete attribute",
+      destructive: true,
+    })
+    if (!confirmed) return
     await deleteAttribute(attributeId).unwrap()
     refreshAttributes()
   }
@@ -180,7 +187,13 @@ export default function ProductAttributes({ mode = "embedded" }: ProductAttribut
   }
 
   const handleDeleteValue = async (valueId: string) => {
-    if (!confirm("Delete this attribute value?")) return
+    const confirmed = await confirmAction({
+      title: "Delete attribute value?",
+      description: "This removes the value from the shared attribute library.",
+      confirmText: "Delete value",
+      destructive: true,
+    })
+    if (!confirmed) return
     await deleteAttributeValue(valueId).unwrap()
     refreshAttributes()
   }

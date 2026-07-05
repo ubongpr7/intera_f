@@ -16,6 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import type { CompanyProfile, CompanyFormData } from "@/redux/features/management/companyProfileTypes"
 import { getCurrencySymbol } from "@/lib/currency-utils"
 import { CURRENCY_CODES } from "@/lib/currencyCode"
+import { extractErrorMessage } from "@/lib/utils"
 
 interface CompanyBasicInfoFormProps {
   profile: CompanyProfile | null
@@ -220,7 +221,7 @@ export function CompanyBasicInfoForm({ profile, onSuccess, submitLabel = "Save C
           {isError && (
         <Alert className="bg-red-50 border-red-200">
           <AlertDescription className="text-red-800">
-            {error ? `Error: ${JSON.stringify(error)}` : "Failed to update company information. Please try again."}
+            {extractErrorMessage(error, ["name", "industry", "currency", "website", "phone", "detail"])}
           </AlertDescription>
         </Alert>
       )}

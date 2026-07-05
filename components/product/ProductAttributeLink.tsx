@@ -13,6 +13,7 @@ import { Column, DataTable } from "../common/DataTable/DataTable"
 import CustomCreateCard from "../common/createCard"
 import LoadingAnimation from "../common/LoadingAnimation"
 import { toast } from "react-toastify"
+import { extractErrorMessage } from "@/lib/utils"
 
 interface ProductAttributeLinksProps {
   productId: string;
@@ -143,9 +144,9 @@ const interfaceKeys: (keyof ProductAttributeLink)[] = [
   if (attributeLinksError || attributesError) {
     return (
       <div className="p-4 text-red-500">
-        Error loading data: 
-        {attributeLinksError && <p>Attribute Links: {(attributeLinksError as any).message || 'Unknown error'}</p>}
-        {attributesError && <p>Attributes: {(attributesError as any).message || 'Unknown error'}</p>}
+        Unable to load product attribute setup.
+        {attributeLinksError ? <p>Attribute links: {extractErrorMessage(attributeLinksError, ["detail", "error"])}</p> : null}
+        {attributesError ? <p>Attributes: {extractErrorMessage(attributesError, ["detail", "error"])}</p> : null}
       </div>
     )
   }
@@ -170,9 +171,10 @@ const interfaceKeys: (keyof ProductAttributeLink)[] = [
         data={attributeLinks || []}
         isLoading={isAttributeLinksLoading}
         onRowClick={handleRowClick}
-        searchableFields={['attribute_name']}
-        filterableFields={['attribute_type']}
-        sortableFields={['attribute_name', 'attribute_type']}
+        searchableFields={['attribute_name', 'attribute_type']}
+        filterableFields={['attribute_type', 'required', 'is_visible_in_pos']}
+        sortableFields={['attribute_name', 'attribute_type', 'order', 'default_modifier']}
+        rangeFilterFields={['order', 'default_modifier']}
         title={`Linked attributes for ${product?.name || 'Product'}`}
         onClose={() => setIsCreateOpen(true)}
       />

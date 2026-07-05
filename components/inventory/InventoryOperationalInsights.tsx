@@ -18,6 +18,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
+import { buildStructuralLocationScopeParams, matchesStructuralLocationScope } from "@/lib/structuralLocationScope"
 import { extractErrorMessage, formatDate } from "@/lib/utils"
 import {
   useCompletePurchaseOrderMutation,
@@ -59,6 +60,7 @@ type InventoryOperationalInsightsProps = {
   inventoryOptions: NamedOption[]
   locationOptions: NamedOption[]
   locations: StockLocationSummary[]
+  selectedStructuralLocationIds?: string[]
 }
 
 type LocationOperationalRow = {
@@ -388,6 +390,7 @@ export default function InventoryOperationalInsights({
   inventoryOptions,
   locationOptions,
   locations,
+  selectedStructuralLocationIds = [],
 }: InventoryOperationalInsightsProps) {
   const [search, setSearch] = useState("")
   const [inventoryItemId, setInventoryItemId] = useState("all")
@@ -409,15 +412,38 @@ export default function InventoryOperationalInsights({
 
   const sharedInventoryFilter = inventoryItemId === "all" ? undefined : inventoryItemId
   const sharedLocationFilter = locationId === "all" ? undefined : locationId
+  const structuralScopeParams = useMemo(
+    () => buildStructuralLocationScopeParams(selectedStructuralLocationIds),
+    [selectedStructuralLocationIds],
+  )
+  const locationsById = useMemo(
+    () =>
+      new Map(
+        locations.map((location) => [String(location.id), location] as const),
+      ),
+    [locations],
+  )
+  const scopedLocationOptions = useMemo(
+    () =>
+      locationOptions.filter((option) => {
+        const location = locationsById.get(String(option.id))
+        const locationStructuralId = String(
+          location?.structural_location_id ?? (location?.structural ? option.id : ""),
+        )
+        return matchesStructuralLocationScope(locationStructuralId, selectedStructuralLocationIds)
+      }),
+    [locationOptions, locationsById, selectedStructuralLocationIds],
+  )
 
   const balanceQuery = useMemo(
     () => ({
+      ...structuralScopeParams,
       search: deferredSearch || undefined,
       inventory_item: sharedInventoryFilter,
       stock_location: sharedLocationFilter,
       ordering: "stock_location__name",
     }),
-    [deferredSearch, sharedInventoryFilter, sharedLocationFilter],
+    [deferredSearch, sharedInventoryFilter, sharedLocationFilter, structuralScopeParams],
   )
 
   const lotQuery = useMemo(
@@ -431,67 +457,74 @@ export default function InventoryOperationalInsights({
 
   const serialQuery = useMemo(
     () => ({
+      ...structuralScopeParams,
       search: deferredSearch || undefined,
       inventory_item: sharedInventoryFilter,
       stock_location: sharedLocationFilter,
       ordering: "serial_number",
     }),
-    [deferredSearch, sharedInventoryFilter, sharedLocationFilter],
+    [deferredSearch, sharedInventoryFilter, sharedLocationFilter, structuralScopeParams],
   )
 
   const movementQuery = useMemo(
     () => ({
+      ...structuralScopeParams,
       search: deferredSearch || undefined,
       inventory_item: sharedInventoryFilter,
       stock_location: sharedLocationFilter,
       ordering: "-occurred_at",
     }),
-    [deferredSearch, sharedInventoryFilter, sharedLocationFilter],
+    [deferredSearch, sharedInventoryFilter, sharedLocationFilter, structuralScopeParams],
   )
 
   const reservationQuery = useMemo(
     () => ({
+      ...structuralScopeParams,
       inventory_item: sharedInventoryFilter,
       stock_location: sharedLocationFilter,
     }),
-    [sharedInventoryFilter, sharedLocationFilter],
+    [sharedInventoryFilter, sharedLocationFilter, structuralScopeParams],
   )
 
   const goodsReceiptQuery = useMemo(
     () => ({
+      ...structuralScopeParams,
       search: deferredSearch || undefined,
       inventory_item: sharedInventoryFilter,
       stock_location: sharedLocationFilter,
       ordering: "-received_at",
     }),
-    [deferredSearch, sharedInventoryFilter, sharedLocationFilter],
+    [deferredSearch, sharedInventoryFilter, sharedLocationFilter, structuralScopeParams],
   )
 
   const shipmentQuery = useMemo(
     () => ({
+      ...structuralScopeParams,
       search: deferredSearch || undefined,
       inventory_item: sharedInventoryFilter,
       stock_location: sharedLocationFilter,
       ordering: "-shipment_date",
     }),
-    [deferredSearch, sharedInventoryFilter, sharedLocationFilter],
+    [deferredSearch, sharedInventoryFilter, sharedLocationFilter, structuralScopeParams],
   )
 
   const purchaseOrderQuery = useMemo(
     () => ({
+      ...structuralScopeParams,
       status_filter: "active",
       search: deferredSearch || undefined,
       ordering: "-created_at",
     }),
-    [deferredSearch],
+    [deferredSearch, structuralScopeParams],
   )
 
   const salesOrderQuery = useMemo(
     () => ({
+      ...structuralScopeParams,
       search: deferredSearch || undefined,
       ordering: "-created_at",
     }),
-    [deferredSearch],
+    [deferredSearch, structuralScopeParams],
   )
 
   const { data: balances = [], isLoading: loadingBalances, refetch: refetchBalances } = useListStockBalancesQuery(balanceQuery)
@@ -780,9 +813,15 @@ export default function InventoryOperationalInsights({
 
   const locationRows = useMemo<LocationOperationalRow[]>(() => {
     const normalizedSearch = deferredSearch.toLowerCase()
+    const structurallyScopedLocations = locations.filter((location) =>
+      matchesStructuralLocationScope(
+        String(location.structural_location_id ?? (location.structural ? location.id : "")),
+        selectedStructuralLocationIds,
+      ),
+    )
     const scopedLocations = sharedLocationFilter
-      ? locations.filter((location) => String(location.id) === sharedLocationFilter)
-      : locations
+      ? structurallyScopedLocations.filter((location) => String(location.id) === sharedLocationFilter)
+      : structurallyScopedLocations
 
     return scopedLocations
       .filter((location) => {
@@ -861,7 +900,7 @@ export default function InventoryOperationalInsights({
           right.stockCount - left.stockCount ||
           left.name.localeCompare(right.name),
       )
-  }, [balances, deferredSearch, locations, movements, sharedInventoryFilter, sharedLocationFilter])
+  }, [balances, deferredSearch, locations, movements, selectedStructuralLocationIds, sharedInventoryFilter, sharedLocationFilter])
 
   const filteredReservations = useMemo(() => {
     const normalizedSearch = deferredSearch.toLowerCase()
@@ -1287,7 +1326,7 @@ export default function InventoryOperationalInsights({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All locations</SelectItem>
-                {locationOptions.map((item) => (
+                {scopedLocationOptions.map((item) => (
                   <SelectItem key={String(item.id)} value={String(item.id)}>
                     {item.name}
                   </SelectItem>
@@ -1657,6 +1696,7 @@ export default function InventoryOperationalInsights({
                             </div>
                             <div className="text-xs text-gray-500">
                               {(receipt.inventory_preview || []).join(", ") || "No item preview"}
+                              {receipt.structural_location_preview?.length ? ` • Store: ${receipt.structural_location_preview.join(", ")}` : ""}
                               {receipt.location_preview?.length ? ` • ${receipt.location_preview.join(", ")}` : ""}
                               {(receipt.location_count || 0) > (receipt.location_preview?.length || 0)
                                 ? ` +${(receipt.location_count || 0) - (receipt.location_preview?.length || 0)} more locations`
@@ -1867,7 +1907,7 @@ export default function InventoryOperationalInsights({
                                       </SelectTrigger>
                                       <SelectContent>
                                         <SelectItem value="unselected">Select branch</SelectItem>
-                                        {locationOptions.map((location) => (
+                                        {scopedLocationOptions.map((location) => (
                                           <SelectItem key={String(location.id)} value={String(location.id)}>
                                             {location.name}
                                           </SelectItem>
@@ -2169,6 +2209,7 @@ export default function InventoryOperationalInsights({
                             </div>
                             <div className="text-xs text-gray-500">
                               {(shipment.inventory_preview || []).join(", ") || "No item preview"}
+                              {shipment.structural_location_preview?.length ? ` • Store: ${shipment.structural_location_preview.join(", ")}` : ""}
                               {shipment.location_preview?.length ? ` • ${shipment.location_preview.join(", ")}` : ""}
                               {(shipment.location_count || 0) > (shipment.location_preview?.length || 0)
                                 ? ` +${(shipment.location_count || 0) - (shipment.location_preview?.length || 0)} more locations`
@@ -2471,7 +2512,7 @@ export default function InventoryOperationalInsights({
                                       </SelectTrigger>
                                       <SelectContent>
                                         <SelectItem value="unselected">Select branch</SelectItem>
-                                        {locationOptions.map((location) => (
+                                        {scopedLocationOptions.map((location) => (
                                           <SelectItem key={String(location.id)} value={String(location.id)}>
                                             {location.name}
                                           </SelectItem>

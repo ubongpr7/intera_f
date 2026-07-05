@@ -66,7 +66,7 @@ const StaffGroup =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
      refetch();
      setRefetchData(false);
    }
-   },[refetchData])
+   },[refetch, refetchData, setRefetchData])
   
   const handleUpdatePermissionSubmit = async (createdData: { permissions: string[] }) => {
     await updatePermission({id:groupId,data: createdData}).unwrap();
@@ -108,7 +108,8 @@ const StaffGroup =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
             onRowClick={handleRowClick}
             searchableFields={['name', 'description']}
             filterableFields={[]}
-            sortableFields={['name', 'description']}
+            sortableFields={['name', 'description', 'permission_count', 'users_count']}
+            rangeFilterFields={['permission_count', 'users_count']}
             title="Groups"
             onClose={() => setIsCreateOpen(true)}
             
