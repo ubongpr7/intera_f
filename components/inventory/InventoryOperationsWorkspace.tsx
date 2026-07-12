@@ -77,7 +77,6 @@ export default function InventoryOperationsWorkspace({ inventoryId }: InventoryO
                   </CardDescription>
                   <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-wide text-gray-500">
                     <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1">{formatMachineLabel(inventory?.inventory_type, "Inventory item")}</span>
-                    <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1">{inventory?.category_name || "No category"}</span>
                     {structuralSpread.map((locationName) => (
                       <span key={locationName} className="rounded-full border border-gray-200 bg-white px-3 py-1">
                         {locationName}
@@ -149,7 +148,6 @@ export default function InventoryOperationsWorkspace({ inventoryId }: InventoryO
         status={inventory ? "complete" : "in_progress"}
         facts={[
           { label: "Inventory type", value: formatMachineLabel(inventory?.inventory_type) },
-          { label: "Category", value: inventory?.category_name || "Not set" },
           { label: "Status", value: formatMachineLabel(inventory?.status) },
         ]}
       >

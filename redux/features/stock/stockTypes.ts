@@ -128,7 +128,6 @@ export interface InventoryItem {
   display_image?: string | null;
   product_variant_image_url?: string | null;
   inventory_type?: string | null;
-  inventory_category?: string | null;
   default_supplier?: string | null;
   track_stock?: boolean;
   track_lot?: boolean;
@@ -279,7 +278,6 @@ export interface CreateInventoryVariantPayload {
   product_variant: string;
   name?: string;
   description?: string;
-  inventory_category_id?: string;
   inventory_type?: string;
   default_uom_code?: string;
   stock_uom_code?: string;
@@ -311,7 +309,6 @@ export interface StockLocationResponse {
 
 export interface InventoryItemListParams {
   inventory_item?: string;
-  inventory_category?: string;
   location?: string;
   structural_location_id?: string;
   structural_location_ids?: string[];

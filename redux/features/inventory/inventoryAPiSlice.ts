@@ -5,9 +5,7 @@ import type { StructuralLocationScopeParams } from "@/lib/structuralLocationScop
 import type {
   AdjustStockPayload,
   AdjustStockResponse,
-  CategoryData,
   InventoryAnalytics,
-  InventoryCategoryListParams,
   InventoryData,
   InventoryListParams,
   InventorySetupSummary,
@@ -23,70 +21,6 @@ type InventoryScopeParams = StructuralLocationScopeParams & Pick<InventoryListPa
 
 export const inventoryApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    listInventoryCategories: builder.query<CategoryData[], InventoryCategoryListParams | void>({
-      query: (params) => ({
-        url: buildQuery(`/${inventoryApi}/categories/`, params),
-        service,
-      }),
-      transformResponse: (response: CategoryData[] | { results?: CategoryData[] }) => unwrapListResponse<CategoryData>(response),
-    }),
-
-    createCategory: builder.mutation<CategoryData, Partial<CategoryData>>({
-      query: (data) => ({
-        url: `/${inventoryApi}/categories/`,
-        method: "POST",
-        body: data,
-        service,
-      }),
-    }),
-
-    getCategory: builder.query<CategoryData, EntityId>({
-      query: (id) => ({
-        url: `/${inventoryApi}/categories/${id}/`,
-        service,
-      }),
-    }),
-
-    updateCategory: builder.mutation<CategoryData, { id: EntityId; data: Partial<CategoryData> }>({
-      query: ({ id, data }) => ({
-        url: `/${inventoryApi}/categories/${id}/`,
-        method: "PATCH",
-        body: data,
-        service,
-      }),
-    }),
-
-    deleteCategory: builder.mutation<void, EntityId>({
-      query: (id) => ({
-        url: `/${inventoryApi}/categories/${id}/`,
-        method: "DELETE",
-        service,
-      }),
-    }),
-
-    getCategoryTree: builder.query<CategoryData[], void>({
-      query: () => ({
-        url: `/${inventoryApi}/categories/tree/`,
-        service,
-      }),
-    }),
-
-    getCategoryChildren: builder.query<CategoryData[], EntityId>({
-      query: (id) => ({
-        url: `/${inventoryApi}/categories/${id}/children/`,
-        service,
-      }),
-      transformResponse: (response: CategoryData[] | { results?: CategoryData[] }) => unwrapListResponse<CategoryData>(response),
-    }),
-
-    getCategoryInventories: builder.query<InventorySummary[], EntityId>({
-      query: (id) => ({
-        url: `/${inventoryApi}/categories/${id}/items/`,
-        service,
-      }),
-      transformResponse: (response: InventorySummary[] | { results?: InventorySummary[] }) => unwrapListResponse<InventorySummary>(response),
-    }),
-
     listInventories: builder.query<InventorySummary[], InventoryListParams | void>({
       query: (params) => ({
         url: buildQuery(`/${inventoryApi}/items/`, params),
@@ -184,14 +118,6 @@ export const inventoryApiSlice = apiSlice.injectEndpoints({
 });
 
 export const {
-  useListInventoryCategoriesQuery,
-  useCreateCategoryMutation,
-  useGetCategoryQuery,
-  useUpdateCategoryMutation,
-  useDeleteCategoryMutation,
-  useGetCategoryTreeQuery,
-  useGetCategoryChildrenQuery,
-  useGetCategoryInventoriesQuery,
   useListInventoriesQuery,
   useCreateInventoryMutation,
   useGetInventoryQuery,
@@ -206,5 +132,4 @@ export const {
   useGetInventoryAnalyticsQuery,
 } = inventoryApiSlice;
 
-export const useGetInventoryCategoriesQuery = useListInventoryCategoriesQuery;
 export const useGetInventoryDataQuery = useListInventoriesQuery;

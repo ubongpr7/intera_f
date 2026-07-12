@@ -14,26 +14,6 @@ export type InventoryUserReference = Partial<UserData> & {
   id?: number | string;
 };
 
-export interface CategoryData {
-  id: string;
-  name: string;
-  slug?: string;
-  description?: string | null;
-  is_active?: boolean;
-  structural?: boolean;
-  parent?: string | null;
-  parent_name?: string | null;
-  default_location?: string | null;
-  inventory_count?: number;
-  children?: CategoryData[];
-  created_at?: string;
-  modified_at?: string;
-  created_by?: number | string | null;
-  modified_by?: number | string | null;
-  created_by_details?: InventoryUserReference | null;
-  modified_by_details?: InventoryUserReference | null;
-}
-
 export interface InventoryStockAnalytics {
   total_locations: number;
   average_purchase_price: string | number;
@@ -58,10 +38,7 @@ export interface InventoryData {
   inventory_type?: string;
   default_uom_code?: string | null;
   stock_uom_code?: string | null;
-  inventory_category?: string | null;
   status?: string | null;
-  category_name?: string | null;
-  category_details?: CategoryData | null;
   current_stock_level?: string | number;
   current_stock?: string | number;
   stock_status?: string;
@@ -147,7 +124,6 @@ export interface InventoryAnalytics {
 
 export interface InventorySetupSummary {
   total_locations: number;
-  total_categories: number;
   total_inventory_items: number;
   total_stock_value: string | number;
   low_stock_count: number;
@@ -174,20 +150,11 @@ export interface OrderAnalytics {
 export interface InventoryListParams {
   status?: string;
   inventory_type?: string;
-  inventory_category?: string;
   stock_status?: "low_stock" | "out_of_stock" | "needs_reorder";
   structural_location_id?: string;
   structural_location_ids?: string[];
   scope?: "all" | "all_locations";
   stock_location_id?: string;
-  search?: string;
-  ordering?: string;
-}
-
-export interface InventoryCategoryListParams {
-  is_active?: boolean;
-  structural?: boolean;
-  parent?: string;
   search?: string;
   ordering?: string;
 }

@@ -1,6 +1,6 @@
 'use client'
 import DetailCard from '../common/Detail';
-import { useGetInventoryCategoriesQuery, useGetInventoryQuery } from '@/redux/features/inventory/inventoryAPiSlice';
+import { useGetInventoryQuery } from '@/redux/features/inventory/inventoryAPiSlice';
 import { InventoryData, inventoryTypes } from "@/redux/features/inventory/inventoryTypes";
 import { useUpdateInventoryMutation } from '../../redux/features/inventory/inventoryAPiSlice';
 import LoadingAnimation from '../common/LoadingAnimation';
@@ -26,11 +26,6 @@ export default function InventoryDetail({ id }: { id: string }) {
   };
 
 
-const { data: categories = [] } = useGetInventoryCategoriesQuery();
-const categoryOptions = categories.map((cat: any) => ({
-  value: cat.id,
-  text: cat.name,
-}));
 const unitOptions = units.map((unit: any) => ({
    value: unit.code,
   text: `${unit.name}${unit.abbreviated_name ? ` (${unit.abbreviated_name})` : ""}`,
@@ -45,7 +40,6 @@ const typeOptions = inventoryTypes ? inventoryTypes.map((inventory_type: any) =>
       })) : [];
 const  selectOptions = {
     
-      inventory_category:categoryOptions,
       inventory_type:typeOptions,
       default_uom_code:unitOptions,
       stock_uom_code:unitOptions,
@@ -81,7 +75,6 @@ const  selectOptions = {
         'sku_snapshot',
         'barcode_snapshot',
         'inventory_type',
-        'category_name',
         'default_supplier_name',
         'default_uom_code',
         'stock_uom_code',
@@ -112,7 +105,6 @@ const  selectOptions = {
       excludeFields={[
         'id',
         'name_snapshot',
-        'inventory_category',
         'created_by',
         'created_by_user_id',
         'updated_by_user_id',
@@ -120,7 +112,6 @@ const  selectOptions = {
         'created_by_details',
         'modified_by_details',
         'updated_by_details',
-        'category_details',
         'metadata',
         'default_supplier',
         'product_template_id',
@@ -131,7 +122,7 @@ const  selectOptions = {
       isLoading={updateIsLoading}
       policyFields={['description']}
       keyInfo={InventoryKeyInfo}
-      optionalFields={['description','inventory_category','default_supplier','stock_uom_code']}
+      optionalFields={['description','default_supplier','stock_uom_code']}
 
     />
   );

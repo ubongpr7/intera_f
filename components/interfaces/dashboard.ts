@@ -19,12 +19,6 @@ export interface TopSellingProduct {
     total_amount: number;
   }
   
-  export interface InventoryCategory {
-    id: string;
-    name: string;
-    inventory_count: number;
-  }
-  
   export interface StockLocation {
     id: string;
     name: string;

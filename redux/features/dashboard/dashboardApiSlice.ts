@@ -64,12 +64,6 @@ export const dashboardApiSlice = apiSlice.injectEndpoints({
           service: 'pos',
         }),
       }),
-      getDashboardInventoryByCategory: builder.query({
-        query: () => ({
-          url: `/inventory_api/categories/`,
-          service: 'inventory',
-        }),
-      }),
       getDashboardStockValueByLocation: builder.query({
         query: () => ({
           url: `/stock_api/locations/`,
@@ -143,7 +137,6 @@ export const {
     useGetDashboardTopSellingProductsQuery,
     useGetDashboardRecentPriceChangesQuery,
     useGetDashboardHeldOrdersQuery,
-    useGetDashboardInventoryByCategoryQuery,
     useGetDashboardStockValueByLocationQuery,
     useGetDashboardTopSuppliersQuery,
     useGetDashboardPendingPurchaseOrdersQuery,

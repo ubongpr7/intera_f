@@ -10,7 +10,6 @@ import CustomCreateCard from '../common/createCard';
 import { InventoryInterfaceKeys,defaultValues } from './selectOptions';
 import { InventoryKeyInfo } from './selectOptions';
 import { useGetUnitsQuery } from "../../redux/features/common/typeOF";
-import { useGetInventoryCategoriesQuery } from "../../redux/features/inventory/inventoryAPiSlice";
 import { RefetchDataProp } from "@/redux/features/common/commonTypes";
 import { formatCurrencyCompact } from '@/lib/currency-utils';
 import { buildStructuralLocationScopeParams } from '@/lib/structuralLocationScope';
@@ -44,7 +43,7 @@ const inventoryColumns: Column<InventoryData>[] = [
         {renderInventoryThumbnail(row.display_image || row.product_variant_image_url, row.name)}
         <div className="min-w-0">
           <div className="truncate font-medium text-gray-900">{value}</div>
-          <div className="truncate text-xs text-gray-500">{row.category_name || formatMachineLabel(row.inventory_type, 'Inventory item')}</div>
+          <div className="truncate text-xs text-gray-500">{formatMachineLabel(row.inventory_type, 'Inventory item')}</div>
         </div>
       </div>
     ),
@@ -95,12 +94,6 @@ const inventoryColumns: Column<InventoryData>[] = [
     className: 'font-medium',
   },
   {
-    header: 'Category',
-    accessor: 'category_name',
-    render: (value) => value || 'Uncategorized',
-    info: 'Operational category assigned to the inventory item',
-  },
-  {
     header: 'Reorder Point',
     accessor: 'reorder_point',
     render: (value) => value || '0',
@@ -128,10 +121,10 @@ function InventoryView({
     [selectedLocationIds],
   );
   const { data, isLoading, refetch, error } = useGetInventoryDataQuery(inventoryQuery);
-  const [createInventory, { isLoading: inventoryCreateLoading }] = useCreateInventoryMutation();
-  const [deleteInventory] = useDeleteInventoryMutation();
-  const [isCreateOpen, setIsCreateOpen] = useState(false); // Renamed for clarity
-  const router = useRouter();
+    const [createInventory, { isLoading: inventoryCreateLoading }] = useCreateInventoryMutation();
+    const [deleteInventory] = useDeleteInventoryMutation();
+    const [isCreateOpen, setIsCreateOpen] = useState(false); // Renamed for clarity
+    const router = useRouter();
 
   const handleCreate = async (createdData: Partial<InventoryData>) => {
     await createInventory(createdData).unwrap();
@@ -139,8 +132,6 @@ function InventoryView({
     await refetch(); 
   };
 
-    //////////////////////////////
-    const { data: categories = [], refetch:refetchCategory } = useGetInventoryCategoriesQuery();
       const { data: units=[] } = useGetUnitsQuery();
       const { data: suppliers=[] } = useGetSupplersQuery();
       
@@ -151,9 +142,9 @@ function InventoryView({
       return;
     }
 
-    refetchCategory();
+    refetch();
     setRefetchData(false);
-  }, [refetchCategory, refetchData, setRefetchData]);
+  }, [refetch, refetchData, setRefetchData]);
 
      const unitOptions = units.map((unit: any) => ({
    value: unit.code,
@@ -168,15 +159,9 @@ function InventoryView({
         text: supplier.name,
       }));
     
-      const categoryOptions = categories.map((cat: any) => ({
-        value: cat.id,
-        text: cat.name,
-      }));
-  
 
     const  selectOptions = {
           
-            inventory_category:categoryOptions,
             inventory_type:typeOptions,
             default_supplier:supplierOptions,
             default_uom_code:unitOptions,
@@ -226,7 +211,6 @@ function InventoryView({
     'id',
     'created_at',
     'updated_at',
-    'category_name',
     'name',
     'current_stock_level',
     'current_stock',
@@ -238,7 +222,6 @@ function InventoryView({
     'modified_by_details',
     'updated_by_details',
     'stock_analytics',
-    'category_details',
     'display_image',
     'product_variant_image_url'
   ];
@@ -276,7 +259,6 @@ function InventoryView({
         actionButtons={actionButtons}
         searchableFields={['name', 'sku_snapshot', 'barcode_snapshot', 'location_name', 'default_supplier_name']}
         filterableFields={[
-          'category_name',
           'inventory_type',
           'stock_status',
           'status',
@@ -305,7 +287,7 @@ function InventoryView({
           keyInfo={InventoryKeyInfo}
           notEditableFields={notEditableFields}
           interfaceKeys={InventoryInterfaceKeys}
-          optionalFields={['description','inventory_category','default_supplier','stock_uom_code']}
+          optionalFields={['description','default_supplier','stock_uom_code']}
           itemTitle={'Create Inventory Item'}
         />
       ) : null}

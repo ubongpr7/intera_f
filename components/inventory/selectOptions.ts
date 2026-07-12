@@ -5,7 +5,6 @@ export const InventoryKeyInfo = {
   name_snapshot: "Human-readable name for the inventory item.",
   description: "Short operational description for warehouse and purchasing teams.",
   inventory_type: "Operational stock type such as raw material, finished good, or consumable.",
-  inventory_category: "Operational category used for storage and replenishment policy.",
   default_supplier: "Preferred supplier used when planning replenishment for this item.",
   default_uom_code: "Default unit of measure code used when this item is referenced.",
   stock_uom_code: "Unit of measure used when stock is counted on hand.",
@@ -24,7 +23,6 @@ export const InventoryKeyInfo = {
 export const InventoryInterfaceKeys: (keyof InventoryData)[] = [
   "name_snapshot",
   "description",
-  "inventory_category",
   "default_supplier",
   "inventory_type",
   "status",
