@@ -559,13 +559,15 @@ const answerFromHistory = (
 
   const latestInsight = selectInsightPayload(messages, text);
   if (!latestInsight) {
-    return {
-      assistantText:
-        "I have the previous analysis, but that follow-up is not mapped yet. Ask about the leader, laggard, gap, trend, risk, or next action, and I will answer from the saved result.",
-    };
+    return undefined;
   }
   const assistantText = answerFromInsightPayload(text, latestInsight);
-  return assistantText ? { assistantText } : undefined;
+  return assistantText
+    ? { assistantText }
+    : {
+        assistantText:
+          "I have the previous analysis, but that follow-up is not mapped yet. Ask about the leader, laggard, gap, trend, risk, or next action, and I will answer from the saved result.",
+      };
 };
 
 export const sendStreamMessage =
