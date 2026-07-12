@@ -283,6 +283,33 @@ export interface GlobalCatalogProduct {
   variants?: GlobalCatalogVariant[];
 }
 
+export interface GlobalCatalogProductListResponse {
+  count: number;
+  next?: string | null;
+  previous?: string | null;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  results: GlobalCatalogProduct[];
+  filters?: {
+    brands?: string[];
+    categories?: string[];
+  };
+}
+
+export interface GlobalCatalogStats {
+  total_products: number;
+  total_variants: number;
+  total_brands: number;
+  total_categories: number;
+  imported_products: number;
+  imported_variants: number;
+  filters?: {
+    brands?: string[];
+    categories?: string[];
+  };
+}
+
 export interface GlobalCatalogAdminProduct {
   id: string;
   name: string;
@@ -304,6 +331,34 @@ export interface GlobalCatalogAdminProduct {
   variants?: GlobalCatalogVariant[];
   created_at: string;
   updated_at: string;
+}
+
+export interface GlobalCatalogAdminListResponse {
+  count: number;
+  next?: string | null;
+  previous?: string | null;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  results: GlobalCatalogAdminProduct[];
+  filters?: {
+    brands?: string[];
+    categories?: string[];
+    source_statuses?: string[];
+  };
+}
+
+export interface GlobalCatalogAdminStats {
+  total_products: number;
+  total_variants: number;
+  published_products: number;
+  draft_products: number;
+  archived_products: number;
+  filters?: {
+    brands?: string[];
+    categories?: string[];
+    source_statuses?: string[];
+  };
 }
 
 export interface GlobalCatalogImport {
@@ -343,6 +398,43 @@ export interface GlobalCatalogImportResponse {
 }
 
 export type GlobalCatalogSyncResult = GlobalCatalogImportResult;
+
+export interface GlobalCatalogBarcodeDuplicate {
+  barcode: string;
+  status: "already_in_workspace";
+  workspace_product_id: string;
+  workspace_variant_id?: string | null;
+  product_name: string;
+  variant_name: string;
+}
+
+export interface GlobalCatalogBarcodeMatch {
+  barcode: string;
+  status: "matched";
+  source: "global_catalog" | "barcodespider_created";
+  global_product_id: string;
+  matched_variant_id: string;
+  matched_variant_barcode: string;
+  matched_variant_name: string;
+  global_product: GlobalCatalogProduct;
+}
+
+export interface GlobalCatalogBarcodeMiss {
+  barcode: string;
+  status: "not_found" | "not_imported";
+  reason: string;
+}
+
+export interface GlobalCatalogBarcodeResolveResponse {
+  requested_count: number;
+  duplicate_count: number;
+  matched_count: number;
+  not_found_count: number;
+  created_global_count: number;
+  duplicates: GlobalCatalogBarcodeDuplicate[];
+  matches: GlobalCatalogBarcodeMatch[];
+  misses: GlobalCatalogBarcodeMiss[];
+}
 
 export interface GlobalCatalogImportPreview {
   global_product_id: string;

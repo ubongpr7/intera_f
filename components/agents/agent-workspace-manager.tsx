@@ -241,12 +241,12 @@ const AgentEditorDialog = ({
           />
         </label>
         <label className="grid gap-2 text-sm md:col-span-2">
-          <span className="font-medium text-slate-200">Developer instruction</span>
+          <span className="font-medium text-slate-200">Workflow guidance</span>
           <Textarea
             value={value.developer_instruction}
             onChange={(event) => onChange({ ...value, developer_instruction: event.target.value })}
             rows={3}
-            placeholder="Additional engineering guidance for the runtime."
+            placeholder="Additional guidance for how this agent should behave."
           />
         </label>
         <label className="grid gap-2 text-sm md:col-span-2">
@@ -265,7 +265,7 @@ const AgentEditorDialog = ({
           />
           <div>
             <p className="font-medium text-slate-200">Enable this agent</p>
-            <p className="text-xs text-slate-400">Disabled agents stay in the control plane but do not appear in runtime registry.</p>
+            <p className="text-xs text-slate-400">Disabled agents stay saved in the workspace but do not appear in the active agent list.</p>
           </div>
         </label>
       </div>
@@ -441,7 +441,7 @@ export default function AgentWorkspaceManager({
   const handleDeleteAgent = async (agent: WorkspaceAgentRecord) => {
     const confirmed = await confirmAction({
       title: "Delete workspace agent?",
-      description: `Delete ${agent.name}? This removes it from the workspace control plane.`,
+      description: `Delete ${agent.name}? This removes it from the workspace.`,
       confirmText: "Delete agent",
       destructive: true,
     });
@@ -586,7 +586,7 @@ export default function AgentWorkspaceManager({
             <h2 className="text-xl font-semibold text-amber-950">This workspace does not expose agent setup or chat access for your account.</h2>
             <p className="max-w-3xl text-sm leading-6 text-amber-900/80">
               Ask a workspace administrator to assign at least <span className="font-semibold">read_agent</span> for setup access or{" "}
-              <span className="font-semibold">interact_with_agent</span> for runtime chat access.
+              <span className="font-semibold">interact_with_agent</span> for chat access.
             </p>
           </div>
         </div>
@@ -600,9 +600,9 @@ export default function AgentWorkspaceManager({
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-4xl">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-700">Workspace Agent Control</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-gray-900">Install default agents, create custom specialists, and control runtime visibility.</h2>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-gray-900">Install default agents, create custom specialists, and manage what is available in chat.</h2>
             <p className="mt-2 text-sm leading-6 text-gray-600">
-              This is the control plane for the future chat-first agent workspace. The runtime registry shown here is the agent set that will back the workspace chat surface once the Kafka runtime finishes switching from file-based loading to DB-backed loading.
+              This page manages the workspace agent setup. The list shown here is the agent set that powers the chat surface for this workspace.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -677,7 +677,7 @@ export default function AgentWorkspaceManager({
                               {agent.origin}
                             </span>
                             <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] ${runtimeVisible ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
-                              {runtimeVisible ? "runtime" : "not in runtime"}
+                              {runtimeVisible ? "available" : "hidden"}
                             </span>
                           </div>
                           <p className="mt-2 text-sm leading-6 text-slate-600">{agent.description || "No description yet."}</p>
@@ -747,7 +747,7 @@ export default function AgentWorkspaceManager({
                   <div className="rounded-[26px] border border-slate-800 bg-slate-900/80 p-4">
                     <div className="flex items-center gap-2">
                       <BrainCircuit className="h-4 w-4 text-blue-300" />
-                      <p className="text-sm font-semibold text-white">Runtime profile</p>
+                      <p className="text-sm font-semibold text-white">Agent profile</p>
                     </div>
                     <div className="mt-3 grid gap-2 text-sm text-slate-300 md:grid-cols-2">
                       <div className="rounded-2xl border border-slate-800 bg-slate-950 px-3 py-2">Visibility: {selectedAgent.visibility}</div>
@@ -758,7 +758,7 @@ export default function AgentWorkspaceManager({
                       <div className="rounded-2xl border border-slate-800 bg-slate-950 px-3 py-2">Skills: {selectedAgent.skill_bindings.length}</div>
                     </div>
                     <details className="mt-4 rounded-[22px] border border-slate-800 bg-slate-950/80 p-4">
-                      <summary className="cursor-pointer text-sm font-semibold text-slate-200">Agent card payload preview</summary>
+                      <summary className="cursor-pointer text-sm font-semibold text-slate-200">Agent details JSON</summary>
                       <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-words text-xs leading-5 text-slate-400">
                         {JSON.stringify(selectedAgent.card_payload, null, 2)}
                       </pre>
@@ -879,9 +879,9 @@ export default function AgentWorkspaceManager({
             <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Runtime Registry</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Active agents</p>
                   <h3 className="mt-1 text-lg font-semibold text-slate-900">
-                    {canInteract ? (loadingRuntimeRegistry ? "Loading..." : `${runtimeAgents.length} visible`) : "Permission required"}
+                    {canInteract ? (loadingRuntimeRegistry ? "Loading..." : `${runtimeAgents.length} available`) : "Permission required"}
                   </h3>
                 </div>
                 <div className="rounded-2xl bg-white p-3 text-slate-700 shadow-sm">
@@ -909,12 +909,12 @@ export default function AgentWorkspaceManager({
                     ))
                   ) : (
                     <p className="rounded-[22px] border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-500">
-                      No enabled workspace-visible agents are currently exposed to runtime.
+                      No enabled workspace agents are currently available in chat.
                     </p>
                   )
                 ) : (
                   <p className="rounded-[22px] border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-500">
-                    Runtime registry requires <span className="font-semibold">interact_with_agent</span>.
+                    Chat access requires <span className="font-semibold">interact_with_agent</span>.
                   </p>
                 )}
               </div>
@@ -979,7 +979,7 @@ export default function AgentWorkspaceManager({
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         title="Create custom workspace agent"
-        description="This creates a workspace-scoped agent record that will later be loaded by the DB-backed A2A runtime."
+        description="This creates a workspace agent record that can later be used in chat."
         value={createForm}
         onChange={setCreateForm}
         onSubmit={handleCreateAgent}
@@ -990,7 +990,7 @@ export default function AgentWorkspaceManager({
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         title="Edit workspace agent"
-        description="Update the control-plane definition without touching the runtime container layout."
+        description="Update the agent details without changing how the rest of the workspace is set up."
         value={editForm}
         onChange={setEditForm}
         onSubmit={handleUpdateAgent}

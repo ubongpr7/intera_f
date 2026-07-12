@@ -164,6 +164,11 @@ const mergeStructuredPayload = (
   return merged;
 };
 
+const isIgnorableAssistantPayloadText = (value: string): boolean => {
+  const normalized = value.trim();
+  return normalized === "[]" || normalized === "{}" || normalized === "null";
+};
+
 const upsertAssistantMessage = (
   session: Ka2aSession,
   payload: {
@@ -177,7 +182,7 @@ const upsertAssistantMessage = (
   const text = payload.content.trim();
   const fallbackText = summarizeStructuredPayload(payload.structuredPayload);
   const content = text || fallbackText;
-  if (!content && !payload.structuredPayload) {
+  if ((!content && !payload.structuredPayload) || (!payload.structuredPayload && isIgnorableAssistantPayloadText(content))) {
     return;
   }
 
@@ -310,12 +315,57 @@ const ka2aSlice = createSlice({
         timestamp: nowIso(),
       });
     },
+    historyAnswerReturned: (
+      state,
+      action: PayloadAction<{
+        sessionId: string;
+        userText: string;
+        assistantText: string;
+        structuredPayload?: AgentStructuredPayload;
+      }>,
+    ) => {
+      const session = state.sessions[action.payload.sessionId];
+      if (!session) {
+        return;
+      }
+      session.isStreaming = false;
+      session.error = undefined;
+      session.awaitingInput = false;
+      session.resumeTaskId = undefined;
+      session.currentTaskState = "completed";
+      session.currentStatusText = undefined;
+      session.messages.push({
+        id: createId(),
+        role: "user",
+        content: action.payload.userText,
+        timestamp: nowIso(),
+      });
+      session.messages.push({
+        id: createId(),
+        role: "assistant",
+        content: action.payload.assistantText,
+        timestamp: nowIso(),
+        structuredPayload: action.payload.structuredPayload,
+      });
+    },
     streamEnded: (state, action: PayloadAction<{ sessionId: string }>) => {
       const session = state.sessions[action.payload.sessionId];
       if (!session) {
         return;
       }
       session.isStreaming = false;
+      const lastUserIndex = [...session.messages].map((message) => message.role).lastIndexOf("user");
+      const hasAssistantAfterLastUser =
+        lastUserIndex >= 0 && session.messages.slice(lastUserIndex + 1).some((message) => message.role === "assistant");
+      if (lastUserIndex >= 0 && !hasAssistantAfterLastUser) {
+        session.messages.push({
+          id: createId(),
+          role: "assistant",
+          content:
+            "I could not complete that answer from the agent service. Please retry, or ask me to regenerate the analysis if you need fresh data.",
+          timestamp: nowIso(),
+        });
+      }
     },
     streamErrored: (state, action: PayloadAction<{ sessionId: string; error: string }>) => {
       const session = state.sessions[action.payload.sessionId];
@@ -325,6 +375,18 @@ const ka2aSlice = createSlice({
       session.isStreaming = false;
       session.currentStatusText = undefined;
       session.error = action.payload.error;
+      const lastUserIndex = [...session.messages].map((message) => message.role).lastIndexOf("user");
+      const hasAssistantAfterLastUser =
+        lastUserIndex >= 0 && session.messages.slice(lastUserIndex + 1).some((message) => message.role === "assistant");
+      if (lastUserIndex >= 0 && !hasAssistantAfterLastUser) {
+        session.messages.push({
+          id: createId(),
+          role: "assistant",
+          content:
+            "I could not complete that answer from the agent service. Please retry, or ask me to regenerate the analysis if you need fresh data.",
+          timestamp: nowIso(),
+        });
+      }
     },
     eventReceived: (state, action: PayloadAction<{ sessionId: string; event: Ka2aEvent }>) => {
       const session = state.sessions[action.payload.sessionId];
@@ -477,6 +539,7 @@ export const {
   deleteSession,
   updateSessionConfig,
   setSessionContextId,
+  historyAnswerReturned,
   streamStarted,
   streamEnded,
   streamErrored,

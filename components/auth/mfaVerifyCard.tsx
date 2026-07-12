@@ -1,36 +1,88 @@
 'use client';
 
-import { useRef, useState } from "react";
-import { useMfaVerifyMutation } from "@/redux/features/users/userApiSlice";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import {
+  useMfaEmailRequestMutation,
+  useMfaEmailVerifyMutation,
+  useMfaVerifyMutation,
+} from "@/redux/features/users/userApiSlice";
 import { markMfaVerified } from "@/lib/mfaFlow";
 import { deleteCookie, getCookie } from "cookies-next";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import { Loader2, ShieldCheck, Smartphone } from "lucide-react";
+import { Loader2, MailCheck, ShieldCheck, Smartphone } from "lucide-react";
 import { getCookieCandidates, readCookieValue } from "@/lib/authCookies";
 import { persistAuthSession } from "@/redux/services/apiSlice";
 import type { MfaVerifyResponse } from "@/redux/features/users/userTypes";
 
+const RESEND_COOLDOWN_SECONDS = 60;
+
 export default function MfaVerifyCard() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [method, setMethod] = useState<"app" | "email">("app");
   const [code, setCode] = useState("");
+  const [email, setEmail] = useState("");
+  const [cooldown, setCooldown] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
   const [verifyMfa, { isLoading }] = useMfaVerifyMutation();
+  const [requestEmailCode, { isLoading: isSendingEmailCode }] = useMfaEmailRequestMutation();
+  const [verifyEmailCode, { isLoading: isVerifyingEmailCode }] = useMfaEmailVerifyMutation();
   const codeDigits = Array.from({ length: 6 }, (_, index) => code[index] ?? "");
+  const isLoadingAny = isLoading || isSendingEmailCode || isVerifyingEmailCode;
+
+  useEffect(() => {
+    if (cooldown <= 0) {
+      return undefined;
+    }
+    const timerId = window.setInterval(() => {
+      setCooldown((current) => Math.max(0, current - 1));
+    }, 1000);
+    return () => window.clearInterval(timerId);
+  }, [cooldown]);
+
+  const handleSendEmailCode = async () => {
+    setErrorMessage("");
+    try {
+      const response = await requestEmailCode().unwrap();
+      setEmail(response.email);
+      setCooldown(RESEND_COOLDOWN_SECONDS);
+      toast.success(response.detail);
+    } catch (error: any) {
+      setErrorMessage(error?.data?.detail || "Unable to send a verification code to your email.");
+    }
+  };
+
+  const handleMethodChange = async (nextMethod: "app" | "email") => {
+    setMethod(nextMethod);
+    setCode("");
+    setErrorMessage("");
+    if (nextMethod === "email" && !email && !isSendingEmailCode) {
+      await handleSendEmailCode();
+    }
+  };
 
   const handleVerify = async () => {
     if (!code || code.length < 6) {
-      setErrorMessage("Please enter the 6-digit code from your authenticator app.");
+      setErrorMessage(
+        method === "email"
+          ? "Please enter the 6-digit code we sent to your email."
+          : "Please enter the 6-digit code from your authenticator app."
+      );
       return;
     }
     setErrorMessage("");
 
     let response: MfaVerifyResponse | null = null;
     try {
-      response = await verifyMfa({ code }).unwrap();
+      response = method === "email"
+        ? await verifyEmailCode({ code }).unwrap()
+        : await verifyMfa({ code }).unwrap();
     } catch (error: any) {
-      setErrorMessage(error?.data?.detail || "Unable to verify MFA code.");
+      setErrorMessage(
+        error?.data?.detail || (method === "email" ? "Unable to verify email code." : "Unable to verify MFA code.")
+      );
       return;
     }
 
@@ -70,19 +122,48 @@ export default function MfaVerifyCard() {
         <div className="absolute bottom-[-120px] right-[-120px] h-80 w-80 rounded-full bg-violet-500/20 blur-3xl" />
       </div>
 
-      <div className="relative w-full max-w-md rounded-3xl border border-white/15 bg-white/95 p-8 shadow-2xl backdrop-blur-md">
+      <div className="relative w-full max-w-md rounded-3xl border border-slate-200 bg-white/95 p-8 shadow-2xl backdrop-blur-md">
         <div className="mb-6 flex items-center justify-between">
           <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
             <ShieldCheck className="h-3.5 w-3.5" />
             Secure Login
           </span>
-          <Smartphone className="h-4 w-4 " />
+          {method === "email" ? <MailCheck className="h-4 w-4 text-slate-500" /> : <Smartphone className="h-4 w-4 text-slate-500" />}
         </div>
 
-        <h2 className="text-3xl font-semibold ">Verify your code</h2>
-        <p className="mt-2 text-sm ">
-          Enter the 6-digit code from your authenticator app to continue.
+        <h2 className="text-3xl font-semibold text-slate-950">Verify your code</h2>
+        <p className="mt-2 text-sm text-slate-600">
+          {method === "email"
+            ? "Enter the 6-digit verification code we sent to your email."
+            : "Enter the 6-digit code from your authenticator app to continue."}
         </p>
+
+        <div className="mt-5 grid grid-cols-2 gap-2 rounded-2xl border border-slate-200 bg-slate-100 p-1">
+          <button
+            type="button"
+            onClick={() => void handleMethodChange("app")}
+            className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+              method === "app" ? "border border-blue-200 bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-950"
+            }`}
+          >
+            Authenticator App
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleMethodChange("email")}
+            className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+              method === "email" ? "border border-blue-200 bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-950"
+            }`}
+          >
+            Email Code
+          </button>
+        </div>
+
+        {method === "email" && email ? (
+          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+            Verification code sent to <span className="font-semibold">{email}</span>.
+          </div>
+        ) : null}
 
         <div className="mt-6 space-y-3">
           <div
@@ -95,15 +176,15 @@ export default function MfaVerifyCard() {
                 inputRef.current?.focus();
               }
             }}
-            className="grid grid-cols-6 gap-2 rounded-2xl border border-slate-200  p-3"
+            className="grid grid-cols-6 gap-2 rounded-2xl border border-slate-200 p-3"
           >
             {codeDigits.map((digit, index) => (
               <div
                 key={`otp-digit-${index}`}
                 className={`flex h-12 items-center justify-center rounded-xl border text-lg font-semibold transition ${
                   code.length === index
-                    ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm"
-                    : "border-slate-200 bg-white "
+                    ? "border-blue-200 bg-blue-50 text-blue-700 shadow-sm"
+                    : "border-slate-200 bg-white text-slate-400"
                 }`}
               >
                 {digit || "•"}
@@ -139,10 +220,10 @@ export default function MfaVerifyCard() {
         <button
           type="button"
           onClick={() => void handleVerify()}
-          disabled={isLoading || code.length < 6}
-          className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-black/20 px-4 py-3 text-sm font-semibold text-black transition hover:bg-black/30 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={isLoadingAny || code.length < 6}
+          className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isLoading ? (
+          {isLoadingAny ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
               Verifying
@@ -152,8 +233,38 @@ export default function MfaVerifyCard() {
           )}
         </button>
 
+        {method === "email" ? (
+          <button
+            type="button"
+            onClick={() => void handleSendEmailCode()}
+            disabled={isSendingEmailCode || cooldown > 0}
+            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isSendingEmailCode ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Sending
+              </>
+            ) : (
+              cooldown > 0 ? `Resend code in ${cooldown}s` : "Resend email code"
+            )}
+          </button>
+        ) : null}
+
         <p className="mt-4 text-center text-xs text-slate-500">
-          Code refreshes every few seconds in your authenticator app.
+          {method === "email"
+            ? "Use the latest code from your email inbox."
+            : "Code refreshes every few seconds in your authenticator app."}
+        </p>
+        <p className="mt-3 text-center text-sm text-slate-600">
+          Lost access to your authenticator?
+          {" "}
+          <Link
+            href="/accounts/mfa/reset"
+            className="font-semibold text-blue-700 underline underline-offset-4 transition hover:text-blue-800"
+          >
+            Reset MFA
+          </Link>
         </p>
       </div>
     </div>

@@ -10,6 +10,8 @@ import type {
   EntitlementSnapshot,
   StartTrialResponse,
   SubscriptionPlanRecord,
+  CoinTransactionRecord,
+  CoinTopUpResponse,
 } from "./paymentTypes"
 
 export const paymentApiSlice = apiSlice.injectEndpoints({
@@ -256,10 +258,36 @@ getFeatures: builder.query({
 
     getCurrentEntitlements: builder.query<EntitlementSnapshot, void>({
       query: () => ({
-        url: "subscriptions-to-plans/entitlements/?application=intera-ims",
+        url: "subscriptions-to-plans/entitlements/?application=intera-ims&include_usage=true",
         service: "payment",
       }),
       keepUnusedDataFor: 60,
+    }),
+
+    getCoinTransactions: builder.query<CoinTransactionRecord[], void>({
+      query: () => ({
+        url: "coin-transactions/",
+        service: "payment",
+      }),
+      keepUnusedDataFor: 30,
+    }),
+
+    topUpCoins: builder.mutation<CoinTopUpResponse, {
+      amount_usd: number;
+      customer_email: string;
+      customer_name?: string;
+      application_slug?: string;
+      provider_slug?: string;
+      success_url?: string;
+      cancel_url?: string;
+      metadata?: Record<string, unknown>;
+    }>({
+      query: (body) => ({
+        url: "payments/coins/top-up/",
+        method: "POST",
+        body,
+        service: "payment",
+      }),
     }),
 
     startSubscriptionTrial: builder.mutation<StartTrialResponse, { plan_slug: string; application?: string }>({
@@ -329,4 +357,6 @@ export const {
   useGetPlanFeaturesQuery,
   useGetCurrentEntitlementsQuery,
   useStartSubscriptionTrialMutation,
+  useGetCoinTransactionsQuery,
+  useTopUpCoinsMutation,
 } = paymentApiSlice

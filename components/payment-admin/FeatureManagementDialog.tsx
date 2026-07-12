@@ -15,6 +15,7 @@ import {
   useAddFeatureToPlanMutation,
   useRemoveFeatureFromPlanMutation,
 } from "@/redux/features/payment/paymentAPISlice"
+import type { SubscriptionPlanRecord } from "@/redux/features/payment/paymentTypes"
 import { toast } from "react-toastify"
 import { extractErrorMessage } from "@/lib/utils"
 
@@ -36,26 +37,10 @@ interface PlanFeature {
   is_unlimited: boolean
 }
 
-interface SubscriptionPlan {
-  id: string
-  name: string
-  description: string
-  price: string
-  billing_cycle: string
-  is_active: boolean
-  app: string
-  features: string[]
-  created_at: string
-  updated_at: string
-  application_name?: string
-  application: string
-  intera_coins_reward?: string
-}
-
 interface FeatureManagementDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  plan: SubscriptionPlan | null
+  plan: SubscriptionPlanRecord | null
   onSuccess?: () => void
 }
 

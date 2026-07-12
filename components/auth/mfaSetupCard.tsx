@@ -24,11 +24,6 @@ export default function MfaSetupCard() {
     setErrorMessage("");
     try {
       const response = await setupMfa(force ? { force: true } : {}).unwrap();
-      if (response.mfa_enabled || response.has_setup_mfa) {
-        setCookie(AUTH_COOKIE_NAMES.mfaSetupRequired, "false", { maxAge: 60 * 60 * 24, path: "/" });
-        router.replace("/accounts/mfa/verify");
-        return;
-      }
       setSetupData(response);
       setCookie(AUTH_COOKIE_NAMES.mfaSetupRequired, "true", { maxAge: 60 * 60 * 24, path: "/" });
     } catch (error: any) {
@@ -52,13 +47,13 @@ export default function MfaSetupCard() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-8">
       <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg space-y-6">
-        <h2 className="text-center text-2xl font-bold text-gray-900">Set Up Authenticator App</h2>
-        <p className="text-center text-sm text-gray-600">
+        <h2 className="text-center text-2xl font-bold text-slate-950">Set Up Authenticator App</h2>
+        <p className="text-center text-sm text-slate-600">
           MFA is required. Scan the QR code with your authenticator app and continue.
         </p>
 
         {isLoading && !setupData ? (
-          <p className="text-center text-sm text-gray-500">Generating setup details...</p>
+          <p className="text-center text-sm text-slate-500">Generating setup details...</p>
         ) : null}
 
         {errorMessage ? (
@@ -69,7 +64,7 @@ export default function MfaSetupCard() {
 
         {setupData ? (
           <>
-            <div className="rounded-lg border border-gray-200 p-4">
+            <div className="rounded-lg border border-slate-200 p-4">
               <Image
                 src={setupData.qr_code}
                 alt="MFA QR code"
@@ -78,9 +73,9 @@ export default function MfaSetupCard() {
                 height={192}
               />
             </div>
-            <div className="rounded-md bg-gray-50 px-3 py-2">
-              <p className="text-xs text-gray-500">Setup key</p>
-              <p className="mt-1 break-all font-mono text-sm text-gray-800">{setupData.mfa_secret}</p>
+            <div className="rounded-md bg-slate-50 px-3 py-2">
+              <p className="text-xs text-slate-500">Setup key</p>
+              <p className="mt-1 break-all font-mono text-sm text-slate-800">{setupData.mfa_secret}</p>
             </div>
           </>
         ) : null}
@@ -100,7 +95,7 @@ export default function MfaSetupCard() {
           <button
             type="button"
             onClick={() => void loadSetup(true)}
-            className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            className="w-full rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50"
             disabled={isLoading}
           >
             Regenerate QR Code

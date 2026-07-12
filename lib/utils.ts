@@ -176,11 +176,72 @@ export const extractErrorMessage = (error: any, listOfKeys: string[]): string =>
 import {jwtDecode} from 'jwt-decode'
 import {getCookie} from 'cookies-next'
 import { readCookieValue } from './authCookies'
+
+const parseBooleanCookie = (value: string | undefined): boolean | undefined => {
+  if (value === undefined) {
+    return undefined
+  }
+
+  const normalized = value.trim().toLowerCase()
+  if (["true", "1", "yes", "on"].includes(normalized)) {
+    return true
+  }
+  if (["false", "0", "no", "off"].includes(normalized)) {
+    return false
+  }
+
+  return undefined
+}
+
+const toBooleanClaim = (value: unknown): boolean | undefined => {
+  if (typeof value === "boolean") {
+    return value
+  }
+
+  if (typeof value === "number") {
+    if (value === 1) {
+      return true
+    }
+    if (value === 0) {
+      return false
+    }
+    return undefined
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase()
+    if (["true", "1", "yes", "on"].includes(normalized)) {
+      return true
+    }
+    if (["false", "0", "no", "off"].includes(normalized)) {
+      return false
+    }
+  }
+
+  return undefined
+}
+
 export function getDecodedToken(){
   const token= readCookieValue("accessToken", getCookie)
+  const isStaffFromCookie = parseBooleanCookie(readCookieValue("isStaff", getCookie))
+  const isSuperuserFromCookie = parseBooleanCookie(readCookieValue("isSuperuser", getCookie))
   try{
-    return jwtDecode(`${token}`)
+    const decoded = jwtDecode<Record<string, unknown>>(`${token}`)
+    const tokenIsStaff = toBooleanClaim(decoded?.is_staff)
+    const tokenIsSuperuser = toBooleanClaim(decoded?.is_superuser)
+
+    return {
+      ...decoded,
+      is_staff: tokenIsStaff ?? isStaffFromCookie,
+      is_superuser: tokenIsSuperuser ?? isSuperuserFromCookie,
+    }
   } catch{
+    if (isStaffFromCookie !== undefined || isSuperuserFromCookie !== undefined) {
+      return {
+        is_staff: isStaffFromCookie,
+        is_superuser: isSuperuserFromCookie,
+      }
+    }
     return null
   }
 }

@@ -40,19 +40,30 @@ export default function StructuralLocationScopeSelect({
   disabled = false,
   allowMultiSelect = false,
 }: StructuralLocationScopeSelectProps) {
-  const { data: locations = [], isLoading } = useListStockLocationsQuery({ structural: true, ordering: "name" })
+  const { data: locations = [], isLoading, isError, error } = useListStockLocationsQuery({ structural: true, ordering: "name" })
   const normalizedValues = normalizeStructuralLocationIds(values)
   const isAllSelected = isAllStructuralLocationScope(normalizedValues)
   const options = locations.map((location) => ({
     value: String(location.id),
     label: formatStructuralLocationLabel(location),
   }))
+  const errorStatus =
+    error && typeof error === "object" && "status" in error && error.status != null ? String(error.status) : ""
+  const errorMessage =
+    isError
+      ? `Structural locations could not be loaded${errorStatus ? ` (${errorStatus})` : ""}. Check your access or refresh the page.`
+      : null
 
   if (allowMultiSelect) {
     return (
       <div className={`space-y-2 ${className}`.trim()}>
         <Label htmlFor={id}>{label}</Label>
         {description ? <p className="text-xs leading-5 text-gray-500">{description}</p> : null}
+        {errorMessage ? (
+          <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+            {errorMessage}
+          </p>
+        ) : null}
         <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
@@ -85,6 +96,11 @@ export default function StructuralLocationScopeSelect({
     <div className={`space-y-2 ${className}`.trim()}>
       <Label htmlFor={id}>{label}</Label>
       {description ? <p className="text-xs leading-5 text-gray-500">{description}</p> : null}
+      {errorMessage ? (
+        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+          {errorMessage}
+        </p>
+      ) : null}
       <Select value={value} onValueChange={onChange} disabled={disabled || isLoading}>
         <SelectTrigger id={id}>
           <SelectValue placeholder={allLabel} />

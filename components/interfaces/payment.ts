@@ -3,11 +3,16 @@ export interface Feature {
   id: string
   name: string
   slug: string
-  application: string
-  application_name: string
-  description: string
-  is_active: boolean
-  feature_type: "CORE" | "ADDON" | "PREMIUM"
+  application?: string
+  application_name?: string
+  description?: string
+  is_active?: boolean
+  feature_type?: "CORE" | "ADDON" | "PREMIUM"
+  limit_type?: "BOOLEAN" | "COUNT" | "METERED"
+  service_area?: string
+  service_identifier?: string
+  limit_value?: number | null
+  is_unlimited?: boolean
 }
 
 export interface PlanFeature {

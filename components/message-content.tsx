@@ -386,7 +386,10 @@ function TextContent({ content }: { content: string }) {
 }
 
 export default function MessageContent({ content, role, onCopy, onExport }: MessageContentProps) {
-  const parts = parseMessageContent(content)
+  const parts =
+    role === "assistant"
+      ? parseMessageContent(content)
+      : [{ type: "text" as const, content: typeof content === "string" ? content : "" }]
 
   return (
     <div className="space-y-2 relative group">

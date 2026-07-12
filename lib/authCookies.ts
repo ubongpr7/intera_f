@@ -19,7 +19,9 @@ export type AuthCookieKey =
   | "tavily_api_key"
   | "mfaVerified"
   | "mfaSetupRequired"
-  | "mfaNextPath";
+  | "mfaNextPath"
+  | "isStaff"
+  | "isSuperuser";
 
 const rawPrefix = (process.env.NEXT_PUBLIC_AUTH_COOKIE_PREFIX || "interaims").trim();
 const normalizedPrefix = rawPrefix.endsWith("_") ? rawPrefix : `${rawPrefix}_`;
@@ -49,6 +51,8 @@ export const AUTH_COOKIE_NAMES: Record<AuthCookieKey, string> = {
   mfaVerified: withPrefix("mfaVerified"),
   mfaSetupRequired: withPrefix("mfaSetupRequired"),
   mfaNextPath: withPrefix("mfaNextPath"),
+  isStaff: withPrefix("isStaff"),
+  isSuperuser: withPrefix("isSuperuser"),
 };
 
 const LEGACY_COOKIE_NAMES: Record<AuthCookieKey, string> = {
@@ -73,6 +77,8 @@ const LEGACY_COOKIE_NAMES: Record<AuthCookieKey, string> = {
   mfaVerified: "mfaVerified",
   mfaSetupRequired: "mfaSetupRequired",
   mfaNextPath: "mfaNextPath",
+  isStaff: "isStaff",
+  isSuperuser: "isSuperuser",
 };
 
 export const AUTH_COOKIE_KEYS: AuthCookieKey[] = Object.keys(AUTH_COOKIE_NAMES) as AuthCookieKey[];

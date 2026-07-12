@@ -7,6 +7,34 @@ import { jwtDecode } from "jwt-decode"
 import { AUTH_COOKIE_NAMES, AUTH_COOKIE_KEYS, readCookieValue } from "@/lib/authCookies"
 import { getOrCreatePosDeviceId } from "@/lib/deviceIdentity"
 
+const toBooleanClaim = (value: unknown): boolean | undefined => {
+  if (typeof value === "boolean") {
+    return value
+  }
+
+  if (typeof value === "number") {
+    if (value === 1) {
+      return true
+    }
+    if (value === 0) {
+      return false
+    }
+    return undefined
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase()
+    if (["true", "1", "yes", "on"].includes(normalized)) {
+      return true
+    }
+    if (["false", "0", "no", "off"].includes(normalized)) {
+      return false
+    }
+  }
+
+  return undefined
+}
+
 const resolveBaseUrl = (publicUrl: string, internalUrl?: string) =>
   typeof window === "undefined" ? (internalUrl ?? publicUrl) : publicUrl
 
@@ -83,6 +111,9 @@ interface AuthResponsePayload {
   access?: string
   refresh?: string
   id?: string | number
+  username?: string
+  is_staff?: boolean
+  is_superuser?: boolean
   profile?: string | number | null
   profile_context?: ProfileContext | null
   currency?: string | null
@@ -99,6 +130,8 @@ interface AuthTokenClaims {
   mfa_verified?: boolean
   mfa_enabled?: boolean
   has_setup_mfa?: boolean
+  is_staff?: boolean
+  is_superuser?: boolean
 }
 
 const AUTH_RESPONSE_URLS = new Set(["/auth/login/", "/auth/refresh/", "/auth/switch-company/", "/accounts/mfa/verify/"])
@@ -253,6 +286,27 @@ export const persistAuthSession = (response: AuthResponsePayload) => {
   ) {
     setAuthCookie("mfaVerified", "false", refreshAge)
     setAuthCookie("mfaSetupRequired", "true", refreshAge)
+  }
+
+  const isStaffClaim =
+    toBooleanClaim(tokenClaims?.is_staff) ??
+    toBooleanClaim(response.is_staff) ??
+    false
+  const isSuperuserClaim =
+    toBooleanClaim(tokenClaims?.is_superuser) ??
+    toBooleanClaim(response.is_superuser) ??
+    false
+
+  if (typeof isStaffClaim === "boolean") {
+    setAuthCookie("isStaff", isStaffClaim ? "true" : "false", refreshAge)
+  } else {
+    deleteAuthCookie("isStaff")
+  }
+
+  if (typeof isSuperuserClaim === "boolean") {
+    setAuthCookie("isSuperuser", isSuperuserClaim ? "true" : "false", refreshAge)
+  } else {
+    deleteAuthCookie("isSuperuser")
   }
 
   deleteAuthCookie("api_key")

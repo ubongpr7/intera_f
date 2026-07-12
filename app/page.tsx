@@ -722,8 +722,19 @@ function formatPlanPrice(plan: SubscriptionPlan) {
   return `$${parsedPrice.toFixed(parsedPrice % 1 === 0 ? 0 : 2)}`;
 }
 
+function formatPlanFeature(feature: Feature) {
+  if (feature.limit_type === "COUNT" && !feature.is_unlimited) {
+    const limit = Number(feature.limit_value ?? 0).toLocaleString();
+    return `${limit} ${feature.name.toLowerCase()}`;
+  }
+  if (feature.limit_type === "COUNT" && feature.is_unlimited) {
+    return `Unlimited ${feature.name.toLowerCase()}`;
+  }
+  return feature.name;
+}
+
 function PlanCard({ plan, highlighted = false }: { plan: SubscriptionPlan; highlighted?: boolean }) {
-  const planFeatures: string[] = plan.features.map((feature: Feature) => feature.name);
+  const planFeatures: string[] = plan.features.map(formatPlanFeature);
   if (planFeatures.length === 0) {
     planFeatures.push(...(planHighlights[plan.slug] ?? []));
   }
@@ -751,7 +762,7 @@ function PlanCard({ plan, highlighted = false }: { plan: SubscriptionPlan; highl
         </p>
       </div>
       <ul className="space-y-2 text-sm text-gray-700">
-        {planFeatures.slice(0, 8).map((featureName) => (
+        {planFeatures.map((featureName) => (
           <li key={featureName} className="flex items-start gap-2">
             <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-600" />
             <span>{featureName}</span>
@@ -1268,7 +1279,9 @@ export default function HomePage() {
                   Unable to load pricing plans right now. Please refresh or try again shortly.
                 </div>
               ) : null}
-              {pricingPlans?.map((plan: SubscriptionPlan, index: number) => (
+              {pricingPlans
+                ?.filter((plan: SubscriptionPlan) => plan.slug !== "enterprise")
+                .map((plan: SubscriptionPlan, index: number) => (
                 <PlanCard key={plan.id} plan={plan} highlighted={index === 1} />
               ))}
             </div>

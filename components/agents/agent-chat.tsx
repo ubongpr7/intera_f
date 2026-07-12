@@ -14,12 +14,30 @@ import {
   MicOff,
   Volume2,
   Download,
+  RotateCcw,
 } from "lucide-react"
 import { getCookie } from "cookies-next"
 import { toast } from "react-toastify"
 import MessageContent from "@/components/message-content"
 import ConfirmationDialog from "@/components/confirmation-dialog"
+import InsightWidgetRenderer from "@/components/agents/insight-widget-renderer"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { humanizeAgentDisplayName } from "@/lib/agent-display"
+import {
+  buildChatPdfBlob,
+  buildInsightCsv,
+  buildInsightExportFilename,
+  buildInsightPdfBlob,
+  downloadTextFile,
+  type ExportStructuredPayload,
+} from "@/lib/agent-export"
 import { readCookieValue } from "@/lib/authCookies"
 import {
   MultipleChoiceHandler,
@@ -56,6 +74,7 @@ import {
 import { useVoiceChat } from "@/hooks/use-voice-chat"
 import type { ChatMessage } from "@/redux/features/ka2a/ka2aSlice"
 import {
+  detectInsightResponse,
   detectInteractionRequest,
   detectInteractionResponseSummary,
   type AgentWorkflowSummary,
@@ -83,9 +102,28 @@ interface AgentChatProps {
   sendLabel?: string
   workflowSummary?: AgentWorkflowSummary | null
   onDownloadConversation?: () => void
+  onClearConversation?: () => void
+}
+
+type ExportDownloadState = {
+  title: string
+  filename?: string
+  href?: string
+  kind: "csv" | "pdf" | "json"
+  status: "choosing" | "preparing" | "ready"
+  description: string
+  payload?: ExportStructuredPayload
 }
 
 const asText = (value: unknown): string => (typeof value === "string" ? value : "")
+const asString = (value: unknown): string => (typeof value === "string" ? value : "")
+const asRecord = (value: unknown): Record<string, unknown> | undefined => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined
+  }
+  return value as Record<string, unknown>
+}
+const yieldToBrowser = () => new Promise((resolve) => setTimeout(resolve, 0))
 const APP_ASSISTANT_AVATAR = "/assets/intera-logo.png"
 
 const buildAbsoluteAssetUrl = (value?: string | null) => {
@@ -320,6 +358,7 @@ export default function AgentChat({
   sendLabel = "Send",
   workflowSummary = null,
   onDownloadConversation,
+  onClearConversation,
 }: AgentChatProps) {
   const [input, setInput] = useState("")
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
@@ -328,12 +367,40 @@ export default function AgentChat({
   const [isVoiceModeEnabled, setIsVoiceModeEnabled] = useState(false)
   const [isAtBottom, setIsAtBottom] = useState(true)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [exportDownload, setExportDownload] = useState<ExportDownloadState | null>(null)
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const prevLenRef = useRef<number>(0)
+  const exportUrlRef = useRef<string | null>(null)
   const MAX_TEXTAREA_HEIGHT = 160
+
+  const clearExportDownload = () => {
+    if (exportUrlRef.current) {
+      URL.revokeObjectURL(exportUrlRef.current)
+      exportUrlRef.current = null
+    }
+    setExportDownload(null)
+  }
+
+  const showExportDownload = (state: ExportDownloadState) => {
+    if (exportUrlRef.current) {
+      URL.revokeObjectURL(exportUrlRef.current)
+      exportUrlRef.current = null
+    }
+    exportUrlRef.current = state.href ?? null
+    setExportDownload(state)
+  }
+
+  const triggerExportDownload = (href: string, filename: string) => {
+    const anchor = document.createElement("a")
+    anchor.href = href
+    anchor.download = filename
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+  }
 
   const voiceChat = useVoiceChat({
     onTranscript: (text: string) => {
@@ -363,6 +430,16 @@ export default function AgentChat({
     el.addEventListener("scroll", onScroll)
     return () => el.removeEventListener("scroll", onScroll)
   }, [])
+
+  useEffect(
+    () => () => {
+      if (exportUrlRef.current) {
+        URL.revokeObjectURL(exportUrlRef.current)
+        exportUrlRef.current = null
+      }
+    },
+    [],
+  )
 
   useEffect(() => {
     const delta = Math.max(messages.length - prevLenRef.current, 0)
@@ -475,15 +552,168 @@ export default function AgentChat({
   }
 
   const handleExportMessage = (content: string) => {
-    const blob = new Blob([content], { type: "text/plain" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `ai-message-${createLocalId()}.txt`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    downloadTextFile(content, `ai-message-${createLocalId()}.txt`)
+  }
+
+  const latestInsightMessage = useMemo(
+    () =>
+      [...messages]
+        .reverse()
+        .find((message) => message.role === "assistant" && Boolean(detectInsightResponse(message.content, message.structuredPayload))),
+    [messages],
+  )
+
+  const resolveInsightExportTitle = (payload?: ExportStructuredPayload) => {
+    if (!payload) {
+      return "AI Insight"
+    }
+    const widget = Array.isArray(payload.widgets) ? asRecord(payload.widgets[0]) : undefined
+    return asString(payload.summary) || asString(payload.title) || asString(widget?.title) || "AI Insight"
+  }
+
+  const resolveInsightPayload = (message: ChatMessage) =>
+    detectInsightResponse(message.content, message.structuredPayload)?.data as ExportStructuredPayload | undefined
+
+  const openInsightExportChooser = (payload?: ExportStructuredPayload) => {
+    if (!payload) {
+      toast.error("This response does not include structured insight data.")
+      return
+    }
+    showExportDownload({
+      title: resolveInsightExportTitle(payload),
+      kind: "pdf",
+      status: "choosing",
+      description: "Choose a download format for this insight.",
+      payload,
+    })
+  }
+
+  const handleExportInsightCsvPayload = (payload?: ExportStructuredPayload) => {
+    if (!payload) {
+      toast.error("This response does not include structured insight data.")
+      return
+    }
+    try {
+      const title = resolveInsightExportTitle(payload)
+      const filename = `${buildInsightExportFilename(title, "data")}.csv`
+      const blob = new Blob([buildInsightCsv(payload)], { type: "text/csv;charset=utf-8" })
+      const href = URL.createObjectURL(blob)
+      showExportDownload({
+        title,
+        filename,
+        href,
+        kind: "csv",
+        status: "ready",
+        description: "Your CSV download has started.",
+        payload,
+      })
+      triggerExportDownload(href, filename)
+      toast.success("Insight CSV download started.")
+    } catch (error) {
+      void error
+      toast.error("Unable to export insight CSV.")
+    }
+  }
+
+  const handleExportInsightCsv = (message: ChatMessage) => {
+    handleExportInsightCsvPayload(resolveInsightPayload(message))
+  }
+
+  const handleExportInsightJsonPayload = (payload?: ExportStructuredPayload) => {
+    if (!payload) {
+      toast.error("This response does not include structured insight data.")
+      return
+    }
+    try {
+      const title = resolveInsightExportTitle(payload)
+      const filename = `${buildInsightExportFilename(title, "data")}.json`
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" })
+      const href = URL.createObjectURL(blob)
+      showExportDownload({
+        title,
+        filename,
+        href,
+        kind: "json",
+        status: "ready",
+        description: "Your JSON download has started.",
+        payload,
+      })
+      triggerExportDownload(href, filename)
+      toast.success("Insight JSON download started.")
+    } catch (error) {
+      void error
+      toast.error("Unable to export insight JSON.")
+    }
+  }
+
+  const handleExportInsightPdfPayload = async (payload?: ExportStructuredPayload) => {
+    if (!payload) {
+      toast.error("This response does not include structured insight data.")
+      return
+    }
+    const title = resolveInsightExportTitle(payload)
+    const filename = `${buildInsightExportFilename(title, "report")}.pdf`
+    showExportDownload({
+      title,
+      filename,
+      kind: "pdf",
+      status: "preparing",
+      description: "Preparing your insight PDF report...",
+      payload,
+    })
+    try {
+      await yieldToBrowser()
+      const blob = await buildInsightPdfBlob(payload, title)
+      const href = URL.createObjectURL(blob)
+      showExportDownload({
+        title,
+        filename,
+        href,
+        kind: "pdf",
+        status: "ready",
+        description: "Your PDF download has started.",
+        payload,
+      })
+      triggerExportDownload(href, filename)
+      toast.success("Insight PDF download started.")
+    } catch (error) {
+      void error
+      toast.error("Unable to export insight PDF.")
+    }
+  }
+
+  const handleExportInsightPdf = async (message: ChatMessage) => {
+    await handleExportInsightPdfPayload(resolveInsightPayload(message))
+  }
+
+  const handleExportChatPdf = async () => {
+    const title = "Intera AI Chat Export"
+    const filename = "intera-ai-chat-export.pdf"
+    showExportDownload({
+      title,
+      filename,
+      kind: "pdf",
+      status: "preparing",
+      description: "Preparing your chat PDF export...",
+    })
+    try {
+      await yieldToBrowser()
+      const blob = await buildChatPdfBlob(messages, title)
+      const href = URL.createObjectURL(blob)
+      showExportDownload({
+        title,
+        filename,
+        href,
+        kind: "pdf",
+        status: "ready",
+        description: "Your chat PDF download has started.",
+      })
+      triggerExportDownload(href, filename)
+      toast.success("Chat PDF download started.")
+    } catch (error) {
+      void error
+      toast.error("Unable to export chat PDF.")
+    }
   }
 
   const getInteractionStyle = (type: string) => {
@@ -670,18 +900,73 @@ export default function AgentChat({
 
           {showWindowControls ? (
             <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="p-1 rounded-full hover:bg-white/20 transition-colors shrink-0"
+                    aria-label="Open export menu"
+                    title="Export"
+                  >
+                    <Download className="h-5 w-5 text-white" strokeWidth={2.2} />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>Export</DropdownMenuLabel>
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      onDownloadConversation?.()
+                      onActivity?.()
+                    }}
+                    disabled={!onDownloadConversation}
+                  >
+                    Conversation JSON
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      void handleExportChatPdf()
+                      onActivity?.()
+                    }}
+                  >
+                    Chat PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      if (latestInsightMessage) {
+                        handleExportInsightCsv(latestInsightMessage)
+                        onActivity?.()
+                      }
+                    }}
+                    disabled={!latestInsightMessage}
+                  >
+                    Latest insight CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      if (latestInsightMessage) {
+                        void handleExportInsightPdf(latestInsightMessage)
+                        onActivity?.()
+                      }
+                    }}
+                    disabled={!latestInsightMessage}
+                  >
+                    Latest insight PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <button
                 type="button"
                 onClick={() => {
-                  onDownloadConversation?.()
+                  onClearConversation?.()
                   onActivity?.()
                 }}
-                className="p-1 rounded-full hover:bg-white/20 transition-colors shrink-0"
-                aria-label="Download conversation JSON"
-                title="Download conversation JSON"
-                disabled={!onDownloadConversation}
+                disabled={!onClearConversation}
+                className="p-1 rounded-full hover:bg-white/20 transition-colors shrink-0 disabled:opacity-50"
+                aria-label="Start new chat"
+                title="New chat"
               >
-                <Download className="h-5 w-5 text-white" strokeWidth={2.2} />
+                <RotateCcw className="h-5 w-5 text-white" strokeWidth={2.2} />
               </button>
               <button
                 type="button"
@@ -743,9 +1028,64 @@ export default function AgentChat({
           </div>
         ) : (
           messages.map((m) => {
+            const insightData =
+              m.role === "assistant" ? detectInsightResponse(m.content, m.structuredPayload) : null
             const interactionData =
               m.role === "assistant" ? detectInteractionRequest(m.content, m.structuredPayload) : null
             const isInteractionDisabled = respondedInteractions.has(m.id)
+
+            if (insightData) {
+              return (
+                <div key={m.id} className="mb-8 flex items-end justify-start gap-3">
+                  <ChatAvatar role="assistant" userInitials={userIdentity.initials} />
+                  <div className="max-w-[95%] rounded-3xl rounded-bl-none border border-gray-200 bg-white px-4 py-4 shadow-lg">
+                    <div className="mb-3 flex flex-wrap justify-end gap-2">
+                      <button
+                        type="button"
+                        onMouseDown={(event) => event.stopPropagation()}
+                        onClick={(event) => {
+                          event.preventDefault()
+                          event.stopPropagation()
+                          openInsightExportChooser(insightData.data as ExportStructuredPayload)
+                          onActivity?.()
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
+                        aria-label="Download insight"
+                        title="Download"
+                      >
+                        <Download className="h-3.5 w-3.5" strokeWidth={2.2} />
+                        Download
+                      </button>
+                    </div>
+                    <InsightWidgetRenderer
+                      payload={insightData.data}
+                      onSend={(text) => {
+                        onSend(text)
+                        onActivity?.()
+                      }}
+                    />
+                    <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-gray-100 pt-3">
+                      <button
+                        type="button"
+                        onMouseDown={(event) => event.stopPropagation()}
+                        onClick={(event) => {
+                          event.preventDefault()
+                          event.stopPropagation()
+                          openInsightExportChooser(insightData.data as ExportStructuredPayload)
+                          onActivity?.()
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
+                        aria-label="Download insight"
+                        title="Download"
+                      >
+                        <Download className="h-3.5 w-3.5" strokeWidth={2.2} />
+                        Download
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            }
 
             if (interactionData) {
               const { type, data } = interactionData
@@ -1033,6 +1373,110 @@ export default function AgentChat({
           </div>
         )}
       </form>
+
+      {exportDownload && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-gray-950/45 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl border border-gray-200 bg-white p-6 text-gray-900 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-600">
+                  {exportDownload.status === "choosing" ? "Download" : `${exportDownload.kind.toUpperCase()} Export`}
+                </p>
+                <h3 className="mt-2 text-xl font-bold text-gray-950">{exportDownload.title}</h3>
+              </div>
+              <button
+                type="button"
+                onClick={clearExportDownload}
+                className="rounded-full p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
+                aria-label="Close export panel"
+              >
+                <X className="h-5 w-5" strokeWidth={2.2} />
+              </button>
+            </div>
+
+            <p className="mt-3 text-sm leading-6 text-gray-600">{exportDownload.description}</p>
+
+            {exportDownload.filename ? (
+              <div className="mt-5 rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">File</p>
+                <p className="mt-1 break-all text-sm font-medium text-gray-800">{exportDownload.filename}</p>
+              </div>
+            ) : null}
+
+            {exportDownload.status === "choosing" ? (
+              <div className="mt-5 grid gap-3">
+                <button
+                  type="button"
+                  onClick={() => void handleExportInsightPdfPayload(exportDownload.payload)}
+                  className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3 text-left transition hover:bg-gray-50"
+                >
+                  <span>
+                    <span className="block text-sm font-semibold text-gray-900">PDF report</span>
+                    <span className="block text-xs text-gray-500">Visual report with charts and product cards.</span>
+                  </span>
+                  <Download className="h-4 w-4 text-gray-500" strokeWidth={2.2} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExportInsightCsvPayload(exportDownload.payload)}
+                  className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3 text-left transition hover:bg-gray-50"
+                >
+                  <span>
+                    <span className="block text-sm font-semibold text-gray-900">CSV data</span>
+                    <span className="block text-xs text-gray-500">Spreadsheet-ready rows for analysis.</span>
+                  </span>
+                  <Download className="h-4 w-4 text-gray-500" strokeWidth={2.2} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExportInsightJsonPayload(exportDownload.payload)}
+                  className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3 text-left transition hover:bg-gray-50"
+                >
+                  <span>
+                    <span className="block text-sm font-semibold text-gray-900">JSON payload</span>
+                    <span className="block text-xs text-gray-500">Structured data for integrations or backup.</span>
+                  </span>
+                  <Download className="h-4 w-4 text-gray-500" strokeWidth={2.2} />
+                </button>
+              </div>
+            ) : exportDownload.status === "preparing" ? (
+              <div className="mt-5 flex items-center gap-3 rounded-2xl bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
+                <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.2} />
+                Generating export...
+              </div>
+            ) : (
+              <>
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <a
+                    href={exportDownload.href}
+                    download={exportDownload.filename}
+                    className="inline-flex flex-1 items-center justify-center rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+                  >
+                    Download {exportDownload.kind.toUpperCase()}
+                  </a>
+                  <a
+                    href={exportDownload.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                  >
+                    Open
+                  </a>
+                </div>
+                {exportDownload.payload ? (
+                  <button
+                    type="button"
+                    onClick={() => openInsightExportChooser(exportDownload.payload)}
+                    className="mt-3 w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                  >
+                    Choose another format
+                  </button>
+                ) : null}
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Confirmation Dialog */}
       {confirmationDialog && (

@@ -3,7 +3,7 @@ import { getCookie } from "cookies-next";
 
 import { apiSlice } from "../../services/apiSlice";
 import { readCookieValue } from "@/lib/authCookies";
-import { eventReceived, type Ka2aEvent } from "./ka2aSlice";
+import { eventReceived, type ChatMessage, type Ka2aEvent } from "./ka2aSlice";
 
 type GatewayHealth = {
   status: string;
@@ -21,6 +21,7 @@ type StreamMessageArgs = {
   agentName: string;
   contextId?: string;
   historyLength: number;
+  history?: StreamHistoryItem[];
 };
 
 type ContinueTaskStreamArgs = {
@@ -29,6 +30,13 @@ type ContinueTaskStreamArgs = {
   text: string;
   agentName: string;
   historyLength: number;
+  history?: StreamHistoryItem[];
+};
+
+export type StreamHistoryItem = {
+  role: ChatMessage["role"];
+  content: string;
+  structuredPayload?: ChatMessage["structuredPayload"];
 };
 
 const stripTrailingSlash = (value: string) => value.replace(/\/+$/, "");
@@ -192,6 +200,7 @@ const parseSseChunks = async (
 };
 
 export const ka2aApiSlice = apiSlice.injectEndpoints({
+  overrideExisting: process.env.NODE_ENV === "development",
   endpoints: (builder) => ({
     getGatewayHealth: builder.query<GatewayHealth, void>({
       queryFn: async (_arg, api) => requestJson<GatewayHealth>("/health", api.signal),
@@ -213,6 +222,7 @@ export const ka2aApiSlice = apiSlice.injectEndpoints({
                 agentName: args.agentName,
                 contextId: args.contextId,
                 historyLength: args.historyLength,
+                history: args.history,
               }),
             },
             api.signal,
@@ -260,6 +270,7 @@ export const ka2aApiSlice = apiSlice.injectEndpoints({
               body: JSON.stringify({
                 text: args.text,
                 historyLength: args.historyLength,
+                history: args.history,
               }),
             },
             api.signal,

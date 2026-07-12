@@ -123,6 +123,22 @@ export interface MfaToggleResponse {
   mfa_enabled: boolean;
 }
 
+export interface MfaResetRequestResponse {
+  detail: string;
+  email: string;
+}
+
+export interface MfaResetConfirmResponse {
+  detail: string;
+  mfa_enabled: boolean;
+  has_setup_mfa: boolean;
+}
+
+export interface MfaEmailRequestResponse {
+  detail: string;
+  email: string;
+}
+
 export interface VerificationRequestPayload {
   email: string;
   action: "send_code" | "verify_code";

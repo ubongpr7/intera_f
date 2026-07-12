@@ -227,8 +227,8 @@ const AgentEditorSheet = ({
     >
       <div className="flex h-full flex-col">
         <SheetHeader className="border-b border-slate-800/80 bg-[linear-gradient(115deg,rgba(15,23,42,0.98),rgba(17,24,39,0.96),rgba(30,41,59,0.96))] px-7 py-7 text-left md:px-8">
-          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-200">
-            Side Form Workspace
+            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-200">
+              Workspace settings
           </div>
           <SheetTitle className="mt-4 text-3xl font-semibold tracking-tight text-blue-200">{title}</SheetTitle>
           <SheetDescription className="max-w-2xl text-sm leading-6 text-slate-300">{description}</SheetDescription>
@@ -318,13 +318,13 @@ const AgentEditorSheet = ({
             </label>
 
             <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Developer instruction</span>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Workflow guidance</span>
               <Textarea
                 className="min-h-[120px] rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
                 value={value.developer_instruction}
                 onChange={(event) => onChange({ ...value, developer_instruction: event.target.value })}
                 rows={3}
-                placeholder="Add engineering or workflow constraints for the runtime."
+                placeholder="Add guidance for how this agent should operate."
               />
             </label>
 
@@ -347,13 +347,13 @@ const AgentEditorSheet = ({
               <div>
                 <p className="font-medium text-slate-100">Enable this agent</p>
                 <p className="text-xs leading-5 text-slate-400">
-                  Disabled agents stay configured in the workspace but do not appear in the runtime registry.
+                  Disabled agents stay configured in the workspace but do not appear in the active agent list.
                 </p>
               </div>
             </label>
 
             <details className="rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-              <summary className="cursor-pointer text-sm font-semibold text-slate-100">Advanced runtime metadata</summary>
+              <summary className="cursor-pointer text-sm font-semibold text-slate-100">Advanced settings</summary>
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <label className="grid gap-2 text-sm">
                   <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Preferred transport</span>
@@ -469,7 +469,7 @@ const AgentBindingsSheet = ({
             Configure tools and skills
           </SheetTitle>
           <SheetDescription className="text-sm leading-6 text-slate-300">
-            {agent ? `Adjust runtime bindings for ${agent.name}.` : "Select an agent first."}
+            {agent ? `Adjust the tools and skills for ${agent.name}.` : "Select an agent first."}
           </SheetDescription>
         </SheetHeader>
 
@@ -1185,7 +1185,7 @@ export default function AgentSettingsControlPanel() {
   const handleDeleteAgent = async (agent: WorkspaceAgentRecord) => {
     const confirmed = await confirmAction({
       title: "Delete workspace agent?",
-      description: `Delete ${agent.name}? This removes it from the workspace control plane.`,
+      description: `Delete ${agent.name}? This removes it from the workspace.`,
       confirmText: "Delete agent",
       destructive: true,
     });
@@ -1484,7 +1484,7 @@ export default function AgentSettingsControlPanel() {
               <p className="mt-2 text-3xl font-semibold text-slate-900">
                 {loadingToolConnections ? "..." : toolConnections.length}
               </p>
-              <p className="mt-2 text-sm leading-6 text-slate-600">Workspace-scoped credentials that external MCP-backed agents can use at runtime.</p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">Workspace-level credentials that external integrations can use when they need access to this workspace.</p>
             </div>
           </CardContent>
         </Card>
@@ -1706,7 +1706,7 @@ export default function AgentSettingsControlPanel() {
               </div>
               <CardTitle className="mt-4 text-3xl font-semibold tracking-tight">MCP connections</CardTitle>
               <CardDescription className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                Configure workspace-scoped credentials for external MCP servers like Shopify or Notion. These records are exported into A2A runtime config, not exposed as raw secrets in agent payloads.
+                Configure workspace-level credentials for external integrations like Shopify or Notion. These records are stored securely and used only when the workspace needs them.
               </CardDescription>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -1751,7 +1751,7 @@ export default function AgentSettingsControlPanel() {
                       <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">{connection.slug}</span>
                       <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">{formatMachineLabel(connection.auth_type, "Unspecified auth")}</span>
                       <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">
-                        {connection.has_credential_payload ? "credential JSON present" : "no credential JSON"}
+                        {connection.has_credential_payload ? "connection data present" : "no connection data"}
                       </span>
                       <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">
                         {connection.has_access_token ? "access token present" : "no access token"}
@@ -1821,7 +1821,7 @@ export default function AgentSettingsControlPanel() {
         open={createSheetOpen}
         onOpenChange={setCreateSheetOpen}
         title="Create custom workspace agent"
-        description="Create a workspace-scoped agent record that will later be loaded by the DB-backed A2A runtime."
+        description="Create a workspace agent record that can be used in chat and automation."
         value={createForm}
         onChange={setCreateForm}
         onSubmit={handleCreateAgent}
@@ -1832,7 +1832,7 @@ export default function AgentSettingsControlPanel() {
         open={editSheetOpen}
         onOpenChange={setEditSheetOpen}
         title={selectedAgent ? `Edit ${selectedAgent.name}` : "Edit workspace agent"}
-        description="Update the runtime-facing card, instructions, and visibility without cluttering the main settings surface."
+        description="Update the agent profile, instructions, and visibility without cluttering the main settings surface."
         value={editForm}
         onChange={setEditForm}
         onSubmit={handleUpdateAgent}
@@ -1871,7 +1871,7 @@ export default function AgentSettingsControlPanel() {
           }
         }}
         title={editingConnectionId ? "Edit MCP connection" : "Create MCP connection"}
-        description="Save workspace-scoped credentials for external MCP servers. This first pass is designed for API keys and workspace-level tokens."
+        description="Save workspace-level credentials for external integrations. This first pass is designed for API keys and workspace tokens."
         value={connectionForm}
         onChange={setConnectionForm}
         toolServers={toolServers}

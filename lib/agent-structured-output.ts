@@ -23,6 +23,10 @@ export type DetectedInteractionRequest = {
   data: AgentStructuredPayload
 }
 
+export type DetectedInsightResponse = {
+  data: AgentStructuredPayload
+}
+
 export type InteractionResponseSummary = {
   type: string
   title: string
@@ -58,6 +62,9 @@ const normalizeInteractionType = (payload: AgentStructuredPayload): string | und
   }
   return undefined
 }
+
+const isInsightResponse = (payload: AgentStructuredPayload): boolean =>
+  asString(payload.kind).trim() === "insight_response" && Array.isArray(payload.widgets)
 
 const slugifyChoiceValue = (value: string) =>
   value
@@ -250,7 +257,7 @@ const parseLegacyToolCodePayload = (toolCode: string): AgentStructuredPayload | 
   return buildLegacyInteractionPayload(functionName, parsedArgs)
 }
 
-export const parseInteractionPayloadFromValue = (value: unknown): AgentStructuredPayload | undefined => {
+export const parseStructuredPayloadFromValue = (value: unknown): AgentStructuredPayload | undefined => {
   const payload = asObject(value)
   if (!payload) {
     return undefined
@@ -269,6 +276,17 @@ export const parseInteractionPayloadFromValue = (value: unknown): AgentStructure
     if (functionName.startsWith("create_") && parameters) {
       return buildLegacyInteractionPayload(functionName, parameters)
     }
+  }
+  if (normalizeInteractionType(payload) || isInsightResponse(payload)) {
+    return payload
+  }
+  return undefined
+}
+
+export const parseInteractionPayloadFromValue = (value: unknown): AgentStructuredPayload | undefined => {
+  const payload = parseStructuredPayloadFromValue(value)
+  if (!payload) {
+    return undefined
   }
   return normalizeInteractionType(payload) ? payload : undefined
 }
@@ -293,7 +311,7 @@ export const parseInteractionPayloadFromText = (content: string): AgentStructure
 
   try {
     const parsed = JSON.parse(raw)
-    return parseInteractionPayloadFromValue(parsed)
+    return parseStructuredPayloadFromValue(parsed)
   } catch {
     return undefined
   }
@@ -308,7 +326,7 @@ export const extractInteractionPayloadFromParts = (parts: unknown): AgentStructu
 
     const kind = asString(record.kind).trim().toLowerCase()
     if (kind === "data") {
-      const payload = parseInteractionPayloadFromValue(record.data)
+      const payload = parseStructuredPayloadFromValue(record.data)
       if (payload) {
         return payload
       }
@@ -316,7 +334,7 @@ export const extractInteractionPayloadFromParts = (parts: unknown): AgentStructu
     }
 
     if (kind === "tool-result") {
-      const payload = parseInteractionPayloadFromValue(record.output)
+      const payload = parseStructuredPayloadFromValue(record.output)
       if (payload) {
         return payload
       }
@@ -343,6 +361,19 @@ export const summarizeStructuredPayload = (payload?: AgentStructuredPayload): st
   const description = asString(payload.description).trim()
   const status = asString(payload.status).trim()
   const normalizedType = normalizeInteractionType(payload)
+  const summary = asString(payload.summary).trim()
+
+  if (isInsightResponse(payload)) {
+    if (summary) {
+      return summary
+    }
+    if (title) {
+      return title
+    }
+    if (status) {
+      return status
+    }
+  }
 
   if (title && description) {
     return `${title}: ${description}`
@@ -380,6 +411,17 @@ export const detectInteractionRequest = (
     type,
     data: payload,
   }
+}
+
+export const detectInsightResponse = (
+  content: string,
+  structuredPayload?: AgentStructuredPayload,
+): DetectedInsightResponse | null => {
+  const payload = structuredPayload || parseInteractionPayloadFromText(content)
+  if (!payload || !isInsightResponse(payload)) {
+    return null
+  }
+  return { data: payload }
 }
 
 const humanizeToken = (value: string): string =>

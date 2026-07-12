@@ -9,7 +9,8 @@ import { getDecodedToken } from "./utils"
 
 type DecodedToken = {
   permissions?: string[]
-  is_staff?: boolean
+  is_staff?: boolean | string | number | null
+  is_superuser?: boolean | string | number | null
   email?: string | null
   owner_id?: string | number | null
   id?: string | number | null
@@ -24,6 +25,7 @@ type RouteGuardRule = {
   anyPermissions?: string[]
   ownerOnly?: boolean
   staffOnly?: boolean
+  ownerBypass?: boolean
   message: string
   resource: string
 }
@@ -35,12 +37,21 @@ type AccessResult = {
   requiredPermissions: string[]
   ownerOnly: boolean
   staffOnly: boolean
+  ownerBypass: boolean
 }
 
 const normalizeId = (value: string | number | null | undefined): string | null => {
   if (value === null || value === undefined) return null
   const normalized = `${value}`.trim()
   return normalized.length ? normalized : null
+}
+
+export const truthyAccessClaim = (value: unknown): boolean => {
+  if (value === true || value === 1) return true
+  if (typeof value === "string") {
+    return ["true", "1", "yes"].includes(value.trim().toLowerCase())
+  }
+  return false
 }
 
 export const getPermissionSnapshot = () => {
@@ -54,7 +65,7 @@ export const getPermissionSnapshot = () => {
   const currentUserId = normalizeId(token?.id) ?? normalizeId(token?.user_id) ?? normalizeId(token?.sub)
   const membershipRole = `${token?.membership_role ?? token?.role ?? ""}`.trim().toLowerCase()
   const isOwner = (ownerId !== null && currentUserId !== null && ownerId === currentUserId) || membershipRole === "owner"
-  const isStaff = Boolean(token?.is_staff)
+  const isStaff = truthyAccessClaim(token?.is_staff) || truthyAccessClaim(token?.is_superuser)
 
   return {
     permissions,
@@ -77,8 +88,23 @@ const ROUTE_GUARDS: RouteGuardRule[] = [
   {
     pattern: /^\/product\/global-catalog-admin(?:\/|$)/,
     staffOnly: true,
+    ownerBypass: false,
     message: "Only Intera IMS staff can curate the platform-owned global product catalog.",
     resource: "Global catalog administration",
+  },
+  {
+    pattern: /^\/admin(?:\/|$)/,
+    staffOnly: true,
+    ownerBypass: false,
+    message: "Only Intera IMS staff or superusers can access the admin hub.",
+    resource: "Admin hub",
+  },
+  {
+    pattern: /^\/payment-admin(?:\/|$)/,
+    staffOnly: true,
+    ownerBypass: false,
+    message: "Only Intera IMS staff or superusers can access payment administration.",
+    resource: "Payment administration",
   },
   {
     pattern: /^\/audit(?:\/|$)/,
@@ -102,6 +128,12 @@ const ROUTE_GUARDS: RouteGuardRule[] = [
     ownerOnly: true,
     message: "Only the workspace owner can access the workspace settings hub.",
     resource: "Workspace settings",
+  },
+  {
+    pattern: /^\/subscription(?:\/|$)/,
+    ownerOnly: true,
+    message: "Only the workspace owner can manage institution billing and subscription limits.",
+    resource: "Institution subscription",
   },
   {
     pattern: /^\/profile\/staff(?:\/|$)/,
@@ -142,11 +174,12 @@ const OPEN_ACCESS: AccessResult = {
   requiredPermissions: [],
   ownerOnly: false,
   staffOnly: false,
+  ownerBypass: true,
 }
 
 export const getPermissionRequirementLabel = (access: Pick<AccessResult, "ownerOnly" | "requiredPermissions" | "staffOnly">) => {
   if (access.staffOnly) {
-    return "interaims_staff"
+    return "is_staff or is_superuser"
   }
   if (access.ownerOnly) {
     return "workspace_owner"
@@ -174,9 +207,10 @@ export const canAccessPath = (pathname: string): AccessResult => {
       requiredPermissions: [],
       ownerOnly: false,
       staffOnly: true,
+      ownerBypass: matchedRule.ownerBypass ?? true,
     }
   }
-  if (snapshot.isOwner) {
+  if (snapshot.isOwner && matchedRule.ownerBypass !== false) {
     return OPEN_ACCESS
   }
   if (matchedRule.ownerOnly) {
@@ -187,6 +221,7 @@ export const canAccessPath = (pathname: string): AccessResult => {
       requiredPermissions: [],
       ownerOnly: true,
       staffOnly: false,
+      ownerBypass: matchedRule.ownerBypass ?? true,
     }
   }
   if (matchedRule.anyPermissions?.length) {
@@ -198,6 +233,7 @@ export const canAccessPath = (pathname: string): AccessResult => {
       requiredPermissions: matchedRule.anyPermissions,
       ownerOnly: false,
       staffOnly: false,
+      ownerBypass: matchedRule.ownerBypass ?? true,
     }
   }
   return OPEN_ACCESS
@@ -283,13 +319,14 @@ export default function PermissionGuard({
       <>{fallback}</>
     ) : (
       <AccessDeniedPanel
-        access={{
+      access={{
           allowed: false,
           message,
           resource,
           requiredPermissions: [],
           ownerOnly: true,
           staffOnly: false,
+          ownerBypass: true,
         }}
       />
     )
@@ -299,13 +336,14 @@ export default function PermissionGuard({
       <>{fallback}</>
     ) : (
       <AccessDeniedPanel
-        access={{
+      access={{
           allowed: false,
           message,
           resource,
           requiredPermissions: anyOf,
           ownerOnly: false,
           staffOnly: false,
+          ownerBypass: true,
         }}
       />
     )

@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import {
   ArrowRight,
   Boxes,
@@ -19,9 +19,6 @@ import {
 } from "lucide-react"
 import { WorkspaceSetupLoadingCard, useWorkspaceSetupProgress } from "@/components/onboarding/WorkspaceSetupShell"
 import ProductView from "@/components/product/productView"
-import GlobalCatalogAdminWorkspace from "@/components/product/GlobalCatalogAdminWorkspace"
-import GlobalProductLibrary from "@/components/product/GlobalProductLibrary"
-import ImportedGlobalProductsPanel from "@/components/product/ImportedGlobalProductsPanel"
 import OperationalStepSection from "@/components/setup/OperationalStepSection"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -55,6 +52,7 @@ const displayCount = (value: number | undefined, isLoading: boolean) => {
 }
 
 export default function ProductPage() {
+  const [showSetupGuide, setShowSetupGuide] = useState(false)
   const { activeMembership, isLoading: loadingWorkspaceSetup, isOwner, nextRecommendedStage, profile, readiness } = useWorkspaceSetupProgress()
 
   const { data: inventories, isLoading: loadingInventories } = useGetInventoryDataQuery()
@@ -164,9 +162,11 @@ export default function ProductPage() {
     )
   }
 
+  const setupGuideAvailable = isOwner && !loadingProductSetupState && !productSetupComplete
+
   return (
-    <div className={cn("mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 lg:px-8", isOwner && !loadingProductSetupState && !productSetupComplete ? "lg:grid-cols-[310px_1fr]" : "grid-cols-1")}>
-      {isOwner && !loadingProductSetupState && !productSetupComplete ? <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+    <div className={cn("mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 lg:px-8", setupGuideAvailable && showSetupGuide ? "lg:grid-cols-[310px_1fr]" : "grid-cols-1")}>
+      {setupGuideAvailable && showSetupGuide ? <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="p-5 text-left text-inherit">
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
@@ -293,6 +293,17 @@ export default function ProductPage() {
                     Manage attribute templates
                   </Link>
                 </Button>
+                <Button asChild variant="outline">
+                  <Link href="/product/imports">
+                    <PackagePlus className="mr-2 h-4 w-4" />
+                    Product imports
+                  </Link>
+                </Button>
+                {setupGuideAvailable ? (
+                  <Button variant="outline" onClick={() => setShowSetupGuide((current) => !current)}>
+                    {showSetupGuide ? "Hide setup guide" : "Show setup guide"}
+                  </Button>
+                ) : null}
                 <Button variant="outline" onClick={handleExportCatalog} disabled={isExportingProducts}>
                   <Download className="mr-2 h-4 w-4" />
                   {isExportingProducts ? "Exporting..." : "Export catalog CSV"}
@@ -364,8 +375,7 @@ export default function ProductPage() {
               </div>
             ) : productCategoryCount === 0 ? (
               <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-                The current backend exposes product categories as read-only data. If the category list is empty, fix that from the product service
-                side rather than expecting category creation on this page.
+                Product categories are managed centrally. If no categories are listed, refresh the product master data from settings before creating catalog items.
               </div>
             ) : undefined
           }
@@ -374,8 +384,7 @@ export default function ProductPage() {
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <p className="text-sm font-semibold text-gray-900">Inventory dependency</p>
               <p className="mt-2 text-sm leading-6 text-gray-600">
-                Products do not attach directly to a specific inventory item in the current backend, but inventory structure should still exist
-                before you start selling or tracking stock. This keeps the catalog aligned with real stock operations.
+                Products are created from catalog templates and then tied into your stock structure. Keep inventory locations and stock setup in place before selling so stock movement stays accurate.
               </p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
@@ -401,10 +410,10 @@ export default function ProductPage() {
         <OperationalStepSection
           id="products"
           step={2}
-          title={productSetupComplete ? "Manage product templates and global catalog imports" : "Create product templates with the shared form system"}
+          title={productSetupComplete ? "Manage product templates" : "Create product templates with the shared form system"}
           description={
             productSetupComplete
-              ? "Maintain catalog records, import global products, export CSV data, and open products for variant, pricing, and POS changes."
+              ? "Maintain catalog records, export CSV data, and open products for variant, pricing, and POS changes."
               : "Add products manually or through bulk generation, define their commercial defaults, and establish the base catalog record."
           }
           helper={productSetupComplete ? undefined : "This step uses the existing custom create form and bulk-create flow. The page around it now makes the intended sequence obvious."}
@@ -423,9 +432,18 @@ export default function ProductPage() {
           }
         >
           <div className="space-y-6">
-            <GlobalCatalogAdminWorkspace />
-            <GlobalProductLibrary />
-            <ImportedGlobalProductsPanel />
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+              <div>
+                <p className="font-semibold">Need ready-made products with barcodes and images?</p>
+                <p className="mt-1">Use the dedicated import workspace so global catalog browsing does not clutter normal product management.</p>
+              </div>
+              <Button asChild variant="outline" className="rounded-full border-blue-200 bg-white">
+                <Link href="/product/imports">
+                  Open product imports
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
             <ProductView />
           </div>
         </OperationalStepSection>

@@ -89,6 +89,14 @@ export default function LoginForm() {
               {!showPassWord ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
             </button>
           </div>
+          <div className="mt-2 flex justify-end">
+            <Link
+              href="/accounts/password_reset"
+              className="text-sm text-blue-600 hover:text-blue-800"
+            >
+              Forgot password?
+            </Link>
+          </div>
           {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>}
         </div>
 

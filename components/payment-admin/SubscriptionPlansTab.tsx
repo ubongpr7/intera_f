@@ -15,38 +15,23 @@ import { toast } from "react-toastify"
 import { extractErrorMessage } from "@/lib/utils"
 import { confirmAction } from "@/components/common/confirmAction"
 import { QueryStateBoundary } from "@/components/common/QueryStateBoundary"
-
-interface SubscriptionPlan {
-  id: string
-  name: string
-  description: string
-  price: string
-  billing_cycle: string
-  is_active: boolean
-  app: string
-  features: string[]
-  created_at: string
-  updated_at: string
-  application: string
-  application_name?: string
-  intera_coins_reward?: string
-}
+import type { SubscriptionPlanRecord } from "@/redux/features/payment/paymentTypes"
 
 export function SubscriptionPlansTab() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isFeatureDialogOpen, setIsFeatureDialogOpen] = useState(false)
-  const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null)
-  const [managingFeaturesPlan, setManagingFeaturesPlan] = useState<SubscriptionPlan | null>(null)
+  const [editingPlan, setEditingPlan] = useState<SubscriptionPlanRecord | null>(null)
+  const [managingFeaturesPlan, setManagingFeaturesPlan] = useState<SubscriptionPlanRecord | null>(null)
 
   const { data: plans = [], isLoading, error, refetch } = useGetSubscriptionPlansQuery({})
   const [deletePlan] = useDeleteSubscriptionPlanMutation()
 
-  const handleEdit = (plan: SubscriptionPlan) => {
+  const handleEdit = (plan: SubscriptionPlanRecord) => {
     setEditingPlan(plan)
     setIsDialogOpen(true)
   }
 
-  const handleManageFeatures = (plan: SubscriptionPlan) => {
+  const handleManageFeatures = (plan: SubscriptionPlanRecord) => {
     setManagingFeaturesPlan(plan)
     setIsFeatureDialogOpen(true)
   }
@@ -150,7 +135,7 @@ export function SubscriptionPlansTab() {
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {plans.map((plan: SubscriptionPlan) => (
+              {plans.map((plan) => (
                 <Card key={plan.id} className="relative">
                   <CardHeader>
                     <div className="flex items-start justify-between">

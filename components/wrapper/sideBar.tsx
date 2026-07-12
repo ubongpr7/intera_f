@@ -24,6 +24,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  ShieldAlert,
 } from 'lucide-react';
 import { UserData } from "@/redux/features/users/userTypes";
 import { useEffect, useRef } from 'react';
@@ -65,6 +66,7 @@ const SideBar = ({ mobileOpen, onMobileClose }:SideBarDataProps) => {
         : `${(process.env.NEXT_PUBLIC_BACKEND_HOST_URL ?? '').replace(/\/+$/, '')}${rawCompanyLogo.startsWith('/') ? rawCompanyLogo : `/${rawCompanyLogo}`}`)
       : null
     const canViewAuditTrail = canAccessPath("/audit").allowed
+    const canViewAdminHub = canAccessPath("/admin").allowed
   return (
     <TooltipProvider delayDuration={250}>
     <aside ref={sidebarRef} className={sideBarClasses} aria-label="Primary navigation"> 
@@ -119,6 +121,28 @@ const SideBar = ({ mobileOpen, onMobileClose }:SideBarDataProps) => {
             <SidebarLink href="/notifications" icon={Bell} label="Notifications" isCollapsed={navigationCollapsed} />
             {canViewAuditTrail ? (
               <SidebarLink href="/audit" icon={FileSearch} label="Audit trail" isCollapsed={navigationCollapsed} />
+            ) : null}
+            {canViewAdminHub ? (
+              <div className="space-y-1 pt-3">
+                <div className={`px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400 ${navigationCollapsed ? "hidden" : ""}`}>
+                  Admin
+                </div>
+                <SidebarLink
+                  href="/admin"
+                  icon={ShieldAlert}
+                  label="Admin hub"
+                  isCollapsed={navigationCollapsed}
+                  subLinks={[
+                    { href: "/admin", label: "Admin dashboard" },
+                    { href: "/payment-admin", label: "Billing & subscriptions" },
+                    { href: "/product/global-catalog-admin", label: "Global catalog admin" },
+                    { href: "/audit", label: "Audit trail" },
+                    { href: "/profile/staff", label: "Staff & roles" },
+                    { href: "/realtime-dashboard", label: "Realtime operations" },
+                    { href: "/notifications", label: "Notifications" },
+                  ]}
+                />
+              </div>
             ) : null}
             <SidebarLink href="/inventory" icon={Package} label="Inventory" isCollapsed={navigationCollapsed} />
             <SidebarLink

@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { ToastContainer } from "react-toastify";
+import { RouteAccessGuard } from "@/lib/permissionsGuard"
 
 
 export default function PaymentLayout({
@@ -14,8 +15,9 @@ export default function PaymentLayout({
         
 <div className={`flex bg-gray-50 text-gray-900   flex-col w-full `}>
     <ToastContainer position="top-right" autoClose={3000} />
-
-{children}
+    <RouteAccessGuard>
+      {children}
+    </RouteAccessGuard>
 </div>
 
 

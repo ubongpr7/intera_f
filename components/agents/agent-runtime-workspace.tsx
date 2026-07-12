@@ -612,9 +612,9 @@ export default function AgentRuntimeWorkspace() {
   const handleCopyDebugSnapshot = async () => {
     try {
       await navigator.clipboard.writeText(JSON.stringify(debugSnapshot, null, 2))
-      toast.success("Copied runtime debug JSON.")
+      toast.success("Copied conversation data JSON.")
     } catch {
-      toast.error("Unable to copy runtime debug JSON.")
+      toast.error("Unable to copy conversation data JSON.")
     }
   }
 
@@ -632,7 +632,7 @@ export default function AgentRuntimeWorkspace() {
       anchor.remove()
       URL.revokeObjectURL(url)
     } catch {
-      toast.error("Unable to download runtime debug JSON.")
+      toast.error("Unable to download conversation data JSON.")
     }
   }
 
@@ -734,10 +734,10 @@ export default function AgentRuntimeWorkspace() {
             <ShieldCheck className="h-4 w-4" />
             Agent Access Required
           </div>
-          <h1 className="mt-5 text-3xl font-semibold tracking-tight text-gray-950">Agent runtime is locked for this workspace.</h1>
+          <h1 className="mt-5 text-3xl font-semibold tracking-tight text-gray-950">Agent access is locked for this workspace.</h1>
           <p className="mt-3 max-w-xl text-sm leading-7 text-gray-600">
-            You need the workspace owner override or the <code>interact_with_agent</code> permission before this runtime
-            surface becomes available.
+            You need the workspace owner override or the <code>interact_with_agent</code> permission before chat access
+            becomes available.
           </p>
           {canManageAgentSettings && (
             <Link
@@ -768,7 +768,7 @@ export default function AgentRuntimeWorkspace() {
               className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-700 transition hover:border-gray-300 hover:bg-gray-100"
               >
               <Radio className="h-4 w-4" />
-              Workspace Agent Runtime
+              Workspace Agents
               {isOverviewOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </button>
             {!isOverviewOpen ? (
@@ -816,8 +816,8 @@ export default function AgentRuntimeWorkspace() {
               <div className="max-w-2xl">
                 <h1 className="text-3xl font-semibold tracking-tight text-gray-950">Persistent conversations for the active workspace.</h1>
                 <p className="mt-3 text-sm leading-7 text-gray-600">
-                  Installed workspace agents are the only chat targets here. Threads are persisted in the A2A runtime,
-                  not the users service, and the gateway streams live task progress over the active conversation socket.
+                  Installed workspace agents are the only chat targets here. Threads are saved for later, and the
+                  gateway streams live task progress over the active conversation connection.
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
@@ -827,7 +827,7 @@ export default function AgentRuntimeWorkspace() {
                   className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:text-gray-950"
                 >
                   <Copy className="h-4 w-4" />
-                  Copy Debug JSON
+                  Copy conversation data
                 </button>
                 <button
                   type="button"
@@ -835,7 +835,7 @@ export default function AgentRuntimeWorkspace() {
                   className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:text-gray-950"
                 >
                   <Download className="h-4 w-4" />
-                  Download JSON
+                  Download conversation data
                 </button>
               </div>
             </div>
@@ -843,7 +843,7 @@ export default function AgentRuntimeWorkspace() {
             <div className="mt-6 grid gap-4 md:grid-cols-3">
               <MetricCard
                 icon={<Bot className="h-4 w-4" />}
-                label="Installed Agents"
+                label="Installed agents"
                 value={`${runtimeAgents.length}`}
                 hint="Only agents installed into this workspace are available in chat."
               />
@@ -851,13 +851,13 @@ export default function AgentRuntimeWorkspace() {
                 icon={<MessageSquareText className="h-4 w-4" />}
                 label="Threads"
                 value={`${conversations.length}`}
-                hint="Persistent conversation threads stored in the A2A runtime."
+                hint="Persistent conversation threads saved for this workspace."
               />
               <MetricCard
                 icon={<Activity className="h-4 w-4" />}
                 label="Gateway"
                 value={gatewayOnline ? "Online" : isCheckingGateway ? "Checking" : "Offline"}
-                hint={socketState === "connected" ? "Conversation socket connected." : "Runtime websocket is idle or reconnecting."}
+                hint={socketState === "connected" ? "Conversation connection is active." : "Conversation connection is idle or reconnecting."}
               />
             </div>
 
@@ -888,8 +888,8 @@ export default function AgentRuntimeWorkspace() {
           <section className="shrink-0 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500">Installed Agents</p>
-                <h2 className="mt-2 text-lg font-semibold text-gray-950">Workspace registry</h2>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500">Installed agents</p>
+                <h2 className="mt-2 text-lg font-semibold text-gray-950">Available agents</h2>
               </div>
               <button
                 type="button"
@@ -1084,8 +1084,8 @@ export default function AgentRuntimeWorkspace() {
                 {activeConversation?.title || activeAgentDisplayName || "Select or start a conversation"}
               </h2>
               <p className="mt-2 text-sm text-gray-600">
-                {activeConversation
-                  ? `Runtime target: ${activeAgentDisplayName}`
+                  {activeConversation
+                  ? `Current target: ${activeAgentDisplayName}`
                   : "Pick an installed agent and start a new persistent conversation."}
               </p>
               {latestHeaderUpdate ? (
@@ -1124,9 +1124,9 @@ export default function AgentRuntimeWorkspace() {
               emptyTitle={selectedAgent ? `Start a thread with ${selectedAgent.name}` : "Select an installed agent"}
               emptyDescription={
                 selectedAgent
-                  ? "Use a quick-start prompt or type your first message. This conversation will persist inside the A2A runtime."
-                  : "The runtime only exposes agents installed into this workspace."
-              }
+                  ? "Use a quick-start prompt or type your first message. This conversation will be saved for this workspace."
+                  : "Only agents installed into this workspace are available."
+                }
               sendLabel={activeConversation?.awaitingInput ? "Continue task" : "Send"}
               workflowSummary={workflowSummary}
             />
@@ -1137,7 +1137,7 @@ export default function AgentRuntimeWorkspace() {
         <aside className="min-h-0 overflow-hidden">
           <div className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto pr-1">
           <section className="shrink-0 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500">Selected Agent</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500">Selected agent</p>
             <h2 className="mt-2 text-lg font-semibold text-gray-950">{activeRuntimeAgent?.name || selectedAgent?.name || "No agent selected"}</h2>
             <p className="mt-3 text-sm leading-7 text-gray-600">
               {activeRuntimeAgent?.description || selectedAgent?.description || "Choose an installed agent to start a new conversation."}
@@ -1172,7 +1172,7 @@ export default function AgentRuntimeWorkspace() {
           </section>
 
           <section className="shrink-0 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500">Current Flow</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500">Current flow</p>
             <div className="mt-4 rounded-[22px] border border-gray-200 bg-white p-4 shadow-[0_10px_24px_-24px_rgba(15,23,42,0.28)]">
               <p className="text-sm font-semibold text-gray-950">
                 {workflowSummary?.title || "Ready for the next message"}
@@ -1238,8 +1238,8 @@ export default function AgentRuntimeWorkspace() {
 
           <section className="shrink-0 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500">Delegation Mode</p>
-              <h2 className="mt-2 text-lg font-semibold text-gray-950">Runtime routing</h2>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500">Delegation mode</p>
+            <h2 className="mt-2 text-lg font-semibold text-gray-950">Routing behavior</h2>
             </div>
             <div className="mt-4 rounded-[20px] border border-gray-200 bg-gray-50/80 p-4">
               <div className="flex items-center gap-2 text-gray-900">
@@ -1249,7 +1249,7 @@ export default function AgentRuntimeWorkspace() {
                 </p>
               </div>
               <p className="mt-3 text-xs leading-6 text-gray-600">
-                The host agent can stay direct, orchestrate to specialists, or remain specialist-only depending on the
+                The host agent can stay direct, route to specialists, or remain specialist-only depending on the
                 workspace configuration.
               </p>
             </div>
@@ -1258,7 +1258,7 @@ export default function AgentRuntimeWorkspace() {
           <section className="flex min-h-0 flex-1 flex-col rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500">Runtime Activity</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500">Activity feed</p>
                 <h2 className="mt-2 text-lg font-semibold text-gray-950">Latest events</h2>
               </div>
               <span className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-600">
@@ -1288,7 +1288,7 @@ export default function AgentRuntimeWorkspace() {
                 ))
               ) : (
                 <div className="rounded-[20px] border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-600">
-                  Runtime activity will appear here during and after conversation processing.
+                  Activity will appear here during and after conversation processing.
                 </div>
               )}
             </div>

@@ -1,17 +1,21 @@
 "use client"
 
-import { useMemo, useState, type ChangeEvent } from "react"
-import { Archive, Boxes, FileUp, ImagePlus, PackagePlus, Pencil, Rocket, Shapes, Star, Trash2 } from "lucide-react"
+import { useDeferredValue, useMemo, useState, type ChangeEvent } from "react"
+import { Archive, Boxes, ChevronLeft, ChevronRight, Eye, FileUp, Filter, ImagePlus, PackagePlus, Pencil, Rocket, Search, Shapes, Star, Trash2 } from "lucide-react"
 import { toast } from "react-toastify"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { ReactSelectField, type SelectOption } from "@/components/ui/react-select-field"
 import { Textarea } from "@/components/ui/textarea"
 import { formatMachineLabel } from "@/lib/displayLabels"
 import { getDecodedToken } from "@/lib/utils"
+import { truthyAccessClaim } from "@/lib/permissionsGuard"
 import { confirmAction } from "@/components/common/confirmAction"
+import { GlobalProductPreviewSheet } from "@/components/product/GlobalProductLibrary"
+import { useGetUnitsQuery } from "@/redux/features/common/typeOF"
 import {
   useArchiveGlobalCatalogAdminProductMutation,
   useBulkIngestGlobalCatalogAdminProductsMutation,
@@ -22,6 +26,7 @@ import {
   useDeleteGlobalCatalogAdminVariantMutation,
   useGetAttachmentsQuery,
   useGetGlobalCatalogAdminProductsQuery,
+  useGetGlobalCatalogAdminStatsQuery,
   usePublishGlobalCatalogAdminProductMutation,
   useSetPrimaryAttachmentMutation,
   useUpdateGlobalCatalogAdminProductMutation,
@@ -30,7 +35,8 @@ import {
 import type { Attachment, GlobalCatalogAdminProduct, GlobalCatalogVariant } from "@/redux/features/product/productTypes"
 
 type StaffToken = {
-  is_staff?: boolean
+  is_staff?: boolean | string | number | null
+  is_superuser?: boolean | string | number | null
 }
 
 type ProductFormState = {
@@ -73,6 +79,16 @@ const initialVariantForm: VariantFormState = {
   price_override: "",
   image_url_override: "",
   is_active: true,
+}
+
+function buildVisiblePageNumbers(currentPage: number, totalPages: number) {
+  if (totalPages <= 1) {
+    return [1]
+  }
+  const start = Math.max(1, currentPage - 2)
+  const end = Math.min(totalPages, start + 4)
+  const normalizedStart = Math.max(1, end - 4)
+  return Array.from({ length: end - normalizedStart + 1 }, (_, index) => normalizedStart + index)
 }
 
 const bulkIngestTemplate = JSON.stringify(
@@ -255,14 +271,27 @@ function buildVariantForm(variant?: GlobalCatalogVariant | null): VariantFormSta
   }
 }
 
+function resolveSelectValue(value: string, options: SelectOption[]) {
+  if (!value) {
+    return null
+  }
+  return options.find((option) => String(option.value) === value) ?? { label: value, value }
+}
+
 function ProductDialog({
   open,
   onOpenChange,
   product,
+  brandOptions,
+  categoryOptions,
+  unitOptions,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   product?: GlobalCatalogAdminProduct | null
+  brandOptions: SelectOption[]
+  categoryOptions: SelectOption[]
+  unitOptions: SelectOption[]
 }) {
   const [form, setForm] = useState<ProductFormState>(buildProductForm(product))
   const [createProduct, { isLoading: isCreating }] = useCreateGlobalCatalogAdminProductMutation()
@@ -270,6 +299,7 @@ function ProductDialog({
 
   const isEditing = Boolean(product)
   const isLoading = isCreating || isUpdating
+  const selectMenuPortalTarget = typeof document !== "undefined" ? document.body : undefined
 
   const submit = async () => {
     try {
@@ -305,13 +335,65 @@ function ProductDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 md:grid-cols-2">
-          <Input value={form.name} onChange={(e) => setForm((current) => ({ ...current, name: e.target.value }))} placeholder="Product family name" />
-          <Input value={form.brand} onChange={(e) => setForm((current) => ({ ...current, brand: e.target.value }))} placeholder="Brand" />
-          <Input value={form.category_name} onChange={(e) => setForm((current) => ({ ...current, category_name: e.target.value }))} placeholder="Category" />
-          <Input value={form.unit} onChange={(e) => setForm((current) => ({ ...current, unit: e.target.value }))} placeholder="Unit" />
-          <Input value={form.base_price} onChange={(e) => setForm((current) => ({ ...current, base_price: e.target.value }))} placeholder="Base price" type="number" />
-          <Input value={form.short_description} onChange={(e) => setForm((current) => ({ ...current, short_description: e.target.value }))} placeholder="Short description" />
+          <div className="grid gap-2 md:col-span-2">
+            <label className="text-sm font-medium text-gray-700">Product family name</label>
+            <Input value={form.name} onChange={(e) => setForm((current) => ({ ...current, name: e.target.value }))} placeholder="Product family name" />
+          </div>
+          <ReactSelectField
+            label="Brand"
+            value={resolveSelectValue(form.brand, brandOptions)}
+            options={brandOptions}
+            onChange={(option) => {
+              const selected = Array.isArray(option) ? null : (option as SelectOption | null)
+              setForm((current) => ({ ...current, brand: selected ? String(selected.value) : "" }))
+            }}
+            placeholder="Select or type a brand"
+            isClearable
+            isSearchable
+            creatable
+            formatCreateLabel={(inputValue: string) => `Use "${inputValue}"`}
+            menuPortalTarget={selectMenuPortalTarget}
+          />
+          <ReactSelectField
+            label="Category"
+            value={resolveSelectValue(form.category_name, categoryOptions)}
+            options={categoryOptions}
+            onChange={(option) => {
+              const selected = Array.isArray(option) ? null : (option as SelectOption | null)
+              setForm((current) => ({ ...current, category_name: selected ? String(selected.value) : "" }))
+            }}
+            placeholder="Select or type a category"
+            isClearable
+            isSearchable
+            creatable
+            formatCreateLabel={(inputValue: string) => `Use "${inputValue}"`}
+            menuPortalTarget={selectMenuPortalTarget}
+          />
+          <ReactSelectField
+            label="Unit"
+            value={resolveSelectValue(form.unit, unitOptions)}
+            options={unitOptions}
+            onChange={(option) => {
+              const selected = Array.isArray(option) ? null : (option as SelectOption | null)
+              setForm((current) => ({ ...current, unit: selected ? String(selected.value) : "" }))
+            }}
+            placeholder="Select or type a unit"
+            isClearable
+            isSearchable
+            creatable
+            formatCreateLabel={(inputValue: string) => `Use "${inputValue}"`}
+            menuPortalTarget={selectMenuPortalTarget}
+          />
+          <div className="grid gap-2">
+            <label className="text-sm font-medium text-gray-700">Base price</label>
+            <Input value={form.base_price} onChange={(e) => setForm((current) => ({ ...current, base_price: e.target.value }))} placeholder="0.00" type="number" />
+          </div>
+          <div className="grid gap-2">
+            <label className="text-sm font-medium text-gray-700">Short description</label>
+            <Input value={form.short_description} onChange={(e) => setForm((current) => ({ ...current, short_description: e.target.value }))} placeholder="Short description" />
+          </div>
           <div className="md:col-span-2">
+            <label className="mb-2 block text-sm font-medium text-gray-700">Product family description</label>
             <Textarea value={form.description} onChange={(e) => setForm((current) => ({ ...current, description: e.target.value }))} placeholder="Product family description" rows={5} />
           </div>
         </div>
@@ -780,28 +862,96 @@ function BulkIngestDialog({
 
 export default function GlobalCatalogAdminWorkspace() {
   const token = getDecodedToken() as StaffToken | null
-  const isStaff = Boolean(token?.is_staff)
+  const isStaff = truthyAccessClaim(token?.is_staff) || truthyAccessClaim(token?.is_superuser)
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<GlobalCatalogAdminProduct | null>(null)
   const [variantProduct, setVariantProduct] = useState<GlobalCatalogAdminProduct | null>(null)
   const [editingVariant, setEditingVariant] = useState<GlobalCatalogVariant | null>(null)
+  const [previewProductId, setPreviewProductId] = useState<string | null>(null)
+  const [previewProductStatus, setPreviewProductStatus] = useState<string | null>(null)
   const [isBulkIngestOpen, setIsBulkIngestOpen] = useState(false)
-  const { data: products = [], isLoading } = useGetGlobalCatalogAdminProductsQuery(undefined, { skip: !isStaff })
+  const [page, setPage] = useState(1)
+  const [query, setQuery] = useState("")
+  const [brand, setBrand] = useState("")
+  const [category, setCategory] = useState("")
+  const [sourceStatus, setSourceStatus] = useState("")
+  const deferredQuery = useDeferredValue(query.trim())
+  const { data: catalogPage, isLoading, isFetching, error } = useGetGlobalCatalogAdminProductsQuery(
+    {
+      page,
+      page_size: 12,
+      q: deferredQuery || undefined,
+      brand: brand || undefined,
+      category: category || undefined,
+      source_status: sourceStatus || undefined,
+    },
+    { skip: !isStaff },
+  )
+  const { data: adminStats, isLoading: loadingStats } = useGetGlobalCatalogAdminStatsQuery(undefined, { skip: !isStaff })
+  const { data: units = [] } = useGetUnitsQuery()
   const [publishProduct, { isLoading: publishing }] = usePublishGlobalCatalogAdminProductMutation()
   const [archiveProduct, { isLoading: archiving }] = useArchiveGlobalCatalogAdminProductMutation()
   const [deleteVariant] = useDeleteGlobalCatalogAdminVariantMutation()
 
+  const products = useMemo(() => catalogPage?.results ?? [], [catalogPage])
+  const currentPage = catalogPage?.page ?? page
+  const totalPages = catalogPage?.total_pages ?? 1
+  const pageNumbers = useMemo(() => buildVisiblePageNumbers(currentPage, totalPages), [currentPage, totalPages])
+  const filterOptions = catalogPage?.filters ?? adminStats?.filters
+  const brandOptions = useMemo<SelectOption[]>(
+    () => (filterOptions?.brands ?? []).map((value) => ({ label: value, value })),
+    [filterOptions?.brands],
+  )
+  const categoryOptions = useMemo<SelectOption[]>(
+    () => (filterOptions?.categories ?? []).map((value) => ({ label: value, value })),
+    [filterOptions?.categories],
+  )
+  const unitOptions = useMemo<SelectOption[]>(
+    () =>
+      units.map((unit) => ({
+        label: unit.dimension_type ? `${unit.name} (${unit.dimension_type})` : unit.name,
+        value: unit.name,
+      })),
+    [units],
+  )
+  const statusOptions = useMemo<SelectOption[]>(
+    () => (filterOptions?.source_statuses ?? []).map((value) => ({ label: formatMachineLabel(value), value })),
+    [filterOptions?.source_statuses],
+  )
+  const selectedBrandOption = useMemo<SelectOption | null>(
+    () => brandOptions.find((option) => option.value === brand) ?? null,
+    [brand, brandOptions],
+  )
+  const selectedCategoryOption = useMemo<SelectOption | null>(
+    () => categoryOptions.find((option) => option.value === category) ?? null,
+    [category, categoryOptions],
+  )
+  const selectedStatusOption = useMemo<SelectOption | null>(
+    () => statusOptions.find((option) => option.value === sourceStatus) ?? null,
+    [sourceStatus, statusOptions],
+  )
+
   const stats = useMemo(
     () => ({
-      total: products.length,
-      published: products.filter((product) => product.source_status === "published").length,
-      drafts: products.filter((product) => product.source_status === "draft").length,
+      total: adminStats?.total_products ?? 0,
+      published: adminStats?.published_products ?? 0,
+      drafts: adminStats?.draft_products ?? 0,
+      archived: adminStats?.archived_products ?? 0,
     }),
-    [products],
+    [adminStats],
   )
 
   if (!isStaff) {
-    return null
+    return (
+      <Card className="border-amber-200 bg-amber-50 shadow-sm">
+        <CardHeader className="p-6 text-left text-inherit">
+          <CardTitle className="text-xl text-amber-950">Global catalog admin requires a staff session</CardTitle>
+          <CardDescription className="mt-2 text-sm leading-6 text-amber-900">
+            This page is restricted to Intera IMS platform staff. If your account should have access, refresh your session so the latest staff claims are loaded into the frontend.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    )
   }
 
   const openCreateProduct = () => {
@@ -822,6 +972,11 @@ export default function GlobalCatalogAdminWorkspace() {
   const openEditVariant = (product: GlobalCatalogAdminProduct, variant: GlobalCatalogVariant) => {
     setVariantProduct(product)
     setEditingVariant(variant)
+  }
+
+  const openPreviewProduct = (product: GlobalCatalogAdminProduct) => {
+    setPreviewProductId(product.id)
+    setPreviewProductStatus(product.source_status)
   }
 
   const handlePublish = async (id: string) => {
@@ -861,7 +1016,9 @@ export default function GlobalCatalogAdminWorkspace() {
 
   return (
     <>
-      <Card className="border-gray-200 shadow-sm">
+      <div className="min-w-0 space-y-6 overflow-x-hidden">
+
+      <Card className="w-full max-w-full overflow-hidden border-gray-200 shadow-sm">
         <CardHeader className="border-b border-gray-100 p-6 text-left text-inherit">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -871,7 +1028,7 @@ export default function GlobalCatalogAdminWorkspace() {
               </div>
               <CardTitle className="mt-3 text-2xl tracking-tight">Curate the master global product catalog</CardTitle>
               <CardDescription className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
-                Create source product families, maintain source variants, attach multiple curated images, and publish only the records workspaces should inherit.
+                Create source product families, maintain source variants, attach multiple curated images, and publish only the records workspaces should inherit. Use the filters below to find what needs updating fast.
               </CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -886,30 +1043,136 @@ export default function GlobalCatalogAdminWorkspace() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-5 p-6">
-          <div className="grid gap-4 md:grid-cols-3">
+        <CardContent className="min-w-0 space-y-5 p-6">
+          <div className="grid gap-4 md:grid-cols-4">
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Total source products</p>
-              <p className="mt-3 text-3xl font-semibold text-gray-950">{stats.total}</p>
+              <p className="mt-3 text-3xl font-semibold text-gray-950">{loadingStats ? "..." : stats.total}</p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Published</p>
-              <p className="mt-3 text-3xl font-semibold text-gray-950">{stats.published}</p>
+              <p className="mt-3 text-3xl font-semibold text-gray-950">{loadingStats ? "..." : stats.published}</p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Drafts</p>
-              <p className="mt-3 text-3xl font-semibold text-gray-950">{stats.drafts}</p>
+              <p className="mt-3 text-3xl font-semibold text-gray-950">{loadingStats ? "..." : stats.drafts}</p>
+            </div>
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Archived</p>
+              <p className="mt-3 text-3xl font-semibold text-gray-950">{loadingStats ? "..." : stats.archived}</p>
             </div>
           </div>
 
-          {isLoading ? (
+          <div className="grid gap-3 rounded-3xl border border-gray-200 bg-white p-4 xl:grid-cols-[minmax(0,1.3fr)_repeat(3,minmax(0,1fr))]">
+            <div className="grid gap-2">
+              <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                <Search className="h-4 w-4 text-blue-600" />
+                Search source catalog
+              </div>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Input
+                  value={query}
+                  onChange={(event) => {
+                    setQuery(event.target.value)
+                    setPage(1)
+                  }}
+                  placeholder="Search by product name, brand, or category"
+                  className="h-12 rounded-full border-gray-200 bg-white pl-11"
+                />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                <Filter className="h-4 w-4 text-blue-600" />
+                Brand
+              </div>
+              <ReactSelectField
+                value={selectedBrandOption}
+                options={brandOptions}
+                onChange={(option) => {
+                  const selected = Array.isArray(option) ? null : (option as SelectOption | null)
+                  setBrand(selected ? String(selected.value) : "")
+                  setPage(1)
+                }}
+                placeholder="All brands"
+                isClearable
+                className="text-sm"
+              />
+            </div>
+            <div className="grid gap-2">
+              <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                <Filter className="h-4 w-4 text-blue-600" />
+                Category
+              </div>
+              <ReactSelectField
+                value={selectedCategoryOption}
+                options={categoryOptions}
+                onChange={(option) => {
+                  const selected = Array.isArray(option) ? null : (option as SelectOption | null)
+                  setCategory(selected ? String(selected.value) : "")
+                  setPage(1)
+                }}
+                placeholder="All categories"
+                isClearable
+                className="text-sm"
+              />
+            </div>
+            <div className="grid gap-2">
+              <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                <Filter className="h-4 w-4 text-blue-600" />
+                Status
+              </div>
+              <ReactSelectField
+                value={selectedStatusOption}
+                options={statusOptions}
+                onChange={(option) => {
+                  const selected = Array.isArray(option) ? null : (option as SelectOption | null)
+                  setSourceStatus(selected ? String(selected.value) : "")
+                  setPage(1)
+                }}
+                placeholder="All statuses"
+                isClearable
+                className="text-sm"
+              />
+            </div>
+          </div>
+
+          {error ? (
+            <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+              Failed to load the admin catalog. Refresh the page and retry.
+            </div>
+          ) : isLoading ? (
             <div className="rounded-3xl border border-gray-200 bg-gray-50 p-6 text-sm text-gray-600">Loading master catalog...</div>
           ) : products.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center text-sm text-gray-600">
-              No global source products exist yet. Start by creating the first source family.
+              No global source products matched the current filters. Clear the filters or create the first source family.
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="min-w-0 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-gray-200 bg-gray-50 p-4">
+                <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+                  <span className="rounded-full bg-white px-3 py-1">Showing {products.length} on this page</span>
+                  <span className="rounded-full bg-white px-3 py-1">{catalogPage?.count?.toLocaleString() ?? 0} matching source products</span>
+                  <span className="rounded-full bg-white px-3 py-1">{stats.total.toLocaleString()} total source products</span>
+                  {isFetching && !isLoading ? <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">Refreshing...</span> : null}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-full"
+                  onClick={() => {
+                    setQuery("")
+                    setBrand("")
+                    setCategory("")
+                    setSourceStatus("")
+                    setPage(1)
+                  }}
+                  disabled={!query && !brand && !category && !sourceStatus}
+                >
+                  Clear filters
+                </Button>
+              </div>
               {products.map((product) => (
                 <div key={product.id} className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
                   <div className="flex flex-wrap items-start justify-between gap-4">
@@ -945,6 +1208,10 @@ export default function GlobalCatalogAdminWorkspace() {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
+                      <Button variant="outline" className="rounded-full" onClick={() => openPreviewProduct(product)}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        Preview
+                      </Button>
                       <Button variant="outline" className="rounded-full" onClick={() => openEditProduct(product)}>
                         <Pencil className="mr-2 h-4 w-4" />
                         Edit product
@@ -988,14 +1255,63 @@ export default function GlobalCatalogAdminWorkspace() {
               ))}
             </div>
           )}
+
+          {products.length > 0 ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-gray-200 bg-white p-4">
+              <p className="text-sm text-gray-600">
+                Admin page <span className="font-semibold text-gray-950">{currentPage}</span> of <span className="font-semibold text-gray-950">{totalPages}</span>
+                {isFetching && !isLoading ? <span className="ml-2 rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-700">Refreshing...</span> : null}
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-full"
+                  disabled={currentPage <= 1 || isFetching}
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                >
+                  <ChevronLeft className="mr-2 h-4 w-4" />
+                  Previous
+                </Button>
+                <div className="flex flex-wrap items-center gap-2">
+                  {pageNumbers.map((pageNumber) => (
+                    <Button
+                      key={pageNumber}
+                      type="button"
+                      variant={pageNumber === currentPage ? "default" : "outline"}
+                      className="min-w-10 rounded-full"
+                      disabled={isFetching}
+                      onClick={() => setPage(pageNumber)}
+                    >
+                      {pageNumber}
+                    </Button>
+                  ))}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-full"
+                  disabled={currentPage >= totalPages || isFetching}
+                  onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                >
+                  Next
+                  <ChevronRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
+      </div>
 
       <ProductDialog
         key={`${editingProduct?.id ?? "new-product"}-${isProductDialogOpen ? "open" : "closed"}`}
         open={isProductDialogOpen}
         onOpenChange={setIsProductDialogOpen}
         product={editingProduct}
+        brandOptions={brandOptions}
+        categoryOptions={categoryOptions}
+        unitOptions={unitOptions}
       />
       <VariantDialog
         key={`${variantProduct?.id ?? "no-product"}-${editingVariant?.id ?? "new-variant"}-${variantProduct ? "open" : "closed"}`}
@@ -1010,6 +1326,17 @@ export default function GlobalCatalogAdminWorkspace() {
         variant={editingVariant}
       />
       <BulkIngestDialog open={isBulkIngestOpen} onOpenChange={setIsBulkIngestOpen} />
+      <GlobalProductPreviewSheet
+        mode="admin"
+        productId={previewProductId}
+        sourceStatus={previewProductStatus}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPreviewProductId(null)
+            setPreviewProductStatus(null)
+          }
+        }}
+      />
     </>
   )
 }

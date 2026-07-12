@@ -4,11 +4,16 @@ import type {
   Attachment,
   BulkTaskStatus,
   GlobalCatalogImport,
+  GlobalCatalogBarcodeResolveResponse,
   GlobalCatalogImportPreview,
   GlobalCatalogImportResponse,
   GlobalCatalogBulkIngestResult,
+  GlobalCatalogAdminListResponse,
   GlobalCatalogAdminProduct,
+  GlobalCatalogAdminStats,
   GlobalCatalogProduct,
+  GlobalCatalogProductListResponse,
+  GlobalCatalogStats,
   GlobalCatalogVariant,
   GlobalCatalogSyncResult,
   PriceChangeHistory,
@@ -117,7 +122,10 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    getGlobalCatalogProducts: builder.query<GlobalCatalogProduct[], { q?: string; brand?: string; category?: string } | void>({
+    getGlobalCatalogProducts: builder.query<
+      GlobalCatalogProductListResponse,
+      { q?: string; brand?: string; category?: string; page?: number; page_size?: number } | void
+    >({
       query: (params = {}) => ({
         url: `/${product_api}/global-catalog/products/`,
         method: "GET",
@@ -130,6 +138,15 @@ export const productApiSlice = apiSlice.injectEndpoints({
     getGlobalCatalogProduct: builder.query<GlobalCatalogProduct, string>({
       query: (id) => ({
         url: `/${product_api}/global-catalog/products/${id}/`,
+        method: "GET",
+        service: service,
+      }),
+      providesTags: ["GlobalCatalog"],
+    }),
+
+    getGlobalCatalogStats: builder.query<GlobalCatalogStats, void>({
+      query: () => ({
+        url: `/${product_api}/global-catalog/products/stats/`,
         method: "GET",
         service: service,
       }),
@@ -164,6 +181,16 @@ export const productApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: ["GlobalCatalog"],
     }),
 
+    resolveGlobalCatalogBarcodes: builder.mutation<GlobalCatalogBarcodeResolveResponse, { barcodes: string[]; fetch_missing?: boolean; source?: string }>({
+      query: (body) => ({
+        url: `/${product_api}/global-catalog/imports/resolve-barcodes/`,
+        method: "POST",
+        body,
+        service: service,
+      }),
+      invalidatesTags: ["GlobalCatalog"],
+    }),
+
     syncGlobalCatalogImport: builder.mutation<GlobalCatalogSyncResult, string>({
       query: (importId) => ({
         url: `/${product_api}/global-catalog/imports/${importId}/sync/`,
@@ -182,11 +209,23 @@ export const productApiSlice = apiSlice.injectEndpoints({
       providesTags: ["GlobalCatalog"],
     }),
 
-    getGlobalCatalogAdminProducts: builder.query<GlobalCatalogAdminProduct[], { q?: string; source_status?: string } | void>({
+    getGlobalCatalogAdminProducts: builder.query<
+      GlobalCatalogAdminListResponse,
+      { q?: string; brand?: string; category?: string; source_status?: string; page?: number; page_size?: number } | void
+    >({
       query: (params = {}) => ({
         url: `/${product_api}/global-catalog/admin/products/`,
         method: "GET",
         params: normalizeQueryParams(params),
+        service: service,
+      }),
+      providesTags: ["GlobalCatalog"],
+    }),
+
+    getGlobalCatalogAdminStats: builder.query<GlobalCatalogAdminStats, void>({
+      query: () => ({
+        url: `/${product_api}/global-catalog/admin/products/stats/`,
+        method: "GET",
         service: service,
       }),
       providesTags: ["GlobalCatalog"],
@@ -1078,12 +1117,15 @@ export const {
   useGetProductDataQuery,
   useGetGlobalCatalogProductsQuery,
   useGetGlobalCatalogProductQuery,
+  useGetGlobalCatalogStatsQuery,
   usePreviewGlobalCatalogProductImportQuery,
   useListGlobalCatalogImportsQuery,
   useCreateGlobalCatalogImportMutation,
+  useResolveGlobalCatalogBarcodesMutation,
   useSyncGlobalCatalogImportMutation,
   usePreviewGlobalCatalogImportSyncQuery,
   useGetGlobalCatalogAdminProductsQuery,
+  useGetGlobalCatalogAdminStatsQuery,
   useCreateGlobalCatalogAdminProductMutation,
   useUpdateGlobalCatalogAdminProductMutation,
   usePublishGlobalCatalogAdminProductMutation,

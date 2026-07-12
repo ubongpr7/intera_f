@@ -12,6 +12,9 @@ import type {
 } from "../management/companyProfileTypes";
 import type {
   BulkInviteResponse,
+  MfaEmailRequestResponse,
+  MfaResetConfirmResponse,
+  MfaResetRequestResponse,
   MfaSetupResponse,
   MfaTogglePayload,
   MfaToggleResponse,
@@ -135,6 +138,42 @@ export const userApiSlice = apiSlice.injectEndpoints({
     mfaVerify: builder.mutation<MfaVerifyResponse, { code: string }>({
       query: (body) => ({
         url: `/${accountsApi}/mfa/verify/`,
+        method: "POST",
+        body,
+        service,
+      }),
+    }),
+
+    mfaEmailRequest: builder.mutation<MfaEmailRequestResponse, void>({
+      query: () => ({
+        url: `/${accountsApi}/mfa/email/request/`,
+        method: "POST",
+        body: {},
+        service,
+      }),
+    }),
+
+    mfaEmailVerify: builder.mutation<MfaVerifyResponse, { code: string }>({
+      query: (body) => ({
+        url: `/${accountsApi}/mfa/email/verify/`,
+        method: "POST",
+        body,
+        service,
+      }),
+    }),
+
+    mfaResetRequest: builder.mutation<MfaResetRequestResponse, void>({
+      query: () => ({
+        url: `/${accountsApi}/mfa/reset/request/`,
+        method: "POST",
+        body: {},
+        service,
+      }),
+    }),
+
+    mfaResetConfirm: builder.mutation<MfaResetConfirmResponse, { code: string }>({
+      query: (body) => ({
+        url: `/${accountsApi}/mfa/reset/confirm/`,
         method: "POST",
         body,
         service,
@@ -288,6 +327,10 @@ export const {
   useSendVerificationCodeMutation,
   useMfaSetupMutation,
   useMfaVerifyMutation,
+  useMfaEmailRequestMutation,
+  useMfaEmailVerifyMutation,
+  useMfaResetRequestMutation,
+  useMfaResetConfirmMutation,
   useMfaToggleMutation,
   useInviteStaffMutation,
   useCreateStaffUserMutation,

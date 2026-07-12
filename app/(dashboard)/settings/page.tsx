@@ -17,8 +17,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 const settingAreas = [
   {
-    title: "Subscription and limits",
-    description: "Review the active plan, included capabilities, and workspace resource limits.",
+    title: "Institution billing and subscription",
+    description: "Owner-only billing setup, active plan, included capabilities, and institution resource limits.",
     href: "/subscription",
     icon: CreditCard,
   },
@@ -58,11 +58,11 @@ export default function SettingsHubPage() {
             Settings Hub
           </div>
           <CardTitle className="text-3xl font-semibold tracking-tight text-gray-900">
-            Workspace and application settings
+            Institution and application settings
           </CardTitle>
           <CardDescription className="max-w-4xl text-sm leading-6 text-gray-600">
-            Use this page as the starting point for application settings. Agent setup lives on its own route, while
-            product, POS, and other operational workspaces keep their own dedicated admin pages.
+            Use this page as the starting point for institution-level settings. Billing and subscription setup is
+            owner-only, while product, POS, agent, and other operational workspaces keep their own admin pages.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 p-6 pt-0 md:grid-cols-3">

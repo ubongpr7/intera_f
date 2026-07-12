@@ -1,12 +1,13 @@
 'use client'
 
-import React, { useRef, useState } from 'react'
+import React, { useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import {
   ArrowRight,
   Bell,
   Bot,
   CheckCheck,
+  CreditCard,
   KeyRound,
   Lock,
   LogOut,
@@ -44,6 +45,7 @@ import { UserData } from '@/redux/features/users/userTypes'
 interface NavbarProps {
   user?: UserData
   onOpenMobileSidebar: () => void
+  sidebarCollapsed: boolean
 }
 
 const buildUserImageUrl = (value?: string | null) => {
@@ -67,7 +69,7 @@ const buildUserInitials = (user?: UserData) => {
 const readUserCookie = (key: 'userFirstName' | 'userLastName' | 'userEmail' | 'userPicture') =>
   readCookieValue(key, (name) => getCookie(name))
 
-const Navbar = ({ user, onOpenMobileSidebar }: NavbarProps) => {
+const Navbar = ({ user, onOpenMobileSidebar, sidebarCollapsed }: NavbarProps) => {
   const dispatch = useAppDispatch()
   const router = useRouter()
   const { isDarkMode, isSystemTheme } = useAppSelector((state) => state.global)
@@ -89,28 +91,14 @@ const Navbar = ({ user, onOpenMobileSidebar }: NavbarProps) => {
   const [switchCompany, { isLoading: isSwitchingCompany }] = useSwitchCompanyMutation()
   const [markNotificationRead] = useMarkNotificationReadMutation()
   const [markAllNotificationsRead, { isLoading: markingAllRead }] = useMarkAllNotificationsReadMutation()
-  const [selectedCompanyCode, setSelectedCompanyCode] = useState<string>('')
   const [settingsMenuOpen, setSettingsMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [notificationMenuOpen, setNotificationMenuOpen] = useState(false)
   const [liveNotifications, setLiveNotifications] = useState<NotificationRecord[]>([])
-  const [liveUnreadCount, setLiveUnreadCount] = useState(0)
 
   const activeProfile = companyMemberships?.profiles?.find(
     (profile) => `${profile.id}` === `${companyMemberships.active_profile_id}`,
   )
-
-  React.useEffect(() => {
-    if (!companyMemberships?.profiles?.length) return
-    const active = companyMemberships.profiles.find(
-      (profile) => `${profile.id}` === `${companyMemberships.active_profile_id}`,
-    )
-    if (active?.company_code) {
-      setSelectedCompanyCode(active.company_code)
-    } else if (companyMemberships.profiles[0]?.company_code) {
-      setSelectedCompanyCode(companyMemberships.profiles[0].company_code)
-    }
-  }, [companyMemberships])
 
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -128,10 +116,6 @@ const Navbar = ({ user, onOpenMobileSidebar }: NavbarProps) => {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
-
-  React.useEffect(() => {
-    setLiveUnreadCount(unreadResponse?.unread_count ?? 0)
-  }, [unreadResponse])
 
   React.useEffect(() => {
     const accessToken = getRealtimeAccessToken()
@@ -180,15 +164,6 @@ const Navbar = ({ user, onOpenMobileSidebar }: NavbarProps) => {
       }
     }
 
-    const markReadListener = () => {
-      setLiveUnreadCount((current) => Math.max(0, current - 1))
-    }
-    const markReadAllListener = () => {
-      setLiveUnreadCount(0)
-    }
-
-    window.addEventListener('inventory-notification-read', markReadListener)
-    window.addEventListener('inventory-notification-read-all', markReadAllListener)
     connect()
 
     return () => {
@@ -196,8 +171,6 @@ const Navbar = ({ user, onOpenMobileSidebar }: NavbarProps) => {
       if (reconnectTimer) {
         clearTimeout(reconnectTimer)
       }
-      window.removeEventListener('inventory-notification-read', markReadListener)
-      window.removeEventListener('inventory-notification-read-all', markReadAllListener)
       socket?.close()
     }
   }, [refetchNotifications, refetchUnreadCount])
@@ -212,7 +185,15 @@ const Navbar = ({ user, onOpenMobileSidebar }: NavbarProps) => {
       .sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime())
       .slice(0, 15)
   }, [liveNotifications, notificationResponse?.results])
-  const totalNotificationCount = notificationResponse?.count ?? recentNotifications.length
+  const liveUnreadCount = unreadResponse?.unread_count ?? 0
+  const unreadNotificationCount = liveUnreadCount || recentNotifications.filter((notification) => !notification.is_read).length
+  const selectedCompanyCode = useMemo(() => {
+    if (!companyMemberships?.profiles?.length) return ''
+    const active = companyMemberships.profiles.find(
+      (profile) => `${profile.id}` === `${companyMemberships.active_profile_id}`,
+    )
+    return active?.company_code || companyMemberships.profiles[0]?.company_code || ''
+  }, [companyMemberships])
 
   const markOneRead = async (notification: NotificationRecord) => {
     if (notification.is_read) return
@@ -222,7 +203,6 @@ const Navbar = ({ user, onOpenMobileSidebar }: NavbarProps) => {
         const source = current.length ? current : recentNotifications
         return source.map((item) => item.id === notification.id ? { ...item, is_read: true, read_at: new Date().toISOString() } : item)
       })
-      window.dispatchEvent(new CustomEvent('inventory-notification-read'))
     } catch {
       toast.error('Unable to mark notification as read.')
     }
@@ -242,8 +222,6 @@ const Navbar = ({ user, onOpenMobileSidebar }: NavbarProps) => {
         is_read: true,
         read_at: item.read_at || new Date().toISOString(),
       })))
-      setLiveUnreadCount(0)
-      window.dispatchEvent(new CustomEvent('inventory-notification-read-all'))
       await Promise.all([refetchNotifications(), refetchUnreadCount()])
     } catch {
       toast.error('Unable to mark all notifications as read.')
@@ -263,7 +241,6 @@ const Navbar = ({ user, onOpenMobileSidebar }: NavbarProps) => {
     if (!companyCode || companyCode === selectedCompanyCode) return
     try {
       await switchCompany({ company_code: companyCode }).unwrap()
-      setSelectedCompanyCode(companyCode)
       toast.success('Company context switched.')
       window.location.reload()
     } catch (error: any) {
@@ -304,6 +281,7 @@ const Navbar = ({ user, onOpenMobileSidebar }: NavbarProps) => {
   } as UserData)
   const settingsLinks = [
     { href: "/settings", label: "Workspace settings", icon: SettingsIcon },
+    { href: "/subscription", label: "Institution billing", icon: CreditCard },
     { href: "/agent/settings", label: "Agent settings", icon: Bot },
     { href: "/profile/support-access", label: "Support access", icon: KeyRound },
     { href: "/pos/settings", label: "POS settings", icon: MonitorSpeaker },
@@ -314,7 +292,11 @@ const Navbar = ({ user, onOpenMobileSidebar }: NavbarProps) => {
   }))
 
   return (
-    <div className="sticky top-0 z-30 mb-5 flex w-full items-center justify-between rounded-2xl px-4 py-3 shadow-sm backdrop-blur">
+    <div
+      className={`fixed top-3 z-30 flex items-center justify-between rounded-2xl bg-gray-50/95 px-4 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-gray-50/80 ${
+        sidebarCollapsed ? "md:left-16 md:right-5" : "md:left-64 md:right-5"
+      } left-3 right-3`}
+    >
       <div className="flex items-center gap-3">
         <button
           type="button"
@@ -327,8 +309,8 @@ const Navbar = ({ user, onOpenMobileSidebar }: NavbarProps) => {
         </button>
       </div>
 
-      <div className="flex items-center justify-between gap-5">
-        <div className="hidden items-center gap-5 justify-between md:flex">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-5">
           {companyMemberships?.profiles?.length ? (
             <select
               value={selectedCompanyCode}
@@ -352,14 +334,14 @@ const Navbar = ({ user, onOpenMobileSidebar }: NavbarProps) => {
                 setUserMenuOpen(false)
                 setSettingsMenuOpen(false)
               }}
-              aria-label={`Open notifications${totalNotificationCount ? `, ${totalNotificationCount} available` : ''}`}
+              aria-label={`Open notifications${unreadNotificationCount ? `, ${unreadNotificationCount} unread` : ''}`}
               aria-expanded={notificationMenuOpen}
               className="relative rounded-full p-2 transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
               <Bell size={24} className="cursor-pointer text-gray-500" />
-              {totalNotificationCount > 0 ? (
+              {unreadNotificationCount > 0 ? (
                 <div className="absolute -right-2 -top-2 inline-flex min-w-5 justify-center rounded-full bg-blue-500 px-[0.4rem] py-1 text-xs font-semibold leading-none text-white">
-                  <span>{totalNotificationCount > 99 ? '99+' : totalNotificationCount}</span>
+                  <span>{unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}</span>
                 </div>
               ) : null}
             </button>
@@ -367,10 +349,10 @@ const Navbar = ({ user, onOpenMobileSidebar }: NavbarProps) => {
             {notificationMenuOpen ? (
               <div className="absolute right-0 z-40 mt-3 w-[min(26rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
                 <div className="flex items-center justify-between gap-4 border-b border-gray-100 px-5 py-4">
-                  <div>
-                    <div className="text-base font-semibold text-gray-900">Notifications</div>
-                    <div className="mt-0.5 text-xs text-gray-500">
-                      {totalNotificationCount} total{liveUnreadCount ? ` · ${liveUnreadCount} unread` : ' · all read'}
+                    <div>
+                      <div className="text-base font-semibold text-gray-900">Notifications</div>
+                      <div className="mt-0.5 text-xs text-gray-500">
+                      {notificationResponse?.count ?? recentNotifications.length} total{unreadNotificationCount ? ` · ${unreadNotificationCount} unread` : ' · all read'}
                     </div>
                   </div>
                   {liveUnreadCount > 0 ? (

@@ -480,7 +480,7 @@ export default function SupportAccessWorkspace() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 p-6 pt-0 text-sm leading-6 text-amber-900">
-              <p>Support access remains temporary, workspace-scoped, and tied to the accepting account.</p>
+              <p>Support access remains temporary, limited to this workspace, and tied to the accepting account.</p>
               <p>Every grant starts as a request and stays unusable until the recipient accepts it.</p>
               <p>Owner role is never available through this flow.</p>
               <p>Revocation blocks future refresh and workspace re-entry for support-scoped tokens.</p>

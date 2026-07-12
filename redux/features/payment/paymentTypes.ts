@@ -71,6 +71,13 @@ export interface EntitlementFeature {
   service_identifier: string;
 }
 
+export interface EntitlementUsageRow extends EntitlementFeature {
+  feature: string;
+  usage: number | null;
+  remaining: number | null;
+  status: "included" | "unlimited" | "enabled" | "usage_unavailable" | "at_limit" | "near_limit" | "healthy";
+}
+
 export interface EntitlementSnapshot {
   profile_id: string;
   application: string;
@@ -80,9 +87,31 @@ export interface EntitlementSnapshot {
     start_date: string;
     end_date: string | null;
     trial_end_date: string | null;
+    billing_authorized?: boolean;
+    billing_provider?: string | null;
+    current_payment_status?: string | null;
     plan: { id: string; slug: string; name: string };
   };
   features: Record<string, EntitlementFeature>;
+  usage?: EntitlementUsageRow[];
+  usage_warnings?: string[];
+  coins?: {
+    balance: number;
+    monthly_allocation: number;
+    used: number;
+  };
+}
+
+export interface SubscriptionPlanFeature {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  limit_type: "BOOLEAN" | "COUNT" | "METERED";
+  service_area: string;
+  service_identifier: string;
+  limit_value: number | null;
+  is_unlimited: boolean;
 }
 
 export interface SubscriptionPlanRecord {
@@ -94,7 +123,7 @@ export interface SubscriptionPlanRecord {
   description: string;
   price: string;
   billing_cycle: "MONTHLY" | "QUARTERLY" | "YEARLY" | "ONE_TIME";
-  features: any[];
+  features: SubscriptionPlanFeature[];
   is_active: boolean;
   trial_days: number;
   display_order?: number;
@@ -110,4 +139,26 @@ export interface StartTrialResponse {
   entitlements: EntitlementSnapshot;
   created: boolean;
   message: string;
+}
+
+export interface CoinTransactionRecord {
+  id: string;
+  profile: string;
+  transaction_type: "EARNED" | "SPENT" | "REFUNDED" | "BONUS";
+  amount: number;
+  description: string;
+  reference_id: string;
+  balance_after: number;
+  created_at: string;
+}
+
+export interface CoinTopUpResponse {
+  success: boolean;
+  checkout_url?: string;
+  coins_amount: number;
+  rate: {
+    usd: number;
+    coins: number;
+    minimum_usd: number;
+  };
 }

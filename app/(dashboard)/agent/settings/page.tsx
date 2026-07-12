@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ReactSelectField, type SelectOption } from "@/components/ui/react-select-field"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
@@ -163,7 +163,12 @@ const WorkspaceAiSetupSheet = ({
   onSave: () => Promise<void>
 }) => {
   const availableVersions = setupResponse?.available_versions ?? []
+  const versionOptions = availableVersions.map((version) => ({
+    value: String(version.id),
+    label: `${version.provider_label} · ${version.model_name}`,
+  }))
   const selectedVersion = availableVersions.find((version) => String(version.id) === form.version)
+  const selectedVersionOption = versionOptions.find((option) => option.value === form.version) ?? null
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -174,12 +179,12 @@ const WorkspaceAiSetupSheet = ({
         <div className="flex h-full flex-col">
           <SheetHeader className="border-b border-slate-800/80 bg-[linear-gradient(115deg,rgba(15,23,42,0.98),rgba(17,24,39,0.96),rgba(30,41,59,0.96))] px-7 py-7 text-left md:px-8">
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-200">
-              Side Form Workspace
+              Workspace AI settings
             </div>
-            <SheetTitle className="mt-4 text-3xl font-semibold tracking-tight text-white">
+            <SheetTitle className="mt-4 text-3xl font-semibold tracking-tight text-white" style={{ color: "#f9fafb" }}>
               {setupResponse?.configured ? "Update workspace AI" : "Configure workspace AI"}
             </SheetTitle>
-            <SheetDescription className="max-w-2xl text-sm leading-6 text-slate-300">
+            <SheetDescription className="max-w-2xl text-sm leading-6 text-slate-300" style={{ color: "#cbd5e1" }}>
               Keep the page compact. Model selection, encrypted keys, and instruction layers are managed here in a side
               form instead of inline.
             </SheetDescription>
@@ -189,7 +194,7 @@ const WorkspaceAiSetupSheet = ({
             <div className="grid gap-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Agent name</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300" style={{ color: "#cbd5e1" }}>Agent name</span>
                   <Input
                     className="h-12 rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
                     value={form.name}
@@ -198,21 +203,32 @@ const WorkspaceAiSetupSheet = ({
                   />
                 </label>
                 <div className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Model version</span>
-                  <Select value={form.version || undefined} onValueChange={(value) => updateField("version", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select provider and model" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableVersions.map((version) => (
-                        <SelectItem key={version.id} value={String(version.id)}>
-                          {version.provider_label} · {version.model_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300" style={{ color: "#cbd5e1" }}>Model version</span>
+                  <ReactSelectField
+                    options={versionOptions}
+                    value={selectedVersionOption}
+                    onChange={(option) => {
+                      const nextOption = Array.isArray(option) ? null : (option as SelectOption | null)
+                      updateField("version", nextOption ? String(nextOption.value) : "")
+                    }}
+                    placeholder="Select provider and model"
+                    isSearchable
+                    isMulti={false}
+                    controlShouldRenderValue
+                    styles={{
+                      control: (base, state) => ({
+                        ...base,
+                        backgroundColor: state.isDisabled ? "#0f172a" : "#1e293b",
+                        borderColor: state.isFocused ? "#60a5fa" : "#334155",
+                        color: "#f8fafc",
+                      }),
+                      singleValue: (base) => ({ ...base, color: "#f8fafc" }),
+                      input: (base) => ({ ...base, color: "#f8fafc" }),
+                      placeholder: (base) => ({ ...base, color: "#94a3b8" }),
+                    }}
+                  />
                   {selectedVersion ? (
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-300" style={{ color: "#cbd5e1" }}>
                       Selected: {selectedVersion.provider_label} · {selectedVersion.model_name}
                     </p>
                   ) : null}
@@ -221,7 +237,7 @@ const WorkspaceAiSetupSheet = ({
 
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                  <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300" style={{ color: "#cbd5e1" }}>
                     <KeyRound className="h-4 w-4 text-slate-500" />
                     LLM API key
                   </span>
@@ -236,7 +252,7 @@ const WorkspaceAiSetupSheet = ({
                   />
                 </label>
                 <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                  <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300" style={{ color: "#cbd5e1" }}>
                     <KeyRound className="h-4 w-4 text-slate-500" />
                     Tavily API key
                   </span>
@@ -255,7 +271,7 @@ const WorkspaceAiSetupSheet = ({
               </div>
 
               <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Special instruction</span>
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300" style={{ color: "#cbd5e1" }}>Special instruction</span>
                 <Textarea
                   className="min-h-[140px] rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
                   value={form.specialInstruction}
@@ -266,7 +282,7 @@ const WorkspaceAiSetupSheet = ({
               </label>
 
               <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">System instruction</span>
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300" style={{ color: "#cbd5e1" }}>System instruction</span>
                 <Textarea
                   className="min-h-[160px] rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
                   value={form.systemInstruction}
@@ -277,7 +293,7 @@ const WorkspaceAiSetupSheet = ({
               </label>
 
               <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Assistant instruction</span>
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300" style={{ color: "#cbd5e1" }}>Assistant instruction</span>
                 <Textarea
                   className="min-h-[160px] rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
                   value={form.assistantInstruction}
@@ -420,7 +436,7 @@ export default function SettingsPage() {
       <WorkspaceSetupShell
         activeStage="agent"
         title="Manage workspace settings"
-        description="Keep agent configuration here. Runtime conversations stay on the agent console, but setup, model selection, and default-agent installs live in this settings workspace."
+        description="Keep agent configuration here. Conversations stay on the agent console, but setup, model selection, and default-agent installs live in this settings workspace."
       >
         <AgentSetupEmptyState profilesCount={companies?.profiles?.length ?? 0} />
       </WorkspaceSetupShell>
@@ -446,7 +462,7 @@ export default function SettingsPage() {
     <WorkspaceSetupShell
       activeStage="agent"
       title="Manage workspace settings"
-      description="Keep setup separate from runtime. Configure workspace AI, install default agents, and manage custom agents here. Live conversations stay on the agent console."
+      description="Keep setup separate from chat. Configure workspace AI, install default agents, and manage custom agents here. Live conversations stay on the agent console."
     >
       <div className="grid gap-6">
         <Card className="border-gray-200 bg-white shadow-sm">
@@ -455,11 +471,11 @@ export default function SettingsPage() {
               <Settings2 className="h-3.5 w-3.5" />
               Settings Workspace
             </div>
-            <CardTitle className="text-3xl font-semibold tracking-tight text-gray-900">Agentic settings</CardTitle>
+            <CardTitle className="text-3xl font-semibold tracking-tight text-gray-900">Agent settings</CardTitle>
             <CardDescription className="max-w-4xl text-sm leading-6 text-gray-600">
               This page is for setup only. Workspace AI configuration, default-agent installs, and custom agent management
-              happen here. The chat and runtime console stay on <span className="font-semibold">/agent</span>. This is
-              not the general settings hub for the rest of the application.
+              happen here. The chat console stays on <span className="font-semibold">/agent</span>. This is not the
+              general settings hub for the rest of the application.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4 p-6 pt-0 lg:flex-row lg:items-center lg:justify-between">
@@ -488,7 +504,7 @@ export default function SettingsPage() {
               <Button asChild>
                 <Link href="/agent">
                   <Sparkles className="mr-2 h-4 w-4" />
-                  Open runtime console
+                  Open agent console
                 </Link>
               </Button>
             </div>
@@ -627,7 +643,7 @@ export default function SettingsPage() {
                         Open agent setup
                       </Button>
                       <Button asChild variant="outline">
-                        <Link href="/agent">Go to runtime console</Link>
+                        <Link href="/agent">Go to agent console</Link>
                       </Button>
                     </CardContent>
                   </Card>

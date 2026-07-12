@@ -679,7 +679,7 @@ export default function DashboardPage() {
                     : "Open the POS floor to start a selling session."}
                 </p>
                 <div className="mt-4">
-                  <Button asChild variant="outline" className="border-blue-300 bg-gray-900 text-blue-950 hover:bg-blue-100">
+                  <Button asChild variant="outline" className="border-blue-300 bg-gray-900 text-gray-200 hover:bg-blue-100">
                     <Link href="/pos">Open POS floor</Link>
                   </Button>
                 </div>

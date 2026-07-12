@@ -3,6 +3,7 @@
 import type React from "react"
 import { forwardRef, useState } from "react"
 import Select, { type Props as ReactSelectProps, type StylesConfig } from "react-select"
+import CreatableSelect from "react-select/creatable"
 import { cn } from "@/lib/utils"
 
 export interface SelectOption {
@@ -15,6 +16,8 @@ export type ReactSelectFieldProps = ReactSelectProps<SelectOption, boolean> & {
   label?: string
   helperText?: string
   inputId?: string
+  creatable?: boolean
+  [key: string]: any
 }
 
 const isDarkMode = () => typeof document !== "undefined" && document.documentElement.classList.contains("dark")
@@ -91,6 +94,7 @@ export const ReactSelectField = forwardRef<any, ReactSelectFieldProps>(
       label,
       helperText,
       inputId,
+      creatable = false,
       menuPortalTarget,
       menuPosition,
       menuPlacement,
@@ -103,11 +107,12 @@ export const ReactSelectField = forwardRef<any, ReactSelectFieldProps>(
   ) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const resolvedPortalTarget = menuPortalTarget
+    const SelectComponent = creatable ? CreatableSelect : Select
 
     return (
       <div className={cn("relative space-y-1", isMenuOpen ? "z-[120]" : "z-0", className)}>
         {label ? <label className="block text-sm font-medium text-gray-700">{label}</label> : null}
-        <Select
+        <SelectComponent
           ref={ref}
           styles={{
             ...customStyles,

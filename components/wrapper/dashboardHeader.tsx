@@ -64,7 +64,7 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
       </>
     ) : null}
     <main
-      className={`flex min-h-screen flex-1 flex-col bg-gray-50 px-3 py-4 transition-[margin] duration-300 ${
+      className={`flex min-h-screen min-w-0 flex-1 flex-col overflow-x-hidden bg-gray-50 px-3 pb-4 pt-24 transition-[margin] duration-300 ${
         shouldHideDashboardUI(pathname)
           ? ""
           : SidebarCollapsed
@@ -74,7 +74,11 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
     >
     
     {!shouldHideDashboardUI(pathname) && (
-      <Navbar user={user} onOpenMobileSidebar={() => setMobileSidebarOpen(true)} />
+      <Navbar
+        user={user}
+        onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+        sidebarCollapsed={SidebarCollapsed}
+      />
     )}
     
     {children}

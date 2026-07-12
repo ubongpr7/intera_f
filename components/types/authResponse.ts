@@ -22,6 +22,8 @@ export interface LoginResponse {
     username?: string;
     email?: string;
     is_verified?: boolean;
+    is_staff?: boolean;
+    is_superuser?: boolean;
     profile?: string | null;
     first_name?: string;
     access?: string;

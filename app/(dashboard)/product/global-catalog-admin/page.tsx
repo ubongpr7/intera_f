@@ -2,7 +2,7 @@ import GlobalCatalogAdminWorkspace from "@/components/product/GlobalCatalogAdmin
 
 export default function GlobalCatalogAdminPage() {
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6 overflow-x-hidden">
       <GlobalCatalogAdminWorkspace />
     </div>
   )

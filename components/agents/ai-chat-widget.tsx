@@ -7,7 +7,7 @@ import { toast } from "react-toastify"
 import AgentChat from "./agent-chat"
 import { humanizeAgentDisplayName } from "@/lib/agent-display"
 import { deriveWorkflowSummary } from "@/lib/agent-structured-output"
-import { createSessionWithConfig, type ChatMessage } from "@/redux/features/ka2a/ka2aSlice"
+import { clearSession, createSessionWithConfig, type ChatMessage } from "@/redux/features/ka2a/ka2aSlice"
 import { sendStreamMessage } from "@/redux/features/ka2a/ka2aThunks"
 import { useAppDispatch, useAppSelector } from "@/redux/store"
 
@@ -107,13 +107,18 @@ export default function AIChatWidget() {
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Element | null
+      const isPortalMenuClick = Boolean(
+        target?.closest('[data-radix-menu-content], [data-radix-popper-content-wrapper], [role="menu"]'),
+      )
       if (
         isOpen &&
         !isFullScreen &&
         widgetRef.current &&
         !widgetRef.current.contains(e.target as Node) &&
         toggleBtnRef.current &&
-        !toggleBtnRef.current.contains(e.target as Node)
+        !toggleBtnRef.current.contains(e.target as Node) &&
+        !isPortalMenuClick
       ) {
         setIsOpen(false)
       }
@@ -161,11 +166,22 @@ export default function AIChatWidget() {
 
   const handleSend = async (text: string) => {
     if (!text.trim() || !sessionId) return
+    if (session?.isStreaming) {
+      toast.info("AI Assistant is still responding. Please wait for the current answer before sending another message.")
+      return
+    }
     markActivity()
     await dispatch(sendStreamMessage({ text, sessionId }))
   }
 
   const handleUserActivity = () => markActivity()
+
+  const handleClearConversation = () => {
+    if (!sessionId) return
+    dispatch(clearSession({ sessionId }))
+    markActivity()
+    toast.info("Started a new AI chat.")
+  }
 
   const handleDownloadConversation = () => {
     if (!session) {
@@ -244,6 +260,7 @@ export default function AIChatWidget() {
             awaitingInput={session?.awaitingInput ?? false}
             workflowSummary={workflowSummary}
             onDownloadConversation={handleDownloadConversation}
+            onClearConversation={handleClearConversation}
           />
         </div>
       )}

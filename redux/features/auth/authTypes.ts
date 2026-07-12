@@ -38,6 +38,8 @@ export interface AuthSessionResponse {
   email?: string;
   first_name?: string;
   is_verified?: boolean;
+  is_staff?: boolean;
+  is_superuser?: boolean;
   profile?: string | null;
   profile_context?: CompanyProfileContext | null;
   profiles?: CompanyProfileContext[];
