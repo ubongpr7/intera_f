@@ -596,6 +596,7 @@ const InstallTemplatesSheet = ({
   selectedTemplateIds,
   onToggleTemplate,
   onToggleAll,
+  isLoadingTemplates,
   isInstalling,
   onInstallSelected,
 }: {
@@ -605,28 +606,62 @@ const InstallTemplatesSheet = ({
   selectedTemplateIds: string[];
   onToggleTemplate: (templateId: string, checked: boolean) => void;
   onToggleAll: (checked: boolean) => void;
+  isLoadingTemplates: boolean;
   isInstalling: boolean;
   onInstallSelected: () => Promise<void>;
 }) => (
   <Sheet open={open} onOpenChange={onOpenChange}>
-    <SheetContent side="right" className="w-full max-w-3xl border-gray-200 bg-white p-0 text-gray-900 sm:max-w-3xl">
+    <SheetContent
+      side="right"
+      className="w-full max-w-3xl border-slate-800 bg-[linear-gradient(180deg,#020617_0%,#0f172a_58%,#111827_100%)] p-0 text-white shadow-[0_40px_90px_rgba(2,6,23,0.82)] sm:max-w-3xl"
+    >
       <div className="flex h-full flex-col">
-        <SheetHeader className="border-b border-gray-200 bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 px-6 py-6 text-left">
+        <SheetHeader className="border-b border-slate-800/80 bg-[linear-gradient(115deg,rgba(15,23,42,0.98),rgba(17,24,39,0.96),rgba(6,78,59,0.86))] px-6 py-6 text-left">
           <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-400/30 bg-blue-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-blue-100">
             Default agents
           </div>
-          <SheetTitle className="mt-4 text-3xl font-semibold tracking-tight text-white">Install default agents</SheetTitle>
+          <SheetTitle className="mt-4 text-3xl font-semibold tracking-tight text-blue-100">Install default agents</SheetTitle>
           <SheetDescription className="max-w-2xl text-sm leading-6 text-slate-300">
             Only templates not yet installed in this workspace are shown here. Install first, then edit details or bindings afterward.
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto bg-slate-50 px-6 py-6">
-          {templates.length ? (
+        <div className="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(22,78,99,0.28)_0%,rgba(15,23,42,0.98)_48%,rgba(2,6,23,1)_100%)] px-6 py-6">
+          {isLoadingTemplates && templates.length === 0 ? (
             <div className="space-y-4">
-              <Card className="border-gray-200">
-                <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
-                  <label className="flex items-center gap-3 text-sm text-slate-700">
+              <div className="rounded-[26px] border border-slate-800 bg-slate-950/72 p-5 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                <div className="h-4 w-44 animate-pulse rounded-full bg-slate-800" />
+                <div className="mt-4 h-10 w-72 animate-pulse rounded-2xl bg-slate-800/80" />
+                <div className="mt-3 h-4 w-full max-w-xl animate-pulse rounded-full bg-slate-800/70" />
+              </div>
+              <div className="grid gap-4">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <div
+                    key={`template-skeleton-${index}`}
+                    className="rounded-[26px] border border-slate-800 bg-slate-950/72 p-5 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1 space-y-3">
+                        <div className="h-5 w-52 animate-pulse rounded-full bg-slate-800" />
+                        <div className="h-4 w-full max-w-xl animate-pulse rounded-full bg-slate-800/70" />
+                        <div className="h-4 w-4/5 animate-pulse rounded-full bg-slate-800/70" />
+                      </div>
+                      <div className="h-11 w-11 animate-pulse rounded-2xl bg-slate-800" />
+                    </div>
+                    <div className="mt-5 flex flex-wrap gap-2">
+                      <div className="h-7 w-20 animate-pulse rounded-full bg-slate-800/80" />
+                      <div className="h-7 w-20 animate-pulse rounded-full bg-slate-800/80" />
+                      <div className="h-7 w-28 animate-pulse rounded-full bg-slate-800/80" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : templates.length ? (
+            <div className="space-y-4">
+              <div className="rounded-[26px] border border-slate-800 bg-slate-950/72 p-5 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <label className="flex items-center gap-3 text-sm text-slate-200">
                     <Checkbox
                       checked={templates.length > 0 && selectedTemplateIds.length === templates.length}
                       onCheckedChange={(checked) => onToggleAll(Boolean(checked))}
@@ -641,44 +676,49 @@ const InstallTemplatesSheet = ({
                     type="button"
                     onClick={() => void onInstallSelected()}
                     disabled={!selectedTemplateIds.length || isInstalling}
+                    className="bg-blue-600 text-white hover:bg-blue-500"
                   >
                     {isInstalling
                       ? `Installing ${selectedTemplateIds.length}...`
                       : `Install ${selectedTemplateIds.length || ""} agent${selectedTemplateIds.length === 1 ? "" : "s"}`.trim()}
                   </Button>
-                </CardContent>
-              </Card>
+                </div>
+                {isLoadingTemplates ? (
+                  <p className="mt-3 text-xs text-slate-400">Refreshing the default agent catalog...</p>
+                ) : null}
+              </div>
+
               {templates.map((template) => (
-                <Card key={template.id} className="border-gray-200">
+                <Card key={template.id} className="border-slate-800 bg-slate-950/72 text-white shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
                   <CardHeader className="p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex min-w-0 items-start gap-3">
                         <Checkbox
                           checked={selectedTemplateIds.includes(template.id)}
                           onCheckedChange={(checked) => onToggleTemplate(template.id, Boolean(checked))}
-                          className="mt-1"
+                          className="mt-1 border-slate-600 data-[state=checked]:border-blue-400 data-[state=checked]:bg-blue-500"
                         />
                         <div className="min-w-0">
-                          <CardTitle className="text-xl">{template.name}</CardTitle>
-                          <CardDescription className="mt-2 text-sm leading-6 text-slate-600">
+                          <CardTitle className="text-xl text-white">{template.name}</CardTitle>
+                          <CardDescription className="mt-2 text-sm leading-6 text-slate-300">
                             {template.description || "No description yet."}
                           </CardDescription>
                         </div>
                       </div>
-                      <div className="rounded-2xl bg-slate-100 p-3 text-slate-600">
+                      <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-3 text-slate-300">
                         <Bot className="h-4 w-4" />
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent className="flex flex-col gap-4 p-5 pt-0">
                     <div className="flex flex-wrap gap-2 text-xs">
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">
+                      <span className="rounded-full border border-slate-700 bg-slate-900/80 px-2.5 py-1 text-slate-200">
                         {template.tool_bindings.length} tools
                       </span>
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">
+                      <span className="rounded-full border border-slate-700 bg-slate-900/80 px-2.5 py-1 text-slate-200">
                         {template.skill_bindings.length} skills
                       </span>
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">
+                      <span className="rounded-full border border-slate-700 bg-slate-900/80 px-2.5 py-1 text-slate-200">
                         {template.preferred_transport}
                       </span>
                     </div>
@@ -687,11 +727,9 @@ const InstallTemplatesSheet = ({
               ))}
             </div>
           ) : (
-            <Card className="border-dashed border-gray-300 bg-white">
-              <CardContent className="p-6 text-sm text-slate-500">
-                Every default template has already been installed in this workspace.
-              </CardContent>
-            </Card>
+            <div className="rounded-[26px] border border-dashed border-slate-700 bg-slate-950/72 p-6 text-sm text-slate-300 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              Every default template has already been installed in this workspace.
+            </div>
           )}
         </div>
       </div>
@@ -1813,6 +1851,7 @@ export default function AgentSettingsControlPanel() {
         selectedTemplateIds={selectedInstallTemplateIds}
         onToggleTemplate={handleToggleInstallTemplate}
         onToggleAll={handleToggleAllInstallTemplates}
+        isLoadingTemplates={loadingTemplates}
         isInstalling={installingTemplate}
         onInstallSelected={handleInstallSelectedTemplates}
       />
