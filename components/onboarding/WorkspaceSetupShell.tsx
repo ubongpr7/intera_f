@@ -3,12 +3,14 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import type { ReactNode } from "react"
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import {
   ArrowRight,
   Bot,
   Building2,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   CircleDashed,
   ListTodo,
   Users,
@@ -211,10 +213,26 @@ export function WorkspaceSetupShell({
   const { activeMembership, completionPercentage, isLoading, isOwner, nextRecommendedStage, stages } = useWorkspaceSetupProgress()
   const pathname = usePathname()
   const showSetupProgress = !isLoading && isOwner && pathname === "/dashboard"
+  const [setupGuideOpen, setSetupGuideOpen] = useState(false)
 
   return (
-    <div className={cn("mx-auto w-full max-w-7xl gap-6 px-4 py-6 lg:px-8", showSetupProgress ? "grid lg:grid-cols-[290px_minmax(0,1fr)]" : "block")}>
-      {showSetupProgress ? <aside className="space-y-4">
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 lg:px-8">
+      {showSetupProgress ? (
+        <div className="flex justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            className="gap-2 rounded-full border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            onClick={() => setSetupGuideOpen((current) => !current)}
+            aria-expanded={setupGuideOpen}
+          >
+            {setupGuideOpen ? "Hide workspace guide" : "Show workspace guide"}
+            {setupGuideOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </div>
+      ) : null}
+
+      {showSetupProgress ? (
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="p-5 text-left text-inherit">
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
@@ -229,69 +247,83 @@ export function WorkspaceSetupShell({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 p-5 pt-0">
-            <div>
-              <div className="mb-2 flex items-center justify-between text-xs font-medium uppercase tracking-wide text-gray-500">
-                <span>Readiness</span>
-                <span>{completionPercentage}%</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-gray-100">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 transition-all duration-300"
-                  style={{ width: `${completionPercentage}%` }}
-                />
-              </div>
-            </div>
+            {setupGuideOpen ? (
+              <>
+                <div>
+                  <div className="mb-2 flex items-center justify-between text-xs font-medium uppercase tracking-wide text-gray-500">
+                    <span>Readiness</span>
+                    <span>{completionPercentage}%</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-gray-100">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 transition-all duration-300"
+                      style={{ width: `${completionPercentage}%` }}
+                    />
+                  </div>
+                </div>
 
-            {nextRecommendedStage ? (
-              <Button asChild className="w-full justify-between">
-                <Link href={nextRecommendedStage.href}>
-                  Continue with {nextRecommendedStage.title}
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
+                {nextRecommendedStage ? (
+                  <Button asChild className="w-full justify-between">
+                    <Link href={nextRecommendedStage.href}>
+                      Continue with {nextRecommendedStage.title}
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                ) : (
+                  <div className="rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+                    Core workspace onboarding is complete. You can move into inventory, products, and POS next.
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  {stages.map((stage) => {
+                    const isActive = activeStage === stage.id
+                    return (
+                      <Link
+                        key={stage.id}
+                        href={stage.href}
+                        className={cn(
+                          "block rounded-2xl border p-4 transition-colors",
+                          isActive ? "border-blue-300 bg-blue-50" : "border-gray-200 bg-white hover:border-gray-300",
+                        )}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div
+                            className={cn(
+                              "mt-0.5 rounded-xl p-2",
+                              stage.complete ? "bg-green-100 text-green-700" : isActive ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600",
+                            )}
+                          >
+                            {stage.complete ? <CheckCircle2 className="h-4 w-4" /> : <stage.icon className="h-4 w-4" />}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-semibold text-gray-900">{stage.title}</p>
+                              {!stage.complete && !isActive ? <CircleDashed className="h-3.5 w-3.5 text-gray-400" /> : null}
+                            </div>
+                            <p className="mt-1 text-xs text-gray-600">{stage.description}</p>
+                            <p className="mt-2 text-xs font-medium text-gray-500">{stage.helper}</p>
+                          </div>
+                        </div>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </>
             ) : (
-              <div className="rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-800">
-                Core workspace onboarding is complete. You can move into inventory, products, and POS next.
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-600">
+                {nextRecommendedStage ? (
+                  <span>
+                    Next recommended action: <span className="font-semibold text-gray-900">{nextRecommendedStage.title}</span>
+                  </span>
+                ) : (
+                  <span>Workspace setup is ready. Expand this guide if you want the full onboarding checklist.</span>
+                )}
               </div>
             )}
           </CardContent>
         </Card>
-
-        <div className="space-y-3">
-          {stages.map((stage) => {
-            const isActive = activeStage === stage.id
-            return (
-              <Link
-                key={stage.id}
-                href={stage.href}
-                className={cn(
-                  "block rounded-2xl border p-4 transition-colors",
-                  isActive ? "border-blue-300 bg-blue-50" : "border-gray-200 bg-white hover:border-gray-300",
-                )}
-              >
-                <div className="flex items-start gap-3">
-                  <div
-                    className={cn(
-                      "mt-0.5 rounded-xl p-2",
-                      stage.complete ? "bg-green-100 text-green-700" : isActive ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600",
-                    )}
-                  >
-                    {stage.complete ? <CheckCircle2 className="h-4 w-4" /> : <stage.icon className="h-4 w-4" />}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold text-gray-900">{stage.title}</p>
-                      {!stage.complete && !isActive ? <CircleDashed className="h-3.5 w-3.5 text-gray-400" /> : null}
-                    </div>
-                    <p className="mt-1 text-xs text-gray-600">{stage.description}</p>
-                    <p className="mt-2 text-xs font-medium text-gray-500">{stage.helper}</p>
-                  </div>
-                </div>
-              </Link>
-            )
-          })}
-        </div>
-      </aside> : null}
+      ) : null}
 
       <main className="min-w-0">
         <Card className="border-gray-200 shadow-sm">

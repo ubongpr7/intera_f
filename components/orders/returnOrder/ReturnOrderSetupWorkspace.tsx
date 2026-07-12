@@ -2,8 +2,9 @@
 
 import Link from "next/link"
 import { useDeferredValue, useState } from "react"
-import { ArrowRight, CheckCircle2, ClipboardCheck, PackageX, ReceiptText, Undo2 } from "lucide-react"
+import { ArrowRight, ClipboardCheck, PackageX, ReceiptText, Undo2 } from "lucide-react"
 import { WorkspaceSetupLoadingCard, useWorkspaceSetupProgress } from "@/components/onboarding/WorkspaceSetupShell"
+import CollapsibleSetupGuide from "@/components/setup/CollapsibleSetupGuide"
 import OperationalStepSection from "@/components/setup/OperationalStepSection"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -59,6 +60,29 @@ export default function ReturnOrderSetupWorkspace() {
   const dispatchStepReady = returnOrders.some((order) => order.status === ReturnOrderStatus.in_transit)
   const completeStepReady = completedOrders > 0
   const nextStepId = !createStepReady ? "initiate-returns" : !dispatchStepReady ? "dispatch-returns" : !completeStepReady ? "close-returns" : null
+  const setupGuideSteps = [
+    {
+      id: "initiate-returns",
+      title: "Initiate from purchase orders",
+      description: "Create returns only after goods have been received into stock.",
+      complete: createStepReady,
+      icon: ReceiptText,
+    },
+    {
+      id: "dispatch-returns",
+      title: "Dispatch returned stock",
+      description: "Move returned quantity out from locations and mark the return in transit.",
+      complete: dispatchStepReady,
+      icon: PackageX,
+    },
+    {
+      id: "close-returns",
+      title: "Complete the supplier return",
+      description: "Close the return once every return line has been fully processed.",
+      complete: completeStepReady,
+      icon: ClipboardCheck,
+    },
+  ] as const
 
   if (loadingWorkspaceSetup) {
     return (
@@ -97,97 +121,27 @@ export default function ReturnOrderSetupWorkspace() {
   }
 
   return (
-    <div className={isOwner ? "mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[310px_1fr] lg:px-8" : "mx-auto w-full max-w-7xl space-y-6 px-4 py-6 lg:px-8"}>
-      {isOwner ? <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-        <Card className="border-gray-200 shadow-sm">
-          <CardHeader className="p-5 text-left text-inherit">
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
-              <Undo2 className="h-3.5 w-3.5" />
-              Supplier returns
-            </div>
-            <CardTitle className="mt-3 text-xl">Track supplier returns from creation to completion</CardTitle>
-            <CardDescription className="text-sm leading-6 text-gray-600">
-              Return orders begin from received purchase orders, then move through dispatch and closure.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 p-5 pt-0">
-            {[
-              {
-                id: "initiate-returns",
-                title: "Initiate from purchase orders",
-                description: "Create returns only after goods have been received into stock.",
-                complete: createStepReady,
-                icon: ReceiptText,
-              },
-              {
-                id: "dispatch-returns",
-                title: "Dispatch returned stock",
-                description: "Move returned quantity out from locations and mark the return in transit.",
-                complete: dispatchStepReady,
-                icon: PackageX,
-              },
-              {
-                id: "close-returns",
-                title: "Complete the supplier return",
-                description: "Close the return once every return line has been fully processed.",
-                complete: completeStepReady,
-                icon: ClipboardCheck,
-              },
-            ].map((step, index) => (
-              <a
-                key={step.id}
-                href={`#${step.id}`}
-                className={`block rounded-2xl border p-4 transition-colors ${
-                  step.complete
-                    ? "border-green-200 bg-green-50"
-                    : nextStepId === step.id
-                      ? "border-blue-300 bg-blue-50"
-                      : "border-gray-200 bg-white hover:border-gray-300"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div
-                    className={`mt-0.5 rounded-xl p-2 ${
-                      step.complete
-                        ? "bg-green-100 text-green-700"
-                        : nextStepId === step.id
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    {step.complete ? <CheckCircle2 className="h-4 w-4" /> : <step.icon className="h-4 w-4" />}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">
-                      Step {index + 1}: {step.title}
-                    </p>
-                    <p className="mt-1 text-xs leading-5 text-gray-600">{step.description}</p>
-                  </div>
-                </div>
-              </a>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card className="border-gray-200 shadow-sm">
-          <CardHeader className="p-5 text-left text-inherit">
-            <CardTitle className="text-base">Dependency notes</CardTitle>
-            <CardDescription className="text-sm leading-6 text-gray-600">
-              Returns are downstream of purchasing and stock receiving.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 p-5 pt-0 text-sm text-gray-600">
-            <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
-              <p className="font-medium text-gray-900">Created from purchase orders</p>
-              <p className="mt-1">Use the purchase-order workbench whenever you need to create a new supplier return.</p>
-            </div>
-            <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
-              <p className="font-medium text-gray-900">Dispatch from valid stock locations</p>
-              <p className="mt-1">Every returned line must be dispatched out from a tracked stock location before completion.</p>
-            </div>
-          </CardContent>
-        </Card>
-      </aside> : null}
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 lg:px-8">
+      {isOwner ? (
+        <CollapsibleSetupGuide
+          eyebrow="Supplier returns"
+          title="Track supplier returns from creation to completion"
+          description="Return orders begin from received purchase orders, then move through dispatch and closure."
+          steps={setupGuideSteps}
+          nextStep={nextStepId ? { href: `#${nextStepId}`, label: "Continue return workflow" } : null}
+          completeMessage="Supplier-return foundations are in place. Your team can now move returns from creation to completion."
+          notes={[
+            {
+              title: "Created from purchase orders",
+              description: "Use the purchase-order workbench whenever you need to create a new supplier return.",
+            },
+            {
+              title: "Dispatch from valid stock locations",
+              description: "Every returned line must be dispatched out from a tracked stock location before completion.",
+            },
+          ]}
+        />
+      ) : null}
 
       <div className="space-y-6">
         <Card className="border-gray-200 shadow-sm">

@@ -5,7 +5,6 @@ import { useDeferredValue, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   ArrowRight,
-  CheckCircle2,
   ClipboardCheck,
   FileClock,
   PackageCheck,
@@ -16,6 +15,7 @@ import {
 } from "lucide-react"
 import { toast } from "react-toastify"
 import { WorkspaceSetupLoadingCard, useWorkspaceSetupProgress } from "@/components/onboarding/WorkspaceSetupShell"
+import CollapsibleSetupGuide from "@/components/setup/CollapsibleSetupGuide"
 import OperationalStepSection from "@/components/setup/OperationalStepSection"
 import StructuralLocationScopeSelect from "@/components/stock/StructuralLocationScopeSelect"
 import { Badge } from "@/components/ui/badge"
@@ -155,6 +155,29 @@ export default function PurchaseOrderSetupWorkspace() {
     () => purchaseOrders.filter((order) => attentionStatuses.has(String(order.status) as (typeof PurchaseOrderStatus)[keyof typeof PurchaseOrderStatus])),
     [attentionStatuses, purchaseOrders],
   )
+  const setupGuideSteps = [
+    {
+      id: "create-orders",
+      title: "Create supplier orders",
+      description: "Open the purchase order and capture the basic supplier commitment.",
+      complete: createStepReady,
+      icon: ShoppingCart,
+    },
+    {
+      id: "active-orders",
+      title: "Add lines and issue",
+      description: "Review active orders, add line items, then approve and issue to the supplier.",
+      complete: issueStepReady,
+      icon: Truck,
+    },
+    {
+      id: "attention",
+      title: "Receive and close",
+      description: "Track what still needs attention until the order is fully received and completed.",
+      complete: receiveStepReady,
+      icon: PackageCheck,
+    },
+  ] as const
 
   const handleCreateOrder = async () => {
     if (!formState.supplier) {
@@ -220,117 +243,35 @@ export default function PurchaseOrderSetupWorkspace() {
   }
 
   return (
-    <div className={isOwner ? "mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[310px_1fr] lg:px-8" : "mx-auto w-full max-w-7xl space-y-6 px-4 py-6 lg:px-8"}>
-      {isOwner ? <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-        <Card className="border-gray-200 shadow-sm">
-          <CardHeader className="p-5 text-left text-inherit">
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
-              <ReceiptText className="h-3.5 w-3.5" />
-              Purchase orders
-            </div>
-            <CardTitle className="mt-3 text-xl">Run replenishment from request to receiving</CardTitle>
-            <CardDescription className="text-sm leading-6 text-gray-600">
-              Start supplier-backed orders, add the required lines, then move each order through approval, issue, receiving, and closure.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 p-5 pt-0">
-            <div className="space-y-3">
-              {[
-                {
-                  id: "create-orders",
-                  title: "Create supplier orders",
-                  description: "Open the purchase order and capture the basic supplier commitment.",
-                  complete: createStepReady,
-                  icon: ShoppingCart,
-                },
-                {
-                  id: "active-orders",
-                  title: "Add lines and issue",
-                  description: "Review active orders, add line items, then approve and issue to the supplier.",
-                  complete: issueStepReady,
-                  icon: Truck,
-                },
-                {
-                  id: "attention",
-                  title: "Receive and close",
-                  description: "Track what still needs attention until the order is fully received and completed.",
-                  complete: receiveStepReady,
-                  icon: PackageCheck,
-                },
-              ].map((step, index) => (
-                <a
-                  key={step.id}
-                  href={`#${step.id}`}
-                  className={`block rounded-2xl border p-4 transition-colors ${
-                    step.complete
-                      ? "border-green-200 bg-green-50"
-                      : nextStepId === step.id
-                        ? "border-blue-300 bg-blue-50"
-                        : "border-gray-200 bg-white hover:border-gray-300"
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div
-                      className={`mt-0.5 rounded-xl p-2 ${
-                        step.complete
-                          ? "bg-green-100 text-green-700"
-                          : nextStepId === step.id
-                            ? "bg-blue-100 text-blue-700"
-                            : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {step.complete ? <CheckCircle2 className="h-4 w-4" /> : <step.icon className="h-4 w-4" />}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">
-                        Step {index + 1}: {step.title}
-                      </p>
-                      <p className="mt-1 text-xs leading-5 text-gray-600">{step.description}</p>
-                    </div>
-                  </div>
-                </a>
-              ))}
-            </div>
-
-            {nextStepId ? (
-              <a
-                href={`#${nextStepId}`}
-                className="flex w-full items-center justify-between rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-              >
-                Continue the purchase flow
-                <ArrowRight className="h-4 w-4" />
-              </a>
-            ) : (
-              <div className="rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-800">
-                Purchase-order foundations are in place. Your team can now keep replenishment moving from order to receiving.
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="border-gray-200 shadow-sm">
-          <CardHeader className="p-5 text-left text-inherit">
-            <CardTitle className="text-base">Dependency notes</CardTitle>
-            <CardDescription className="text-sm leading-6 text-gray-600">
-              Keep the flow smooth by setting up supplier and team context before pushing orders out.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 p-5 pt-0 text-sm text-gray-600">
-            <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
-              <p className="font-medium text-gray-900">Suppliers first</p>
-              <p className="mt-1">Create supplier companies before opening purchase orders so the order can be issued cleanly.</p>
-            </div>
-            <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
-              <p className="font-medium text-gray-900">Order lines before approval</p>
-              <p className="mt-1">Approval should happen after quantity, price, and receiving expectations are already on the order.</p>
-            </div>
-            <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
-              <p className="font-medium text-gray-900">Receiving closes the loop</p>
-              <p className="mt-1">Stock only becomes operational after the issued order is received into a stock location.</p>
-            </div>
-          </CardContent>
-        </Card>
-      </aside> : null}
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 lg:px-8">
+      {isOwner ? (
+        <CollapsibleSetupGuide
+          eyebrow="Purchase orders"
+          title="Run replenishment from request to receiving"
+          description="Start supplier-backed orders, add the required lines, then move each order through approval, issue, receiving, and closure."
+          steps={setupGuideSteps}
+          nextStep={
+            nextStepId
+              ? { href: `#${nextStepId}`, label: "Continue the purchase flow" }
+              : null
+          }
+          completeMessage="Purchase-order foundations are in place. Your team can now keep replenishment moving from order to receiving."
+          notes={[
+            {
+              title: "Suppliers first",
+              description: "Create supplier companies before opening purchase orders so the order can be issued cleanly.",
+            },
+            {
+              title: "Order lines before approval",
+              description: "Approval should happen after quantity, price, and receiving expectations are already on the order.",
+            },
+            {
+              title: "Receiving closes the loop",
+              description: "Stock only becomes operational after the issued order is received into a stock location.",
+            },
+          ]}
+        />
+      ) : null}
 
       <main className="min-w-0 space-y-6">
         <StructuralLocationScopeSelect

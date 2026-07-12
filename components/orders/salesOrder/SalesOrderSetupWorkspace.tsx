@@ -5,7 +5,6 @@ import { useDeferredValue, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   ArrowRight,
-  CheckCircle2,
   ClipboardCheck,
   PackageCheck,
   ReceiptText,
@@ -15,6 +14,7 @@ import {
 } from "lucide-react"
 import { toast } from "react-toastify"
 import { WorkspaceSetupLoadingCard, useWorkspaceSetupProgress } from "@/components/onboarding/WorkspaceSetupShell"
+import CollapsibleSetupGuide from "@/components/setup/CollapsibleSetupGuide"
 import OperationalStepSection from "@/components/setup/OperationalStepSection"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -115,6 +115,29 @@ export default function SalesOrderSetupWorkspace() {
   const attentionOrders = salesOrders.filter((order) =>
     [SalesOrderStatus.pending, SalesOrderStatus.in_progress, SalesOrderStatus.shipped].includes(order.status as never),
   )
+  const setupGuideSteps = [
+    {
+      id: "create-orders",
+      title: "Create customer orders",
+      description: "Capture the commercial commitment and customer context.",
+      complete: createStepReady,
+      icon: ShoppingBag,
+    },
+    {
+      id: "active-orders",
+      title: "Reserve and prepare stock",
+      description: "Add the lines and assign inventory before fulfillment.",
+      complete: reserveStepReady,
+      icon: Users2,
+    },
+    {
+      id: "shipping",
+      title: "Ship and complete",
+      description: "Turn reservations into shipments and close the order cleanly.",
+      complete: shipStepReady,
+      icon: Truck,
+    },
+  ] as const
 
   const handleCreateOrder = async () => {
     if (!formState.customer) {
@@ -179,101 +202,31 @@ export default function SalesOrderSetupWorkspace() {
   }
 
   return (
-    <div className={isOwner ? "mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[310px_1fr] lg:px-8" : "mx-auto w-full max-w-7xl space-y-6 px-4 py-6 lg:px-8"}>
-      {isOwner ? <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-        <Card className="border-gray-200 shadow-sm">
-          <CardHeader className="p-5 text-left text-inherit">
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
-              <ReceiptText className="h-3.5 w-3.5" />
-              Sales orders
-            </div>
-            <CardTitle className="mt-3 text-xl">Move customer demand into reservation and shipment</CardTitle>
-            <CardDescription className="text-sm leading-6 text-gray-600">
-              Create the order, reserve stock, then ship and close from one workflow.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 p-5 pt-0">
-            {[
-              {
-                id: "create-orders",
-                title: "Create customer orders",
-                description: "Capture the commercial commitment and customer context.",
-                complete: createStepReady,
-                icon: ShoppingBag,
-              },
-              {
-                id: "active-orders",
-                title: "Reserve and prepare stock",
-                description: "Add the lines and assign inventory before fulfillment.",
-                complete: reserveStepReady,
-                icon: Users2,
-              },
-              {
-                id: "shipping",
-                title: "Ship and complete",
-                description: "Turn reservations into shipments and close the order cleanly.",
-                complete: shipStepReady,
-                icon: Truck,
-              },
-            ].map((step, index) => (
-              <a
-                key={step.id}
-                href={`#${step.id}`}
-                className={`block rounded-2xl border p-4 transition-colors ${
-                  step.complete
-                    ? "border-green-200 bg-green-50"
-                    : nextStepId === step.id
-                      ? "border-blue-300 bg-blue-50"
-                      : "border-gray-200 bg-white hover:border-gray-300"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div
-                    className={`mt-0.5 rounded-xl p-2 ${
-                      step.complete
-                        ? "bg-green-100 text-green-700"
-                        : nextStepId === step.id
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    {step.complete ? <CheckCircle2 className="h-4 w-4" /> : <step.icon className="h-4 w-4" />}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">
-                      Step {index + 1}: {step.title}
-                    </p>
-                    <p className="mt-1 text-xs leading-5 text-gray-600">{step.description}</p>
-                  </div>
-                </div>
-              </a>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card className="border-gray-200 shadow-sm">
-          <CardHeader className="p-5 text-left text-inherit">
-            <CardTitle className="text-base">Dependency notes</CardTitle>
-            <CardDescription className="text-sm leading-6 text-gray-600">
-              Sales orders work best after product and inventory setup are already stable.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 p-5 pt-0 text-sm text-gray-600">
-            <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
-              <p className="font-medium text-gray-900">Inventory-backed fulfillment</p>
-              <p className="mt-1">Reservation and shipment both depend on stock locations and inventory items already existing.</p>
-            </div>
-            <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
-              <p className="font-medium text-gray-900">Customers first</p>
-              <p className="mt-1">Create or sync customer companies before the commercial team starts building sales orders.</p>
-            </div>
-            <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
-              <p className="font-medium text-gray-900">Operational handoff</p>
-              <p className="mt-1">The workbench route is where stock reservation, shipment, and completion actually happen.</p>
-            </div>
-          </CardContent>
-        </Card>
-      </aside> : null}
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 lg:px-8">
+      {isOwner ? (
+        <CollapsibleSetupGuide
+          eyebrow="Sales orders"
+          title="Move customer demand into reservation and shipment"
+          description="Create the order, reserve stock, then ship and close from one workflow."
+          steps={setupGuideSteps}
+          nextStep={nextStepId ? { href: `#${nextStepId}`, label: "Continue sales workflow" } : null}
+          completeMessage="Sales-order foundations are in place. You can move demand through reservation, shipment, and completion."
+          notes={[
+            {
+              title: "Inventory-backed fulfillment",
+              description: "Reservation and shipment both depend on stock locations and inventory items already existing.",
+            },
+            {
+              title: "Customers first",
+              description: "Create or sync customer companies before the commercial team starts building sales orders.",
+            },
+            {
+              title: "Operational handoff",
+              description: "The workbench route is where stock reservation, shipment, and completion actually happen.",
+            },
+          ]}
+        />
+      ) : null}
 
       <main className="min-w-0 space-y-6">
         <Card className="border-gray-200 shadow-sm">
