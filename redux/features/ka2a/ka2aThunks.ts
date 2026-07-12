@@ -157,6 +157,7 @@ const selectInsightPayload = (
   const wantsBusiness = ["business", "analyst", "analysis", "analyze", "analyse", "entire system", "whole system", "owner review", "first analysis", "first review"].some(
     (term) => question.includes(term),
   );
+  const wantsLocation = ["location", "branch", "store", "warehouse", "outlet", "site"].some((term) => question.includes(term));
   const wantsComparison =
     ["comparison", "compare", "product comparison", "variant comparison"].some((term) => question.includes(term)) ||
     (["product", "variant"].some((term) => question.includes(term)) &&
@@ -166,6 +167,8 @@ const selectInsightPayload = (
 
   const terms = wantsBusiness
     ? ["business analyst review", "recommended owner actions", "revenue posture", "entire system"]
+    : wantsLocation
+      ? ["location contribution", "location revenue", "store revenue", "branch revenue", "location ranking"]
     : wantsComparison
       ? ["product comparison table", "product revenue ranking", "product units trend", "variant comparison"]
       : wantsProcurement
@@ -190,7 +193,7 @@ const selectInsightPayload = (
   if (scored[0]?.payload) {
     return scored[0].payload;
   }
-  if (wantsBusiness || wantsComparison || wantsProcurement || wantsStaff) {
+  if (wantsBusiness || wantsLocation || wantsComparison || wantsProcurement || wantsStaff) {
     return undefined;
   }
   return payloads[payloads.length - 1];
@@ -213,17 +216,30 @@ const pickFirst = (record: Record<string, unknown>, keys: string[]): unknown => 
       return record[key];
     }
   }
-  return `I have the previous analysis${suffix}, but that follow-up is not mapped yet. Ask about the leader, laggard, gap, trend, risk, or next action, and I will answer from the saved result.`;
+  return undefined;
 };
 
 const comparisonProductName = (row: Record<string, unknown>): string =>
   asString(pickFirst(row, ["product", "product_name", "productName", "label", "title", "name"]));
 
 const comparisonRevenue = (row: Record<string, unknown>): number =>
-  asNumber(pickFirst(row, ["sales_total", "salesTotal", "total_sales", "totalSales", "revenue", "sales", "value"]));
+  asNumber(
+    pickFirst(row, [
+      "sales_total",
+      "salesTotal",
+      "total_sales",
+      "totalSales",
+      "total_revenue",
+      "gross_sales",
+      "revenue",
+      "sales",
+      "amount",
+      "value",
+    ]),
+  );
 
 const comparisonUnits = (row: Record<string, unknown>): number =>
-  asNumber(pickFirst(row, ["quantity_sold", "quantitySold", "units_sold", "unitsSold", "quantity", "units"]));
+  asNumber(pickFirst(row, ["quantity_sold", "quantitySold", "units_sold", "unitsSold", "items_sold", "quantity", "units"]));
 
 const comparisonOrders = (row: Record<string, unknown>): number =>
   asNumber(pickFirst(row, ["order_count", "orderCount", "orders", "count"]));
@@ -458,28 +474,35 @@ const answerFromInsightPayload = (text: string, payload: AgentStructuredPayload)
     }
   }
 
-  if (/(which|what).*(location).*led|top location|best location|leading location|location led|far behind|lagging|lowest revenue|least revenue|underperforming/.test(question)) {
+  if (
+    /(which|what).*(location).*led|top location|best location|leading location|location led|far behind|lagging|lowest revenue|least revenue|underperforming|branch|store|warehouse|outlet/.test(
+      question,
+    )
+  ) {
     const widget = findWidgetByTitle(payload, "location");
     const rows = asArray(widget?.rows).map(asRecord).filter(Boolean) as Record<string, unknown>[];
     const fallbackRows = rows.length ? rows : (asArray(widget?.data).map(asRecord).filter(Boolean) as Record<string, unknown>[]);
     const analysisRows = fallbackRows;
     const best = analysisRows.reduce<Record<string, unknown> | undefined>((winner, row) => {
-      const rowValue = asNumber(row.sales ?? row.value ?? row.total_sales);
-      const winnerValue = winner ? asNumber(winner.sales ?? winner.value ?? winner.total_sales) : -Infinity;
+      const rowValue = asNumber(row.sales ?? row.value ?? row.total_sales ?? row.revenue ?? row.amount ?? row.total_revenue);
+      const winnerValue = winner ? asNumber(winner.sales ?? winner.value ?? winner.total_sales ?? winner.revenue ?? winner.amount ?? winner.total_revenue) : -Infinity;
       return rowValue > winnerValue ? row : winner;
     }, undefined);
     if (best) {
       const worst = analysisRows.reduce<Record<string, unknown> | undefined>((loser, row) => {
-        const rowValue = asNumber(row.sales ?? row.value ?? row.total_sales);
-        const loserValue = loser ? asNumber(loser.sales ?? loser.value ?? loser.total_sales) : Infinity;
+        const rowValue = asNumber(row.sales ?? row.value ?? row.total_sales ?? row.revenue ?? row.amount ?? row.total_revenue);
+        const loserValue = loser ? asNumber(loser.sales ?? loser.value ?? loser.total_sales ?? loser.revenue ?? loser.amount ?? loser.total_revenue) : Infinity;
         return rowValue < loserValue ? row : loser;
       }, undefined);
-      const bestSales = asNumber(best.sales ?? best.value ?? best.total_sales);
-      const bestOrders = asNumber(best.orders ?? best.count ?? best.order_count);
-      const totalSales = analysisRows.reduce((sum, row) => sum + asNumber(row.sales ?? row.value ?? row.total_sales), 0);
+      const bestSales = asNumber(best.sales ?? best.value ?? best.total_sales ?? best.revenue ?? best.amount ?? best.total_revenue);
+      const bestOrders = asNumber(best.orders ?? best.count ?? best.order_count ?? best.orderCount ?? best.transaction_count);
+      const totalSales = analysisRows.reduce(
+        (sum, row) => sum + asNumber(row.sales ?? row.value ?? row.total_sales ?? row.revenue ?? row.amount ?? row.total_revenue),
+        0,
+      );
       const orderLeader = analysisRows.reduce<Record<string, unknown> | undefined>((winner, row) => {
-        const rowOrders = asNumber(row.orders ?? row.count ?? row.order_count);
-        const winnerOrders = winner ? asNumber(winner.orders ?? winner.count ?? winner.order_count) : -Infinity;
+        const rowOrders = asNumber(row.orders ?? row.count ?? row.order_count ?? row.orderCount ?? row.transaction_count);
+        const winnerOrders = winner ? asNumber(winner.orders ?? winner.count ?? winner.order_count ?? winner.orderCount ?? winner.transaction_count) : -Infinity;
         return rowOrders > winnerOrders ? row : winner;
       }, undefined);
       const share = totalSales > 0 ? `, representing ${((bestSales / totalSales) * 100).toFixed(1)}% of location revenue` : "";
@@ -522,10 +545,16 @@ const answerFromInsightPayload = (text: string, payload: AgentStructuredPayload)
 
   if (/top product|which product|products drove|best seller|top seller/.test(question)) {
     const widget = findWidgetByTitle(payload, "top", "product") || findWidgetByTitle(payload, "top", "seller");
-    const items = asArray(widget?.items).map(asRecord).filter(Boolean).slice(0, 5) as Record<string, unknown>[];
+    const items = (
+      asArray(widget?.items).map(asRecord).filter(Boolean) as Record<string, unknown>[]
+    ).concat(findComparisonRows(payload));
     if (items.length) {
       return `From the last analysis, the top products were:\n${items
-        .map((item, index) => `${index + 1}. ${asString(item.label) || asString(item.title)}${item.value !== undefined ? `: ${formatMoney(item.value, currencyCode)}` : ""}${asString(item.detail) ? ` (${asString(item.detail)})` : ""}`)
+        .slice(0, 5)
+        .map(
+          (item, index) =>
+            `${index + 1}. ${asString(item.label) || asString(item.title) || asString(item.product) || asString(item.product_name) || asString(item.variant_name)}${item.value !== undefined || item.sales_total !== undefined || item.total_sales !== undefined || item.revenue !== undefined || item.amount !== undefined ? `: ${formatMoney(item.value ?? item.sales_total ?? item.total_sales ?? item.revenue ?? item.amount, currencyCode)}` : ""}${asString(item.detail) || asString(item.variant_name) || asString(item.barcode) || asString(item.barcode_snapshot) ? ` (${asString(item.detail) || asString(item.variant_name) || asString(item.barcode) || asString(item.barcode_snapshot)})` : ""}`,
+        )
         .join("\n")}`;
     }
   }
