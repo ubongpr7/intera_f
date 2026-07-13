@@ -53,6 +53,8 @@ export default function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextUrl = searchParams.get('next')?.trim();
+  const lockedEmail = searchParams.get("email")?.trim() || "";
+  const isEmailLocked = searchParams.get("locked") === "1" && Boolean(lockedEmail);
   const [password, setPassword] = useState('');
   const [showPassWord,setShowPassword]=useState(false)
   const [isSocialLoading, setIsSocialLoading] = useState(false);
@@ -61,7 +63,11 @@ export default function RegisterForm() {
     handleSubmit, 
     watch, 
     formState: { errors } 
-  } = useForm<RegisterFormInputs>();
+  } = useForm<RegisterFormInputs>({
+    defaultValues: {
+      email: lockedEmail,
+    },
+  });
 
   const onSubmit: SubmitHandler<RegisterFormInputs> = async (formData) => {
     try {
@@ -142,9 +148,15 @@ export default function RegisterForm() {
           })}
           type="email"
           placeholder="john@example.com"
+          readOnly={isEmailLocked}
           className={`mt-1 block w-full rounded-md border border-gray-300 px-3 bg-gray-50 py-2 shadow-sm 
             focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm`}
         />
+        {isEmailLocked ? (
+          <p className="mt-1 text-xs text-gray-500">
+            This invitation email is not registered yet. Create the account with this email to continue.
+          </p>
+        ) : null}
         {errors.email && (
           <p className="mt-1 text-sm text-red-600">
             {errors.email.message}

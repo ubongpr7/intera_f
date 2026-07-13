@@ -85,7 +85,7 @@ const ProductVariantManager = ({ productId, ProductData }: ProductVariantManager
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
   const { data: products = [] } = useGetProductDataQuery()
   const workspaceVariantCount = products.reduce((total, product) => total + Number(product.variant_count ?? 0), 0)
-  const variantQuota = useSubscriptionQuota("product-variants", workspaceVariantCount)
+  const variantQuota = useSubscriptionQuota("product-variants", workspaceVariantCount, 1, { requireBillingAuthorization: true })
 
   const {
     data: variants,

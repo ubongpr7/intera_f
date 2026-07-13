@@ -21,17 +21,10 @@ import { toast } from "react-toastify"
 import MessageContent from "@/components/message-content"
 import ConfirmationDialog from "@/components/confirmation-dialog"
 import InsightWidgetRenderer from "@/components/agents/insight-widget-renderer"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { humanizeAgentDisplayName } from "@/lib/agent-display"
 import {
   buildChatPdfBlob,
+  buildChatCsv,
   buildInsightCsv,
   buildInsightExportFilename,
   buildInsightPdfBlob,
@@ -61,7 +54,7 @@ import {
   BulkActionSelectorHandler,
   MarketplaceResultsHandler,
 } from "@/components/advanced-interaction-handlers"
-import { ConditionalFormHandler } from "../user-agents-interaction/conditional-form" 
+import { ConditionalFormHandler } from "../user-agents-interaction/conditional-form"
 import {
   DashboardBuilderHandler,
   MasterDetailTableHandler,
@@ -106,6 +99,7 @@ interface AgentChatProps {
 }
 
 type ExportDownloadState = {
+  source?: "conversation" | "insight"
   title: string
   filename?: string
   href?: string
@@ -580,11 +574,22 @@ export default function AgentChat({
       return
     }
     showExportDownload({
+      source: "insight",
       title: resolveInsightExportTitle(payload),
       kind: "pdf",
       status: "choosing",
       description: "Choose a download format for this insight.",
       payload,
+    })
+  }
+
+  const openConversationExportChooser = () => {
+    showExportDownload({
+      source: "conversation",
+      title: "Intera AI Chat Export",
+      kind: "pdf",
+      status: "choosing",
+      description: "Choose a download format for this conversation.",
     })
   }
 
@@ -599,6 +604,7 @@ export default function AgentChat({
       const blob = new Blob([buildInsightCsv(payload)], { type: "text/csv;charset=utf-8" })
       const href = URL.createObjectURL(blob)
       showExportDownload({
+        source: "insight",
         title,
         filename,
         href,
@@ -630,6 +636,7 @@ export default function AgentChat({
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" })
       const href = URL.createObjectURL(blob)
       showExportDownload({
+        source: "insight",
         title,
         filename,
         href,
@@ -654,6 +661,7 @@ export default function AgentChat({
     const title = resolveInsightExportTitle(payload)
     const filename = `${buildInsightExportFilename(title, "report")}.pdf`
     showExportDownload({
+      source: "insight",
       title,
       filename,
       kind: "pdf",
@@ -666,6 +674,7 @@ export default function AgentChat({
       const blob = await buildInsightPdfBlob(payload, title)
       const href = URL.createObjectURL(blob)
       showExportDownload({
+        source: "insight",
         title,
         filename,
         href,
@@ -690,6 +699,7 @@ export default function AgentChat({
     const title = "Intera AI Chat Export"
     const filename = "intera-ai-chat-export.pdf"
     showExportDownload({
+      source: "conversation",
       title,
       filename,
       kind: "pdf",
@@ -701,6 +711,7 @@ export default function AgentChat({
       const blob = await buildChatPdfBlob(messages, title)
       const href = URL.createObjectURL(blob)
       showExportDownload({
+        source: "conversation",
         title,
         filename,
         href,
@@ -713,6 +724,74 @@ export default function AgentChat({
     } catch (error) {
       void error
       toast.error("Unable to export chat PDF.")
+    }
+  }
+
+  const handleExportChatCsv = async () => {
+    const filename = "intera-ai-chat-export.csv"
+    try {
+      showExportDownload({
+        source: "conversation",
+        title: "Intera AI Chat Export",
+        filename,
+        kind: "csv",
+        status: "preparing",
+        description: "Preparing your chat CSV export...",
+      })
+      await yieldToBrowser()
+      const csv = buildChatCsv(messages)
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" })
+      const href = URL.createObjectURL(blob)
+      showExportDownload({
+        source: "conversation",
+        title: "Intera AI Chat Export",
+        filename,
+        href,
+        kind: "csv",
+        status: "ready",
+        description: "Your chat CSV download has started.",
+      })
+      triggerExportDownload(href, filename)
+      toast.success("Chat CSV download started.")
+    } catch (error) {
+      void error
+      toast.error("Unable to export chat CSV.")
+    }
+  }
+
+  const handleExportChatJson = async () => {
+    const filename = "intera-ai-chat-export.json"
+    try {
+      showExportDownload({
+        source: "conversation",
+        title: "Intera AI Chat Export",
+        filename,
+        kind: "json",
+        status: "preparing",
+        description: "Preparing your chat JSON export...",
+      })
+      await yieldToBrowser()
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        title: "Intera AI Chat Export",
+        messages,
+      }
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" })
+      const href = URL.createObjectURL(blob)
+      showExportDownload({
+        source: "conversation",
+        title: "Intera AI Chat Export",
+        filename,
+        href,
+        kind: "json",
+        status: "ready",
+        description: "Your chat JSON download has started.",
+      })
+      triggerExportDownload(href, filename)
+      toast.success("Chat JSON download started.")
+    } catch (error) {
+      void error
+      toast.error("Unable to export chat JSON.")
     }
   }
 
@@ -900,61 +979,19 @@ export default function AgentChat({
 
           {showWindowControls ? (
             <div className="flex items-center gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className="p-1 rounded-full hover:bg-white/20 transition-colors shrink-0"
-                    aria-label="Open export menu"
-                    title="Export"
-                  >
-                    <Download className="h-5 w-5 text-white" strokeWidth={2.2} />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>Export</DropdownMenuLabel>
-                  <DropdownMenuItem
-                    onSelect={() => {
-                      onDownloadConversation?.()
-                      onActivity?.()
-                    }}
-                    disabled={!onDownloadConversation}
-                  >
-                    Conversation JSON
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onSelect={() => {
-                      void handleExportChatPdf()
-                      onActivity?.()
-                    }}
-                  >
-                    Chat PDF
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onSelect={() => {
-                      if (latestInsightMessage) {
-                        handleExportInsightCsv(latestInsightMessage)
-                        onActivity?.()
-                      }
-                    }}
-                    disabled={!latestInsightMessage}
-                  >
-                    Latest insight CSV
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onSelect={() => {
-                      if (latestInsightMessage) {
-                        void handleExportInsightPdf(latestInsightMessage)
-                        onActivity?.()
-                      }
-                    }}
-                    disabled={!latestInsightMessage}
-                  >
-                    Latest insight PDF
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <button
+                type="button"
+                data-ai-chat-export-trigger="true"
+                className="p-1 rounded-full hover:bg-white/20 transition-colors shrink-0"
+                aria-label="Open export options"
+                title="Export"
+                onClick={() => {
+                  openConversationExportChooser()
+                  onActivity?.()
+                }}
+              >
+                <Download className="h-5 w-5 text-white" strokeWidth={2.2} />
+              </button>
               <button
                 type="button"
                 onClick={() => {
@@ -1375,7 +1412,12 @@ export default function AgentChat({
       </form>
 
       {exportDownload && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-gray-950/45 px-4 backdrop-blur-sm">
+        <div
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-gray-950/45 px-4 backdrop-blur-sm"
+          data-ai-chat-export-panel="true"
+          onMouseDown={(event) => event.stopPropagation()}
+          onClick={(event) => event.stopPropagation()}
+        >
           <div className="w-full max-w-md rounded-3xl border border-gray-200 bg-white p-6 text-gray-900 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -1407,7 +1449,11 @@ export default function AgentChat({
               <div className="mt-5 grid gap-3">
                 <button
                   type="button"
-                  onClick={() => void handleExportInsightPdfPayload(exportDownload.payload)}
+                  onClick={() =>
+                    exportDownload.source === "conversation"
+                      ? void handleExportChatPdf()
+                      : void handleExportInsightPdfPayload(exportDownload.payload)
+                  }
                   className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3 text-left transition hover:bg-gray-50"
                 >
                   <span>
@@ -1418,7 +1464,11 @@ export default function AgentChat({
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleExportInsightCsvPayload(exportDownload.payload)}
+                  onClick={() =>
+                    exportDownload.source === "conversation"
+                      ? void handleExportChatCsv()
+                      : handleExportInsightCsvPayload(exportDownload.payload)
+                  }
                   className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3 text-left transition hover:bg-gray-50"
                 >
                   <span>
@@ -1429,7 +1479,11 @@ export default function AgentChat({
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleExportInsightJsonPayload(exportDownload.payload)}
+                  onClick={() =>
+                    exportDownload.source === "conversation"
+                      ? void handleExportChatJson()
+                      : handleExportInsightJsonPayload(exportDownload.payload)
+                  }
                   className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3 text-left transition hover:bg-gray-50"
                 >
                   <span>
@@ -1463,10 +1517,14 @@ export default function AgentChat({
                     Open
                   </a>
                 </div>
-                {exportDownload.payload ? (
+                {exportDownload.source === "conversation" || exportDownload.payload ? (
                   <button
                     type="button"
-                    onClick={() => openInsightExportChooser(exportDownload.payload)}
+                    onClick={() =>
+                      exportDownload.source === "conversation"
+                        ? openConversationExportChooser()
+                        : openInsightExportChooser(exportDownload.payload)
+                    }
                     className="mt-3 w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
                   >
                     Choose another format

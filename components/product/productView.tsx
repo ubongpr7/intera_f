@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react';
+import Link from "next/link";
 
 import { useRouter } from 'nextjs-toploader/app';
 import { Column, DataTable,ActionButton, GeneralButton } from "../common/DataTable/DataTable";
@@ -87,11 +88,17 @@ function ProductView() {
   const [isCreateOpen, setIsCreateOpen] = useState(false); // Renamed for clarity
   const router = useRouter();
   const [isAIBulkCreateOpen, setIsAIBulkCreateOpen] = useState(false);
-  const productQuota = useSubscriptionQuota("products", data?.length ?? 0);
+  const productQuota = useSubscriptionQuota("products", data?.length ?? 0, 1, { requireBillingAuthorization: true });
+  const productCatalogLocked = !productQuota.canCreate;
+
+  const goToSubscription = () => {
+    router.push("/subscription")
+  }
 
   const handleCreate = async (createdData: Partial<ProductData>) => {
     if (!productQuota.canCreate) {
       toast.error(productQuota.message);
+      goToSubscription();
       return;
     }
     await createProduct(createdData).unwrap();
@@ -180,6 +187,7 @@ function ProductView() {
   const handleDuplicate = async (product: ProductData) => {
     if (!productQuota.canCreate) {
       toast.error(productQuota.message)
+      goToSubscription()
       return
     }
     const duplicateData: Partial<ProductData> = {}
@@ -319,6 +327,24 @@ const actionButtons: ActionButton<ProductData>[] = [
 
   return (
     <div className="space-y-4">
+      {productCatalogLocked ? (
+        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-900 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="font-semibold">Product creation is locked until billing is authorized.</p>
+              <p className="mt-1">
+                Choose a plan and connect the workspace card before creating, duplicating, or bulk importing products.
+              </p>
+            </div>
+            <Link
+              href="/subscription"
+              className="inline-flex items-center rounded-full border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100"
+            >
+              Open subscription
+            </Link>
+          </div>
+        </div>
+      ) : null}
       <BulkTaskPanel
         tasks={bulkTasks}
         isFetching={isFetchingBulkTasks}
@@ -329,7 +355,11 @@ const actionButtons: ActionButton<ProductData>[] = [
         onResearchPrices={handleResearchBulkTaskPrices}
         onOpenReport={openReport}
         onNewUpload={() => {
-          if (!productQuota.canCreate) return toast.error(productQuota.message)
+          if (!productQuota.canCreate) {
+            toast.error(productQuota.message)
+            goToSubscription()
+            return
+          }
           setIsAIBulkCreateOpen(true)
         }}
       />
@@ -341,7 +371,11 @@ const actionButtons: ActionButton<ProductData>[] = [
         secondaryButton={{
           label: 'Create Bulk Product',
           onClick: () => {
-            if (!productQuota.canCreate) return toast.error(productQuota.message)
+            if (!productQuota.canCreate) {
+              toast.error(productQuota.message)
+              goToSubscription()
+              return
+            }
             setIsAIBulkCreateOpen(true)
           },
 
@@ -365,7 +399,11 @@ const actionButtons: ActionButton<ProductData>[] = [
         getRowId={(row) => row.id}
         title="Products"
         onClose={() => {
-          if (!productQuota.canCreate) return toast.error(productQuota.message)
+          if (!productQuota.canCreate) {
+            toast.error(productQuota.message)
+            goToSubscription()
+            return
+          }
           setIsCreateOpen(true)
         }}
       />

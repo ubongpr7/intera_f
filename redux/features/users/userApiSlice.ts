@@ -7,6 +7,7 @@ import type {
   CompanyInvitation,
   CompanyInvitationAcceptResponse,
   CompanyInvitationAcceptPayload,
+  CompanyInvitationLookupResponse,
   InviteCompanyBulkPayload,
   InviteCompanyPayload,
 } from "../management/companyProfileTypes";
@@ -266,6 +267,14 @@ export const userApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
+    resolveInvitation: builder.query<CompanyInvitationLookupResponse, string>({
+      query: (invitationCode) => ({
+        url: `/${managementApi}/invitations/resolve/`,
+        params: { invitation_code: invitationCode },
+        service,
+      }),
+    }),
+
     resendInvitation: builder.mutation<CompanyInvitation, string>({
       query: (invitationId) => ({
         url: `/${managementApi}/invitations/${invitationId}/resend/`,
@@ -338,6 +347,7 @@ export const {
   useGetCompanyUsersQuery,
   useGetPendingInvitationsQuery,
   useGetMyInvitationsQuery,
+  useResolveInvitationQuery,
   useResendInvitationMutation,
   useRevokeInvitationMutation,
   useAcceptInvitationMutation,

@@ -7,6 +7,7 @@ import { toast } from "react-toastify"
 import AgentChat from "./agent-chat"
 import { humanizeAgentDisplayName } from "@/lib/agent-display"
 import { deriveWorkflowSummary } from "@/lib/agent-structured-output"
+import { downloadJsonFile } from "@/lib/agent-export"
 import { clearSession, createSessionWithConfig, type ChatMessage } from "@/redux/features/ka2a/ka2aSlice"
 import { sendStreamMessage } from "@/redux/features/ka2a/ka2aThunks"
 import { useAppDispatch, useAppSelector } from "@/redux/store"
@@ -107,10 +108,17 @@ export default function AIChatWidget() {
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
+      const portalSelector = [
+        '[data-radix-menu-content]',
+        '[data-radix-popper-content-wrapper]',
+        '[role="menu"]',
+        '[data-ai-chat-export-menu]',
+        '[data-ai-chat-export-panel]',
+      ].join(", ")
+      const eventPath = typeof e.composedPath === "function" ? e.composedPath() : []
+      const isPortalMenuClick = eventPath.some((node) => node instanceof Element && node.matches(portalSelector))
       const target = e.target as Element | null
-      const isPortalMenuClick = Boolean(
-        target?.closest('[data-radix-menu-content], [data-radix-popper-content-wrapper], [role="menu"]'),
-      )
+      const isInsideProtectedSurface = Boolean(target?.closest(portalSelector))
       if (
         isOpen &&
         !isFullScreen &&
@@ -118,6 +126,7 @@ export default function AIChatWidget() {
         !widgetRef.current.contains(e.target as Node) &&
         toggleBtnRef.current &&
         !toggleBtnRef.current.contains(e.target as Node) &&
+        !isInsideProtectedSurface &&
         !isPortalMenuClick
       ) {
         setIsOpen(false)
@@ -204,15 +213,7 @@ export default function AIChatWidget() {
         runs: session.runs,
         eventLog: session.eventLog,
       }
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" })
-      const url = URL.createObjectURL(blob)
-      const anchor = document.createElement("a")
-      anchor.href = url
-      anchor.download = `ai-widget-conversation-${session.sessionId}.json`
-      document.body.appendChild(anchor)
-      anchor.click()
-      document.body.removeChild(anchor)
-      URL.revokeObjectURL(url)
+      downloadJsonFile(payload, `ai-widget-conversation-${session.sessionId}.json`)
       toast.success("Conversation JSON downloaded.")
     } catch (error) {
       void error

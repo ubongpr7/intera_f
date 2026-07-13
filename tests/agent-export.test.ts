@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 
 import {
+  buildChatCsv,
   buildChatPdfBlob,
   buildChatReportBodyHtml,
   buildInsightCsv,
@@ -173,6 +174,32 @@ test("buildChatReportBodyHtml renders both plain messages and structured insight
   assert.match(html, /Sales analysis for last month/)
   assert.match(html, /Order milestones/)
   assert.match(html, /Promotion launch/)
+})
+
+test("buildChatCsv includes message metadata without developer-only fields", () => {
+  const csv = buildChatCsv([
+    {
+      id: "1",
+      role: "user",
+      content: "Show sales by location today.",
+      timestamp: "2026-07-10T12:00:00.000Z",
+    },
+    {
+      id: "2",
+      role: "assistant",
+      content: "Here is the analysis.",
+      structuredPayload: {
+        kind: "insight_response",
+        summary: "Sales analysis",
+        widgets: [],
+      },
+    },
+  ])
+
+  assert.match(csv, /message_id,role,timestamp,content,has_structured_payload,structured_summary/)
+  assert.match(csv, /Here is the analysis\./)
+  assert.match(csv, /Sales analysis/)
+  assert.doesNotMatch(csv, /row_type|widget_type/)
 })
 
 test("buildInsightPdfBlob renders a real PDF with react-pdf renderer", async () => {

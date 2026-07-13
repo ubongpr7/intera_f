@@ -13,6 +13,14 @@ export type ExportChatMessage = {
 }
 
 export type ExportRow = Record<string, string | number | boolean | null>
+export type ChatCsvRow = {
+  message_id: string
+  role: string
+  timestamp: string
+  content: string
+  has_structured_payload: boolean
+  structured_summary: string
+}
 
 const asRecord = (value: unknown): Record<string, unknown> | undefined => {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -71,6 +79,71 @@ const getExportCurrencyCode = () => {
   return decodeURIComponent(match?.[1] || "NGN").trim().toUpperCase() || "NGN"
 }
 
+const resolveExportImageUrl = (value?: string | null) => {
+  if (!value) {
+    return ""
+  }
+  if (/^(https?:)?\/\//i.test(value) || value.startsWith("data:") || value.startsWith("blob:")) {
+    return value
+  }
+  if (value.startsWith("/")) {
+    const backendHost = (process.env.NEXT_PUBLIC_BACKEND_HOST_URL ?? "").replace(/\/+$/, "")
+    return backendHost ? `${backendHost}${value}` : value
+  }
+  const backendHost = (process.env.NEXT_PUBLIC_BACKEND_HOST_URL ?? "").replace(/\/+$/, "")
+  return backendHost ? `${backendHost}/${value}` : `/${value}`
+}
+
+const blobToDataUrl = (blob: Blob) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "")
+    reader.onerror = () => reject(new Error("Unable to read image blob."))
+    reader.readAsDataURL(blob)
+  })
+
+const resolveExportImageDataUrl = async (value?: string | null) => {
+  const url = resolveExportImageUrl(value)
+  if (!url) {
+    return ""
+  }
+  if (url.startsWith("data:") || url.startsWith("blob:")) {
+    return url
+  }
+  try {
+    const response = await fetch(url, {
+      credentials: "include",
+      cache: "force-cache",
+    })
+    if (!response.ok) {
+      return url
+    }
+    const blob = await response.blob()
+    return await blobToDataUrl(blob)
+  } catch {
+    return url
+  }
+}
+
+const hydrateExportImages = async (value: unknown): Promise<unknown> => {
+  if (Array.isArray(value)) {
+    return Promise.all(value.map((item) => hydrateExportImages(item)))
+  }
+  if (!value || typeof value !== "object") {
+    return value
+  }
+  const record = value as Record<string, unknown>
+  const hydratedEntries = await Promise.all(
+    Object.entries(record).map(async ([key, entry]) => {
+      if ((key === "image_url" || key === "display_image" || key === "product_variant_image_url") && typeof entry === "string") {
+        return [key, await resolveExportImageDataUrl(entry)] as const
+      }
+      return [key, await hydrateExportImages(entry)] as const
+    }),
+  )
+  return Object.fromEntries(hydratedEntries)
+}
+
 const formatExportCurrency = (amount: number) => {
   const currencyCode = getExportCurrencyCode()
   const config = EXPORT_CURRENCY_CONFIG[currencyCode] || { symbol: `${currencyCode} `, decimals: 2, locale: "en-US" }
@@ -97,6 +170,26 @@ const formatMoneyInText = (value: string) => {
 }
 
 const exportText = (value: unknown) => formatMoneyInText(printText(value))
+
+const escapeCsvCell = (value: unknown) => {
+  const text = printText(value)
+  if (!/[",\n\r]/.test(text)) {
+    return text
+  }
+  return `"${text.replace(/"/g, '""')}"`
+}
+
+const csvRowsToText = <T extends Record<string, string | number | boolean | null | undefined>>(rows: T[]) => {
+  if (!rows.length) {
+    return ""
+  }
+  const header = Object.keys(rows[0])
+  const lines = [header.map((cell) => escapeCsvCell(cell)).join(",")]
+  rows.forEach((row) => {
+    lines.push(header.map((key) => escapeCsvCell(row[key])).join(","))
+  })
+  return lines.join("\n")
+}
 
 const humanizeKey = (value: unknown) =>
   printText(value)
@@ -255,6 +348,9 @@ const widgetRows = (widget: Record<string, unknown>): ExportRow[] => {
         columns.forEach((column) => {
           output[column.label] = row?.[column.key] === undefined ? null : (row[column.key] as string | number | boolean | null)
         })
+        output.image_url = asString(row?.image_url || row?.display_image || row?.product_variant_image_url) || null
+        output.label = asString(row?.label || row?.title || row?.name) || null
+        output.detail = asString(row?.detail || row?.subtitle) || null
         return output
       })
   }
@@ -297,7 +393,7 @@ const widgetRows = (widget: Record<string, unknown>): ExportRow[] => {
         title: asString(entity.title) || asString(entity.name) || null,
         subtitle: asString(entity.subtitle) || null,
         kind: asString(entity.kind) || null,
-        image_url: asString(entity.image_url) || null,
+        image_url: resolveExportImageUrl(asString(entity.image_url)) || null,
         meta: asArray(entity.meta).map((meta) => printText(meta)).join(" | ") || null,
       },
     ]
@@ -435,6 +531,23 @@ export const buildInsightCsv = (payload: ExportStructuredPayload): string => {
   return XLSX.utils.sheet_to_csv(sheet)
 }
 
+export const buildChatCsvRows = (messages: ExportChatMessage[]): ChatCsvRow[] =>
+  messages.map((message) => ({
+    message_id: message.id,
+    role: message.role,
+    timestamp: message.timestamp || "",
+    content: message.content || "",
+    has_structured_payload: Boolean(message.structuredPayload),
+    structured_summary: message.structuredPayload
+      ? asString(message.structuredPayload.summary) ||
+        asString(message.structuredPayload.title) ||
+        asString(message.structuredPayload.kind) ||
+        JSON.stringify(message.structuredPayload).slice(0, 500)
+      : "",
+  }))
+
+export const buildChatCsv = (messages: ExportChatMessage[]): string => csvRowsToText(buildChatCsvRows(messages))
+
 const renderTable = (columns: string[], rows: ExportRow[]) => `
   <div class="table-wrap">
     <table>
@@ -466,7 +579,7 @@ const renderRankedListHtml = (widget: Record<string, unknown>) => {
       ${items
         .map((item, index) => {
           const label = asString(item?.label) || asString(item?.title) || `Item ${index + 1}`
-          const imageUrl = asString(item?.image_url)
+          const imageUrl = resolveExportImageUrl(asString(item?.image_url))
           const barcode = asString(item?.barcode || asRecord(item?.meta)?.barcode)
           return `
             <div class="ranked-item">
@@ -489,13 +602,47 @@ const renderRankedListHtml = (widget: Record<string, unknown>) => {
   `
 }
 
+const renderProductCardRowsHtml = (rows: ExportRow[]) => {
+  const imageRows = rows.filter((row) => asString(row.image_url))
+  if (!imageRows.length) {
+    return ""
+  }
+  return `
+    <div class="ranked-list">
+      ${imageRows
+        .map((row) => {
+          const label = asString(row.label) || asString(row.widget_title) || "Product"
+          const imageUrl = asString(row.image_url)
+          const barcode = asString(row.barcode)
+          const detail = asString(row.detail)
+          return `
+            <div class="ranked-item">
+              ${imageUrl ? `<img class="ranked-image" src="${escapeHtml(imageUrl)}" alt="${escapeHtml(label)}" />` : ""}
+              <div class="ranked-main">
+                <strong>${escapeHtml(label)}</strong>
+                ${detail ? `<span>${escapeHtml(detail)}</span>` : ""}
+                ${barcode ? `<span class="barcode">Barcode: ${escapeHtml(barcode)}</span>` : ""}
+              </div>
+            </div>
+          `
+        })
+        .join("")}
+    </div>
+  `
+}
+
 const renderInsightWidgetHtml = (widget: Record<string, unknown>) => {
   const rows = widgetRows(widget)
   const type = asString(widget.type) || "widget"
   const title = asString(widget.title) || type.replace(/_/g, " ")
   const subtitle = asString(widget.subtitle)
   const columns = userFacingColumnsFromRows(rows)
-  const body = type === "ranked_list" ? renderRankedListHtml(widget) : renderTable(columns, rows)
+  const body =
+    type === "ranked_list"
+      ? renderRankedListHtml(widget)
+      : type === "comparison_table" && rows.some((row) => asString(row.image_url))
+        ? `${renderProductCardRowsHtml(rows)}${renderTable(columns, rows)}`
+        : renderTable(columns, rows)
   return `
     <section class="card">
       <div class="section-head">
@@ -909,11 +1056,15 @@ const createReactPdfBlob = async (
     await import("@react-pdf/renderer")
   const h = React.createElement
   const chartPalette = ["#0f766e", "#1d4ed8", "#ca8a04", "#c2410c", "#9333ea", "#be185d"]
+  const hydratedBody =
+    mode === "insight"
+      ? ((await hydrateExportImages(body)) as ExportStructuredPayload)
+      : ((await hydrateExportImages(body)) as ExportChatMessage[])
   const reportTimeframe =
     mode === "insight"
-      ? resolvePayloadTimeframe(body as ExportStructuredPayload)
+      ? resolvePayloadTimeframe(hydratedBody as ExportStructuredPayload)
       : resolvePayloadTimeframe(
-          (body as ExportChatMessage[]).find((message) => isInsightPayload(message.structuredPayload))?.structuredPayload,
+          (hydratedBody as ExportChatMessage[]).find((message) => isInsightPayload(message.structuredPayload))?.structuredPayload,
         )
 
   const styles = StyleSheet.create({
@@ -1490,7 +1641,7 @@ const createReactPdfBlob = async (
 
   const renderPdfProductImage = (item: Record<string, unknown>) => {
     const label = asString(item.label) || asString(item.title) || "Product"
-    const imageUrl = asString(item.image_url)
+    const imageUrl = resolveExportImageUrl(asString(item.image_url))
     if (imageUrl && !imageUrl.startsWith("data:image/svg+xml")) {
       return h(Image, { src: imageUrl, style: styles.productImage })
     }
@@ -1498,6 +1649,44 @@ const createReactPdfBlob = async (
       View,
       { style: styles.productImageFallback },
       h(Text, { style: styles.productImageText }, productInitials(label)),
+    )
+  }
+
+  const renderPdfComparisonProductCards = (widget: Record<string, unknown>) => {
+    const rows = asArray(widget.rows).map((item) => asRecord(item)).filter(Boolean).slice(0, 12)
+    const imageRows = rows.filter((item) => {
+      const imageUrl = resolveExportImageUrl(asString(item?.image_url || item?.display_image || item?.product_variant_image_url))
+      return Boolean(imageUrl)
+    })
+    if (!imageRows.length) {
+      return null
+    }
+    return h(
+      View,
+      { style: { marginTop: 6 } },
+      ...imageRows.map((item, index) => {
+        const label = asString(item?.label) || asString(item?.title) || asString(item?.name) || `Item ${index + 1}`
+        const barcode = asString(item?.barcode || asRecord(item?.meta)?.barcode)
+        const imageUrl = resolveExportImageUrl(asString(item?.image_url || item?.display_image || item?.product_variant_image_url))
+        return h(
+          View,
+          { key: `comparison-product-${index}`, style: styles.rankedItem, wrap: false },
+          h(Text, { style: styles.rankBadge }, String(index + 1)),
+          imageUrl ? h(Image, { src: imageUrl, style: styles.productImage }) : renderPdfProductImage(item),
+          h(
+            View,
+            { style: styles.rankedMain },
+            h(Text, { style: { fontSize: 10, fontWeight: 700, lineHeight: 1.25 } }, label),
+            asString(item?.detail || item?.subtitle) ? h(Text, { style: styles.subtitle }, asString(item?.detail || item?.subtitle)) : null,
+            barcode ? h(Text, { style: styles.subtitle }, `Barcode: ${barcode}`) : null,
+          ),
+          h(
+            View,
+            { style: styles.rankedValue },
+            h(Text, { style: { fontSize: 10, fontWeight: 700 } }, pdfText(item?.value ?? item?.count)),
+          ),
+        )
+      }),
     )
   }
 
@@ -1577,7 +1766,12 @@ const createReactPdfBlob = async (
       ...widgets.map((widget, index) => {
         if (!widget) return null
         const type = asString(widget.type)
-        const visual = type === "ranked_list" ? renderPdfRankedList(widget) : renderPdfChart(widget)
+        const visual =
+          type === "ranked_list"
+            ? renderPdfRankedList(widget)
+            : type === "comparison_table"
+              ? renderPdfComparisonProductCards(widget)
+              : renderPdfChart(widget)
         const rows = widgetRows(widget)
         const columns = userFacingColumnsFromRows(rows).slice(0, 8)
         return h(
@@ -1593,8 +1787,8 @@ const createReactPdfBlob = async (
 
   const content =
     mode === "insight"
-      ? renderInsightPayload(body as ExportStructuredPayload)
-      : (body as ExportChatMessage[]).flatMap((message, index) =>
+      ? renderInsightPayload(hydratedBody as ExportStructuredPayload)
+      : (hydratedBody as ExportChatMessage[]).flatMap((message, index) =>
           h(
             View,
             {

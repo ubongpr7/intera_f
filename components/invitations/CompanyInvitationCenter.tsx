@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { getCookie } from "cookies-next";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowRight,
@@ -19,11 +19,13 @@ import { toast } from "react-toastify";
 import { readCookieValue } from "@/lib/authCookies";
 import { formatMachineLabel } from "@/lib/displayLabels";
 import { extractErrorMessage, formatDate } from "@/lib/utils";
-import { useSwitchCompanyMutation } from "@/redux/features/auth/authApiSlice";
+import { useLogoutMutation, useSwitchCompanyMutation } from "@/redux/features/auth/authApiSlice";
 import {
   useAcceptInvitationMutation,
   useDeclineInvitationMutation,
+  useGetLoggedInUserQuery,
   useGetMyInvitationsQuery,
+  useResolveInvitationQuery,
 } from "@/redux/features/users/userApiSlice";
 import type { CompanyInvitation } from "@/redux/features/management/companyProfileTypes";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -116,9 +118,21 @@ export default function CompanyInvitationCenter({
   );
   const [decision, setDecision] = useState<DecisionState>(null);
   const [declined, setDeclined] = useState(false);
+  const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
   const [acceptInvitation, { isLoading: isAccepting }] = useAcceptInvitationMutation();
   const [declineInvitation, { isLoading: isDeclining }] = useDeclineInvitationMutation();
   const [switchCompany, { isLoading: isSwitchingCompany }] = useSwitchCompanyMutation();
+  const {
+    data: invitationLookup,
+    isLoading: invitationLookupLoading,
+    isFetching: invitationLookupFetching,
+    error: invitationLookupError,
+  } = useResolveInvitationQuery(invitationCode, {
+    skip: !invitationCode,
+  });
+  const { data: loggedInUser } = useGetLoggedInUserQuery(undefined, {
+    skip: !hasAuthCookie,
+  });
   const {
     data: invitations = [],
     isLoading: invitationsLoading,
@@ -133,13 +147,36 @@ export default function CompanyInvitationCenter({
     return query ? `${pathname}?${query}` : pathname;
   }, [pathname, searchParams]);
 
-  const signInHref = `/accounts/signin?next=${encodeURIComponent(currentUrl)}`;
-  const registerHref = `/accounts?next=${encodeURIComponent(currentUrl)}`;
-  const currentInvitation = invitationCode
-    ? invitations.find(
-        (item) => (item.invitation_code || "").trim().toLowerCase() === invitationCode.trim().toLowerCase(),
-      )
-    : null;
+  const currentInvitation = invitationCode ? invitationLookup || null : null;
+  const inviteEmail = currentInvitation?.email?.trim() || "";
+  const signInHref = inviteEmail
+    ? `/accounts/signin?email=${encodeURIComponent(inviteEmail)}&locked=1&next=${encodeURIComponent(currentUrl)}`
+    : `/accounts/signin?next=${encodeURIComponent(currentUrl)}`;
+  const registerHref = inviteEmail
+    ? `/accounts?email=${encodeURIComponent(inviteEmail)}&locked=1&next=${encodeURIComponent(currentUrl)}`
+    : `/accounts?next=${encodeURIComponent(currentUrl)}`;
+
+  useEffect(() => {
+    if (!invitationCode || hasAuthCookie || invitationLookupLoading || invitationLookupFetching || !currentInvitation) {
+      return;
+    }
+
+    const nextHref = currentInvitation.is_registered_user ? signInHref : registerHref;
+    router.replace(nextHref);
+  }, [
+    currentInvitation,
+    hasAuthCookie,
+    invitationCode,
+    invitationLookupFetching,
+    invitationLookupLoading,
+    registerHref,
+    router,
+    signInHref,
+  ]);
+
+  const invitationEmailMismatch =
+    Boolean(hasAuthCookie && loggedInUser?.email && currentInvitation?.email) &&
+    loggedInUser?.email.trim().toLowerCase() !== currentInvitation?.email.trim().toLowerCase();
 
   const handleAccept = async () => {
     if (!invitationCode) {
@@ -183,7 +220,93 @@ export default function CompanyInvitationCenter({
     }
   };
 
-  const showBusyState = invitationsLoading || invitationsFetching;
+  const showBusyState = invitationsLoading || invitationsFetching || invitationLookupLoading || invitationLookupFetching;
+
+  if (invitationCode && !hasAuthCookie && invitationLookupError) {
+    return (
+      <div className="mx-auto flex min-h-screen max-w-4xl items-center justify-center px-4 py-12">
+        <Card className="w-full max-w-2xl border-gray-200/80 bg-white/95 shadow-xl shadow-gray-200/60">
+          <CardHeader className="space-y-3">
+            <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
+              <Mail className="h-6 w-6" />
+            </div>
+            <CardTitle className="text-3xl">Invitation not available</CardTitle>
+            <CardDescription className="text-base leading-7 text-gray-600">
+              We could not find this invitation. It may have expired, been revoked, or the code may be invalid.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter className="justify-end">
+            <Button asChild className="rounded-xl">
+              <Link href="/accounts/invitations">View my invitations</Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
+  if (invitationEmailMismatch && currentInvitation) {
+    return (
+      <div className="mx-auto flex min-h-screen max-w-4xl items-center justify-center px-4 py-12">
+        <Card className="w-full max-w-2xl border-gray-200/80 bg-white/95 shadow-xl shadow-gray-200/60">
+          <CardHeader className="space-y-4">
+            <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
+              <XCircle className="h-6 w-6" />
+            </div>
+            <div className="space-y-2">
+              <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+                Email mismatch
+              </Badge>
+              <CardTitle className="text-3xl">This invitation belongs to another account</CardTitle>
+              <CardDescription className="text-base leading-7 text-gray-600">
+                You are signed in as <span className="font-semibold text-gray-800">{loggedInUser?.email}</span>, but this invite
+                was sent to <span className="font-semibold text-gray-800">{currentInvitation.email}</span>.
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm text-gray-600">
+            <Alert className="rounded-2xl border-amber-200 bg-amber-50 text-amber-900">
+              <XCircle className="h-4 w-4" />
+              <AlertTitle>Switch account to continue</AlertTitle>
+              <AlertDescription>
+                Sign out first, then sign back in with the invited email address before accepting this invitation.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+          <CardFooter className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <Button asChild variant="outline" className="w-full rounded-xl sm:w-auto">
+              <Link href={signInHref}>Sign in with invited email</Link>
+            </Button>
+            <Button
+              type="button"
+              className="w-full rounded-xl sm:w-auto"
+              onClick={async () => {
+                try {
+                  await logout().unwrap();
+                } finally {
+                  router.push(signInHref);
+                }
+              }}
+              disabled={isLoggingOut}
+            >
+              {isLoggingOut ? "Signing out..." : "Sign out and continue"}
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
+  if (invitationCode && !hasAuthCookie && currentInvitation) {
+    return (
+      <div className="mx-auto flex min-h-screen max-w-4xl items-center justify-center px-4 py-12">
+        <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-6 py-4 shadow-sm">
+          <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+          <span className="text-sm font-medium text-gray-700">Redirecting you to the correct account flow...</span>
+        </div>
+      </div>
+    );
+  }
 
   if (!hasAuthCookie) {
     return (

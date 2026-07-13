@@ -12,11 +12,13 @@ import { Input } from "@/components/ui/input"
 import { ReactSelectField, type SelectOption } from "@/components/ui/react-select-field"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { formatMachineLabel } from "@/lib/displayLabels"
+import { useSubscriptionQuota } from "@/hooks/useSubscriptionQuota"
 import {
   useCreateGlobalCatalogImportMutation,
   useGetGlobalCatalogProductQuery,
   useGetGlobalCatalogProductsQuery,
   useGetGlobalCatalogStatsQuery,
+  useGetProductDataQuery,
   usePreviewGlobalCatalogProductImportQuery,
   useResolveGlobalCatalogBarcodesMutation,
 } from "@/redux/features/product/productAPISlice"
@@ -448,7 +450,7 @@ export function GlobalProductPreviewSheet({
 }
 
 export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProductLibraryProps) {
-  const canImport = mode === "workspace"
+  const isWorkspaceMode = mode === "workspace"
   const [query, setQuery] = useState("")
   const [brand, setBrand] = useState("")
   const [category, setCategory] = useState("")
@@ -471,6 +473,7 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
     page_size: 30,
   })
   const { data: catalogStats, isLoading: loadingStats } = useGetGlobalCatalogStatsQuery()
+  const { data: workspaceProducts = [] } = useGetProductDataQuery(undefined, { skip: !isWorkspaceMode })
   const [createImport, { isLoading: importing }] = useCreateGlobalCatalogImportMutation()
   const [resolveBarcodes, { isLoading: resolvingBarcodes }] = useResolveGlobalCatalogBarcodesMutation()
 
@@ -498,6 +501,12 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
   const selectableIds = useMemo(() => visibleProducts.filter((product) => !product.imported).map((product) => product.id), [visibleProducts])
   const selectedCount = selectedProductIds.length
   const parsedBarcodes = useMemo(() => parseBarcodeText(barcodeText), [barcodeText])
+  const workspaceProductCount = workspaceProducts.length
+  const importQuotaSingle = useSubscriptionQuota("products", workspaceProductCount, 1, { requireBillingAuthorization: true })
+  const importQuotaBulk = useSubscriptionQuota("products", workspaceProductCount, Math.max(selectedCount, 1), { requireBillingAuthorization: true })
+  const canImport = isWorkspaceMode && importQuotaSingle.canCreate
+  const canImportBulk = isWorkspaceMode && importQuotaBulk.canCreate
+  const importLocked = isWorkspaceMode && !canImport
 
   useEffect(() => {
     setPage(1)
@@ -517,6 +526,10 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
   }
 
   const handleImport = async (productIds: string[]) => {
+    if (!canImport) {
+      toast.error("Choose a plan and connect the workspace card before importing products.")
+      return
+    }
     if (!productIds.length) {
       return
     }
@@ -542,6 +555,10 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
   }
 
   const handleResolveBarcodes = async () => {
+    if (!canImport) {
+      toast.error("Choose a plan and connect the workspace card before importing products.")
+      return
+    }
     if (!parsedBarcodes.length) {
       toast.error("Paste or type at least one barcode.")
       return
@@ -574,11 +591,19 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
   }
 
   const handleImportBarcodeProducts = async () => {
+    if (!canImport) {
+      toast.error("Choose a plan and connect the workspace card before importing products.")
+      return
+    }
     await handleImport(selectedBarcodeProductIds)
     setSelectedBarcodeProductIds([])
   }
 
   const handleBarcodeImageFiles = async (files: FileList | null) => {
+    if (!canImport) {
+      toast.error("Choose a plan and connect the workspace card before importing products.")
+      return
+    }
     const imageFiles = Array.from(files || []).filter((file) => file.type.startsWith("image/"))
     if (!imageFiles.length) {
       return
@@ -619,11 +644,17 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
                 {canImport ? "Global product library" : "Global catalog browser"}
               </div>
               <CardTitle className="mt-3 text-2xl tracking-tight">
-                {canImport ? "Import curated product families instead of rebuilding them manually" : "Browse the published catalog before curating or editing source products"}
+                {canImport
+                  ? "Import curated product families instead of rebuilding them manually"
+                  : importLocked
+                    ? "Browse the published catalog while billing is being connected"
+                    : "Browse the published catalog before curating or editing source products"}
               </CardTitle>
               <CardDescription className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
                 {canImport
                   ? "This starter catalog is platform-curated. Preview what is inside, select multiple families, and import them into your workspace with inherited media and source variants."
+                  : importLocked
+                    ? "Preview product families, filters, and barcodes now. Importing stays locked until the workspace owner connects billing and chooses a plan."
                   : "Review published catalog families by name, brand, and category. This gives Intera IMS staff the same discovery context as workspace users without exposing workspace import actions."}
               </CardDescription>
             </div>
@@ -641,6 +672,21 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
           </div>
         </CardHeader>
         <CardContent className="min-w-0 space-y-5 p-6">
+          {importLocked ? (
+            <div className="rounded-3xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-900">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="font-semibold">Importing is locked until billing is connected.</p>
+                  <p className="mt-1">
+                    Browse and preview the catalog now, then open subscription setup to choose a plan and connect the workspace card before importing.
+                  </p>
+                </div>
+                <Button asChild variant="outline" className="rounded-full border-blue-200 bg-white">
+                  <Link href="/subscription">Open subscription</Link>
+                </Button>
+              </div>
+            </div>
+          ) : null}
           {canImport ? (
             <div className="rounded-3xl border border-blue-100 bg-blue-50/60 p-4">
             <div className="flex flex-wrap items-start justify-between gap-4">
@@ -680,7 +726,7 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
                 <Button
                   type="button"
                   onClick={() => void handleResolveBarcodes()}
-                  disabled={resolvingBarcodes || parsedBarcodes.length === 0}
+                  disabled={resolvingBarcodes || parsedBarcodes.length === 0 || !canImportBulk}
                   className="rounded-full"
                 >
                   {resolvingBarcodes ? "Checking..." : "Check barcodes"}
@@ -717,13 +763,13 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
                     {barcodeResolutionSummary(barcodeResolution)}
                   </div>
                   <Button
-                    type="button"
-                    onClick={() => void handleImportBarcodeProducts()}
-                    disabled={selectedBarcodeProductIds.length === 0 || importing}
-                    className="rounded-full"
-                  >
-                    {importing ? "Importing..." : `Import selected families (${selectedBarcodeProductIds.length})`}
-                  </Button>
+                  type="button"
+                  onClick={() => void handleImportBarcodeProducts()}
+                  disabled={selectedBarcodeProductIds.length === 0 || importing || !canImportBulk}
+                  className="rounded-full"
+                >
+                  {importing ? "Importing..." : `Import selected families (${selectedBarcodeProductIds.length})`}
+                </Button>
                 </div>
 
                 {barcodeResolution.matches.length > 0 ? (
@@ -890,6 +936,9 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
             {canImport ? (
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs text-gray-500">Selection stays intact while you move across pages.</span>
+                {!canImportBulk ? (
+                  <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">{importQuotaBulk.message}</span>
+                ) : null}
                 <Button
                   type="button"
                   variant="outline"
@@ -902,7 +951,7 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
                 <Button
                   type="button"
                   onClick={() => void handleImport(selectedProductIds)}
-                  disabled={selectedCount === 0 || importing}
+                  disabled={selectedCount === 0 || importing || !canImportBulk}
                   className="rounded-full"
                 >
                   <Sparkles className="mr-2 h-4 w-4" />

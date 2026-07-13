@@ -289,6 +289,27 @@ export interface CompanyInvitation {
   updated_at: string;
 }
 
+export interface CompanyInvitationLookupResponse {
+  is_registered_user: boolean;
+  detail?: string;
+  id: string;
+  profile?: string;
+  profile_name?: string;
+  email: string;
+  role: string;
+  invitation_message?: string;
+  invitation_code?: string;
+  status: string;
+  invited_by?: string;
+  invited_by_email?: string;
+  accepted_by?: string | null;
+  accepted_by_email?: string | null;
+  expires_at?: string | null;
+  responded_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface InviteCompanyPayload {
   email: string;
   role?: string;
