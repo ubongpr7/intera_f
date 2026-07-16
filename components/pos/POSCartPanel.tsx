@@ -178,7 +178,7 @@ export default function POSCartPanel({
           <div className="space-y-4 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
             <p className="text-lg font-semibold text-gray-900">
               {isHydrating
-                ? "Loading cashier workspace"
+                ? "Loading"
                 : sessionReadNotice
                   ? "POS session access denied"
                   : cartUnavailable
@@ -187,7 +187,7 @@ export default function POSCartPanel({
             </p>
             <p className="text-sm text-gray-600">
               {isHydrating
-                ? "Loading the session, draft order, and cart state before the cashier can start selling."
+                ? "Please wait while we open this page."
                 : sessionReadNotice
                   ? sessionReadNotice.message
                 : cartUnavailable

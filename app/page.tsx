@@ -6,7 +6,6 @@ import Link from "next/link";
 import {
   ArrowRight,
   BarChart3,
-  BellRing,
   Bot,
   Boxes,
   Building2,
@@ -14,10 +13,7 @@ import {
   ChevronDown,
   ClipboardList,
   Clock3,
-  KeyRound,
-  LibraryBig,
   Menu,
-  PackageCheck,
   Radio,
   ScanBarcode,
   Send,
@@ -46,7 +42,7 @@ const planHighlights: Record<string, string[]> = {
     "1 structural stock location",
     "1 POS terminal",
     "200 products and 800 variants",
-    "Global catalog imports and realtime operations",
+    "Offline POS and realtime operations",
     "30-day free trial",
   ],
   starter: [
@@ -54,7 +50,7 @@ const planHighlights: Record<string, string[]> = {
     "3 structural stock locations",
     "6 POS terminals",
     "500 products and 2,500 variants",
-    "Global catalog imports, realtime operations, and support access",
+    "Audit trails, team access, and realtime operations",
     "30-day free trial",
   ],
   growth: [
@@ -62,7 +58,7 @@ const planHighlights: Record<string, string[]> = {
     "10 structural stock locations",
     "25 POS terminals",
     "5,000 products and 25,000 variants",
-    "Global catalog imports and realtime operations",
+    "Business intelligence and inventory traceability",
     "30-day free trial",
   ],
   scale: [
@@ -70,14 +66,14 @@ const planHighlights: Record<string, string[]> = {
     "30 structural stock locations",
     "100 POS terminals",
     "10,000 products and 50,000 variants",
-    "High-volume operations and support access",
+    "High-volume operations and anti-theft oversight",
     "30-day free trial",
   ],
   enterprise: [
     "Custom users, locations, and terminals",
-    "Custom support and onboarding",
-    "Custom catalog and operational scope",
-    "Custom audit and notification limits",
+    "Custom onboarding and rollout support",
+    "Custom operational scope and integrations",
+    "Custom audit and intelligence limits",
   ],
 };
 
@@ -89,15 +85,15 @@ const coreHighlights = [
     icon: Boxes,
   },
   {
-    title: "Made for real-world constraints",
+    title: "Made for real-world control",
     description:
-      "Run retail and warehouse workflows with confidence using offline-first POS, role controls, and audit trails.",
+      "Run retail and warehouse workflows with confidence using offline-first POS, role controls, audit trails, and anti-theft signals.",
     icon: WifiOff,
   },
   {
     title: "AI where it matters",
     description:
-      "Use configurable workspace agents and offline operational intelligence to answer questions and surface risk faster.",
+      "Use configurable workspace agents and offline operational intelligence to ask your inventory questions in natural language and surface risk faster.",
     icon: Bot,
   },
 ];
@@ -105,17 +101,17 @@ const coreHighlights = [
 const capabilityGrid = [
   {
     title: "Inventory Control",
-    description: "Track balances across structural locations with reorder rules, adjustments, reservations, and movement history.",
+    description: "Track products, balances, reorder rules, adjustments, reservations, and movement history across structural locations.",
     icon: ClipboardList,
   },
   {
-    title: "Supplier & Purchasing",
-    description: "Run purchase orders, approvals, receiving, supplier returns, delivery timing, and supplier performance analysis.",
+    title: "Purchasing & Replenishment",
+    description: "Run purchase orders, approvals, receiving, supplier returns, and delivery timing from one workflow.",
     icon: Building2,
   },
   {
-    title: "POS & Sales",
-    description: "Operate terminals, sessions, discounts, orders, remittances, and inventory-aware in-store sales.",
+    title: "POS & Offline Selling",
+    description: "Operate terminals, sessions, discounts, orders, remittances, and inventory-aware in-store sales even when connectivity drops.",
     icon: ScanBarcode,
   },
   {
@@ -124,44 +120,29 @@ const capabilityGrid = [
     icon: Users2,
   },
   {
-    title: "Offline POS & Intelligence",
-    description: "Use cached device data, queue local changes, inspect sync health, and answer operational questions while offline.",
-    icon: WifiOff,
-  },
-  {
-    title: "Global Product Catalog",
-    description: "Import curated products and variants, reuse shared media, and synchronize new variants without duplicating products.",
-    icon: LibraryBig,
-  },
-  {
-    title: "Live Operations Monitor",
-    description: "Follow paid sales, purchase receiving, stock signals, and operational risk through audit-backed realtime streams.",
-    icon: Radio,
-  },
-  {
-    title: "Audit & Accountability",
-    description: "Search permission-controlled activity trails and monitor workspace events over authenticated realtime connections.",
+    title: "Audit, Traceability & Anti-theft",
+    description: "Search controlled activity trails, trace stock movements, and surface anti-theft risk through event-backed monitoring.",
     icon: ShieldCheck,
   },
   {
-    title: "Notifications",
-    description: "Deliver in-app and email notifications with user preferences, realtime updates, and reliable event processing.",
-    icon: BellRing,
-  },
-  {
-    title: "Traceable Stock",
-    description: "Model lots, serial numbers, reservations, receipts, shipments, returns, and stock movements across locations.",
-    icon: PackageCheck,
-  },
-  {
     title: "Business Intelligence",
-    description: "Review inventory, purchasing, supplier, product, POS, and realtime operational analytics from focused dashboards.",
+    description: "Review inventory, purchasing, POS, and realtime operational analytics, then query years of history in natural language and get answers in seconds.",
     icon: BarChart3,
   },
   {
-    title: "Controlled Support Access",
-    description: "Grant time-limited, scoped support access that can be reviewed and revoked by the workspace owner.",
-    icon: KeyRound,
+    title: "Conversational Intelligence",
+    description: "Ask plain-language questions about sales, stock, purchasing, and staff activity, then turn the answer into charts, lists, or actions.",
+    icon: Sparkles,
+  },
+  {
+    title: "Live Operations Monitor",
+    description: "Follow sales, receiving, stock signals, and risk changes as they happen through realtime operational streams.",
+    icon: Radio,
+  },
+  {
+    title: "External API Platform",
+    description: "Build custom integrations on top of the platform API when you need a separate, metered developer surface. Coming soon.",
+    icon: Menu,
   },
 ];
 
@@ -200,9 +181,9 @@ const faqItems = [
       "Yes. Structural locations model stores and warehouses, while operational locations model areas such as shelves, racks, backrooms, and receiving points.",
   },
   {
-    question: "How do I load an existing product catalog?",
+    question: "How do I set up products and variants?",
     answer:
-      "You can create products directly, use bulk workflows, or import curated global catalog products with their variants and shared media, then customize them for your workspace.",
+      "You can create products directly, use bulk workflows, or start from shared product data, then customize the product names, variants, and media for your workspace.",
   },
   {
     question: "Does stock update after sales and receiving?",
@@ -215,14 +196,9 @@ const faqItems = [
       "Workspace owners and explicitly authorized staff can access the audit trail. Audit APIs and realtime streams enforce workspace and permission checks.",
   },
   {
-    question: "Can each employee have restricted access?",
+    question: "How does the platform help prevent theft?",
     answer:
-      "Yes. Invite staff and assign workspace-specific roles, groups, and permissions so each person sees and performs only the work assigned to them.",
-  },
-  {
-    question: "How does temporary support access work?",
-    answer:
-      "A workspace owner can grant scoped, time-limited access for support work, review the grant, and revoke it without sharing the owner's credentials.",
+      "The platform keeps a trace of stock movement, user activity, receiving, sales, and approvals so suspicious gaps are easier to spot and investigate.",
   },
   {
     question: "Is there a free trial?",
@@ -232,7 +208,7 @@ const faqItems = [
   {
     question: "Can I change plans as the business grows?",
     answer:
-      "The plan model is designed around increasing staff, locations, terminals, products, variants, support access, and operational capabilities as your requirements grow.",
+      "The plan model is designed around increasing staff, locations, terminals, products, variants, and operational capabilities as your requirements grow.",
   },
 ];
 
@@ -449,33 +425,33 @@ const demoConversations: DemoConversation[] = [
     ],
   },
   {
-    title: "Global catalog import",
-    specialist: "Catalog agent",
+    title: "Anti-theft investigation",
+    specialist: "Audit agent",
     messages: [
-      { role: "user", text: "I sell Nivea and Sure products. Can I avoid uploading all product images myself?" },
+      { role: "user", text: "Can you help me spot a stock movement that looks suspicious?" },
       {
         role: "assistant",
-        text: "Yes. Import curated global catalog products so your workspace reuses shared product images and variants without duplicating media uploads.",
+        text: "Yes. I can inspect the stock trail, receiving history, sales pattern, and user activity to highlight where the movement no longer looks consistent.",
         widget: {
           type: "metric-grid",
           items: [
-            { label: "Image uploads saved", value: "96", helper: "From shared catalog" },
-            { label: "Variants imported", value: "42", helper: "Ready to price and stock" },
-            { label: "Barcode coverage", value: "91%", helper: "Matched source variants" },
+            { label: "Stock trail checks", value: "184", helper: "Across movements and adjustments" },
+            { label: "Suspicious gaps", value: "4", helper: "Needs review" },
+            { label: "Risk flags", value: "2", helper: "Approval and receiving mismatch" },
           ],
         },
       },
-      { role: "user", text: "If new variants are added later, will my workspace duplicate the product?" },
+      { role: "user", text: "What should I review first?" },
       {
         role: "assistant",
-        text: "No. Sync can add only missing variants and leave your customized workspace product intact.",
+        text: "Start with the adjustment log, then check who handled the last receiving and sales events around the missing stock.",
         widget: {
           type: "ranked-list",
-          title: "Safe sync behavior",
+          title: "Review order",
           items: [
-            { label: "Existing product", meta: "Preserved", tone: "good" },
-            { label: "New source variants", meta: "Imported as missing records", tone: "good" },
-            { label: "Custom images", meta: "Kept unless you replace them", tone: "good" },
+            { label: "Adjustment log", meta: "Look for recent manual edits", tone: "risk" },
+            { label: "Receiving history", meta: "Compare expected and received", tone: "warn" },
+            { label: "Sales and stock trail", meta: "Confirm the full movement chain", tone: "good" },
           ],
         },
       },
@@ -566,12 +542,12 @@ const demoConversations: DemoConversation[] = [
       { role: "user", text: "Notify the staff member when the role is updated." },
       {
         role: "assistant",
-        text: "The platform can send in-app and email notifications for important access changes so the user knows what changed.",
+        text: "The platform records the change in the audit trail and surfaces it wherever the workspace owner reviews access changes.",
         widget: {
           type: "action-form",
-          title: "Access update notification",
+          title: "Access update record",
           fields: ["Staff member", "Role summary", "Reason for change"],
-          cta: "Send notification",
+          cta: "Save change",
         },
       },
     ],

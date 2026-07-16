@@ -156,6 +156,7 @@ export const useWorkspaceSetupProgress = () => {
 
   const nextRecommendedStage = stages.find((stage) => !stage.complete) ?? null
   const completionPercentage = Math.round((stageProgressCount / stages.length) * 100)
+  const isWorkspaceContextLoading = loadingCompanies || loadingProfile
 
   return {
     activeProfileId,
@@ -169,12 +170,13 @@ export const useWorkspaceSetupProgress = () => {
     completionPercentage,
     nextRecommendedStage,
     isLoading: loadingCompanies || loadingProfile || loadingAnalytics || loadingAgentSetup,
+    isWorkspaceContextLoading,
   }
 }
 
 export function WorkspaceSetupLoadingCard({
-  title = "Loading workspace context",
-  description = "Checking your active workspace and setup state before showing operational controls.",
+  title = "Loading",
+  description = "Please wait while we open this page.",
 }: {
   title?: string
   description?: string
@@ -210,9 +212,9 @@ export function WorkspaceSetupShell({
   description: string
   children: ReactNode
 }) {
-  const { activeMembership, completionPercentage, isLoading, isOwner, nextRecommendedStage, stages } = useWorkspaceSetupProgress()
+  const { activeMembership, completionPercentage, isOwner, isWorkspaceContextLoading, nextRecommendedStage, stages } = useWorkspaceSetupProgress()
   const pathname = usePathname()
-  const showSetupProgress = !isLoading && isOwner && pathname === "/dashboard"
+  const showSetupProgress = !isWorkspaceContextLoading && isOwner && pathname === "/dashboard"
   const [setupGuideOpen, setSetupGuideOpen] = useState(false)
 
   return (

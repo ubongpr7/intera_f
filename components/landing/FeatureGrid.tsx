@@ -15,33 +15,58 @@ interface FeatureCardProps {
     </div>
   );
   
-  export default function FeatureGrid() {
+export default function FeatureGrid() {
     const features = [
       {
         icon: "📦",
-        title: "Real-Time Stock Tracking",
-        description: "Monitor inventory levels across multiple warehouses with live updates"
+        title: "Inventory Control",
+        description: "Track products, balances, reorder rules, reservations, and movement history across locations."
       },
       {
         icon: "💳",
-        title: "Flexible POS System",
-        description: "Support for cash, card, transfers, and credit sales with partial payments"
+        title: "POS & Offline Selling",
+        description: "Run checkout, sessions, discounts, and inventory-aware sales even when connectivity drops."
       },
       {
         icon: "📊",
-        title: "Smart Analytics",
-        description: "Profit/loss, sales trends, and dead stock identification reports"
+        title: "Business Intelligence",
+        description: "Review inventory, purchasing, POS, and realtime operational analytics, then query years of history in natural language and get answers in seconds."
+      },
+      {
+        icon: "🗣️",
+        title: "Conversational Intelligence",
+        description: "Ask plain-language questions about sales, stock, purchasing, and staff activity, then turn the answer into charts, lists, or actions."
+      },
+      {
+        icon: "📡",
+        title: "Live Operations Monitor",
+        description: "Follow sales, receiving, stock signals, and risk changes as they happen through realtime operational streams."
+      },
+      {
+        icon: "🧩",
+        title: "External API Platform",
+        description: "Build custom integrations on top of the platform API when you need a separate, metered developer surface. Coming soon."
       },
       {
         icon: "🔄",
-        title: "Automated Reordering",
-        description: "Smart purchase orders based on minimum stock levels"
+        title: "Purchasing & Replenishment",
+        description: "Create purchase orders, approve them, receive goods, and manage supplier returns."
+      },
+      {
+        icon: "🛡️",
+        title: "Audit, Traceability & Anti-theft",
+        description: "Trace stock movement and activity history so suspicious gaps are easier to spot and investigate."
+      },
+      {
+        icon: "👥",
+        title: "Team Access",
+        description: "Invite staff and assign roles, groups, and permissions independently for each workspace."
       }
     ];
   
     return (
       <section className="py-16 px-4 bg-gray-50">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
             <FeatureCard key={index} {...feature} />
           ))}

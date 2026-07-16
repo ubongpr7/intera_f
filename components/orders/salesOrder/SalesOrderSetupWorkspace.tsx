@@ -78,7 +78,7 @@ const asNumber = (value: string | number | undefined | null) => Number(value ?? 
 
 export default function SalesOrderSetupWorkspace() {
   const router = useRouter()
-  const { activeMembership, isLoading: loadingWorkspaceSetup, isOwner, profile } = useWorkspaceSetupProgress()
+  const { activeMembership, isWorkspaceContextLoading: loadingWorkspaceSetup, isOwner, profile } = useWorkspaceSetupProgress()
   const defaultCurrency = profile?.currency || "NGN"
   const [formState, setFormState] = useState<SalesOrderFormState>(() => buildInitialForm(defaultCurrency))
   const [statusFilter, setStatusFilter] = useState<string>("all")
@@ -168,8 +168,6 @@ export default function SalesOrderSetupWorkspace() {
   if (loadingWorkspaceSetup) {
     return (
       <WorkspaceSetupLoadingCard
-        title="Loading sales-order workspace"
-        description="Checking your active company before showing sales-order setup and fulfillment controls."
       />
     )
   }

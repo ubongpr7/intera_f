@@ -43,6 +43,8 @@ export function SubscriptionRequiredGuard({ children }: { children: ReactNode })
   const { data, isLoading, isError } = useGetCurrentEntitlementsQuery()
   const hasSubscription = Boolean(data?.subscription)
   const shouldBlock = !exempt && !isLoading && !isError && data && !hasSubscription
+  const showLoading = !exempt && isLoading
+  const showError = !exempt && isError
 
   useEffect(() => {
     if (shouldBlock && owner) {
@@ -50,7 +52,42 @@ export function SubscriptionRequiredGuard({ children }: { children: ReactNode })
     }
   }, [owner, router, shouldBlock])
 
-  if (!shouldBlock || owner) {
+  if (exempt) {
+    return <>{children}</>
+  }
+
+  if (showLoading) {
+    return (
+      <div className="mx-auto flex min-h-[50vh] max-w-2xl flex-col items-center justify-center gap-4 p-8 text-center">
+        <div className="h-14 w-14 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
+        <div className="space-y-2">
+          <h1 className="text-2xl font-semibold">Loading</h1>
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            Please wait while we open this page.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (showError) {
+    return (
+      <div className="mx-auto flex min-h-[50vh] max-w-2xl flex-col items-center justify-center gap-4 p-8 text-center">
+        <div className="rounded-full bg-amber-100 p-4 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
+          <LockKeyhole className="h-8 w-8" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-semibold">Subscription check unavailable</h1>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+            We could not verify workspace billing right now. Please try again.
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => router.refresh()}>Retry</Button>
+      </div>
+    )
+  }
+
+  if (!shouldBlock) {
     return <>{children}</>
   }
 

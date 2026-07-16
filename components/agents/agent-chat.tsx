@@ -797,37 +797,37 @@ export default function AgentChat({
 
   const getInteractionStyle = (type: string) => {
     const styles = {
-      confirmation: { color: "bg-yellow-50 border-yellow-200", textColor: "text-yellow-700", icon: "⚠️" },
-      multiple_choice: { color: "bg-blue-50 border-blue-200", textColor: "text-blue-700", icon: "❓" },
-      file_upload: { color: "bg-green-50 border-green-200", textColor: "text-green-700", icon: "📁" },
-      progress_tracker: { color: "bg-purple-50 border-purple-200", textColor: "text-purple-700", icon: "⏳" },
-      data_table: { color: "bg-indigo-50 border-indigo-200", textColor: "text-indigo-700", icon: "📊" },
-      data_table_review: { color: "bg-indigo-50 border-indigo-200", textColor: "text-indigo-700", icon: "📋" },
-      dynamic_form: { color: "bg-pink-50 border-pink-200", textColor: "text-pink-700", icon: "📝" },
-      update_form: { color: "bg-blue-50 border-blue-200", textColor: "text-blue-700", icon: "✏️" },
-      date_time_picker: { color: "bg-teal-50 border-teal-200", textColor: "text-teal-700", icon: "📅" },
-      slider_input: { color: "bg-orange-50 border-orange-200", textColor: "text-orange-700", icon: "🎚️" },
-      priority_ranking: { color: "bg-red-50 border-red-200", textColor: "text-red-700", icon: "📋" },
+      confirmation: { color: "bg-yellow-50 border-yellow-200", textColor: "text-gray-700", icon: "⚠️" },
+      multiple_choice: { color: "bg-blue-50 border-blue-200", textColor: "text-gray-700", icon: "❓" },
+      file_upload: { color: "bg-green-50 border-green-200", textColor: "text-gray-700", icon: "📁" },
+      progress_tracker: { color: "bg-purple-50 border-purple-200", textColor: "text-gray-700", icon: "⏳" },
+      data_table: { color: "bg-indigo-50 border-indigo-200", textColor: "text-gray-700", icon: "📊" },
+      data_table_review: { color: "bg-indigo-50 border-indigo-200", textColor: "text-gray-700", icon: "📋" },
+      dynamic_form: { color: "bg-pink-50 border-pink-200", textColor: "text-gray-700", icon: "📝" },
+      update_form: { color: "bg-blue-50 border-blue-200", textColor: "text-gray-700", icon: "✏️" },
+      date_time_picker: { color: "bg-teal-50 border-teal-200", textColor: "text-gray-700", icon: "📅" },
+      slider_input: { color: "bg-orange-50 border-orange-200", textColor: "text-gray-700", icon: "🎚️" },
+      priority_ranking: { color: "bg-red-50 border-red-200", textColor: "text-gray-700", icon: "📋" },
       code_review: { color: "bg-gray-50 border-gray-200", textColor: "text-gray-700", icon: "💻" },
-      image_annotation: { color: "bg-yellow-50 border-yellow-200", textColor: "text-yellow-700", icon: "🖼️" },
-      searchable_selection: { color: "bg-cyan-50 border-cyan-200", textColor: "text-cyan-700", icon: "🔍" },
-      hierarchical_selection: { color: "bg-emerald-50 border-emerald-200", textColor: "text-emerald-700", icon: "🌳" },
-      autocomplete_selection: { color: "bg-violet-50 border-violet-200", textColor: "text-violet-700", icon: "⚡" },
-      comparison_view: { color: "bg-rose-50 border-rose-200", textColor: "text-rose-700", icon: "⚖️" },
+      image_annotation: { color: "bg-yellow-50 border-yellow-200", textColor: "text-gray-700", icon: "🖼️" },
+      searchable_selection: { color: "bg-cyan-50 border-cyan-200", textColor: "text-gray-700", icon: "🔍" },
+      hierarchical_selection: { color: "bg-emerald-50 border-emerald-200", textColor: "text-gray-700", icon: "🌳" },
+      autocomplete_selection: { color: "bg-violet-50 border-violet-200", textColor: "text-gray-700", icon: "⚡" },
+      comparison_view: { color: "bg-rose-50 border-rose-200", textColor: "text-gray-700", icon: "⚖️" },
       bulk_action_selector: { color: "bg-gray-50 border-gray-200", textColor: "text-gray-700", icon: "⚡" },
-      marketplace_results: { color: "bg-yellow-50 border-yellow-200", textColor: "text-yellow-700", icon: "🛍️" },
-      dashboard_builder: { color: "bg-blue-50 border-blue-200", textColor: "text-blue-700", icon: "📊" },
-      master_detail_table: { color: "bg-indigo-50 border-indigo-200", textColor: "text-indigo-700", icon: "📋" },
-      alert_manager: { color: "bg-yellow-50 border-yellow-200", textColor: "text-yellow-700", icon: "🔔" },
-      task_assignment: { color: "bg-green-50 border-green-200", textColor: "text-green-700", icon: "👥" },
-      comment_thread: { color: "bg-purple-50 border-purple-200", textColor: "text-purple-700", icon: "💬" },
-      report_builder: { color: "bg-orange-50 border-orange-200", textColor: "text-orange-700", icon: "📈" },
-      data_visualization: { color: "bg-teal-50 border-teal-200", textColor: "text-teal-700", icon: "📊" },
+      marketplace_results: { color: "bg-yellow-50 border-yellow-200", textColor: "text-gray-700", icon: "🛍️" },
+      dashboard_builder: { color: "bg-blue-50 border-blue-200", textColor: "text-gray-700", icon: "📊" },
+      master_detail_table: { color: "bg-indigo-50 border-indigo-200", textColor: "text-gray-700", icon: "📋" },
+      alert_manager: { color: "bg-yellow-50 border-yellow-200", textColor: "text-gray-700", icon: "🔔" },
+      task_assignment: { color: "bg-green-50 border-green-200", textColor: "text-gray-700", icon: "👥" },
+      comment_thread: { color: "bg-purple-50 border-purple-200", textColor: "text-gray-700", icon: "💬" },
+      report_builder: { color: "bg-orange-50 border-orange-200", textColor: "text-gray-700", icon: "📈" },
+      data_visualization: { color: "bg-teal-50 border-teal-200", textColor: "text-gray-700", icon: "📊" },
       timeline_activity: { color: "bg-gray-50 border-gray-200", textColor: "text-gray-700", icon: "⏰" },
-      kanban_board: { color: "bg-pink-50 border-pink-200", textColor: "text-pink-700", icon: "📌" },
-      approval_workflow: { color: "bg-emerald-50 border-emerald-200", textColor: "text-emerald-700", icon: "✅" },
-      wizard_flow: { color: "bg-purple-50 border-purple-200", textColor: "text-purple-700", icon: "🧙" },
-      conditional_form: { color: "bg-purple-50 border-purple-200", textColor: "text-purple-700", icon: "🧙" },
+      kanban_board: { color: "bg-pink-50 border-pink-200", textColor: "text-gray-700", icon: "📌" },
+      approval_workflow: { color: "bg-emerald-50 border-emerald-200", textColor: "text-gray-700", icon: "✅" },
+      wizard_flow: { color: "bg-purple-50 border-purple-200", textColor: "text-gray-700", icon: "🧙" },
+      conditional_form: { color: "bg-purple-50 border-purple-200", textColor: "text-gray-700", icon: "🧙" },
     }
     return styles[type as keyof typeof styles] || styles.confirmation
   }
@@ -1133,7 +1133,7 @@ export default function AgentChat({
                   <div key={m.id} className="mb-8 flex items-end justify-start gap-3">
                     <ChatAvatar role="assistant" userInitials={userIdentity.initials} />
                     <div
-                      className={`max-w-[95%] ${style.color} border text-gray-800 rounded-2xl rounded-bl-none shadow-lg px-4 py-4 ${
+                      className={`max-w-[95%] ${style.color} border text-gray-700 rounded-2xl rounded-bl-none shadow-lg px-4 py-4 ${
                         isInteractionDisabled ? "opacity-60" : ""
                       }`}
                     >
@@ -1146,11 +1146,11 @@ export default function AgentChat({
                         {isInteractionDisabled ? "Response Sent" : "Awaiting Confirmation"}
                       </div>
                       <div className="space-y-3">
-                        <p className="font-medium text-gray-900 text-sm">
+                        <p className="font-medium text-gray-700 text-sm">
                           {asText(data.description) || asText(data.title) || "Please review this request."}
                         </p>
                         {asText(data.details) && (
-                          <p className="text-xs text-gray-600 bg-white/50 p-2 rounded-lg">{asText(data.details)}</p>
+                          <p className="text-xs text-gray-600 bg-white/50 p-2 rounded-lg/50">{asText(data.details)}</p>
                         )}
                         {!isInteractionDisabled && (
                           <button
@@ -1175,10 +1175,10 @@ export default function AgentChat({
                 <div key={m.id} className="mb-8 flex items-end justify-start gap-3">
                   <ChatAvatar role="assistant" userInitials={userIdentity.initials} />
                   <div
-                    className={`max-w-[95%] ${style.color} border text-gray-800 rounded-2xl rounded-bl-none shadow-lg px-4 py-4 ${
-                      isInteractionDisabled ? "opacity-60" : ""
-                    }`}
-                  >
+                      className={`max-w-[95%] ${style.color} border text-gray-700 rounded-2xl rounded-bl-none shadow-lg px-4 py-4 ${
+                        isInteractionDisabled ? "opacity-60" : ""
+                      }`}
+                    >
                     <div className={`font-semibold text-xs mb-3 ${style.textColor} flex items-center gap-2`}>
                       <span>{style.icon}</span>
                       {type.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase())}
@@ -1233,13 +1233,13 @@ export default function AgentChat({
                         aria-label="Listen to this message"
                         title="Listen to this message"
                       >
-                        <Volume2 className="h-3 w-3 text-gray-500 hover:text-blue-600" strokeWidth={2.2} />
+                        <Volume2 className="h-3 w-3 text-gray-500 hover:text-blue-600 dark:hover:text-gray-200" strokeWidth={2.2} />
                       </button>
                     )}
                   </div>
                   {interactionResponseSummary ? (
                     <div className="space-y-1">
-                      <p className="text-base font-semibold">{interactionResponseSummary.title}</p>
+                      <p className="text-base font-semibold text-gray-900">{interactionResponseSummary.title}</p>
                       {interactionResponseSummary.detail ? (
                         <p className={`text-sm leading-6 ${isUserMessage ? "text-blue-50" : "text-gray-600"}`}>
                           {interactionResponseSummary.detail}
@@ -1424,7 +1424,7 @@ export default function AgentChat({
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-600">
                   {exportDownload.status === "choosing" ? "Download" : `${exportDownload.kind.toUpperCase()} Export`}
                 </p>
-                <h3 className="mt-2 text-xl font-bold text-gray-950">{exportDownload.title}</h3>
+                <h3 className="mt-2 text-xl font-bold text-gray-900">{exportDownload.title}</h3>
               </div>
               <button
                 type="button"
@@ -1439,7 +1439,7 @@ export default function AgentChat({
             <p className="mt-3 text-sm leading-6 text-gray-600">{exportDownload.description}</p>
 
             {exportDownload.filename ? (
-              <div className="mt-5 rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                <div className="mt-5 rounded-2xl border border-gray-200 bg-gray-50 p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">File</p>
                 <p className="mt-1 break-all text-sm font-medium text-gray-800">{exportDownload.filename}</p>
               </div>
@@ -1504,7 +1504,7 @@ export default function AgentChat({
                   <a
                     href={exportDownload.href}
                     download={exportDownload.filename}
-                    className="inline-flex flex-1 items-center justify-center rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+                    className="inline-flex flex-1 items-center justify-center rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
                   >
                     Download {exportDownload.kind.toUpperCase()}
                   </a>

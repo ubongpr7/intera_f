@@ -53,7 +53,7 @@ const displayCount = (value: number | undefined, isLoading: boolean) => {
 
 export default function ProductPage() {
   const [showSetupGuide, setShowSetupGuide] = useState(false)
-  const { activeMembership, isLoading: loadingWorkspaceSetup, isOwner, nextRecommendedStage, profile, readiness } = useWorkspaceSetupProgress()
+  const { activeMembership, isWorkspaceContextLoading: loadingWorkspaceSetup, isOwner, nextRecommendedStage, profile, readiness } = useWorkspaceSetupProgress()
 
   const { data: inventories, isLoading: loadingInventories } = useGetInventoryDataQuery()
   const { data: products, isLoading: loadingProducts } = useGetProductDataQuery()
@@ -128,8 +128,6 @@ export default function ProductPage() {
   if (loadingWorkspaceSetup) {
     return (
       <WorkspaceSetupLoadingCard
-        title="Loading product workspace"
-        description="Checking your active company and catalog setup state before showing setup guidance or product controls."
       />
     )
   }
@@ -148,7 +146,7 @@ export default function ProductPage() {
           <CardContent className="p-6 pt-0">
             {isOwner ? (
               <Button asChild>
-                <Link href="/profile">
+                <Link href="/profile/create">
                   Go to workspace setup
                   <ArrowRight className="h-4 w-4" />
                 </Link>

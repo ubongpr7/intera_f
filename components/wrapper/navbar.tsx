@@ -4,6 +4,7 @@ import React, { useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import {
   ArrowRight,
+  CirclePlus,
   Bell,
   Bot,
   CheckCheck,
@@ -295,7 +296,7 @@ const Navbar = ({ user, onOpenMobileSidebar, sidebarCollapsed }: NavbarProps) =>
     <div
       className={`fixed top-3 z-30 flex items-center justify-between rounded-2xl bg-gray-50/95 px-4 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-gray-50/80 ${
         sidebarCollapsed ? "md:left-16 md:right-5" : "md:left-64 md:right-5"
-      } left-3 right-3`}
+      } left-3 right-3 md:px-3 md:py-2.5`}
     >
       <div className="flex items-center gap-3">
         <button
@@ -309,24 +310,35 @@ const Navbar = ({ user, onOpenMobileSidebar, sidebarCollapsed }: NavbarProps) =>
         </button>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-5">
+      <div className="flex min-w-0 flex-1 items-center justify-end gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-3 overflow-visible">
           {companyMemberships?.profiles?.length ? (
-            <select
-              value={selectedCompanyCode}
-              onChange={(e) => handleSwitchCompany(e.target.value)}
-              disabled={isSwitchingCompany}
-              className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700"
-            >
-              {companyMemberships.profiles.map((profile) => (
-                <option key={`${profile.id}`} value={profile.company_code}>
-                  {profile.name} ({profile.company_code}){profile.support_access ? " • support" : ""}
-                </option>
-              ))}
-            </select>
+            <div className="flex min-w-0 items-center gap-2">
+              <select
+                value={selectedCompanyCode}
+                onChange={(e) => handleSwitchCompany(e.target.value)}
+                disabled={isSwitchingCompany}
+                className="min-w-0 max-w-[10rem] rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 md:max-w-[12rem] lg:max-w-[14rem] xl:max-w-[18rem]"
+              >
+                {companyMemberships.profiles.map((profile) => (
+                  <option key={`${profile.id}`} value={profile.company_code}>
+                    {profile.name} ({profile.company_code}){profile.support_access ? " • support" : ""}
+                  </option>
+                ))}
+              </select>
+              <Link
+                href="/profile/create?mode=new"
+                className="inline-flex h-10 items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:border-blue-300 hover:bg-blue-100 md:px-2.5"
+                aria-label="Create a new workspace"
+                title="Create a new workspace"
+              >
+                <CirclePlus className="h-4 w-4" />
+                <span className="hidden 2xl:inline">New workspace</span>
+              </Link>
+            </div>
           ) : null}
 
-          <div className="relative" ref={notificationMenuRef}>
+          <div className="relative shrink-0" ref={notificationMenuRef}>
             <button
               type="button"
               onClick={() => {
@@ -347,7 +359,7 @@ const Navbar = ({ user, onOpenMobileSidebar, sidebarCollapsed }: NavbarProps) =>
             </button>
 
             {notificationMenuOpen ? (
-              <div className="absolute right-0 z-40 mt-3 w-[min(26rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
+              <div className="absolute right-0 z-50 mt-3 w-[min(26rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
                 <div className="flex items-center justify-between gap-4 border-b border-gray-100 px-5 py-4">
                     <div>
                       <div className="text-base font-semibold text-gray-900">Notifications</div>
@@ -452,9 +464,9 @@ const Navbar = ({ user, onOpenMobileSidebar, sidebarCollapsed }: NavbarProps) =>
             ) : null}
           </div>
 
-          <hr className="h-6 w-0 border border-solid border-l bg-gray-300" />
+          <hr className="hidden h-6 w-0 border border-solid border-l bg-gray-300 md:block" />
 
-          <div className="relative" ref={userMenuRef}>
+          <div className="relative shrink-0" ref={userMenuRef}>
             <button
               type="button"
               onClick={() => setUserMenuOpen((current) => !current)}
@@ -468,7 +480,7 @@ const Navbar = ({ user, onOpenMobileSidebar, sidebarCollapsed }: NavbarProps) =>
             </button>
 
             {userMenuOpen ? (
-              <div className="absolute right-0 z-10 mt-2 w-72 rounded-xl border bg-white py-1 shadow-lg">
+              <div className="absolute right-0 z-50 mt-2 w-72 rounded-xl border bg-white py-1 shadow-lg">
                 <div className="border-b border-gray-100 px-4 py-3">
                   <div className="text-sm font-semibold text-gray-900">{userDisplayName}</div>
                   <div className="mt-1 text-xs text-gray-500">{fallbackUser.email || 'Personal account'}</div>
@@ -560,7 +572,7 @@ const Navbar = ({ user, onOpenMobileSidebar, sidebarCollapsed }: NavbarProps) =>
           </div>
         </div>
 
-        <div className="relative" ref={settingsMenuRef}>
+        <div className="relative shrink-0" ref={settingsMenuRef}>
           <button
             type="button"
             onClick={() => setSettingsMenuOpen((current) => !current)}
@@ -570,7 +582,7 @@ const Navbar = ({ user, onOpenMobileSidebar, sidebarCollapsed }: NavbarProps) =>
             <SettingsIcon size={24} className="cursor-pointer text-gray-500" />
           </button>
           {settingsMenuOpen ? (
-            <div className="absolute right-0 z-10 mt-2 w-56 rounded-xl border bg-white py-1 shadow-lg">
+            <div className="absolute right-0 z-50 mt-2 w-56 rounded-xl border bg-white py-1 shadow-lg">
               {settingsLinks.map((item) => {
                 const Icon = item.icon
                 const accessLabel = getPermissionRequirementLabel(item.access)

@@ -162,9 +162,9 @@ export const extractErrorMessage = (error: any, listOfKeys: string[]): string =>
         case 429:
             return "Too many attempts: Please wait a moment before trying again";
         case 500:
-          return 'Check your data entry and try again, ensure you abide by the unique constraint' 
+          return "Something went wrong while loading this data. Please refresh and try again."
         case 'PARSING_ERROR':
-          return 'Check your data entry and try again, ensure you abide by the unique constraint, item with same name or data already exist' 
+          return "Something went wrong while loading this data. Please refresh and try again."
         case 502:
         case 503:
             return "Server error: We're experiencing technical difficulties";

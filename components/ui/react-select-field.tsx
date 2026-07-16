@@ -27,16 +27,16 @@ const customStyles: StylesConfig<SelectOption, boolean> = {
     ...provided,
     minHeight: 48,
     borderRadius: 18,
-    backgroundColor: state.isDisabled ? "#f8fafc" : "#ffffff",
-    borderColor: state.isFocused ? "#60a5fa" : "#e2e8f0",
+    backgroundColor: state.isDisabled ? "#f9fafb" : "#ffffff",
+    borderColor: state.isFocused ? "#60a5fa" : "#e5e7eb",
     boxShadow: state.isFocused ? "0 0 0 4px rgba(59, 130, 246, 0.14)" : "0 10px 24px rgba(15, 23, 42, 0.05)",
     "&:hover": {
-      borderColor: state.isFocused ? "#60a5fa" : "#cbd5e1",
+      borderColor: state.isFocused ? "#60a5fa" : "#d1d5db",
     },
     ...(isDarkMode() && {
-      backgroundColor: state.isDisabled ? "#0f172a" : "#1e293b",
-      borderColor: state.isFocused ? "#60a5fa" : "#334155",
-      color: "#f9fafb",
+      backgroundColor: state.isDisabled ? "#111827" : "#111827",
+      borderColor: state.isFocused ? "#60a5fa" : "#374151",
+      color: "#f3f4f6",
       boxShadow: state.isFocused ? "0 0 0 4px rgba(59, 130, 246, 0.16)" : "0 12px 28px rgba(2, 6, 23, 0.42)",
     }),
   }),
@@ -47,12 +47,12 @@ const customStyles: StylesConfig<SelectOption, boolean> = {
     overflow: "hidden",
     boxShadow: "0 18px 40px rgba(15, 23, 42, 0.12)",
     ...(isDarkMode() && {
-      backgroundColor: "#0f172a",
+      backgroundColor: "#111827",
     }),
   }),
   placeholder: (provided) => ({
     ...provided,
-    color: isDarkMode() ? "#64748b" : "#94a3b8",
+    color: isDarkMode() ? "#9ca3af" : "#94a3b8",
   }),
   option: (provided, state) => ({
     ...provided,
@@ -62,22 +62,22 @@ const customStyles: StylesConfig<SelectOption, boolean> = {
       backgroundColor: "#3b82f6",
     },
     ...(isDarkMode() && {
-      backgroundColor: state.isSelected ? "#2563eb" : state.isFocused ? "#1e3a8a" : "#0f172a",
-      color: "#f8fafc",
+      backgroundColor: state.isSelected ? "#2563eb" : state.isFocused ? "#1e3a8a" : "#111827",
+      color: "#f3f4f6",
     }),
   }),
   singleValue: (provided) => ({
     ...provided,
     color: "#111827",
     ...(isDarkMode() && {
-      color: "#f9fafb",
+      color: "#f3f4f6",
     }),
   }),
   input: (provided) => ({
     ...provided,
     color: "#111827",
     ...(isDarkMode() && {
-      color: "#f9fafb",
+      color: "#f3f4f6",
     }),
   }),
   menuPortal: (provided) => ({
@@ -121,10 +121,10 @@ export const ReactSelectField = forwardRef<any, ReactSelectFieldProps>(
           classNames={{
             control: () =>
               cn(
-                "rounded-2xl border bg-white px-2 py-1 dark:bg-slate-800/90",
-                error ? "border-red-500 dark:border-red-500" : "border-gray-200 dark:border-slate-700",
+                "rounded-2xl border bg-white px-2 py-1 dark:bg-gray-800/90",
+                error ? "border-red-500 dark:border-red-500" : "border-gray-200 dark:border-gray-700",
               ),
-            menu: () => "p-1 dark:bg-slate-950",
+            menu: () => "p-1 dark:bg-gray-950",
           }}
           inputId={inputId}
           menuPortalTarget={resolvedPortalTarget}

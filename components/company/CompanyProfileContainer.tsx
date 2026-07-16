@@ -60,11 +60,13 @@ export default function CompanyProfileContainer() {
   const searchParams = useSearchParams()
   const pathname = usePathname()
   const router = useRouter()
+  const createMode = searchParams.get("mode") === "new"
   const initialStep = searchParams.get("step")
   const [activeTab, setActiveTab] = useState<CompanySetupStep>(
     isCompanySetupStep(initialStep) ? initialStep : "basic-info",
   )
   const resolvedActiveTab = isCompanySetupStep(initialStep) ? initialStep : activeTab
+  const editableProfile = createMode ? null : typedProfile
 
   const goToStep = useCallback(
     (nextStep: CompanySetupStep) => {
@@ -95,16 +97,16 @@ export default function CompanyProfileContainer() {
 
   const handleBasicInfoSuccess = useCallback(
     async (savedProfile: CompanyProfile) => {
-      goToStep("address")
-      if (!activeProfileId && savedProfile?.id) {
+      if (savedProfile?.id && (createMode || !activeProfileId)) {
         await switchCompany({ profile_id: savedProfile.id }).unwrap()
         await refetchCompanies()
-        router.refresh()
+        router.replace("/subscription")
         return
       }
+      goToStep("address")
       await refetch()
     },
-    [activeProfileId, goToStep, refetch, refetchCompanies, router, switchCompany],
+    [activeProfileId, createMode, goToStep, refetch, refetchCompanies, router, switchCompany],
   )
 
   const handleAddressSuccess = useCallback(async () => {
@@ -208,9 +210,9 @@ export default function CompanyProfileContainer() {
           <CardContent className="p-5">
             {resolvedActiveTab === "basic-info" ? (
               <CompanyBasicInfoForm
-                profile={typedProfile}
+                profile={editableProfile}
                 onSuccess={handleBasicInfoSuccess}
-                submitLabel={typedProfile?.id ? "Save and continue" : "Create company and continue"}
+                submitLabel={editableProfile?.id ? "Save and continue" : "Create company and continue"}
               />
             ) : null}
 

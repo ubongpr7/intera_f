@@ -87,7 +87,7 @@ export default function InventoryPage() {
     inventories: false,
     insights: false,
   })
-  const { activeMembership, isLoading: loadingWorkspaceSetup, isOwner, nextRecommendedStage, profile, readiness } = useWorkspaceSetupProgress()
+  const { activeMembership, isWorkspaceContextLoading: loadingWorkspaceSetup, isOwner, nextRecommendedStage, profile, readiness } = useWorkspaceSetupProgress()
   const structuralScopeParams = useMemo(
     () => buildStructuralLocationScopeParams(selectedStructuralLocationIds),
     [selectedStructuralLocationIds],
@@ -200,8 +200,6 @@ export default function InventoryPage() {
   if (loadingWorkspaceSetup) {
     return (
       <WorkspaceSetupLoadingCard
-        title="Loading inventory workspace"
-        description="Checking your active company and inventory setup state."
       />
     )
   }
@@ -219,7 +217,7 @@ export default function InventoryPage() {
           <CardContent className="p-6 pt-0">
             {isOwner ? (
               <Button asChild>
-                <Link href="/profile">
+                <Link href="/profile/create">
                   Go to workspace setup
                   <ArrowRight className="h-4 w-4" />
                 </Link>

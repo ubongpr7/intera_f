@@ -195,6 +195,9 @@ export const getPermissionRequirementLabel = (access: Pick<AccessResult, "ownerO
 
 export const canAccessPath = (pathname: string): AccessResult => {
   const snapshot = getPermissionSnapshot()
+  if (/^\/profile\/create(?:\/|$)/.test(pathname)) {
+    return OPEN_ACCESS
+  }
   const matchedRule = ROUTE_GUARDS.find((rule) => rule.pattern.test(pathname))
   if (!matchedRule) {
     return OPEN_ACCESS

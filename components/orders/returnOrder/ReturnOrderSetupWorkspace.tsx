@@ -34,7 +34,7 @@ const formatStatus = (value: string) =>
 const asNumber = (value: string | number | undefined | null) => Number(value ?? 0)
 
 export default function ReturnOrderSetupWorkspace() {
-  const { activeMembership, isLoading: loadingWorkspaceSetup, isOwner } = useWorkspaceSetupProgress()
+  const { activeMembership, isWorkspaceContextLoading: loadingWorkspaceSetup, isOwner } = useWorkspaceSetupProgress()
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [searchQuery, setSearchQuery] = useState("")
   const deferredSearchQuery = useDeferredValue(searchQuery.trim())
@@ -87,8 +87,6 @@ export default function ReturnOrderSetupWorkspace() {
   if (loadingWorkspaceSetup) {
     return (
       <WorkspaceSetupLoadingCard
-        title="Loading supplier-return workspace"
-        description="Checking your active company before showing supplier-return setup and return controls."
       />
     )
   }
@@ -106,7 +104,7 @@ export default function ReturnOrderSetupWorkspace() {
           <CardContent className="p-6 pt-0">
             {isOwner ? (
               <Button asChild>
-                <Link href="/profile">
+                <Link href="/profile/create">
                   Go to workspace setup
                   <ArrowRight className="h-4 w-4" />
                 </Link>

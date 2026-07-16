@@ -115,7 +115,7 @@ const AgentSetupEmptyState = ({ profilesCount }: { profilesCount: number }) => (
       </Button>
       {profilesCount === 0 ? (
         <Button asChild variant="outline">
-          <Link href="/profile">Create company profile</Link>
+          <Link href="/profile/create">Create company profile</Link>
         </Button>
       ) : null}
     </CardContent>
@@ -174,17 +174,17 @@ const WorkspaceAiSetupSheet = ({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full max-w-3xl border-slate-800 bg-[linear-gradient(180deg,#020617_0%,#0f172a_58%,#111827_100%)] p-0 text-white shadow-[0_40px_90px_rgba(2,6,23,0.82)] sm:max-w-3xl"
+        className="w-full max-w-3xl border-gray-800 bg-[linear-gradient(180deg,#020617_0%,#0f172a_58%,#111827_100%)] p-0 text-gray-100 shadow-[0_40px_90px_rgba(2,6,23,0.82)] sm:max-w-3xl"
       >
         <div className="flex h-full flex-col">
-          <SheetHeader className="border-b border-slate-800/80 bg-[linear-gradient(115deg,rgba(15,23,42,0.98),rgba(17,24,39,0.96),rgba(30,41,59,0.96))] px-7 py-7 text-left md:px-8">
+          <SheetHeader className="border-b border-gray-800/80 bg-[linear-gradient(115deg,rgba(15,23,42,0.98),rgba(17,24,39,0.96),rgba(30,41,59,0.96))] px-7 py-7 text-left md:px-8">
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-200">
               Workspace AI settings
             </div>
-            <SheetTitle className="mt-4 text-3xl font-semibold tracking-tight text-white" style={{ color: "#f9fafb" }}>
+            <SheetTitle className="mt-4 text-3xl font-semibold tracking-tight text-gray-100">
               {setupResponse?.configured ? "Update workspace AI" : "Configure workspace AI"}
             </SheetTitle>
-            <SheetDescription className="max-w-2xl text-sm leading-6 text-slate-300" style={{ color: "#cbd5e1" }}>
+            <SheetDescription className="max-w-2xl text-sm leading-6 text-gray-300">
               Keep the page compact. Model selection, encrypted keys, and instruction layers are managed here in a side
               form instead of inline.
             </SheetDescription>
@@ -193,17 +193,17 @@ const WorkspaceAiSetupSheet = ({
           <div className="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(30,41,59,0.96)_0%,rgba(15,23,42,0.98)_52%,rgba(2,6,23,1)_100%)] px-7 py-6 md:px-8">
             <div className="grid gap-4">
               <div className="grid gap-4 md:grid-cols-2">
-                <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300" style={{ color: "#cbd5e1" }}>Agent name</span>
+                <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-300">Agent name</span>
                   <Input
-                    className="h-12 rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                    className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
                     value={form.name}
                     onChange={(event) => updateField("name", event.target.value)}
                     placeholder="Intera workspace copilot"
                   />
                 </label>
-                <div className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300" style={{ color: "#cbd5e1" }}>Model version</span>
+                <div className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-300">Model version</span>
                   <ReactSelectField
                     options={versionOptions}
                     value={selectedVersionOption}
@@ -218,17 +218,17 @@ const WorkspaceAiSetupSheet = ({
                     styles={{
                       control: (base, state) => ({
                         ...base,
-                        backgroundColor: state.isDisabled ? "#0f172a" : "#1e293b",
-                        borderColor: state.isFocused ? "#60a5fa" : "#334155",
-                        color: "#f8fafc",
+                        backgroundColor: state.isDisabled ? "#111827" : "#1f2937",
+                        borderColor: state.isFocused ? "#60a5fa" : "#374151",
+                        color: "#f3f4f6",
                       }),
-                      singleValue: (base) => ({ ...base, color: "#f8fafc" }),
-                      input: (base) => ({ ...base, color: "#f8fafc" }),
-                      placeholder: (base) => ({ ...base, color: "#94a3b8" }),
+                      singleValue: (base) => ({ ...base, color: "#f3f4f6" }),
+                      input: (base) => ({ ...base, color: "#f3f4f6" }),
+                      placeholder: (base) => ({ ...base, color: "#9ca3af" }),
                     }}
                   />
                   {selectedVersion ? (
-                    <p className="text-xs text-slate-300" style={{ color: "#cbd5e1" }}>
+                    <p className="text-xs text-gray-300">
                       Selected: {selectedVersion.provider_label} · {selectedVersion.model_name}
                     </p>
                   ) : null}
@@ -236,13 +236,13 @@ const WorkspaceAiSetupSheet = ({
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
-                <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                  <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300" style={{ color: "#cbd5e1" }}>
-                    <KeyRound className="h-4 w-4 text-slate-500" />
+                <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                  <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-300">
+                    <KeyRound className="h-4 w-4 text-gray-500" />
                     LLM API key
                   </span>
                   <Input
-                    className="h-12 rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                    className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
                     type="password"
                     value={form.apiKey}
                     onChange={(event) => updateField("apiKey", event.target.value)}
@@ -251,13 +251,13 @@ const WorkspaceAiSetupSheet = ({
                     }
                   />
                 </label>
-                <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                  <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300" style={{ color: "#cbd5e1" }}>
-                    <KeyRound className="h-4 w-4 text-slate-500" />
+                <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                  <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-300">
+                    <KeyRound className="h-4 w-4 text-gray-500" />
                     Tavily API key
                   </span>
                   <Input
-                    className="h-12 rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                    className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
                     type="password"
                     value={form.tavilyApiKey}
                     onChange={(event) => updateField("tavilyApiKey", event.target.value)}
@@ -270,10 +270,10 @@ const WorkspaceAiSetupSheet = ({
                 </label>
               </div>
 
-              <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300" style={{ color: "#cbd5e1" }}>Special instruction</span>
+              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-300">Special instruction</span>
                 <Textarea
-                  className="min-h-[140px] rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                  className="min-h-[140px] rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
                   value={form.specialInstruction}
                   onChange={(event) => updateField("specialInstruction", event.target.value)}
                   placeholder="Organization-level guidance for how the workspace AI should behave."
@@ -281,10 +281,10 @@ const WorkspaceAiSetupSheet = ({
                 />
               </label>
 
-              <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300" style={{ color: "#cbd5e1" }}>System instruction</span>
+              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-300">System instruction</span>
                 <Textarea
-                  className="min-h-[160px] rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                  className="min-h-[160px] rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
                   value={form.systemInstruction}
                   onChange={(event) => updateField("systemInstruction", event.target.value)}
                   placeholder="Base operating instruction used by the workspace AI."
@@ -292,10 +292,10 @@ const WorkspaceAiSetupSheet = ({
                 />
               </label>
 
-              <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300" style={{ color: "#cbd5e1" }}>Assistant instruction</span>
+              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-300">Assistant instruction</span>
                 <Textarea
-                  className="min-h-[160px] rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                  className="min-h-[160px] rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
                   value={form.assistantInstruction}
                   onChange={(event) => updateField("assistantInstruction", event.target.value)}
                   placeholder="Response style, formatting, and interaction guidance."
@@ -305,7 +305,7 @@ const WorkspaceAiSetupSheet = ({
             </div>
           </div>
 
-          <div className="border-t border-slate-800 bg-slate-950/95 px-7 py-4 md:px-8">
+          <div className="border-t border-gray-800 bg-gray-950/95 px-7 py-4 md:px-8">
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
@@ -482,17 +482,17 @@ export default function SettingsPage() {
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-[24px] border border-blue-100 bg-blue-50 px-4 py-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">Access Mode</p>
-                <p className="mt-2 text-lg font-semibold text-slate-900">
+                <p className="mt-2 text-lg font-semibold text-gray-900">
                   {ownerOverride ? "Workspace owner" : "Permission-based"}
                 </p>
               </div>
               <div className="rounded-[24px] border border-emerald-100 bg-emerald-50 px-4 py-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">Workspace AI</p>
-                <p className="mt-2 text-lg font-semibold text-slate-900">{aiConfigured ? "Configured" : "Not configured"}</p>
+                <p className="mt-2 text-lg font-semibold text-gray-900">{aiConfigured ? "Configured" : "Not configured"}</p>
               </div>
               <div className="rounded-[24px] border border-violet-100 bg-violet-50 px-4 py-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-700">Runtime Surface</p>
-                <p className="mt-2 text-lg font-semibold text-slate-900">Separated from setup</p>
+                <p className="mt-2 text-lg font-semibold text-gray-900">Separated from setup</p>
               </div>
             </div>
 
@@ -512,7 +512,7 @@ export default function SettingsPage() {
         </Card>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="h-auto flex-wrap justify-start gap-2 rounded-[24px] bg-slate-100 p-1">
+          <TabsList className="h-auto flex-wrap justify-start gap-2 rounded-[24px] bg-gray-100 p-1">
             <TabsTrigger
               value="workspace-ai"
               className="rounded-[18px] border-transparent bg-transparent px-4 py-2.5 data-[state=active]:border-blue-300 data-[state=active]:bg-white data-[state=active]:text-blue-700"

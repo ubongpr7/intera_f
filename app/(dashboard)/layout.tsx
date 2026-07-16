@@ -3,6 +3,7 @@
 import type React from "react"
 import DashboardHeader from "@/components/wrapper/dashboardHeader";
 import { RouteAccessGuard } from "@/lib/permissionsGuard";
+import { SubscriptionRequiredGuard } from "@/components/subscription/SubscriptionRequiredGuard";
 
 
 export default function DashboardLayout({
@@ -13,7 +14,9 @@ export default function DashboardLayout({
   return (
     <DashboardHeader>
       <RouteAccessGuard>
-        {children}
+        <SubscriptionRequiredGuard>
+          {children}
+        </SubscriptionRequiredGuard>
       </RouteAccessGuard>
     </DashboardHeader>
   )

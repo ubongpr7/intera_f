@@ -102,7 +102,7 @@ const quickSummary = (summary?: PurchaseOrderDashboardSummary, analytics?: Purch
 
 export default function PurchaseOrderSetupWorkspace() {
   const router = useRouter()
-  const { activeMembership, isLoading: loadingWorkspaceSetup, isOwner, profile } = useWorkspaceSetupProgress()
+  const { activeMembership, isWorkspaceContextLoading: loadingWorkspaceSetup, isOwner, profile } = useWorkspaceSetupProgress()
   const defaultCurrency = profile?.currency || "NGN"
   const [formState, setFormState] = useState<PurchaseOrderFormState>(() => buildInitialForm(defaultCurrency))
   const [selectedStructuralLocationIds, setSelectedStructuralLocationIds] = useStructuralLocationScope()
@@ -208,8 +208,6 @@ export default function PurchaseOrderSetupWorkspace() {
   if (loadingWorkspaceSetup) {
     return (
       <WorkspaceSetupLoadingCard
-        title="Loading purchase-order workspace"
-        description="Checking your active company before showing purchase-order setup and replenishment controls."
       />
     )
   }
@@ -228,7 +226,7 @@ export default function PurchaseOrderSetupWorkspace() {
           <CardContent className="p-6 pt-0">
             {isOwner ? (
               <Button asChild>
-                <Link href="/profile">
+                <Link href="/profile/create">
                   Go to workspace setup
                   <ArrowRight className="h-4 w-4" />
                 </Link>

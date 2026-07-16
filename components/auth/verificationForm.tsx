@@ -151,7 +151,7 @@ export default function VerificationForm({ email,redirectTo }: VerificationProps
             type="button"
             onClick={handleResend}
             disabled={cooldown > 0 || isResending}
-            className="text-blue-600 hover:text-blue-800 disabled:text-gray-400 disabled:cursor-not-allowed"
+            className="text-gray-900 hover:text-blue-800 disabled:text-gray-900 disabled:cursor-not-allowed"
           >
             {cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend verification code'}
           </button>

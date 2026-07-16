@@ -84,14 +84,14 @@ export default function POSCashierHeader({
               </div>
               <h2 className="mt-3 text-2xl font-semibold tracking-tight text-gray-900">
                 {isLoading
-                  ? "Loading POS session"
+                  ? "Loading"
                   : hasCurrentSession
                     ? "Live session in progress"
                     : "Open a session to start selling"}
               </h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
                 {isLoading
-                  ? "Loading terminals, session status, closeout state, and cashier workspace data."
+                  ? "Please wait while we open this page."
                   : "Browse POS-ready products, recover held carts, manage the cart, coordinate inventory, and settle the order from one checkout flow."}
               </p>
             </div>
@@ -129,11 +129,11 @@ export default function POSCashierHeader({
               </div>
               <div className="rounded-xl border border-gray-200 bg-white p-3">
                 <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">Started</div>
-                <div className="mt-2 text-base font-semibold text-gray-900">{isLoading ? "Loading..." : formatTime(currentSession?.opening_time)}</div>
+                <div className="mt-2 text-base font-semibold text-gray-900">{isLoading ? "Loading" : formatTime(currentSession?.opening_time)}</div>
               </div>
               <div className="rounded-xl border border-gray-200 bg-white p-3">
                 <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">Current order</div>
-                <div className="mt-2 text-base font-semibold text-gray-900">{isLoading ? "Loading..." : currentOrder?.order_number || "No draft"}</div>
+                <div className="mt-2 text-base font-semibold text-gray-900">{isLoading ? "Loading" : currentOrder?.order_number || "No draft"}</div>
               </div>
             </div>
 
@@ -160,8 +160,8 @@ export default function POSCashierHeader({
                 <>
                   <div className="rounded-2xl border border-gray-200 bg-white p-3 text-sm text-gray-600">
                     <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">Session status</div>
-                    <div className="mt-2 text-base font-semibold text-gray-900">Loading...</div>
-                    <div className="mt-2 text-xs">Checking whether a cashier session is already open on this terminal.</div>
+                    <div className="mt-2 text-base font-semibold text-gray-900">Loading</div>
+                    <div className="mt-2 text-xs">Please wait while we open this page.</div>
                   </div>
                   <Button className="w-full" disabled>
                     Loading session...

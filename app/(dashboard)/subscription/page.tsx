@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { jwtDecode } from "jwt-decode"
 import { getCookie } from "cookies-next"
 import { useSearchParams } from "next/navigation"
@@ -135,6 +135,7 @@ function UsageCardsSkeleton() {
 export default function SubscriptionPage() {
   const searchParams = useSearchParams()
   const owner = useMemo(() => isWorkspaceOwner(), [])
+  const handledPaymentVerificationRef = useRef<string | null>(null)
   const {
     data: entitlements,
     isLoading: loadingEntitlements,
@@ -142,7 +143,10 @@ export default function SubscriptionPage() {
     refetch,
   } = useGetCurrentEntitlementsQuery(undefined, { refetchOnMountOrArgChange: true })
   const { data: coinTransactions = [], refetch: refetchCoinTransactions } = useGetCoinTransactionsQuery(undefined, { refetchOnMountOrArgChange: true })
-  const { data: plans = [], isLoading: loadingPlans } = useGetSubscriptionPlansQuery({ application__slug: "intera-ims" })
+  const { data: plans = [], isLoading: loadingPlans } = useGetSubscriptionPlansQuery(
+    { application__slug: "intera-ims" },
+    { refetchOnMountOrArgChange: true },
+  )
   const [initiatePayment, { isLoading: initiatingPayment }] = useInitiatePaymentMutation()
   const [verifyPayment, { isLoading: verifyingPayment }] = useVerifyPaymentMutation()
   const [cancelSubscription, { isLoading: cancellingSubscription }] = useCancelSubscriptionMutation()
@@ -151,8 +155,8 @@ export default function SubscriptionPage() {
   const activePlan = entitlements?.subscription?.plan
   const activeSubscriptionId = entitlements?.subscription?.id
   const billingAuthorized = Boolean(entitlements?.subscription?.billing_authorized)
-  const usageRows = entitlements?.usage ?? []
-  const features = Object.entries(entitlements?.features ?? {})
+  const usageRows = useMemo(() => entitlements?.usage ?? [], [entitlements?.usage])
+  const features = useMemo(() => Object.entries(entitlements?.features ?? {}), [entitlements?.features])
   const coinBalance = entitlements?.coins?.balance ?? 0
   const coinAllocation = entitlements?.coins?.monthly_allocation ?? 0
   const coinUsed = entitlements?.coins?.used ?? Math.max(coinAllocation - coinBalance, 0)
@@ -177,6 +181,9 @@ export default function SubscriptionPage() {
     const txRef = searchParams.get("tx_ref")
     const status = searchParams.get("status")
     if (!transactionId && !txRef) return
+    const verificationKey = [transactionId ?? "", txRef ?? "", status ?? ""].join("|")
+    if (handledPaymentVerificationRef.current === verificationKey) return
+    handledPaymentVerificationRef.current = verificationKey
     if (status && status !== "successful" && status !== "completed") {
       toast.error("Billing authorization was not completed.")
       return

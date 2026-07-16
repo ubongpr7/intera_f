@@ -671,8 +671,8 @@ export function WizardFlowHandler({ data, onResponse, compact = false, disabled 
               }
 
               return (
-                <div key={step.title || index} className="rounded-lg border border-slate-200 bg-white/70 p-3">
-                  <div className={`font-medium text-slate-800 ${compact ? "text-xs" : "text-sm"}`}>{step.title}</div>
+                <div key={step.title || index} className="rounded-lg border border-gray-200 bg-white/70 p-3/70">
+                  <div className={`font-medium text-gray-800 ${compact ? "text-xs" : "text-sm"}`}>{step.title}</div>
                   <div className="mt-2 space-y-1">
                     {step.fields.map((field: any) => {
                       const value = stepValues[field.name]
@@ -688,8 +688,8 @@ export function WizardFlowHandler({ data, onResponse, compact = false, disabled 
 
                       return (
                         <div key={field.name} className={`flex flex-col gap-1 ${compact ? "text-xs" : "text-sm"}`}>
-                          <span className="font-medium text-slate-600">{field.label}</span>
-                          <span className="text-slate-800 whitespace-pre-wrap break-words">{renderedValue}</span>
+                          <span className="font-medium text-gray-600">{field.label}</span>
+                          <span className="whitespace-pre-wrap break-words text-gray-800">{renderedValue}</span>
                         </div>
                       )
                     })}

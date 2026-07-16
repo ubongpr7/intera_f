@@ -329,7 +329,7 @@ function CodeBlock({ content, language }: { content: string; language?: string }
         </div>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm hover:bg-gray-700 transition-colors border border-gray-600"
+        className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm hover:bg-gray-700 transition-colors border border-gray-600"
           title="Copy code"
         >
           {copied ? (
@@ -373,16 +373,16 @@ function TextContent({ content }: { content: string }) {
   // Handle inline code `code`
   processedContent = processedContent.replace(
     /`([^`]+)`/g,
-    '<code class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm font-mono border">$1</code>',
+    '<code class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm font-mono border dark:bg-gray-800">$1</code>',
   )
 
   // Handle links [text](url)
   processedContent = processedContent.replace(
     /\[([^\]]+)\]$$([^)]+)$$/g,
-    '<a href="$2" class="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer">$1</a>',
+    '<a href="$2" class="text-blue-600 hover:text-blue-800 underline dark:text-blue-300 dark:hover:text-blue-200" target="_blank" rel="noopener noreferrer">$1</a>',
   )
 
-  return <div className="whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: processedContent }} />
+  return <div className="whitespace-pre-wrap leading-relaxed text-gray-700 dark:text-gray-100" dangerouslySetInnerHTML={{ __html: processedContent }} />
 }
 
 export default function MessageContent({ content, role, onCopy, onExport }: MessageContentProps) {
@@ -398,17 +398,17 @@ export default function MessageContent({ content, role, onCopy, onExport }: Mess
         <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1">
           <button
             onClick={onCopy}
-            className="p-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
+            className="p-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800"
             title="Copy message"
           >
-            <Copy className="h-4 w-4 text-gray-600" />
+            <Copy className="h-4 w-4 text-gray-600 dark:text-gray-300" />
           </button>
           <button
             onClick={onExport}
-            className="p-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
+            className="p-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800"
             title="Export message"
           >
-            <Download className="h-4 w-4 text-gray-600" />
+            <Download className="h-4 w-4 text-gray-600 dark:text-gray-300" />
           </button>
         </div>
       )}
