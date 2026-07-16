@@ -223,33 +223,33 @@ const AgentEditorSheet = ({
   <Sheet open={open} onOpenChange={onOpenChange}>
     <SheetContent
       side="right"
-      className="w-full max-w-3xl border-slate-800 bg-[linear-gradient(180deg,#020617_0%,#0f172a_58%,#111827_100%)] p-0 text-white shadow-[0_40px_90px_rgba(2,6,23,0.82)] sm:max-w-3xl"
+      className="w-full max-w-3xl border-gray-800 bg-[linear-gradient(180deg,#020617_0%,#0f172a_58%,#111827_100%)] p-0 text-white shadow-[0_40px_90px_rgba(2,6,23,0.82)] sm:max-w-3xl"
     >
       <div className="flex h-full flex-col">
-        <SheetHeader className="border-b border-slate-800/80 bg-[linear-gradient(115deg,rgba(15,23,42,0.98),rgba(17,24,39,0.96),rgba(30,41,59,0.96))] px-7 py-7 text-left md:px-8">
+        <SheetHeader className="border-b border-gray-800/80 bg-[linear-gradient(115deg,rgba(15,23,42,0.98),rgba(17,24,39,0.96),rgba(30,41,59,0.96))] px-7 py-7 text-left md:px-8">
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-200">
               Workspace settings
           </div>
           <SheetTitle className="mt-4 text-3xl font-semibold tracking-tight text-blue-200">{title}</SheetTitle>
-          <SheetDescription className="max-w-2xl text-sm leading-6 text-slate-300">{description}</SheetDescription>
+          <SheetDescription className="max-w-2xl text-sm leading-6 text-gray-300">{description}</SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(30,41,59,0.96)_0%,rgba(15,23,42,0.98)_52%,rgba(2,6,23,1)_100%)] px-7 py-6 md:px-8">
           <div className="grid gap-4">
             <div className="grid gap-4 md:grid-cols-2">
-              <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Slug</span>
+              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Slug</span>
                 <Input
-                  className="h-12 rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                  className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
                   value={value.slug}
                   onChange={(event) => onChange({ ...value, slug: event.target.value })}
                   placeholder="inventory-ops-copilot"
                 />
               </label>
-              <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Name</span>
+              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Name</span>
                 <Input
-                  className="h-12 rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                  className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
                   value={value.name}
                   onChange={(event) => onChange({ ...value, name: event.target.value })}
                   placeholder="Inventory Ops Copilot"
@@ -257,10 +257,10 @@ const AgentEditorSheet = ({
               </label>
             </div>
 
-            <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Description</span>
+            <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Description</span>
               <Textarea
-                className="min-h-[120px] rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                className="min-h-[120px] rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
                 value={value.description}
                 onChange={(event) => onChange({ ...value, description: event.target.value })}
                 placeholder="Explain what this agent is responsible for in the workspace."
@@ -269,14 +269,14 @@ const AgentEditorSheet = ({
             </label>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Visibility</span>
+              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Visibility</span>
                 <select
                   value={value.visibility}
                   onChange={(event) =>
                     onChange({ ...value, visibility: event.target.value as AgentFormState["visibility"] })
                   }
-                  className="h-12 rounded-2xl border border-slate-700 bg-slate-800/80 px-4 text-sm text-slate-100 outline-none transition focus:border-blue-400"
+                  className="h-12 rounded-2xl border border-gray-700 bg-gray-800/80 px-4 text-sm text-gray-100 outline-none transition focus:border-blue-400"
                 >
                   {visibilityOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -285,8 +285,8 @@ const AgentEditorSheet = ({
                   ))}
                 </select>
               </label>
-              <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Routing policy</span>
+              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Routing policy</span>
                 <select
                   value={value.routing_policy}
                   onChange={(event) =>
@@ -295,7 +295,7 @@ const AgentEditorSheet = ({
                       routing_policy: event.target.value as AgentFormState["routing_policy"],
                     })
                   }
-                  className="h-12 rounded-2xl border border-slate-700 bg-slate-800/80 px-4 text-sm text-slate-100 outline-none transition focus:border-blue-400"
+                  className="h-12 rounded-2xl border border-gray-700 bg-gray-800/80 px-4 text-sm text-gray-100 outline-none transition focus:border-blue-400"
                 >
                   {routingOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -306,10 +306,10 @@ const AgentEditorSheet = ({
               </label>
             </div>
 
-            <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">System instruction</span>
+            <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">System instruction</span>
               <Textarea
-                className="min-h-[140px] rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                className="min-h-[140px] rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
                 value={value.system_instruction}
                 onChange={(event) => onChange({ ...value, system_instruction: event.target.value })}
                 rows={4}
@@ -317,10 +317,10 @@ const AgentEditorSheet = ({
               />
             </label>
 
-            <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Workflow guidance</span>
+            <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Workflow guidance</span>
               <Textarea
-                className="min-h-[120px] rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                className="min-h-[120px] rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
                 value={value.developer_instruction}
                 onChange={(event) => onChange({ ...value, developer_instruction: event.target.value })}
                 rows={3}
@@ -328,10 +328,10 @@ const AgentEditorSheet = ({
               />
             </label>
 
-            <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Assistant instruction</span>
+            <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Assistant instruction</span>
               <Textarea
-                className="min-h-[120px] rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                className="min-h-[120px] rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
                 value={value.assistant_instruction}
                 onChange={(event) => onChange({ ...value, assistant_instruction: event.target.value })}
                 rows={3}
@@ -339,62 +339,62 @@ const AgentEditorSheet = ({
               />
             </label>
 
-            <label className="flex items-start gap-3 rounded-[26px] border border-slate-800 bg-slate-950/72 px-4 py-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+            <label className="flex items-start gap-3 rounded-[26px] border border-gray-800 bg-gray-950/72 px-4 py-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
               <Checkbox
                 checked={value.is_enabled}
                 onCheckedChange={(checked) => onChange({ ...value, is_enabled: Boolean(checked) })}
               />
               <div>
-                <p className="font-medium text-slate-100">Enable this agent</p>
-                <p className="text-xs leading-5 text-slate-400">
+                <p className="font-medium text-gray-100">Enable this agent</p>
+                <p className="text-xs leading-5 text-gray-400">
                   Disabled agents stay configured in the workspace but do not appear in the active agent list.
                 </p>
               </div>
             </label>
 
-            <details className="rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-              <summary className="cursor-pointer text-sm font-semibold text-slate-100">Advanced settings</summary>
+            <details className="rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <summary className="cursor-pointer text-sm font-semibold text-gray-100">Advanced settings</summary>
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <label className="grid gap-2 text-sm">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Preferred transport</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Preferred transport</span>
                   <Input
-                    className="h-12 rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                    className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
                     value={value.preferred_transport}
                     onChange={(event) => onChange({ ...value, preferred_transport: event.target.value })}
                     placeholder="kafka"
                   />
                 </label>
                 <label className="grid gap-2 text-sm">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Protocol version</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Protocol version</span>
                   <Input
-                    className="h-12 rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                    className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
                     value={value.protocol_version}
                     onChange={(event) => onChange({ ...value, protocol_version: event.target.value })}
                     placeholder="0.3.0"
                   />
                 </label>
                 <label className="grid gap-2 text-sm">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Agent version</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Agent version</span>
                   <Input
-                    className="h-12 rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                    className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
                     value={value.version}
                     onChange={(event) => onChange({ ...value, version: event.target.value })}
                     placeholder="0.1.0"
                   />
                 </label>
                 <label className="grid gap-2 text-sm">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Documentation URL</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Documentation URL</span>
                   <Input
-                    className="h-12 rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                    className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
                     value={value.documentation_url}
                     onChange={(event) => onChange({ ...value, documentation_url: event.target.value })}
                     placeholder="https://docs.example.com/agent"
                   />
                 </label>
                 <label className="grid gap-2 text-sm md:col-span-2">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Icon URL</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Icon URL</span>
                   <Input
-                    className="h-12 rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                    className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
                     value={value.icon_url}
                     onChange={(event) => onChange({ ...value, icon_url: event.target.value })}
                     placeholder="https://cdn.example.com/icon.svg"
@@ -405,7 +405,7 @@ const AgentEditorSheet = ({
           </div>
         </div>
 
-        <div className="border-t border-slate-800 bg-slate-950/95 px-7 py-4 md:px-8">
+        <div className="border-t border-gray-800 bg-gray-950/95 px-7 py-4 md:px-8">
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
@@ -464,16 +464,16 @@ const AgentBindingsSheet = ({
   <Sheet open={open} onOpenChange={onOpenChange}>
     <SheetContent side="right" className="w-full max-w-3xl border-gray-200 bg-white p-0 text-gray-900 sm:max-w-3xl">
       <div className="flex h-full flex-col">
-        <SheetHeader className="border-b border-gray-200 bg-slate-950 px-6 py-6 text-left">
+        <SheetHeader className="border-b border-gray-200 bg-gray-950 px-6 py-6 text-left">
           <SheetTitle className="text-3xl font-semibold tracking-tight text-white">
             Configure tools and skills
           </SheetTitle>
-          <SheetDescription className="text-sm leading-6 text-slate-300">
+          <SheetDescription className="text-sm leading-6 text-gray-300">
             {agent ? `Adjust the tools and skills for ${agent.name}.` : "Select an agent first."}
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto bg-slate-50 px-6 py-6">
+        <div className="flex-1 overflow-y-auto bg-gray-50 px-6 py-6">
           {agent ? (
             <div className="space-y-6">
               <Card className="border-gray-200">
@@ -506,13 +506,13 @@ const AgentBindingsSheet = ({
                       agent.tool_bindings.map((binding) => (
                         <div
                           key={binding.id}
-                          className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-slate-700"
+                          className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700"
                         >
                           <span>{binding.tool.display_name}</span>
                           <button
                             type="button"
                             onClick={() => void onDetachTool(binding.tool.id)}
-                            className="rounded-full p-1 text-slate-400 transition hover:bg-white hover:text-red-500"
+                            className="rounded-full p-1 text-gray-400 transition hover:bg-white hover:text-red-500"
                             disabled={detachingTool}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -520,7 +520,7 @@ const AgentBindingsSheet = ({
                         </div>
                       ))
                     ) : (
-                      <p className="text-sm text-slate-500">No tools attached yet.</p>
+                      <p className="text-sm text-gray-500">No tools attached yet.</p>
                     )}
                   </div>
                 </CardContent>
@@ -556,13 +556,13 @@ const AgentBindingsSheet = ({
                       agent.skill_bindings.map((binding) => (
                         <div
                           key={binding.id}
-                          className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-slate-700"
+                          className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700"
                         >
                           <span>{binding.skill.name}</span>
                           <button
                             type="button"
                             onClick={() => void onDetachSkill(binding.skill.id)}
-                            className="rounded-full p-1 text-slate-400 transition hover:bg-white hover:text-red-500"
+                            className="rounded-full p-1 text-gray-400 transition hover:bg-white hover:text-red-500"
                             disabled={detachingSkill}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -570,7 +570,7 @@ const AgentBindingsSheet = ({
                         </div>
                       ))
                     ) : (
-                      <p className="text-sm text-slate-500">No skills attached yet.</p>
+                      <p className="text-sm text-gray-500">No skills attached yet.</p>
                     )}
                   </div>
                 </CardContent>
@@ -578,7 +578,7 @@ const AgentBindingsSheet = ({
             </div>
           ) : (
             <Card className="border-dashed border-gray-300 bg-white">
-              <CardContent className="p-6 text-sm text-slate-500">
+              <CardContent className="p-6 text-sm text-gray-500">
                 Select an installed agent first.
               </CardContent>
             </Card>
@@ -613,15 +613,15 @@ const InstallTemplatesSheet = ({
   <Sheet open={open} onOpenChange={onOpenChange}>
     <SheetContent
       side="right"
-      className="w-full max-w-3xl border-slate-800 bg-[linear-gradient(180deg,#020617_0%,#0f172a_58%,#111827_100%)] p-0 text-white shadow-[0_40px_90px_rgba(2,6,23,0.82)] sm:max-w-3xl"
+      className="w-full max-w-3xl border-gray-800 bg-[linear-gradient(180deg,#020617_0%,#0f172a_58%,#111827_100%)] p-0 text-white shadow-[0_40px_90px_rgba(2,6,23,0.82)] sm:max-w-3xl"
     >
       <div className="flex h-full flex-col">
-        <SheetHeader className="border-b border-slate-800/80 bg-[linear-gradient(115deg,rgba(15,23,42,0.98),rgba(17,24,39,0.96),rgba(6,78,59,0.86))] px-6 py-6 text-left">
+        <SheetHeader className="border-b border-gray-800/80 bg-[linear-gradient(115deg,rgba(15,23,42,0.98),rgba(17,24,39,0.96),rgba(6,78,59,0.86))] px-6 py-6 text-left">
           <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-400/30 bg-blue-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-blue-100">
             Default agents
           </div>
           <SheetTitle className="mt-4 text-3xl font-semibold tracking-tight text-blue-100">Install default agents</SheetTitle>
-          <SheetDescription className="max-w-2xl text-sm leading-6 text-slate-300">
+          <SheetDescription className="max-w-2xl text-sm leading-6 text-gray-300">
             Only templates not yet installed in this workspace are shown here. Install first, then edit details or bindings afterward.
           </SheetDescription>
         </SheetHeader>
@@ -629,29 +629,29 @@ const InstallTemplatesSheet = ({
         <div className="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(22,78,99,0.28)_0%,rgba(15,23,42,0.98)_48%,rgba(2,6,23,1)_100%)] px-6 py-6">
           {isLoadingTemplates && templates.length === 0 ? (
             <div className="space-y-4">
-              <div className="rounded-[26px] border border-slate-800 bg-slate-950/72 p-5 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <div className="h-4 w-44 animate-pulse rounded-full bg-slate-800" />
-                <div className="mt-4 h-10 w-72 animate-pulse rounded-2xl bg-slate-800/80" />
-                <div className="mt-3 h-4 w-full max-w-xl animate-pulse rounded-full bg-slate-800/70" />
+              <div className="rounded-[26px] border border-gray-800 bg-gray-950/72 p-5 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                <div className="h-4 w-44 animate-pulse rounded-full bg-gray-800" />
+                <div className="mt-4 h-10 w-72 animate-pulse rounded-2xl bg-gray-800/80" />
+                <div className="mt-3 h-4 w-full max-w-xl animate-pulse rounded-full bg-gray-800/70" />
               </div>
               <div className="grid gap-4">
                 {Array.from({ length: 3 }).map((_, index) => (
                   <div
                     key={`template-skeleton-${index}`}
-                    className="rounded-[26px] border border-slate-800 bg-slate-950/72 p-5 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]"
+                    className="rounded-[26px] border border-gray-800 bg-gray-950/72 p-5 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1 space-y-3">
-                        <div className="h-5 w-52 animate-pulse rounded-full bg-slate-800" />
-                        <div className="h-4 w-full max-w-xl animate-pulse rounded-full bg-slate-800/70" />
-                        <div className="h-4 w-4/5 animate-pulse rounded-full bg-slate-800/70" />
+                        <div className="h-5 w-52 animate-pulse rounded-full bg-gray-800" />
+                        <div className="h-4 w-full max-w-xl animate-pulse rounded-full bg-gray-800/70" />
+                        <div className="h-4 w-4/5 animate-pulse rounded-full bg-gray-800/70" />
                       </div>
-                      <div className="h-11 w-11 animate-pulse rounded-2xl bg-slate-800" />
+                      <div className="h-11 w-11 animate-pulse rounded-2xl bg-gray-800" />
                     </div>
                     <div className="mt-5 flex flex-wrap gap-2">
-                      <div className="h-7 w-20 animate-pulse rounded-full bg-slate-800/80" />
-                      <div className="h-7 w-20 animate-pulse rounded-full bg-slate-800/80" />
-                      <div className="h-7 w-28 animate-pulse rounded-full bg-slate-800/80" />
+                      <div className="h-7 w-20 animate-pulse rounded-full bg-gray-800/80" />
+                      <div className="h-7 w-20 animate-pulse rounded-full bg-gray-800/80" />
+                      <div className="h-7 w-28 animate-pulse rounded-full bg-gray-800/80" />
                     </div>
                   </div>
                 ))}
@@ -659,9 +659,9 @@ const InstallTemplatesSheet = ({
             </div>
           ) : templates.length ? (
             <div className="space-y-4">
-              <div className="rounded-[26px] border border-slate-800 bg-slate-950/72 p-5 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <div className="rounded-[26px] border border-gray-800 bg-gray-950/72 p-5 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <label className="flex items-center gap-3 text-sm text-slate-200">
+                  <label className="flex items-center gap-3 text-sm text-gray-200">
                     <Checkbox
                       checked={templates.length > 0 && selectedTemplateIds.length === templates.length}
                       onCheckedChange={(checked) => onToggleAll(Boolean(checked))}
@@ -684,41 +684,41 @@ const InstallTemplatesSheet = ({
                   </Button>
                 </div>
                 {isLoadingTemplates ? (
-                  <p className="mt-3 text-xs text-slate-400">Refreshing the default agent catalog...</p>
+                  <p className="mt-3 text-xs text-gray-400">Refreshing the default agent catalog...</p>
                 ) : null}
               </div>
 
               {templates.map((template) => (
-                <Card key={template.id} className="border-slate-800 bg-slate-950/72 text-white shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                <Card key={template.id} className="border-gray-800 bg-gray-950/72 text-white shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
                   <CardHeader className="p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex min-w-0 items-start gap-3">
                         <Checkbox
                           checked={selectedTemplateIds.includes(template.id)}
                           onCheckedChange={(checked) => onToggleTemplate(template.id, Boolean(checked))}
-                          className="mt-1 border-slate-600 data-[state=checked]:border-blue-400 data-[state=checked]:bg-blue-500"
+                          className="mt-1 border-gray-600 data-[state=checked]:border-blue-400 data-[state=checked]:bg-blue-500"
                         />
                         <div className="min-w-0">
                           <CardTitle className="text-xl text-white">{template.name}</CardTitle>
-                          <CardDescription className="mt-2 text-sm leading-6 text-slate-300">
+                          <CardDescription className="mt-2 text-sm leading-6 text-gray-300">
                             {template.description || "No description yet."}
                           </CardDescription>
                         </div>
                       </div>
-                      <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-3 text-slate-300">
+                      <div className="rounded-2xl border border-gray-800 bg-gray-900/80 p-3 text-gray-300">
                         <Bot className="h-4 w-4" />
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent className="flex flex-col gap-4 p-5 pt-0">
                     <div className="flex flex-wrap gap-2 text-xs">
-                      <span className="rounded-full border border-slate-700 bg-slate-900/80 px-2.5 py-1 text-slate-200">
+                      <span className="rounded-full border border-gray-700 bg-gray-900/80 px-2.5 py-1 text-gray-200">
                         {template.tool_bindings.length} tools
                       </span>
-                      <span className="rounded-full border border-slate-700 bg-slate-900/80 px-2.5 py-1 text-slate-200">
+                      <span className="rounded-full border border-gray-700 bg-gray-900/80 px-2.5 py-1 text-gray-200">
                         {template.skill_bindings.length} skills
                       </span>
-                      <span className="rounded-full border border-slate-700 bg-slate-900/80 px-2.5 py-1 text-slate-200">
+                      <span className="rounded-full border border-gray-700 bg-gray-900/80 px-2.5 py-1 text-gray-200">
                         {template.preferred_transport}
                       </span>
                     </div>
@@ -727,7 +727,7 @@ const InstallTemplatesSheet = ({
               ))}
             </div>
           ) : (
-            <div className="rounded-[26px] border border-dashed border-slate-700 bg-slate-950/72 p-6 text-sm text-slate-300 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+            <div className="rounded-[26px] border border-dashed border-gray-700 bg-gray-950/72 p-6 text-sm text-gray-300 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
               Every default template has already been installed in this workspace.
             </div>
           )}
@@ -780,31 +780,31 @@ const ToolConnectionSheet = ({
     <Sheet open={open} onOpenChange={onOpenChange}>
   <SheetContent
       side="right"
-      className="w-full max-w-3xl border-slate-800 bg-[linear-gradient(180deg,#020617_0%,#0f172a_58%,#111827_100%)] p-0 text-white shadow-[0_40px_90px_rgba(2,6,23,0.82)] sm:max-w-3xl"
+      className="w-full max-w-3xl border-gray-800 bg-[linear-gradient(180deg,#020617_0%,#0f172a_58%,#111827_100%)] p-0 text-white shadow-[0_40px_90px_rgba(2,6,23,0.82)] sm:max-w-3xl"
     >
       <div className="flex h-full flex-col">
-        <SheetHeader className="border-b border-slate-800/80 bg-[linear-gradient(115deg,rgba(15,23,42,0.98),rgba(17,24,39,0.96),rgba(6,78,59,0.86))] px-7 py-7 text-left md:px-8">
+        <SheetHeader className="border-b border-gray-800/80 bg-[linear-gradient(115deg,rgba(15,23,42,0.98),rgba(17,24,39,0.96),rgba(6,78,59,0.86))] px-7 py-7 text-left md:px-8">
           <div className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-200">
             External MCP
           </div>
           <SheetTitle className="mt-4 text-3xl font-semibold tracking-tight text-blue-200">{title}</SheetTitle>
-          <SheetDescription className="max-w-2xl text-sm leading-6 text-slate-300">{description}</SheetDescription>
+          <SheetDescription className="max-w-2xl text-sm leading-6 text-gray-300">{description}</SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(22,78,99,0.28)_0%,rgba(15,23,42,0.98)_48%,rgba(2,6,23,1)_100%)] px-7 py-6 md:px-8">
           <div className="grid gap-4">
-            <div className="rounded-[26px] border border-slate-800 bg-slate-950/72 p-5 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-              <p className="text-sm font-semibold text-slate-100">How this works</p>
-              <div className="mt-3 grid gap-3 text-sm text-slate-300 md:grid-cols-2">
-                <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Tool server</p>
+            <div className="rounded-[26px] border border-gray-800 bg-gray-950/72 p-5 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <p className="text-sm font-semibold text-gray-100">How this works</p>
+              <div className="mt-3 grid gap-3 text-sm text-gray-300 md:grid-cols-2">
+                <div className="rounded-2xl border border-gray-800 bg-gray-900/70 p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Tool server</p>
                   <p className="mt-2 leading-6">
                     This is the MCP server definition in the platform catalog. It tells the workspace what kind of
                     external tool family you are connecting, such as Shopify, Slack, or Notion.
                   </p>
                 </div>
-                <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Connection</p>
+                <div className="rounded-2xl border border-gray-800 bg-gray-900/70 p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Connection</p>
                   <p className="mt-2 leading-6">
                     This stores your workspace-specific credentials and optional server URL. The server record is shared;
                     the connection is yours.
@@ -814,8 +814,8 @@ const ToolConnectionSheet = ({
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Tool server</span>
+              <div className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Tool server</span>
                 <ReactSelectField
                   value={toolServerOptions.find((option) => option.value === value.tool_server) ?? null}
                   onChange={(option) => {
@@ -835,14 +835,14 @@ const ToolConnectionSheet = ({
                     No MCP servers are in the catalog yet. Seed the platform catalog first, then reopen this sheet.
                   </p>
                 ) : (
-                  <p className="text-xs leading-5 text-slate-400">
+                  <p className="text-xs leading-5 text-gray-400">
                     Pick the external MCP family first. After that, save the credentials your workspace should use with
                     that server.
                   </p>
                 )}
               </div>
-              <div className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Auth type</span>
+              <div className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Auth type</span>
                 <ReactSelectField
                   value={toolConnectionAuthTypeOptions.find((option) => option.value === value.auth_type) ?? null}
                   onChange={(option) => {
@@ -854,7 +854,7 @@ const ToolConnectionSheet = ({
                   isSearchable={false}
                   isClearable={false}
                 />
-                <p className="text-xs leading-5 text-slate-400">
+                <p className="text-xs leading-5 text-gray-400">
                   This is the credential pattern your workspace will save for this connection, not the tool-server type
                   itself.
                 </p>
@@ -868,42 +868,42 @@ const ToolConnectionSheet = ({
                   <span className="rounded-full border border-emerald-700/50 bg-emerald-900/30 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-200">
                     {selectedServer.server_id}
                   </span>
-                  <span className="rounded-full border border-slate-700 bg-slate-900/70 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-300">
+                  <span className="rounded-full border border-gray-700 bg-gray-900/70 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-300">
                     {selectedServer.auth_mode || "none"}
                   </span>
                 </div>
-                <p className="mt-3 leading-6 text-slate-300">{selectedServer.description || "No server description yet."}</p>
+                <p className="mt-3 leading-6 text-gray-300">{selectedServer.description || "No server description yet."}</p>
                 {connectionGuide.length > 0 ? (
-                  <ul className="mt-4 grid gap-2 text-sm text-slate-300">
+                  <ul className="mt-4 grid gap-2 text-sm text-gray-300">
                     {connectionGuide.map((item) => (
-                      <li key={item} className="rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 leading-6">
+                      <li key={item} className="rounded-2xl border border-gray-800 bg-gray-900/70 px-4 py-3 leading-6">
                         {item}
                       </li>
                     ))}
                   </ul>
                 ) : null}
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Supported auth</p>
-                    <p className="mt-2 leading-6 text-slate-300">
+                  <div className="rounded-2xl border border-gray-800 bg-gray-900/70 p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Supported auth</p>
+                    <p className="mt-2 leading-6 text-gray-300">
                       {supportedAuthTypes.length > 0 ? supportedAuthTypes.join(", ") : value.auth_type || "custom"}
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Server URL</p>
-                    <p className="mt-2 break-all leading-6 text-slate-300">
+                  <div className="rounded-2xl border border-gray-800 bg-gray-900/70 p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Server URL</p>
+                    <p className="mt-2 break-all leading-6 text-gray-300">
                       {selectedServer.server_url || "No default URL is stored. Use Server URL Override for your actual endpoint."}
                     </p>
                   </div>
                 </div>
                 {capabilityExamples.length > 0 ? (
-                  <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Typical capabilities</p>
+                  <div className="mt-4 rounded-2xl border border-gray-800 bg-gray-900/70 p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Typical capabilities</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {capabilityExamples.map((item) => (
                         <span
                           key={item}
-                          className="rounded-full border border-slate-700 bg-slate-800/80 px-3 py-1 text-xs font-medium text-slate-200"
+                          className="rounded-full border border-gray-700 bg-gray-800/80 px-3 py-1 text-xs font-medium text-gray-200"
                         >
                           {item}
                         </span>
@@ -915,19 +915,19 @@ const ToolConnectionSheet = ({
             ) : null}
 
             <div className="grid gap-4 md:grid-cols-2">
-              <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Connection name</span>
+              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Connection name</span>
                 <Input
-                  className="h-12 rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
+                  className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
                   value={value.name}
                   onChange={(event) => onChange({ ...value, name: event.target.value })}
                   placeholder="Shopify Main Store"
                 />
               </label>
-              <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Slug</span>
+              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Slug</span>
                 <Input
-                  className="h-12 rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
+                  className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
                   value={value.slug}
                   onChange={(event) => onChange({ ...value, slug: event.target.value })}
                   placeholder="shopify-main-store"
@@ -935,36 +935,36 @@ const ToolConnectionSheet = ({
               </label>
             </div>
 
-            <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Server URL override</span>
+            <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Server URL override</span>
               <Input
-                className="h-12 rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
+                className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
                 value={value.server_url_override}
                 onChange={(event) => onChange({ ...value, server_url_override: event.target.value })}
                 placeholder="Optional override for the MCP endpoint URL"
               />
-              <p className="text-xs leading-5 text-slate-400">
+              <p className="text-xs leading-5 text-gray-400">
                 Use this when the provider gives you a tenant-specific or self-hosted MCP endpoint. If the catalog server
                 already has a valid URL, you can leave this blank.
               </p>
             </label>
 
-            <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Credential payload JSON</span>
+            <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Credential payload JSON</span>
               <Textarea
-                className="min-h-[150px] rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
+                className="min-h-[150px] rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
                 value={value.credential_payload_text}
                 onChange={(event) => onChange({ ...value, credential_payload_text: event.target.value })}
                 rows={6}
                 placeholder={'{"header_name":"x-api-key","api_key":"..."}'}
               />
-              <p className="text-xs leading-5 text-slate-400">
+              <p className="text-xs leading-5 text-gray-400">
                 Use this for API-key or custom header credentials. For example: <span className="font-mono">{"{\"header_name\":\"x-api-key\",\"api_key\":\"...\"}"}</span>
               </p>
               {credentialExample ? (
-                <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Example for selected server</p>
-                  <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-words rounded-2xl bg-slate-950/80 p-3 text-xs leading-6 text-slate-200">
+                <div className="rounded-2xl border border-gray-800 bg-gray-900/70 p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Example for selected server</p>
+                  <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-words rounded-2xl bg-gray-950/80 p-3 text-xs leading-6 text-gray-200">
                     {stringifyExampleJson(credentialExample)}
                   </pre>
                 </div>
@@ -972,19 +972,19 @@ const ToolConnectionSheet = ({
             </label>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Access token</span>
+              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Access token</span>
                 <Input
-                  className="h-12 rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
+                  className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
                   value={value.access_token}
                   onChange={(event) => onChange({ ...value, access_token: event.target.value })}
                   placeholder={isEditing ? "Leave blank to keep current token" : "Optional bearer or OAuth token"}
                 />
               </label>
-              <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Refresh token</span>
+              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Refresh token</span>
                 <Input
-                  className="h-12 rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
+                  className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
                   value={value.refresh_token}
                   onChange={(event) => onChange({ ...value, refresh_token: event.target.value })}
                   placeholder={isEditing ? "Leave blank to keep current refresh token" : "Optional refresh token"}
@@ -993,19 +993,19 @@ const ToolConnectionSheet = ({
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Resource label</span>
+              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Resource label</span>
                 <Input
-                  className="h-12 rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
+                  className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
                   value={value.resource_label}
                   onChange={(event) => onChange({ ...value, resource_label: event.target.value })}
                   placeholder="Merchant Admin Store"
                 />
               </label>
-              <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Resource owner ID</span>
+              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Resource owner ID</span>
                 <Input
-                  className="h-12 rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
+                  className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
                   value={value.resource_owner_id}
                   onChange={(event) => onChange({ ...value, resource_owner_id: event.target.value })}
                   placeholder="shop_123"
@@ -1014,17 +1014,17 @@ const ToolConnectionSheet = ({
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <label className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Granted scopes</span>
+              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Granted scopes</span>
                 <Input
-                  className="h-12 rounded-2xl border-slate-700 bg-slate-800/80 text-slate-100 placeholder:text-slate-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
+                  className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
                   value={value.granted_scopes_text}
                   onChange={(event) => onChange({ ...value, granted_scopes_text: event.target.value })}
                   placeholder="read_products, write_inventory"
                 />
               </label>
-              <div className="grid gap-2 rounded-[26px] border border-slate-800 bg-slate-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Status</span>
+              <div className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Status</span>
                 <ReactSelectField
                   value={toolConnectionStatusOptions.find((option) => option.value === value.status) ?? null}
                   onChange={(option) => {
@@ -1041,7 +1041,7 @@ const ToolConnectionSheet = ({
           </div>
         </div>
 
-        <div className="border-t border-slate-800 bg-slate-950/95 px-7 py-4 md:px-8">
+        <div className="border-t border-gray-800 bg-gray-950/95 px-7 py-4 md:px-8">
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
@@ -1475,10 +1475,10 @@ export default function AgentSettingsControlPanel() {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">Installed Agents</p>
-              <p className="mt-2 text-3xl font-semibold text-slate-900">
+              <p className="mt-2 text-3xl font-semibold text-gray-900">
                 {loadingWorkspaceAgents ? "..." : workspaceAgents.length}
               </p>
-              <p className="mt-2 text-sm leading-6 text-slate-600">Custom and default agents already attached to this workspace.</p>
+              <p className="mt-2 text-sm leading-6 text-gray-600">Custom and default agents already attached to this workspace.</p>
             </div>
           </CardContent>
         </Card>
@@ -1489,10 +1489,10 @@ export default function AgentSettingsControlPanel() {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-700">Installable Defaults</p>
-              <p className="mt-2 text-3xl font-semibold text-slate-900">
+              <p className="mt-2 text-3xl font-semibold text-gray-900">
                 {loadingTemplates ? "..." : installableTemplates.length}
               </p>
-              <p className="mt-2 text-sm leading-6 text-slate-600">Templates you can still install into this workspace from the platform catalog.</p>
+              <p className="mt-2 text-sm leading-6 text-gray-600">Templates you can still install into this workspace from the platform catalog.</p>
             </div>
           </CardContent>
         </Card>
@@ -1503,10 +1503,10 @@ export default function AgentSettingsControlPanel() {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-700">Access Mode</p>
-              <p className="mt-2 text-lg font-semibold text-slate-900">
+              <p className="mt-2 text-lg font-semibold text-gray-900">
                 {ownerOverride ? "Workspace owner override" : "Permission-based setup access"}
               </p>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
+              <p className="mt-2 text-sm leading-6 text-gray-600">
                 Setup access is currently granted through {ownerOverride ? "owner identity" : "manage_agent_settings"}.
               </p>
             </div>
@@ -1519,10 +1519,10 @@ export default function AgentSettingsControlPanel() {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">External MCP Connections</p>
-              <p className="mt-2 text-3xl font-semibold text-slate-900">
+              <p className="mt-2 text-3xl font-semibold text-gray-900">
                 {loadingToolConnections ? "..." : toolConnections.length}
               </p>
-              <p className="mt-2 text-sm leading-6 text-slate-600">Workspace-level credentials that external integrations can use when they need access to this workspace.</p>
+              <p className="mt-2 text-sm leading-6 text-gray-600">Workspace-level credentials that external integrations can use when they need access to this workspace.</p>
             </div>
           </CardContent>
         </Card>
@@ -1538,7 +1538,7 @@ export default function AgentSettingsControlPanel() {
                   Workspace Agents
                 </div>
                 <CardTitle className="mt-4 text-3xl font-semibold tracking-tight">Installed agents</CardTitle>
-                <CardDescription className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                <CardDescription className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
                   Keep this list compact. Select an agent to inspect or edit it in the detail panel.
                 </CardDescription>
               </div>
@@ -1583,7 +1583,7 @@ export default function AgentSettingsControlPanel() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="truncate text-base font-semibold text-slate-900">{agent.name}</p>
+                            <p className="truncate text-base font-semibold text-gray-900">{agent.name}</p>
                             <span
                               className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] ${
                                 agent.is_enabled ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"
@@ -1592,14 +1592,14 @@ export default function AgentSettingsControlPanel() {
                               {agent.is_enabled ? "on" : "off"}
                             </span>
                           </div>
-                          <p className="mt-1 truncate text-xs uppercase tracking-[0.18em] text-slate-500">{agent.slug}</p>
+                          <p className="mt-1 truncate text-xs uppercase tracking-[0.18em] text-gray-500">{agent.slug}</p>
                           <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
-                            <span className="rounded-full bg-white px-2.5 py-1 text-slate-600">{humanize(agent.origin)}</span>
-                            <span className="rounded-full bg-white px-2.5 py-1 text-slate-600">{agent.tool_bindings.length} tools</span>
-                            <span className="rounded-full bg-white px-2.5 py-1 text-slate-600">{agent.skill_bindings.length} skills</span>
+                            <span className="rounded-full bg-white px-2.5 py-1 text-gray-600">{humanize(agent.origin)}</span>
+                            <span className="rounded-full bg-white px-2.5 py-1 text-gray-600">{agent.tool_bindings.length} tools</span>
+                            <span className="rounded-full bg-white px-2.5 py-1 text-gray-600">{agent.skill_bindings.length} skills</span>
                           </div>
                         </div>
-                        <div className="rounded-2xl bg-white p-2.5 text-slate-600 shadow-sm">
+                        <div className="rounded-2xl bg-white p-2.5 text-gray-600 shadow-sm">
                           <Bot className="h-4 w-4" />
                         </div>
                       </div>
@@ -1609,7 +1609,7 @@ export default function AgentSettingsControlPanel() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-[24px] border border-dashed border-gray-300 bg-gray-50 p-6 text-sm text-slate-500">
+              <div className="rounded-[24px] border border-dashed border-gray-300 bg-gray-50 p-6 text-sm text-gray-500">
                 No workspace agents installed yet. Use <span className="font-semibold">Install default agents</span> or create a custom one.
               </div>
             )}
@@ -1620,12 +1620,12 @@ export default function AgentSettingsControlPanel() {
           <CardHeader className="p-6">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-slate-700">
+                <div className="inline-flex w-fit items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-gray-700">
                   <Wrench className="h-3.5 w-3.5" />
                   Agent Detail
                 </div>
                 <CardTitle className="mt-4 text-3xl font-semibold tracking-tight">Selected agent</CardTitle>
-                <CardDescription className="mt-2 text-sm leading-6 text-slate-600">
+                <CardDescription className="mt-2 text-sm leading-6 text-gray-600">
                   Keep the main view short. Use side panels to edit or bind tools and skills.
                 </CardDescription>
               </div>
@@ -1634,35 +1634,35 @@ export default function AgentSettingsControlPanel() {
           <CardContent className="p-6 pt-0">
             {selectedAgent ? (
               <div className="space-y-5">
-                <div className="rounded-[28px] border border-slate-900 bg-slate-950 p-5 text-white shadow-[0_22px_60px_rgba(2,6,23,0.35)]">
+                <div className="rounded-[28px] border border-gray-900 bg-gray-950 p-5 text-white shadow-[0_22px_60px_rgba(2,6,23,0.35)]">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-2xl font-semibold">{selectedAgent.name}</p>
                         {selectedAgent.source_template ? (
-                          <span className="rounded-full border border-slate-700 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-300">
+                          <span className="rounded-full border border-gray-700 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-300">
                             from {selectedAgent.source_template.name}
                           </span>
                         ) : null}
                       </div>
-                      <p className="mt-2 text-sm leading-6 text-slate-300">{selectedAgent.description || "No description yet."}</p>
+                      <p className="mt-2 text-sm leading-6 text-gray-300">{selectedAgent.description || "No description yet."}</p>
                     </div>
-                    <div className="rounded-2xl bg-white/10 p-3 text-slate-200">
+                    <div className="rounded-2xl bg-white/10 p-3 text-gray-200">
                       <BrainCircuit className="h-5 w-5" />
                     </div>
                   </div>
 
                   <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
+                    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-gray-200">
                       Visibility: {selectedAgent.visibility}
                     </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
+                    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-gray-200">
                       Routing: {humanize(selectedAgent.routing_policy)}
                     </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
+                    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-gray-200">
                       Transport: {selectedAgent.preferred_transport}
                     </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
+                    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-gray-200">
                       Updated: {formatDate(selectedAgent.updated_at, { month: "short", day: "numeric", year: "numeric" })}
                     </div>
                   </div>
@@ -1700,8 +1700,8 @@ export default function AgentSettingsControlPanel() {
                           <Wrench className="h-5 w-5" />
                         </div>
                         <div>
-                          <p className="text-3xl font-semibold text-slate-900">{selectedAgent.tool_bindings.length}</p>
-                          <p className="text-sm text-slate-600">Attached tools</p>
+                          <p className="text-3xl font-semibold text-gray-900">{selectedAgent.tool_bindings.length}</p>
+                          <p className="text-sm text-gray-600">Attached tools</p>
                         </div>
                       </div>
                     </CardContent>
@@ -1717,8 +1717,8 @@ export default function AgentSettingsControlPanel() {
                           <Sparkles className="h-5 w-5" />
                         </div>
                         <div>
-                          <p className="text-3xl font-semibold text-slate-900">{selectedAgent.skill_bindings.length}</p>
-                          <p className="text-sm text-slate-600">Attached skills</p>
+                          <p className="text-3xl font-semibold text-gray-900">{selectedAgent.skill_bindings.length}</p>
+                          <p className="text-sm text-gray-600">Attached skills</p>
                         </div>
                       </div>
                     </CardContent>
@@ -1726,7 +1726,7 @@ export default function AgentSettingsControlPanel() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-[24px] border border-dashed border-gray-300 bg-gray-50 p-6 text-sm text-slate-500">
+              <div className="rounded-[24px] border border-dashed border-gray-300 bg-gray-50 p-6 text-sm text-gray-500">
                 Select an installed agent to review and configure it.
               </div>
             )}
@@ -1743,7 +1743,7 @@ export default function AgentSettingsControlPanel() {
                 External Tools
               </div>
               <CardTitle className="mt-4 text-3xl font-semibold tracking-tight">MCP connections</CardTitle>
-              <CardDescription className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+              <CardDescription className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
                 Configure workspace-level credentials for external integrations like Shopify or Notion. These records are stored securely and used only when the workspace needs them.
               </CardDescription>
             </div>
@@ -1769,8 +1769,8 @@ export default function AgentSettingsControlPanel() {
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-lg font-semibold text-slate-900">{connection.name}</p>
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-600">
+                      <p className="text-lg font-semibold text-gray-900">{connection.name}</p>
+                      <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-600">
                         {connection.tool_server?.name ?? "Unknown server"}
                       </span>
                       <span
@@ -1786,23 +1786,23 @@ export default function AgentSettingsControlPanel() {
                       </span>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">{connection.slug}</span>
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">{formatMachineLabel(connection.auth_type, "Unspecified auth")}</span>
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">
+                      <span className="rounded-full bg-gray-100 px-2.5 py-1 text-gray-600">{connection.slug}</span>
+                      <span className="rounded-full bg-gray-100 px-2.5 py-1 text-gray-600">{formatMachineLabel(connection.auth_type, "Unspecified auth")}</span>
+                      <span className="rounded-full bg-gray-100 px-2.5 py-1 text-gray-600">
                         {connection.has_credential_payload ? "connection data present" : "no connection data"}
                       </span>
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">
+                      <span className="rounded-full bg-gray-100 px-2.5 py-1 text-gray-600">
                         {connection.has_access_token ? "access token present" : "no access token"}
                       </span>
                     </div>
                     {connection.resource_label ? (
-                      <p className="mt-3 text-sm text-slate-600">Resource: {connection.resource_label}</p>
+                      <p className="mt-3 text-sm text-gray-600">Resource: {connection.resource_label}</p>
                     ) : null}
                     {connection.last_error ? (
                       <p className="mt-3 text-sm text-red-600">Last error: {connection.last_error}</p>
                     ) : null}
                     {connection.last_tested_at ? (
-                      <p className="mt-2 text-xs text-slate-500">
+                      <p className="mt-2 text-xs text-gray-500">
                         Last tested {formatDate(connection.last_tested_at, { month: "short", day: "numeric", year: "numeric" })}
                       </p>
                     ) : null}
@@ -1832,7 +1832,7 @@ export default function AgentSettingsControlPanel() {
               </div>
             ))
           ) : (
-            <div className="rounded-[24px] border border-dashed border-gray-300 bg-gray-50 p-6 text-sm text-slate-500">
+            <div className="rounded-[24px] border border-dashed border-gray-300 bg-gray-50 p-6 text-sm text-gray-500">
               No external MCP connections configured yet.
             </div>
           )}

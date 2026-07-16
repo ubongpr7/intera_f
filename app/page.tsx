@@ -849,9 +849,6 @@ export default function HomePage() {
             <a href="#capabilities" className="text-sm text-gray-600 hover:text-gray-900">
               Capabilities
             </a>
-            <a href="#workflow" className="text-sm text-gray-600 hover:text-gray-900">
-              Workflow
-            </a>
             <a href="#demo" className="text-sm text-gray-600 hover:text-gray-900">
               Demo
             </a>
@@ -887,9 +884,6 @@ export default function HomePage() {
             <div className="flex flex-col gap-3">
               <a href="#capabilities" className="text-sm text-gray-600 hover:text-gray-900" onClick={() => setIsMobileMenuOpen(false)}>
                 Capabilities
-              </a>
-              <a href="#workflow" className="text-sm text-gray-600 hover:text-gray-900" onClick={() => setIsMobileMenuOpen(false)}>
-                Workflow
               </a>
               <a href="#demo" className="text-sm text-gray-600 hover:text-gray-900" onClick={() => setIsMobileMenuOpen(false)}>
                 Demo
@@ -1013,9 +1007,18 @@ export default function HomePage() {
             ))}
           </div>
         </section>
-
+        {/* 
         <section className="border-y border-gray-200 bg-gray-50">
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+            <div className="max-w-2xl">
+              <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">Core Capabilities</p>
+              <h2 className="mt-3 text-3xl font-semibold text-gray-900 sm:text-4xl">
+                The essentials behind a modern inventory operation.
+              </h2>
+              <p className="mt-4 text-lg text-gray-600">
+                These are the primary capabilities that define how the platform helps teams run stock, selling, control, and insight from one workspace.
+              </p>
+            </div>
             <div className="grid gap-6 lg:grid-cols-3">
               {coreHighlights.map(({ title, description, icon: IconComponent }, index) => (
                 <motion.div
@@ -1032,8 +1035,8 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-
-        <section id="workflow" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <section id="workflow" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 bg-gray-50">
+          
           <div className="max-w-2xl">
             <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">Workflow</p>
             <h2 className="mt-3 text-3xl font-semibold text-gray-900 sm:text-4xl">
@@ -1055,6 +1058,7 @@ export default function HomePage() {
             ))}
           </div>
         </section>
+*/}
 
         <section id="demo" className="border-y border-gray-200 bg-gray-50">
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">

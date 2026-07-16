@@ -128,14 +128,14 @@ const AgentEditorDialog = ({
   isBusy: boolean;
 }) => (
   <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto border-slate-800 bg-slate-950 text-slate-50">
+    <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto border-gray-800 bg-gray-950 text-gray-50">
       <DialogHeader>
         <DialogTitle className="text-white">{title}</DialogTitle>
-        <DialogDescription className="text-slate-300">{description}</DialogDescription>
+        <DialogDescription className="text-gray-300">{description}</DialogDescription>
       </DialogHeader>
       <div className="grid gap-4 md:grid-cols-2">
         <label className="grid gap-2 text-sm">
-          <span className="font-medium text-slate-200">Slug</span>
+          <span className="font-medium text-gray-200">Slug</span>
           <Input
             value={value.slug}
             onChange={(event) => onChange({ ...value, slug: event.target.value })}
@@ -143,7 +143,7 @@ const AgentEditorDialog = ({
           />
         </label>
         <label className="grid gap-2 text-sm">
-          <span className="font-medium text-slate-200">Name</span>
+          <span className="font-medium text-gray-200">Name</span>
           <Input
             value={value.name}
             onChange={(event) => onChange({ ...value, name: event.target.value })}
@@ -151,7 +151,7 @@ const AgentEditorDialog = ({
           />
         </label>
         <label className="grid gap-2 text-sm md:col-span-2">
-          <span className="font-medium text-slate-200">Description</span>
+          <span className="font-medium text-gray-200">Description</span>
           <Textarea
             value={value.description}
             onChange={(event) => onChange({ ...value, description: event.target.value })}
@@ -160,13 +160,13 @@ const AgentEditorDialog = ({
           />
         </label>
         <label className="grid gap-2 text-sm">
-          <span className="font-medium text-slate-200">Visibility</span>
+          <span className="font-medium text-gray-200">Visibility</span>
           <select
             value={value.visibility}
             onChange={(event) =>
               onChange({ ...value, visibility: event.target.value as AgentFormState["visibility"] })
             }
-            className="h-11 rounded-2xl border border-slate-700 bg-slate-900 px-4 text-sm text-slate-100 outline-none transition focus:border-blue-400"
+            className="h-11 rounded-2xl border border-gray-700 bg-gray-900 px-4 text-sm text-gray-100 outline-none transition focus:border-blue-400"
           >
             {visibilityOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -176,13 +176,13 @@ const AgentEditorDialog = ({
           </select>
         </label>
         <label className="grid gap-2 text-sm">
-          <span className="font-medium text-slate-200">Routing policy</span>
+          <span className="font-medium text-gray-200">Routing policy</span>
           <select
             value={value.routing_policy}
             onChange={(event) =>
               onChange({ ...value, routing_policy: event.target.value as AgentFormState["routing_policy"] })
             }
-            className="h-11 rounded-2xl border border-slate-700 bg-slate-900 px-4 text-sm text-slate-100 outline-none transition focus:border-blue-400"
+            className="h-11 rounded-2xl border border-gray-700 bg-gray-900 px-4 text-sm text-gray-100 outline-none transition focus:border-blue-400"
           >
             {routingOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -192,7 +192,7 @@ const AgentEditorDialog = ({
           </select>
         </label>
         <label className="grid gap-2 text-sm">
-          <span className="font-medium text-slate-200">Preferred transport</span>
+          <span className="font-medium text-gray-200">Preferred transport</span>
           <Input
             value={value.preferred_transport}
             onChange={(event) => onChange({ ...value, preferred_transport: event.target.value })}
@@ -200,7 +200,7 @@ const AgentEditorDialog = ({
           />
         </label>
         <label className="grid gap-2 text-sm">
-          <span className="font-medium text-slate-200">Protocol version</span>
+          <span className="font-medium text-gray-200">Protocol version</span>
           <Input
             value={value.protocol_version}
             onChange={(event) => onChange({ ...value, protocol_version: event.target.value })}
@@ -208,7 +208,7 @@ const AgentEditorDialog = ({
           />
         </label>
         <label className="grid gap-2 text-sm">
-          <span className="font-medium text-slate-200">Version</span>
+          <span className="font-medium text-gray-200">Version</span>
           <Input
             value={value.version}
             onChange={(event) => onChange({ ...value, version: event.target.value })}
@@ -216,7 +216,7 @@ const AgentEditorDialog = ({
           />
         </label>
         <label className="grid gap-2 text-sm">
-          <span className="font-medium text-slate-200">Documentation URL</span>
+          <span className="font-medium text-gray-200">Documentation URL</span>
           <Input
             value={value.documentation_url}
             onChange={(event) => onChange({ ...value, documentation_url: event.target.value })}
@@ -224,7 +224,7 @@ const AgentEditorDialog = ({
           />
         </label>
         <label className="grid gap-2 text-sm">
-          <span className="font-medium text-slate-200">Icon URL</span>
+          <span className="font-medium text-gray-200">Icon URL</span>
           <Input
             value={value.icon_url}
             onChange={(event) => onChange({ ...value, icon_url: event.target.value })}
@@ -232,7 +232,7 @@ const AgentEditorDialog = ({
           />
         </label>
         <label className="grid gap-2 text-sm md:col-span-2">
-          <span className="font-medium text-slate-200">System instruction</span>
+          <span className="font-medium text-gray-200">System instruction</span>
           <Textarea
             value={value.system_instruction}
             onChange={(event) => onChange({ ...value, system_instruction: event.target.value })}
@@ -241,7 +241,7 @@ const AgentEditorDialog = ({
           />
         </label>
         <label className="grid gap-2 text-sm md:col-span-2">
-          <span className="font-medium text-slate-200">Workflow guidance</span>
+          <span className="font-medium text-gray-200">Workflow guidance</span>
           <Textarea
             value={value.developer_instruction}
             onChange={(event) => onChange({ ...value, developer_instruction: event.target.value })}
@@ -250,7 +250,7 @@ const AgentEditorDialog = ({
           />
         </label>
         <label className="grid gap-2 text-sm md:col-span-2">
-          <span className="font-medium text-slate-200">Assistant instruction</span>
+          <span className="font-medium text-gray-200">Assistant instruction</span>
           <Textarea
             value={value.assistant_instruction}
             onChange={(event) => onChange({ ...value, assistant_instruction: event.target.value })}
@@ -258,14 +258,14 @@ const AgentEditorDialog = ({
             placeholder="Response style and interaction guidance."
           />
         </label>
-        <label className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/80 px-4 py-3 text-sm md:col-span-2">
+        <label className="flex items-center gap-3 rounded-2xl border border-gray-800 bg-gray-900/80 px-4 py-3 text-sm md:col-span-2">
           <Checkbox
             checked={value.is_enabled}
             onCheckedChange={(checked) => onChange({ ...value, is_enabled: Boolean(checked) })}
           />
           <div>
-            <p className="font-medium text-slate-200">Enable this agent</p>
-            <p className="text-xs text-slate-400">Disabled agents stay saved in the workspace but do not appear in the active agent list.</p>
+            <p className="font-medium text-gray-200">Enable this agent</p>
+            <p className="text-xs text-gray-400">Disabled agents stay saved in the workspace but do not appear in the active agent list.</p>
           </div>
         </label>
       </div>
@@ -625,11 +625,11 @@ export default function AgentWorkspaceManager({
 
         <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.85fr)]">
           <div className="space-y-4">
-            <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-4">
+            <div className="rounded-[28px] border border-gray-200 bg-gray-50 p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Workspace Agents</p>
-                  <h3 className="mt-1 text-lg font-semibold text-slate-900">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-500">Workspace Agents</p>
+                  <h3 className="mt-1 text-lg font-semibold text-gray-900">
                     {loadingWorkspaceAgents ? "Loading..." : `${workspaceAgents.length} installed`}
                   </h3>
                 </div>
@@ -672,25 +672,25 @@ export default function AgentWorkspaceManager({
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-base font-semibold text-slate-900">{agent.name}</span>
-                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-600">
+                            <span className="text-base font-semibold text-gray-900">{agent.name}</span>
+                            <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-600">
                               {agent.origin}
                             </span>
                             <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] ${runtimeVisible ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
                               {runtimeVisible ? "available" : "hidden"}
                             </span>
                           </div>
-                          <p className="mt-2 text-sm leading-6 text-slate-600">{agent.description || "No description yet."}</p>
+                          <p className="mt-2 text-sm leading-6 text-gray-600">{agent.description || "No description yet."}</p>
                         </div>
-                        <div className="rounded-2xl bg-slate-100 p-2 text-slate-600">
+                        <div className="rounded-2xl bg-gray-100 p-2 text-gray-600">
                           <Bot className="h-4 w-4" />
                         </div>
                       </div>
                       <div className="mt-4 flex flex-wrap gap-2 text-xs">
-                        <span className="rounded-full bg-white px-2.5 py-1 text-slate-600">{agent.visibility}</span>
-                        <span className="rounded-full bg-white px-2.5 py-1 text-slate-600">{humanize(agent.routing_policy)}</span>
-                        <span className="rounded-full bg-white px-2.5 py-1 text-slate-600">{agent.tool_bindings.length} tools</span>
-                        <span className="rounded-full bg-white px-2.5 py-1 text-slate-600">{agent.skill_bindings.length} skills</span>
+                        <span className="rounded-full bg-white px-2.5 py-1 text-gray-600">{agent.visibility}</span>
+                        <span className="rounded-full bg-white px-2.5 py-1 text-gray-600">{humanize(agent.routing_policy)}</span>
+                        <span className="rounded-full bg-white px-2.5 py-1 text-gray-600">{agent.tool_bindings.length} tools</span>
+                        <span className="rounded-full bg-white px-2.5 py-1 text-gray-600">{agent.skill_bindings.length} skills</span>
                       </div>
                     </button>
                   );
@@ -703,16 +703,16 @@ export default function AgentWorkspaceManager({
             </div>
 
             {selectedAgent ? (
-              <div className="rounded-[30px] border border-slate-900 bg-slate-950 p-5 text-slate-50 shadow-[0_20px_55px_rgba(2,6,23,0.35)]">
+              <div className="rounded-[30px] border border-gray-900 bg-gray-950 p-5 text-gray-50 shadow-[0_20px_55px_rgba(2,6,23,0.35)]">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-xl font-semibold">{selectedAgent.name}</p>
-                      <span className="rounded-full border border-slate-700 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-300">
+                      <span className="rounded-full border border-gray-700 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-300">
                         {selectedAgent.slug}
                       </span>
                     </div>
-                    <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-300">
+                    <p className="mt-2 max-w-4xl text-sm leading-6 text-gray-300">
                       {selectedAgent.description || "No description yet."}
                     </p>
                   </div>
@@ -744,29 +744,29 @@ export default function AgentWorkspaceManager({
                 </div>
 
                 <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-                  <div className="rounded-[26px] border border-slate-800 bg-slate-900/80 p-4">
+                  <div className="rounded-[26px] border border-gray-800 bg-gray-900/80 p-4">
                     <div className="flex items-center gap-2">
                       <BrainCircuit className="h-4 w-4 text-blue-300" />
                       <p className="text-sm font-semibold text-white">Agent profile</p>
                     </div>
-                    <div className="mt-3 grid gap-2 text-sm text-slate-300 md:grid-cols-2">
-                      <div className="rounded-2xl border border-slate-800 bg-slate-950 px-3 py-2">Visibility: {selectedAgent.visibility}</div>
-                      <div className="rounded-2xl border border-slate-800 bg-slate-950 px-3 py-2">Routing: {humanize(selectedAgent.routing_policy)}</div>
-                      <div className="rounded-2xl border border-slate-800 bg-slate-950 px-3 py-2">Transport: {selectedAgent.preferred_transport}</div>
-                      <div className="rounded-2xl border border-slate-800 bg-slate-950 px-3 py-2">Version: {selectedAgent.version}</div>
-                      <div className="rounded-2xl border border-slate-800 bg-slate-950 px-3 py-2">Tools: {selectedAgent.tool_bindings.length}</div>
-                      <div className="rounded-2xl border border-slate-800 bg-slate-950 px-3 py-2">Skills: {selectedAgent.skill_bindings.length}</div>
+                    <div className="mt-3 grid gap-2 text-sm text-gray-300 md:grid-cols-2">
+                      <div className="rounded-2xl border border-gray-800 bg-gray-950 px-3 py-2">Visibility: {selectedAgent.visibility}</div>
+                      <div className="rounded-2xl border border-gray-800 bg-gray-950 px-3 py-2">Routing: {humanize(selectedAgent.routing_policy)}</div>
+                      <div className="rounded-2xl border border-gray-800 bg-gray-950 px-3 py-2">Transport: {selectedAgent.preferred_transport}</div>
+                      <div className="rounded-2xl border border-gray-800 bg-gray-950 px-3 py-2">Version: {selectedAgent.version}</div>
+                      <div className="rounded-2xl border border-gray-800 bg-gray-950 px-3 py-2">Tools: {selectedAgent.tool_bindings.length}</div>
+                      <div className="rounded-2xl border border-gray-800 bg-gray-950 px-3 py-2">Skills: {selectedAgent.skill_bindings.length}</div>
                     </div>
-                    <details className="mt-4 rounded-[22px] border border-slate-800 bg-slate-950/80 p-4">
-                      <summary className="cursor-pointer text-sm font-semibold text-slate-200">Agent details JSON</summary>
-                      <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-words text-xs leading-5 text-slate-400">
+                    <details className="mt-4 rounded-[22px] border border-gray-800 bg-gray-950/80 p-4">
+                      <summary className="cursor-pointer text-sm font-semibold text-gray-200">Agent details JSON</summary>
+                      <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-words text-xs leading-5 text-gray-400">
                         {JSON.stringify(selectedAgent.card_payload, null, 2)}
                       </pre>
                     </details>
                   </div>
 
                   <div className="space-y-4">
-                    <div className="rounded-[26px] border border-slate-800 bg-slate-900/80 p-4">
+                    <div className="rounded-[26px] border border-gray-800 bg-gray-900/80 p-4">
                       <div className="flex items-center gap-2">
                         <Wrench className="h-4 w-4 text-emerald-300" />
                         <p className="text-sm font-semibold text-white">Tool bindings</p>
@@ -797,14 +797,14 @@ export default function AgentWorkspaceManager({
                           selectedAgent.tool_bindings.map((binding) => (
                             <div
                               key={binding.id}
-                              className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-200"
+                              className="inline-flex items-center gap-2 rounded-full border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-gray-200"
                             >
                               <span>{binding.tool.display_name}</span>
                               {canManageAgent ? (
                                 <button
                                   type="button"
                                   onClick={() => void handleDetachTool(binding.tool.id)}
-                                  className="rounded-full p-1 text-slate-400 transition hover:bg-slate-800 hover:text-red-300"
+                                  className="rounded-full p-1 text-gray-400 transition hover:bg-gray-800 hover:text-red-300"
                                   disabled={detachingTool}
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
@@ -813,12 +813,12 @@ export default function AgentWorkspaceManager({
                             </div>
                           ))
                         ) : (
-                          <p className="text-sm text-slate-400">No tools attached yet.</p>
+                          <p className="text-sm text-gray-400">No tools attached yet.</p>
                         )}
                       </div>
                     </div>
 
-                    <div className="rounded-[26px] border border-slate-800 bg-slate-900/80 p-4">
+                    <div className="rounded-[26px] border border-gray-800 bg-gray-900/80 p-4">
                       <div className="flex items-center gap-2">
                         <Sparkles className="h-4 w-4 text-violet-300" />
                         <p className="text-sm font-semibold text-white">Skill bindings</p>
@@ -849,14 +849,14 @@ export default function AgentWorkspaceManager({
                           selectedAgent.skill_bindings.map((binding) => (
                             <div
                               key={binding.id}
-                              className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-200"
+                              className="inline-flex items-center gap-2 rounded-full border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-gray-200"
                             >
                               <span>{binding.skill.name}</span>
                               {canManageAgent ? (
                                 <button
                                   type="button"
                                   onClick={() => void handleDetachSkill(binding.skill.id)}
-                                  className="rounded-full p-1 text-slate-400 transition hover:bg-slate-800 hover:text-red-300"
+                                  className="rounded-full p-1 text-gray-400 transition hover:bg-gray-800 hover:text-red-300"
                                   disabled={detachingSkill}
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
@@ -865,7 +865,7 @@ export default function AgentWorkspaceManager({
                             </div>
                           ))
                         ) : (
-                          <p className="text-sm text-slate-400">No skills attached yet.</p>
+                          <p className="text-sm text-gray-400">No skills attached yet.</p>
                         )}
                       </div>
                     </div>
@@ -876,15 +876,15 @@ export default function AgentWorkspaceManager({
           </div>
 
           <div className="space-y-4">
-            <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-4">
+            <div className="rounded-[28px] border border-gray-200 bg-gray-50 p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Active agents</p>
-                  <h3 className="mt-1 text-lg font-semibold text-slate-900">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-500">Active agents</p>
+                  <h3 className="mt-1 text-lg font-semibold text-gray-900">
                     {canInteract ? (loadingRuntimeRegistry ? "Loading..." : `${runtimeAgents.length} available`) : "Permission required"}
                   </h3>
                 </div>
-                <div className="rounded-2xl bg-white p-3 text-slate-700 shadow-sm">
+                <div className="rounded-2xl bg-white p-3 text-gray-700 shadow-sm">
                   <ShieldCheck className="h-5 w-5" />
                 </div>
               </div>
@@ -895,8 +895,8 @@ export default function AgentWorkspaceManager({
                       <div key={agent.id} className="rounded-[22px] border border-white bg-white px-4 py-3 shadow-sm">
                         <div className="flex items-center justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-slate-900">{agent.name}</p>
-                            <p className="mt-1 truncate text-xs text-slate-500">{agent.slug}</p>
+                            <p className="truncate text-sm font-semibold text-gray-900">{agent.name}</p>
+                            <p className="mt-1 truncate text-xs text-gray-500">{agent.slug}</p>
                           </div>
                           {onUseAgent ? (
                             <Button type="button" variant="outline" size="sm" onClick={() => onUseAgent(agent.slug)}>
@@ -908,23 +908,23 @@ export default function AgentWorkspaceManager({
                       </div>
                     ))
                   ) : (
-                    <p className="rounded-[22px] border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-500">
+                    <p className="rounded-[22px] border border-dashed border-gray-300 bg-white px-4 py-3 text-sm text-gray-500">
                       No enabled workspace agents are currently available in chat.
                     </p>
                   )
                 ) : (
-                  <p className="rounded-[22px] border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-500">
+                  <p className="rounded-[22px] border border-dashed border-gray-300 bg-white px-4 py-3 text-sm text-gray-500">
                     Chat access requires <span className="font-semibold">interact_with_agent</span>.
                   </p>
                 )}
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-slate-900 bg-slate-950 p-4 text-slate-50 shadow-[0_20px_55px_rgba(2,6,23,0.35)]">
+            <div className="rounded-[28px] border border-gray-900 bg-gray-950 p-4 text-gray-50 shadow-[0_20px_55px_rgba(2,6,23,0.35)]">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-blue-300" />
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Default Templates</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-400">Default Templates</p>
                   <h3 className="mt-1 text-lg font-semibold text-white">
                     {loadingTemplates ? "Loading..." : `${templates.length} available`}
                   </h3>
@@ -933,7 +933,7 @@ export default function AgentWorkspaceManager({
               <div className="mt-4 space-y-3">
                 {templates.length ? (
                   templates.map((template) => (
-                    <div key={template.id} className="rounded-[24px] border border-slate-800 bg-slate-900/80 p-4">
+                    <div key={template.id} className="rounded-[24px] border border-gray-800 bg-gray-900/80 p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
@@ -944,16 +944,16 @@ export default function AgentWorkspaceManager({
                               </span>
                             ) : null}
                           </div>
-                          <p className="mt-2 text-sm leading-6 text-slate-300">{template.description || "No description yet."}</p>
+                          <p className="mt-2 text-sm leading-6 text-gray-300">{template.description || "No description yet."}</p>
                         </div>
-                        <div className="rounded-2xl bg-slate-950 p-2 text-slate-300">
+                        <div className="rounded-2xl bg-gray-950 p-2 text-gray-300">
                           <Bot className="h-4 w-4" />
                         </div>
                       </div>
                       <div className="mt-4 flex flex-wrap gap-2 text-xs">
-                        <span className="rounded-full border border-slate-700 px-2.5 py-1 text-slate-300">{template.tool_bindings.length} tools</span>
-                        <span className="rounded-full border border-slate-700 px-2.5 py-1 text-slate-300">{template.skill_bindings.length} skills</span>
-                        <span className="rounded-full border border-slate-700 px-2.5 py-1 text-slate-300">{template.preferred_transport}</span>
+                        <span className="rounded-full border border-gray-700 px-2.5 py-1 text-gray-300">{template.tool_bindings.length} tools</span>
+                        <span className="rounded-full border border-gray-700 px-2.5 py-1 text-gray-300">{template.skill_bindings.length} skills</span>
+                        <span className="rounded-full border border-gray-700 px-2.5 py-1 text-gray-300">{template.preferred_transport}</span>
                       </div>
                       {canCreateAgent ? (
                         <div className="mt-4">
@@ -965,7 +965,7 @@ export default function AgentWorkspaceManager({
                     </div>
                   ))
                 ) : (
-                  <p className="rounded-[24px] border border-dashed border-slate-700 bg-slate-900/80 px-4 py-3 text-sm text-slate-400">
+                  <p className="rounded-[24px] border border-dashed border-gray-700 bg-gray-900/80 px-4 py-3 text-sm text-gray-400">
                     No templates available yet.
                   </p>
                 )}
