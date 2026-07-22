@@ -195,6 +195,11 @@ const ProductVariantManager = ({ productId, ProductData }: ProductVariantManager
 
   return (
     <div className="p-4">
+      {!variantQuota.canCreate && (
+        <div className="mb-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+          {variantQuota.message}
+        </div>
+      )}
       <DataTable<ProductVariant>
         columns={variantColumns}
         data={variants || []}

@@ -40,7 +40,41 @@ export const getAuditWebSocketBaseUrl = () =>
     resolvePublicUrl(process.env.NEXT_PUBLIC_AUDIT_BACKEND_URL || "", "http://localhost:8091"),
   )
 
+export const getNotificationHttpBaseUrl = () =>
+  resolvePublicUrl(process.env.NEXT_PUBLIC_NOTIFICATION_BACKEND_URL || "", "http://localhost:8092")
+
 export const getNotificationWebSocketBaseUrl = () =>
-  toWebSocketBaseUrl(
-    resolvePublicUrl(process.env.NEXT_PUBLIC_NOTIFICATION_BACKEND_URL || "", "http://localhost:8092"),
-  )
+  toWebSocketBaseUrl(getNotificationHttpBaseUrl())
+
+let notificationServiceAvailabilityPromise: Promise<boolean> | null = null
+
+export const canReachNotificationService = async () => {
+  if (typeof window === "undefined") {
+    return false
+  }
+
+  if (!notificationServiceAvailabilityPromise) {
+    notificationServiceAvailabilityPromise = (async () => {
+      try {
+        const controller = new AbortController()
+        const timeoutId = window.setTimeout(() => controller.abort(), 3000)
+        try {
+          const response = await fetch(`${getNotificationHttpBaseUrl()}/health`, {
+            method: "GET",
+            signal: controller.signal,
+            credentials: "include",
+          })
+          return response.ok
+        } finally {
+          window.clearTimeout(timeoutId)
+        }
+      } catch {
+        return false
+      }
+    })().finally(() => {
+      notificationServiceAvailabilityPromise = null
+    })
+  }
+
+  return notificationServiceAvailabilityPromise
+}

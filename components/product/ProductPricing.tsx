@@ -77,7 +77,7 @@ export default function ProductPricing({ productId,product }: ProductPricingProp
 
 const defaultValues: Partial<PricingRule> = {
   name: '',
-  rule_type: 'PROMO',
+  rule_type: 'BATCH',
   discount_type: 'PERCENTAGE',
   value: 0,
   is_active: true,
@@ -238,6 +238,7 @@ const defaultValues: Partial<PricingRule> = {
     {
       label: 'Toggle Active',
       onClick: (row: PricingRule) => handleToggleActive(row.id, row.is_active),
+      hidden: (row: PricingRule) => row.is_default_rule === true,
     },
     {
       label: 'Delete',

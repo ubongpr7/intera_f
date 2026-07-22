@@ -26,6 +26,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGetSubscriptionPlansQuery } from "@/redux/features/payment/paymentAPISlice";
+import { useAppSelector } from "@/redux/store";
 import { Feature, SubscriptionPlan } from "@/components/interfaces/payment";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -561,11 +562,6 @@ const demoSignalCoverage = [
   { label: "Inventory and catalog snapshot", source: "Domain services", delivery: "API refresh" },
 ];
 
-const demoAvatarForRole = {
-  assistant: "/assets/intera-logo.png",
-  user: "/assets/demo-user-avatar.svg",
-} as const;
-
 function DemoWidgetView({ widget }: { widget?: DemoWidget }) {
   if (!widget) return null
 
@@ -759,9 +755,17 @@ export default function HomePage() {
   const [activeDemoIndex, setActiveDemoIndex] = useState(() => Math.floor(Math.random() * demoConversations.length));
   const [visibleMessageCount, setVisibleMessageCount] = useState(0);
   const [typedDemoText, setTypedDemoText] = useState("");
+  const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
   const { data: pricingPlans, isLoading, isError } = useGetSubscriptionPlansQuery({
     application__slug: "intera-ims",
   });
+  const demoAvatarForRole = {
+    assistant: isDarkMode ? "/assets/img/favicons/favicon-dark.png" : "/assets/img/favicons/favicon-light.png",
+    user: "/assets/intera-logo.png",
+  } as const;
+  const homepageLogoSrc = isDarkMode
+    ? "/assets/img/logos/verticals/no-bg/INTERA-PRIMARY-LOGO-VERTICAL-WHITE-4.png"
+    : "/assets/img/logos/verticals/no-bg/INTERA-PRIMARY-LOGO-VERTICAL-BLACK-3.png";
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -832,17 +836,16 @@ export default function HomePage() {
       <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-2">
-            <span className="relative block h-11 w-11 shrink-0 overflow-hidden rounded-xl shadow-sm">
+            <span className="relative block h-12 w-[172px] shrink-0 overflow-hidden sm:h-14 sm:w-[196px]">
               <Image
-                src="/assets/intera-logo.png"
+                src={homepageLogoSrc}
                 alt="Intera Inventory logo"
                 fill
                 priority
-                sizes="44px"
-                className="object-cover"
+                sizes="(min-width: 1024px) 196px, 172px"
+                className="object-cover object-center"
               />
             </span>
-            <span className="text-lg font-semibold text-gray-900">Intera Inventory</span>
           </Link>
 
           <nav className="hidden items-center gap-8 md:flex">
@@ -1317,12 +1320,12 @@ export default function HomePage() {
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8 text-sm text-gray-900 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div className="flex items-center gap-3">
             <Image
-              src="/assets/intera-logo.png"
-              alt=""
-              width={32}
-              height={32}
-              sizes="32px"
-              className="rounded-lg "
+              src={homepageLogoSrc}
+              alt="Intera Inventory logo"
+              width={220}
+              height={64}
+              sizes="(min-width: 1024px) 220px, 180px"
+              className="h-14 w-auto shrink-0 sm:h-16"
             />
             <p>© 2026 Intera Inventory. Built for dependable operations.</p>
           </div>

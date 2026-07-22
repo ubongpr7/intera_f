@@ -138,6 +138,7 @@ export default function SalesOrderSetupWorkspace() {
       icon: Truck,
     },
   ] as const
+  const showWorkspaceLoading = loadingWorkspaceSetup && !activeMembership
 
   const handleCreateOrder = async () => {
     if (!formState.customer) {
@@ -165,14 +166,7 @@ export default function SalesOrderSetupWorkspace() {
     }
   }
 
-  if (loadingWorkspaceSetup) {
-    return (
-      <WorkspaceSetupLoadingCard
-      />
-    )
-  }
-
-  if (!activeMembership) {
+  if (!activeMembership && !showWorkspaceLoading) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-8 lg:px-8">
         <Card className="border-gray-200 shadow-sm">
@@ -201,6 +195,7 @@ export default function SalesOrderSetupWorkspace() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 lg:px-8">
+      {showWorkspaceLoading ? <WorkspaceSetupLoadingCard /> : null}
       {isOwner ? (
         <CollapsibleSetupGuide
           eyebrow="Sales orders"

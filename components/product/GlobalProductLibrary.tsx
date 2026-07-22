@@ -1,6 +1,6 @@
 "use client"
 
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react"
+import { useDeferredValue, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { AlertCircle, ArrowRight, Barcode, Boxes, CheckCircle2, ChevronLeft, ChevronRight, Eye, Filter, ImageIcon, PackagePlus, Search, Sparkles } from "lucide-react"
 import { toast } from "react-toastify"
@@ -462,9 +462,9 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
   const [previewProductId, setPreviewProductId] = useState<string | null>(null)
   const [pendingProductIds, setPendingProductIds] = useState<string[]>([])
   const [extractingImageBarcodes, setExtractingImageBarcodes] = useState(false)
-  const [selectMenuPortalTarget, setSelectMenuPortalTarget] = useState<HTMLElement | null>(null)
   const barcodeImageInputRef = useRef<HTMLInputElement | null>(null)
   const deferredQuery = useDeferredValue(query.trim())
+  const selectMenuPortalTarget = typeof document !== "undefined" ? document.body : null
   const { data: catalogPage, isLoading, isFetching } = useGetGlobalCatalogProductsQuery({
     q: deferredQuery || undefined,
     brand: brand || undefined,
@@ -507,15 +507,6 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
   const canImport = isWorkspaceMode && importQuotaSingle.canCreate
   const canImportBulk = isWorkspaceMode && importQuotaBulk.canCreate
   const importLocked = isWorkspaceMode && !canImport
-
-  useEffect(() => {
-    setPage(1)
-    setSelectedProductIds([])
-  }, [deferredQuery, brand, category])
-
-  useEffect(() => {
-    setSelectMenuPortalTarget(document.body)
-  }, [])
 
   const toggleSelected = (productId: string) => {
     setSelectedProductIds((current) => (current.includes(productId) ? current.filter((id) => id !== productId) : [...current, productId]))
@@ -645,17 +636,17 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
               </div>
               <CardTitle className="mt-3 text-2xl tracking-tight">
                 {canImport
-                  ? "Import curated product families instead of rebuilding them manually"
+                  ? "Choose categories and brands, then import curated product families"
                   : importLocked
                     ? "Browse the published catalog while billing is being connected"
                     : "Browse the published catalog before curating or editing source products"}
               </CardTitle>
               <CardDescription className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
                 {canImport
-                  ? "This starter catalog is platform-curated. Preview what is inside, select multiple families, and import them into your workspace with inherited media and source variants."
+                  ? "This starter catalog is platform-curated. Preview what is inside, select categories and brands, choose multiple families, and import them into your workspace with inherited media and source variants."
                   : importLocked
                     ? "Preview product families, filters, and barcodes now. Importing stays locked until the workspace owner connects billing and chooses a plan."
-                  : "Review published catalog families by name, brand, and category. This gives Intera IMS staff the same discovery context as workspace users without exposing workspace import actions."}
+                    : "Review published catalog families by name, brand, and category. This gives Intera IMS staff the same discovery context as workspace users without exposing workspace import actions."}
               </CardDescription>
             </div>
             <div className="w-full max-w-sm">
@@ -663,7 +654,11 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
                 <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <Input
                   value={query}
-                  onChange={(event) => setQuery(event.target.value)}
+                  onChange={(event) => {
+                    setQuery(event.target.value)
+                    setPage(1)
+                    setSelectedProductIds([])
+                  }}
                   placeholder="Search Nivea, Sure, Ritz, perfume, lotion..."
                   className="h-12 rounded-full border-gray-200 bg-white pl-11"
                 />
@@ -880,6 +875,8 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
                 onChange={(option) => {
                   const selected = Array.isArray(option) ? null : (option as SelectOption | null)
                   setBrand(selected ? String(selected.value) : "")
+                  setPage(1)
+                  setSelectedProductIds([])
                 }}
                 placeholder="All brands"
                 isClearable
@@ -895,6 +892,8 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
                 onChange={(option) => {
                   const selected = Array.isArray(option) ? null : (option as SelectOption | null)
                   setCategory(selected ? String(selected.value) : "")
+                  setPage(1)
+                  setSelectedProductIds([])
                 }}
                 placeholder="All categories"
                 isClearable

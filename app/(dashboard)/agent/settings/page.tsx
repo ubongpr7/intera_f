@@ -161,14 +161,25 @@ const WorkspaceAiSetupSheet = ({
   setupResponse?: CompanyAgentSetupResponse
   savingSetup: boolean
   onSave: () => Promise<void>
-}) => {
+  }) => {
   const availableVersions = setupResponse?.available_versions ?? []
   const versionOptions = availableVersions.map((version) => ({
     value: String(version.id),
     label: `${version.provider_label} · ${version.model_name}`,
   }))
   const selectedVersion = availableVersions.find((version) => String(version.id) === form.version)
-  const selectedVersionOption = versionOptions.find((option) => option.value === form.version) ?? null
+  const fallbackSelectedVersionOption =
+    form.version && setupResponse?.agent
+      ? {
+          value: form.version,
+          label: `${setupResponse.agent.provider_label} · ${setupResponse.agent.model_name}`,
+        }
+      : null
+  const selectedVersionOption = versionOptions.find((option) => option.value === form.version) ?? fallbackSelectedVersionOption
+  const resolvedVersionOptions =
+    selectedVersionOption && !versionOptions.some((option) => option.value === selectedVersionOption.value)
+      ? [selectedVersionOption, ...versionOptions]
+      : versionOptions
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -194,7 +205,7 @@ const WorkspaceAiSetupSheet = ({
             <div className="grid gap-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-300">Agent name</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-200">Agent name</span>
                   <Input
                     className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
                     value={form.name}
@@ -203,32 +214,21 @@ const WorkspaceAiSetupSheet = ({
                   />
                 </label>
                 <div className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-300">Model version</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-200">Model version</span>
                   <ReactSelectField
-                    options={versionOptions}
+                    options={resolvedVersionOptions}
                     value={selectedVersionOption}
-                    onChange={(option) => {
-                      const nextOption = Array.isArray(option) ? null : (option as SelectOption | null)
-                      updateField("version", nextOption ? String(nextOption.value) : "")
-                    }}
-                    placeholder="Select provider and model"
-                    isSearchable
-                    isMulti={false}
-                    controlShouldRenderValue
-                    styles={{
-                      control: (base, state) => ({
-                        ...base,
-                        backgroundColor: state.isDisabled ? "#111827" : "#1f2937",
-                        borderColor: state.isFocused ? "#60a5fa" : "#374151",
-                        color: "#f3f4f6",
-                      }),
-                      singleValue: (base) => ({ ...base, color: "#f3f4f6" }),
-                      input: (base) => ({ ...base, color: "#f3f4f6" }),
-                      placeholder: (base) => ({ ...base, color: "#9ca3af" }),
-                    }}
+                  onChange={(option) => {
+                    const nextOption = Array.isArray(option) ? null : (option as SelectOption | null)
+                    updateField("version", nextOption ? String(nextOption.value) : "")
+                  }}
+                  placeholder="Select provider and model"
+                  isSearchable={false}
+                  isMulti={false}
+                  controlShouldRenderValue
                   />
                   {selectedVersion ? (
-                    <p className="text-xs text-gray-300">
+                    <p className="text-xs text-gray-200">
                       Selected: {selectedVersion.provider_label} · {selectedVersion.model_name}
                     </p>
                   ) : null}
@@ -237,8 +237,8 @@ const WorkspaceAiSetupSheet = ({
 
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                  <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-300">
-                    <KeyRound className="h-4 w-4 text-gray-500" />
+                  <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-200">
+                    <KeyRound className="h-4 w-4 text-gray-400" />
                     LLM API key
                   </span>
                   <Input
@@ -252,8 +252,8 @@ const WorkspaceAiSetupSheet = ({
                   />
                 </label>
                 <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                  <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-300">
-                    <KeyRound className="h-4 w-4 text-gray-500" />
+                  <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-200">
+                    <KeyRound className="h-4 w-4 text-gray-400" />
                     Tavily API key
                   </span>
                   <Input
@@ -271,7 +271,7 @@ const WorkspaceAiSetupSheet = ({
               </div>
 
               <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-300">Special instruction</span>
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-200">Special instruction</span>
                 <Textarea
                   className="min-h-[140px] rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
                   value={form.specialInstruction}
@@ -282,7 +282,7 @@ const WorkspaceAiSetupSheet = ({
               </label>
 
               <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-300">System instruction</span>
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-200">System instruction</span>
                 <Textarea
                   className="min-h-[160px] rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
                   value={form.systemInstruction}
@@ -293,7 +293,7 @@ const WorkspaceAiSetupSheet = ({
               </label>
 
               <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-300">Assistant instruction</span>
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-200">Assistant instruction</span>
                 <Textarea
                   className="min-h-[160px] rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
                   value={form.assistantInstruction}

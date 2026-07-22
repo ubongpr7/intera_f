@@ -17,7 +17,7 @@ import {
   TriangleAlert,
   Warehouse,
 } from "lucide-react"
-import { WorkspaceSetupLoadingCard, useWorkspaceSetupProgress } from "@/components/onboarding/WorkspaceSetupShell"
+import { useWorkspaceSetupProgress } from "@/components/onboarding/WorkspaceSetupShell"
 import ProductView from "@/components/product/productView"
 import OperationalStepSection from "@/components/setup/OperationalStepSection"
 import { Button } from "@/components/ui/button"
@@ -125,14 +125,7 @@ export default function ProductPage() {
     }
   }
 
-  if (loadingWorkspaceSetup) {
-    return (
-      <WorkspaceSetupLoadingCard
-      />
-    )
-  }
-
-  if (!activeMembership) {
+  if (!loadingWorkspaceSetup && !activeMembership) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-8 lg:px-8">
         <Card className="border-gray-200 shadow-sm">
@@ -160,7 +153,7 @@ export default function ProductPage() {
     )
   }
 
-  const setupGuideAvailable = isOwner && !loadingProductSetupState && !productSetupComplete
+  const setupGuideAvailable = isOwner && !loadingWorkspaceSetup && !loadingProductSetupState && !productSetupComplete
 
   return (
     <div className={cn("mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 lg:px-8", setupGuideAvailable && showSetupGuide ? "lg:grid-cols-[310px_1fr]" : "grid-cols-1")}>

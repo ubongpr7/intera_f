@@ -12,12 +12,20 @@ export const metadata: Metadata = {
   manifest: "/site.webmanifest",
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "32x32" },
-      { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
-      { url: "/favicon-16x16.png", type: "image/png", sizes: "16x16" },
+      {
+        url: "/assets/img/favicons/favicon-light.png",
+        type: "image/png",
+        sizes: "2000x2000",
+        media: "(prefers-color-scheme: light)",
+      },
+      {
+        url: "/assets/img/favicons/favicon-dark.png",
+        type: "image/png",
+        sizes: "2000x2000",
+        media: "(prefers-color-scheme: dark)",
+      },
     ],
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
-    shortcut: "/favicon.ico",
   },
 };
 

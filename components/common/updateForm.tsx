@@ -323,7 +323,7 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
                                 {...field}
                                 value={field.value as string | number | undefined}
                                 disabled={isDisabled}
-                                className={`w-full rounded-2xl border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
+                                className={`w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 transition focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${
                                   errors[key as string] 
                                     ? 'border-red-500 ring-red-500' 
                                     : ''
@@ -344,7 +344,7 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
                             return (
                               <select
                                 disabled={!isSupplierSelected}
-                                className={`w-full rounded-2xl border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
+                                className={`w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 transition focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${
                                   errors[key as string] 
                                     ? 'border-red-500 ring-red-500' 
                                     : ''
@@ -375,7 +375,7 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
                               name={field.name}
                               ref={field.ref}
 
-                                className={`w-full rounded-2xl border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
+                                className={`w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 transition focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${
                                   errors[key as string] 
                                     ? 'border-red-500 ring-red-500' 
                                     : ''
@@ -401,7 +401,7 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
                               onBlur={field.onBlur}
                               name={field.name}
                               ref={field.ref}
-                              className="h-5 w-5 rounded border-border text-primary focus:ring-ring"
+                              className="h-5 w-5 rounded border-slate-600 text-blue-600 focus:ring-blue-500"
                             />
                             );
                           }
@@ -417,7 +417,7 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
                         
                                 international
                                 defaultCountry="NG"
-                                className={`w-full rounded-2xl border border-border bg-background px-3 py-2 text-foreground focus-within:ring-2 focus-within:ring-ring ${
+                                className={`w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus-within:ring-2 focus-within:ring-blue-500/40 ${
                                   errors[key as string] 
                                     ? 'border-red-500 ring-red-500' 
                                     : ''
@@ -430,7 +430,7 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
                               type={inputType}
                               {...field}
                               value={field.value as string | number | undefined}
-                              className={`w-full rounded-2xl border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
+                              className={`w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${
                                 errors[key as string] 
                                   ? 'border-red-500 ring-red-500' 
                                   : ''
@@ -467,7 +467,7 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
                           {...field}
                           value={field.value as string || ''}
                           rows={4}
-                          className={`w-full rounded-2xl border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-ring ${
+                          className={`w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${
                             errors.description 
                               ? 'border-red-500 ring-red-500' 
                               : ''
@@ -486,12 +486,12 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
             )}
           </div>
 
-          <div className="sticky bottom-0 border-t border-border bg-card p-6">
+          <div className="sticky bottom-0 border-t border-slate-800 bg-slate-950/95 p-6">
             <div className="flex justify-end gap-3">
               
               <button
                 type="submit"
-                className="rounded-2xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-ring"
+                className="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 focus:ring-2 focus:ring-blue-500/40"
               >
                 {isLoading ? (
                   <LoadingAnimation text="Updating..." ringColor="#3b82f6" />

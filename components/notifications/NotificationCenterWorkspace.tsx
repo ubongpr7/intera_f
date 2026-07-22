@@ -9,7 +9,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { formatMachineLabel } from "@/lib/displayLabels"
 import { getNotificationPresentation } from "@/lib/notificationEventHelpers"
-import { getNotificationWebSocketBaseUrl, getRealtimeAccessToken } from "@/lib/serviceRealtime"
+import {
+  canReachNotificationService,
+  getNotificationWebSocketBaseUrl,
+  getRealtimeAccessToken,
+} from "@/lib/serviceRealtime"
 import {
   useGetNotificationUnreadCountQuery,
   useListNotificationsQuery,
@@ -55,6 +59,7 @@ const connectionBadge = (state: "connecting" | "connected" | "disconnected") => 
 export default function NotificationCenterWorkspace() {
   const [liveNotifications, setLiveNotifications] = useState<NotificationRecord[]>([])
   const [socketState, setSocketState] = useState<"connecting" | "connected" | "disconnected">("disconnected")
+  const [notificationServiceReady, setNotificationServiceReady] = useState(false)
   const {
     data: notificationResponse,
     isLoading,
@@ -62,18 +67,36 @@ export default function NotificationCenterWorkspace() {
     refetch,
   } = useListNotificationsQuery(
     { limit: 50, offset: 0 },
-    { pollingInterval: 15000 },
+    { pollingInterval: 15000, skip: !notificationServiceReady },
   )
   const {
     data: unreadResponse,
     isFetching: unreadFetching,
     refetch: refetchUnreadCount,
-  } = useGetNotificationUnreadCountQuery(undefined, { pollingInterval: 15000 })
+  } = useGetNotificationUnreadCountQuery(undefined, {
+    pollingInterval: 15000,
+    skip: !notificationServiceReady,
+  })
   const [markNotificationRead, { isLoading: markingRead }] = useMarkNotificationReadMutation()
   const [markAllNotificationsRead, { isLoading: markingAllRead }] = useMarkAllNotificationsReadMutation()
   const accessToken = getRealtimeAccessToken()
 
   useEffect(() => {
+    let disposed = false
+    void canReachNotificationService().then((available) => {
+      if (!disposed) {
+        setNotificationServiceReady(available)
+      }
+    })
+    return () => {
+      disposed = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!notificationServiceReady) {
+      return
+    }
     if (!accessToken) {
       return
     }
@@ -142,7 +165,7 @@ export default function NotificationCenterWorkspace() {
       }
       socket?.close()
     }
-  }, [accessToken])
+  }, [accessToken, notificationServiceReady])
 
   const notifications = useMemo(() => {
     const merged = new Map<string, NotificationRecord>()

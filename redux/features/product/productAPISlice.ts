@@ -56,6 +56,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
         body: productData,
         service: service,
       }),
+      invalidatesTags: ["Product", "GlobalCatalog"],
     }),
 
     removeTemplateMode: builder.mutation({
@@ -73,6 +74,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
         body: data,
         service: service,
       }),
+      invalidatesTags: (_result, _error, { id }) => [{ type: "Product", id }, "GlobalCatalog"],
     }),
 
     deleteProduct: builder.mutation({
@@ -81,6 +83,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
         method: "DELETE",
         service: service,
       }),
+      invalidatesTags: (_result, _error, id) => [{ type: "Product", id }, "GlobalCatalog"],
     }),
 
     bulkDeleteProducts: builder.mutation<
@@ -105,6 +108,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
         url: `/${product_api}/products/${id}/`,
         service: service,
       }),
+      providesTags: (_result, _error, id) => [{ type: "Product", id }],
     }),
 
     getMinimalProduct: builder.query<Partial<Product>, string>({
@@ -314,6 +318,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
         method: "POST",
         service: service,
       }),
+      invalidatesTags: (_result, _error, id) => [{ type: "Product", id }, "GlobalCatalog"],
     }),
 
     toggleProductFeatured: builder.mutation({
@@ -322,6 +327,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
         method: "POST",
         service: service,
       }),
+      invalidatesTags: (_result, _error, id) => [{ type: "Product", id }, "GlobalCatalog"],
     }),
 
     getProductVariants: builder.query<ProductVariant[], string>({
@@ -476,6 +482,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
         method: "POST",
         service: service,
       }),
+      invalidatesTags: ["GlobalCatalog"],
     }),
 
     toggleVariantPosVisible: builder.mutation({
@@ -484,6 +491,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
         method: "POST",
         service: service,
       }),
+      invalidatesTags: ["GlobalCatalog"],
     }),
 
     getVariantStockHistory: builder.query<Record<string, unknown>, string>({

@@ -10,11 +10,11 @@ import {
   Clock,
   Loader2,
   Check,
-  Mic,
-  MicOff,
-  Volume2,
+  PhoneCall,
+  PhoneOff,
   Download,
   RotateCcw,
+  AudioLines,
 } from "lucide-react"
 import { getCookie } from "cookies-next"
 import { toast } from "react-toastify"
@@ -22,6 +22,7 @@ import MessageContent from "@/components/message-content"
 import ConfirmationDialog from "@/components/confirmation-dialog"
 import InsightWidgetRenderer from "@/components/agents/insight-widget-renderer"
 import { humanizeAgentDisplayName } from "@/lib/agent-display"
+import { hasTokenPermission } from "@/lib/agentPermissions"
 import {
   buildChatPdfBlob,
   buildChatCsv,
@@ -153,6 +154,7 @@ const resolveUserIdentity = () => {
   return {
     initials,
     imageUrl: buildAbsoluteAssetUrl(picture),
+    email,
   }
 }
 
@@ -173,7 +175,7 @@ function ChatAvatar({
   return (
     <div
       className={`flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border shadow-sm ${
-        isAssistant ? "border-blue-100 bg-white" : "border-blue-200 bg-blue-600 text-white"
+        isAssistant ? "border-blue-100 bg-white" : "border-blue-200 bg-blue-600 text-gray-50"
       } ${className}`}
       aria-label={isAssistant ? "Intera AI" : "User"}
       title={isAssistant ? "Intera AI" : "User"}
@@ -358,7 +360,7 @@ export default function AgentChat({
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const [confirmationDialog, setConfirmationDialog] = useState<any>(null)
   const [respondedInteractions, setRespondedInteractions] = useState<Set<string>>(new Set())
-  const [isVoiceModeEnabled, setIsVoiceModeEnabled] = useState(false)
+  const [isCallModeActive, setIsCallModeActive] = useState(false)
   const [isAtBottom, setIsAtBottom] = useState(true)
   const [unreadCount, setUnreadCount] = useState(0)
   const [exportDownload, setExportDownload] = useState<ExportDownloadState | null>(null)
@@ -368,6 +370,10 @@ export default function AgentChat({
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const prevLenRef = useRef<number>(0)
   const exportUrlRef = useRef<string | null>(null)
+  const lastSpokenAssistantIdRef = useRef<string | null>(null)
+  const resumeListeningAfterSpeechRef = useRef(false)
+  const previousAutoSubmitRef = useRef(false)
+  const callModeTransitionRef = useRef(false)
   const MAX_TEXTAREA_HEIGHT = 160
 
   const clearExportDownload = () => {
@@ -396,13 +402,29 @@ export default function AgentChat({
     anchor.remove()
   }
 
+  const userIdentity = useMemo(() => resolveUserIdentity(), [])
+  const workspaceName = useMemo(
+    () =>
+      readCookieValue("companyName", (name) => getCookie(name)) ||
+      readCookieValue("profile", (name) => getCookie(name)) ||
+      "",
+    [],
+  )
+  const profileId = useMemo(() => readCookieValue("profileId", (name) => getCookie(name)) || "", [])
+  const accessToken = useMemo(() => readCookieValue("accessToken", (name) => getCookie(name)) || "", [])
+  const voiceAccessAllowed = hasTokenPermission("oral_conversation_with_ai")
+
   const voiceChat = useVoiceChat({
     onTranscript: (text: string) => {
-      setInput(text)
+      if (!isCallModeActive) {
+        setInput(text)
+        onActivity?.()
+        return
+      }
       onActivity?.()
     },
     onAutoSend: (text: string) => {
-      if (text.trim() && !hasActiveInteraction) {
+      if (text.trim()) {
         onSend(text)
         onActivity?.()
         setInput("")
@@ -410,7 +432,17 @@ export default function AgentChat({
         requestAnimationFrame(scrollToBottom)
       }
     },
-    autoSendDelay: 6000,
+    autoSendDelay: isCallModeActive ? 1800 : 6000,
+    livekitEnabled: voiceAccessAllowed,
+    livekitParticipantName: userIdentity.email || `Intera voice user ${userIdentity.initials}`,
+    livekitAgentName: process.env.NEXT_PUBLIC_LIVEKIT_VOICE_AGENT_NAME?.trim() || "ka2a-voice",
+    livekitMetadata: {
+      profileId,
+      accessToken,
+      userEmail: userIdentity.email,
+      workspaceName,
+      participantName: userIdentity.email || `Intera voice user ${userIdentity.initials}`,
+    },
   })
 
   useEffect(() => {
@@ -473,7 +505,6 @@ export default function AgentChat({
       borderClass: "border-emerald-200 bg-emerald-50 text-emerald-800",
     }
   }, [awaitingInput, isBusy, pendingCount])
-  const userIdentity = useMemo(() => resolveUserIdentity(), [])
 
   const workflowDetail = workflowSummary?.detail?.trim() || ""
 
@@ -494,6 +525,30 @@ export default function AgentChat({
     }
   }, [hasActiveInteraction, voiceChat])
 
+  const voiceCallStatus = useMemo(() => {
+    if (!isCallModeActive) {
+      return "Idle"
+    }
+    if (voiceChat.isConnecting) {
+      return "Connecting"
+    }
+    if (voiceChat.isListening) {
+      return "Listening"
+    }
+    if (voiceChat.isConnected) {
+      return "Connected"
+    }
+    return "Preparing"
+  }, [isCallModeActive, voiceChat.isConnected, voiceChat.isConnecting, voiceChat.isListening])
+
+  const voiceConversationEntries = useMemo(
+    () => voiceChat.conversationEntries.slice(-12),
+    [voiceChat.conversationEntries],
+  )
+  const voiceLiveTranscript = useMemo(() => {
+    return (voiceChat.transcript || voiceChat.finalTranscript || "").trim()
+  }, [voiceChat.finalTranscript, voiceChat.transcript])
+
   function scrollToBottom() {
     endRef.current?.scrollIntoView({ behavior: "smooth" })
     setUnreadCount(0)
@@ -513,12 +568,6 @@ export default function AgentChat({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!input.trim()) return
-
-    if (isVoiceModeEnabled) {
-      voiceChat.stopListening()
-      voiceChat.stopSpeaking()
-      voiceChat.clearTranscript()
-    }
 
     onSend(input)
     onActivity?.()
@@ -589,7 +638,7 @@ export default function AgentChat({
       title: "Intera AI Chat Export",
       kind: "pdf",
       status: "choosing",
-      description: "Choose a download format for this conversation.",
+      description: "Choose a download format for this conversation. JSON exports the full chat transcript.",
     })
   }
 
@@ -928,45 +977,87 @@ export default function AgentChat({
     setConfirmationDialog(null)
   }
 
-  const toggleVoiceMode = () => {
+  const stopCallMode = async () => {
+    setIsCallModeActive(false)
+    try {
+      await voiceChat.stopConversation()
+      voiceChat.stopSpeaking()
+      setInput("")
+      voiceChat.setAutoSubmitEnabled(previousAutoSubmitRef.current)
+      onActivity?.()
+    } catch (error) {
+      void error
+      toast.error("Unable to stop the voice session.")
+    } finally {
+      callModeTransitionRef.current = false
+    }
+  }
+
+  const toggleCallMode = async () => {
+    if (callModeTransitionRef.current) {
+      if (isCallModeActive || voiceChat.isConnected || voiceChat.isConnecting) {
+        await stopCallMode()
+      }
+      return
+    }
+
+    if (!voiceAccessAllowed) {
+      toast.info("Voice conversation is not enabled for this workspace.")
+      return
+    }
+
     if (!voiceChat.isSupported) {
       toast.info("Voice chat is not supported in this browser. Please use Chrome, Edge, or Safari.")
       return
     }
 
-    const newVoiceMode = !isVoiceModeEnabled
-    setIsVoiceModeEnabled(newVoiceMode)
-
-    if (newVoiceMode) {
-      voiceChat.startListening()
-    } else {
-      voiceChat.stopListening()
-      voiceChat.stopSpeaking()
-      voiceChat.clearTranscript()
+    callModeTransitionRef.current = true
+    if (isCallModeActive || voiceChat.isConnected || voiceChat.isConnecting) {
+      setIsCallModeActive(false)
+      await stopCallMode()
+      return
     }
 
-    onActivity?.()
+    setIsCallModeActive(true)
+    try {
+      previousAutoSubmitRef.current = voiceChat.autoSubmitEnabled
+      voiceChat.setInputMethod("voice")
+      voiceChat.setAutoSubmitEnabled(true)
+      await voiceChat.startConversation()
+      onActivity?.()
+    } catch (error) {
+      void error
+      setIsCallModeActive(false)
+      voiceChat.setAutoSubmitEnabled(previousAutoSubmitRef.current)
+      toast.error("Unable to start the voice session.")
+    } finally {
+      callModeTransitionRef.current = false
+    }
   }
 
   const handleUserInterruption = () => {
-    if (isVoiceModeEnabled && voiceChat.isSpeaking) {
+    if (isCallModeActive && voiceChat.isSpeaking) {
       voiceChat.stopSpeaking()
     }
     onActivity?.()
   }
 
-  const speakMessage = (content: string, _messageId: string) => {
-    voiceChat.speak(content)
+  const handleCloseChat = () => {
+    if (isCallModeActive || voiceChat.isConnected || voiceChat.isConnecting) {
+      setIsCallModeActive(false)
+      void voiceChat.stopConversation()
+    }
+    onClose()
     onActivity?.()
   }
 
   return (
     <div className="flex h-full min-h-0 flex-col">
       {showHeader && (
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-gray-50 p-4 flex items-center justify-between">
           <div className="min-w-0">
             <div className="flex items-center gap-2 min-w-0">
-              <Bot className="h-5 w-5 text-white shrink-0" aria-hidden strokeWidth={2.2} />
+              <Bot className="h-5 w-5 text-gray-50 shrink-0" aria-hidden strokeWidth={2.2} />
               <span className="truncate text-sm font-semibold uppercase tracking-[0.22em] text-blue-100">
                 {activeAgentName}
               </span>
@@ -983,14 +1074,18 @@ export default function AgentChat({
                 type="button"
                 data-ai-chat-export-trigger="true"
                 className="p-1 rounded-full hover:bg-white/20 transition-colors shrink-0"
-                aria-label="Open export options"
+                aria-label="Export conversation"
                 title="Export"
                 onClick={() => {
-                  openConversationExportChooser()
+                  if (onDownloadConversation) {
+                    onDownloadConversation()
+                  } else {
+                    openConversationExportChooser()
+                  }
                   onActivity?.()
                 }}
               >
-                <Download className="h-5 w-5 text-white" strokeWidth={2.2} />
+                <Download className="h-5 w-5 text-gray-50" strokeWidth={2.2} />
               </button>
               <button
                 type="button"
@@ -1003,7 +1098,7 @@ export default function AgentChat({
                 aria-label="Start new chat"
                 title="New chat"
               >
-                <RotateCcw className="h-5 w-5 text-white" strokeWidth={2.2} />
+                <RotateCcw className="h-5 w-5 text-gray-50" strokeWidth={2.2} />
               </button>
               <button
                 type="button"
@@ -1016,22 +1111,19 @@ export default function AgentChat({
                 title={isFullScreen ? "Exit full screen" : "Enter full screen"}
               >
                 {isFullScreen ? (
-                  <Minimize className="h-5 w-5 text-white" strokeWidth={2.2} />
+                  <Minimize className="h-5 w-5 text-gray-50" strokeWidth={2.2} />
                 ) : (
-                  <Maximize className="h-5 w-5 text-white" strokeWidth={2.2} />
+                  <Maximize className="h-5 w-5 text-gray-50" strokeWidth={2.2} />
                 )}
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  onClose()
-                  onActivity?.()
-                }}
+                onClick={handleCloseChat}
                 className="p-1 rounded-full hover:bg-white/20 transition-colors"
                 aria-label="Close chat"
                 title="Close"
               >
-                <X className="h-5 w-5 text-white" strokeWidth={2.2} />
+                <X className="h-5 w-5 text-gray-50" strokeWidth={2.2} />
               </button>
             </div>
           ) : null}
@@ -1057,6 +1149,78 @@ export default function AgentChat({
             <p className="mt-1">{humanizeTechnicalMessage(statusText)}</p>
           </div>
         )}
+        {isCallModeActive ? (
+          <div className="mb-4 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4 shadow-sm dark:border-blue-900 dark:bg-blue-950/40">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <AudioLines
+                    className={`h-5 w-5 text-blue-700 dark:text-blue-300 ${
+                      voiceChat.isSpeaking || voiceChat.isListening ? "animate-pulse" : ""
+                    }`}
+                    strokeWidth={2.2}
+                  />
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gray-600 dark:text-gray-300">
+                    Voice call active
+                  </p>
+                  <span className="rounded-full bg-blue-100 px-2 py-1 text-[11px] font-semibold text-blue-700 dark:bg-blue-900 dark:text-blue-100">
+                    {voiceCallStatus}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+                  {voiceChat.isConnecting
+                    ? "Connecting to LiveKit..."
+                    : voiceChat.isSpeaking
+                      ? "Assistant is speaking."
+                      : voiceChat.isListening
+                        ? "Listening for your next phrase."
+                        : "Speak normally and the assistant will respond in the same conversation."}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  void toggleCallMode()
+                }}
+                className="rounded-full border border-gray-200 bg-white p-2 text-gray-600 transition hover:bg-gray-100 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
+                aria-label="End voice call"
+                title="End voice call"
+              >
+                <PhoneOff className="h-5 w-5" strokeWidth={2.2} />
+              </button>
+            </div>
+            <div className="mt-4 rounded-2xl border border-dashed border-blue-200 bg-white/80 px-4 py-3 dark:border-blue-900 dark:bg-gray-950/70">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+                Voice transcript
+              </p>
+              {voiceConversationEntries.length > 0 ? (
+                <div className="mt-3 space-y-2">
+                  {voiceConversationEntries.map((entry, index) => (
+                    <div
+                      key={`${entry.timestamp}-${index}`}
+                      className={`rounded-2xl px-3 py-2 text-sm leading-6 ${
+                        entry.speaker === "user"
+                          ? "ml-auto max-w-[92%] bg-blue-500 text-gray-50"
+                          : "mr-auto max-w-[92%] bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100"
+                      }`}
+                    >
+                      <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] opacity-75">
+                        {entry.speaker === "user" ? "You" : "Assistant"}
+                      </p>
+                      <p>{entry.text}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : voiceLiveTranscript ? (
+                <p className="mt-1 text-sm leading-6 text-gray-800 dark:text-gray-100">{voiceLiveTranscript}</p>
+              ) : (
+                <p className="mt-1 text-sm leading-6 text-gray-500 dark:text-gray-400">
+                  Your voice conversation will appear here.
+                </p>
+              )}
+            </div>
+          </div>
+        ) : null}
         {messages.length === 0 ? (
           <div className="text-center h-full flex flex-col items-center justify-center text-gray-500">
             <ChatAvatar role="assistant" userInitials={userIdentity.initials} className="mb-3 h-14 w-14" />
@@ -1155,7 +1319,7 @@ export default function AgentChat({
                         {!isInteractionDisabled && (
                           <button
                             onClick={() => setConfirmationDialog(data)}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors"
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-gray-50 py-2 px-3 rounded-lg text-sm font-medium transition-colors"
                           >
                             Review & Respond
                           </button>
@@ -1210,7 +1374,7 @@ export default function AgentChat({
                 <div
                   className={`max-w-[85%] rounded-2xl px-5 py-4 ${
                     isUserMessage
-                      ? "bg-blue-500 text-white rounded-br-none"
+                      ? "bg-blue-500 text-gray-50 rounded-br-none"
                       : "bg-white text-gray-800 rounded-bl-none shadow-lg border border-gray-100"
                   }`}
                 >
@@ -1225,17 +1389,6 @@ export default function AgentChat({
                         </span>
                       )}
                     </div>
-
-                    {!isUserMessage && voiceChat.isSupported && (
-                      <button
-                        onClick={() => speakMessage(m.content, m.id)}
-                        className="p-1 rounded-full hover:bg-gray-100 transition-colors shrink-0 dark:hover:bg-gray-800"
-                        aria-label="Listen to this message"
-                        title="Listen to this message"
-                      >
-                        <Volume2 className="h-3 w-3 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-gray-200" strokeWidth={2.2} />
-                      </button>
-                    )}
                   </div>
                   {interactionResponseSummary ? (
                     <div className="space-y-1">
@@ -1282,7 +1435,7 @@ export default function AgentChat({
               scrollToBottom()
               onActivity?.()
             }}
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs px-3 py-1.5 rounded-full shadow hover:bg-blue-700"
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-blue-600 text-gray-50 text-xs px-3 py-1.5 rounded-full shadow hover:bg-blue-700"
           >
             View {unreadCount} new message{unreadCount > 1 ? "s" : ""}
           </button>
@@ -1313,71 +1466,51 @@ export default function AgentChat({
               rows={1}
               placeholder={
                 inputPlaceholder ||
-                isVoiceModeEnabled
-                  ? voiceChat.isListening
-                    ? "Listening... (speak now or type)"
-                    : "Voice mode active (click mic or type)"
-                  : awaitingInput
-                    ? "Provide the requested answer, approval, or follow-up..."
-                    : "Type your message..."
+                (awaitingInput
+                  ? "Provide the requested answer, approval, or follow-up..."
+                  : "Type your message...")
               }
-              className={`w-full  text-gray-800 bg-gray-200/70 border border-gray-300 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none leading-6 max-h-[160px] ${
-                isVoiceModeEnabled && voiceChat.isListening ? "ring-2 ring-green-400" : ""
-              }`}
-              aria-label="Type your message"
-            />
+            className="w-full text-gray-800 bg-gray-200/70 border border-gray-300 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none leading-6 max-h-[160px]"
+            aria-label="Type your message"
+          />
+          </div>
 
-            {isVoiceModeEnabled && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                {voiceChat.isListening && (
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-xs text-green-600 font-medium">Listening</span>
-                  </div>
+          <div className="flex items-center gap-1">
+            {voiceChat.isSupported && voiceAccessAllowed && (
+              <button
+                type="button"
+                onClick={() => {
+                  void toggleCallMode()
+                }}
+                className={`p-2 rounded-full transition-colors shrink-0 ${
+                  isCallModeActive ? "bg-blue-100 hover:bg-blue-200" : "bg-gray-100 hover:bg-gray-200"
+                }`}
+                aria-label={isCallModeActive ? "End call mode" : "Start call mode"}
+                title={isCallModeActive ? "End call mode" : "Start call mode"}
+              >
+                {isCallModeActive ? (
+                  <PhoneOff className="h-5 w-5 text-blue-600" strokeWidth={2.2} />
+                ) : (
+                  <PhoneCall className="h-5 w-5 text-gray-600" strokeWidth={2.2} />
                 )}
-                {voiceChat.isSpeaking && (
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                    <span className="text-xs text-blue-600 font-medium">Speaking</span>
-                  </div>
-                )}
+              </button>
+            )}
+            {voiceChat.isSupported && !voiceAccessAllowed && (
+              <div className="rounded-full border border-gray-200 bg-gray-100 px-3 py-2 text-xs text-gray-500">
+                Voice conversation is disabled for this account.
               </div>
             )}
           </div>
 
-          {voiceChat.isSupported && (
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={toggleVoiceMode}
-                className={`p-2 rounded-full transition-colors shrink-0 ${
-                  isVoiceModeEnabled ? "bg-green-100 hover:bg-green-200" : "bg-gray-100 hover:bg-gray-200"
-                }`}
-                aria-label={isVoiceModeEnabled ? "Disable voice mode" : "Enable voice mode"}
-                title={isVoiceModeEnabled ? "Disable voice mode" : "Enable voice mode"}
-              >
-                {isVoiceModeEnabled ? (
-                  voiceChat.isListening ? (
-                    <Mic className="h-5 w-5 text-green-600 animate-pulse" strokeWidth={2.2} />
-                  ) : (
-                    <MicOff className="h-5 w-5 text-gray-600" strokeWidth={2.2} />
-                  )
-                ) : (
-                  <Mic className="h-5 w-5 text-gray-600" strokeWidth={2.2} />
-                )}
-              </button>
-            </div>
-          )}
-
           <button
             type="submit"
-            className="bg-blue-600 text-white p-3 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="bg-blue-600 text-gray-50 p-3 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50"
             disabled={!input.trim()}
             aria-label="Send message"
             title={sendLabel}
             onClick={onActivity}
           >
-            <Send className="h-5 w-5 text-white" strokeWidth={2.2} />
+            <Send className="h-5 w-5 text-gray-50" strokeWidth={2.2} />
           </button>
         </div>
 
@@ -1387,28 +1520,6 @@ export default function AgentChat({
           </span>
           <span className="font-medium text-gray-600">{sendLabel}</span>
         </div>
-
-        {isVoiceModeEnabled && (
-          <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
-            <div className="flex items-center gap-2">
-              <span>Voice mode active</span>
-              {hasActiveInteraction && <span className="text-yellow-600">• Interaction detected - voice paused</span>}
-            </div>
-            <div className="flex items-center gap-2">
-              <span>Auto-send after 6s silence</span>
-              <button
-                type="button"
-                onClick={() => {
-                  voiceChat.clearTranscript()
-                  setInput("")
-                }}
-                className="text-blue-600 hover:text-blue-700"
-              >
-                Clear
-              </button>
-            </div>
-          </div>
-        )}
       </form>
 
       {exportDownload && (
@@ -1454,7 +1565,7 @@ export default function AgentChat({
                       ? void handleExportChatPdf()
                       : void handleExportInsightPdfPayload(exportDownload.payload)
                   }
-                  className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3 text-left transition hover:bg-gray-50"
+                  className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3 text-left transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <span>
                     <span className="block text-sm font-semibold text-gray-900">PDF report</span>
@@ -1469,7 +1580,7 @@ export default function AgentChat({
                       ? void handleExportChatCsv()
                       : handleExportInsightCsvPayload(exportDownload.payload)
                   }
-                  className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3 text-left transition hover:bg-gray-50"
+                  className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3 text-left transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <span>
                     <span className="block text-sm font-semibold text-gray-900">CSV data</span>
@@ -1484,7 +1595,7 @@ export default function AgentChat({
                       ? void handleExportChatJson()
                       : handleExportInsightJsonPayload(exportDownload.payload)
                   }
-                  className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3 text-left transition hover:bg-gray-50"
+                  className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3 text-left transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <span>
                     <span className="block text-sm font-semibold text-gray-900">JSON payload</span>
@@ -1504,7 +1615,7 @@ export default function AgentChat({
                   <a
                     href={exportDownload.href}
                     download={exportDownload.filename}
-                    className="inline-flex flex-1 items-center justify-center rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
+                    className="inline-flex flex-1 items-center justify-center rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-gray-50 transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
                   >
                     Download {exportDownload.kind.toUpperCase()}
                   </a>

@@ -27,17 +27,26 @@ export default function Modal({ isOpen, onClose, title, children, size = "md" }:
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onClose} />
+      <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-md" onClick={onClose} />
       <div
-        className={`relative bg-white rounded-lg shadow-xl ${sizeClasses[size]} w-full mx-4 max-h-[90vh] overflow-hidden`}
+        className={`relative mx-4 w-full max-h-[92vh] overflow-hidden rounded-[28px] border border-slate-800 bg-slate-950/95 text-slate-50 shadow-[0_32px_80px_-24px_rgba(2,6,23,0.95)] ${sizeClasses[size]}`}
       >
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
-            <X className="w-5 h-5 text-gray-500" />
+        <div className="flex items-center justify-between border-b border-slate-800/80 px-6 py-5">
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-blue-300/80">Workspace modal</p>
+            <h2 className="text-xl font-semibold tracking-tight text-slate-50">{title}</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-800 bg-slate-900/80 text-slate-300 transition-colors hover:border-slate-700 hover:bg-slate-800 hover:text-white"
+            aria-label="Close modal"
+          >
+            <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="overflow-y-auto max-h-[calc(90vh-80px)]">{children}</div>
+        <div className="max-h-[calc(92vh-90px)] overflow-y-auto bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.08),_transparent_35%)]">
+          {children}
+        </div>
       </div>
     </div>
   )

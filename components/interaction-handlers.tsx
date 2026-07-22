@@ -43,16 +43,7 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
     return String(rawValue)
   }
   const visibleOptions = Array.isArray(data.options)
-    ? data.options.filter((option: any) => {
-        if (
-          data.workflow === "inventory_onboarding" &&
-          typeof option?.value === "string" &&
-          option.value === "revise_answers"
-        ) {
-          return false
-        }
-        return true
-      })
+    ? data.options
     : []
 
   const handleOptionToggle = (value: string) => {
@@ -76,7 +67,7 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
       <div className="space-y-3">
         <div className="space-y-2">
           <h4 className="font-medium text-sm">{data.title}</h4>
-          {data.description && <p className="text-xs text-gray-600">{data.description}</p>}
+          {data.description && <p className="text-xs text-gray-300">{data.description}</p>}
         </div>
 
         <div className="space-y-2">
@@ -87,8 +78,8 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
                 key={`${optionValue}-${index}`}
                 className={`p-2 border rounded cursor-pointer transition-colors text-sm ${
                   selectedOptions.includes(optionValue)
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-gray-200 hover:border-gray-300"
+                    ? "border-blue-500 bg-blue-950/40"
+                    : "border-gray-800 hover:border-gray-700"
                 }`}
                 onClick={() => handleOptionToggle(optionValue)}
               >
@@ -96,7 +87,7 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
                   <span className="font-medium">{option.label}</span>
                   {selectedOptions.includes(optionValue) && <CheckCircle className="h-3 w-3 text-blue-500" />}
                 </div>
-                {option.description && <p className="text-xs text-gray-600 mt-1">{option.description}</p>}
+                {option.description && <p className="text-xs text-gray-300 mt-1">{option.description}</p>}
               </div>
             )
           })}
@@ -110,7 +101,7 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
               onChange={(e) => setAdditionalInput(e.target.value)}
               placeholder="Add any additional context..."
               rows={2}
-              className="text-sm bg-gray-200/70 text-gray-800"
+              className="text-sm bg-gray-900/70 text-gray-100"
             />
           </div>
         )}
@@ -140,8 +131,8 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
                 key={`${optionValue}-${index}`}
                 className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                   selectedOptions.includes(optionValue)
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-gray-200 hover:border-gray-300"
+                    ? "border-blue-500 bg-blue-950/40"
+                    : "border-gray-800 hover:border-gray-700"
                 }`}
                 onClick={() => handleOptionToggle(optionValue)}
               >
@@ -149,7 +140,7 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
                   <span className="font-medium">{option.label}</span>
                   {selectedOptions.includes(optionValue) && <CheckCircle className="h-4 w-4 text-blue-500" />}
                 </div>
-                {option.description && <p className="text-sm text-gray-600 mt-1">{option.description}</p>}
+                {option.description && <p className="text-sm text-gray-300 mt-1">{option.description}</p>}
               </div>
             )
           })}
@@ -157,13 +148,13 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
 
         {data.allow_additional_input && (
           <div>
-            <label className="block text-sm bg-gray-200/70 text-gray-800 font-medium mb-2">Additional Instructions (Optional)</label>
+            <label className="block text-sm bg-gray-900/70 text-gray-100 font-medium mb-2">Additional Instructions (Optional)</label>
             <Textarea
               value={additionalInput}
               onChange={(e) => setAdditionalInput(e.target.value)}
               placeholder="Add any additional context or instructions..."
               rows={3}
-              className="text-sm bg-gray-200/70 text-gray-800"
+              className="text-sm bg-gray-900/70 text-gray-100"
             />
           </div>
         )}
@@ -218,12 +209,12 @@ export function FileUploadHandler({ data, onResponse, compact = false }: Interac
       <div className="space-y-3">
         <div className="space-y-1">
           <h4 className="font-medium text-sm">{data.title}</h4>
-          {data.description && <p className="text-xs text-gray-600">{data.description}</p>}
+          {data.description && <p className="text-xs text-gray-300">{data.description}</p>}
         </div>
 
         <div
           className={`border-2 border-dashed rounded p-4 text-center transition-colors ${
-            dragOver ? "border-blue-500 bg-blue-50" : "border-gray-300"
+            dragOver ? "border-blue-500 bg-blue-950/40" : "border-gray-700"
           }`}
           onDragOver={(e) => {
             e.preventDefault()
@@ -234,7 +225,7 @@ export function FileUploadHandler({ data, onResponse, compact = false }: Interac
         >
           <UploadIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
           <p className="text-sm font-medium mb-1">Drop files or click to browse</p>
-          <p className="text-xs text-gray-600 mb-2">
+          <p className="text-xs text-gray-300 mb-2">
             {data.accepted_types ? `${data.accepted_types.join(", ")}` : "All types"}
           </p>
           <input
@@ -256,7 +247,7 @@ export function FileUploadHandler({ data, onResponse, compact = false }: Interac
           <div className="space-y-1">
             <h5 className="text-xs font-medium">Selected Files:</h5>
             {files.map((file, index) => (
-              <div key={index} className="flex items-center justify-between p-1 bg-gray-50 rounded text-xs">
+              <div key={index} className="flex items-center justify-between p-1 bg-gray-900/60 rounded text-xs">
                 <span className="truncate">{file.name}</span>
                 <Button
                   size="sm"
@@ -290,7 +281,7 @@ export function FileUploadHandler({ data, onResponse, compact = false }: Interac
       <CardContent className="space-y-4">
         <div
           className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-            dragOver ? "border-blue-500 bg-blue-50" : "border-gray-300"
+            dragOver ? "border-blue-500 bg-blue-950/40" : "border-gray-700"
           }`}
           onDragOver={(e) => {
             e.preventDefault()
@@ -301,7 +292,7 @@ export function FileUploadHandler({ data, onResponse, compact = false }: Interac
         >
           <UploadIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <p className="text-lg font-medium mb-2">Drop files here or click to browse</p>
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm text-gray-300 mb-4">
             {data.accepted_types ? `Accepted: ${data.accepted_types.join(", ")}` : "All file types accepted"}
           </p>
           <input
@@ -323,7 +314,7 @@ export function FileUploadHandler({ data, onResponse, compact = false }: Interac
           <div className="space-y-2">
             <h4 className="font-medium">Selected Files:</h4>
             {files.map((file, index) => (
-              <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+              <div key={index} className="flex items-center justify-between p-2 bg-gray-900/60 rounded">
                 <span className="text-sm">{file.name}</span>
                 <Button
                   size="sm"
@@ -369,7 +360,7 @@ export function ProgressTrackerHandler({ data, onResponse, compact = false }: In
             </span>
           </div>
           <Progress value={(data.current / data.total) * 100} className="w-full h-2" />
-          <div className="flex justify-between text-xs text-gray-600">
+          <div className="flex justify-between text-xs text-gray-300">
             <span>{Math.round((data.current / data.total) * 100)}% complete</span>
             {data.estimated_time && <span>~{data.estimated_time}</span>}
           </div>
@@ -401,7 +392,7 @@ export function ProgressTrackerHandler({ data, onResponse, compact = false }: In
             </span>
           </div>
           <Progress value={(data.current / data.total) * 100} className="w-full" />
-          <div className="flex justify-between text-xs text-gray-600">
+          <div className="flex justify-between text-xs text-gray-300">
             <span>{Math.round((data.current / data.total) * 100)}% complete</span>
             {data.estimated_time && <span>~{data.estimated_time} remaining</span>}
           </div>
@@ -442,15 +433,15 @@ export function DataTableHandler({ data, onResponse, compact = false }: Interact
       <div className="space-y-3">
         <div className="space-y-1">
           <h4 className="font-medium text-sm">{data.title}</h4>
-          {data.description && <p className="text-xs text-gray-600">{data.description}</p>}
+          {data.description && <p className="text-xs text-gray-300">{data.description}</p>}
         </div>
 
         <div className="overflow-x-auto max-h-48">
-          <table className="w-full border-collapse border border-gray-300 text-xs">
+          <table className="w-full border-collapse border border-gray-700 text-xs">
             <thead>
-              <tr className="bg-gray-50">
+              <tr className="bg-gray-900/60">
                 {data.headers.map((header: string, index: number) => (
-                  <th key={index} className="border border-gray-300 p-1 text-left font-medium">
+                  <th key={index} className="border border-gray-700 p-1 text-left font-medium">
                     {header}
                   </th>
                 ))}
@@ -460,7 +451,7 @@ export function DataTableHandler({ data, onResponse, compact = false }: Interact
               {tableData.map((row: any[], rowIndex: number) => (
                 <tr key={rowIndex}>
                   {row.map((cell: any, colIndex: number) => (
-                    <td key={colIndex} className="border border-gray-300 p-1">
+                    <td key={colIndex} className="border border-gray-700 p-1">
                       {data.editable_columns?.includes(colIndex) ? (
                         editingCell?.row === rowIndex && editingCell?.col === colIndex ? (
                           <Input
@@ -515,11 +506,11 @@ export function DataTableHandler({ data, onResponse, compact = false }: Interact
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse border border-gray-300">
+          <table className="w-full border-collapse border border-gray-700">
             <thead>
-              <tr className="bg-gray-50">
+              <tr className="bg-gray-900/60">
                 {data.headers.map((header: string, index: number) => (
-                  <th key={index} className="border border-gray-300 p-2 text-left font-medium">
+                  <th key={index} className="border border-gray-700 p-2 text-left font-medium">
                     {header}
                   </th>
                 ))}
@@ -529,7 +520,7 @@ export function DataTableHandler({ data, onResponse, compact = false }: Interact
               {tableData.map((row: any[], rowIndex: number) => (
                 <tr key={rowIndex}>
                   {row.map((cell: any, colIndex: number) => (
-                    <td key={colIndex} className="border border-gray-300 p-2">
+                    <td key={colIndex} className="border border-gray-700 p-2">
                       {data.editable_columns?.includes(colIndex) ? (
                         editingCell?.row === rowIndex && editingCell?.col === colIndex ? (
                           <Input
@@ -612,7 +603,7 @@ export function DynamicFormHandler({ data, onResponse, compact = false, disabled
             placeholder={field.placeholder}
             required={field.required}
             rows={compact ? 2 : 3}
-            className={compact ? "text-sm bg-gray-200/70 text-gray-800" : "bg-gray-200/70 text-gray-800"}
+            className={compact ? "text-sm bg-gray-900/70 text-gray-100" : "bg-gray-900/70 text-gray-100"}
               
 
             disabled={disabled}
@@ -639,7 +630,7 @@ export function DynamicFormHandler({ data, onResponse, compact = false, disabled
           <select
             value={fieldValue}
             onChange={(e) => updateField(field.name, e.target.value)}
-            className={`w-full p-2 border border-gray-300 rounded-md ${compact ? "h-8 text-sm p-1" : ""}`}
+            className={`w-full p-2 border border-gray-700 rounded-md ${compact ? "h-8 text-sm p-1" : ""}`}
             required={field.required}
             disabled={disabled}
           >
@@ -686,7 +677,7 @@ export function DynamicFormHandler({ data, onResponse, compact = false, disabled
       <div className="space-y-3">
         <div className="space-y-1">
           <h4 className="font-medium text-sm">{data.title}</h4>
-          {data.description && <p className="text-xs text-gray-600">{data.description}</p>}
+          {data.description && <p className="text-xs text-gray-300">{data.description}</p>}
         </div>
 
         {data.fields.map((field: any, index: number) => (
@@ -761,7 +752,7 @@ export function DateTimePickerHandler({
       <div className="space-y-3">
         <div className="space-y-1">
           <h4 className="font-medium text-sm">{data.title}</h4>
-          {data.description && <p className="text-xs text-gray-600">{data.description}</p>}
+          {data.description && <p className="text-xs text-gray-300">{data.description}</p>}
         </div>
 
         <Input
@@ -825,11 +816,11 @@ export function SliderInputHandler({ data, onResponse, compact = false, disabled
       <div className="space-y-3">
         <div className="space-y-1">
           <h4 className="font-medium text-sm">{data.title}</h4>
-          {data.description && <p className="text-xs text-gray-600">{data.description}</p>}
+          {data.description && <p className="text-xs text-gray-300">{data.description}</p>}
         </div>
 
         <div className="space-y-2">
-          <div className="flex justify-between text-xs text-gray-600">
+          <div className="flex justify-between text-xs text-gray-300">
             <span>
               {data.min}
               {data.unit}
@@ -872,7 +863,7 @@ export function SliderInputHandler({ data, onResponse, compact = false, disabled
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-4">
-          <div className="flex justify-between text-sm text-gray-600">
+          <div className="flex justify-between text-sm text-gray-300">
             <span>
               {data.min}
               {data.unit}
@@ -942,7 +933,7 @@ export function PriorityRankingHandler({ data, onResponse, compact = false }: In
       <div className="space-y-3">
         <div className="space-y-1">
           <h4 className="font-medium text-sm">{data.title}</h4>
-          {data.description && <p className="text-xs text-gray-600">{data.description}</p>}
+          {data.description && <p className="text-xs text-gray-300">{data.description}</p>}
         </div>
 
         <div className="space-y-1 max-h-48 overflow-y-auto">
@@ -952,7 +943,7 @@ export function PriorityRankingHandler({ data, onResponse, compact = false }: In
               draggable
               onDragStart={() => handleDragStart(index)}
               onDragOver={(e) => handleDragOver(e, index)}
-              className="flex items-center gap-2 p-2 border rounded cursor-move hover:bg-gray-50 text-sm"
+              className="flex items-center gap-2 p-2 border rounded cursor-move hover:bg-gray-900/60 text-sm"
             >
               <Badge variant="outline" className="min-w-[1.5rem] h-5 text-xs justify-center">
                 {index + 1}
@@ -987,7 +978,7 @@ export function PriorityRankingHandler({ data, onResponse, compact = false }: In
               draggable
               onDragStart={() => handleDragStart(index)}
               onDragOver={(e) => handleDragOver(e, index)}
-              className="flex items-center gap-3 p-3 border rounded-lg cursor-move hover:bg-gray-50"
+              className="flex items-center gap-3 p-3 border rounded-lg cursor-move hover:bg-gray-900/60"
             >
               <Badge variant="outline" className="min-w-[2rem] justify-center">
                 {index + 1}
@@ -1023,7 +1014,7 @@ export function CodeReviewHandler({ data, onResponse, compact = false }: Interac
       <div className="space-y-3">
         <div className="space-y-1">
           <h4 className="font-medium text-sm">{data.title}</h4>
-          {data.description && <p className="text-xs text-gray-600">{data.description}</p>}
+          {data.description && <p className="text-xs text-gray-300">{data.description}</p>}
         </div>
 
         <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -1040,7 +1031,7 @@ export function CodeReviewHandler({ data, onResponse, compact = false }: Interac
                 {change.old_code && (
                   <div>
                     <h6 className="text-xs font-medium text-red-600">Before:</h6>
-                    <pre className="bg-red-50 p-2 rounded text-xs overflow-x-auto">
+                    <pre className="bg-red-950/40 p-2 rounded text-xs overflow-x-auto">
                       <code>{change.old_code}</code>
                     </pre>
                   </div>
@@ -1048,7 +1039,7 @@ export function CodeReviewHandler({ data, onResponse, compact = false }: Interac
 
                 <div>
                   <h6 className="text-xs font-medium text-green-600">After:</h6>
-                  <pre className="bg-green-50 p-2 rounded text-xs overflow-x-auto">
+                  <pre className="bg-green-950/40 p-2 rounded text-xs overflow-x-auto">
                     <code>{change.new_code}</code>
                   </pre>
                 </div>
@@ -1059,7 +1050,7 @@ export function CodeReviewHandler({ data, onResponse, compact = false }: Interac
                 value={comments[change.file] || ""}
                 onChange={(e) => setComments((prev) => ({ ...prev, [change.file]: e.target.value }))}
                 rows={1}
-                className="text-xs bg-gray-200/70 text-gray-800"
+                className="text-xs bg-gray-900/70 text-gray-100"
               />
             </div>
           ))}
@@ -1104,7 +1095,7 @@ export function CodeReviewHandler({ data, onResponse, compact = false }: Interac
               {change.old_code && (
                 <div>
                   <h5 className="text-sm font-medium text-red-600 mb-2">Before:</h5>
-                  <pre className="bg-red-50 p-3 rounded text-sm overflow-x-auto">
+                  <pre className="bg-red-950/40 p-3 rounded text-sm overflow-x-auto">
                     <code>{change.old_code}</code>
                   </pre>
                 </div>
@@ -1112,7 +1103,7 @@ export function CodeReviewHandler({ data, onResponse, compact = false }: Interac
 
               <div>
                 <h5 className="text-sm font-medium text-green-600 mb-2">After:</h5>
-                <pre className="bg-green-50 p-3 rounded text-sm overflow-x-auto">
+                <pre className="bg-green-950/40 p-3 rounded text-sm overflow-x-auto">
                   <code>{change.new_code}</code>
                 </pre>
               </div>
@@ -1123,7 +1114,7 @@ export function CodeReviewHandler({ data, onResponse, compact = false }: Interac
               value={comments[change.file] || ""}
               onChange={(e) => setComments((prev) => ({ ...prev, [change.file]: e.target.value }))}
               rows={2}
-              className="text-sm bg-gray-200/70 text-gray-800"
+              className="text-sm bg-gray-900/70 text-gray-100"
             />
           </div>
         ))}
@@ -1171,7 +1162,7 @@ export function ImageAnnotationHandler({
       <div className="space-y-3">
         <div className="space-y-1">
           <h4 className="font-medium text-sm">{data.title}</h4>
-          {data.description && <p className="text-xs text-gray-600">{data.description}</p>}
+          {data.description && <p className="text-xs text-gray-300">{data.description}</p>}
         </div>
 
         <div className="flex gap-1">
@@ -1189,7 +1180,7 @@ export function ImageAnnotationHandler({
           ))}
         </div>
 
-        <div className="border rounded p-3 bg-gray-50 min-h-[150px] flex items-center justify-center">
+        <div className="border rounded p-3 bg-gray-900/60 min-h-[150px] flex items-center justify-center">
           {data.image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -1198,7 +1189,7 @@ export function ImageAnnotationHandler({
               className="max-w-full max-h-[140px] object-contain"
             />
           ) : (
-            <div className="text-center text-gray-500">
+            <div className="text-center text-gray-400">
               <ImageIcon className="h-8 w-8 mx-auto mb-1" />
               <p className="text-xs">Image annotation interface</p>
               <p className="text-xs">Tool: {selectedTool}</p>
@@ -1237,7 +1228,7 @@ export function ImageAnnotationHandler({
           ))}
         </div>
 
-        <div className="border rounded-lg p-4 bg-gray-50 min-h-[300px] flex items-center justify-center">
+        <div className="border rounded-lg p-4 bg-gray-900/60 min-h-[300px] flex items-center justify-center">
           {data.image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -1246,7 +1237,7 @@ export function ImageAnnotationHandler({
               className="max-w-full max-h-[280px] object-contain"
             />
           ) : (
-            <div className="text-center text-gray-500">
+            <div className="text-center text-gray-400">
               <ImageIcon className="h-12 w-12 mx-auto mb-2" />
               <p>Image annotation interface would be implemented here</p>
               <p className="text-sm">Selected tool: {selectedTool}</p>
@@ -1299,7 +1290,7 @@ export function DataTableReviewHandler({
       <div className="space-y-3">
         <div className="space-y-1">
           <h4 className="font-medium text-sm">{data.title}</h4>
-          {data.description && <p className="text-xs text-gray-600">{data.description}</p>}
+          {data.description && <p className="text-xs text-gray-300">{data.description}</p>}
         </div>
 
         <div className="overflow-x-auto max-h-48">
@@ -1369,7 +1360,7 @@ export function DataTableReviewHandler({
               <tr>
                 {data.allow_selection && <th className="border p-2"></th>}
                 {data.columns?.map((col: string, i: number) => (
-                  <th key={i} className="border p-2 font-medium text-left bg-gray-50">
+                  <th key={i} className="border p-2 font-medium text-left bg-gray-900/60">
                     {col}
                   </th>
                 ))}
@@ -1377,7 +1368,7 @@ export function DataTableReviewHandler({
             </thead>
             <tbody>
               {editedData.map((row: any[], rowIndex: number) => (
-                <tr key={rowIndex} className="hover:bg-gray-50">
+                <tr key={rowIndex} className="hover:bg-gray-900/60">
                   {data.allow_selection && (
                     <td className="border p-2">
                       <Checkbox
@@ -1455,7 +1446,7 @@ export function UpdateFormHandler({ data, onResponse, compact = false, disabled 
             placeholder={field.placeholder}
             required={field.required}
             rows={compact ? 2 : 3}
-            className={compact ? "text-sm bg-gray-200/70 text-gray-800" : "bg-gray-200/70 text-gray-800"}
+            className={compact ? "text-sm bg-gray-900/70 text-gray-100" : "bg-gray-900/70 text-gray-100"}
             disabled={disabled}
           />
         )
@@ -1470,7 +1461,7 @@ export function UpdateFormHandler({ data, onResponse, compact = false, disabled 
             required={field.required}
             min={field.min}
             max={field.max}
-            className={compact ? "h-8 text-sm bg-gray-200/70 text-gray-800" : "bg-gray-200/70 text-gray-800" }
+            className={compact ? "h-8 text-sm bg-gray-900/70 text-gray-100" : "bg-gray-900/70 text-gray-100" }
             disabled={disabled}
           />
         )
@@ -1480,7 +1471,7 @@ export function UpdateFormHandler({ data, onResponse, compact = false, disabled 
           <select
             value={fieldValue}
             onChange={(e) => updateField(field.name, e.target.value)}
-            className={`w-full p-2 border border-gray-300 rounded-md ${compact ? "h-8 text-sm p-1" : ""}`}
+            className={`w-full p-2 border border-gray-700 rounded-md ${compact ? "h-8 text-sm p-1" : ""}`}
             required={field.required}
             disabled={disabled}
           >
@@ -1527,7 +1518,7 @@ export function UpdateFormHandler({ data, onResponse, compact = false, disabled 
       <div className="space-y-3">
         <div className="space-y-1">
           <h4 className="font-medium text-sm">{data.title}</h4>
-          {data.description && <p className="text-xs text-gray-600">{data.description}</p>}
+          {data.description && <p className="text-xs text-gray-300">{data.description}</p>}
           {data.item_name && <p className="text-xs text-blue-600">Updating: {data.item_name}</p>}
         </div>
 

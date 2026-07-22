@@ -25,7 +25,11 @@ import {
 } from 'lucide-react'
 import { deleteCookie, getCookie } from 'cookies-next'
 import { useRouter } from 'nextjs-toploader/app'
-import { getNotificationWebSocketBaseUrl, getRealtimeAccessToken } from '@/lib/serviceRealtime'
+import {
+  canReachNotificationService,
+  getNotificationWebSocketBaseUrl,
+  getRealtimeAccessToken,
+} from '@/lib/serviceRealtime'
 import { useGetUserCompaniesQuery, useSwitchCompanyMutation } from '@/redux/features/auth/authApiSlice'
 import {
   useGetNotificationUnreadCountQuery,
@@ -78,24 +82,31 @@ const Navbar = ({ user, onOpenMobileSidebar, sidebarCollapsed }: NavbarProps) =>
   const settingsMenuRef = useRef<HTMLDivElement>(null)
   const userMenuRef = useRef<HTMLDivElement>(null)
   const notificationMenuRef = useRef<HTMLDivElement>(null)
+  const [settingsMenuOpen, setSettingsMenuOpen] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [notificationMenuOpen, setNotificationMenuOpen] = useState(false)
+  const [liveNotifications, setLiveNotifications] = useState<NotificationRecord[]>([])
+  const [notificationServiceReady, setNotificationServiceReady] = useState(false)
 
   const { data: companyMemberships } = useGetUserCompaniesQuery()
   const {
     data: unreadResponse,
     refetch: refetchUnreadCount,
-  } = useGetNotificationUnreadCountQuery(undefined, { pollingInterval: 60000 })
+  } = useGetNotificationUnreadCountQuery(undefined, {
+    pollingInterval: 60000,
+    skip: !notificationServiceReady,
+  })
   const {
     data: notificationResponse,
     isLoading: notificationsLoading,
     refetch: refetchNotifications,
-  } = useListNotificationsQuery({ limit: 15, offset: 0 }, { pollingInterval: 60000 })
+  } = useListNotificationsQuery({ limit: 15, offset: 0 }, {
+    pollingInterval: 60000,
+    skip: !notificationServiceReady,
+  })
   const [switchCompany, { isLoading: isSwitchingCompany }] = useSwitchCompanyMutation()
   const [markNotificationRead] = useMarkNotificationReadMutation()
   const [markAllNotificationsRead, { isLoading: markingAllRead }] = useMarkAllNotificationsReadMutation()
-  const [settingsMenuOpen, setSettingsMenuOpen] = useState(false)
-  const [userMenuOpen, setUserMenuOpen] = useState(false)
-  const [notificationMenuOpen, setNotificationMenuOpen] = useState(false)
-  const [liveNotifications, setLiveNotifications] = useState<NotificationRecord[]>([])
 
   const activeProfile = companyMemberships?.profiles?.find(
     (profile) => `${profile.id}` === `${companyMemberships.active_profile_id}`,
@@ -119,6 +130,21 @@ const Navbar = ({ user, onOpenMobileSidebar, sidebarCollapsed }: NavbarProps) =>
   }, [])
 
   React.useEffect(() => {
+    let disposed = false
+    void canReachNotificationService().then((available) => {
+      if (!disposed) {
+        setNotificationServiceReady(available)
+      }
+    })
+    return () => {
+      disposed = true
+    }
+  }, [])
+
+  React.useEffect(() => {
+    if (!notificationServiceReady) {
+      return
+    }
     const accessToken = getRealtimeAccessToken()
     if (!accessToken) {
       return
@@ -174,7 +200,7 @@ const Navbar = ({ user, onOpenMobileSidebar, sidebarCollapsed }: NavbarProps) =>
       }
       socket?.close()
     }
-  }, [refetchNotifications, refetchUnreadCount])
+  }, [notificationServiceReady, refetchNotifications, refetchUnreadCount])
 
   const recentNotifications = React.useMemo(() => {
     const merged = new Map<string, NotificationRecord>()

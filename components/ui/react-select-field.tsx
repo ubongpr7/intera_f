@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { forwardRef, useState } from "react"
-import Select, { type Props as ReactSelectProps, type StylesConfig } from "react-select"
+import Select, { components as reactSelectComponents, type Props as ReactSelectProps, type StylesConfig } from "react-select"
 import CreatableSelect from "react-select/creatable"
 import { cn } from "@/lib/utils"
 
@@ -20,65 +20,76 @@ export type ReactSelectFieldProps = ReactSelectProps<SelectOption, boolean> & {
   [key: string]: any
 }
 
-const isDarkMode = () => typeof document !== "undefined" && document.documentElement.classList.contains("dark")
-
 const customStyles: StylesConfig<SelectOption, boolean> = {
   control: (provided, state) => ({
     ...provided,
-    minHeight: 48,
+    minHeight: 52,
     borderRadius: 18,
-    backgroundColor: state.isDisabled ? "#f9fafb" : "#ffffff",
-    borderColor: state.isFocused ? "#60a5fa" : "#e5e7eb",
-    boxShadow: state.isFocused ? "0 0 0 4px rgba(59, 130, 246, 0.14)" : "0 10px 24px rgba(15, 23, 42, 0.05)",
+    backgroundColor: "hsl(var(--background))",
+    borderColor: state.isFocused ? "hsl(var(--ring))" : "hsl(var(--border))",
+    boxShadow: state.isFocused ? "0 0 0 4px rgba(59, 130, 246, 0.16)" : "0 16px 36px rgba(2, 6, 23, 0.18)",
+    color: "hsl(var(--foreground))",
     "&:hover": {
-      borderColor: state.isFocused ? "#60a5fa" : "#d1d5db",
+      borderColor: state.isFocused ? "hsl(var(--ring))" : "hsl(var(--muted-foreground))",
     },
-    ...(isDarkMode() && {
-      backgroundColor: state.isDisabled ? "#111827" : "#111827",
-      borderColor: state.isFocused ? "#60a5fa" : "#374151",
-      color: "#f3f4f6",
-      boxShadow: state.isFocused ? "0 0 0 4px rgba(59, 130, 246, 0.16)" : "0 12px 28px rgba(2, 6, 23, 0.42)",
-    }),
   }),
   menu: (provided) => ({
     ...provided,
-    backgroundColor: "#ffffff",
+    backgroundColor: "hsl(var(--popover))",
     borderRadius: 18,
     overflow: "hidden",
-    boxShadow: "0 18px 40px rgba(15, 23, 42, 0.12)",
-    ...(isDarkMode() && {
-      backgroundColor: "#111827",
-    }),
+    border: "1px solid hsl(var(--border))",
+    boxShadow: "0 24px 64px rgba(2, 6, 23, 0.3)",
   }),
   placeholder: (provided) => ({
     ...provided,
-    color: isDarkMode() ? "#9ca3af" : "#94a3b8",
+    color: "hsl(var(--muted-foreground))",
   }),
   option: (provided, state) => ({
     ...provided,
-    backgroundColor: state.isSelected ? "#3b82f6" : state.isFocused ? "#dbeafe" : "transparent",
-    color: state.isSelected ? "#ffffff" : "#111827",
+    backgroundColor: state.isSelected ? "hsl(var(--primary))" : state.isFocused ? "rgba(59, 130, 246, 0.14)" : "transparent",
+    color: "hsl(var(--popover-foreground))",
     "&:active": {
-      backgroundColor: "#3b82f6",
+      backgroundColor: "hsl(var(--primary))",
     },
-    ...(isDarkMode() && {
-      backgroundColor: state.isSelected ? "#2563eb" : state.isFocused ? "#1e3a8a" : "#111827",
-      color: "#f3f4f6",
-    }),
   }),
   singleValue: (provided) => ({
     ...provided,
-    color: "#111827",
-    ...(isDarkMode() && {
-      color: "#f3f4f6",
-    }),
+    color: "hsl(var(--foreground))",
   }),
   input: (provided) => ({
     ...provided,
-    color: "#111827",
-    ...(isDarkMode() && {
-      color: "#f3f4f6",
-    }),
+    color: "hsl(var(--foreground))",
+  }),
+  valueContainer: (provided) => ({
+    ...provided,
+    color: "hsl(var(--foreground))",
+    paddingLeft: "0.5rem",
+  }),
+  indicatorsContainer: (provided) => ({
+    ...provided,
+    color: "hsl(var(--muted-foreground))",
+  }),
+  dropdownIndicator: (provided, state) => ({
+    ...provided,
+    color: state.isFocused ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))",
+    "&:hover": {
+      color: "hsl(var(--foreground))",
+    },
+  }),
+  clearIndicator: (provided) => ({
+    ...provided,
+    color: "hsl(var(--muted-foreground))",
+    "&:hover": {
+      color: "hsl(var(--foreground))",
+    },
+  }),
+  indicatorSeparator: () => ({
+    backgroundColor: "hsl(var(--border))",
+  }),
+  menuList: (provided) => ({
+    ...provided,
+    padding: 6,
   }),
   menuPortal: (provided) => ({
     ...provided,
@@ -111,20 +122,28 @@ export const ReactSelectField = forwardRef<any, ReactSelectFieldProps>(
 
     return (
       <div className={cn("relative space-y-1", isMenuOpen ? "z-[120]" : "z-0", className)}>
-        {label ? <label className="block text-sm font-medium text-gray-700">{label}</label> : null}
+        {label ? <label className="block text-sm font-medium text-gray-300">{label}</label> : null}
         <SelectComponent
           ref={ref}
           styles={{
             ...customStyles,
             ...styles,
           }}
+          components={{
+            ...props.components,
+            Input: (inputProps) => (
+              <reactSelectComponents.Input {...inputProps} autoComplete="off" autoCorrect="off" spellCheck={false} />
+            ),
+          }}
           classNames={{
             control: () =>
               cn(
-                "rounded-2xl border bg-white px-2 py-1 dark:bg-gray-800/90",
-                error ? "border-red-500 dark:border-red-500" : "border-gray-200 dark:border-gray-700",
-              ),
-            menu: () => "p-1 dark:bg-gray-950",
+                "rounded-2xl border px-2 py-1 transition-colors",
+                error ? "border-red-500" : "border-gray-700",
+            ),
+            menu: () => "p-1",
+            singleValue: () => "text-gray-100",
+            placeholder: () => "text-gray-400",
           }}
           inputId={inputId}
           menuPortalTarget={resolvedPortalTarget}
@@ -140,7 +159,7 @@ export const ReactSelectField = forwardRef<any, ReactSelectFieldProps>(
           }}
           {...props}
         />
-        {helperText ? <p className={cn("text-xs", error ? "text-red-500" : "text-gray-500")}>{helperText}</p> : null}
+        {helperText ? <p className={cn("text-xs", error ? "text-red-400" : "text-gray-400")}>{helperText}</p> : null}
       </div>
     )
   },

@@ -12,18 +12,18 @@ html,body,.app,#root{
     width: 100%;
     margin:0;
     @apply text-sm;
-    @apply bg-gray-500;
-    @apply text-gray-900;
+    @apply bg-background;
+    @apply text-foreground;
     padding:0;
     font-family: 'Roboto', sans-serif;
     font-size: 16px;
     line-height: 1.5;
-    color: #333;
-    background-color: #f4f4f4;
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
 }
 a{
     text-decoration: none;
-    color: #333;
+    color: inherit;
 }
 ul{
     list-style: none;
@@ -92,12 +92,8 @@ img{
 }
 
 select {
-  @apply bg-white text-black border border-gray-300 rounded-md p-2;
+  @apply bg-background text-foreground border border-border rounded-md p-2;
   appearance: none;
-}
-input,textarea{
-  @apply bg-gray-200/70 text-gray-800;
-  border-radius: 50%;
 }
 ::-webkit-scrollbar {
   width: 8px;
@@ -117,14 +113,9 @@ input,textarea{
   scrollbar-width: thin; 
   scrollbar-color: rgba(0, 0, 0, 0.02) transparent; 
 }
-select {
-  @apply bg-gray-200 text-gray-800 border border-gray-300 rounded-md p-2;
-  appearance: none; /* Remove native dropdown arrow for custom styling (optional) */
-}
-
 option {
-  background-color: bg-gray-200; /* force option bg for supporting browsers */
-  color: text-gray-900;
+  background-color: inherit;
+  color: inherit;
   z-index: 9999;
 }
 

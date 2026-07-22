@@ -81,11 +81,11 @@ export default function ProductPOS({ productId, product }: ProductPOSProps) {
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <Button onClick={handleToggleQuickSale} disabled={isTogglingQuickSale}>
-                {productData.quick_sale ? "Disable quick sale" : "Enable quick sale"}
+              <Button onClick={handleToggleQuickSale} disabled={isTogglingQuickSale} aria-busy={isTogglingQuickSale}>
+                {isTogglingQuickSale ? "Updating..." : productData.quick_sale ? "Disable quick sale" : "Enable quick sale"}
               </Button>
-              <Button variant="outline" onClick={handleToggleFeatured} disabled={isTogglingFeatured}>
-                {productData.is_featured ? "Remove featured" : "Mark featured"}
+              <Button variant="outline" onClick={handleToggleFeatured} disabled={isTogglingFeatured} aria-busy={isTogglingFeatured}>
+                {isTogglingFeatured ? "Updating..." : productData.is_featured ? "Remove featured" : "Mark featured"}
               </Button>
             </div>
 

@@ -7,6 +7,11 @@ interface CurrencyConfig {
   locale: string
 }
 
+const normalizeCurrencyCode = (currencyCode: string | null | undefined) => {
+  const normalized = `${currencyCode ?? "USD"}`.trim().toUpperCase()
+  return normalized.length ? normalized : "USD"
+}
+
 // Currency configuration mapping
 const CURRENCY_CONFIG: Record<string, CurrencyConfig> = {
   USD: { symbol: "$", decimals: 2, locale: "en-US" },
@@ -81,7 +86,8 @@ export function formatCurrency(
   const { showSymbol = true, showCode = false, compact = false } = options
 
   // Get currency configuration
-  const config = CURRENCY_CONFIG[currencyCode.toUpperCase()] || CURRENCY_CONFIG.USD
+  const normalizedCurrencyCode = normalizeCurrencyCode(currencyCode)
+  const config = CURRENCY_CONFIG[normalizedCurrencyCode] || CURRENCY_CONFIG.USD
 
   // Determine decimal places
   const minimumFractionDigits = options.minimumFractionDigits ?? config.decimals
@@ -115,7 +121,7 @@ export function formatCurrency(
   }
 
   if (showCode) {
-    result = `${result} ${currencyCode.toUpperCase()}`
+    result = `${result} ${normalizedCurrencyCode}`
   }
 
   return result
@@ -127,17 +133,19 @@ export function formatCurrency(
  * @returns Currency symbol
  */
 export function getCurrencySymbol(currencyCode: string): string {
-  const config = CURRENCY_CONFIG[currencyCode.toUpperCase()]
-  return config?.symbol || currencyCode.toUpperCase()
+  const normalizedCurrencyCode = normalizeCurrencyCode(currencyCode)
+  const config = CURRENCY_CONFIG[normalizedCurrencyCode]
+  return config?.symbol || normalizedCurrencyCode
 }
 export function getCurrencySymbolForProfile() {
   const currencyCode = `${readCookieValue("currency", getCookie) || "USD"}`
-  const config = CURRENCY_CONFIG[currencyCode?.toUpperCase()||'USD']
-  return config?.symbol || currencyCode.toUpperCase()
+  const normalizedCurrencyCode = normalizeCurrencyCode(currencyCode)
+  const config = CURRENCY_CONFIG[normalizedCurrencyCode]
+  return config?.symbol || normalizedCurrencyCode
 }
 
 export function getCurrencyCodeForProfile() {
-  return `${readCookieValue("currency", getCookie) || "USD"}`.toUpperCase()
+  return normalizeCurrencyCode(readCookieValue("currency", getCookie) || "USD")
 }
 
 export function formatMoneyCompactForProfile(amount:string|number){
@@ -190,7 +198,7 @@ export function parseCurrency(currencyString: string, currencyCode?: string): nu
  * @returns Boolean indicating if currency is supported
  */
 export function isSupportedCurrency(currencyCode: string): boolean {
-  return currencyCode.toUpperCase() in CURRENCY_CONFIG
+  return normalizeCurrencyCode(currencyCode) in CURRENCY_CONFIG
 }
 
 /**

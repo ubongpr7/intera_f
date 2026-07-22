@@ -12,6 +12,7 @@ import type { ProductAttributeLink, ProductAttribute, Product } from "@/redux/fe
 import { Column, DataTable } from "../common/DataTable/DataTable"
 import CustomCreateCard from "../common/createCard"
 import LoadingAnimation from "../common/LoadingAnimation"
+import { Trash2 } from "lucide-react"
 import { toast } from "react-toastify"
 import { extractErrorMessage } from "@/lib/utils"
 
@@ -92,6 +93,22 @@ export default function ProductAttributeLinks({ productId, product }: ProductAtt
     text: attr.name,
   })) || []
 
+  const actionButtons = [
+    {
+      label: "Delete",
+      icon: Trash2,
+      variant: "danger" as const,
+      tooltip: "Remove this attribute link",
+      disabled: () => deleteLoading,
+      onClick: (row: ProductAttributeLink) => {
+        if (typeof window !== "undefined" && !window.confirm(`Remove ${row.attribute_name || "this attribute"} from this product?`)) {
+          return
+        }
+        void handleDelete(row.id)
+      },
+    },
+  ]
+
   const selectOptions = {
     attribute: attributeOptions,
   }
@@ -171,6 +188,7 @@ const interfaceKeys: (keyof ProductAttributeLink)[] = [
         data={attributeLinks || []}
         isLoading={isAttributeLinksLoading}
         onRowClick={handleRowClick}
+        actionButtons={actionButtons}
         searchableFields={['attribute_name', 'attribute_type']}
         filterableFields={['attribute_type', 'required', 'is_visible_in_pos']}
         sortableFields={['attribute_name', 'attribute_type', 'order', 'default_modifier']}

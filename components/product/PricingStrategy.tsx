@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 import { toast } from "react-toastify"
+import { Trash2 } from "lucide-react"
 import {
   useGetPricingStrategiesQuery,
   useCreatePricingStrategyMutation,
@@ -78,18 +79,18 @@ const pricingStrategyColumns: Column<PricingStrategy>[] = [
 const defaultValues: Partial<PricingStrategy> = {
   name: '',
   strategy: 'margin',
-  margin_percentage: undefined,
+  margin_percentage: 10,
   market_multiplier: undefined,
   min_price: undefined,
   max_price: undefined,
   demand_factor: 1.0,
   seasonal_factor: 1.0,
   tier_1_quantity: 1,
-  tier_1_discount: 1,
+  tier_1_discount: 0,
   tier_2_quantity: 1,
-  tier_2_discount: 1,
+  tier_2_discount: 0,
   tier_3_quantity: 1,
-  tier_3_discount: 1,
+  tier_3_discount: 0,
   is_active: true,
 }
 
@@ -141,19 +142,27 @@ export default function ProductPricingStrategies({ productId,product }: ProductP
   }
 
   const handleCreate = async (data: Partial<PricingStrategy>) => {
+    try {
       const strategyData = { ...data, product: productId }
       await createPricingStrategy(strategyData).unwrap()
       setIsCreateOpen(false)
       refetch()
+    } catch (error) {
+      toast.error(extractErrorMessage(error, ["detail", "error"]) || "Failed to create pricing strategy.")
+    }
    
   }
 
   const handleUpdate = async (data: Partial<PricingStrategy>) => {
     if (!editingStrategy) return
+    try {
       await updatePricingStrategy({ id: editingStrategy.id,data }).unwrap()
       setEditingStrategy(null)
       setIsCreateOpen(false)
       refetch()
+    } catch (error) {
+      toast.error(extractErrorMessage(error, ["detail", "error"]) || "Failed to update pricing strategy.")
+    }
     
   }
 
@@ -185,6 +194,10 @@ export default function ProductPricingStrategies({ productId,product }: ProductP
   const actionButtons = [
     {
       label: 'Delete',
+      icon: Trash2,
+      variant: 'danger' as const,
+      tooltip: 'Remove this pricing strategy',
+      disabled: () => deleteLoading,
       onClick: (row: PricingStrategy) => handleDelete(row.id),
       className: 'text-red-500',
     },
@@ -211,6 +224,7 @@ export default function ProductPricingStrategies({ productId,product }: ProductP
         data={pricingStrategies || []}
         isLoading={isLoading}
         onRowClick={handleRowClick}
+        actionButtons={actionButtons}
         searchableFields={['name']}
         filterableFields={['strategy', 'is_active']}
         sortableFields={['name', 'strategy', 'margin_percentage', 'market_multiplier', 'min_price', 'max_price', 'calculated_price_example']}

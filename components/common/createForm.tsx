@@ -278,11 +278,10 @@ export default function CustomCreateForm<T extends Record<string, any>>({
                               <select
                                 {...field}
                                 disabled={isDisabled}
-                                className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
-                                  focus:border-blue-500 py-2 rounded-md ${
+                                className={`w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 transition focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${
                                   errors[key as string] 
                                     ? 'border-red-500 ring-red-500' 
-                                    : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                                    : ''
                                 }`}
                                 value={field.value as string | number | readonly string[] | undefined}
                               >
@@ -303,11 +302,10 @@ export default function CustomCreateForm<T extends Record<string, any>>({
                             return (
                               <select
                                 disabled={!isSupplierSelected}
-                                className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
-                                  focus:border-blue-500 py-2 rounded-md ${
+                                className={`w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 transition focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${
                                   errors[key as string] 
                                     ? 'border-red-500 ring-red-500' 
-                                    : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                                    : ''
                                 }`}
                                 // Explicitly set select props instead of spreading field
                                 value={field.value as string}  // Convert to string
@@ -333,11 +331,10 @@ export default function CustomCreateForm<T extends Record<string, any>>({
                               onBlur={field.onBlur}
                               name={field.name}
                               ref={field.ref}
-                                className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
-                                  focus:border-blue-500 py-2 rounded-md ${
+                                className={`w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 transition focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${
                                   errors[key as string] 
                                     ? 'border-red-500 ring-red-500' 
-                                    : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                                    : ''
                                 }`}
                               >
                                 <option value="">Select {formatLabel(String(key))}</option>
@@ -380,11 +377,10 @@ export default function CustomCreateForm<T extends Record<string, any>>({
                         
                                 international
                                 defaultCountry="NG"
-                                className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none 
-                                  focus:border-blue-500 py-2 rounded-md ${
+                                className={`w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${
                                   errors[key as string] 
                                     ? 'border-red-500 ring-red-500' 
-                                    : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                                    : ''
                                 }`}
                               />
                             );
@@ -395,11 +391,10 @@ export default function CustomCreateForm<T extends Record<string, any>>({
                               type={inputType}
                               {...field}
                               value={field.value as string | number | readonly string[] | undefined}
-                              className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
-                                focus:border-blue-500 py-2 rounded-md ${
+                              className={`w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${
                                 errors[key as string] 
                                   ? 'border-red-500 ring-red-500' 
-                                  : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                                  : ''
                               }`}
                             />
                           );
@@ -431,11 +426,10 @@ export default function CustomCreateForm<T extends Record<string, any>>({
                       render={({ field }) => (
                         <textarea
                           rows={4}
-                          className={`w-full bg-gray-50 px-3 border-2 border-gray-300 focus:outline-none
-                            focus:border-blue-500 py-2 rounded-md ${
+                          className={`w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${
                             errors.description 
                               ? 'border-red-500 ring-red-500' 
-                              : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                              : ''
                           }`}
                           // Explicitly set textarea props
                           value={field.value?.toString() ?? ''}  // Convert to string

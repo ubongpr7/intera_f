@@ -223,7 +223,7 @@ const AgentEditorSheet = ({
   <Sheet open={open} onOpenChange={onOpenChange}>
     <SheetContent
       side="right"
-      className="w-full max-w-3xl border-gray-800 bg-[linear-gradient(180deg,#020617_0%,#0f172a_58%,#111827_100%)] p-0 text-white shadow-[0_40px_90px_rgba(2,6,23,0.82)] sm:max-w-3xl"
+      className="w-full max-w-3xl border-gray-800 bg-[linear-gradient(180deg,#020617_0%,#0f172a_58%,#111827_100%)] p-0 text-gray-100 shadow-[0_40px_90px_rgba(2,6,23,0.82)] sm:max-w-3xl"
     >
       <div className="flex h-full flex-col">
         <SheetHeader className="border-b border-gray-800/80 bg-[linear-gradient(115deg,rgba(15,23,42,0.98),rgba(17,24,39,0.96),rgba(30,41,59,0.96))] px-7 py-7 text-left md:px-8">
@@ -465,7 +465,7 @@ const AgentBindingsSheet = ({
     <SheetContent side="right" className="w-full max-w-3xl border-gray-200 bg-white p-0 text-gray-900 sm:max-w-3xl">
       <div className="flex h-full flex-col">
         <SheetHeader className="border-b border-gray-200 bg-gray-950 px-6 py-6 text-left">
-          <SheetTitle className="text-3xl font-semibold tracking-tight text-white">
+          <SheetTitle className="text-3xl font-semibold tracking-tight text-gray-100">
             Configure tools and skills
           </SheetTitle>
           <SheetDescription className="text-sm leading-6 text-gray-300">
@@ -613,7 +613,7 @@ const InstallTemplatesSheet = ({
   <Sheet open={open} onOpenChange={onOpenChange}>
     <SheetContent
       side="right"
-      className="w-full max-w-3xl border-gray-800 bg-[linear-gradient(180deg,#020617_0%,#0f172a_58%,#111827_100%)] p-0 text-white shadow-[0_40px_90px_rgba(2,6,23,0.82)] sm:max-w-3xl"
+      className="w-full max-w-3xl border-gray-800 bg-[linear-gradient(180deg,#020617_0%,#0f172a_58%,#111827_100%)] p-0 text-gray-100 shadow-[0_40px_90px_rgba(2,6,23,0.82)] sm:max-w-3xl"
     >
       <div className="flex h-full flex-col">
         <SheetHeader className="border-b border-gray-800/80 bg-[linear-gradient(115deg,rgba(15,23,42,0.98),rgba(17,24,39,0.96),rgba(6,78,59,0.86))] px-6 py-6 text-left">
@@ -676,7 +676,7 @@ const InstallTemplatesSheet = ({
                     type="button"
                     onClick={() => void onInstallSelected()}
                     disabled={!selectedTemplateIds.length || isInstalling}
-                    className="bg-blue-600 text-white hover:bg-blue-500"
+                    className="bg-blue-600 text-gray-100 hover:bg-blue-500"
                   >
                     {isInstalling
                       ? `Installing ${selectedTemplateIds.length}...`
@@ -689,7 +689,7 @@ const InstallTemplatesSheet = ({
               </div>
 
               {templates.map((template) => (
-                <Card key={template.id} className="border-gray-800 bg-gray-950/72 text-white shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                <Card key={template.id} className="border-gray-800 bg-gray-950/72 text-gray-100 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
                   <CardHeader className="p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex min-w-0 items-start gap-3">
@@ -699,7 +699,7 @@ const InstallTemplatesSheet = ({
                           className="mt-1 border-gray-600 data-[state=checked]:border-blue-400 data-[state=checked]:bg-blue-500"
                         />
                         <div className="min-w-0">
-                          <CardTitle className="text-xl text-white">{template.name}</CardTitle>
+                          <CardTitle className="text-xl text-gray-100">{template.name}</CardTitle>
                           <CardDescription className="mt-2 text-sm leading-6 text-gray-300">
                             {template.description || "No description yet."}
                           </CardDescription>
@@ -780,7 +780,7 @@ const ToolConnectionSheet = ({
     <Sheet open={open} onOpenChange={onOpenChange}>
   <SheetContent
       side="right"
-      className="w-full max-w-3xl border-gray-800 bg-[linear-gradient(180deg,#020617_0%,#0f172a_58%,#111827_100%)] p-0 text-white shadow-[0_40px_90px_rgba(2,6,23,0.82)] sm:max-w-3xl"
+      className="w-full max-w-3xl border-gray-800 bg-[linear-gradient(180deg,#020617_0%,#0f172a_58%,#111827_100%)] p-0 text-gray-100 shadow-[0_40px_90px_rgba(2,6,23,0.82)] sm:max-w-3xl"
     >
       <div className="flex h-full flex-col">
         <SheetHeader className="border-b border-gray-800/80 bg-[linear-gradient(115deg,rgba(15,23,42,0.98),rgba(17,24,39,0.96),rgba(6,78,59,0.86))] px-7 py-7 text-left md:px-8">
@@ -1634,7 +1634,7 @@ export default function AgentSettingsControlPanel() {
           <CardContent className="p-6 pt-0">
             {selectedAgent ? (
               <div className="space-y-5">
-                <div className="rounded-[28px] border border-gray-900 bg-gray-950 p-5 text-white shadow-[0_22px_60px_rgba(2,6,23,0.35)]">
+                <div className="rounded-[28px] border border-gray-900 bg-gray-950 p-5 text-gray-100 shadow-[0_22px_60px_rgba(2,6,23,0.35)]">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">

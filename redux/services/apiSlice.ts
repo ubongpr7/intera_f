@@ -522,7 +522,7 @@ export const apiSlice = createApi({
   refetchOnFocus: true,
   refetchOnReconnect: true,
   refetchOnMountOrArgChange: true,
-  tagTypes: ["User", "Inventory", "Category", "Agent", "AgentConversation", "GlobalCatalog"], // Add tag types for caching
+  tagTypes: ["User", "Inventory", "Category", "Agent", "AgentConversation", "GlobalCatalog", "Product"], // Add tag types for caching
   endpoints: (builder) => ({}),
 })
 

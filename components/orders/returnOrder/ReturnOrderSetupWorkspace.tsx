@@ -60,6 +60,7 @@ export default function ReturnOrderSetupWorkspace() {
   const dispatchStepReady = returnOrders.some((order) => order.status === ReturnOrderStatus.in_transit)
   const completeStepReady = completedOrders > 0
   const nextStepId = !createStepReady ? "initiate-returns" : !dispatchStepReady ? "dispatch-returns" : !completeStepReady ? "close-returns" : null
+  const showWorkspaceLoading = loadingWorkspaceSetup && !activeMembership
   const setupGuideSteps = [
     {
       id: "initiate-returns",
@@ -84,14 +85,7 @@ export default function ReturnOrderSetupWorkspace() {
     },
   ] as const
 
-  if (loadingWorkspaceSetup) {
-    return (
-      <WorkspaceSetupLoadingCard
-      />
-    )
-  }
-
-  if (!activeMembership) {
+  if (!activeMembership && !showWorkspaceLoading) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-8 lg:px-8">
         <Card className="border-gray-200 shadow-sm">
@@ -120,6 +114,7 @@ export default function ReturnOrderSetupWorkspace() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 lg:px-8">
+      {showWorkspaceLoading ? <WorkspaceSetupLoadingCard /> : null}
       {isOwner ? (
         <CollapsibleSetupGuide
           eyebrow="Supplier returns"
