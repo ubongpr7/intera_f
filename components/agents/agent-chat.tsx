@@ -382,6 +382,7 @@ export default function AgentChat({
   const resumeListeningAfterSpeechRef = useRef(false)
   const previousAutoSubmitRef = useRef(false)
   const callModeTransitionRef = useRef(false)
+  const autoExpandedForCallRef = useRef(false)
   const MAX_TEXTAREA_HEIGHT = 160
 
   const clearExportDownload = () => {
@@ -585,6 +586,23 @@ export default function AgentChat({
   function scrollToBottom() {
     endRef.current?.scrollIntoView({ behavior: "smooth" })
     setUnreadCount(0)
+  }
+
+  function restorePrimaryChatScrollAfterCallMode() {
+    const syncToBottom = () => {
+      const container = scrollRef.current
+      if (container) {
+        container.scrollTop = container.scrollHeight
+      }
+      endRef.current?.scrollIntoView({ behavior: "auto", block: "end" })
+      setUnreadCount(0)
+      setIsAtBottom(true)
+    }
+
+    requestAnimationFrame(() => {
+      syncToBottom()
+      requestAnimationFrame(syncToBottom)
+    })
   }
 
   function resizeTextarea(el: HTMLTextAreaElement) {
@@ -1019,6 +1037,8 @@ export default function AgentChat({
       voiceChat.stopSpeaking()
       setInput("")
       voiceChat.setAutoSubmitEnabled(previousAutoSubmitRef.current)
+      autoExpandedForCallRef.current = false
+      restorePrimaryChatScrollAfterCallMode()
       onActivity?.()
     } catch (error) {
       void error
@@ -1053,6 +1073,10 @@ export default function AgentChat({
 
     setIsCallModeActive(true)
     try {
+      if (!isFullScreen) {
+        autoExpandedForCallRef.current = true
+        toggleFullScreen()
+      }
       previousAutoSubmitRef.current = voiceChat.autoSubmitEnabled
       voiceChat.setInputMethod("voice")
       voiceChat.setAutoSubmitEnabled(false)
@@ -1061,6 +1085,10 @@ export default function AgentChat({
     } catch (error) {
       void error
       setIsCallModeActive(false)
+      if (autoExpandedForCallRef.current && isFullScreen) {
+        toggleFullScreen()
+      }
+      autoExpandedForCallRef.current = false
       voiceChat.setAutoSubmitEnabled(previousAutoSubmitRef.current)
       toast.error("Unable to start the voice session.")
     } finally {
@@ -1082,10 +1110,83 @@ export default function AgentChat({
       void voiceChat.stopConversation()
       setIsCallTransitioning(false)
       callModeTransitionRef.current = false
+      restorePrimaryChatScrollAfterCallMode()
     }
     onClose()
     onActivity?.()
   }
+
+  const voicePanel = isCallModeActive ? (
+    <aside className="flex min-h-0 min-w-[280px] max-w-md shrink-0 flex-col rounded-2xl border border-blue-200 bg-blue-50 shadow-sm">
+      <div className="flex items-start justify-between gap-3 border-b border-blue-200 px-4 py-4">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <AudioLines
+              className={`h-5 w-5 text-blue-700 ${voiceChat.isSpeaking || voiceChat.isListening ? "animate-pulse" : ""}`}
+              strokeWidth={2.2}
+            />
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gray-600">Voice call active</p>
+            <span className="rounded-full bg-blue-100 px-2 py-1 text-[11px] font-semibold text-blue-700">
+              {voiceCallStatus}
+            </span>
+          </div>
+          <p className="mt-2 text-sm leading-6 text-gray-700">
+            {voiceChat.isConnecting
+              ? "Connecting to LiveKit..."
+              : voiceChat.isSpeaking
+                ? "Assistant is speaking."
+                : voiceChat.isListening
+                  ? "Listening for your next phrase."
+                  : voiceCallStatus === "Preparing"
+                    ? "Preparing the workspace assistant..."
+                    : "Speak naturally. Incomplete requests stay here until the missing detail is clarified."}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            void toggleCallMode()
+          }}
+          disabled={isCallTransitioning}
+          className="rounded-full border border-gray-200 bg-white p-2 text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
+          aria-label="End voice call"
+          title="End voice call"
+        >
+          <PhoneOff className="h-5 w-5" strokeWidth={2.2} />
+        </button>
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col px-4 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto rounded-2xl border border-dashed border-blue-200 bg-white/80 px-4 py-3 custom-scrollbar">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">Voice transcript</p>
+          {voiceConversationEntries.length > 0 ? (
+            <div className="mt-3 space-y-2">
+              {voiceConversationEntries.map((entry, index) => (
+                <div
+                  key={`${entry.timestamp}-${index}`}
+                  className={`rounded-2xl px-3 py-2 text-sm leading-6 ${
+                    entry.speaker === "user"
+                      ? "ml-auto max-w-[94%] bg-blue-500 text-gray-50"
+                      : "mr-auto max-w-[94%] bg-gray-100 text-gray-900"
+                  }`}
+                >
+                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] opacity-75">
+                    {entry.speaker === "user" ? "You" : "Assistant"}
+                  </p>
+                  <p>{entry.text}</p>
+                </div>
+              ))}
+            </div>
+          ) : voiceLiveTranscript ? (
+            <p className="mt-3 text-sm leading-6 text-gray-800">{voiceLiveTranscript}</p>
+          ) : (
+            <p className="mt-3 text-sm leading-6 text-gray-500">
+              Voice conversation will appear here while the main A2A thread stays on the left.
+            </p>
+          )}
+        </div>
+      </div>
+    </aside>
+  ) : null
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -1168,31 +1269,35 @@ export default function AgentChat({
 
       {/* Messages area */}
       <div
-        ref={scrollRef}
-        className="relative min-h-0 flex-1 overflow-y-auto bg-gray-50 p-4 custom-scrollbar"
+        className={`min-h-0 flex-1 bg-gray-50 p-4 ${isCallModeActive ? "overflow-hidden" : "overflow-y-auto custom-scrollbar"}`}
         onMouseMove={handleUserInterruption}
         onClick={handleUserInterruption}
       >
-        {workflowSummary ? <WorkflowSummaryStrip summary={workflowSummary} /> : null}
-        {statusText && statusText.trim() !== workflowSummary?.detail?.trim() && (
-          <div className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${
-            statusTone.borderClass
-          }`}>
-            <div className="flex items-center gap-2 font-medium">
-              <ChatAvatar role="assistant" userInitials={userIdentity.initials} className="h-6 w-6" />
-              <span>{activeAgentName}</span>
-            </div>
-            <p className="mt-1">{humanizeTechnicalMessage(statusText)}</p>
-          </div>
-        )}
-        {messages.length === 0 ? (
-          <div className="text-center h-full flex flex-col items-center justify-center text-gray-500">
-            <ChatAvatar role="assistant" userInitials={userIdentity.initials} className="mb-3 h-14 w-14" />
-            <p className="text-base font-medium text-gray-700">{emptyTitle}</p>
-            {emptyDescription ? <p className="mt-2 max-w-md text-sm leading-6 text-gray-500">{emptyDescription}</p> : null}
-          </div>
-        ) : (
-          messages.map((m) => {
+        <div className={`min-h-0 ${isCallModeActive ? "grid h-full grid-cols-[minmax(0,1fr)_minmax(280px,360px)] gap-4 items-start" : "block"}`}>
+          <div
+            ref={scrollRef}
+            className={`relative min-h-0 ${isCallModeActive ? "h-full overflow-y-auto pr-1 custom-scrollbar" : ""}`}
+          >
+            {workflowSummary ? <WorkflowSummaryStrip summary={workflowSummary} /> : null}
+            {statusText && statusText.trim() !== workflowSummary?.detail?.trim() && (
+              <div className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${
+                statusTone.borderClass
+              }`}>
+                <div className="flex items-center gap-2 font-medium">
+                  <ChatAvatar role="assistant" userInitials={userIdentity.initials} className="h-6 w-6" />
+                  <span>{activeAgentName}</span>
+                </div>
+                <p className="mt-1">{humanizeTechnicalMessage(statusText)}</p>
+              </div>
+            )}
+            {messages.length === 0 ? (
+              <div className="text-center h-full flex flex-col items-center justify-center text-gray-500">
+                <ChatAvatar role="assistant" userInitials={userIdentity.initials} className="mb-3 h-14 w-14" />
+                <p className="text-base font-medium text-gray-700">{emptyTitle}</p>
+                {emptyDescription ? <p className="mt-2 max-w-md text-sm leading-6 text-gray-500">{emptyDescription}</p> : null}
+              </div>
+            ) : (
+              messages.map((m) => {
             const insightData =
               m.role === "assistant" ? detectInsightResponse(m.content, m.structuredPayload) : null
             const interactionData =
@@ -1379,117 +1484,39 @@ export default function AgentChat({
                 ) : null}
               </div>
             )
-          })
-        )}
+              })
+            )}
 
-        {pendingCount > 0 && (
-          <div className="mb-4 flex items-end justify-start gap-3">
-            <ChatAvatar role="assistant" userInitials={userIdentity.initials} />
-            <div className="bg-white text-gray-800 rounded-2xl rounded-bl-none px-4 py-3 max-w-[80%] shadow-sm border border-gray-100">
-              <div className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin text-gray-700" aria-hidden />
-                <span>Assistant is processing...</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {isCallModeActive ? (
-          <div className="mb-4 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4 shadow-sm">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <AudioLines
-                    className={`h-5 w-5 text-blue-700 ${
-                      voiceChat.isSpeaking || voiceChat.isListening ? "animate-pulse" : ""
-                    }`}
-                    strokeWidth={2.2}
-                  />
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gray-600">
-                    Voice call active
-                  </p>
-                  <span className="rounded-full bg-blue-100 px-2 py-1 text-[11px] font-semibold text-blue-700">
-                    {voiceCallStatus}
-                  </span>
+            {pendingCount > 0 && (
+              <div className="mb-4 flex items-end justify-start gap-3">
+                <ChatAvatar role="assistant" userInitials={userIdentity.initials} />
+                <div className="bg-white text-gray-800 rounded-2xl rounded-bl-none px-4 py-3 max-w-[80%] shadow-sm border border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-gray-700" aria-hidden />
+                    <span>Assistant is processing...</span>
+                  </div>
                 </div>
-                <p className="mt-2 text-sm text-gray-700">
-                  {voiceChat.isConnecting
-                    ? "Connecting to LiveKit..."
-                    : voiceChat.isSpeaking
-                      ? "Assistant is speaking."
-                      : voiceChat.isListening
-                        ? "Listening for your next phrase."
-                        : voiceCallStatus === "Preparing"
-                          ? "Preparing the workspace assistant..."
-                          : "Speak normally and the assistant will respond in this chat."}
-                </p>
               </div>
+            )}
+
+            {!isAtBottom && unreadCount > 0 && (
               <button
                 type="button"
                 onClick={() => {
-                  void toggleCallMode()
+                  scrollToBottom()
+                  onActivity?.()
                 }}
-                disabled={isCallTransitioning}
-                className="rounded-full border border-gray-200 bg-white p-2 text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
-                aria-label="End voice call"
-                title="End voice call"
+                className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-blue-600 text-gray-50 text-xs px-3 py-1.5 rounded-full shadow hover:bg-blue-700"
               >
-                <PhoneOff className="h-5 w-5" strokeWidth={2.2} />
+                View {unreadCount} new message{unreadCount > 1 ? "s" : ""}
               </button>
-            </div>
-            <div className="mt-4 rounded-2xl border border-dashed border-blue-200 bg-white/80 px-4 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
-                Voice transcript
-              </p>
-              {voiceConversationEntries.length > 0 ? (
-                <div className="mt-3 space-y-2">
-                  {voiceConversationEntries.map((entry, index) => (
-                    <div
-                      key={`${entry.timestamp}-${index}`}
-                      className={`rounded-2xl px-3 py-2 text-sm leading-6 ${
-                        entry.speaker === "user"
-                          ? "ml-auto max-w-[92%] bg-blue-500 text-gray-50"
-                          : "mr-auto max-w-[92%] bg-gray-100 text-gray-900"
-                      }`}
-                    >
-                      <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] opacity-75">
-                        {entry.speaker === "user" ? "You" : "Assistant"}
-                      </p>
-                      <p>{entry.text}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : voiceLiveTranscript ? (
-                <p className="mt-1 text-sm leading-6 text-gray-800">{voiceLiveTranscript}</p>
-              ) : (
-                <p className="mt-1 text-sm leading-6 text-gray-500">
-                  Your voice conversation will appear here.
-                </p>
-              )}
-              {pendingCount > 0 ? (
-                <div className="mt-3 mr-auto flex max-w-[92%] items-center gap-2 rounded-2xl bg-gray-100 px-3 py-2 text-sm text-gray-700">
-                  <Loader2 className="h-4 w-4 animate-spin text-gray-600" aria-hidden />
-                  <span>Assistant is working on that now.</span>
-                </div>
-              ) : null}
-            </div>
+            )}
+
+            <div ref={endRef} />
           </div>
-        ) : null}
 
-        {!isAtBottom && unreadCount > 0 && (
-          <button
-            type="button"
-            onClick={() => {
-              scrollToBottom()
-              onActivity?.()
-            }}
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-blue-600 text-gray-50 text-xs px-3 py-1.5 rounded-full shadow hover:bg-blue-700"
-          >
-            View {unreadCount} new message{unreadCount > 1 ? "s" : ""}
-          </button>
-        )}
-
-        <div ref={endRef} />
+          {voicePanel}
+        </div>
       </div>
 
       {/* Input */}

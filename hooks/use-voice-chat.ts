@@ -802,8 +802,10 @@ export function useVoiceChat({
               role?: string
               text?: string
               syncChat?: boolean
+              displayInTranscript?: boolean
               turnId?: string
               event?: unknown
+              payload?: Record<string, unknown>
             }
             if (event.source !== "ka2a_voice") {
               return
@@ -818,18 +820,35 @@ export function useVoiceChat({
               return
             }
 
+            const eventPayload =
+              event.payload && typeof event.payload === "object" && !Array.isArray(event.payload)
+                ? event.payload
+                : undefined
+            const syncChat =
+              event.syncChat === true || eventPayload?.syncChat === true
+            const turnId =
+              typeof event.turnId === "string" && event.turnId.trim()
+                ? event.turnId
+                : typeof eventPayload?.turnId === "string"
+                  ? eventPayload.turnId
+                  : undefined
+            const displayInTranscript =
+              event.displayInTranscript === false || eventPayload?.displayInTranscript === false ? false : true
+
             if (event.type === "status") {
               setIsSpeaking(false)
               return
             }
 
             const speaker = event.role === "user" ? "user" : "assistant"
-            appendConversationEntry(speaker, event.text)
+            if (displayInTranscript) {
+              appendConversationEntry(speaker, event.text)
+            }
             if (speaker === "user") {
               const normalizedText = collapseRepeatedTranscriptText(event.text)
-              if (event.syncChat && event.turnId && !syncedVoiceTurnIdsRef.current.has(event.turnId)) {
-                syncedVoiceTurnIdsRef.current.add(event.turnId)
-                onSyncedVoiceTurnStartRef.current?.(normalizedText, event.turnId)
+              if (syncChat && turnId && !syncedVoiceTurnIdsRef.current.has(turnId)) {
+                syncedVoiceTurnIdsRef.current.add(turnId)
+                onSyncedVoiceTurnStartRef.current?.(normalizedText, turnId)
               }
               lastTranscriptRef.current = normalizedText
               lastFinalTranscriptBySpeakerRef.current.user = normalizedText
@@ -839,8 +858,8 @@ export function useVoiceChat({
               return
             }
             lastFinalTranscriptBySpeakerRef.current.assistant = collapseRepeatedTranscriptText(event.text)
-            if (event.syncChat && (event.type === "result" || event.type === "error")) {
-              onSyncedVoiceTurnEndRef.current?.(event.turnId)
+            if (syncChat && (event.type === "result" || event.type === "error")) {
+              onSyncedVoiceTurnEndRef.current?.(turnId)
             }
             setIsSpeaking(false)
           } catch {
