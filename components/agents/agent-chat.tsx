@@ -33,6 +33,7 @@ import {
   type ExportStructuredPayload,
 } from "@/lib/agent-export"
 import { readCookieValue } from "@/lib/authCookies"
+import { DEFAULT_BRAND_AVATAR_SRC, resolveBrandAssetUrl } from "@/lib/brandAssets"
 import {
   MultipleChoiceHandler,
   FileUploadHandler,
@@ -66,7 +67,7 @@ import {
   WizardFlowHandler,
 } from "@/components/extra-collab-handlers"
 import { useVoiceChat } from "@/hooks/use-voice-chat"
-import type { ChatMessage } from "@/redux/features/ka2a/ka2aSlice"
+import type { ChatMessage, Ka2aEvent } from "@/redux/features/ka2a/ka2aSlice"
 import {
   detectInsightResponse,
   detectInteractionRequest,
@@ -97,6 +98,9 @@ interface AgentChatProps {
   workflowSummary?: AgentWorkflowSummary | null
   onDownloadConversation?: () => void
   onClearConversation?: () => void
+  onSyncedVoiceTurnStart?: (text: string, turnId: string) => void
+  onSyncedVoiceA2aEvent?: (event: Ka2aEvent, turnId?: string) => void
+  onSyncedVoiceTurnEnd?: (turnId?: string) => void
 }
 
 type ExportDownloadState = {
@@ -119,7 +123,7 @@ const asRecord = (value: unknown): Record<string, unknown> | undefined => {
   return value as Record<string, unknown>
 }
 const yieldToBrowser = () => new Promise((resolve) => setTimeout(resolve, 0))
-const APP_ASSISTANT_AVATAR = "/assets/intera-logo.png"
+const APP_ASSISTANT_AVATAR = DEFAULT_BRAND_AVATAR_SRC
 
 const buildAbsoluteAssetUrl = (value?: string | null) => {
   if (!value) return undefined
@@ -153,7 +157,7 @@ const resolveUserIdentity = () => {
 
   return {
     initials,
-    imageUrl: buildAbsoluteAssetUrl(picture),
+    imageUrl: resolveBrandAssetUrl(buildAbsoluteAssetUrl(picture)),
     email,
   }
 }
@@ -170,7 +174,7 @@ function ChatAvatar({
   className?: string
 }) {
   const isAssistant = role === "assistant"
-  const imageUrl = isAssistant ? APP_ASSISTANT_AVATAR : userImageUrl
+  const imageUrl = isAssistant ? APP_ASSISTANT_AVATAR : userImageUrl || DEFAULT_BRAND_AVATAR_SRC
 
   return (
     <div
@@ -249,28 +253,28 @@ const workflowToneStyles: Record<
   }
 > = {
   ready: {
-    card: "border-gray-200 bg-white",
-    badge: "bg-gray-100 text-gray-700",
+    card: "border-gray-800 bg-gray-950",
+    badge: "bg-gray-800 text-gray-100",
     dot: "bg-emerald-500",
-    stepCompleted: "border-gray-200 bg-gray-100 text-gray-700",
-    stepCurrent: "border-blue-200 bg-blue-50 text-blue-700",
-    stepPending: "border-gray-200 bg-white text-gray-500",
+    stepCompleted: "border-gray-700 bg-gray-800 text-gray-100",
+    stepCurrent: "border-blue-700 bg-blue-950 text-gray-100",
+    stepPending: "border-gray-700 bg-gray-900 text-gray-300",
   },
   working: {
-    card: "border-gray-200 bg-white",
-    badge: "bg-gray-100 text-gray-700",
+    card: "border-gray-800 bg-gray-950",
+    badge: "bg-gray-800 text-gray-100",
     dot: "bg-blue-500",
-    stepCompleted: "border-gray-200 bg-gray-100 text-gray-700",
-    stepCurrent: "border-blue-200 bg-blue-50 text-blue-700",
-    stepPending: "border-gray-200 bg-white text-gray-500",
+    stepCompleted: "border-gray-700 bg-gray-800 text-gray-100",
+    stepCurrent: "border-blue-700 bg-blue-950 text-gray-100",
+    stepPending: "border-gray-700 bg-gray-900 text-gray-300",
   },
   awaiting: {
-    card: "border-gray-200 bg-white",
-    badge: "bg-gray-100 text-gray-700",
+    card: "border-gray-800 bg-gray-950",
+    badge: "bg-gray-800 text-gray-100",
     dot: "bg-yellow-500",
-    stepCompleted: "border-gray-200 bg-gray-100 text-gray-700",
-    stepCurrent: "border-yellow-200 bg-yellow-50 text-yellow-700",
-    stepPending: "border-gray-200 bg-white text-gray-500",
+    stepCompleted: "border-gray-700 bg-gray-800 text-gray-100",
+    stepCurrent: "border-yellow-700 bg-yellow-950 text-gray-100",
+    stepPending: "border-gray-700 bg-gray-900 text-gray-300",
   },
 }
 
@@ -291,27 +295,27 @@ function WorkflowSummaryStrip({ summary }: { summary: AgentWorkflowSummary }) {
     <div className={`mb-4 rounded-[22px] border px-4 py-3 shadow-[0_12px_28px_-26px_rgba(15,23,42,0.18)] ${tone.card}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">Workflow</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Workflow</p>
           <div className="mt-1 flex items-center gap-2">
             <span className={`inline-flex h-2.5 w-2.5 shrink-0 rounded-full ${tone.dot}`} />
-            <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{summary.title}</p>
+            <p className="truncate text-sm font-semibold text-gray-100">{summary.title}</p>
           </div>
-          {summary.detail ? <p className="mt-1 text-xs leading-5 text-gray-600 dark:text-gray-300">{summary.detail}</p> : null}
+          {summary.detail ? <p className="mt-1 text-xs leading-5 text-gray-300">{summary.detail}</p> : null}
         </div>
         <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${tone.badge}`}>
           {summary.statusLabel}
         </span>
       </div>
       {summary.currentAgentLabel || summary.nextAgentLabel ? (
-        <div className="mt-3 flex flex-wrap gap-4 text-xs text-gray-600 dark:text-gray-300">
+        <div className="mt-3 flex flex-wrap gap-4 text-xs text-gray-300">
           {summary.currentAgentLabel ? (
             <p>
-              <span className="font-medium text-gray-900 dark:text-gray-100">Now:</span> {summary.currentAgentLabel}
+              <span className="font-medium text-gray-100">Now:</span> {summary.currentAgentLabel}
             </p>
           ) : null}
           {summary.nextAgentLabel ? (
             <p>
-              <span className="font-medium text-gray-900 dark:text-gray-100">Next:</span> {summary.nextAgentLabel}
+              <span className="font-medium text-gray-100">Next:</span> {summary.nextAgentLabel}
             </p>
           ) : null}
         </div>
@@ -355,12 +359,16 @@ export default function AgentChat({
   workflowSummary = null,
   onDownloadConversation,
   onClearConversation,
+  onSyncedVoiceTurnStart,
+  onSyncedVoiceA2aEvent,
+  onSyncedVoiceTurnEnd,
 }: AgentChatProps) {
   const [input, setInput] = useState("")
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const [confirmationDialog, setConfirmationDialog] = useState<any>(null)
   const [respondedInteractions, setRespondedInteractions] = useState<Set<string>>(new Set())
   const [isCallModeActive, setIsCallModeActive] = useState(false)
+  const [isCallTransitioning, setIsCallTransitioning] = useState(false)
   const [isAtBottom, setIsAtBottom] = useState(true)
   const [unreadCount, setUnreadCount] = useState(0)
   const [exportDownload, setExportDownload] = useState<ExportDownloadState | null>(null)
@@ -424,6 +432,10 @@ export default function AgentChat({
       onActivity?.()
     },
     onAutoSend: (text: string) => {
+      if (isCallModeActive) {
+        onActivity?.()
+        return
+      }
       if (text.trim()) {
         onSend(text)
         onActivity?.()
@@ -432,7 +444,7 @@ export default function AgentChat({
         requestAnimationFrame(scrollToBottom)
       }
     },
-    autoSendDelay: isCallModeActive ? 1800 : 6000,
+    autoSendDelay: isCallModeActive ? 3500 : 6000,
     livekitEnabled: voiceAccessAllowed,
     livekitParticipantName: userIdentity.email || `Intera voice user ${userIdentity.initials}`,
     livekitAgentName: process.env.NEXT_PUBLIC_LIVEKIT_VOICE_AGENT_NAME?.trim() || "ka2a-voice",
@@ -443,6 +455,18 @@ export default function AgentChat({
       workspaceName,
       participantName: userIdentity.email || `Intera voice user ${userIdentity.initials}`,
     },
+    onSyncedVoiceTurnStart,
+    onSyncedVoiceA2aEvent: (event, turnId) => {
+      if (!event || typeof event !== "object" || Array.isArray(event)) {
+        return
+      }
+      const record = event as Record<string, unknown>
+      if (typeof record.kind !== "string") {
+        return
+      }
+      onSyncedVoiceA2aEvent?.(record as Ka2aEvent, turnId)
+    },
+    onSyncedVoiceTurnEnd,
   })
 
   useEffect(() => {
@@ -526,8 +550,12 @@ export default function AgentChat({
   }, [hasActiveInteraction, voiceChat])
 
   const voiceCallStatus = useMemo(() => {
+    const hasAssistantSignal = voiceChat.conversationEntries.some((entry) => entry.speaker === "assistant")
     if (!isCallModeActive) {
       return "Idle"
+    }
+    if (isCallTransitioning) {
+      return voiceChat.isConnected ? "Stopping" : "Starting"
     }
     if (voiceChat.isConnecting) {
       return "Connecting"
@@ -536,10 +564,17 @@ export default function AgentChat({
       return "Listening"
     }
     if (voiceChat.isConnected) {
-      return "Connected"
+      return hasAssistantSignal ? "Connected" : "Preparing"
     }
     return "Preparing"
-  }, [isCallModeActive, voiceChat.isConnected, voiceChat.isConnecting, voiceChat.isListening])
+  }, [
+    isCallModeActive,
+    isCallTransitioning,
+    voiceChat.conversationEntries,
+    voiceChat.isConnected,
+    voiceChat.isConnecting,
+    voiceChat.isListening,
+  ])
 
   const voiceConversationEntries = useMemo(
     () => voiceChat.conversationEntries.slice(-12),
@@ -978,6 +1013,8 @@ export default function AgentChat({
   }
 
   const stopCallMode = async () => {
+    callModeTransitionRef.current = true
+    setIsCallTransitioning(true)
     setIsCallModeActive(false)
     try {
       await voiceChat.stopConversation()
@@ -990,14 +1027,12 @@ export default function AgentChat({
       toast.error("Unable to stop the voice session.")
     } finally {
       callModeTransitionRef.current = false
+      setIsCallTransitioning(false)
     }
   }
 
   const toggleCallMode = async () => {
     if (callModeTransitionRef.current) {
-      if (isCallModeActive || voiceChat.isConnected || voiceChat.isConnecting) {
-        await stopCallMode()
-      }
       return
     }
 
@@ -1012,8 +1047,8 @@ export default function AgentChat({
     }
 
     callModeTransitionRef.current = true
+    setIsCallTransitioning(true)
     if (isCallModeActive || voiceChat.isConnected || voiceChat.isConnecting) {
-      setIsCallModeActive(false)
       await stopCallMode()
       return
     }
@@ -1022,7 +1057,7 @@ export default function AgentChat({
     try {
       previousAutoSubmitRef.current = voiceChat.autoSubmitEnabled
       voiceChat.setInputMethod("voice")
-      voiceChat.setAutoSubmitEnabled(true)
+      voiceChat.setAutoSubmitEnabled(false)
       await voiceChat.startConversation()
       onActivity?.()
     } catch (error) {
@@ -1032,6 +1067,7 @@ export default function AgentChat({
       toast.error("Unable to start the voice session.")
     } finally {
       callModeTransitionRef.current = false
+      setIsCallTransitioning(false)
     }
   }
 
@@ -1046,6 +1082,8 @@ export default function AgentChat({
     if (isCallModeActive || voiceChat.isConnected || voiceChat.isConnecting) {
       setIsCallModeActive(false)
       void voiceChat.stopConversation()
+      setIsCallTransitioning(false)
+      callModeTransitionRef.current = false
     }
     onClose()
     onActivity?.()
@@ -1174,7 +1212,9 @@ export default function AgentChat({
                       ? "Assistant is speaking."
                       : voiceChat.isListening
                         ? "Listening for your next phrase."
-                        : "Speak normally and the assistant will respond in the same conversation."}
+                        : voiceCallStatus === "Preparing"
+                          ? "Preparing the workspace assistant..."
+                          : "Speak normally and the assistant will respond in the same conversation."}
                 </p>
               </div>
               <button
@@ -1182,6 +1222,7 @@ export default function AgentChat({
                 onClick={() => {
                   void toggleCallMode()
                 }}
+                disabled={isCallTransitioning}
                 className="rounded-full border border-gray-200 bg-white p-2 text-gray-600 transition hover:bg-gray-100 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
                 aria-label="End voice call"
                 title="End voice call"
@@ -1201,7 +1242,7 @@ export default function AgentChat({
                       className={`rounded-2xl px-3 py-2 text-sm leading-6 ${
                         entry.speaker === "user"
                           ? "ml-auto max-w-[92%] bg-blue-500 text-gray-50"
-                          : "mr-auto max-w-[92%] bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100"
+                          : "mr-auto max-w-[92%] bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100"
                       }`}
                     >
                       <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] opacity-75">
@@ -1375,11 +1416,11 @@ export default function AgentChat({
                   className={`max-w-[85%] rounded-2xl px-5 py-4 ${
                     isUserMessage
                       ? "bg-blue-500 text-gray-50 rounded-br-none"
-                      : "bg-white text-gray-800 rounded-bl-none shadow-lg border border-gray-100"
+                      : "bg-gray-950 text-gray-100 rounded-bl-none shadow-lg border border-gray-800"
                   }`}
                 >
                   <div
-                    className={`font-semibold text-xs mb-3 flex items-center justify-between ${isUserMessage ? "text-blue-100" : "text-gray-500 dark:text-gray-400"}`}
+                    className={`font-semibold text-xs mb-3 flex items-center justify-between ${isUserMessage ? "text-blue-100" : "text-gray-400"}`}
                   >
                     <div className="flex items-center gap-2">
                       {copiedMessageId === m.id && (
@@ -1392,9 +1433,9 @@ export default function AgentChat({
                   </div>
                   {interactionResponseSummary ? (
                     <div className="space-y-1">
-                      <p className="text-base font-semibold text-gray-900 dark:text-gray-100">{interactionResponseSummary.title}</p>
+                      <p className="text-base font-semibold text-gray-100">{interactionResponseSummary.title}</p>
                       {interactionResponseSummary.detail ? (
-                        <p className={`text-sm leading-6 ${isUserMessage ? "text-blue-50" : "text-gray-600 dark:text-gray-300"}`}>
+                        <p className={`text-sm leading-6 ${isUserMessage ? "text-blue-50" : "text-gray-200"}`}>
                           {interactionResponseSummary.detail}
                         </p>
                       ) : null}
@@ -1482,6 +1523,7 @@ export default function AgentChat({
                 onClick={() => {
                   void toggleCallMode()
                 }}
+                disabled={isCallTransitioning || voiceChat.isConnecting}
                 className={`p-2 rounded-full transition-colors shrink-0 ${
                   isCallModeActive ? "bg-blue-100 hover:bg-blue-200" : "bg-gray-100 hover:bg-gray-200"
                 }`}

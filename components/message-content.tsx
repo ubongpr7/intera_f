@@ -373,16 +373,16 @@ function TextContent({ content }: { content: string }) {
   // Handle inline code `code`
   processedContent = processedContent.replace(
     /`([^`]+)`/g,
-    '<code class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm font-mono border dark:bg-gray-800">$1</code>',
+    '<code class="rounded border border-gray-500/30 bg-gray-500/10 px-2 py-1 text-sm font-mono text-inherit">$1</code>',
   )
 
   // Handle links [text](url)
   processedContent = processedContent.replace(
     /\[([^\]]+)\]$$([^)]+)$$/g,
-    '<a href="$2" class="text-blue-600 hover:text-blue-800 underline dark:text-blue-300 dark:hover:text-blue-200" target="_blank" rel="noopener noreferrer">$1</a>',
+    '<a href="$2" class="text-inherit underline underline-offset-2" target="_blank" rel="noopener noreferrer">$1</a>',
   )
 
-  return <div className="whitespace-pre-wrap leading-relaxed text-gray-700 dark:text-gray-100" dangerouslySetInnerHTML={{ __html: processedContent }} />
+  return <div className="whitespace-pre-wrap leading-relaxed text-inherit" dangerouslySetInnerHTML={{ __html: processedContent }} />
 }
 
 export default function MessageContent({ content, role, onCopy, onExport }: MessageContentProps) {

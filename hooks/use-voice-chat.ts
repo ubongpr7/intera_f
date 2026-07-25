@@ -20,6 +20,9 @@ interface UseVoiceChatOptions {
   livekitAgentName?: string
   livekitMetadata?: Record<string, string>
   livekitEnabled?: boolean
+  onSyncedVoiceTurnStart?: (text: string, turnId: string) => void
+  onSyncedVoiceA2aEvent?: (event: unknown, turnId?: string) => void
+  onSyncedVoiceTurnEnd?: (turnId?: string) => void
 }
 
 interface UseVoiceChatReturn {
@@ -56,10 +59,38 @@ interface UseVoiceChatReturn {
 
 const normalizeTranscriptText = (value: string) => value.trim().replace(/\s+/g, " ")
 
+const transcriptComparisonKey = (value: string) =>
+  normalizeTranscriptText(value)
+    .toLowerCase()
+    .replace(/[’‘`]/g, "'")
+    .replace(/[^a-z0-9']+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+
 const collapseRepeatedTranscriptText = (value: string) => {
   const normalizedText = normalizeTranscriptText(value)
   if (!normalizedText) {
     return ""
+  }
+
+  const sentenceParts = normalizedText
+    .split(/(?<=[.!?])\s+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+  if (sentenceParts.length > 1) {
+    const uniqueSentences: string[] = []
+    const seenSentences = new Set<string>()
+    for (const sentence of sentenceParts) {
+      const key = sentence.toLowerCase()
+      if (seenSentences.has(key)) {
+        continue
+      }
+      seenSentences.add(key)
+      uniqueSentences.push(sentence)
+    }
+    if (uniqueSentences.length < sentenceParts.length) {
+      return uniqueSentences.join(" ")
+    }
   }
 
   const words = normalizedText.split(" ")
@@ -68,9 +99,10 @@ const collapseRepeatedTranscriptText = (value: string) => {
       continue
     }
     const phrase = words.slice(0, size)
+    const phraseKey = transcriptComparisonKey(phrase.join(" "))
     let repeated = true
     for (let index = 0; index < words.length; index += size) {
-      if (words.slice(index, index + size).join(" ") !== phrase.join(" ")) {
+      if (transcriptComparisonKey(words.slice(index, index + size).join(" ")) !== phraseKey) {
         repeated = false
         break
       }
@@ -92,7 +124,7 @@ const uniqueTranscriptTexts = (texts: string[]) => {
     if (!normalizedText) {
       continue
     }
-    const key = normalizedText.toLowerCase()
+    const key = transcriptComparisonKey(normalizedText)
     if (seen.has(key)) {
       continue
     }
@@ -101,6 +133,44 @@ const uniqueTranscriptTexts = (texts: string[]) => {
   }
 
   return uniqueTexts
+}
+
+const LIVEKIT_SESSION_ROOM_STORAGE_KEY = "intera.a2a.voice.room"
+
+const readStoredLivekitRoom = () => {
+  if (typeof window === "undefined") {
+    return null
+  }
+  try {
+    return window.sessionStorage.getItem(LIVEKIT_SESSION_ROOM_STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+const rememberLivekitRoom = (roomName: string) => {
+  if (typeof window === "undefined" || !roomName) {
+    return
+  }
+  try {
+    window.sessionStorage.setItem(LIVEKIT_SESSION_ROOM_STORAGE_KEY, roomName)
+  } catch {
+    // Session storage is best-effort; server cleanup still runs from refs.
+  }
+}
+
+const forgetStoredLivekitRoom = (roomName?: string | null) => {
+  if (typeof window === "undefined") {
+    return
+  }
+  try {
+    const storedRoomName = window.sessionStorage.getItem(LIVEKIT_SESSION_ROOM_STORAGE_KEY)
+    if (!roomName || storedRoomName === roomName) {
+      window.sessionStorage.removeItem(LIVEKIT_SESSION_ROOM_STORAGE_KEY)
+    }
+  } catch {
+    // Ignore storage failures.
+  }
 }
 
 export function useVoiceChat({
@@ -120,6 +190,9 @@ export function useVoiceChat({
   livekitAgentName,
   livekitMetadata,
   livekitEnabled = false,
+  onSyncedVoiceTurnStart,
+  onSyncedVoiceA2aEvent,
+  onSyncedVoiceTurnEnd,
 }: UseVoiceChatOptions): UseVoiceChatReturn {
   const [isListening, setIsListening] = useState(false)
   const [isSupported, setIsSupported] = useState(false)
@@ -145,12 +218,16 @@ export function useVoiceChat({
     assistant: null,
   })
   const lastTranscriptRef = useRef("")
+  const lastAutoSentTranscriptRef = useRef<{ text: string; timestamp: number }>({ text: "", timestamp: 0 })
   const lastFinalTranscriptBySpeakerRef = useRef<{ user: string; assistant: string }>({ user: "", assistant: "" })
   const processedTranscriptSegmentKeysRef = useRef<Set<string>>(new Set())
   const pendingTranscriptBySpeakerRef = useRef<{ user: string; assistant: string }>({ user: "", assistant: "" })
   const onTranscriptRef = useRef(onTranscript)
   const onAutoSendRef = useRef(onAutoSend)
   const onInputMethodChangeRef = useRef(onInputMethodChange)
+  const onSyncedVoiceTurnStartRef = useRef(onSyncedVoiceTurnStart)
+  const onSyncedVoiceA2aEventRef = useRef(onSyncedVoiceA2aEvent)
+  const onSyncedVoiceTurnEndRef = useRef(onSyncedVoiceTurnEnd)
   const livekitRoomRef = useRef<Room | null>(null)
   const livekitTrackRef = useRef<Awaited<ReturnType<typeof createLocalAudioTrack>> | null>(null)
   const livekitCleanupRef = useRef<(() => Promise<void>) | null>(null)
@@ -160,6 +237,8 @@ export function useVoiceChat({
   const livekitSessionGenerationRef = useRef(0)
   const sessionRoomNameRef = useRef<string | null>(null)
   const remoteAudioElementsRef = useRef<Map<string, HTMLMediaElement>>(new Map())
+  const speakingIdleTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const syncedVoiceTurnIdsRef = useRef<Set<string>>(new Set())
 
   const stopLivekitRoom = useCallback(
     async (roomName: string | null, keepalive = false) => {
@@ -212,10 +291,16 @@ export function useVoiceChat({
       clearTimeout(transcriptFlushTimeoutRef.current.assistant)
       transcriptFlushTimeoutRef.current.assistant = null
     }
+    if (speakingIdleTimeoutRef.current) {
+      clearTimeout(speakingIdleTimeoutRef.current)
+      speakingIdleTimeoutRef.current = null
+    }
     lastTranscriptRef.current = ""
-    lastFinalTranscriptBySpeakerRef.current = { user: "", assistant: "" }
-    processedTranscriptSegmentKeysRef.current.clear()
-    pendingTranscriptBySpeakerRef.current = { user: "", assistant: "" }
+      lastAutoSentTranscriptRef.current = { text: "", timestamp: 0 }
+      lastFinalTranscriptBySpeakerRef.current = { user: "", assistant: "" }
+      processedTranscriptSegmentKeysRef.current.clear()
+      syncedVoiceTurnIdsRef.current.clear()
+      pendingTranscriptBySpeakerRef.current = { user: "", assistant: "" }
     setTranscript("")
     setFinalTranscript("")
     setConversationEntries([])
@@ -236,6 +321,7 @@ export function useVoiceChat({
       const track = livekitTrackRef.current
       const roomName = sessionRoomNameRef.current
 
+      forgetStoredLivekitRoom(roomName)
       livekitCleanupRef.current = null
       livekitRoomRef.current = null
       livekitTrackRef.current = null
@@ -247,8 +333,10 @@ export function useVoiceChat({
       setFinalTranscript("")
       setConversationEntries([])
       lastTranscriptRef.current = ""
+      lastAutoSentTranscriptRef.current = { text: "", timestamp: 0 }
       lastFinalTranscriptBySpeakerRef.current = { user: "", assistant: "" }
       processedTranscriptSegmentKeysRef.current.clear()
+      syncedVoiceTurnIdsRef.current.clear()
       pendingTranscriptBySpeakerRef.current = { user: "", assistant: "" }
       if (transcriptFlushTimeoutRef.current.user) {
         clearTimeout(transcriptFlushTimeoutRef.current.user)
@@ -257,6 +345,10 @@ export function useVoiceChat({
       if (transcriptFlushTimeoutRef.current.assistant) {
         clearTimeout(transcriptFlushTimeoutRef.current.assistant)
         transcriptFlushTimeoutRef.current.assistant = null
+      }
+      if (speakingIdleTimeoutRef.current) {
+        clearTimeout(speakingIdleTimeoutRef.current)
+        speakingIdleTimeoutRef.current = null
       }
       setIsConnected(false)
       setIsConnecting(false)
@@ -277,6 +369,7 @@ export function useVoiceChat({
       }
 
       try {
+        await stopLivekitRoom(roomName)
         if (room && track) {
           try {
             await room.localParticipant.unpublishTrack(track)
@@ -298,7 +391,6 @@ export function useVoiceChat({
             // ignore cleanup errors
           }
         }
-        await stopLivekitRoom(roomName)
       } finally {
         livekitRoomRef.current = null
         livekitTrackRef.current = null
@@ -329,6 +421,18 @@ export function useVoiceChat({
   }, [onInputMethodChange])
 
   useEffect(() => {
+    onSyncedVoiceTurnStartRef.current = onSyncedVoiceTurnStart
+  }, [onSyncedVoiceTurnStart])
+
+  useEffect(() => {
+    onSyncedVoiceA2aEventRef.current = onSyncedVoiceA2aEvent
+  }, [onSyncedVoiceA2aEvent])
+
+  useEffect(() => {
+    onSyncedVoiceTurnEndRef.current = onSyncedVoiceTurnEnd
+  }, [onSyncedVoiceTurnEnd])
+
+  useEffect(() => {
     if (typeof window !== "undefined") {
       const supportTimerId = window.setTimeout(
         () => setIsSupported(Boolean(window.navigator.mediaDevices?.getUserMedia)),
@@ -354,8 +458,21 @@ export function useVoiceChat({
 
       setConversationEntries((current) => {
         const last = current[current.length - 1]
-        if (last && last.speaker === speaker && last.text === normalizedText) {
-          return current
+        if (last && last.speaker === speaker) {
+          const lastKey = transcriptComparisonKey(last.text)
+          const nextKey = transcriptComparisonKey(normalizedText)
+          if (lastKey === nextKey) {
+            return current
+          }
+
+          const combinedText = collapseRepeatedTranscriptText(`${last.text} ${normalizedText}`)
+          const combinedKey = transcriptComparisonKey(combinedText)
+          if (combinedKey === lastKey) {
+            return current
+          }
+          if (combinedKey === nextKey) {
+            return [...current.slice(0, -1), { ...last, text: normalizedText, timestamp: Date.now() }]
+          }
         }
         return [...current, { speaker, text: normalizedText, timestamp: Date.now() }]
       })
@@ -390,6 +507,12 @@ export function useVoiceChat({
           clearTimeout(autoSendTimeoutRef.current)
         }
         autoSendTimeoutRef.current = setTimeout(() => {
+          const lowerText = normalizedText.toLowerCase()
+          const lastAutoSent = lastAutoSentTranscriptRef.current
+          if (lastAutoSent.text === lowerText && Date.now() - lastAutoSent.timestamp < 5000) {
+            return
+          }
+          lastAutoSentTranscriptRef.current = { text: lowerText, timestamp: Date.now() }
           onAutoSendRef.current(normalizedText)
           setTranscript("")
           setFinalTranscript("")
@@ -407,15 +530,21 @@ export function useVoiceChat({
       }
 
       const pendingText = pendingTranscriptBySpeakerRef.current[speaker]
-      if (pendingText && pendingText === normalizedText) {
+      const pendingKey = transcriptComparisonKey(pendingText)
+      const normalizedKey = transcriptComparisonKey(normalizedText)
+      if (pendingText && pendingKey === normalizedKey) {
         return
       }
-      if (pendingText && pendingText.endsWith(` ${normalizedText}`)) {
+      if (pendingText && (pendingKey.endsWith(` ${normalizedKey}`) || pendingKey.includes(normalizedKey))) {
         return
       }
-      pendingTranscriptBySpeakerRef.current[speaker] = collapseRepeatedTranscriptText(
-        pendingText ? `${pendingText} ${normalizedText}` : normalizedText,
-      )
+      if (pendingText && normalizedKey.includes(pendingKey)) {
+        pendingTranscriptBySpeakerRef.current[speaker] = normalizedText
+      } else {
+        pendingTranscriptBySpeakerRef.current[speaker] = collapseRepeatedTranscriptText(
+          pendingText ? `${pendingText} ${normalizedText}` : normalizedText,
+        )
+      }
 
       const combinedText = pendingTranscriptBySpeakerRef.current[speaker]
       if (speaker === "user") {
@@ -435,7 +564,7 @@ export function useVoiceChat({
       transcriptFlushTimeoutRef.current[speaker] = setTimeout(() => {
         transcriptFlushTimeoutRef.current[speaker] = null
         flushBufferedTranscript(speaker)
-      }, speaker === "user" ? Math.max(900, Math.min(autoSendDelay, 2500)) : 450)
+      }, speaker === "user" ? Math.max(900, Math.min(autoSendDelay, 3500)) : 450)
     },
     [autoSendDelay, flushBufferedTranscript, onSpeechStart],
   )
@@ -470,25 +599,39 @@ export function useVoiceChat({
       const isStaleStart = () =>
         abortController.signal.aborted || livekitSessionGenerationRef.current !== startGeneration
 
+      setIsConnecting(true)
+      setIsConnected(false)
+
       if (livekitStopPromiseRef.current) {
         await livekitStopPromiseRef.current
       }
       if (livekitRoomRef.current) {
+        setIsConnecting(false)
         return
       }
       if (isStaleStart()) {
+        setIsConnecting(false)
         return
       }
 
-      setIsConnecting(true)
       let generatedRoomName = ""
       try {
+        const previousRoomName = readStoredLivekitRoom()
+        if (previousRoomName) {
+          await stopLivekitRoom(previousRoomName)
+          forgetStoredLivekitRoom(previousRoomName)
+        }
+        if (isStaleStart()) {
+          setIsConnecting(false)
+          return
+        }
+
         generatedRoomName =
-          sessionRoomNameRef.current ||
           livekitRoomName ||
           `a2a-voice-${new Date().toISOString().replace(/[:.]/g, "-")}-${Math.random().toString(16).slice(2, 8)}`
         sessionRoomNameRef.current = generatedRoomName
         setSessionRoomName(generatedRoomName)
+        rememberLivekitRoom(generatedRoomName)
 
         const response = await fetch("/api/livekit/token", {
           method: "POST",
@@ -514,6 +657,7 @@ export function useVoiceChat({
           throw new Error("LiveKit token response was incomplete.")
         }
         if (isStaleStart()) {
+          forgetStoredLivekitRoom(generatedRoomName)
           await stopLivekitRoom(generatedRoomName)
           return
         }
@@ -542,8 +686,34 @@ export function useVoiceChat({
             return
           }
           remoteAudioElementsRef.current.set(track.sid, mediaElement)
-          setIsSpeaking(true)
-          onSpeechStart?.()
+        })
+        room.on(RoomEvent.ActiveSpeakersChanged, (participants) => {
+          const localIdentity = room.localParticipant.identity
+          const hasLocalSpeaker = participants.some((participant) => participant.identity === localIdentity)
+          const hasRemoteSpeaker = participants.some(
+            (participant) => participant.identity && participant.identity !== localIdentity,
+          )
+
+          if (speakingIdleTimeoutRef.current) {
+            clearTimeout(speakingIdleTimeoutRef.current)
+            speakingIdleTimeoutRef.current = null
+          }
+
+          setIsListening(hasLocalSpeaker)
+          setIsSpeaking(hasRemoteSpeaker)
+          if (hasLocalSpeaker || hasRemoteSpeaker) {
+            onSpeechStart?.()
+          } else {
+            onSpeechEnd?.()
+          }
+
+          if (hasRemoteSpeaker) {
+            speakingIdleTimeoutRef.current = setTimeout(() => {
+              setIsSpeaking(false)
+              speakingIdleTimeoutRef.current = null
+              onSpeechEnd?.()
+            }, 2500)
+          }
         })
         room.on(RoomEvent.TranscriptionReceived, (segments, participant) => {
           const localIdentity = room.localParticipant.identity
@@ -604,13 +774,84 @@ export function useVoiceChat({
             onSpeechEnd?.()
             return
           }
-          if (speaker === "assistant" && transcriptText === lastFinalTranscriptBySpeakerRef.current.assistant) {
-            setIsSpeaking(false)
+          if (speaker === "user") {
+            lastTranscriptRef.current = transcriptText
+            setTranscript(transcriptText)
+            onTranscriptRef.current(transcriptText)
+            setIsListening(false)
             onSpeechEnd?.()
             return
           }
 
-          queueBufferedTranscript(speaker, transcriptText)
+          setIsSpeaking(false)
+          onSpeechEnd?.()
+        })
+        room.on(RoomEvent.DataReceived, (payload, _participant, _kind, topic) => {
+          if (topic !== "ka2a.voice") {
+            return
+          }
+
+          let decodedPayload = ""
+          try {
+            decodedPayload =
+              typeof payload === "string"
+                ? payload
+                : new TextDecoder().decode(payload instanceof Uint8Array ? payload : new Uint8Array(payload))
+          } catch {
+            return
+          }
+
+          try {
+            const event = JSON.parse(decodedPayload) as {
+              source?: string
+              type?: string
+              role?: string
+              text?: string
+              syncChat?: boolean
+              turnId?: string
+              event?: unknown
+            }
+            if (event.source !== "ka2a_voice") {
+              return
+            }
+
+            if (event.type === "a2a_event" && event.event) {
+              onSyncedVoiceA2aEventRef.current?.(event.event, event.turnId)
+              return
+            }
+
+            if (!event.text?.trim()) {
+              return
+            }
+
+            if (event.type === "status") {
+              setIsSpeaking(false)
+              return
+            }
+
+            const speaker = event.role === "user" ? "user" : "assistant"
+            appendConversationEntry(speaker, event.text)
+            if (speaker === "user") {
+              const normalizedText = collapseRepeatedTranscriptText(event.text)
+              if (event.syncChat && event.turnId && !syncedVoiceTurnIdsRef.current.has(event.turnId)) {
+                syncedVoiceTurnIdsRef.current.add(event.turnId)
+                onSyncedVoiceTurnStartRef.current?.(normalizedText, event.turnId)
+              }
+              lastTranscriptRef.current = normalizedText
+              lastFinalTranscriptBySpeakerRef.current.user = normalizedText
+              setFinalTranscript(normalizedText)
+              setTranscript("")
+              setIsListening(false)
+              return
+            }
+            lastFinalTranscriptBySpeakerRef.current.assistant = collapseRepeatedTranscriptText(event.text)
+            if (event.syncChat && (event.type === "result" || event.type === "error")) {
+              onSyncedVoiceTurnEndRef.current?.(event.turnId)
+            }
+            setIsSpeaking(false)
+          } catch {
+            // Ignore unrelated data messages.
+          }
         })
         room.on(RoomEvent.TrackUnsubscribed, (track) => {
           if (track.kind !== "audio") {
@@ -655,6 +896,7 @@ export function useVoiceChat({
         })
         if (isStaleStart()) {
           room.disconnect()
+          forgetStoredLivekitRoom(generatedRoomName)
           await stopLivekitRoom(generatedRoomName)
           return
         }
@@ -676,6 +918,7 @@ export function useVoiceChat({
             // ignore stale cleanup errors
           }
           room.disconnect()
+          forgetStoredLivekitRoom(generatedRoomName)
           await stopLivekitRoom(generatedRoomName)
           return
         }
@@ -689,9 +932,14 @@ export function useVoiceChat({
       } catch (error) {
         if (abortController.signal.aborted) {
           if (generatedRoomName) {
+            forgetStoredLivekitRoom(generatedRoomName)
             await stopLivekitRoom(generatedRoomName)
           }
           return
+        }
+        if (generatedRoomName) {
+          forgetStoredLivekitRoom(generatedRoomName)
+          await stopLivekitRoom(generatedRoomName)
         }
         setIsConnected(false)
         setSessionRoomName(null)
@@ -716,6 +964,7 @@ export function useVoiceChat({
       }
     }
   }, [
+    appendConversationEntry,
     cleanupLivekitSession,
     livekitAgentName,
     livekitMetadata,
@@ -723,7 +972,6 @@ export function useVoiceChat({
     livekitRoomName,
     onSpeechEnd,
     onSpeechStart,
-    queueBufferedTranscript,
     stopLivekitRoom,
   ])
 
@@ -796,6 +1044,7 @@ export function useVoiceChat({
       const track = livekitTrackRef.current
       const roomName = sessionRoomNameRef.current
 
+      forgetStoredLivekitRoom(roomName)
       livekitRoomRef.current = null
       livekitTrackRef.current = null
       livekitCleanupRef.current = null
@@ -827,6 +1076,10 @@ export function useVoiceChat({
       } catch {
         // ignore unload cleanup errors
       }
+      if (speakingIdleTimeoutRef.current) {
+        clearTimeout(speakingIdleTimeoutRef.current)
+        speakingIdleTimeoutRef.current = null
+      }
 
       void stopLivekitRoom(roomName, true)
     }
@@ -840,6 +1093,10 @@ export function useVoiceChat({
       }
       if (listeningResetTimeoutRef.current) {
         clearTimeout(listeningResetTimeoutRef.current)
+      }
+      if (speakingIdleTimeoutRef.current) {
+        clearTimeout(speakingIdleTimeoutRef.current)
+        speakingIdleTimeoutRef.current = null
       }
       if (transcriptFlushTimeouts.user) {
         clearTimeout(transcriptFlushTimeouts.user)

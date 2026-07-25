@@ -8,7 +8,15 @@ import AgentChat from "./agent-chat"
 import { humanizeAgentDisplayName } from "@/lib/agent-display"
 import { deriveWorkflowSummary } from "@/lib/agent-structured-output"
 import { downloadJsonFile } from "@/lib/agent-export"
-import { clearSession, createSessionWithConfig, type ChatMessage } from "@/redux/features/ka2a/ka2aSlice"
+import {
+  clearSession,
+  createSessionWithConfig,
+  eventReceived,
+  streamEnded,
+  streamStarted,
+  type ChatMessage,
+  type Ka2aEvent,
+} from "@/redux/features/ka2a/ka2aSlice"
 import { sendStreamMessage } from "@/redux/features/ka2a/ka2aThunks"
 import { useAppDispatch, useAppSelector } from "@/redux/store"
 
@@ -26,6 +34,7 @@ export default function AIChatWidget() {
   const [isFullScreen, setIsFullScreen] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const lastActivityAtRef = useRef<number | null>(null)
+  const syncedVoiceTurnIdsRef = useRef<Set<string>>(new Set())
 
   const widgetRef = useRef<HTMLDivElement>(null)
   const toggleBtnRef = useRef<HTMLButtonElement>(null)
@@ -185,9 +194,35 @@ export default function AIChatWidget() {
 
   const handleUserActivity = () => markActivity()
 
+  const handleSyncedVoiceTurnStart = (text: string, turnId: string) => {
+    if (!sessionId || !text.trim() || syncedVoiceTurnIdsRef.current.has(turnId)) {
+      return
+    }
+    syncedVoiceTurnIdsRef.current.add(turnId)
+    markActivity()
+    dispatch(streamStarted({ sessionId, userText: text }))
+  }
+
+  const handleSyncedVoiceA2aEvent = (event: Ka2aEvent) => {
+    if (!sessionId) {
+      return
+    }
+    markActivity()
+    dispatch(eventReceived({ sessionId, event }))
+  }
+
+  const handleSyncedVoiceTurnEnd = () => {
+    if (!sessionId) {
+      return
+    }
+    markActivity()
+    dispatch(streamEnded({ sessionId }))
+  }
+
   const handleClearConversation = () => {
     if (!sessionId) return
     dispatch(clearSession({ sessionId }))
+    syncedVoiceTurnIdsRef.current.clear()
     markActivity()
     toast.info("Started a new AI chat.")
   }
@@ -262,6 +297,9 @@ export default function AIChatWidget() {
             workflowSummary={workflowSummary}
             onDownloadConversation={handleDownloadConversation}
             onClearConversation={handleClearConversation}
+            onSyncedVoiceTurnStart={handleSyncedVoiceTurnStart}
+            onSyncedVoiceA2aEvent={handleSyncedVoiceA2aEvent}
+            onSyncedVoiceTurnEnd={handleSyncedVoiceTurnEnd}
           />
         </div>
       )}

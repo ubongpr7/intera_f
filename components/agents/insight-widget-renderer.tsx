@@ -249,7 +249,7 @@ function WidgetCard({
   children: ReactNode
 }) {
   return (
-    <section className="rounded-[24px] border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-4 text-gray-700 dark:text-gray-300 shadow-[0_18px_44px_-34px_rgba(15,23,42,0.28)]">
+    <section className="rounded-[24px] border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-4 text-gray-700 dark:text-gray-200 shadow-[0_18px_44px_-34px_rgba(15,23,42,0.28)]">
       {title ? <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{title}</h4> : null}
       {subtitle ? <p className="mt-1 text-xs leading-5 text-gray-500 dark:text-gray-400">{subtitle}</p> : null}
       <div className={title || subtitle ? "mt-4" : ""}>{children}</div>

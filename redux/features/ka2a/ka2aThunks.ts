@@ -69,6 +69,27 @@ const normalizeQuestion = (value: string): string =>
     .replace(/[?.!,]+$/g, "")
     .replace(/\s+/g, " ");
 
+const conversationalStatusQueries = new Set([
+  "are you listening",
+  "are you still there",
+  "are you there",
+  "can you hear me",
+  "can you hear me now",
+  "did you get my message",
+  "hello again",
+  "hello are you there",
+  "hey are you there",
+  "hi are you there",
+  "is my message delivered",
+  "is this working",
+  "still there",
+  "what is going on",
+  "whats going on",
+  "you there",
+]);
+
+const isConversationalStatusCheck = (value: string): boolean => conversationalStatusQueries.has(normalizeQuestion(value));
+
 const isNewScopedInsightRequest = (value: string): boolean => {
   const question = normalizeQuestion(value);
   if (!question || question.startsWith("going back") || question.startsWith("based on") || question.startsWith("from that")) {
@@ -170,7 +191,7 @@ const selectInsightPayload = (
     : wantsLocation
       ? ["location contribution", "location revenue", "store revenue", "branch revenue", "location ranking"]
     : wantsComparison
-      ? ["product comparison table", "product revenue ranking", "product units trend", "variant comparison"]
+      ? ["product comparison table", "product revenue ranking", "product units trend", "variant comparison", "top products", "top sellers"]
       : wantsProcurement
         ? ["receiving progress", "receiving lifecycle", "receiving activity", "purchase-order receiving"]
         : wantsStaff
@@ -567,6 +588,9 @@ const answerFromHistory = (
   text: string,
 ): { assistantText: string; structuredPayload?: AgentStructuredPayload } | undefined => {
   const normalized = normalizeQuestion(text);
+  if (isConversationalStatusCheck(text)) {
+    return undefined;
+  }
   const scopedInsightRequest = isNewScopedInsightRequest(text);
   for (let i = messages.length - 1; i >= 0; i -= 1) {
     const message = messages[i];
