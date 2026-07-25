@@ -496,8 +496,13 @@ export function useVoiceChat({
         setIsSpeaking(false)
       }
 
-      appendConversationEntry(speaker, normalizedText)
       onSpeechEnd?.()
+
+      if (livekitEnabled) {
+        return
+      }
+
+      appendConversationEntry(speaker, normalizedText)
 
       if (speaker === "user" && autoSubmitEnabled) {
         if (autoSendTimeoutRef.current) {
@@ -516,7 +521,7 @@ export function useVoiceChat({
         }, Math.max(150, Math.min(autoSendDelay / 4, 1200)))
       }
     },
-    [appendConversationEntry, autoSendDelay, autoSubmitEnabled, onSpeechEnd],
+    [appendConversationEntry, autoSendDelay, autoSubmitEnabled, livekitEnabled, onSpeechEnd],
   )
 
   const queueBufferedTranscript = useCallback(

@@ -200,7 +200,7 @@ export default function AIChatWidget() {
     }
     syncedVoiceTurnIdsRef.current.add(turnId)
     markActivity()
-    dispatch(streamStarted({ sessionId, userText: text }))
+    dispatch(streamStarted({ sessionId, userText: text, silent: true }))
   }
 
   const handleSyncedVoiceA2aEvent = (event: Ka2aEvent) => {

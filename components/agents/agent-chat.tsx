@@ -1466,6 +1466,12 @@ export default function AgentChat({
                   Your voice conversation will appear here.
                 </p>
               )}
+              {pendingCount > 0 ? (
+                <div className="mt-3 mr-auto flex max-w-[92%] items-center gap-2 rounded-2xl bg-gray-100 px-3 py-2 text-sm text-gray-700">
+                  <Loader2 className="h-4 w-4 animate-spin text-gray-600" aria-hidden />
+                  <span>Assistant is working on that now.</span>
+                </div>
+              ) : null}
             </div>
           </div>
         ) : null}

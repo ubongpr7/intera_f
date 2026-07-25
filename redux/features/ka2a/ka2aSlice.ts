@@ -293,7 +293,7 @@ const ka2aSlice = createSlice({
       }
       session.contextId = action.payload.contextId;
     },
-    streamStarted: (state, action: PayloadAction<{ sessionId: string; userText: string }>) => {
+    streamStarted: (state, action: PayloadAction<{ sessionId: string; userText: string; silent?: boolean }>) => {
       const session = state.sessions[action.payload.sessionId];
       if (!session) {
         return;
@@ -308,12 +308,14 @@ const ka2aSlice = createSlice({
       if (!resumingExistingTask) {
         session.activeSpecialist = undefined;
       }
-      session.messages.push({
-        id: createId(),
-        role: "user",
-        content: action.payload.userText,
-        timestamp: nowIso(),
-      });
+      if (!action.payload.silent) {
+        session.messages.push({
+          id: createId(),
+          role: "user",
+          content: action.payload.userText,
+          timestamp: nowIso(),
+        });
+      }
     },
     historyAnswerReturned: (
       state,
