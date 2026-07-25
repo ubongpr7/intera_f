@@ -5,7 +5,6 @@ export const runtime = "nodejs"
 
 type StopLivekitRoomRequest = {
   roomName?: string
-  participantName?: string
 }
 
 const livekitHttpUrl = (value: string) => {
@@ -41,19 +40,8 @@ export async function POST(request: NextRequest) {
   if (!roomName || !roomName.startsWith("a2a-voice-")) {
     return NextResponse.json({ error: "Invalid voice room." }, { status: 400 })
   }
-  const participantName = body.participantName?.trim() || ""
-
   try {
     const roomClient = new RoomServiceClient(livekitHttpUrl(wsUrl), apiKey, apiSecret)
-    if (participantName) {
-      try {
-        await roomClient.removeParticipant(roomName, participantName, {
-          revokeTokenTs: BigInt(Math.floor(Date.now() / 1000)),
-        })
-      } catch {
-        // The participant may already be gone; deleting the room is still enough.
-      }
-    }
     await roomClient.deleteRoom(roomName)
   } catch {
     // Treat missing/already-closed rooms as stopped. The client calls this defensively.
