@@ -220,7 +220,6 @@ export function useVoiceChat({
   const lastTranscriptRef = useRef("")
   const lastAutoSentTranscriptRef = useRef<{ text: string; timestamp: number }>({ text: "", timestamp: 0 })
   const lastFinalTranscriptBySpeakerRef = useRef<{ user: string; assistant: string }>({ user: "", assistant: "" })
-  const processedTranscriptSegmentKeysRef = useRef<Set<string>>(new Set())
   const pendingTranscriptBySpeakerRef = useRef<{ user: string; assistant: string }>({ user: "", assistant: "" })
   const onTranscriptRef = useRef(onTranscript)
   const onAutoSendRef = useRef(onAutoSend)
@@ -298,7 +297,6 @@ export function useVoiceChat({
     lastTranscriptRef.current = ""
       lastAutoSentTranscriptRef.current = { text: "", timestamp: 0 }
       lastFinalTranscriptBySpeakerRef.current = { user: "", assistant: "" }
-      processedTranscriptSegmentKeysRef.current.clear()
       syncedVoiceTurnIdsRef.current.clear()
       pendingTranscriptBySpeakerRef.current = { user: "", assistant: "" }
     setTranscript("")
@@ -335,7 +333,6 @@ export function useVoiceChat({
       lastTranscriptRef.current = ""
       lastAutoSentTranscriptRef.current = { text: "", timestamp: 0 }
       lastFinalTranscriptBySpeakerRef.current = { user: "", assistant: "" }
-      processedTranscriptSegmentKeysRef.current.clear()
       syncedVoiceTurnIdsRef.current.clear()
       pendingTranscriptBySpeakerRef.current = { user: "", assistant: "" }
       if (transcriptFlushTimeoutRef.current.user) {
@@ -724,9 +721,47 @@ export function useVoiceChat({
           const speaker: "user" | "assistant" = speakerIdentity === localIdentity ? "user" : "assistant"
 
           const isFinal = segments.some((segment) => segment.final)
+          const transcriptText = collapseRepeatedTranscriptText(
+            uniqueTranscriptTexts(
+              segments
+                .map((segment) => segment.text.trim().replace(/\s+/g, " "))
+                .filter(Boolean),
+            ).join(" "),
+          )
           if (listeningResetTimeoutRef.current) {
             clearTimeout(listeningResetTimeoutRef.current)
             listeningResetTimeoutRef.current = null
+          }
+
+          if (!transcriptText) {
+            if (speaker === "user") {
+              setIsListening(false)
+            } else {
+              setIsSpeaking(false)
+            }
+            return
+          }
+
+          if (speaker === "user") {
+            setTranscript(transcriptText)
+            onTranscriptRef.current(transcriptText)
+            setIsListening(!isFinal)
+            if (isFinal) {
+              lastTranscriptRef.current = transcriptText
+              lastFinalTranscriptBySpeakerRef.current.user = transcriptText
+              setFinalTranscript(transcriptText)
+              onSpeechEnd?.()
+            } else {
+              onSpeechStart?.()
+            }
+          } else {
+            setIsSpeaking(!isFinal)
+            if (isFinal) {
+              lastFinalTranscriptBySpeakerRef.current.assistant = transcriptText
+              onSpeechEnd?.()
+            } else {
+              onSpeechStart?.()
+            }
           }
 
           if (!isFinal) {
@@ -739,52 +774,6 @@ export function useVoiceChat({
             }, 750)
             return
           }
-
-          const newFinalTexts: string[] = []
-          for (const segment of segments) {
-            if (!segment.final) {
-              continue
-            }
-            const segmentText = segment.text.trim().replace(/\s+/g, " ")
-            if (!segmentText) {
-              continue
-            }
-            const segmentId = typeof segment.id === "string" && segment.id ? segment.id : segmentText.toLowerCase()
-            const segmentKey = `${speaker}:${segmentId}`
-            if (processedTranscriptSegmentKeysRef.current.has(segmentKey)) {
-              continue
-            }
-            processedTranscriptSegmentKeysRef.current.add(segmentKey)
-            newFinalTexts.push(segmentText)
-          }
-
-          const transcriptText = collapseRepeatedTranscriptText(uniqueTranscriptTexts(newFinalTexts).join(" "))
-          if (!transcriptText) {
-            if (speaker === "user") {
-              setIsListening(false)
-            } else {
-              setIsSpeaking(false)
-            }
-            onSpeechEnd?.()
-            return
-          }
-
-          if (speaker === "user" && transcriptText === lastTranscriptRef.current) {
-            setIsListening(false)
-            onSpeechEnd?.()
-            return
-          }
-          if (speaker === "user") {
-            lastTranscriptRef.current = transcriptText
-            setTranscript(transcriptText)
-            onTranscriptRef.current(transcriptText)
-            setIsListening(false)
-            onSpeechEnd?.()
-            return
-          }
-
-          setIsSpeaking(false)
-          onSpeechEnd?.()
         })
         room.on(RoomEvent.DataReceived, (payload, _participant, _kind, topic) => {
           if (topic !== "ka2a.voice") {

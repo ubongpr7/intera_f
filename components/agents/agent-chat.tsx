@@ -253,28 +253,28 @@ const workflowToneStyles: Record<
   }
 > = {
   ready: {
-    card: "border-gray-800 bg-gray-950",
-    badge: "bg-gray-800 text-gray-100",
+    card: "border-gray-200 bg-gray-100",
+    badge: "bg-gray-200 text-gray-900",
     dot: "bg-emerald-500",
-    stepCompleted: "border-gray-700 bg-gray-800 text-gray-100",
-    stepCurrent: "border-blue-700 bg-blue-950 text-gray-100",
-    stepPending: "border-gray-700 bg-gray-900 text-gray-300",
+    stepCompleted: "border-gray-200 bg-gray-200 text-gray-900",
+    stepCurrent: "border-blue-200 bg-blue-100 text-gray-900",
+    stepPending: "border-gray-200 bg-white text-gray-700",
   },
   working: {
-    card: "border-gray-800 bg-gray-950",
-    badge: "bg-gray-800 text-gray-100",
+    card: "border-gray-200 bg-gray-100",
+    badge: "bg-gray-200 text-gray-900",
     dot: "bg-blue-500",
-    stepCompleted: "border-gray-700 bg-gray-800 text-gray-100",
-    stepCurrent: "border-blue-700 bg-blue-950 text-gray-100",
-    stepPending: "border-gray-700 bg-gray-900 text-gray-300",
+    stepCompleted: "border-gray-200 bg-gray-200 text-gray-900",
+    stepCurrent: "border-blue-200 bg-blue-100 text-gray-900",
+    stepPending: "border-gray-200 bg-white text-gray-700",
   },
   awaiting: {
-    card: "border-gray-800 bg-gray-950",
-    badge: "bg-gray-800 text-gray-100",
+    card: "border-gray-200 bg-gray-100",
+    badge: "bg-gray-200 text-gray-900",
     dot: "bg-yellow-500",
-    stepCompleted: "border-gray-700 bg-gray-800 text-gray-100",
-    stepCurrent: "border-yellow-700 bg-yellow-950 text-gray-100",
-    stepPending: "border-gray-700 bg-gray-900 text-gray-300",
+    stepCompleted: "border-gray-200 bg-gray-200 text-gray-900",
+    stepCurrent: "border-yellow-200 bg-yellow-100 text-gray-900",
+    stepPending: "border-gray-200 bg-white text-gray-700",
   },
 }
 
@@ -295,27 +295,27 @@ function WorkflowSummaryStrip({ summary }: { summary: AgentWorkflowSummary }) {
     <div className={`mb-4 rounded-[22px] border px-4 py-3 shadow-[0_12px_28px_-26px_rgba(15,23,42,0.18)] ${tone.card}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Workflow</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-600">Workflow</p>
           <div className="mt-1 flex items-center gap-2">
             <span className={`inline-flex h-2.5 w-2.5 shrink-0 rounded-full ${tone.dot}`} />
-            <p className="truncate text-sm font-semibold text-gray-100">{summary.title}</p>
+            <p className="truncate text-sm font-semibold text-gray-900">{summary.title}</p>
           </div>
-          {summary.detail ? <p className="mt-1 text-xs leading-5 text-gray-300">{summary.detail}</p> : null}
+          {summary.detail ? <p className="mt-1 text-xs leading-5 text-gray-700">{summary.detail}</p> : null}
         </div>
         <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${tone.badge}`}>
           {summary.statusLabel}
         </span>
       </div>
       {summary.currentAgentLabel || summary.nextAgentLabel ? (
-        <div className="mt-3 flex flex-wrap gap-4 text-xs text-gray-300">
+        <div className="mt-3 flex flex-wrap gap-4 text-xs text-gray-700">
           {summary.currentAgentLabel ? (
             <p>
-              <span className="font-medium text-gray-100">Now:</span> {summary.currentAgentLabel}
+              <span className="font-medium text-gray-900">Now:</span> {summary.currentAgentLabel}
             </p>
           ) : null}
           {summary.nextAgentLabel ? (
             <p>
-              <span className="font-medium text-gray-100">Next:</span> {summary.nextAgentLabel}
+              <span className="font-medium text-gray-900">Next:</span> {summary.nextAgentLabel}
             </p>
           ) : null}
         </div>
@@ -1339,11 +1339,11 @@ export default function AgentChat({
                   className={`max-w-[85%] rounded-2xl px-5 py-4 ${
                     isUserMessage
                       ? "bg-blue-500 text-gray-50 rounded-br-none"
-                      : "bg-gray-950 text-gray-100 rounded-bl-none shadow-lg border border-gray-800"
+                      : "bg-gray-100 text-gray-900 rounded-bl-none shadow-lg border border-gray-200"
                   }`}
                 >
                   <div
-                    className={`font-semibold text-xs mb-3 flex items-center justify-between ${isUserMessage ? "text-blue-100" : "text-gray-500"}`}
+                    className={`font-semibold text-xs mb-3 flex items-center justify-between ${isUserMessage ? "text-blue-100" : "text-gray-600"}`}
                   >
                     <div className="flex items-center gap-2">
                       {copiedMessageId === m.id && (
@@ -1356,11 +1356,11 @@ export default function AgentChat({
                   </div>
                   {interactionResponseSummary ? (
                     <div className="space-y-1">
-                      <p className={`text-base font-semibold ${isUserMessage ? "text-gray-50" : "text-gray-100"}`}>
+                      <p className={`text-base font-semibold ${isUserMessage ? "text-gray-50" : "text-gray-900"}`}>
                         {interactionResponseSummary.title}
                       </p>
                       {interactionResponseSummary.detail ? (
-                        <p className={`text-sm leading-6 ${isUserMessage ? "text-blue-50" : "text-gray-300"}`}>
+                        <p className={`text-sm leading-6 ${isUserMessage ? "text-blue-50" : "text-gray-700"}`}>
                           {interactionResponseSummary.detail}
                         </p>
                       ) : null}
