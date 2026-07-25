@@ -304,7 +304,9 @@ const ka2aSlice = createSlice({
       session.awaitingInput = false;
       session.resumeTaskId = undefined;
       session.currentTaskState = "working";
-      session.currentStatusText = undefined;
+      session.currentStatusText = action.payload.silent
+        ? "Assistant is processing your voice request."
+        : undefined;
       if (!resumingExistingTask) {
         session.activeSpecialist = undefined;
       }

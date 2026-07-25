@@ -66,8 +66,8 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
     return (
       <div className="space-y-3">
         <div className="space-y-2">
-          <h4 className="font-medium text-sm">{data.title}</h4>
-          {data.description && <p className="text-xs text-gray-300">{data.description}</p>}
+          <h4 className="text-sm font-medium text-gray-900">{data.title}</h4>
+          {data.description && <p className="text-xs text-gray-700">{data.description}</p>}
         </div>
 
         <div className="space-y-2">
@@ -76,10 +76,10 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
             return (
               <div
                 key={`${optionValue}-${index}`}
-                className={`p-2 border rounded cursor-pointer transition-colors text-sm ${
+                className={`rounded border p-2 text-sm text-gray-900 transition-colors ${
                   selectedOptions.includes(optionValue)
-                    ? "border-blue-500 bg-blue-950/40"
-                    : "border-gray-800 hover:border-gray-700"
+                    ? "cursor-pointer border-blue-300 bg-blue-100"
+                    : "cursor-pointer border-gray-300 bg-white hover:border-gray-400"
                 }`}
                 onClick={() => handleOptionToggle(optionValue)}
               >
@@ -87,7 +87,7 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
                   <span className="font-medium">{option.label}</span>
                   {selectedOptions.includes(optionValue) && <CheckCircle className="h-3 w-3 text-blue-500" />}
                 </div>
-                {option.description && <p className="text-xs text-gray-300 mt-1">{option.description}</p>}
+                {option.description && <p className="mt-1 text-xs text-gray-700">{option.description}</p>}
               </div>
             )
           })}
@@ -95,13 +95,13 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
 
         {data.allow_additional_input && (
           <div>
-            <label className="block text-xs font-medium mb-1">Additional Instructions (Optional)</label>
+            <label className="mb-1 block text-xs font-medium text-gray-700">Additional Instructions (Optional)</label>
             <Textarea
               value={additionalInput}
               onChange={(e) => setAdditionalInput(e.target.value)}
               placeholder="Add any additional context..."
               rows={2}
-              className="text-sm bg-gray-900/70 text-gray-100"
+              className="border-gray-300 bg-white text-sm text-gray-800"
             />
           </div>
         )}
@@ -118,9 +118,9 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
       <CardHeader>
         <div className="flex items-center gap-2">
           <HelpCircle className="h-5 w-5 text-blue-500" />
-          <CardTitle>{data.title}</CardTitle>
+          <CardTitle className="text-gray-900">{data.title}</CardTitle>
         </div>
-        <CardDescription>{data.description}</CardDescription>
+        <CardDescription className="text-gray-700">{data.description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
@@ -129,10 +129,10 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
             return (
               <div
                 key={`${optionValue}-${index}`}
-                className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                className={`rounded-lg border p-3 text-gray-900 transition-colors ${
                   selectedOptions.includes(optionValue)
-                    ? "border-blue-500 bg-blue-950/40"
-                    : "border-gray-800 hover:border-gray-700"
+                    ? "cursor-pointer border-blue-300 bg-blue-100"
+                    : "cursor-pointer border-gray-300 bg-white hover:border-gray-400"
                 }`}
                 onClick={() => handleOptionToggle(optionValue)}
               >
@@ -140,7 +140,7 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
                   <span className="font-medium">{option.label}</span>
                   {selectedOptions.includes(optionValue) && <CheckCircle className="h-4 w-4 text-blue-500" />}
                 </div>
-                {option.description && <p className="text-sm text-gray-300 mt-1">{option.description}</p>}
+                {option.description && <p className="mt-1 text-sm text-gray-700">{option.description}</p>}
               </div>
             )
           })}
@@ -148,13 +148,13 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
 
         {data.allow_additional_input && (
           <div>
-            <label className="block text-sm bg-gray-900/70 text-gray-100 font-medium mb-2">Additional Instructions (Optional)</label>
+            <label className="mb-2 block text-sm font-medium text-gray-700">Additional Instructions (Optional)</label>
             <Textarea
               value={additionalInput}
               onChange={(e) => setAdditionalInput(e.target.value)}
               placeholder="Add any additional context or instructions..."
               rows={3}
-              className="text-sm bg-gray-900/70 text-gray-100"
+              className="border-gray-300 bg-white text-sm text-gray-800"
             />
           </div>
         )}

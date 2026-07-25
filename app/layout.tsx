@@ -4,6 +4,7 @@ import StoreProvider from "../redux/provider";
 import DashboardHeader from "../components/wrapper/dashboardHeader";
 import NextTopLoader from 'nextjs-toploader';
 import ThemeProvider from "@/components/theme-provider";
+import MicrosoftClarity from "@/components/analytics/MicrosoftClarity";
 
 
 export const metadata: Metadata = {
@@ -34,19 +35,18 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-   
+  const clarityProjectId = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID?.trim() ?? "";
 
   return (
     <html lang="en" suppressHydrationWarning>
-      
-      <body  suppressHydrationWarning>
-      <NextTopLoader />
+      <body suppressHydrationWarning>
+        <NextTopLoader />
         <StoreProvider>
-        <ThemeProvider>
-        {children}
-        </ThemeProvider>
+          <ThemeProvider>
+            <MicrosoftClarity projectId={clarityProjectId} />
+            {children}
+          </ThemeProvider>
         </StoreProvider>
-        
       </body>
     </html>
   );

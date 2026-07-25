@@ -932,7 +932,7 @@ export default function HomePage() {
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
-                <Button asChild variant="outline" size="lg">
+                <Button asChild variant="secondary" size="lg">
                   <a href="#pricing">View plans</a>
                 </Button>
               </div>

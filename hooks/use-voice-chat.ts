@@ -295,10 +295,10 @@ export function useVoiceChat({
       speakingIdleTimeoutRef.current = null
     }
     lastTranscriptRef.current = ""
-      lastAutoSentTranscriptRef.current = { text: "", timestamp: 0 }
-      lastFinalTranscriptBySpeakerRef.current = { user: "", assistant: "" }
-      syncedVoiceTurnIdsRef.current.clear()
-      pendingTranscriptBySpeakerRef.current = { user: "", assistant: "" }
+    lastAutoSentTranscriptRef.current = { text: "", timestamp: 0 }
+    lastFinalTranscriptBySpeakerRef.current = { user: "", assistant: "" }
+    syncedVoiceTurnIdsRef.current.clear()
+    pendingTranscriptBySpeakerRef.current = { user: "", assistant: "" }
     setTranscript("")
     setFinalTranscript("")
     setConversationEntries([])
@@ -329,7 +329,6 @@ export function useVoiceChat({
       setEstimatedCoins(0)
       setTranscript("")
       setFinalTranscript("")
-      setConversationEntries([])
       lastTranscriptRef.current = ""
       lastAutoSentTranscriptRef.current = { text: "", timestamp: 0 }
       lastFinalTranscriptBySpeakerRef.current = { user: "", assistant: "" }
@@ -752,6 +751,7 @@ export function useVoiceChat({
             onTranscriptRef.current(transcriptText)
             setIsListening(!isFinal)
             if (isFinal) {
+              appendConversationEntry("user", transcriptText)
               lastTranscriptRef.current = transcriptText
               lastFinalTranscriptBySpeakerRef.current.user = transcriptText
               setFinalTranscript(transcriptText)
@@ -761,7 +761,8 @@ export function useVoiceChat({
             }
           } else {
             setIsSpeaking(!isFinal)
-            if (isFinal) {
+            if (isFinal && !livekitEnabled) {
+              appendConversationEntry("assistant", transcriptText)
               lastFinalTranscriptBySpeakerRef.current.assistant = transcriptText
               onSpeechEnd?.()
             } else {
@@ -837,6 +838,9 @@ export function useVoiceChat({
 
             if (event.type === "status") {
               setIsSpeaking(false)
+              if (displayInTranscript) {
+                appendConversationEntry("assistant", event.text)
+              }
               return
             }
 
@@ -1009,6 +1013,14 @@ export function useVoiceChat({
   }, [])
 
   const startConversation = useCallback(async () => {
+    setTranscript("")
+    setFinalTranscript("")
+    setConversationEntries([])
+    lastTranscriptRef.current = ""
+    lastAutoSentTranscriptRef.current = { text: "", timestamp: 0 }
+    lastFinalTranscriptBySpeakerRef.current = { user: "", assistant: "" }
+    syncedVoiceTurnIdsRef.current.clear()
+    pendingTranscriptBySpeakerRef.current = { user: "", assistant: "" }
     await startPushToTalk()
   }, [startPushToTalk])
 

@@ -615,12 +615,7 @@ const answerFromHistory = (
     return undefined;
   }
   const assistantText = answerFromInsightPayload(text, latestInsight);
-  return assistantText
-    ? { assistantText }
-    : {
-        assistantText:
-          "I have the previous analysis, but that follow-up is not mapped yet. Ask about the leader, laggard, gap, trend, risk, or next action, and I will answer from the saved result.",
-      };
+  return assistantText ? { assistantText } : undefined;
 };
 
 export const sendStreamMessage =
@@ -640,7 +635,8 @@ export const sendStreamMessage =
       return;
     }
 
-    const historyAnswer = answerFromHistory(session.messages, text);
+    const canAnswerFromHistory = !session.awaitingInput && !session.resumeTaskId && !session.isStreaming;
+    const historyAnswer = canAnswerFromHistory ? answerFromHistory(session.messages, text) : undefined;
     if (historyAnswer) {
       dispatch(
         historyAnswerReturned({

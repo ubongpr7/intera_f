@@ -398,17 +398,17 @@ export default function MessageContent({ content, role, onCopy, onExport }: Mess
         <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1">
           <button
             onClick={onCopy}
-            className="p-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
+            className="rounded-lg border border-gray-300 bg-gray-100 p-2 shadow-sm transition-colors hover:bg-gray-200"
             title="Copy message"
           >
-            <Copy className="h-4 w-4 text-gray-600" />
+            <Copy className="h-4 w-4 text-gray-500" />
           </button>
           <button
             onClick={onExport}
-            className="p-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
+            className="rounded-lg border border-gray-300 bg-gray-100 p-2 shadow-sm transition-colors hover:bg-gray-200"
             title="Export message"
           >
-            <Download className="h-4 w-4 text-gray-600" />
+            <Download className="h-4 w-4 text-gray-500" />
           </button>
         </div>
       )}
