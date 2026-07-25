@@ -550,7 +550,6 @@ export default function AgentChat({
   }, [hasActiveInteraction, voiceChat])
 
   const voiceCallStatus = useMemo(() => {
-    const hasAssistantSignal = voiceChat.conversationEntries.some((entry) => entry.speaker === "assistant")
     if (!isCallModeActive) {
       return "Idle"
     }
@@ -564,13 +563,12 @@ export default function AgentChat({
       return "Listening"
     }
     if (voiceChat.isConnected) {
-      return hasAssistantSignal ? "Connected" : "Preparing"
+      return "Connected"
     }
     return "Preparing"
   }, [
     isCallModeActive,
     isCallTransitioning,
-    voiceChat.conversationEntries,
     voiceChat.isConnected,
     voiceChat.isConnecting,
     voiceChat.isListening,
@@ -881,37 +879,37 @@ export default function AgentChat({
 
   const getInteractionStyle = (type: string) => {
     const styles = {
-      confirmation: { color: "bg-yellow-50 border-yellow-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "⚠️" },
-      multiple_choice: { color: "bg-blue-50 border-blue-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "❓" },
-      file_upload: { color: "bg-green-50 border-green-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "📁" },
-      progress_tracker: { color: "bg-purple-50 border-purple-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "⏳" },
-      data_table: { color: "bg-indigo-50 border-indigo-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "📊" },
-      data_table_review: { color: "bg-indigo-50 border-indigo-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "📋" },
-      dynamic_form: { color: "bg-pink-50 border-pink-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "📝" },
-      update_form: { color: "bg-blue-50 border-blue-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "✏️" },
-      date_time_picker: { color: "bg-teal-50 border-teal-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "📅" },
-      slider_input: { color: "bg-orange-50 border-orange-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "🎚️" },
-      priority_ranking: { color: "bg-red-50 border-red-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "📋" },
-      code_review: { color: "bg-gray-50 border-gray-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "💻" },
-      image_annotation: { color: "bg-yellow-50 border-yellow-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "🖼️" },
-      searchable_selection: { color: "bg-cyan-50 border-cyan-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "🔍" },
-      hierarchical_selection: { color: "bg-emerald-50 border-emerald-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "🌳" },
-      autocomplete_selection: { color: "bg-violet-50 border-violet-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "⚡" },
-      comparison_view: { color: "bg-rose-50 border-rose-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "⚖️" },
-      bulk_action_selector: { color: "bg-gray-50 border-gray-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "⚡" },
-      marketplace_results: { color: "bg-yellow-50 border-yellow-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "🛍️" },
-      dashboard_builder: { color: "bg-blue-50 border-blue-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "📊" },
-      master_detail_table: { color: "bg-indigo-50 border-indigo-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "📋" },
-      alert_manager: { color: "bg-yellow-50 border-yellow-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "🔔" },
-      task_assignment: { color: "bg-green-50 border-green-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "👥" },
-      comment_thread: { color: "bg-purple-50 border-purple-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "💬" },
-      report_builder: { color: "bg-orange-50 border-orange-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "📈" },
-      data_visualization: { color: "bg-teal-50 border-teal-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "📊" },
-      timeline_activity: { color: "bg-gray-50 border-gray-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "⏰" },
-      kanban_board: { color: "bg-pink-50 border-pink-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "📌" },
-      approval_workflow: { color: "bg-emerald-50 border-emerald-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "✅" },
-      wizard_flow: { color: "bg-purple-50 border-purple-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "🧙" },
-      conditional_form: { color: "bg-purple-50 border-purple-200 dark:bg-gray-900 dark:border-gray-700", textColor: "text-gray-700 dark:text-gray-100", icon: "🧙" },
+      confirmation: { color: "bg-yellow-50 border-yellow-200", textColor: "text-gray-700", icon: "⚠️" },
+      multiple_choice: { color: "bg-blue-50 border-blue-200", textColor: "text-gray-700", icon: "❓" },
+      file_upload: { color: "bg-green-50 border-green-200", textColor: "text-gray-700", icon: "📁" },
+      progress_tracker: { color: "bg-purple-50 border-purple-200", textColor: "text-gray-700", icon: "⏳" },
+      data_table: { color: "bg-indigo-50 border-indigo-200", textColor: "text-gray-700", icon: "📊" },
+      data_table_review: { color: "bg-indigo-50 border-indigo-200", textColor: "text-gray-700", icon: "📋" },
+      dynamic_form: { color: "bg-pink-50 border-pink-200", textColor: "text-gray-700", icon: "📝" },
+      update_form: { color: "bg-blue-50 border-blue-200", textColor: "text-gray-700", icon: "✏️" },
+      date_time_picker: { color: "bg-teal-50 border-teal-200", textColor: "text-gray-700", icon: "📅" },
+      slider_input: { color: "bg-orange-50 border-orange-200", textColor: "text-gray-700", icon: "🎚️" },
+      priority_ranking: { color: "bg-red-50 border-red-200", textColor: "text-gray-700", icon: "📋" },
+      code_review: { color: "bg-gray-50 border-gray-200", textColor: "text-gray-700", icon: "💻" },
+      image_annotation: { color: "bg-yellow-50 border-yellow-200", textColor: "text-gray-700", icon: "🖼️" },
+      searchable_selection: { color: "bg-cyan-50 border-cyan-200", textColor: "text-gray-700", icon: "🔍" },
+      hierarchical_selection: { color: "bg-emerald-50 border-emerald-200", textColor: "text-gray-700", icon: "🌳" },
+      autocomplete_selection: { color: "bg-violet-50 border-violet-200", textColor: "text-gray-700", icon: "⚡" },
+      comparison_view: { color: "bg-rose-50 border-rose-200", textColor: "text-gray-700", icon: "⚖️" },
+      bulk_action_selector: { color: "bg-gray-50 border-gray-200", textColor: "text-gray-700", icon: "⚡" },
+      marketplace_results: { color: "bg-yellow-50 border-yellow-200", textColor: "text-gray-700", icon: "🛍️" },
+      dashboard_builder: { color: "bg-blue-50 border-blue-200", textColor: "text-gray-700", icon: "📊" },
+      master_detail_table: { color: "bg-indigo-50 border-indigo-200", textColor: "text-gray-700", icon: "📋" },
+      alert_manager: { color: "bg-yellow-50 border-yellow-200", textColor: "text-gray-700", icon: "🔔" },
+      task_assignment: { color: "bg-green-50 border-green-200", textColor: "text-gray-700", icon: "👥" },
+      comment_thread: { color: "bg-purple-50 border-purple-200", textColor: "text-gray-700", icon: "💬" },
+      report_builder: { color: "bg-orange-50 border-orange-200", textColor: "text-gray-700", icon: "📈" },
+      data_visualization: { color: "bg-teal-50 border-teal-200", textColor: "text-gray-700", icon: "📊" },
+      timeline_activity: { color: "bg-gray-50 border-gray-200", textColor: "text-gray-700", icon: "⏰" },
+      kanban_board: { color: "bg-pink-50 border-pink-200", textColor: "text-gray-700", icon: "📌" },
+      approval_workflow: { color: "bg-emerald-50 border-emerald-200", textColor: "text-gray-700", icon: "✅" },
+      wizard_flow: { color: "bg-purple-50 border-purple-200", textColor: "text-gray-700", icon: "🧙" },
+      conditional_form: { color: "bg-purple-50 border-purple-200", textColor: "text-gray-700", icon: "🧙" },
     }
     return styles[type as keyof typeof styles] || styles.confirmation
   }
@@ -1187,81 +1185,6 @@ export default function AgentChat({
             <p className="mt-1">{humanizeTechnicalMessage(statusText)}</p>
           </div>
         )}
-        {isCallModeActive ? (
-          <div className="mb-4 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4 shadow-sm dark:border-blue-900 dark:bg-blue-950/40">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <AudioLines
-                    className={`h-5 w-5 text-blue-700 dark:text-blue-300 ${
-                      voiceChat.isSpeaking || voiceChat.isListening ? "animate-pulse" : ""
-                    }`}
-                    strokeWidth={2.2}
-                  />
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gray-600 dark:text-gray-300">
-                    Voice call active
-                  </p>
-                  <span className="rounded-full bg-blue-100 px-2 py-1 text-[11px] font-semibold text-blue-700 dark:bg-blue-900 dark:text-blue-100">
-                    {voiceCallStatus}
-                  </span>
-                </div>
-                <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
-                  {voiceChat.isConnecting
-                    ? "Connecting to LiveKit..."
-                    : voiceChat.isSpeaking
-                      ? "Assistant is speaking."
-                      : voiceChat.isListening
-                        ? "Listening for your next phrase."
-                        : voiceCallStatus === "Preparing"
-                          ? "Preparing the workspace assistant..."
-                          : "Speak normally and the assistant will respond in the same conversation."}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  void toggleCallMode()
-                }}
-                disabled={isCallTransitioning}
-                className="rounded-full border border-gray-200 bg-white p-2 text-gray-600 transition hover:bg-gray-100 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
-                aria-label="End voice call"
-                title="End voice call"
-              >
-                <PhoneOff className="h-5 w-5" strokeWidth={2.2} />
-              </button>
-            </div>
-            <div className="mt-4 rounded-2xl border border-dashed border-blue-200 bg-white/80 px-4 py-3 dark:border-blue-900 dark:bg-gray-950/70">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
-                Voice transcript
-              </p>
-              {voiceConversationEntries.length > 0 ? (
-                <div className="mt-3 space-y-2">
-                  {voiceConversationEntries.map((entry, index) => (
-                    <div
-                      key={`${entry.timestamp}-${index}`}
-                      className={`rounded-2xl px-3 py-2 text-sm leading-6 ${
-                        entry.speaker === "user"
-                          ? "ml-auto max-w-[92%] bg-blue-500 text-gray-50"
-                          : "mr-auto max-w-[92%] bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100"
-                      }`}
-                    >
-                      <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] opacity-75">
-                        {entry.speaker === "user" ? "You" : "Assistant"}
-                      </p>
-                      <p>{entry.text}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : voiceLiveTranscript ? (
-                <p className="mt-1 text-sm leading-6 text-gray-800 dark:text-gray-100">{voiceLiveTranscript}</p>
-              ) : (
-                <p className="mt-1 text-sm leading-6 text-gray-500 dark:text-gray-400">
-                  Your voice conversation will appear here.
-                </p>
-              )}
-            </div>
-          </div>
-        ) : null}
         {messages.length === 0 ? (
           <div className="text-center h-full flex flex-col items-center justify-center text-gray-500">
             <ChatAvatar role="assistant" userInitials={userIdentity.initials} className="mb-3 h-14 w-14" />
@@ -1338,7 +1261,7 @@ export default function AgentChat({
                   <div key={m.id} className="mb-8 flex items-end justify-start gap-3">
                     <ChatAvatar role="assistant" userInitials={userIdentity.initials} />
                     <div
-                      className={`max-w-[95%] ${style.color} border text-gray-700 dark:text-gray-100 rounded-2xl rounded-bl-none shadow-lg px-4 py-4 ${
+                      className={`max-w-[95%] ${style.color} border text-gray-700 rounded-2xl rounded-bl-none shadow-lg px-4 py-4 ${
                         isInteractionDisabled ? "opacity-60" : ""
                       }`}
                     >
@@ -1351,11 +1274,11 @@ export default function AgentChat({
                         {isInteractionDisabled ? "Response Sent" : "Awaiting Confirmation"}
                       </div>
                       <div className="space-y-3">
-                        <p className="font-medium text-gray-700 dark:text-gray-100 text-sm">
+                        <p className="font-medium text-gray-700 text-sm">
                           {asText(data.description) || asText(data.title) || "Please review this request."}
                         </p>
                         {asText(data.details) && (
-                          <p className="text-xs text-gray-600 dark:text-gray-300 bg-white/50 p-2 rounded-lg">{asText(data.details)}</p>
+                          <p className="text-xs text-gray-600 bg-white/50 p-2 rounded-lg">{asText(data.details)}</p>
                         )}
                         {!isInteractionDisabled && (
                           <button
@@ -1380,7 +1303,7 @@ export default function AgentChat({
                 <div key={m.id} className="mb-8 flex items-end justify-start gap-3">
                   <ChatAvatar role="assistant" userInitials={userIdentity.initials} />
                   <div
-                      className={`max-w-[95%] ${style.color} border text-gray-700 dark:text-gray-100 rounded-2xl rounded-bl-none shadow-lg px-4 py-4 ${
+                      className={`max-w-[95%] ${style.color} border text-gray-700 rounded-2xl rounded-bl-none shadow-lg px-4 py-4 ${
                         isInteractionDisabled ? "opacity-60" : ""
                       }`}
                     >
@@ -1420,7 +1343,7 @@ export default function AgentChat({
                   }`}
                 >
                   <div
-                    className={`font-semibold text-xs mb-3 flex items-center justify-between ${isUserMessage ? "text-blue-100" : "text-gray-400"}`}
+                    className={`font-semibold text-xs mb-3 flex items-center justify-between ${isUserMessage ? "text-blue-100" : "text-gray-500"}`}
                   >
                     <div className="flex items-center gap-2">
                       {copiedMessageId === m.id && (
@@ -1433,9 +1356,11 @@ export default function AgentChat({
                   </div>
                   {interactionResponseSummary ? (
                     <div className="space-y-1">
-                      <p className="text-base font-semibold text-gray-100">{interactionResponseSummary.title}</p>
+                      <p className={`text-base font-semibold ${isUserMessage ? "text-gray-50" : "text-gray-100"}`}>
+                        {interactionResponseSummary.title}
+                      </p>
                       {interactionResponseSummary.detail ? (
-                        <p className={`text-sm leading-6 ${isUserMessage ? "text-blue-50" : "text-gray-200"}`}>
+                        <p className={`text-sm leading-6 ${isUserMessage ? "text-blue-50" : "text-gray-300"}`}>
                           {interactionResponseSummary.detail}
                         </p>
                       ) : null}
@@ -1460,14 +1385,90 @@ export default function AgentChat({
         {pendingCount > 0 && (
           <div className="mb-4 flex items-end justify-start gap-3">
             <ChatAvatar role="assistant" userInitials={userIdentity.initials} />
-            <div className="bg-white text-gray-800 dark:text-gray-100 rounded-2xl rounded-bl-none px-4 py-3 max-w-[80%] shadow-sm border border-gray-100 dark:bg-gray-900 dark:border-gray-700">
+            <div className="bg-white text-gray-800 rounded-2xl rounded-bl-none px-4 py-3 max-w-[80%] shadow-sm border border-gray-100">
               <div className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin text-gray-700 dark:text-gray-300" aria-hidden />
+                <Loader2 className="h-4 w-4 animate-spin text-gray-700" aria-hidden />
                 <span>Assistant is processing...</span>
               </div>
             </div>
           </div>
         )}
+
+        {isCallModeActive ? (
+          <div className="mb-4 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <AudioLines
+                    className={`h-5 w-5 text-blue-700 ${
+                      voiceChat.isSpeaking || voiceChat.isListening ? "animate-pulse" : ""
+                    }`}
+                    strokeWidth={2.2}
+                  />
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gray-600">
+                    Voice call active
+                  </p>
+                  <span className="rounded-full bg-blue-100 px-2 py-1 text-[11px] font-semibold text-blue-700">
+                    {voiceCallStatus}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm text-gray-700">
+                  {voiceChat.isConnecting
+                    ? "Connecting to LiveKit..."
+                    : voiceChat.isSpeaking
+                      ? "Assistant is speaking."
+                      : voiceChat.isListening
+                        ? "Listening for your next phrase."
+                        : voiceCallStatus === "Preparing"
+                          ? "Preparing the workspace assistant..."
+                          : "Speak normally and the assistant will respond in this chat."}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  void toggleCallMode()
+                }}
+                disabled={isCallTransitioning}
+                className="rounded-full border border-gray-200 bg-white p-2 text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
+                aria-label="End voice call"
+                title="End voice call"
+              >
+                <PhoneOff className="h-5 w-5" strokeWidth={2.2} />
+              </button>
+            </div>
+            <div className="mt-4 rounded-2xl border border-dashed border-blue-200 bg-white/80 px-4 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
+                Voice transcript
+              </p>
+              {voiceConversationEntries.length > 0 ? (
+                <div className="mt-3 space-y-2">
+                  {voiceConversationEntries.map((entry, index) => (
+                    <div
+                      key={`${entry.timestamp}-${index}`}
+                      className={`rounded-2xl px-3 py-2 text-sm leading-6 ${
+                        entry.speaker === "user"
+                          ? "ml-auto max-w-[92%] bg-blue-500 text-gray-50"
+                          : "mr-auto max-w-[92%] bg-gray-100 text-gray-900"
+                      }`}
+                    >
+                      <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] opacity-75">
+                        {entry.speaker === "user" ? "You" : "Assistant"}
+                      </p>
+                      <p>{entry.text}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : voiceLiveTranscript ? (
+                <p className="mt-1 text-sm leading-6 text-gray-800">{voiceLiveTranscript}</p>
+              ) : (
+                <p className="mt-1 text-sm leading-6 text-gray-500">
+                  Your voice conversation will appear here.
+                </p>
+              )}
+            </div>
+          </div>
+        ) : null}
 
         {!isAtBottom && unreadCount > 0 && (
           <button
@@ -1657,7 +1658,7 @@ export default function AgentChat({
                   <a
                     href={exportDownload.href}
                     download={exportDownload.filename}
-                    className="inline-flex flex-1 items-center justify-center rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-gray-50 transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
+                    className="inline-flex flex-1 items-center justify-center rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-gray-50 transition hover:bg-blue-700"
                   >
                     Download {exportDownload.kind.toUpperCase()}
                   </a>

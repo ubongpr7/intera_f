@@ -249,9 +249,9 @@ function WidgetCard({
   children: ReactNode
 }) {
   return (
-    <section className="rounded-[24px] border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-4 text-gray-700 dark:text-gray-200 shadow-[0_18px_44px_-34px_rgba(15,23,42,0.28)]">
-      {title ? <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{title}</h4> : null}
-      {subtitle ? <p className="mt-1 text-xs leading-5 text-gray-500 dark:text-gray-400">{subtitle}</p> : null}
+    <section className="rounded-[24px] border border-gray-200 bg-white p-4 text-gray-700 shadow-[0_18px_44px_-34px_rgba(15,23,42,0.28)]">
+      {title ? <h4 className="text-sm font-semibold text-gray-900">{title}</h4> : null}
+      {subtitle ? <p className="mt-1 text-xs leading-5 text-gray-500">{subtitle}</p> : null}
       <div className={title || subtitle ? "mt-4" : ""}>{children}</div>
     </section>
   )
@@ -298,7 +298,7 @@ function InsightActionForm({
 
         return (
           <label key={name} className="block">
-            <span className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400 dark:text-gray-500">
+            <span className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-gray-500">
               {label}
             </span>
             {type === "select" ? (
@@ -306,7 +306,7 @@ function InsightActionForm({
                 required={required}
                 value={values[name] ?? ""}
                 onChange={(event) => setValues((current) => ({ ...current, [name]: event.target.value }))}
-                className="w-full rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/70 px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 outline-none ring-0 transition focus:border-blue-400"
+                className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 outline-none ring-0 transition focus:border-blue-400"
               >
                 <option value="">{asString(field.placeholder) || `Select ${label}`}</option>
                 {options.map((option) => (
@@ -322,7 +322,7 @@ function InsightActionForm({
                 value={values[name] ?? ""}
                 placeholder={asString(field.placeholder)}
                 onChange={(event) => setValues((current) => ({ ...current, [name]: event.target.value }))}
-                className="w-full rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/70 px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 outline-none ring-0 transition focus:border-blue-400"
+                className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 outline-none ring-0 transition focus:border-blue-400"
               />
             ) : (
               <input
@@ -331,7 +331,7 @@ function InsightActionForm({
                 value={values[name] ?? ""}
                 placeholder={asString(field.placeholder)}
                 onChange={(event) => setValues((current) => ({ ...current, [name]: event.target.value }))}
-                className="w-full rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/70 px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 outline-none ring-0 transition focus:border-blue-400"
+                className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 outline-none ring-0 transition focus:border-blue-400"
               />
             )}
           </label>
@@ -362,9 +362,9 @@ function renderWidget(
       <WidgetCard key={`${type}-${index}`} title={title} subtitle={subtitle}>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {items.map((item, itemIndex) => (
-            <div key={`${title}-${itemIndex}`} className="rounded-[20px] bg-gray-50 dark:bg-gray-900/70 px-4 py-3">
-              <p className="text-xs font-medium uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400 dark:text-gray-500">{asString(item.label) || `Metric ${itemIndex + 1}`}</p>
-              <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">
+            <div key={`${title}-${itemIndex}`} className="rounded-[20px] bg-gray-50 px-4 py-3">
+              <p className="text-xs font-medium uppercase tracking-[0.14em] text-gray-500">{asString(item.label) || `Metric ${itemIndex + 1}`}</p>
+              <p className="mt-2 text-2xl font-semibold text-gray-900">
                 {formatMetricValue(item.value, asString(item.unit) || undefined, {
                   explicitFormat: item.format ?? item.type ?? item.value_format ?? widget.value_format,
                   title,
@@ -373,7 +373,7 @@ function renderWidget(
                   currencyCode: item.currency_code ?? item.currency ?? widget.currency_code ?? widget.currency,
                 })}
               </p>
-              {asString(item.detail) ? <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500">{asString(item.detail)}</p> : null}
+              {asString(item.detail) ? <p className="mt-1 text-xs text-gray-500">{asString(item.detail)}</p> : null}
             </div>
           ))}
         </div>
@@ -412,8 +412,8 @@ function renderWidget(
                 <ChartTooltipContent
                   formatter={(value, name) => (
                     <>
-                      <span className="text-gray-500 dark:text-gray-400 dark:text-gray-500">{String(name)}</span>
-                      <span className="font-mono font-medium tabular-nums text-gray-900 dark:text-gray-100">
+                      <span className="text-gray-500">{String(name)}</span>
+                      <span className="font-mono font-medium tabular-nums text-gray-900">
                         {formatScalarValue(value, {
                           explicitFormat: yFormat,
                           title,
@@ -452,12 +452,12 @@ function renderWidget(
         </ChartContainer>
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           {data.map((item, itemIndex) => (
-            <div key={`${title}-${itemIndex}`} className="flex items-center justify-between rounded-2xl bg-gray-50 dark:bg-gray-900/70 px-3 py-2 text-sm">
+            <div key={`${title}-${itemIndex}`} className="flex items-center justify-between rounded-2xl bg-gray-50 px-3 py-2 text-sm">
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: palette[itemIndex % palette.length] }} />
-                <span className="text-gray-700 dark:text-gray-200">{asString(item[labelKey])}</span>
+                <span className="text-gray-700">{asString(item[labelKey])}</span>
               </div>
-              <span className="font-medium text-gray-900 dark:text-gray-100">
+              <span className="font-medium text-gray-900">
                 {formatScalarValue(item[valueKey], {
                   explicitFormat: widget.value_format ?? widget.format,
                   title,
@@ -523,8 +523,8 @@ function renderWidget(
                 <ChartTooltipContent
                   formatter={(value, name) => (
                     <>
-                      <span className="text-gray-500 dark:text-gray-400 dark:text-gray-500">{String(name)}</span>
-                      <span className="font-mono font-medium tabular-nums text-gray-900 dark:text-gray-100">
+                      <span className="text-gray-500">{String(name)}</span>
+                      <span className="font-mono font-medium tabular-nums text-gray-900">
                         {formatScalarValue(value, {
                           explicitFormat: yFormat,
                           title,
@@ -546,7 +546,7 @@ function renderWidget(
         {series.length ? (
           <div className="mt-3 flex flex-wrap gap-2">
             {renderedSeries.map((item) => (
-              <span key={item.key} className="inline-flex items-center gap-2 rounded-full bg-gray-50 dark:bg-gray-900/70 px-3 py-1 text-xs font-medium text-gray-600 dark:text-gray-300">
+              <span key={item.key} className="inline-flex items-center gap-2 rounded-full bg-gray-50 px-3 py-1 text-xs font-medium text-gray-600">
                 <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
                 {item.label}
               </span>
@@ -563,9 +563,9 @@ function renderWidget(
     return (
       <WidgetCard key={`${type}-${index}`} title={title || asString(metric.label)} subtitle={subtitle}>
         <div className="grid gap-4 md:grid-cols-[180px,1fr]">
-          <div className="rounded-[20px] bg-gray-50 dark:bg-gray-900/70 px-4 py-3">
-            <p className="text-xs font-medium uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400 dark:text-gray-500">{asString(metric.label) || "Metric"}</p>
-            <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">
+          <div className="rounded-[20px] bg-gray-50 px-4 py-3">
+            <p className="text-xs font-medium uppercase tracking-[0.14em] text-gray-500">{asString(metric.label) || "Metric"}</p>
+            <p className="mt-2 text-2xl font-semibold text-gray-900">
               {formatMetricValue(metric.value, asString(metric.unit) || undefined, {
                 explicitFormat: metric.format ?? metric.type ?? metric.value_format ?? widget.value_format,
                 title,
@@ -574,7 +574,7 @@ function renderWidget(
                 currencyCode: metric.currency_code ?? metric.currency ?? widget.currency_code ?? widget.currency,
               })}
             </p>
-            {asString(metric.detail) ? <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500">{asString(metric.detail)}</p> : null}
+            {asString(metric.detail) ? <p className="mt-1 text-xs text-gray-500">{asString(metric.detail)}</p> : null}
           </div>
           <ChartContainer config={chartConfig} className="h-36 w-full">
             <LineChart data={points}>
@@ -583,8 +583,8 @@ function renderWidget(
                   <ChartTooltipContent
                     formatter={(value, name) => (
                       <>
-                        <span className="text-gray-500 dark:text-gray-400 dark:text-gray-500">{String(name)}</span>
-                        <span className="font-mono font-medium tabular-nums text-gray-900 dark:text-gray-100">
+                        <span className="text-gray-500">{String(name)}</span>
+                        <span className="font-mono font-medium tabular-nums text-gray-900">
                           {formatScalarValue(value, {
                             explicitFormat: widget.y_format ?? widget.value_format ?? widget.format,
                             title,
@@ -616,9 +616,9 @@ function renderWidget(
             const imageUrl = asString(item.image_url) || productImageFallback(item)
             const hideValue = Boolean(item.hide_value)
             return (
-            <div key={`${title}-${itemIndex}`} className="flex items-start justify-between gap-3 rounded-[20px] bg-gray-50 dark:bg-gray-900/70 px-4 py-3">
+            <div key={`${title}-${itemIndex}`} className="flex items-start justify-between gap-3 rounded-[20px] bg-gray-50 px-4 py-3">
               <div className="flex min-w-0 gap-3">
-                <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white dark:bg-gray-950 text-xs font-semibold text-gray-600 dark:text-gray-300">
+                <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-xs font-semibold text-gray-600">
                   {itemIndex + 1}
                 </span>
                 {imageUrl ? (
@@ -626,11 +626,11 @@ function renderWidget(
                   <img src={imageUrl} alt={asString(item.label) || asString(item.title) || "Item"} className="h-14 w-14 shrink-0 rounded-2xl object-cover" />
                 ) : null}
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{asString(item.label) || asString(item.title) || "Item"}</p>
-                  {asString(item.detail) ? <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500">{asString(item.detail)}</p> : null}
+                  <p className="truncate text-sm font-semibold text-gray-900">{asString(item.label) || asString(item.title) || "Item"}</p>
+                  {asString(item.detail) ? <p className="mt-1 text-xs text-gray-500">{asString(item.detail)}</p> : null}
                   {barcodeValue ? (
                     <div className="mt-2">
-                      <span className="inline-flex rounded-full bg-white dark:bg-gray-950 px-2.5 py-1 text-[11px] font-medium text-gray-600 dark:text-gray-300">
+                      <span className="inline-flex rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-gray-600">
                         Barcode: {barcodeValue}
                       </span>
                     </div>
@@ -639,7 +639,7 @@ function renderWidget(
               </div>
               {!hideValue ? (
                 <div className="shrink-0 text-right">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  <p className="text-sm font-semibold text-gray-900">
                     {formatScalarValue(item.value ?? item.count, {
                       explicitFormat: item.format ?? item.type ?? item.value_format ?? widget.value_format,
                       title,
@@ -649,7 +649,7 @@ function renderWidget(
                     })}
                   </p>
                   {item.secondary_value !== undefined && item.secondary_value !== null && `${item.secondary_value}`.trim() ? (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500">
+                    <p className="text-xs text-gray-500">
                       {formatScalarValue(item.secondary_value, {
                         explicitFormat: item.secondary_format ?? item.secondary_value_format ?? widget.secondary_value_format,
                         title,
@@ -684,15 +684,15 @@ function renderWidget(
                 <CheckCircle2 className="h-4 w-4 text-emerald-600" />
               )
             return (
-              <div key={`${title}-${itemIndex}`} className="rounded-[20px] border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/70 px-4 py-3">
+              <div key={`${title}-${itemIndex}`} className="rounded-[20px] border border-gray-200 bg-gray-50 px-4 py-3">
                 <div className="flex items-start gap-2">
                   {icon}
                   <div>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{asString(item.label) || "Risk"}</p>
+                    <p className="text-sm font-semibold text-gray-900">{asString(item.label) || "Risk"}</p>
                     {asString(item.detail) || asString(item.description) ? (
-                      <p className="mt-1 text-xs leading-5 text-gray-600 dark:text-gray-300">{asString(item.detail) || asString(item.description)}</p>
+                      <p className="mt-1 text-xs leading-5 text-gray-600">{asString(item.detail) || asString(item.description)}</p>
                     ) : null}
-                    {asString(item.next_action) ? <p className="mt-2 text-xs font-medium text-gray-900 dark:text-gray-100">Next: {asString(item.next_action)}</p> : null}
+                    {asString(item.next_action) ? <p className="mt-2 text-xs font-medium text-gray-900">Next: {asString(item.next_action)}</p> : null}
                   </div>
                 </div>
               </div>
@@ -729,7 +729,7 @@ function renderWidget(
             <thead>
               <tr>
                 {normalizedColumns.map((column) => (
-                  <th key={column.key} className="px-3 py-1 text-left text-xs font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400 dark:text-gray-500">
+                  <th key={column.key} className="px-3 py-1 text-left text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">
                     {column.label}
                   </th>
                 ))}
@@ -737,9 +737,9 @@ function renderWidget(
             </thead>
             <tbody>
               {rows.map((row, rowIndex) => (
-                <tr key={`${title}-${rowIndex}`} className="rounded-2xl bg-gray-50 dark:bg-gray-900/70">
+                <tr key={`${title}-${rowIndex}`} className="rounded-2xl bg-gray-50">
                   {normalizedColumns.map((column) => (
-                    <td key={`${rowIndex}-${column.key}`} className="px-3 py-3 text-gray-700 dark:text-gray-200">
+                    <td key={`${rowIndex}-${column.key}`} className="px-3 py-3 text-gray-700">
                       {formatScalarValue(row[column.key], {
                         explicitFormat: column.format,
                         title,
@@ -769,15 +769,15 @@ function renderWidget(
                 <span className="mt-1 h-2.5 w-2.5 rounded-full bg-gray-900" />
                 {eventIndex < events.length - 1 ? <span className="mt-2 h-full w-px bg-gray-200" /> : null}
               </div>
-              <div className="rounded-[20px] bg-gray-50 dark:bg-gray-900/70 px-4 py-3">
-                <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500">
+              <div className="rounded-[20px] bg-gray-50 px-4 py-3">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
                   <Clock3 className="h-3.5 w-3.5" />
                   <span>{asString(event.timestamp) || asString(event.occurred_at)}</span>
-                  {asString(event.severity) ? <span className="rounded-full bg-white dark:bg-gray-950 px-2 py-0.5 font-medium text-gray-700 dark:text-gray-200">{asString(event.severity)}</span> : null}
+                  {asString(event.severity) ? <span className="rounded-full bg-white px-2 py-0.5 font-medium text-gray-700">{asString(event.severity)}</span> : null}
                 </div>
-                <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-gray-100">{asString(event.title) || asString(event.event_name) || "Event"}</p>
+                <p className="mt-2 text-sm font-semibold text-gray-900">{asString(event.title) || asString(event.event_name) || "Event"}</p>
                 {asString(event.detail) || asString(event.summary) ? (
-                  <p className="mt-1 text-xs leading-5 text-gray-600 dark:text-gray-300">{asString(event.detail) || asString(event.summary)}</p>
+                  <p className="mt-1 text-xs leading-5 text-gray-600">{asString(event.detail) || asString(event.summary)}</p>
                 ) : null}
               </div>
             </div>
@@ -800,14 +800,14 @@ function renderWidget(
               ) : status === "current" || status === "in_progress" ? (
                 <TrendingUp className="h-4 w-4 text-blue-600" />
               ) : (
-                <Clock3 className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                <Clock3 className="h-4 w-4 text-gray-400" />
               )
             return (
-              <div key={`${title}-${stepIndex}`} className="flex items-start gap-3 rounded-[20px] bg-gray-50 dark:bg-gray-900/70 px-4 py-3">
+              <div key={`${title}-${stepIndex}`} className="flex items-start gap-3 rounded-[20px] bg-gray-50 px-4 py-3">
                 {icon}
                 <div>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{asString(step.label) || `Step ${stepIndex + 1}`}</p>
-                  {asString(step.detail) ? <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500">{asString(step.detail)}</p> : null}
+                  <p className="text-sm font-semibold text-gray-900">{asString(step.label) || `Step ${stepIndex + 1}`}</p>
+                  {asString(step.detail) ? <p className="mt-1 text-xs text-gray-500">{asString(step.detail)}</p> : null}
                 </div>
               </div>
             )
@@ -828,9 +828,9 @@ function renderWidget(
   if (type === "confirmation_card") {
     return (
       <WidgetCard key={`${type}-${index}`} title={title} subtitle={subtitle}>
-        <div className="rounded-[20px] bg-gray-50 dark:bg-gray-900/70 px-4 py-4">
-          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{asString(widget.summary) || "Confirm this action."}</p>
-          {asString(widget.risk_level) ? <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500">Risk level: {asString(widget.risk_level)}</p> : null}
+        <div className="rounded-[20px] bg-gray-50 px-4 py-4">
+          <p className="text-sm font-semibold text-gray-900">{asString(widget.summary) || "Confirm this action."}</p>
+          {asString(widget.risk_level) ? <p className="mt-1 text-xs text-gray-500">Risk level: {asString(widget.risk_level)}</p> : null}
           <div className="mt-4 flex flex-wrap gap-2">
             <button
               type="button"
@@ -851,7 +851,7 @@ function renderWidget(
             </button>
             <button
               type="button"
-              className="rounded-full border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 transition hover:bg-gray-50 dark:bg-gray-900/70"
+              className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
               onClick={() =>
                 onSend(
                   JSON.stringify(
@@ -876,18 +876,18 @@ function renderWidget(
     const entity = asRecord(widget.entity) ?? {}
     return (
       <WidgetCard key={`${type}-${index}`} title={title} subtitle={subtitle}>
-        <div className="flex items-start gap-4 rounded-[20px] bg-gray-50 dark:bg-gray-900/70 px-4 py-4">
+        <div className="flex items-start gap-4 rounded-[20px] bg-gray-50 px-4 py-4">
           {asString(entity.image_url) ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={asString(entity.image_url)} alt={asString(entity.title) || "Entity"} className="h-20 w-20 rounded-2xl object-cover" />
           ) : (
-            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white dark:bg-gray-950 text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400 dark:text-gray-500">
+            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
               {asString(entity.kind) || "Item"}
             </div>
           )}
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{asString(entity.title) || asString(entity.name) || "Entity"}</p>
-            {asString(entity.subtitle) ? <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500">{asString(entity.subtitle)}</p> : null}
+            <p className="text-sm font-semibold text-gray-900">{asString(entity.title) || asString(entity.name) || "Entity"}</p>
+            {asString(entity.subtitle) ? <p className="mt-1 text-xs text-gray-500">{asString(entity.subtitle)}</p> : null}
             {asArray(entity.meta).length ? (
               <div className="mt-3 flex flex-wrap gap-2">
                 {asArray(entity.meta).map((meta, metaIndex) => {
@@ -896,7 +896,7 @@ function renderWidget(
                     return null
                   }
                   return (
-                    <span key={`${title}-${metaIndex}`} className="rounded-full bg-white dark:bg-gray-950 px-2.5 py-1 text-xs text-gray-600 dark:text-gray-300">
+                    <span key={`${title}-${metaIndex}`} className="rounded-full bg-white px-2.5 py-1 text-xs text-gray-600">
                       {asString(record.label)}: {asString(record.value) || formatNumber(record.value)}
                     </span>
                   )
@@ -911,7 +911,7 @@ function renderWidget(
 
   return (
     <WidgetCard key={`${type}-${index}`} title={title || "Unsupported widget"} subtitle={subtitle}>
-      <pre className="overflow-x-auto rounded-[20px] bg-gray-50 dark:bg-gray-900/70 p-3 text-xs text-gray-700 dark:text-gray-200">
+      <pre className="overflow-x-auto rounded-[20px] bg-gray-50 p-3 text-xs text-gray-700">
         {JSON.stringify(widget, null, 2)}
       </pre>
     </WidgetCard>
@@ -930,16 +930,16 @@ export default function InsightWidgetRenderer({ payload, onSend }: InsightRender
       {summary || explanation || insights.length ? (
         <WidgetCard>
           <div className="space-y-3">
-            {summary ? <p className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">{summary}</p> : null}
-            {explanation ? <p className="text-sm leading-6 text-gray-600 dark:text-gray-300">{explanation}</p> : null}
+            {summary ? <p className="text-sm font-semibold leading-6 text-gray-900">{summary}</p> : null}
+            {explanation ? <p className="text-sm leading-6 text-gray-600">{explanation}</p> : null}
             {insights.length ? (
               <div className="grid gap-3 md:grid-cols-2">
                 {insights.map((insight, index) => (
-                  <div key={`insight-${index}`} className="rounded-[20px] bg-gray-50 dark:bg-gray-900/70 px-4 py-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400 dark:text-gray-500">
+                  <div key={`insight-${index}`} className="rounded-[20px] bg-gray-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
                       {asString(insight.title) || `Insight ${index + 1}`}
                     </p>
-                    <p className="mt-2 text-sm leading-6 text-gray-700 dark:text-gray-200">
+                    <p className="mt-2 text-sm leading-6 text-gray-700">
                       {asString(insight.detail) || asString(insight.summary) || asString(insight.description)}
                     </p>
                   </div>
@@ -959,7 +959,7 @@ export default function InsightWidgetRenderer({ payload, onSend }: InsightRender
               <button
                 key={`suggested-${index}`}
                 type="button"
-                className="rounded-full border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 transition hover:bg-gray-50 dark:bg-gray-900/70"
+                className="rounded-full border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
                 onClick={() =>
                   onSend(
                     JSON.stringify(
