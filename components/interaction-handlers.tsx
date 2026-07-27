@@ -35,9 +35,10 @@ interface InteractionHandlerProps {
   disabled?: boolean
 }
 
-export function MultipleChoiceHandler({ data, onResponse, compact = false }: InteractionHandlerProps) {
+export function MultipleChoiceHandler({ data, onResponse, compact = false, disabled = false }: InteractionHandlerProps) {
   const [selectedOptions, setSelectedOptions] = useState<string[]>([])
   const [additionalInput, setAdditionalInput] = useState("")
+  const [hasSubmitted, setHasSubmitted] = useState(false)
   const getOptionValue = (option: any, index: number): string => {
     const rawValue = option?.value ?? option?.id ?? option?.label ?? option?.title ?? index
     return String(rawValue)
@@ -45,8 +46,16 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
   const visibleOptions = Array.isArray(data.options)
     ? data.options
     : []
+  const isLocked = disabled || hasSubmitted
+  const allowSelectAll = Boolean(data.multiple) && visibleOptions.length > 1
+  const allOptionValues = visibleOptions.map((option: any, index: number) => getOptionValue(option, index))
+  const hasSelectedAll =
+    allOptionValues.length > 0 && allOptionValues.every((value: string) => selectedOptions.includes(value))
 
   const handleOptionToggle = (value: string) => {
+    if (isLocked) {
+      return
+    }
     if (data.multiple) {
       setSelectedOptions((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]))
     } else {
@@ -54,7 +63,18 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
     }
   }
 
+  const handleSelectAllToggle = () => {
+    if (isLocked || !allowSelectAll) {
+      return
+    }
+    setSelectedOptions(hasSelectedAll ? [] : allOptionValues)
+  }
+
   const handleSubmit = () => {
+    if (isLocked || selectedOptions.length === 0) {
+      return
+    }
+    setHasSubmitted(true)
     onResponse({
       type: "multiple_choice_response",
       selected: data.multiple ? selectedOptions : selectedOptions[0],
@@ -71,6 +91,20 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
         </div>
 
         <div className="space-y-2">
+          {allowSelectAll && (
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleSelectAllToggle}
+                disabled={isLocked}
+                className="text-xs"
+              >
+                {hasSelectedAll ? "Clear all" : "Select all"}
+              </Button>
+            </div>
+          )}
           {visibleOptions.map((option: any, index: number) => {
             const optionValue = getOptionValue(option, index)
             return (
@@ -78,10 +112,14 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
                 key={`${optionValue}-${index}`}
                 className={`rounded border p-2 text-sm text-gray-900 transition-colors ${
                   selectedOptions.includes(optionValue)
-                    ? "cursor-pointer border-blue-300 bg-blue-100"
-                    : "cursor-pointer border-gray-300 bg-white hover:border-gray-400"
-                }`}
-                onClick={() => handleOptionToggle(optionValue)}
+                    ? "border-blue-300 bg-blue-100"
+                    : "border-gray-300 bg-white hover:border-gray-400"
+                } ${isLocked ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+                onClick={() => {
+                  if (!isLocked) {
+                    handleOptionToggle(optionValue)
+                  }
+                }}
               >
                 <div className="flex items-center justify-between">
                   <span className="font-medium">{option.label}</span>
@@ -102,11 +140,12 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
               placeholder="Add any additional context..."
               rows={2}
               className="border-gray-300 bg-white text-sm text-gray-800"
+              disabled={isLocked}
             />
           </div>
         )}
 
-        <Button onClick={handleSubmit} disabled={selectedOptions.length === 0} size="sm" className="w-full">
+        <Button onClick={handleSubmit} disabled={isLocked || selectedOptions.length === 0} size="sm" className="w-full">
           Submit Selection
         </Button>
       </div>
@@ -123,6 +162,13 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
         <CardDescription className="text-gray-700">{data.description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {allowSelectAll && (
+          <div className="flex justify-end">
+            <Button type="button" variant="outline" size="sm" onClick={handleSelectAllToggle} disabled={isLocked}>
+              {hasSelectedAll ? "Clear all" : "Select all"}
+            </Button>
+          </div>
+        )}
         <div className="space-y-2">
           {visibleOptions.map((option: any, index: number) => {
             const optionValue = getOptionValue(option, index)
@@ -131,10 +177,14 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
                 key={`${optionValue}-${index}`}
                 className={`rounded-lg border p-3 text-gray-900 transition-colors ${
                   selectedOptions.includes(optionValue)
-                    ? "cursor-pointer border-blue-300 bg-blue-100"
-                    : "cursor-pointer border-gray-300 bg-white hover:border-gray-400"
-                }`}
-                onClick={() => handleOptionToggle(optionValue)}
+                    ? "border-blue-300 bg-blue-100"
+                    : "border-gray-300 bg-white hover:border-gray-400"
+                } ${isLocked ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+                onClick={() => {
+                  if (!isLocked) {
+                    handleOptionToggle(optionValue)
+                  }
+                }}
               >
                 <div className="flex items-center justify-between">
                   <span className="font-medium">{option.label}</span>
@@ -155,12 +205,13 @@ export function MultipleChoiceHandler({ data, onResponse, compact = false }: Int
               placeholder="Add any additional context or instructions..."
               rows={3}
               className="border-gray-300 bg-white text-sm text-gray-800"
+              disabled={isLocked}
             />
           </div>
         )}
 
         <div className="flex gap-2 pt-4">
-          <Button onClick={handleSubmit} disabled={selectedOptions.length === 0} className="flex-1">
+          <Button onClick={handleSubmit} disabled={isLocked || selectedOptions.length === 0} className="flex-1">
             Submit Selection
           </Button>
         </div>

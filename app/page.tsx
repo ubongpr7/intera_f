@@ -1310,7 +1310,7 @@ export default function HomePage() {
               </Button>
               <Button
                 asChild
-                variant="outline"
+                variant="secondary"
                 
               >
                 <Link href="/accounts/signin">Sign in</Link>

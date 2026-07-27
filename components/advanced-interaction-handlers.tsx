@@ -30,10 +30,12 @@ interface AdvancedInteractionProps {
   disabled?: boolean
 }
 
-export function SearchableSelectionHandler({ data, onResponse }: AdvancedInteractionProps) {
+export function SearchableSelectionHandler({ data, onResponse, disabled = false }: AdvancedInteractionProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedItems, setSelectedItems] = useState<string[]>([])
   const [additionalInput, setAdditionalInput] = useState("")
+  const [hasSubmitted, setHasSubmitted] = useState(false)
+  const isLocked = disabled || hasSubmitted
 
   const filteredItems = useMemo(() => {
     if (!searchTerm) return data.items
@@ -42,8 +44,14 @@ export function SearchableSelectionHandler({ data, onResponse }: AdvancedInterac
       data.search_fields.some((field: string) => item[field]?.toLowerCase().includes(searchTerm.toLowerCase())),
     )
   }, [searchTerm, data.items, data.search_fields])
+  const allowSelectAll = Boolean(data.multiple) && filteredItems.length > 1
+  const filteredItemIds = filteredItems.map((item: any) => item.id)
+  const hasSelectedAll = filteredItemIds.length > 0 && filteredItemIds.every((id: string) => selectedItems.includes(id))
 
   const handleItemToggle = (itemId: string) => {
+    if (isLocked) {
+      return
+    }
     if (data.multiple) {
       setSelectedItems((prev) =>
         prev.includes(itemId)
@@ -55,7 +63,29 @@ export function SearchableSelectionHandler({ data, onResponse }: AdvancedInterac
     }
   }
 
+  const handleSelectAllToggle = () => {
+    if (isLocked || !allowSelectAll) {
+      return
+    }
+    setSelectedItems((prev) => {
+      if (hasSelectedAll) {
+        return prev.filter((id) => !filteredItemIds.includes(id))
+      }
+      const merged = [...prev]
+      for (const itemId of filteredItemIds) {
+        if (!merged.includes(itemId)) {
+          merged.push(itemId)
+        }
+      }
+      return merged.slice(0, data.max_selections || merged.length)
+    })
+  }
+
   const handleSubmit = () => {
+    if (isLocked || selectedItems.length === 0) {
+      return
+    }
+    setHasSubmitted(true)
     onResponse({
       type: "searchable_selection_response",
       selected_items: selectedItems,
@@ -82,6 +112,7 @@ export function SearchableSelectionHandler({ data, onResponse }: AdvancedInterac
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
+            disabled={isLocked}
           />
         </div>
 
@@ -91,6 +122,14 @@ export function SearchableSelectionHandler({ data, onResponse }: AdvancedInterac
           {selectedItems.length > 0 && <span>{selectedItems.length} selected</span>}
         </div>
 
+        {allowSelectAll && (
+          <div className="flex justify-end">
+            <Button type="button" variant="outline" size="sm" onClick={handleSelectAllToggle} disabled={isLocked}>
+              {hasSelectedAll ? "Clear all" : "Select all"}
+            </Button>
+          </div>
+        )}
+
         {/* Items List */}
         <div className="max-h-96 overflow-y-auto space-y-2">
           {filteredItems.map((item: any) => (
@@ -98,8 +137,12 @@ export function SearchableSelectionHandler({ data, onResponse }: AdvancedInterac
               key={item.id}
               className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                 selectedItems.includes(item.id) ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-gray-300"
-              }`}
-              onClick={() => handleItemToggle(item.id)}
+              } ${isLocked ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+              onClick={() => {
+                if (!isLocked) {
+                  handleItemToggle(item.id)
+                }
+              }}
             >
               <div className="flex items-start gap-3">
                 { item.image && (
@@ -140,11 +183,12 @@ export function SearchableSelectionHandler({ data, onResponse }: AdvancedInterac
               value={additionalInput}
               onChange={(e) => setAdditionalInput(e.target.value)}
               placeholder="Add any additional context..."
+              disabled={isLocked}
             />
           </div>
         )}
 
-        <Button onClick={handleSubmit} disabled={selectedItems.length === 0} className="w-full">
+        <Button onClick={handleSubmit} disabled={isLocked || selectedItems.length === 0} className="w-full">
           Select {selectedItems.length} Item{selectedItems.length !== 1 ? "s" : ""}
         </Button>
       </CardContent>
@@ -152,11 +196,30 @@ export function SearchableSelectionHandler({ data, onResponse }: AdvancedInterac
   )
 }
 
-export function HierarchicalSelectionHandler({ data, onResponse }: AdvancedInteractionProps) {
+export function HierarchicalSelectionHandler({ data, onResponse, disabled = false }: AdvancedInteractionProps) {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(data.expand_all ? new Set() : new Set(["root"]))
   const [selectedItems, setSelectedItems] = useState<string[]>([])
+  const [hasSubmitted, setHasSubmitted] = useState(false)
+  const isLocked = disabled || hasSubmitted
+
+  const collectNodeIds = (node: any): string[] => {
+    if (!node || !node.id) {
+      return []
+    }
+    const childIds = Array.isArray(node.children)
+      ? node.children.flatMap((child: any) => collectNodeIds(child))
+      : []
+    return [node.id, ...childIds]
+  }
+
+  const selectableNodeIds = useMemo(() => collectNodeIds(data.tree_data), [data.tree_data])
+  const allowSelectAll = Boolean(data.multiple) && selectableNodeIds.length > 1
+  const hasSelectedAll = selectableNodeIds.length > 0 && selectableNodeIds.every((id) => selectedItems.includes(id))
 
   const toggleNode = (nodeId: string) => {
+    if (isLocked) {
+      return
+    }
     setExpandedNodes((prev) => {
       const newSet = new Set(prev)
       if (newSet.has(nodeId)) {
@@ -169,11 +232,21 @@ export function HierarchicalSelectionHandler({ data, onResponse }: AdvancedInter
   }
 
   const handleItemSelect = (nodeId: string) => {
+    if (isLocked) {
+      return
+    }
     if (data.multiple) {
       setSelectedItems((prev) => (prev.includes(nodeId) ? prev.filter((id) => id !== nodeId) : [...prev, nodeId]))
     } else {
       setSelectedItems([nodeId])
     }
+  }
+
+  const handleSelectAllToggle = () => {
+    if (isLocked || !allowSelectAll) {
+      return
+    }
+    setSelectedItems(hasSelectedAll ? [] : selectableNodeIds)
   }
 
   const renderNode = (node: any, level = 0) => {
@@ -190,14 +263,14 @@ export function HierarchicalSelectionHandler({ data, onResponse }: AdvancedInter
           style={{ marginLeft: `${level * 20}px` }}
         >
           {hasChildren ? (
-            <button onClick={() => toggleNode(node.id)} className="p-1">
+            <button onClick={() => toggleNode(node.id)} className="p-1" disabled={isLocked}>
               {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
             </button>
           ) : (
             <div className="w-6" />
           )}
 
-          <Checkbox checked={isSelected} onCheckedChange={() => handleItemSelect(node.id)} />
+          <Checkbox checked={isSelected} onCheckedChange={() => handleItemSelect(node.id)} disabled={isLocked} />
 
           <span className="flex-1">{node.name}</span>
 
@@ -214,6 +287,10 @@ export function HierarchicalSelectionHandler({ data, onResponse }: AdvancedInter
   }
 
   const handleSubmit = () => {
+    if (isLocked || selectedItems.length === 0) {
+      return
+    }
+    setHasSubmitted(true)
     onResponse({
       type: "hierarchical_selection_response",
       selected_items: selectedItems,
@@ -231,9 +308,16 @@ export function HierarchicalSelectionHandler({ data, onResponse }: AdvancedInter
         <CardDescription>{data.description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {allowSelectAll && (
+          <div className="flex justify-end">
+            <Button type="button" variant="outline" size="sm" onClick={handleSelectAllToggle} disabled={isLocked}>
+              {hasSelectedAll ? "Clear all" : "Select all"}
+            </Button>
+          </div>
+        )}
         <div className="max-h-96 overflow-y-auto border rounded-lg p-2">{renderNode(data.tree_data)}</div>
 
-        <Button onClick={handleSubmit} disabled={selectedItems.length === 0} className="w-full">
+        <Button onClick={handleSubmit} disabled={isLocked || selectedItems.length === 0} className="w-full">
           Select {selectedItems.length} Item{selectedItems.length !== 1 ? "s" : ""}
         </Button>
       </CardContent>
