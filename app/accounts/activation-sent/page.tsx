@@ -1,3 +1,4 @@
+import AuthSplitShell from "@/components/auth/AuthSplitShell";
 import ActivationSentCard from "@/components/auth/ActivationSentCard";
 
 export default async function ActivationSentPage({
@@ -12,5 +13,13 @@ export default async function ActivationSentPage({
     return <div>Invalid activation request</div>;
   }
 
-  return <ActivationSentCard email={normalizedEmail} nextPath={next?.trim()} />;
+  return (
+    <AuthSplitShell
+      eyebrow="Verify account"
+      title="Check your email"
+      description={`We sent an account activation link to ${normalizedEmail}. Open the email and activate your account to continue.`}
+    >
+      <ActivationSentCard email={normalizedEmail} nextPath={next?.trim()} />
+    </AuthSplitShell>
+  );
 }

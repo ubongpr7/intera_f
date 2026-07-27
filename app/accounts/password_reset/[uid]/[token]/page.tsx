@@ -1,3 +1,4 @@
+import AuthSplitShell from "@/components/auth/AuthSplitShell";
 import ResetPasswordConfirmForm from '@/components/auth/resetPasswordConfirmForm';
 
 type PasswordResetConfirmPageProps = {
@@ -11,11 +12,14 @@ export default async function PasswordResetConfirmPage({ params }: PasswordReset
   const { token, uid } = await params;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow-lg">
-        <h2 className="text-center text-3xl font-bold text-gray-900">Choose a new password</h2>
+    <AuthSplitShell
+      eyebrow="Account recovery"
+      title="Choose a new password"
+      description="Set a new password for your account and return to sign in."
+    >
+      <div className="w-full rounded-3xl border border-slate-200 bg-white p-8 shadow-[0_24px_70px_-40px_rgba(16,23,39,0.45)] dark:border-white/10 dark:bg-[#101727]">
         <ResetPasswordConfirmForm uid={uid} token={token} />
       </div>
-    </div>
+    </AuthSplitShell>
   );
 }

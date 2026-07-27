@@ -33,37 +33,35 @@ export default function ActivationSentCard({ email, nextPath }: ActivationSentCa
     : "/accounts/signin";
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
-      <Card className="w-full max-w-2xl shadow-xl shadow-gray-200/60">
-        <CardHeader className="space-y-4">
-          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
-            <MailCheck className="h-6 w-6" />
-          </div>
-          <div className="space-y-2">
-            <CardTitle className="text-3xl">Check your email</CardTitle>
-            <CardDescription className="text-base leading-7 text-gray-600">
-              We sent an account activation link to <span className="font-semibold text-gray-800">{email}</span>.
-              Open the email and click the activation button to finish setting up your account.
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4 text-sm leading-7 text-gray-600">
-          <p>You must activate your account from the email before you can sign in.</p>
-          {pendingNext ? (
-            <p>
-              After activation, sign in and you will continue to the page you were trying to reach.
-            </p>
-          ) : null}
-        </CardContent>
-        <CardFooter className="justify-end">
-          <Button asChild className="rounded-xl">
-            <Link href={signInHref}>
-              Go to sign in
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </Button>
-        </CardFooter>
-      </Card>
-    </div>
+    <Card className="w-full max-w-2xl border-slate-200 shadow-xl shadow-slate-200/60 dark:border-white/10 dark:bg-[#101727] dark:shadow-black/30">
+      <CardHeader className="space-y-4">
+        <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-700 dark:bg-[#3c83f7]/15 dark:text-[#98fcc2]">
+          <MailCheck className="h-6 w-6" />
+        </div>
+        <div className="space-y-2">
+          <CardTitle className="text-3xl text-[#101727] dark:text-white">Check your email</CardTitle>
+          <CardDescription className="text-base leading-7 text-gray-600 dark:text-slate-300">
+            We sent an account activation link to <span className="font-semibold text-gray-800 dark:text-white">{email}</span>.
+            Open the email and click the activation button to finish setting up your account.
+          </CardDescription>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4 text-sm leading-7 text-gray-600 dark:text-slate-300">
+        <p>You must activate your account from the email before you can sign in.</p>
+        {pendingNext ? (
+          <p>
+            After activation, sign in and you will continue to the page you were trying to reach.
+          </p>
+        ) : null}
+      </CardContent>
+      <CardFooter className="justify-end">
+        <Button asChild className="rounded-xl">
+          <Link href={signInHref}>
+            Go to sign in
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </Button>
+      </CardFooter>
+    </Card>
   );
 }
