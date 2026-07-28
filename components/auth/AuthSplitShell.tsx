@@ -99,7 +99,7 @@ export default function AuthSplitShell({
           <div className="w-full max-w-lg">
             <div className="mb-6 flex items-center justify-between lg:hidden">
               <Link href="/" aria-label="Go to Intera home" className="rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]">
-                <Image src={logoSrc} alt="Intera" width={360} height={108} className="h-14 w-auto max-w-[12rem] object-contain object-left" />
+                <Image src={logoSrc} alt="Intera" width={360} height={108} className="h-24 w-auto max-w-[12rem] object-contain object-left" />
               </Link>
               <span className="inline-flex items-center gap-2 rounded-full border border-[#3c83f7]/20 bg-[#3c83f7]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#3c83f7] dark:border-[#98fcc2]/20 dark:bg-[#98fcc2]/10 dark:text-[#98fcc2]">
                 <ShieldCheck className="h-3.5 w-3.5" />
