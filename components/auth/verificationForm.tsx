@@ -6,6 +6,7 @@ import { useResendCodeMutation, useVerifyCodeMutation } from '@/redux/features/a
 import { VerificationProps, VerifyFormData } from '../types/authForms';
 import { ErrorResponse, ResendError } from '../types/authResponse';
 import { useRouter } from 'nextjs-toploader/app'
+import { Loader2, MailCheck } from 'lucide-react';
 export default function VerificationForm({ email,redirectTo }: VerificationProps) {
   const [verifyCode, { isLoading, error }] = useVerifyCodeMutation();
   const [resendCode, { isLoading: isResending }] = useResendCodeMutation();
@@ -110,13 +111,16 @@ export default function VerificationForm({ email,redirectTo }: VerificationProps
     }
   };
   return (
-    <div className="max-w-md mx-auto mt-20 p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-6 text-center">Verify Your Email</h2>
+    <div className="mx-auto max-w-md">
+      <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50/70 p-4 text-center dark:border-blue-400/15 dark:bg-blue-400/10">
+        <MailCheck aria-hidden="true" className="mx-auto h-5 w-5 text-blue-600 dark:text-[#6ee7d2]" />
+        <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Enter the six-digit code sent to <span className="font-semibold text-slate-800 dark:text-white">{email}</span>.</p>
+      </div>
       
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" onPaste={handlePaste}>
         <input type="hidden" {...register('code')} />
         
-        <div className="flex justify-center space-x-2 mb-8">
+        <div className="flex justify-center gap-1.5 sm:gap-2 mb-8">
           {[...Array(6)].map((_, index) => (
             <input
               key={index}
@@ -126,7 +130,8 @@ export default function VerificationForm({ email,redirectTo }: VerificationProps
               value={codeValue[index] || ''}
               onChange={(e) => handleCodeChange(index, e.target.value)}
               ref={(el) => { if (el) inputsRef.current[index] = el; }}
-              className="w-12 h-12 bg-gray-50 text-center text-xl border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none"
+              aria-label={`Verification digit ${index + 1}`}
+              className="h-11 w-10 rounded-xl border border-slate-200 bg-slate-50 text-center text-lg font-semibold text-slate-900 transition focus:border-blue-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:ring-blue-400/15 sm:h-12 sm:w-12"
               autoFocus={index === 0 && !codeValue.length}
             />
           ))}
@@ -135,13 +140,13 @@ export default function VerificationForm({ email,redirectTo }: VerificationProps
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+          className="auth-button"
         >
-          {isLoading ? 'Verifying...' : 'Verify Account'}
+          {isLoading ? <><Loader2 className="h-4 w-4 animate-spin" /> Verifying...</> : 'Verify account'}
         </button>
 
         {error && (
-          <div className="mt-4 text-red-600 text-center">
+          <div role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-center text-sm text-red-700 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-200">
             {'data' in error ? ((error.data as { detail?: string; error?: string }).detail || (error.data as { error?: string }).error) : 'Verification failed'}
           </div>
         )}
@@ -151,7 +156,7 @@ export default function VerificationForm({ email,redirectTo }: VerificationProps
             type="button"
             onClick={handleResend}
             disabled={cooldown > 0 || isResending}
-            className="text-gray-900 hover:text-blue-800 disabled:text-gray-900 disabled:cursor-not-allowed"
+            className="auth-link text-sm disabled:cursor-not-allowed disabled:text-slate-400 dark:disabled:text-slate-500"
           >
             {cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend verification code'}
           </button>

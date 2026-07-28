@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { deleteCookie, getCookie } from "cookies-next";
 import { useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -42,8 +43,14 @@ export default function ActivationResultCard({ uid, token }: ActivationResultCar
   }, [isSuccess]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
-      <Card className="w-full max-w-2xl shadow-xl shadow-gray-200/60">
+    <div className="auth-page flex min-h-screen items-center justify-center px-4 py-8 sm:py-12">
+      <Card className="auth-card w-full max-w-xl overflow-hidden p-2 sm:p-3">
+        <div className="px-4 pt-5 sm:px-6">
+          <Link href="/" aria-label="Go to Intera home" className="inline-flex rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+            <Image src="/assets/img/logos/verticals/no-bg/INTERA-PRIMARY-LOGO-VERTICAL-BLACK-3.png" alt="Intera" width={220} height={66} className="h-12 w-auto dark:hidden" priority />
+            <Image src="/assets/img/logos/verticals/no-bg/INTERA-PRIMARY-LOGO-VERTICAL-WHITE-4.png" alt="Intera" width={220} height={66} className="hidden h-12 w-auto dark:block" priority />
+          </Link>
+        </div>
         {isLoading ? (
           <>
             <CardHeader className="space-y-4">

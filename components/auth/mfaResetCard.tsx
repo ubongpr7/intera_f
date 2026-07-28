@@ -79,13 +79,7 @@ export default function MfaResetCard() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-4 py-8">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-[-120px] top-[-80px] h-72 w-72 rounded-full bg-blue-500/25 blur-3xl" />
-        <div className="absolute bottom-[-120px] right-[-120px] h-80 w-80 rounded-full bg-violet-500/20 blur-3xl" />
-      </div>
-
-      <div className="relative w-full max-w-md rounded-3xl border border-white/15 bg-white/95 p-8 shadow-2xl backdrop-blur-md">
+    <div className="auth-card relative w-full max-w-md p-6 sm:p-8">
         <div className="mb-6 flex items-center justify-between">
           <span className="inline-flex items-center gap-2 rounded-full border border-amber-100 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-700">
             <ShieldAlert className="h-3.5 w-3.5" />
@@ -94,13 +88,13 @@ export default function MfaResetCard() {
           <MailCheck className="h-4 w-4 text-slate-700" />
         </div>
 
-        <h2 className="text-3xl font-semibold text-slate-950">Reset your MFA</h2>
-        <p className="mt-2 text-sm text-slate-600">
+        <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-950 dark:text-white">Reset your MFA</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
           We will email a 6-digit recovery code to the address on this account. Verify it to remove the current MFA setup.
         </p>
 
         {email ? (
-          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
             Recovery code sent to <span className="font-semibold">{email}</span>.
           </div>
         ) : null}
@@ -116,15 +110,15 @@ export default function MfaResetCard() {
                 inputRef.current?.focus();
               }
             }}
-            className="grid grid-cols-6 gap-2 rounded-2xl border border-slate-200 p-3"
+            className="grid grid-cols-6 gap-2 rounded-2xl border border-slate-200 p-3 dark:border-white/10"
           >
             {codeDigits.map((digit, index) => (
               <div
                 key={`mfa-reset-digit-${index}`}
                 className={`flex h-12 items-center justify-center rounded-xl border text-lg font-semibold transition ${
                   code.length === index
-                    ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm"
-                    : "border-slate-200 bg-white text-slate-800"
+                    ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm dark:border-[#6ee7d2]/40 dark:bg-[#6ee7d2]/10 dark:text-[#6ee7d2]"
+                    : "border-slate-200 bg-white text-slate-800 dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
                 }`}
               >
                 {digit || "•"}
@@ -152,7 +146,7 @@ export default function MfaResetCard() {
         </div>
 
         {errorMessage ? (
-          <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-200">
             {errorMessage}
           </div>
         ) : null}
@@ -161,7 +155,7 @@ export default function MfaResetCard() {
           type="button"
           onClick={() => void handleConfirm()}
           disabled={isConfirming || code.length < 6}
-          className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-black/20 px-4 py-3 text-sm font-semibold text-black transition hover:bg-black/30 disabled:cursor-not-allowed disabled:opacity-50"
+          className="auth-button mt-6"
         >
           {isConfirming ? (
             <>
@@ -177,7 +171,7 @@ export default function MfaResetCard() {
           type="button"
           onClick={() => void handleSendCode()}
           disabled={isSending || cooldown > 0}
-          className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="auth-secondary-button mt-3"
         >
           {isSending ? (
             <>
@@ -192,15 +186,14 @@ export default function MfaResetCard() {
           )}
         </button>
 
-        <p className="mt-4 text-center text-sm text-slate-600">
+        <p className="mt-4 text-center text-sm text-slate-600 dark:text-slate-300">
           <Link
             href="/accounts/mfa/verify"
-            className="font-semibold text-blue-700 underline underline-offset-4 transition hover:text-blue-800"
+            className="auth-link"
           >
             Back to MFA verification
           </Link>
         </p>
-      </div>
     </div>
   );
 }
