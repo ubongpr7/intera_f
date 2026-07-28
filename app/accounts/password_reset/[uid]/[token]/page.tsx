@@ -17,7 +17,7 @@ export default async function PasswordResetConfirmPage({ params }: PasswordReset
       title="Choose a new password"
       description="Set a new password for your account and return to sign in."
     >
-      <div className="w-full rounded-3xl border border-slate-200 bg-white p-8 shadow-[0_24px_70px_-40px_rgba(16,23,39,0.45)] dark:border-white/10 dark:bg-[#101727]">
+      <div className="auth-card w-full p-6 sm:p-8">
         <ResetPasswordConfirmForm uid={uid} token={token} />
       </div>
     </AuthSplitShell>

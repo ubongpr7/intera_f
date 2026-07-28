@@ -14,6 +14,7 @@ import {
   ClipboardList,
   Clock3,
   Menu,
+  LogIn,
   Radio,
   ScanBarcode,
   Send,
@@ -763,9 +764,7 @@ export default function HomePage() {
     assistant: isDarkMode ? "/assets/img/favicons/favicon-dark.png" : "/assets/img/favicons/favicon-light.png",
     user: "/assets/intera-logo.png",
   } as const;
-  const homepageLogoSrc = isDarkMode
-    ? "/assets/img/logos/verticals/no-bg/INTERA-PRIMARY-LOGO-VERTICAL-WHITE-4.png"
-    : "/assets/img/logos/verticals/no-bg/INTERA-PRIMARY-LOGO-VERTICAL-BLACK-3.png";
+  const homepageLogoSrc = "/assets/img/logos/verticals/no-bg/INTERA-PRIMARY-LOGO-VERTICAL-WHITE-4.png";
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -832,8 +831,8 @@ export default function HomePage() {
   const isAssistantThinking = Boolean(nextDemoMessage?.role === "assistant" && !typedDemoText);
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
-      <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
+    <div className="landing-page min-h-screen bg-white text-gray-900">
+      <header className="landing-header sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-2">
             <span className="relative block h-12 w-[172px] shrink-0 overflow-hidden sm:h-14 sm:w-[196px]">
@@ -849,26 +848,26 @@ export default function HomePage() {
           </Link>
 
           <nav className="hidden items-center gap-8 md:flex">
-            <a href="#capabilities" className="text-sm text-gray-600 hover:text-gray-900">
+            <a href="#capabilities" className="text-sm text-gray-600 md:text-base hover:text-gray-900">
               Capabilities
             </a>
-            <a href="#demo" className="text-sm text-gray-600 hover:text-gray-900">
+            <a href="#demo" className="text-sm text-gray-600 md:text-base hover:text-gray-900">
               Demo
             </a>
-            <a href="#pricing" className="text-sm text-gray-600 hover:text-gray-900">
+            <a href="#pricing" className="text-sm text-gray-600 md:text-base hover:text-gray-900">
               Pricing
             </a>
-            <a href="#faq" className="text-sm text-gray-600 hover:text-gray-900">
+            <a href="#faq" className="text-sm text-gray-600 md:text-base hover:text-gray-900">
               FAQ
             </a>
           </nav>
 
           <div className="hidden items-center gap-3 md:flex">
             <Button variant="secondary" asChild>
-              <Link  href="/accounts/signin">Sign in</Link>
+              <Link className="landing-nav-secondary" href="/accounts/signin"><LogIn className="h-4 w-4" />Sign in</Link>
             </Button>
             <Button asChild>
-              <Link href="/accounts">Get started</Link>
+              <Link className="landing-nav-primary" href="/accounts">Get started <ArrowRight className="h-4 w-4" /></Link>
             </Button>
           </div>
 
@@ -899,10 +898,10 @@ export default function HomePage() {
               </a>
               <div className="mt-2 flex gap-2">
                 <Button variant="ghost" asChild className="flex-1 text-gray-700">
-                  <Link href="/accounts/signin">Sign in</Link>
+                  <Link className="landing-nav-secondary" href="/accounts/signin"><LogIn className="h-4 w-4" />Sign in</Link>
                 </Button>
                 <Button asChild className="flex-1">
-                  <Link href="/accounts">Get started</Link>
+                  <Link className="landing-nav-primary" href="/accounts">Get started <ArrowRight className="h-4 w-4" /></Link>
                 </Button>
               </div>
             </div>
@@ -911,7 +910,7 @@ export default function HomePage() {
       </header>
 
       <main>
-        <section className="bg-gradient-to-b from-blue-50 via-white to-white">
+        <section className="landing-hero bg-gradient-to-b from-blue-50 via-white to-white">
           <div className="mx-auto grid max-w-7xl gap-12 px-4 pb-16 pt-16 sm:px-6 lg:grid-cols-2 lg:px-8 lg:pt-20">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
@@ -984,7 +983,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="capabilities" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <section id="capabilities" className="landing-section mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">Capabilities</p>
             <h2 className="mt-3 text-3xl font-semibold text-gray-900 sm:text-4xl">
@@ -1063,7 +1062,7 @@ export default function HomePage() {
         </section>
 */}
 
-        <section id="demo" className="border-y border-gray-200 bg-gray-50">
+        <section id="demo" className="landing-demo border-y border-gray-200 bg-gray-50">
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             <div className="max-w-3xl">
               <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">Conversation Demo</p>
@@ -1239,7 +1238,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="pricing" className="border-y border-gray-200 bg-white">
+        <section id="pricing" className="landing-pricing border-y border-gray-200 bg-white">
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             <div className="max-w-3xl">
               <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">Pricing</p>
@@ -1271,7 +1270,8 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="faq" className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
+        <section id="faq" className="landing-faq">
+          <div className="landing-faq-inner mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="text-center">
             <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">FAQ</p>
             <h2 className="mt-3 text-3xl font-semibold text-gray-900 sm:text-4xl">Common questions, clear answers.</h2>
@@ -1294,46 +1294,40 @@ export default function HomePage() {
               </motion.details>
             ))}
           </div>
+          </div>
         </section>
 
-        <section className="bg-blue-700">
-          <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-14 text-white sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+        <section className="landing-cta bg-blue-700">
+          <div className="landing-cta-inner mx-auto grid max-w-7xl gap-8 px-4 py-14 text-white sm:px-6 lg:grid-cols-[1.25fr_.75fr] lg:items-center lg:px-8">
             <div className="max-w-2xl">
-              <h2 className="text-3xl font-semibold">Ready to simplify inventory operations for your team?</h2>
-              <p className="mt-3 text-blue-100">
-                Start with a structured setup, enforce secure access with MFA, and scale into AI-assisted execution.
-              </p>
+              <span className="landing-cta-kicker"><Sparkles className="h-3.5 w-3.5" /> A calmer way to run operations</span>
+              <h2 className="mt-5 text-3xl font-semibold sm:text-4xl">Give every stock decision a clearer next move.</h2>
+              <p className="mt-4 max-w-xl text-blue-100">Set up your workspace, bring the team into one controlled flow, and let Intera turn daily operational data into confident action.</p>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <Button asChild >
-                <Link href="/accounts">Create account</Link>
-              </Button>
-              <Button
-                asChild
-                variant="secondary"
-                
-              >
-                <Link href="/accounts/signin">Sign in</Link>
-              </Button>
+            <div className="landing-cta-panel rounded-2xl p-5 sm:p-6">
+              <div className="flex items-start gap-3"><span className="landing-cta-icon"><ShieldCheck className="h-5 w-5" /></span><div><p className="font-semibold">Start with a secure foundation</p><p className="mt-1 text-sm leading-6 text-blue-100">Invite the right people, set up locations, then grow at your own pace.</p></div></div>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                <Button asChild><Link href="/accounts">Create account <ArrowRight className="h-4 w-4" /></Link></Button>
+                <Button asChild variant="secondary"><Link href="/accounts/signin">Sign in</Link></Button>
+              </div>
             </div>
           </div>
         </section>
       </main>
 
-      <footer className="border-t border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8 text-sm text-gray-900 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-          <div className="flex items-center gap-3">
-            <Image
-              src={homepageLogoSrc}
-              alt="Intera Inventory logo"
-              width={220}
-              height={64}
-              sizes="(min-width: 1024px) 220px, 180px"
-              className="h-14 w-auto shrink-0 sm:h-16"
-            />
-            <p>© 2026 Intera Inventory. Built for dependable operations.</p>
+      <footer className="landing-footer border-t border-gray-200 bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-12 text-sm sm:px-6 lg:px-8">
+          <div className="landing-footer-grid grid gap-10 border-b border-slate-800 pb-10 md:grid-cols-[1.5fr_repeat(2,1fr)]">
+            <div className="landing-footer-brand">
+              <p className="landing-footer-kicker">Operations, in sync</p>
+              <Image src={homepageLogoSrc} alt="Intera Inventory logo" width={320} height={96} sizes="(min-width: 1024px) 320px, 250px" className="landing-footer-logo mt-3 h-20 w-auto object-contain object-left sm:h-24" />
+              <p className="mt-4 max-w-sm leading-6 text-slate-400">A command center for teams that need inventory, selling, and operational intelligence to move together.</p>
+            </div>
+            <div className="landing-footer-links text-base"><p className="font-semibold text-white">Explore</p><div className="mt-4 flex flex-col gap-3"><a href="#capabilities">Capabilities</a><a href="#demo">Live demo</a><a href="#pricing">Pricing</a></div></div>
+            <div className="landing-footer-links text-base"><p className="font-semibold text-white">Account</p><div className="mt-4 flex flex-col gap-3"><Link href="/accounts">Start free</Link><Link href="/accounts/signin">Sign in</Link><a href="#faq">FAQ</a></div></div>
           </div>
-        </div>
+          <div className="flex flex-col gap-2 pt-6 text-slate-500 sm:flex-row sm:items-center sm:justify-between"><p>© 2026 Intera Inventory. Built for dependable operations.</p><p>Inventory clarity, from first scan to final decision.</p></div>
+          </div>
       </footer>
     </div>
   );

@@ -45,8 +45,8 @@ export default function MfaSetupCard() {
   }, [loadSetup]);
 
   return (
-    <div className="w-full max-w-md space-y-6 rounded-3xl border border-slate-200 bg-white/95 p-8 shadow-[0_24px_70px_-40px_rgba(16,23,39,0.45)] backdrop-blur dark:border-white/10 dark:bg-[#101727]">
-      <h2 className="text-center text-2xl font-bold text-slate-950 dark:text-white">Set Up Authenticator App</h2>
+    <div className="auth-card w-full max-w-md space-y-6 p-6 sm:p-8">
+      <h2 className="text-center text-2xl font-bold tracking-[-0.03em] text-slate-950 dark:text-white">Set up your authenticator</h2>
       <p className="text-center text-sm text-slate-600 dark:text-slate-300">
         MFA is required. Scan the QR code with your authenticator app and continue.
       </p>
@@ -86,7 +86,7 @@ export default function MfaSetupCard() {
             setCookie(AUTH_COOKIE_NAMES.mfaSetupRequired, "false", { maxAge: 60 * 60 * 24, path: "/" });
             router.push("/accounts/mfa/verify");
           }}
-          className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          className="auth-button"
           disabled={!setupData || isLoading}
         >
           Continue to Verification
@@ -94,7 +94,7 @@ export default function MfaSetupCard() {
         <button
           type="button"
           onClick={() => void loadSetup(true)}
-          className="w-full rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5 dark:hover:text-white"
+          className="auth-secondary-button"
           disabled={isLoading}
         >
           Regenerate QR Code
