@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -757,6 +757,7 @@ function PlanCard({ plan, highlighted = false }: { plan: SubscriptionPlan; highl
 
 export default function HomePage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
   const dispatch = useAppDispatch();
   const [activeDemoIndex, setActiveDemoIndex] = useState(() => Math.floor(Math.random() * demoConversations.length));
   const [visibleMessageCount, setVisibleMessageCount] = useState(0);
@@ -774,6 +775,18 @@ export default function HomePage() {
     : "/assets/img/logos/verticals/no-bg/INTERA-PRIMARY-LOGO-VERTICAL-BLACK-3.png";
 
   const toggleLandingTheme = () => dispatch(setIsDarkMode(!isDarkMode));
+
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const closeOnOutsidePress = (event: PointerEvent) => {
+      const target = event.target;
+      if (target instanceof Element && !mobileMenuRef.current?.contains(target) && !target.closest(".landing-menu-trigger")) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", closeOnOutsidePress);
+    return () => document.removeEventListener("pointerdown", closeOnOutsidePress);
+  }, [isMobileMenuOpen]);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -885,43 +898,43 @@ export default function HomePage() {
 
           <button
             type="button"
-            className="inline-flex rounded-md p-2 text-gray-700 hover:bg-gray-100 md:hidden"
+            className="landing-menu-trigger inline-flex md:hidden"
             onClick={() => setIsMobileMenuOpen((currentValue) => !currentValue)}
             aria-label="Toggle menu"
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="landing-mobile-menu"
           >
             {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
 
-        {isMobileMenuOpen ? (
-          <div className="border-t border-gray-200  bg-white px-4 py-4 md:hidden">
-            <div className="flex flex-col gap-3">
-              <a href="#capabilities" className="text-sm text-gray-600 hover:text-gray-900" onClick={() => setIsMobileMenuOpen(false)}>
-                Capabilities
-              </a>
-              <a href="#demo" className="text-sm text-gray-600 hover:text-gray-900" onClick={() => setIsMobileMenuOpen(false)}>
-                Demo
-              </a>
-              <a href="#pricing" className="text-sm text-gray-600 hover:text-gray-900" onClick={() => setIsMobileMenuOpen(false)}>
-                Pricing
-              </a>
-              <a href="#faq" className="text-sm text-gray-600 hover:text-gray-900" onClick={() => setIsMobileMenuOpen(false)}>
-                FAQ
-              </a>
-              <div className="mt-2 flex gap-2">
+        <AnimatePresence>
+          {isMobileMenuOpen ? (
+            <motion.div
+              ref={mobileMenuRef}
+              id="landing-mobile-menu"
+              initial={{ opacity: 0, y: -10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.98 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              className="landing-mobile-menu md:hidden"
+            >
+              <div className="landing-mobile-links">
+                <a href="#capabilities" onClick={() => setIsMobileMenuOpen(false)}>Capabilities <ArrowRight className="h-4 w-4" /></a>
+                <a href="#demo" onClick={() => setIsMobileMenuOpen(false)}>Demo <ArrowRight className="h-4 w-4" /></a>
+                <a href="#pricing" onClick={() => setIsMobileMenuOpen(false)}>Pricing <ArrowRight className="h-4 w-4" /></a>
+                <a href="#faq" onClick={() => setIsMobileMenuOpen(false)}>FAQ <ArrowRight className="h-4 w-4" /></a>
+              </div>
+              <div className="landing-mobile-actions">
                 <button type="button" onClick={toggleLandingTheme} className="landing-theme-toggle" aria-label={`Switch to ${isDarkMode ? "light" : "dark"} theme`}>
                   {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                 </button>
-                <Button variant="ghost" asChild className="flex-1 text-gray-700">
-                  <Link className="landing-nav-secondary" href="/accounts/signin"><LogIn className="h-4 w-4" />Sign in</Link>
-                </Button>
-                <Button asChild className="flex-1">
-                  <Link className="landing-nav-primary" href="/accounts">Get started <ArrowRight className="h-4 w-4" /></Link>
-                </Button>
+                <Button variant="ghost" asChild className="flex-1"><Link className="landing-nav-secondary" href="/accounts/signin" onClick={() => setIsMobileMenuOpen(false)}><LogIn className="h-4 w-4" />Sign in</Link></Button>
+                <Button asChild className="flex-1"><Link className="landing-nav-primary" href="/accounts" onClick={() => setIsMobileMenuOpen(false)}>Get started <ArrowRight className="h-4 w-4" /></Link></Button>
               </div>
-            </div>
-          </div>
-        ) : null}
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
       </header>
 
       <main>
