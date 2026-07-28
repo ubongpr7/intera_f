@@ -15,11 +15,13 @@ import {
   Clock3,
   Menu,
   LogIn,
+  Moon,
   Radio,
   ScanBarcode,
   Send,
   ShieldCheck,
   Sparkles,
+  Sun,
   Users2,
   WifiOff,
   X,
@@ -28,6 +30,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGetSubscriptionPlansQuery } from "@/redux/features/payment/paymentAPISlice";
 import { useAppSelector } from "@/redux/store";
+import { useAppDispatch } from "@/redux/store";
+import { setIsDarkMode } from "@/redux/state";
 import { Feature, SubscriptionPlan } from "@/components/interfaces/payment";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -753,6 +757,7 @@ function PlanCard({ plan, highlighted = false }: { plan: SubscriptionPlan; highl
 
 export default function HomePage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const dispatch = useAppDispatch();
   const [activeDemoIndex, setActiveDemoIndex] = useState(() => Math.floor(Math.random() * demoConversations.length));
   const [visibleMessageCount, setVisibleMessageCount] = useState(0);
   const [typedDemoText, setTypedDemoText] = useState("");
@@ -764,7 +769,11 @@ export default function HomePage() {
     assistant: isDarkMode ? "/assets/img/favicons/favicon-dark.png" : "/assets/img/favicons/favicon-light.png",
     user: "/assets/intera-logo.png",
   } as const;
-  const homepageLogoSrc = "/assets/img/logos/verticals/no-bg/INTERA-PRIMARY-LOGO-VERTICAL-WHITE-4.png";
+  const homepageLogoSrc = isDarkMode
+    ? "/assets/img/logos/verticals/no-bg/INTERA-PRIMARY-LOGO-VERTICAL-WHITE-4.png"
+    : "/assets/img/logos/verticals/no-bg/INTERA-PRIMARY-LOGO-VERTICAL-BLACK-3.png";
+
+  const toggleLandingTheme = () => dispatch(setIsDarkMode(!isDarkMode));
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -863,6 +872,9 @@ export default function HomePage() {
           </nav>
 
           <div className="hidden items-center gap-3 md:flex">
+            <button type="button" onClick={toggleLandingTheme} className="landing-theme-toggle" aria-label={`Switch to ${isDarkMode ? "light" : "dark"} theme`}>
+              {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </button>
             <Button variant="secondary" asChild>
               <Link className="landing-nav-secondary" href="/accounts/signin"><LogIn className="h-4 w-4" />Sign in</Link>
             </Button>
@@ -897,6 +909,9 @@ export default function HomePage() {
                 FAQ
               </a>
               <div className="mt-2 flex gap-2">
+                <button type="button" onClick={toggleLandingTheme} className="landing-theme-toggle" aria-label={`Switch to ${isDarkMode ? "light" : "dark"} theme`}>
+                  {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                </button>
                 <Button variant="ghost" asChild className="flex-1 text-gray-700">
                   <Link className="landing-nav-secondary" href="/accounts/signin"><LogIn className="h-4 w-4" />Sign in</Link>
                 </Button>

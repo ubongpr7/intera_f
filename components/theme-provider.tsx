@@ -40,10 +40,10 @@ export default function ThemeProvider({
 
   // Handle system theme changes
   useEffect(() => {
-    if (!isSystemTheme) return
-
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
-    dispatch(updateSystemTheme(mediaQuery.matches))
+    if (isSystemTheme) {
+      dispatch(updateSystemTheme(mediaQuery.matches))
+    }
 
     const handleChange = (e: MediaQueryListEvent) => {
       dispatch(updateSystemTheme(e.matches))
