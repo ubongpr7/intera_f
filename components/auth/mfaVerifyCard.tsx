@@ -116,7 +116,7 @@ export default function MfaVerifyCard() {
   };
 
   return (
-    <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 bg-white/95 p-8 shadow-2xl backdrop-blur-md dark:border-white/10 dark:bg-[#101727]/95">
+    <div className="auth-mfa-card relative w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 bg-white/95 p-8 shadow-2xl backdrop-blur-md dark:border-white/10 dark:bg-[#101727]/95">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-[-120px] top-[-80px] h-72 w-72 rounded-full bg-blue-500/12 blur-3xl dark:bg-blue-500/20" />
         <div className="absolute bottom-[-120px] right-[-120px] h-80 w-80 rounded-full bg-violet-500/10 blur-3xl dark:bg-violet-500/15" />
@@ -142,10 +142,10 @@ export default function MfaVerifyCard() {
           <button
             type="button"
             onClick={() => void handleMethodChange("app")}
-            className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+            className={`auth-mfa-tab rounded-xl px-3 py-2 text-sm font-semibold transition ${
               method === "app"
-                ? "border border-blue-200 bg-white text-blue-700 shadow-sm dark:border-[#98fcc2]/20 dark:bg-[#101727] dark:text-[#98fcc2]"
-                : "text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
+                ? "auth-mfa-tab-active border border-blue-200 bg-white text-blue-700 shadow-sm dark:border-[#98fcc2]/20 dark:bg-[#101727] dark:text-[#98fcc2]"
+                : "auth-mfa-tab-idle text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
             }`}
           >
             Authenticator App
@@ -153,10 +153,10 @@ export default function MfaVerifyCard() {
           <button
             type="button"
             onClick={() => void handleMethodChange("email")}
-            className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+            className={`auth-mfa-tab rounded-xl px-3 py-2 text-sm font-semibold transition ${
               method === "email"
-                ? "border border-blue-200 bg-white text-blue-700 shadow-sm dark:border-[#98fcc2]/20 dark:bg-[#101727] dark:text-[#98fcc2]"
-                : "text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
+                ? "auth-mfa-tab-active border border-blue-200 bg-white text-blue-700 shadow-sm dark:border-[#98fcc2]/20 dark:bg-[#101727] dark:text-[#98fcc2]"
+                : "auth-mfa-tab-idle text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
             }`}
           >
             Email Code
@@ -225,7 +225,7 @@ export default function MfaVerifyCard() {
           type="button"
           onClick={() => void handleVerify()}
           disabled={isLoadingAny || code.length < 6}
-          className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="auth-action-primary mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isLoadingAny ? (
             <>
@@ -242,7 +242,7 @@ export default function MfaVerifyCard() {
             type="button"
             onClick={() => void handleSendEmailCode()}
             disabled={isSendingEmailCode || cooldown > 0}
-            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10 dark:hover:text-white"
+            className="auth-action-secondary mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10 dark:hover:text-white"
           >
             {isSendingEmailCode ? (
               <>
@@ -265,7 +265,7 @@ export default function MfaVerifyCard() {
           {" "}
           <Link
             href="/accounts/mfa/reset"
-            className="font-semibold text-blue-700 underline underline-offset-4 transition hover:text-blue-800"
+            className="auth-action-link font-semibold text-blue-700 underline underline-offset-4 transition hover:text-blue-800"
           >
             Reset MFA
           </Link>

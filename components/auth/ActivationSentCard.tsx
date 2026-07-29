@@ -33,15 +33,15 @@ export default function ActivationSentCard({ email, nextPath }: ActivationSentCa
     : "/accounts/signin";
 
   return (
-    <Card className="w-full max-w-2xl border-slate-200 shadow-xl shadow-slate-200/60 dark:border-white/10 dark:bg-[#101727] dark:shadow-black/30">
+    <Card className="activation-sent-card w-full max-w-2xl border-slate-200 shadow-xl shadow-slate-200/60 dark:border-white/10 dark:bg-[#101727] dark:shadow-black/30">
       <CardHeader className="space-y-4">
         <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-700 dark:bg-[#3c83f7]/15 dark:text-[#98fcc2]">
           <MailCheck className="h-6 w-6" />
         </div>
         <div className="space-y-2">
-          <CardTitle className="text-3xl text-[#101727] dark:text-white">Check your email</CardTitle>
+          <CardTitle className="activation-sent-title text-3xl text-[#101727] dark:text-white">Check your email</CardTitle>
           <CardDescription className="text-base leading-7 text-gray-600 dark:text-slate-300">
-            We sent an account activation link to <span className="font-semibold text-gray-800 dark:text-white">{email}</span>.
+            We sent an account activation link to <span className="activation-sent-email font-semibold text-gray-800 dark:text-white">{email}</span>.
             Open the email and click the activation button to finish setting up your account.
           </CardDescription>
         </div>
