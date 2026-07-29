@@ -1223,3 +1223,32 @@ option {
 [data-tooltip]:hover::before {
   opacity: 1;
 }
+
+.dark .activation-sent-card .activation-sent-title,
+.dark .activation-sent-card .activation-sent-email {
+  color: #f8fafc !important;
+}
+
+.dark .activation-sent-card [data-slot="card-description"],
+.dark .activation-sent-card [data-slot="card-content"] {
+  color: #cbd5e1 !important;
+}
+
+/* Auth state contrast: selected, hover, disabled, success and error states remain readable in dark mode. */
+.dark .auth-mfa-card h2,
+.dark .activation-result-card [data-slot="card-title"] { color: #f8fafc !important; }
+.dark .auth-mfa-card p,
+.dark .activation-result-card [data-slot="card-description"],
+.dark .activation-result-card [data-slot="card-content"] { color: #cbd5e1 !important; }
+.dark .auth-mfa-card .auth-mfa-tab { color: #cbd5e1 !important; }
+.dark .auth-mfa-card .auth-mfa-tab-idle:hover { color: #f8fafc !important; background: rgba(255,255,255,.07); }
+.dark .auth-mfa-card .auth-mfa-tab-active { color: #98fcc2 !important; }
+.dark .auth-mfa-card .auth-action-primary { color: #ffffff !important; background: #2563eb !important; }
+.dark .auth-mfa-card .auth-action-primary:disabled { color: #dbeafe !important; background: #3f5f8d !important; opacity: 1; }
+.dark .auth-mfa-card .auth-action-secondary { color: #e2e8f0 !important; }
+.dark .auth-mfa-card .auth-action-secondary:hover { color: #f8fafc !important; border-color: rgba(152,252,194,.35); background: rgba(152,252,194,.1); }
+.dark .auth-mfa-card .auth-action-link { color: #98fcc2 !important; }
+.dark .auth-mfa-card .text-slate-400,
+.dark .auth-mfa-card .text-slate-500 { color: #94a3b8 !important; }
+.dark .auth-card .auth-button { color: #ffffff !important; }
+.dark .auth-card .auth-secondary-button { color: #e2e8f0 !important; }
