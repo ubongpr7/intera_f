@@ -1,0 +1,295 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: intera-redis-shared
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  kafka:
+    image: ubongpr7/intera-kafka:dev
+    container_name: intera-kafka-shared
+    ports:
+      - "9092:9092"
+      - "9094:9094"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python3 -c \"import socket; s=socket.create_connection(('127.0.0.1', 9092), 5); s.close()\"",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+    restart: unless-stopped
+
+  kafka_topics_init:
+    image: confluentinc/cp-kafka:7.8.3
+    container_name: intera-kafka-topics-init-shared
+    command: >-
+      bash -lc 'set -euo pipefail; bootstrap_server="kafka:9092"; topics=(identity.user identity.company_profile identity.membership catalog.product catalog.variant inventory.availability inventory.reservation inventory.fulfillment inventory.purchase_price pos.order audit_events notification_events support_access_events); echo "Waiting for Kafka at $${bootstrap_server}"; cub kafka-ready -b "$${bootstrap_server}" 1 120; for topic in "$${topics[@]}"; do echo "Ensuring topic $${topic}"; kafka-topics --bootstrap-server "$${bootstrap_server}" --create --if-not-exists --replication-factor 1 --partitions 1 --topic "$${topic}"; echo "Ensuring topic $${topic}.dlq"; kafka-topics --bootstrap-server "$${bootstrap_server}" --create --if-not-exists --replication-factor 1 --partitions 1 --topic "$${topic}.dlq"; done; echo "Kafka topic bootstrap complete."'
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: "no"
+
+  users:
+    image: ubongpr7/intera-users:dev
+    container_name: intera-users-shared
+    ports:
+      - "7001:7001"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:7001/healthz/', timeout=5).read()\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    command: >
+      sh -c "uv run manage.py migrate && uv run manage.py runserver 0.0.0.0:7001"
+    depends_on:
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka_topics_init:
+        condition: service_completed_successfully
+      subscriptions:
+        condition: service_healthy
+    restart: unless-stopped
+
+  inventory:
+    image: ubongpr7/intera-inventory:dev
+    container_name: intera-inventory-shared
+    ports:
+      - "7002:7002"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:7002/healthz/', timeout=5).read()\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    command: >
+      sh -c "uv run manage.py migrate && uv run manage.py runserver 0.0.0.0:7002"
+    depends_on:
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka_topics_init:
+        condition: service_completed_successfully
+      subscriptions:
+        condition: service_healthy
+    restart: unless-stopped
+
+  products:
+    image: ubongpr7/intera-products:dev
+    container_name: intera-products-shared
+    ports:
+      - "7003:7003"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:7003/healthz/', timeout=5).read()\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    command: >
+      sh -c "uv run manage.py migrate && uv run manage.py runserver 0.0.0.0:7003"
+    depends_on:
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka_topics_init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  subscriptions:
+    image: ubongpr7/intera-subscriptions:dev
+    container_name: intera-subscriptions-shared
+    ports:
+      - "8550:8550"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8550/swagger/', timeout=5).read()\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    command: >
+      sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8550"
+    depends_on:
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka_topics_init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  audit:
+    image: ubongpr7/intera-audit-service:dev
+    container_name: intera-audit-shared
+    ports:
+      - "8091:8091"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8091/health', timeout=5).read()\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+
+  notification:
+    image: ubongpr7/intera-notification-service:dev
+    container_name: intera-notification-shared
+    ports:
+      - "8092:8092"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8092/health', timeout=5).read()\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+
+  pos:
+    image: ubongpr7/intera-pos-backend:dev
+    container_name: intera-pos-shared
+    ports:
+      - "7004:7004"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:7004/healthz/', timeout=5).read()\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    command: >
+      sh -c "uv run manage.py migrate && uv run manage.py runserver 0.0.0.0:7004"
+    depends_on:
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka_topics_init:
+        condition: service_completed_successfully
+      subscriptions:
+        condition: service_healthy
+    restart: unless-stopped
+
+  ka2a_topics_init:
+    image: ubongpr7/intera-a2a:dev
+    container_name: intera-ka2a-topics-init-shared
+    entrypoint: ["/bin/sh", "-c"]
+    command: >-
+      set -euo pipefail;
+      attempt=1;
+      until ka2a ensure-topics
+      --agents 'host,inventory,product,pos,onboarding'
+      --client-ids 'gateway,proxy,host-delegator,inventory-delegator,product-delegator,pos-delegator,onboarding-delegator';
+      do
+        if [ "$$attempt" -ge 12 ]; then
+          echo 'ka2a ensure-topics failed after retries' >&2;
+          exit 1;
+        fi;
+        echo "ka2a ensure-topics retry $$attempt/12" >&2;
+        attempt=$$((attempt+1));
+        sleep 5;
+      done
+    depends_on:
+      kafka:
+        condition: service_healthy
+      kafka_topics_init:
+        condition: service_completed_successfully
+    restart: "no"
+
+  ka2a_gateway:
+    image: ubongpr7/intera-a2a:dev
+    container_name: intera-ka2a-gateway-shared
+    entrypoint: ["/usr/local/bin/ka2a-gateway-entrypoint.sh"]
+    command: ["--default-agent", "host", "--host", "0.0.0.0", "--port", "7006", "--reload"]
+    ports:
+      - "7006:7006"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:7006/health', timeout=5).read()",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 30s
+    depends_on:
+      ka2a_topics_init:
+        condition: service_completed_successfully
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  ka2a_runtime:
+    image: ubongpr7/intera-a2a:dev
+    container_name: intera-ka2a-runtime-shared
+    command: ["runtime"]
+    depends_on:
+      ka2a_gateway:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  ka2a_proxy:
+    image: ubongpr7/intera-a2a:dev
+    container_name: intera-ka2a-proxy-shared
+    entrypoint: ["/usr/local/bin/ka2a-proxy-entrypoint.sh"]
+    ports:
+      - "7007:7007"
+    depends_on:
+      ka2a_runtime:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  kafka_data:
+  redis_data:
