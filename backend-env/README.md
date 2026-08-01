@@ -13,6 +13,12 @@ Required runtime files:
 - `subscriptions.env`
 - `audit.env`
 - `notification.env`
+- `ka2a.env`
+
+`ka2a.env` is required for the agent setup page. It should contain the KA2A
+database URL, JWT public key string, Fernet key(s), and subscription service key
+needed by the gateway/control-plane runtime. Do not bake these values into
+Docker images.
 
 After the files are present, the frontend developer can run:
 

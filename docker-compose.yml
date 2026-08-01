@@ -14,6 +14,37 @@ x-worker-env: &worker_env
   KAFKA_SECURITY_PROTOCOL: PLAINTEXT
   KAFKA_USE_OUTBOX: "false"
 
+x-ka2a-env: &ka2a_env
+  KA2A_BOOTSTRAP_SERVERS: kafka:9092
+  KA2A_KAFKA_SECURITY_PROTOCOL: PLAINTEXT
+  KA2A_KAFKA_SASL_MECHANISM: ""
+  KA2A_KAFKA_SASL_USERNAME: ""
+  KA2A_KAFKA_SASL_PASSWORD: ""
+  KA2A_KAFKA_SSL_CHECK_HOSTNAME: "false"
+  KA2A_CONTROL_PLANE_BASE_URL: http://ka2a_gateway:7006
+  KA2A_CONTROL_PLANE_TIMEOUT_S: "60"
+  KA2A_RUNTIME_SHARED_TOKEN: local-ka2a-runtime-token
+  KA2A_DATA_DIR: /app/.data
+  KA2A_CONTROL_PLANE_STORE_PATH: /app/.data/control_plane.json
+  KA2A_TASK_STORE: redis
+  KA2A_CHAT_STORE: redis
+  KA2A_REDIS_URL: redis://redis:6379/0
+  KA2A_TOOLS_ENABLED: "false"
+  KA2A_TOOLS_SOURCE: "off"
+  KA2A_GATEWAY_REQUEST_TIMEOUT_S: "30"
+  KA2A_PROXY_REQUEST_TIMEOUT_S: "30"
+  KA2A_CORS_ALLOW_ORIGINS: http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001
+  KA2A_CORS_ALLOW_ORIGIN_REGEX: ^https?://(localhost|127\.0\.0\.1)(:\d+)?$
+  KA2A_CORS_ALLOW_CREDENTIALS: "true"
+  KA2A_CORS_ALLOW_HEADERS: Authorization,Content-Type,X-Requested-With,X-Profile-ID,X-Company-Code,X-Device-ID
+  KA2A_JWT_ENABLED: "true"
+  KA2A_JWT_ALGORITHMS: RS256
+  KA2A_JWT_USER_CLAIM: user_id
+  KA2A_JWT_TENANT_CLAIM: profile_id
+  KA2A_JWT_FORWARD_BEARER_TOKEN: "true"
+  KA2A_JWT_INCLUDE_CLAIMS: "true"
+  SUBSCRIPTION_SERVICE_URL: http://subscriptions:8550
+
 services:
   redis:
     image: redis:7-alpine
@@ -55,7 +86,7 @@ services:
     command: >-
       bash -lc 'set -euo pipefail;
       bootstrap_server="kafka:9092";
-      topics=(identity.user identity.company_profile identity.membership catalog.product catalog.variant inventory.availability inventory.reservation inventory.fulfillment inventory.purchase_price pos.order audit_events notification_events support_access_events);
+      topics=(identity.user identity.company_profile identity.membership catalog.product catalog.variant inventory.availability inventory.reservation inventory.fulfillment inventory.purchase_price pos.order audit_events notification_events support_access_events ka2a.registry ka2a.dlq ka2a.req.host ka2a.reply.gateway ka2a.reply.proxy ka2a.reply.host-delegator);
       echo "Waiting for Kafka at $${bootstrap_server}";
       cub kafka-ready -b "$${bootstrap_server}" 1 120;
       for topic in "$${topics[@]}"; do
@@ -69,6 +100,101 @@ services:
       kafka:
         condition: service_healthy
     restart: "no"
+
+  ka2a_topics_init:
+    image: ubongpr7/intera-ka2a:dev
+    container_name: intera-ka2a-topics-init-shared
+    env_file:
+      - ./backend-env/ka2a.env
+    environment:
+      <<: *ka2a_env
+    entrypoint: ["/bin/sh", "-c"]
+    command: >-
+      attempt=1;
+      until ka2a ensure-topics
+      --agents 'host'
+      --client-ids 'gateway,proxy,host-delegator';
+      do
+        if [ "$$attempt" -ge 12 ]; then
+          echo 'ka2a ensure-topics failed after retries' >&2;
+          exit 1;
+        fi;
+        echo "ka2a ensure-topics retry $$attempt/12" >&2;
+        attempt=$$((attempt+1));
+        sleep 5;
+      done
+    depends_on:
+      kafka:
+        condition: service_healthy
+      kafka_topics_init:
+        condition: service_completed_successfully
+    restart: "no"
+
+  ka2a_gateway:
+    image: ubongpr7/intera-ka2a:dev
+    container_name: intera-ka2a-gateway-shared
+    env_file:
+      - ./backend-env/ka2a.env
+    environment:
+      <<: *ka2a_env
+    command: ["gateway", "--default-agent", "host", "--host", "0.0.0.0", "--port", "7006"]
+    ports:
+      - "7006:7006"
+    healthcheck:
+      <<: *django_api_health
+      test:
+        [
+          "CMD-SHELL",
+          "python3 -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:7006/health', timeout=15).read()\"",
+        ]
+    depends_on:
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka_topics_init:
+        condition: service_completed_successfully
+      ka2a_topics_init:
+        condition: service_completed_successfully
+      users:
+        condition: service_healthy
+      subscriptions:
+        condition: service_healthy
+    restart: unless-stopped
+
+  ka2a_runtime:
+    image: ubongpr7/intera-ka2a:dev
+    container_name: intera-ka2a-runtime-shared
+    env_file:
+      - ./backend-env/ka2a.env
+    environment:
+      <<: *ka2a_env
+    command: ["runtime"]
+    depends_on:
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      ka2a_gateway:
+        condition: service_healthy
+      ka2a_topics_init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  ka2a_proxy:
+    image: ubongpr7/intera-ka2a:dev
+    container_name: intera-ka2a-proxy-shared
+    env_file:
+      - ./backend-env/ka2a.env
+    environment:
+      <<: *ka2a_env
+    command: ["proxy", "--agent-name", "host", "--host", "0.0.0.0", "--port", "7007"]
+    ports:
+      - "7007:7007"
+    depends_on:
+      ka2a_runtime:
+        condition: service_started
+    restart: unless-stopped
 
   subscriptions:
     image: ubongpr7/intera-subscriptions:dev
