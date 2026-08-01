@@ -132,7 +132,7 @@ export default function CompanyProfileContainer() {
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[280px_1fr]">
+    <div className="company-profile-workspace grid gap-6 xl:grid-cols-[300px_1fr]">
       <aside className="space-y-4">
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="p-5 text-left text-inherit">

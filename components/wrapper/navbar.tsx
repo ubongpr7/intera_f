@@ -320,7 +320,7 @@ const Navbar = ({ user, onOpenMobileSidebar, sidebarCollapsed }: NavbarProps) =>
 
   return (
     <div
-      className={`fixed top-3 z-30 flex items-center justify-between rounded-2xl bg-gray-50/95 px-4 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-gray-50/80 ${
+      className={`dashboard-topbar fixed top-3 z-30 flex items-center justify-between rounded-2xl bg-gray-50/95 px-4 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-gray-50/80 ${
         sidebarCollapsed ? "md:left-16 md:right-5" : "md:left-64 md:right-5"
       } left-3 right-3 md:px-3 md:py-2.5`}
     >

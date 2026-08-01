@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useRef } from "react";
-import { X } from "lucide-react";
+import { Building2, Sparkles, X } from "lucide-react";
 import { useForm, Controller, Path, DefaultValues } from "react-hook-form";
 import dynamic from "next/dynamic";
 import LoadingAnimation from "./LoadingAnimation";
@@ -305,6 +305,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
   const visibleFieldCount = regularFields.length + (hasDescription ? 1 : 0);
   const useSideFormLayout = visibleFieldCount > 6;
   const panelTitle = itemTitle || "Create Item";
+  const isCompanyCreateForm = panelTitle === "Create Company";
   const actionText = panelTitle.toLowerCase().startsWith("update") ? "Save changes" : panelTitle;
   const loadingText = panelTitle.toLowerCase().startsWith("update") ? "Saving..." : "Creating...";
   const descriptionInfoText =
@@ -328,6 +329,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
       <div
         className={cn(
           "relative flex w-full flex-col overflow-hidden border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] shadow-[0_32px_80px_rgba(15,23,42,0.22)] dark:border-slate-800/90 dark:bg-[linear-gradient(180deg,#020617_0%,#0f172a_58%,#111827_100%)] dark:shadow-[0_40px_90px_rgba(2,6,23,0.82)]",
+          isCompanyCreateForm && "company-create-modal",
           useSideFormLayout
             ? "ml-auto h-full max-w-[min(56rem,100vw)] rounded-none border-y-0 border-r-0 sm:rounded-l-[34px]"
             : "max-h-[92vh] max-w-5xl rounded-[32px]",
@@ -341,12 +343,18 @@ export default function CustomCreateCard<T extends Record<string, any>>({
         </button>
         <form onSubmit={handleSubmit(onSubmitHandler)} className="flex h-full flex-col overflow-hidden">
          <div className="border-b border-slate-200/80 bg-gradient-to-r from-slate-50 via-white to-blue-50/70 px-7 pb-6 pt-7 md:px-8 dark:border-slate-800/80 dark:bg-[linear-gradient(115deg,rgba(15,23,42,0.98),rgba(17,24,39,0.96),rgba(30,41,59,0.96))]">
-            <div className="mb-3 inline-flex rounded-full border border-blue-100 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-700 shadow-sm dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200">
-              {useSideFormLayout ? "Side form workspace" : "Quick create form"}
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-700 shadow-sm dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200">
+              {isCompanyCreateForm ? <Building2 className="h-3.5 w-3.5" aria-hidden="true" /> : null}
+              {isCompanyCreateForm ? "Company directory" : useSideFormLayout ? "Side form workspace" : "Quick create form"}
             </div>
             <div className="pr-14">
               <h2 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-50">{panelTitle}</h2>
-              
+              {isCompanyCreateForm ? (
+                <p className="company-create-subtitle mt-2 flex items-center gap-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                  <Sparkles className="h-4 w-4 shrink-0 text-blue-500" aria-hidden="true" />
+                  Add an affiliated company and define its operating relationship in one place.
+                </p>
+              ) : null}
             </div>
           </div>
  
@@ -367,7 +375,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
             ))}
           </div>
 
-          <div className="flex-1 overflow-y-auto bg-[linear-gradient(180deg,rgba(255,255,255,0.82)_0%,rgba(248,251,255,0.96)_100%)] px-7 py-6 md:px-8 dark:bg-[radial-gradient(circle_at_top,rgba(30,41,59,0.96)_0%,rgba(15,23,42,0.98)_52%,rgba(2,6,23,1)_100%)]">
+          <div className="create-card-form-body flex-1 overflow-y-auto bg-[linear-gradient(180deg,rgba(255,255,255,0.82)_0%,rgba(248,251,255,0.96)_100%)] px-7 py-6 md:px-8 dark:bg-[radial-gradient(circle_at_top,rgba(30,41,59,0.96)_0%,rgba(15,23,42,0.98)_52%,rgba(2,6,23,1)_100%)]">
             <div className="grid grid-cols-1 gap-4 pb-4 md:grid-cols-2">
               {regularFields.map((key) => {
                 const isReadOnly = readOnlyFields.includes(key);
@@ -579,7 +587,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
 
                           if (inputType === "checkbox") {
                             return (
-                              <div className="flex min-h-[54px] items-center justify-between rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-800/80">
+                              <label className="flex min-h-[54px] cursor-pointer items-center justify-between rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 transition-colors hover:border-blue-300 hover:bg-blue-50/60 dark:border-slate-700 dark:bg-slate-800/80 dark:hover:border-blue-400/50 dark:hover:bg-slate-800">
                                 <div className="pr-4">
                                   <p className="text-sm font-medium text-slate-700 dark:text-slate-100">{field.value ? "Enabled" : "Disabled"}</p>
                                   <p className="text-xs text-slate-500 dark:text-slate-400">Toggle this option for the record you are creating.</p>
@@ -593,7 +601,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                                   ref={field.ref}
                                   className="h-5 w-5 rounded-md border-slate-300 text-blue-600 shadow-sm focus:ring-4 focus:ring-blue-500/20 dark:border-slate-600 dark:bg-slate-900"
                                 />
-                              </div>
+                              </label>
                             );
                           }
 

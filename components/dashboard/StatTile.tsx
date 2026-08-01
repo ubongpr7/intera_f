@@ -27,7 +27,7 @@ export default function StatTile({
   tone = "default",
 }: StatTileProps) {
   return (
-    <Card className={cn("overflow-hidden shadow-sm", toneStyles[tone])}>
+    <Card className={cn("dashboard-stat-tile overflow-hidden shadow-sm", toneStyles[tone])}>
       <CardContent className="p-4">
         <div className="flex items-center justify-between gap-3">
           <p className="text-[11px] font-medium uppercase tracking-wide opacity-70">{label}</p>

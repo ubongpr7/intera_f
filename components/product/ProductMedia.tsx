@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
+import { FileText } from "lucide-react"
 import {
   useGetAttachmentsQuery,
   useUpdateAttachmentMutation,
@@ -166,7 +167,7 @@ export default function ProductMedia({ productId }: ProductMediaProps) {
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <div className="text-center">
-                        <div className="text-2xl text-gray-400 mb-2">📄</div>
+                        <FileText className="mb-2 h-7 w-7 text-gray-400" aria-label="Document attachment" />
                         <p className="text-xs text-gray-600">{attachment.file_type}</p>
                       </div>
                     </div>
@@ -417,7 +418,7 @@ function AttachmentEditForm({
           </>
         ) : (
           <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-2xl border border-slate-800 bg-slate-900">
-            <span className="text-2xl">📄</span>
+            <FileText className="h-6 w-6 text-gray-500" aria-label="Document attachment" />
           </div>
         )}
         <p className="mt-2 text-sm text-slate-400">

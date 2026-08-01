@@ -2165,7 +2165,7 @@ export default function POSExecutionWorkspace() {
 
   return (
     <>
-      <div className="space-y-5">
+      <div className="pos-execution-workspace mx-auto w-full max-w-[1800px] space-y-5 px-4 py-6 lg:px-8 2xl:px-10">
         <POSCashierHeader
           isLoading={bootstrapLoading}
           isCloseoutSummaryLoading={isCloseoutSummaryLoading}

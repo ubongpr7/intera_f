@@ -234,8 +234,8 @@ export default function NotificationCenterWorkspace() {
   const LiveConnectionIcon = liveConnection.icon
 
   return (
-    <div className="space-y-6">
-      <Card className="border-gray-200 bg-white shadow-sm">
+    <div className="notifications-workspace mx-auto w-full max-w-[1800px] space-y-6 px-4 py-6 lg:px-8 2xl:px-10">
+      <Card className="notifications-hero border-gray-200 bg-white shadow-sm">
         <CardHeader className="gap-3 p-6 text-left">
           <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
             Notification Service
@@ -314,7 +314,7 @@ export default function NotificationCenterWorkspace() {
             return (
             <Card
               key={notification.id}
-              className={`overflow-hidden shadow-sm ${notification.is_read ? "border-gray-200" : "border-blue-200 bg-blue-50/20"}`}
+              className={`notification-event-card overflow-hidden shadow-sm ${notification.is_read ? "border-gray-200" : "border-blue-200 bg-blue-50/20"}`}
             >
               <div className={`h-1.5 w-full ${notification.is_read ? "bg-slate-200" : "bg-gradient-to-r from-sky-500 via-blue-500 to-cyan-400"}`} />
               <CardHeader className="gap-3 p-6 text-left">

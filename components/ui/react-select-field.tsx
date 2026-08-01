@@ -25,67 +25,67 @@ const customStyles: StylesConfig<SelectOption, boolean> = {
     ...provided,
     minHeight: 52,
     borderRadius: 18,
-    backgroundColor: "hsl(var(--background))",
-    borderColor: state.isFocused ? "hsl(var(--ring))" : "hsl(var(--border))",
+    backgroundColor: "var(--select-surface, #ffffff)",
+    borderColor: state.isFocused ? "var(--select-ring, #3b82f6)" : "var(--select-border, #d1d5db)",
     boxShadow: state.isFocused ? "0 0 0 4px rgba(59, 130, 246, 0.16)" : "0 16px 36px rgba(2, 6, 23, 0.18)",
-    color: "hsl(var(--foreground))",
+    color: "var(--select-text, #111827)",
     "&:hover": {
-      borderColor: state.isFocused ? "hsl(var(--ring))" : "hsl(var(--muted-foreground))",
+      borderColor: state.isFocused ? "var(--select-ring, #3b82f6)" : "var(--select-border, #94a3b8)",
     },
   }),
   menu: (provided) => ({
     ...provided,
-    backgroundColor: "hsl(var(--popover))",
+    backgroundColor: "var(--select-menu-surface, #ffffff)",
     borderRadius: 18,
     overflow: "hidden",
-    border: "1px solid hsl(var(--border))",
+    border: "1px solid var(--select-border, #d1d5db)",
     boxShadow: "0 24px 64px rgba(2, 6, 23, 0.3)",
   }),
   placeholder: (provided) => ({
     ...provided,
-    color: "hsl(var(--muted-foreground))",
+    color: "var(--select-muted, #64748b)",
   }),
   option: (provided, state) => ({
     ...provided,
-    backgroundColor: state.isSelected ? "hsl(var(--primary))" : state.isFocused ? "rgba(59, 130, 246, 0.14)" : "transparent",
-    color: "hsl(var(--popover-foreground))",
+    backgroundColor: state.isSelected ? "var(--select-selected, #2563eb)" : state.isFocused ? "var(--select-focused, #dbeafe)" : "var(--select-menu-surface, #ffffff)",
+    color: state.isSelected ? "#ffffff" : "var(--select-text, #111827)",
     "&:active": {
-      backgroundColor: "hsl(var(--primary))",
+      backgroundColor: "var(--select-selected, #2563eb)",
     },
   }),
   singleValue: (provided) => ({
     ...provided,
-    color: "hsl(var(--foreground))",
+    color: "var(--select-text, #111827)",
   }),
   input: (provided) => ({
     ...provided,
-    color: "hsl(var(--foreground))",
+    color: "var(--select-text, #111827)",
   }),
   valueContainer: (provided) => ({
     ...provided,
-    color: "hsl(var(--foreground))",
+    color: "var(--select-text, #111827)",
     paddingLeft: "0.5rem",
   }),
   indicatorsContainer: (provided) => ({
     ...provided,
-    color: "hsl(var(--muted-foreground))",
+    color: "var(--select-muted, #64748b)",
   }),
   dropdownIndicator: (provided, state) => ({
     ...provided,
-    color: state.isFocused ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))",
+    color: state.isFocused ? "var(--select-text, #111827)" : "var(--select-muted, #64748b)",
     "&:hover": {
-      color: "hsl(var(--foreground))",
+      color: "var(--select-text, #111827)",
     },
   }),
   clearIndicator: (provided) => ({
     ...provided,
-    color: "hsl(var(--muted-foreground))",
+    color: "var(--select-muted, #64748b)",
     "&:hover": {
-      color: "hsl(var(--foreground))",
+      color: "var(--select-text, #111827)",
     },
   }),
   indicatorSeparator: () => ({
-    backgroundColor: "hsl(var(--border))",
+    backgroundColor: "var(--select-border, #d1d5db)",
   }),
   menuList: (provided) => ({
     ...provided,
@@ -121,7 +121,7 @@ export const ReactSelectField = forwardRef<any, ReactSelectFieldProps>(
     const SelectComponent = creatable ? CreatableSelect : Select
 
     return (
-      <div className={cn("relative space-y-1", isMenuOpen ? "z-[120]" : "z-0", className)}>
+      <div className={cn("react-select-field relative space-y-1", isMenuOpen ? "z-[120]" : "z-0", className)}>
         {label ? <label className="block text-sm font-medium text-gray-300">{label}</label> : null}
         <SelectComponent
           ref={ref}
@@ -142,8 +142,8 @@ export const ReactSelectField = forwardRef<any, ReactSelectFieldProps>(
                 error ? "border-red-500" : "border-gray-700",
             ),
             menu: () => "p-1",
-            singleValue: () => "text-gray-100",
-            placeholder: () => "text-gray-400",
+            singleValue: () => "",
+            placeholder: () => "",
           }}
           inputId={inputId}
           menuPortalTarget={resolvedPortalTarget}

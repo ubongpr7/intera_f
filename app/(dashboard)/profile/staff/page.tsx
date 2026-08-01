@@ -10,7 +10,7 @@ import { usePopulateCompanyProfileDefaultAccessMutation } from '@/redux/features
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { getCookie } from 'cookies-next';
-import { BadgePlus, BriefcaseBusiness, RefreshCcw, ShieldCheck, Users } from 'lucide-react';
+import { BadgePlus, BriefcaseBusiness, RefreshCcw, ShieldCheck, Users, UsersRound } from 'lucide-react';
 import {useState} from 'react'
 import { toast } from 'react-toastify';
 const StaffPage = () => {
@@ -47,17 +47,20 @@ const StaffPage = () => {
     {
       id: 'all',
       label: 'All Staff',
+      icon: Users,
       content: <StaffCreateCard refetchData={refetchData} setRefetchData={setRefetchData} />,
     },
     {
       id: 'group',
       label: 'Staff Group',
+      icon: UsersRound,
       content: <StaffGroup refetchData={refetchData} setRefetchData={setRefetchData}  />,
     },
     
     {
       id: 'role',
       label: 'Staff Role',
+      icon: ShieldCheck,
       content: <StaffRole refetchData={refetchData} setRefetchData={setRefetchData}  />,
     },
     
@@ -69,9 +72,9 @@ const StaffPage = () => {
       title="Staff access management"
       description="Add members, manage groups and roles, and keep permissions aligned with the active company workspace."
     >
-      <div className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card className="border-gray-200 shadow-sm">
+      <div className="staff-management-page space-y-6">
+        <div className="staff-management-intro grid gap-4 md:grid-cols-3">
+          <Card className="staff-management-feature border-gray-200 shadow-sm">
             <CardContent className="p-5">
               <div className="mb-3 inline-flex rounded-xl bg-blue-100 p-2 text-blue-700">
                 <Users className="h-4 w-4" />
@@ -80,7 +83,7 @@ const StaffPage = () => {
               <p className="mt-1 text-sm text-gray-600">Add staff into the active company context before assigning operational ownership.</p>
             </CardContent>
           </Card>
-          <Card className="border-gray-200 shadow-sm">
+          <Card className="staff-management-feature border-gray-200 shadow-sm">
             <CardContent className="p-5">
               <div className="mb-3 inline-flex rounded-xl bg-blue-100 p-2 text-blue-700">
                 <ShieldCheck className="h-4 w-4" />
@@ -89,7 +92,7 @@ const StaffPage = () => {
               <p className="mt-1 text-sm text-gray-600">Roles describe responsibility. Groups make recurring permission sets reusable across teams.</p>
             </CardContent>
           </Card>
-          <Card className="border-gray-200 shadow-sm">
+          <Card className="staff-management-feature border-gray-200 shadow-sm">
             <CardContent className="p-5">
               <div className="mb-3 inline-flex rounded-xl bg-blue-100 p-2 text-blue-700">
                 <BadgePlus className="h-4 w-4" />
@@ -100,7 +103,7 @@ const StaffPage = () => {
           </Card>
         </div>
 
-        <Card className="border-gray-200 shadow-sm">
+        <Card className="staff-management-presets border-gray-200 shadow-sm">
           <CardContent className="flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-3xl">
               <div className="mb-3 inline-flex rounded-xl bg-emerald-100 p-2 text-emerald-700">
@@ -119,7 +122,7 @@ const StaffPage = () => {
                 </div>
               ) : null}
             </div>
-            <Button onClick={() => void handlePopulateDefaults()} disabled={!canManageStaffAccess || populatingDefaults || !activeProfileId}>
+            <Button className="staff-management-sync" onClick={() => void handlePopulateDefaults()} disabled={!canManageStaffAccess || populatingDefaults || !activeProfileId}>
               <RefreshCcw className="mr-2 h-4 w-4" />
               {populatingDefaults ? "Syncing defaults..." : "Populate default roles & groups"}
             </Button>
@@ -127,7 +130,7 @@ const StaffPage = () => {
         </Card>
 
         {canManageStaffAccess ? (
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="staff-management-tabs rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
             <Tabs 
               items={tabs} 
               className="rounded-lg"

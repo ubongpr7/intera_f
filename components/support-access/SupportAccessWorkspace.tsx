@@ -256,10 +256,10 @@ export default function SupportAccessWorkspace() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="support-access-workspace mx-auto w-full max-w-[1800px] space-y-6 px-4 py-6 lg:px-8 2xl:px-10">
       <WorkspaceSupportContextBanner />
 
-      <Card className="border-gray-200 bg-white shadow-sm">
+      <Card className="support-access-hero border-gray-200 bg-white shadow-sm">
         <CardHeader className="gap-3 p-6 text-left">
           <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
             <KeyRound className="h-3.5 w-3.5" />

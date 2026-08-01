@@ -232,7 +232,7 @@ export default function InventoryPage() {
   }
 
   return (
-    <div className="grid w-full grid-cols-1 gap-6 py-2">
+    <div className="inventory-workspace mx-auto grid w-full max-w-[1800px] grid-cols-1 gap-6 px-4 py-6 lg:px-8 2xl:px-10">
       <main className="min-w-0 space-y-6">
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="border-b border-gray-100 p-6 text-left text-inherit">

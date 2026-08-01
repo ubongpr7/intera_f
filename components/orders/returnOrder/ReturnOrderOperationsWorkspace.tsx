@@ -153,7 +153,7 @@ export default function ReturnOrderOperationsWorkspace({ returnOrderId }: Return
   }
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 lg:px-8">
+    <div className="return-order-operations-workspace mx-auto w-full max-w-[1800px] space-y-6 px-4 py-6 lg:px-8 2xl:px-10">
       <Card className="border-gray-200 shadow-sm">
         <CardHeader className="border-b border-gray-100 p-6 text-left text-inherit">
           <div className="flex flex-wrap items-start justify-between gap-4">

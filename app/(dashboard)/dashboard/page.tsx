@@ -54,7 +54,7 @@ const formatDateTime = (value?: string | null) => {
 }
 
 const DashboardLoadingState = () => (
-  <div className="mx-auto mt-8 grid w-full max-w-6xl grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+  <div className="dashboard-loading mx-auto mt-8 grid w-full max-w-6xl grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
     {Array.from({ length: 8 }).map((_, index) => (
       <div key={`dashboard-loading-${index}`} className="h-36 animate-pulse rounded-2xl border border-gray-200 bg-white" />
     ))}
@@ -338,7 +338,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] space-y-6 px-4 py-6 lg:px-8">
+    <div className="workspace-dashboard mx-auto w-full max-w-[1600px] space-y-6 px-4 py-6 lg:px-8">
       <StructuralLocationScopeSelect
         allowMultiSelect
         className="max-w-sm"
@@ -347,7 +347,7 @@ export default function DashboardPage() {
         onValuesChange={setSelectedStructuralLocationIds}
         description="Focus dashboard metrics on one structural location when you need store-specific operations visibility."
       />
-      <Card className="overflow-hidden border-gray-200 shadow-sm">
+      <Card className="dashboard-overview-hero overflow-hidden border-gray-200 shadow-sm">
         <CardContent className="p-0">
           <div className="border-b border-gray-100 bg-gray-100/50 px-6 py-6">
             <div className="flex flex-wrap items-start justify-between gap-6">
@@ -384,7 +384,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-6">
+          <div className="dashboard-metrics grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-6">
             {canReadProductDashboard ? (
               <StatTile
                 label="Products"
@@ -455,7 +455,7 @@ export default function DashboardPage() {
 
       {isOwner ? <WorkspaceSetupOverview /> : null}
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="dashboard-domain-grid grid gap-6 xl:grid-cols-2">
         {canReadInventory || canViewInventoryReports ? (
           <DomainLaunchCard
             title="Inventory"
@@ -579,7 +579,7 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+      <div className="dashboard-ops-grid grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         {canReadInventory || canViewInventoryReports ? (
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="border-b border-gray-100 p-5 text-left text-inherit">

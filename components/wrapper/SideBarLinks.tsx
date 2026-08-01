@@ -43,7 +43,7 @@ interface SidebarLinkProps {
 
     const linkBody = (
       <div
-        className={`flex cursor-pointer items-center gap-3 rounded-2xl transition-colors ${
+        className={`dashboard-nav-item flex cursor-pointer items-center gap-3 rounded-2xl transition-colors ${
           isCollapsed ? "justify-center px-2 py-3" : "justify-start px-4 py-3"
         } ${
           isActive
