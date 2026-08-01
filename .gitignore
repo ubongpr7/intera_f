@@ -42,3 +42,4 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 docker-compose.yml
+backend-env-20260801-075525.zip
