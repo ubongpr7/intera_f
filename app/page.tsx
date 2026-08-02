@@ -9,7 +9,7 @@ import {
   Bot,
   Boxes,
   Building2,
-  CheckCircle2,
+  // CheckCircle2,
   ChevronDown,
   ClipboardList,
   Clock3,
@@ -27,14 +27,16 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useGetSubscriptionPlansQuery } from "@/redux/features/payment/paymentAPISlice";
+// import { Skeleton } from "@/components/ui/skeleton";
+// import { useGetSubscriptionPlansQuery } from "@/redux/features/payment/paymentAPISlice";
 import { useAppSelector } from "@/redux/store";
 import { useAppDispatch } from "@/redux/store";
 import { setIsDarkMode } from "@/redux/state";
-import { Feature, SubscriptionPlan } from "@/components/interfaces/payment";
+// import { Feature, SubscriptionPlan } from "@/components/interfaces/payment";
 import { AnimatePresence, motion } from "framer-motion";
+import { SocialIcon } from "@/components/social-icons";
 
+/*
 const billingLabel: Record<SubscriptionPlan["billing_cycle"], string> = {
   MONTHLY: "month",
   QUARTERLY: "quarter",
@@ -82,6 +84,7 @@ const planHighlights: Record<string, string[]> = {
     "Custom audit and intelligence limits",
   ],
 };
+*/
 
 const coreHighlights = [
   {
@@ -206,6 +209,7 @@ const faqItems = [
     answer:
       "The platform keeps a trace of stock movement, user activity, receiving, sales, and approvals so suspicious gaps are easier to spot and investigate.",
   },
+  /* Pricing and plan questions are intentionally hidden until after registration.
   {
     question: "Is there a free trial?",
     answer:
@@ -216,6 +220,7 @@ const faqItems = [
     answer:
       "The plan model is designed around increasing staff, locations, terminals, products, variants, and operational capabilities as your requirements grow.",
   },
+  */
 ];
 
 type DemoWidget =
@@ -688,6 +693,7 @@ const liftOnHover = {
   transition: { duration: 0.2, ease: "easeOut" as const },
 };
 
+/*
 function formatPlanPrice(plan: SubscriptionPlan) {
   if (plan.name.toLowerCase().includes("enterprise")) {
     return "Contact sales";
@@ -754,6 +760,7 @@ function PlanCard({ plan, highlighted = false }: { plan: SubscriptionPlan; highl
     </motion.div>
   );
 }
+*/
 
 export default function HomePage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -763,9 +770,11 @@ export default function HomePage() {
   const [visibleMessageCount, setVisibleMessageCount] = useState(0);
   const [typedDemoText, setTypedDemoText] = useState("");
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
+  /* Pricing is intentionally hidden until after registration.
   const { data: pricingPlans, isLoading, isError } = useGetSubscriptionPlansQuery({
     application__slug: "intera-ims",
   });
+  */
   const demoAvatarForRole = {
     assistant: isDarkMode ? "/assets/img/favicons/favicon-dark.png" : "/assets/img/favicons/favicon-light.png",
     user: "/assets/intera-logo.png",
@@ -876,9 +885,7 @@ export default function HomePage() {
             <a href="#demo" className="text-sm text-gray-600 md:text-base hover:text-gray-900">
               Demo
             </a>
-            <a href="#pricing" className="text-sm text-gray-600 md:text-base hover:text-gray-900">
-              Pricing
-            </a>
+            {/* Pricing is intentionally hidden until after registration. */}
             <a href="#faq" className="text-sm text-gray-600 md:text-base hover:text-gray-900">
               FAQ
             </a>
@@ -922,7 +929,7 @@ export default function HomePage() {
               <div className="landing-mobile-links">
                 <a href="#capabilities" onClick={() => setIsMobileMenuOpen(false)}>Capabilities <ArrowRight className="h-4 w-4" /></a>
                 <a href="#demo" onClick={() => setIsMobileMenuOpen(false)}>Demo <ArrowRight className="h-4 w-4" /></a>
-                <a href="#pricing" onClick={() => setIsMobileMenuOpen(false)}>Pricing <ArrowRight className="h-4 w-4" /></a>
+                {/* Pricing is intentionally hidden until after registration. */}
                 <a href="#faq" onClick={() => setIsMobileMenuOpen(false)}>FAQ <ArrowRight className="h-4 w-4" /></a>
               </div>
               <div className="landing-mobile-actions">
@@ -959,9 +966,7 @@ export default function HomePage() {
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
-                <Button asChild variant="secondary" size="lg">
-                  <a href="#pricing">View plans</a>
-                </Button>
+                {/* Pricing is intentionally hidden until after registration. */}
               </div>
               <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
                 {coreHighlights.map(({ title, icon: IconComponent }, index) => (
@@ -1266,6 +1271,7 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* Pricing is intentionally hidden until after registration.
         <section id="pricing" className="landing-pricing border-y border-gray-200 bg-white">
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             <div className="max-w-3xl">
@@ -1297,6 +1303,7 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+        */}
 
         <section id="faq" className="landing-faq">
           <div className="landing-faq-inner mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
@@ -1345,14 +1352,15 @@ export default function HomePage() {
 
       <footer className="landing-footer border-t border-gray-200 bg-white">
         <div className="mx-auto max-w-7xl px-4 py-12 text-sm sm:px-6 lg:px-8">
-          <div className="landing-footer-grid grid gap-10 border-b border-slate-800 pb-10 md:grid-cols-[1.5fr_repeat(2,1fr)]">
+          <div className="landing-footer-grid grid gap-10 border-b border-slate-800 pb-10 md:grid-cols-[1.5fr_repeat(3,1fr)]">
             <div className="landing-footer-brand">
               <p className="landing-footer-kicker">Operations, in sync</p>
               <Image src={homepageLogoSrc} alt="Intera Inventory logo" width={320} height={96} sizes="(min-width: 1024px) 320px, 250px" className="landing-footer-logo mt-3 h-20 w-auto object-contain object-left sm:h-24" />
               <p className="mt-4 max-w-sm leading-6 text-slate-400">A command center for teams that need inventory, selling, and operational intelligence to move together.</p>
             </div>
-            <div className="landing-footer-links text-base"><p className="font-semibold text-white">Explore</p><div className="mt-4 flex flex-col gap-3"><a href="#capabilities">Capabilities</a><a href="#demo">Live demo</a><a href="#pricing">Pricing</a></div></div>
+            <div className="landing-footer-links text-base"><p className="font-semibold text-white">Explore</p><div className="mt-4 flex flex-col gap-3"><a href="#capabilities">Capabilities</a><a href="#demo">Live demo</a></div></div>
             <div className="landing-footer-links text-base"><p className="font-semibold text-white">Account</p><div className="mt-4 flex flex-col gap-3"><Link href="/accounts">Start free</Link><Link href="/accounts/signin">Sign in</Link><a href="#faq">FAQ</a></div></div>
+            <div className="landing-footer-links text-base"><p className="font-semibold text-white">Connect</p><div className="mt-4 flex items-center gap-4"><a href="https://www.linkedin.com/company/interapro-tech" target="_blank" rel="noopener noreferrer" aria-label="InteraPro on LinkedIn" title="LinkedIn"><SocialIcon name="linkedin" /></a><a href="https://x.com/interaprotech" target="_blank" rel="noopener noreferrer" aria-label="InteraPro on X" title="X"><SocialIcon name="x" /></a></div></div>
           </div>
           <div className="flex flex-col gap-2 pt-6 text-slate-500 sm:flex-row sm:items-center sm:justify-between"><p>© 2026 Intera Inventory. Built for dependable operations.</p><p>Inventory clarity, from first scan to final decision.</p></div>
           </div>
