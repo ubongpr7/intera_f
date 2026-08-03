@@ -8,9 +8,33 @@ import MicrosoftClarity from "@/components/analytics/MicrosoftClarity";
 
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.interaims.com"),
   title: "Intera Inventory",
-  description: "AI-driven IMS",
+  description:
+    "Intera IMS helps businesses run clearer inventory operations with stock control, POS, purchasing, reporting, and AI assistance.",
   manifest: "/site.webmanifest",
+  openGraph: {
+    title: "Intera IMS | Inventory operations made clearer",
+    description:
+      "Run inventory operations, POS, purchasing, reporting, and AI-assisted workflows in one workspace.",
+    siteName: "Intera IMS",
+    type: "website",
+    images: [
+      {
+        url: "/assets/interapro-gradient-dark.png",
+        width: 2000,
+        height: 2000,
+        alt: "InteraPro Tech Solutions",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Intera IMS | Inventory operations made clearer",
+    description:
+      "Run inventory operations, POS, purchasing, reporting, and AI-assisted workflows in one workspace.",
+    images: ["/assets/interapro-gradient-dark.png"],
+  },
   icons: {
     icon: [
       {
