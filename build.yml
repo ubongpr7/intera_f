@@ -1,0 +1,20 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - yarn install --frozen-lockfile --network-timeout 600000
+    build:
+      commands:
+        - rm -f .env.production
+        - env | grep -e '^LIVEKIT_API_KEY=' -e '^LIVEKIT_API_SECRET=' -e '^NEXT_PUBLIC_LIVEKIT_URL=' -e '^NEXT_PUBLIC_LIVEKIT_VOICE_AGENT_NAME=' >> .env.production
+        - node -e "const fs=require('fs'); const text=fs.readFileSync('.env.production','utf8'); console.log('HAS_LIVEKIT_API_KEY', /LIVEKIT_API_KEY=/.test(text)); console.log('HAS_LIVEKIT_API_SECRET', /LIVEKIT_API_SECRET=/.test(text)); console.log('HAS_NEXT_PUBLIC_LIVEKIT_URL', /NEXT_PUBLIC_LIVEKIT_URL=/.test(text));"
+        - yarn build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - .next/cache/**/*

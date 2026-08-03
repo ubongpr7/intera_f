@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -30,11 +30,10 @@ import { Button } from "@/components/ui/button";
 // import { Skeleton } from "@/components/ui/skeleton";
 // import { useGetSubscriptionPlansQuery } from "@/redux/features/payment/paymentAPISlice";
 import { useAppSelector } from "@/redux/store";
-import { useAppDispatch } from "@/redux/store";
-import { setIsDarkMode } from "@/redux/state";
+import { LandingFooter } from "@/components/landing/LandingFooter";
+import { LandingHeader } from "@/components/landing/LandingHeader";
 // import { Feature, SubscriptionPlan } from "@/components/interfaces/payment";
 import { AnimatePresence, motion } from "framer-motion";
-import { SocialIcon } from "@/components/social-icons";
 
 /*
 const billingLabel: Record<SubscriptionPlan["billing_cycle"], string> = {
@@ -763,9 +762,6 @@ function PlanCard({ plan, highlighted = false }: { plan: SubscriptionPlan; highl
 */
 
 export default function HomePage() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const mobileMenuRef = useRef<HTMLDivElement>(null);
-  const dispatch = useAppDispatch();
   const [activeDemoIndex, setActiveDemoIndex] = useState(() => Math.floor(Math.random() * demoConversations.length));
   const [visibleMessageCount, setVisibleMessageCount] = useState(0);
   const [typedDemoText, setTypedDemoText] = useState("");
@@ -779,24 +775,6 @@ export default function HomePage() {
     assistant: isDarkMode ? "/assets/img/favicons/favicon-dark.png" : "/assets/img/favicons/favicon-light.png",
     user: "/assets/intera-logo.png",
   } as const;
-  const homepageLogoSrc = isDarkMode
-    ? "/assets/img/logos/verticals/no-bg/INTERA-PRIMARY-LOGO-VERTICAL-WHITE-4.png"
-    : "/assets/img/logos/verticals/no-bg/INTERA-PRIMARY-LOGO-VERTICAL-BLACK-3.png";
-
-  const toggleLandingTheme = () => dispatch(setIsDarkMode(!isDarkMode));
-
-  useEffect(() => {
-    if (!isMobileMenuOpen) return;
-    const closeOnOutsidePress = (event: PointerEvent) => {
-      const target = event.target;
-      if (target instanceof Element && !mobileMenuRef.current?.contains(target) && !target.closest(".landing-menu-trigger")) {
-        setIsMobileMenuOpen(false);
-      }
-    };
-    document.addEventListener("pointerdown", closeOnOutsidePress);
-    return () => document.removeEventListener("pointerdown", closeOnOutsidePress);
-  }, [isMobileMenuOpen]);
-
   useEffect(() => {
     const intervalId = window.setInterval(() => {
       setActiveDemoIndex((currentValue) => (currentValue + 1) % demoConversations.length);
@@ -863,86 +841,7 @@ export default function HomePage() {
 
   return (
     <div className="landing-page min-h-screen bg-white text-gray-900">
-      <header className="landing-header sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="relative block h-12 w-[172px] shrink-0 overflow-hidden sm:h-14 sm:w-[196px]">
-              <Image
-                src={homepageLogoSrc}
-                alt="Intera Inventory logo"
-                fill
-                priority
-                sizes="(min-width: 1024px) 196px, 172px"
-                className="object-cover object-center"
-              />
-            </span>
-          </Link>
-
-          <nav className="hidden items-center gap-8 md:flex">
-            <a href="#capabilities" className="text-sm text-gray-600 md:text-base hover:text-gray-900">
-              Capabilities
-            </a>
-            <a href="#demo" className="text-sm text-gray-600 md:text-base hover:text-gray-900">
-              Demo
-            </a>
-            {/* Pricing is intentionally hidden until after registration. */}
-            <a href="#faq" className="text-sm text-gray-600 md:text-base hover:text-gray-900">
-              FAQ
-            </a>
-          </nav>
-
-          <div className="hidden items-center gap-3 md:flex">
-            <button type="button" onClick={toggleLandingTheme} className="landing-theme-toggle" aria-label={`Switch to ${isDarkMode ? "light" : "dark"} theme`}>
-              {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </button>
-            <Button variant="secondary" asChild>
-              <Link className="landing-nav-secondary" href="/accounts/signin"><LogIn className="h-4 w-4" />Sign in</Link>
-            </Button>
-            <Button asChild>
-              <Link className="landing-nav-primary" href="/accounts">Get started <ArrowRight className="h-4 w-4" /></Link>
-            </Button>
-          </div>
-
-          <button
-            type="button"
-            className="landing-menu-trigger inline-flex md:hidden"
-            onClick={() => setIsMobileMenuOpen((currentValue) => !currentValue)}
-            aria-label="Toggle menu"
-            aria-expanded={isMobileMenuOpen}
-            aria-controls="landing-mobile-menu"
-          >
-            {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-        </div>
-
-        <AnimatePresence>
-          {isMobileMenuOpen ? (
-            <motion.div
-              ref={mobileMenuRef}
-              id="landing-mobile-menu"
-              initial={{ opacity: 0, y: -10, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.98 }}
-              transition={{ duration: 0.18, ease: "easeOut" }}
-              className="landing-mobile-menu md:hidden"
-            >
-              <div className="landing-mobile-links">
-                <a href="#capabilities" onClick={() => setIsMobileMenuOpen(false)}>Capabilities <ArrowRight className="h-4 w-4" /></a>
-                <a href="#demo" onClick={() => setIsMobileMenuOpen(false)}>Demo <ArrowRight className="h-4 w-4" /></a>
-                {/* Pricing is intentionally hidden until after registration. */}
-                <a href="#faq" onClick={() => setIsMobileMenuOpen(false)}>FAQ <ArrowRight className="h-4 w-4" /></a>
-              </div>
-              <div className="landing-mobile-actions">
-                <button type="button" onClick={toggleLandingTheme} className="landing-theme-toggle" aria-label={`Switch to ${isDarkMode ? "light" : "dark"} theme`}>
-                  {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                </button>
-                <Button variant="ghost" asChild className="flex-1"><Link className="landing-nav-secondary" href="/accounts/signin" onClick={() => setIsMobileMenuOpen(false)}><LogIn className="h-4 w-4" />Sign in</Link></Button>
-                <Button asChild className="flex-1"><Link className="landing-nav-primary" href="/accounts" onClick={() => setIsMobileMenuOpen(false)}>Get started <ArrowRight className="h-4 w-4" /></Link></Button>
-              </div>
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
-      </header>
+      <LandingHeader />
 
       <main>
         <section className="landing-hero bg-gradient-to-b from-blue-50 via-white to-white">
@@ -1350,21 +1249,7 @@ export default function HomePage() {
         </section>
       </main>
 
-      <footer className="landing-footer border-t border-gray-200 bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-12 text-sm sm:px-6 lg:px-8">
-          <div className="landing-footer-grid grid gap-10 border-b border-slate-800 pb-10 md:grid-cols-[1.5fr_repeat(3,1fr)]">
-            <div className="landing-footer-brand">
-              <p className="landing-footer-kicker">Operations, in sync</p>
-              <Image src={homepageLogoSrc} alt="Intera Inventory logo" width={320} height={96} sizes="(min-width: 1024px) 320px, 250px" className="landing-footer-logo mt-3 h-20 w-auto object-contain object-left sm:h-24" />
-              <p className="mt-4 max-w-sm leading-6 text-slate-400">A command center for teams that need inventory, selling, and operational intelligence to move together.</p>
-            </div>
-            <div className="landing-footer-links text-base"><p className="font-semibold text-white">Explore</p><div className="mt-4 flex flex-col gap-3"><a href="#capabilities">Capabilities</a><a href="#demo">Live demo</a></div></div>
-            <div className="landing-footer-links text-base"><p className="font-semibold text-white">Account</p><div className="mt-4 flex flex-col gap-3"><Link href="/accounts">Start free</Link><Link href="/accounts/signin">Sign in</Link><a href="#faq">FAQ</a></div></div>
-            <div className="landing-footer-links text-base"><p className="font-semibold text-white">Connect</p><div className="mt-4 flex items-center gap-4"><a href="https://www.linkedin.com/company/interapro-tech" target="_blank" rel="noopener noreferrer" aria-label="InteraPro on LinkedIn" title="LinkedIn"><SocialIcon name="linkedin" /></a><a href="https://x.com/interaprotech" target="_blank" rel="noopener noreferrer" aria-label="InteraPro on X" title="X"><SocialIcon name="x" /></a></div></div>
-          </div>
-          <div className="flex flex-col gap-2 pt-6 text-slate-500 sm:flex-row sm:items-center sm:justify-between"><p>© 2026 Intera Inventory. Built for dependable operations.</p><p>Inventory clarity, from first scan to final decision.</p></div>
-          </div>
-      </footer>
+      <LandingFooter />
     </div>
   );
 }

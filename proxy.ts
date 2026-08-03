@@ -15,6 +15,7 @@ export function proxy(request: NextRequest) {
     path.startsWith("/accounts/invitations/") ||
     path === "/invitations/accept"
   const isActivationPath = path.startsWith("/activate/")
+  const isLegalPath = path === "/privacy" || path === "/terms"
   const readCookie = (key: AuthCookieKey) => {
     for (const name of getCookieCandidates(key)) {
       const value = request.cookies.get(name)?.value
@@ -34,6 +35,7 @@ export function proxy(request: NextRequest) {
     path === "/pricing" ||
     path === "/about" ||
     path === "/contact" ||
+    isLegalPath ||
     path === "/blog" ||
     path.startsWith("/blog/") ||
     path.startsWith("/docs") ||
@@ -71,7 +73,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(mfaTargetPath, request.url))
   }
 
-  if (isPublicPath && mfaVerified && !isInvitationPath && !isActivationPath) {
+  if (isPublicPath && mfaVerified && !isInvitationPath && !isActivationPath && !isLegalPath) {
     return NextResponse.redirect(new URL("/dashboard", request.url))
   }
 
