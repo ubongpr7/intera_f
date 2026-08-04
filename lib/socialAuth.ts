@@ -53,7 +53,10 @@ const extractAuthorizationUrl = async (response: Response) => {
   }
 };
 
-export const continueWithSocialAuth = async (provider: SocialProvider) => {
+export const continueWithSocialAuth = async (
+  provider: SocialProvider,
+  options?: { signup?: boolean; termsAccepted?: boolean; privacyAccepted?: boolean },
+) => {
   const backend = (process.env.NEXT_PUBLIC_BACKEND_HOST_URL ?? "").replace(/\/+$/, "");
   const redirectUri = getRedirectUri(provider);
 
@@ -65,7 +68,13 @@ export const continueWithSocialAuth = async (provider: SocialProvider) => {
   }
 
   const providerSlug = providerSlugMap[provider];
-  const url = `${backend}/auth/o/${providerSlug}/?redirect_uri=${encodeURIComponent(redirectUri)}`;
+  const query = new URLSearchParams({ redirect_uri: redirectUri });
+  if (options?.signup) {
+    query.set('signup', '1');
+    query.set('terms_accepted', String(options.termsAccepted === true));
+    query.set('privacy_accepted', String(options.privacyAccepted === true));
+  }
+  const url = `${backend}/auth/o/${providerSlug}/?${query.toString()}`;
 
   const response = await fetch(url, {
     method: "GET",

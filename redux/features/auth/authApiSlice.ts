@@ -67,12 +67,20 @@ export const authApiSlice = apiSlice.injectEndpoints({
 
     register: builder.mutation<
       unknown,
-      { first_name: string; last_name: string; email: string; password: string; re_password: string }
+      {
+        first_name: string;
+        last_name: string;
+        email: string;
+        password: string;
+        re_password: string;
+        terms_accepted: boolean;
+        privacy_accepted: boolean;
+      }
     >({
-      query: ({ first_name, last_name, email, password, re_password }) => ({
+      query: ({ first_name, last_name, email, password, re_password, terms_accepted, privacy_accepted }) => ({
         url: "/djoser/users/",
         method: "POST",
-        body: { first_name, last_name, email, password, re_password },
+        body: { first_name, last_name, email, password, re_password, terms_accepted, privacy_accepted },
         service: "users",
       }),
     }),

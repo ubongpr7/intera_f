@@ -95,7 +95,7 @@ const coreHighlights = [
   {
     title: "Made for real-world control",
     description:
-      "Run retail and warehouse workflows with confidence using offline-first POS, role controls, audit trails, and anti-theft signals.",
+      "Run retail and warehouse workflows with confidence using offline-first POS, role controls, audit trails, and controlled activity monitoring.",
     icon: WifiOff,
   },
   {
@@ -128,8 +128,8 @@ const capabilityGrid = [
     icon: Users2,
   },
   {
-    title: "Audit, Traceability & Anti-theft",
-    description: "Search controlled activity trails, trace stock movements, and surface anti-theft risk through event-backed monitoring.",
+    title: "Audit & Traceability",
+    description: "Search controlled activity trails and trace stock movements through event-backed monitoring.",
     icon: ShieldCheck,
   },
   {
@@ -148,8 +148,15 @@ const capabilityGrid = [
     icon: Radio,
   },
   {
+    title: "Anti-theft Oversight",
+    description: "Planned monitoring that will help teams identify suspicious stock patterns and investigate operational risk after launch.",
+    availability: "Coming soon",
+    icon: ShieldCheck,
+  },
+  {
     title: "External API Platform",
-    description: "Build custom integrations on top of the platform API when you need a separate, metered developer surface. Coming soon.",
+    description: "Build custom integrations on top of the platform API when you need a separate, metered developer surface.",
+    availability: "Coming soon",
     icon: Menu,
   },
 ];
@@ -204,9 +211,9 @@ const faqItems = [
       "Workspace owners and explicitly authorized staff can access the audit trail. Audit APIs and realtime streams enforce workspace and permission checks.",
   },
   {
-    question: "How does the platform help prevent theft?",
+    question: "How will the platform help prevent theft?",
     answer:
-      "The platform keeps a trace of stock movement, user activity, receiving, sales, and approvals so suspicious gaps are easier to spot and investigate.",
+      "Current audit and traceability tools keep a record of stock movement, user activity, receiving, sales, and approvals. Dedicated anti-theft oversight is planned for release within two months after the 01 September launch.",
   },
   /* Pricing and plan questions are intentionally hidden until after registration.
   {
@@ -238,6 +245,7 @@ type DemoMessage = {
 type DemoConversation = {
   title: string
   specialist: string
+  availability?: "Ready" | "Coming soon"
   messages: DemoMessage[]
 }
 
@@ -437,6 +445,7 @@ const demoConversations: DemoConversation[] = [
   {
     title: "Anti-theft investigation",
     specialist: "Audit agent",
+    availability: "Coming soon",
     messages: [
       { role: "user", text: "Can you help me spot a stock movement that looks suspicious?" },
       {
@@ -927,14 +936,21 @@ export default function HomePage() {
           </div>
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {capabilityGrid.map(({ title, description, icon: IconComponent }, index) => (
+            {capabilityGrid.map(({ title, description, availability, icon: IconComponent }, index) => (
               <motion.div
                 key={title}
                 {...revealCard(index)}
                 whileHover={liftOnHover}
-                className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-colors hover:border-blue-300"
+                className={`rounded-2xl border p-6 shadow-sm transition-colors hover:border-blue-300 ${availability ? "border-blue-200 bg-blue-50/40" : "border-gray-200 bg-white"}`}
               >
-                <IconComponent className="h-5 w-5 text-blue-700" />
+                <div className="flex items-start justify-between gap-3">
+                  <IconComponent className="h-5 w-5 text-blue-700" />
+                  {availability ? (
+                    <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700">
+                      {availability}
+                    </span>
+                  ) : null}
+                </div>
                 <h3 className="mt-4 text-lg font-semibold text-gray-900">{title}</h3>
                 <p className="mt-2 text-sm text-gray-600">{description}</p>
               </motion.div>
@@ -1010,7 +1026,7 @@ export default function HomePage() {
               <motion.div
                 {...revealCard(0)}
                 whileHover={liftOnHover}
-                className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-colors hover:border-blue-300 lg:col-span-3"
+                className="flex h-[620px] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-colors hover:border-blue-300 lg:col-span-3 lg:h-[650px]"
               >
                 <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-700 p-4 text-white">
                   <div className="min-w-0">
@@ -1019,18 +1035,22 @@ export default function HomePage() {
                       <span className="truncate text-sm font-semibold uppercase tracking-[0.18em] text-blue-100">
                         Intera operations agent
                       </span>
-                      <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-900">
-                        Ready
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${demoConversations[activeDemoIndex].availability === "Coming soon" ? "bg-blue-50 text-blue-700" : "bg-emerald-100 text-emerald-900"}`}>
+                        {demoConversations[activeDemoIndex].availability ?? "Ready"}
                       </span>
                     </div>
-                    <p className="mt-2 truncate text-sm text-blue-50/90">Demonstration conversation using supported workflows.</p>
+                    <p className="mt-2 truncate text-sm text-blue-50/90">
+                      {demoConversations[activeDemoIndex].availability === "Coming soon"
+                        ? "Planned post-launch feature preview."
+                        : "Demonstration conversation using supported workflows."}
+                    </p>
                   </div>
                   <span className="hidden rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-medium sm:inline-flex">
                     Product preview
                   </span>
                 </div>
 
-                <div className="min-h-[330px] bg-gray-50 p-4">
+                <div className="min-h-0 flex-1 overflow-y-auto bg-gray-50 p-4">
                   <div className="mb-4 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Workflow</p>
                     <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
@@ -1041,7 +1061,9 @@ export default function HomePage() {
                           <p className="text-xs text-gray-500">{demoConversations[activeDemoIndex].specialist}</p>
                         </div>
                       </div>
-                      <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-semibold text-gray-700">Ready</span>
+                      <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${demoConversations[activeDemoIndex].availability === "Coming soon" ? "bg-blue-50 text-blue-700" : "bg-gray-100 text-gray-700"}`}>
+                        {demoConversations[activeDemoIndex].availability ?? "Ready"}
+                      </span>
                     </div>
                   </div>
                   <AnimatePresence mode="wait">

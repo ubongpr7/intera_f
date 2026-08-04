@@ -9,8 +9,9 @@ import { ErrorResponse, RegisterResponse } from '../types/authResponse';
 import { RegisterFormInputs } from '../types/authForms';
 import { useRouter } from 'nextjs-toploader/app'
 import { useSearchParams } from 'next/navigation';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Check, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { continueWithSocialAuth } from '@/lib/socialAuth';
+import LegalConsentDialog, { LegalPolicy } from '@/components/legal/LegalConsentDialog';
 
 function GoogleIcon() {
   return <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4" focusable="false"><path fill="#4285F4" d="M21.8 12.23c0-.71-.06-1.23-.2-1.77H12v3.55h5.64c-.11.88-.73 2.2-2.1 3.09l-.02.12 3.05 2.31.21.02c1.93-1.74 3.02-4.29 3.02-7.32Z"/><path fill="#34A853" d="M12 22c2.76 0 5.08-.89 6.77-2.42l-3.23-2.45c-.86.59-2.02 1-3.54 1a6.12 6.12 0 0 1-5.78-4.14l-.12.01-3.17 2.4-.04.11A10.16 10.16 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.22 13.99A6.03 6.03 0 0 1 5.9 12c0-.69.12-1.36.31-1.99v-.13L2.99 7.46l-.1.05A9.78 9.78 0 0 0 1.8 12c0 1.62.39 3.15 1.09 4.49l3.33-2.5Z"/><path fill="#EA4335" d="M12 5.87c1.91 0 3.2.8 3.94 1.47l2.88-2.73C17.08 3.02 14.76 2 12 2a10.16 10.16 0 0 0-9.11 5.51l3.32 2.5A6.12 6.12 0 0 1 12 5.87Z"/></svg>;
@@ -62,6 +63,9 @@ export default function RegisterForm() {
   const [password, setPassword] = useState('');
   const [showPassWord,setShowPassword]=useState(false)
   const [isSocialLoading, setIsSocialLoading] = useState(false);
+  const [legalDialog, setLegalDialog] = useState<LegalPolicy | null>(null);
+  const [legalAccepted, setLegalAccepted] = useState({ terms: false, privacy: false });
+  const hasAcceptedPolicies = legalAccepted.terms && legalAccepted.privacy;
   const { 
     register, 
     handleSubmit, 
@@ -74,10 +78,18 @@ export default function RegisterForm() {
   });
 
   const onSubmit: SubmitHandler<RegisterFormInputs> = async (formData) => {
+    if (!hasAcceptedPolicies) {
+      setLegalDialog(legalAccepted.terms ? 'privacy' : 'terms');
+      toast.error('Read and agree to both policies before creating your account.');
+      return;
+    }
+
     try {
       const userData = await registerUser({
         ...formData,
         last_name: formData.last_name ?? "",
+        terms_accepted: legalAccepted.terms,
+        privacy_accepted: legalAccepted.privacy,
       }).unwrap() as RegisterResponse;
       toast.success("Registration successful. Check your email to activate your account.");
       const nextSuffix = nextUrl ? `&next=${encodeURIComponent(nextUrl)}` : "";
@@ -90,9 +102,18 @@ export default function RegisterForm() {
   };
 
   const handleGoogleAuth = async () => {
+    if (!hasAcceptedPolicies) {
+      setLegalDialog(legalAccepted.terms ? 'privacy' : 'terms');
+      toast.error('Read and agree to both policies before continuing.');
+      return;
+    }
     try {
       setIsSocialLoading(true);
-      await continueWithSocialAuth("google");
+      await continueWithSocialAuth("google", {
+        signup: true,
+        termsAccepted: legalAccepted.terms,
+        privacyAccepted: legalAccepted.privacy,
+      });
     } catch (error: any) {
       toast.error(error?.message || "Unable to start Google sign-up.");
     } finally {
@@ -241,9 +262,35 @@ export default function RegisterForm() {
       
 
       {/* Submit Button */}
+      <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <p className="text-sm font-medium text-slate-800">Review the policies before creating your account.</p>
+        <p className="text-xs text-slate-500">Open each policy, scroll through it, and select “I agree” at the end.</p>
+        {(['terms', 'privacy'] as const).map((policy) => {
+          const accepted = legalAccepted[policy];
+          const label = policy === 'terms' ? 'Terms and Conditions' : 'Privacy Policy';
+          return (
+            <div key={policy} className="flex items-start gap-3 text-sm text-slate-700">
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={accepted}
+                aria-label={`Read and agree to the ${label}`}
+                onClick={() => accepted ? setLegalAccepted((current) => ({ ...current, [policy]: false })) : setLegalDialog(policy)}
+                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border transition ${accepted ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-400 bg-white text-transparent hover:border-blue-500'}`}
+              >
+                <Check className="h-3.5 w-3.5" />
+              </button>
+              <span>
+                I have read and agree to the {label}.{' '}
+                <button type="button" onClick={() => setLegalDialog(policy)} className="font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700">Review in dialog</button>
+              </span>
+            </div>
+          );
+        })}
+      </div>
       <button
         type="submit"
-        disabled={isLoading || isSocialLoading}
+        disabled={isLoading || isSocialLoading || !hasAcceptedPolicies}
         className="auth-button"
       >
         {isLoading ? <><Loader2 className="h-4 w-4 animate-spin" /> Creating account...</> : 'Create account'}
@@ -251,7 +298,7 @@ export default function RegisterForm() {
       <button
         type="button"
         onClick={() => void handleGoogleAuth()}
-        disabled={isLoading || isSocialLoading}
+        disabled={isLoading || isSocialLoading || !hasAcceptedPolicies}
         className="auth-secondary-button"
       >
         {isSocialLoading ? <><Loader2 className="h-4 w-4 animate-spin" /> Redirecting...</> : <><GoogleIcon /> Continue with Google</>}
@@ -266,6 +313,14 @@ export default function RegisterForm() {
       </Link>
       
       </div>
+      <LegalConsentDialog
+        policy={legalDialog}
+        onClose={() => setLegalDialog(null)}
+        onAgree={(policy) => {
+          setLegalAccepted((current) => ({ ...current, [policy]: true }));
+          setLegalDialog(null);
+        }}
+      />
     </form>
   );
 }
