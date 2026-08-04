@@ -1630,6 +1630,93 @@ html.light .legal-section-body a {
   }
 }
 
+/* Legal pages use the landing shell but need a readable document rhythm of their own. */
+.legal-document {
+  color: #dbe7f7;
+}
+
+.legal-section + .legal-section {
+  margin-top: 2.75rem;
+  padding-top: 2.75rem;
+  border-top: 1px solid rgba(157, 183, 221, .16);
+}
+
+.legal-section-number {
+  margin: 0;
+  color: #75e3ce;
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+
+.legal-section h2 {
+  margin-top: .55rem;
+  color: #f7faff;
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+  font-weight: 750;
+  letter-spacing: -.02em;
+}
+
+.legal-section-body {
+  margin-top: 1rem;
+  color: #b9c9df;
+  font-size: 1rem;
+  line-height: 1.8;
+}
+
+.legal-section-body p + p {
+  margin-top: 1rem;
+}
+
+.legal-section-body ul {
+  margin: 1rem 0 0 1.25rem;
+  list-style: disc;
+}
+
+.legal-section-body li + li {
+  margin-top: .55rem;
+}
+
+.legal-section-body strong {
+  color: #f7faff;
+  font-weight: 700;
+}
+
+.legal-section-body a {
+  color: #8db9ff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+html.light .legal-document {
+  color: #334b6b;
+}
+
+html.light .legal-section + .legal-section {
+  border-color: rgba(44, 74, 119, .14);
+}
+
+html.light .legal-section-number {
+  color: #147c72;
+}
+
+html.light .legal-section h2 {
+  color: #11233e;
+}
+
+html.light .legal-section-body {
+  color: #526783;
+}
+
+html.light .legal-section-body strong {
+  color: #1b3558;
+}
+
+html.light .legal-section-body a {
+  color: #2457d6;
+}
+
 @media (max-width:1023px) {
 
   .landing-hero>div,

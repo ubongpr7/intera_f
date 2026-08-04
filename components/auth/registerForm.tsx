@@ -262,27 +262,27 @@ export default function RegisterForm() {
       
 
       {/* Submit Button */}
-      <div className="auth-legal-consent space-y-3 rounded-2xl border p-4">
-        <p className="text-sm font-semibold">Review the policies before creating your account.</p>
-        <p className="text-xs">Open each policy, scroll through it, and select “I agree” at the end.</p>
+      <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <p className="text-sm font-medium text-slate-800">Review the policies before creating your account.</p>
+        <p className="text-xs text-slate-500">Open each policy, scroll through it, and select “I agree” at the end.</p>
         {(['terms', 'privacy'] as const).map((policy) => {
           const accepted = legalAccepted[policy];
           const label = policy === 'terms' ? 'Terms and Conditions' : 'Privacy Policy';
           return (
-            <div key={policy} className="auth-consent-row flex items-start gap-3 rounded-xl p-2 text-sm">
+            <div key={policy} className="flex items-start gap-3 text-sm text-slate-700">
               <button
                 type="button"
                 role="checkbox"
                 aria-checked={accepted}
                 aria-label={`Read and agree to the ${label}`}
                 onClick={() => accepted ? setLegalAccepted((current) => ({ ...current, [policy]: false })) : setLegalDialog(policy)}
-                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${accepted ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-400 bg-white text-transparent hover:border-blue-500'}`}
+                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border transition ${accepted ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-400 bg-white text-transparent hover:border-blue-500'}`}
               >
                 <Check className="h-3.5 w-3.5" />
               </button>
               <span>
                 I have read and agree to the {label}.{' '}
-                <button type="button" onClick={() => setLegalDialog(policy)} className="auth-consent-review font-semibold underline underline-offset-2">Review in dialog</button>
+                <button type="button" onClick={() => setLegalDialog(policy)} className="font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700">Review in dialog</button>
               </span>
             </div>
           );
