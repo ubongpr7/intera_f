@@ -163,8 +163,8 @@ export default function POSRemittances({ currencyCode }: { currencyCode: string 
   }
 
   return (
-    <>
-      <Card className="border-gray-200 shadow-sm">
+    <div className="pos-remittance-content">
+      <Card className="pos-remittance-ledger border-gray-200 shadow-sm">
         <CardHeader className="border-b border-gray-100 p-6 text-left text-inherit">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -190,7 +190,7 @@ export default function POSRemittances({ currencyCode }: { currencyCode: string 
             {summaryCards.map((item) => {
               const Icon = item.icon
               return (
-                <div key={item.label} className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                <div key={item.label} className="pos-remittance-summary rounded-2xl border border-gray-200 bg-gray-50 p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">{item.label}</div>
                     <Icon className="h-4 w-4 text-gray-400" />
@@ -203,7 +203,7 @@ export default function POSRemittances({ currencyCode }: { currencyCode: string 
 
           <div className="grid gap-4 xl:grid-cols-2">
             {remittances.map((remittance) => (
-              <div key={remittance.id} className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+              <div key={remittance.id} className="pos-remittance-record rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <div className="text-sm font-semibold text-gray-900">{remittance.terminal_name || "Terminal remittance"}</div>
@@ -217,19 +217,19 @@ export default function POSRemittances({ currencyCode }: { currencyCode: string 
                 </div>
 
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
+                  <div className="pos-remittance-amount rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
                     <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">Expected</div>
                     <div className="mt-2 text-lg font-semibold text-gray-900">{formatCurrency(currencyCode, Number(remittance.expected_amount ?? 0))}</div>
                   </div>
-                  <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
+                  <div className="pos-remittance-amount rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
                     <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">Counted</div>
                     <div className="mt-2 text-lg font-semibold text-gray-900">{formatCurrency(currencyCode, Number(remittance.counted_amount ?? 0))}</div>
                   </div>
-                  <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
+                  <div className="pos-remittance-amount rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
                     <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">Deposited</div>
                     <div className="mt-2 text-lg font-semibold text-gray-900">{formatCurrency(currencyCode, Number(remittance.deposited_amount ?? 0))}</div>
                   </div>
-                  <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
+                  <div className="pos-remittance-amount rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
                     <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">Variance</div>
                     <div className={`mt-2 text-lg font-semibold ${Number(remittance.variance_amount ?? 0) === 0 ? "text-gray-900" : "text-amber-700"}`}>
                       {formatCurrency(currencyCode, Number(remittance.variance_amount ?? 0))}
@@ -323,7 +323,7 @@ export default function POSRemittances({ currencyCode }: { currencyCode: string 
       </Card>
 
       <Sheet open={!!selectedRemittance && !!action} onOpenChange={(open) => !open && (setSelectedRemittance(null), setAction(null), resetForm())}>
-        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-xl">
+        <SheetContent side="right" className="pos-remittance-sheet w-full overflow-y-auto sm:max-w-xl">
           <SheetHeader className="pr-8">
             <SheetTitle>{action ? titleForAction(action) : "Update remittance"}</SheetTitle>
             <SheetDescription>
@@ -379,6 +379,6 @@ export default function POSRemittances({ currencyCode }: { currencyCode: string 
           </SheetFooter>
         </SheetContent>
       </Sheet>
-    </>
+    </div>
   )
 }

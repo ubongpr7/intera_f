@@ -280,8 +280,8 @@ export default function SubscriptionPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <div className="subscription-workspace space-y-6">
+      <Card className="subscription-overview border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
         <CardHeader>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -303,23 +303,23 @@ export default function SubscriptionPage() {
             </div>
           ) : activePlan ? (
             <div className="grid gap-3 md:grid-cols-5">
-              <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
+              <div className="subscription-stat rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Status</p>
                 <p className="mt-2 text-lg font-semibold">{entitlements?.subscription?.status ?? "Unknown"}</p>
               </div>
-              <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
+              <div className="subscription-stat rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Trial ends</p>
                 <p className="mt-2 text-lg font-semibold">{formatDate(entitlements?.subscription?.trial_end_date)}</p>
               </div>
-              <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
+              <div className="subscription-stat rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Billing</p>
                 <p className="mt-2 text-lg font-semibold">{verifyingPayment ? "Verifying..." : "Secure billing"}</p>
               </div>
-              <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
+              <div className="subscription-stat rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Intera coins</p>
                 <p className="mt-2 text-lg font-semibold">{coinBalance.toLocaleString()} / {coinAllocation.toLocaleString()}</p>
               </div>
-              <div className={`rounded-2xl border p-4 ${
+              <div className={`subscription-stat rounded-2xl border p-4 ${ 
                 billingAuthorized
                   ? "border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-50"
                   : "border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-50"
@@ -339,14 +339,14 @@ export default function SubscriptionPage() {
       </Card>
 
       {!owner ? (
-        <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <Card className="subscription-restricted border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
           <CardContent className="flex items-center gap-3 p-6 text-sm text-slate-600 dark:text-slate-300">
             <LockKeyhole className="h-5 w-5 text-amber-500" />
             Subscription setup is restricted to the workspace owner.
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <Card className="subscription-billing border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CalendarClock className="h-5 w-5 text-blue-600" />
@@ -402,7 +402,7 @@ export default function SubscriptionPage() {
                 return (
                   <div
                     key={plan.id}
-                    className={`rounded-3xl border p-5 ${
+                    className={`subscription-plan-card rounded-3xl border p-5 ${ 
                       selected
                         ? "border-emerald-400 bg-emerald-50 text-emerald-950 dark:border-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-50"
                         : "border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/60"
@@ -448,7 +448,7 @@ export default function SubscriptionPage() {
         </Card>
       )}
 
-      <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <Card className="subscription-coins border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Coins className="h-5 w-5 text-blue-600" />Intera coin balance</CardTitle>
         <CardDescription>Coins power metered AI and catalog operations. Global catalog imports use 1 coin per imported variant; AI image bulk creation uses 5 coins per uploaded image.</CardDescription>
@@ -534,7 +534,7 @@ export default function SubscriptionPage() {
         </CardContent>
       </Card>
 
-      <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <Card className="subscription-usage border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Gauge className="h-5 w-5 text-blue-600" />Plan usage and limits</CardTitle>
           <CardDescription>Current workspace consumption against the active plan. Usage is read from the owning services.</CardDescription>

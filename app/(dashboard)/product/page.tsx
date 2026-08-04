@@ -156,7 +156,7 @@ export default function ProductPage() {
   const setupGuideAvailable = isOwner && !loadingWorkspaceSetup && !loadingProductSetupState && !productSetupComplete
 
   return (
-    <div className={cn("mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 lg:px-8", setupGuideAvailable && showSetupGuide ? "lg:grid-cols-[310px_1fr]" : "grid-cols-1")}>
+    <div className={cn("product-catalog-workspace mx-auto grid w-full max-w-[1800px] gap-6 px-4 py-6 lg:px-8 2xl:px-10", setupGuideAvailable && showSetupGuide ? "lg:grid-cols-[310px_1fr]" : "grid-cols-1")}>
       {setupGuideAvailable && showSetupGuide ? <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="p-5 text-left text-inherit">

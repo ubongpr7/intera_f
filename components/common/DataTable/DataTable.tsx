@@ -295,12 +295,12 @@ export function DataTable<T>({
 
   const getButtonVariantClasses = (variant: ActionButton<T>["variant"] = "secondary") => {
     const baseClasses =
-      "inline-flex items-center px-2 py-1 text-xs font-medium rounded border focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      "inline-flex items-center rounded-xl border px-3 py-1.5 text-xs font-semibold shadow-sm transition-[background-color,color,border-color,box-shadow,transform] duration-200 hover:-translate-y-px focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
     switch (variant) {
       case "primary":
         return `${baseClasses} text-white bg-blue-600 border-blue-600 hover:bg-blue-700 focus:ring-blue-500`
       case "danger":
-        return `${baseClasses} text-white bg-red-600 border-red-600 hover:bg-red-700 focus:ring-red-500`
+        return `${baseClasses} !text-white bg-red-600 border-red-600 hover:bg-red-700 focus:ring-red-500 dark:!text-white dark:bg-red-500 dark:border-red-500 dark:hover:bg-red-600`
       case "success":
         return `${baseClasses} text-white bg-green-600 border-green-600 hover:bg-green-700 focus:ring-green-500`
       case "warning":
@@ -521,7 +521,7 @@ export function DataTable<T>({
   };
 
   return (
-    <div className="overflow-hidden rounded-[28px] border border-border bg-card text-card-foreground shadow-[0_18px_50px_-34px_rgba(15,23,42,0.28)]">
+    <div className="data-table overflow-hidden rounded-[28px] border border-border bg-card text-card-foreground shadow-[0_18px_50px_-34px_rgba(15,23,42,0.28)]">
       {(title || onClose) && (
         <div className="flex items-center justify-between border-b border-border bg-card/90 px-5 py-4 backdrop-blur">
           {title && <h1 className="text-lg font-semibold text-foreground md:text-xl">{title}</h1>}
@@ -665,7 +665,7 @@ export function DataTable<T>({
       )}
 
       <div className="overflow-x-auto overflow-y-visible">
-        <table className="min-w-full table-auto divide-y divide-border">
+        <table className="min-w-full table-auto border-separate border-spacing-0">
           <thead className="sticky top-0 bg-muted/90 backdrop-blur">
             <tr>
               {hasGeneralButtons && (
@@ -694,7 +694,7 @@ export function DataTable<T>({
                   {column.header}
                   {sortableFields.includes(column.accessor as keyof T) && (
                     <span>
-                      {sortConfig?.key === column.accessor && (sortConfig?.direction === "ascending" ? " 🔼" : " 🔽")}
+                      {sortConfig?.key === column.accessor && (sortConfig?.direction === "ascending" ? " ↑" : " ↓")}
                     </span>
                   )}
                   {column.info && <FieldInfo info={column.info} displayBelow={true} />}
@@ -709,12 +709,12 @@ export function DataTable<T>({
               )}
             </tr>
           </thead>
-          <tbody className="divide-y divide-border bg-card">
+          <tbody className="bg-card">
             {filteredAndSortedData.map((row, rowIndex) => (
               <tr
                 key={rowIndex}
                 onClick={() => onRowClick?.(row)}
-                className={`${onRowClick ? "cursor-pointer hover:bg-muted/60" : ""} relative transition-colors`}
+                className={`data-table-row ${onRowClick ? "cursor-pointer" : ""} relative transition-colors`}
               >
                 {hasGeneralButtons && (
                   <td className="w-12 whitespace-nowrap px-4 py-4">

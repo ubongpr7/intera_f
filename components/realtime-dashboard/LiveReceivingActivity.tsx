@@ -78,7 +78,7 @@ export default function LiveReceivingActivity({
     socketState === "connected" ? "Receiving stream online" : socketState === "connecting" ? "Connecting stream" : "Stream offline"
 
   return (
-    <Card className="overflow-hidden border-gray-200 bg-white shadow-sm">
+    <Card className="realtime-receiving-activity overflow-hidden border-gray-200 bg-white shadow-sm">
       <CardHeader className="border-b border-gray-100 bg-gray-100/50 p-5 text-left text-inherit">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-3xl">

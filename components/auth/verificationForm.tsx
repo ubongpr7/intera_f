@@ -12,6 +12,7 @@ export default function VerificationForm({ email,redirectTo }: VerificationProps
   const [resendCode, { isLoading: isResending }] = useResendCodeMutation();
   const [cooldown, setCooldown] = useState(120);
   const inputsRef = useRef<HTMLInputElement[]>([]);
+  const autoSubmitRef = useRef("");
   const router=useRouter();
   const { register, control, handleSubmit, setValue } = useForm<VerifyFormData>({
     defaultValues: { code: '', userId: '' }
@@ -26,6 +27,11 @@ export default function VerificationForm({ email,redirectTo }: VerificationProps
       setCooldown(prev => Math.max(0, prev - 1));
     }, 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const focusTimer = window.setTimeout(() => inputsRef.current[0]?.focus(), 50);
+    return () => window.clearTimeout(focusTimer);
   }, []);
   const handleResend = async () => {
     if (cooldown > 0) return;
@@ -67,6 +73,7 @@ export default function VerificationForm({ email,redirectTo }: VerificationProps
     newCode[index] = numericValue;
     const joinedCode = newCode.join('').slice(0, 6);
     setValue('code', joinedCode);
+    autoSubmitRef.current = '';
 
     // Auto-focus logic
     if (numericValue && index < 5) {
@@ -80,6 +87,8 @@ export default function VerificationForm({ email,redirectTo }: VerificationProps
     e.preventDefault();
     const pastedData = e.clipboardData.getData('text/plain').replace(/\D/g, '').slice(0, 6);
     setValue('code', pastedData);
+    autoSubmitRef.current = '';
+    inputsRef.current[Math.max(pastedData.length - 1, 0)]?.focus();
   };
 
   const onSubmit: SubmitHandler<VerifyFormData> = async (data) => {
@@ -110,6 +119,14 @@ export default function VerificationForm({ email,redirectTo }: VerificationProps
       
     }
   };
+
+  useEffect(() => {
+    if (codeValue.length !== 6 || isLoading || autoSubmitRef.current === codeValue) {
+      return;
+    }
+    autoSubmitRef.current = codeValue;
+    void handleSubmit(onSubmit)();
+  }, [codeValue, handleSubmit, isLoading, onSubmit]);
   return (
     <div className="mx-auto max-w-md">
       <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50/70 p-4 text-center dark:border-blue-400/15 dark:bg-blue-400/10">

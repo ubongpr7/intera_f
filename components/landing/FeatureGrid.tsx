@@ -1,14 +1,17 @@
 // components/landing/FeatureGrid.tsx
+import type { LucideIcon } from "lucide-react";
+import { BarChart3, Boxes, CreditCard, MessageCircle, Radio, RefreshCw, ShieldCheck, Users, Waypoints } from "lucide-react";
+
 interface FeatureCardProps {
     title: string;
     description: string;
-    icon: string;
+    icon: LucideIcon;
   }
   
-  const FeatureCard: React.FC<FeatureCardProps> = ({ title, description, icon }) => (
+  const FeatureCard: React.FC<FeatureCardProps> = ({ title, description, icon: Icon }) => (
     <div className="bg-white  p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
       <div className="w-12 h-12 bg-blue-100  rounded-lg mb-4 flex items-center justify-center">
-        <span className="text-2xl">{icon}</span>
+        <Icon className="h-6 w-6 text-blue-700" aria-hidden="true" />
       </div>
       <h3 className="text-xl font-semibold mb-2 ">{title}</h3>
       <p className="text-gray-600 ">{description}</p>
@@ -18,47 +21,47 @@ interface FeatureCardProps {
 export default function FeatureGrid() {
     const features = [
       {
-        icon: "📦",
+        icon: Boxes,
         title: "Inventory Control",
         description: "Track products, balances, reorder rules, reservations, and movement history across locations."
       },
       {
-        icon: "💳",
+        icon: CreditCard,
         title: "POS & Offline Selling",
         description: "Run checkout, sessions, discounts, and inventory-aware sales even when connectivity drops."
       },
       {
-        icon: "📊",
+        icon: BarChart3,
         title: "Business Intelligence",
         description: "Review inventory, purchasing, POS, and realtime operational analytics, then query years of history in natural language and get answers in seconds."
       },
       {
-        icon: "🗣️",
+        icon: MessageCircle,
         title: "Conversational Intelligence",
         description: "Ask plain-language questions about sales, stock, purchasing, and staff activity, then turn the answer into charts, lists, or actions."
       },
       {
-        icon: "📡",
+        icon: Radio,
         title: "Live Operations Monitor",
         description: "Follow sales, receiving, stock signals, and risk changes as they happen through realtime operational streams."
       },
       {
-        icon: "🧩",
+        icon: Waypoints,
         title: "External API Platform",
         description: "Build custom integrations on top of the platform API when you need a separate, metered developer surface. Coming soon."
       },
       {
-        icon: "🔄",
+        icon: RefreshCw,
         title: "Purchasing & Replenishment",
         description: "Create purchase orders, approve them, receive goods, and manage supplier returns."
       },
       {
-        icon: "🛡️",
+        icon: ShieldCheck,
         title: "Audit, Traceability & Anti-theft",
         description: "Trace stock movement and activity history so suspicious gaps are easier to spot and investigate."
       },
       {
-        icon: "👥",
+        icon: Users,
         title: "Team Access",
         description: "Invite staff and assign roles, groups, and permissions independently for each workspace."
       }

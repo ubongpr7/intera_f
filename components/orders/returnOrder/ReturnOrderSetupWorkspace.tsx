@@ -113,7 +113,7 @@ export default function ReturnOrderSetupWorkspace() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 lg:px-8">
+    <div className="return-orders-workspace mx-auto w-full max-w-[1800px] space-y-6 px-4 py-6 lg:px-8 2xl:px-10">
       {showWorkspaceLoading ? <WorkspaceSetupLoadingCard /> : null}
       {isOwner ? (
         <CollapsibleSetupGuide

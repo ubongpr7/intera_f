@@ -42,7 +42,7 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
   }, [mobileSidebarOpen]);
   
   return (
-    <div className={`flex bg-gray-50 text-gray-900 w-full min-h-screen`}>
+    <div className={`dashboard-shell ${SidebarCollapsed ? "sidebar-is-collapsed" : "sidebar-is-expanded"} flex w-full min-h-screen bg-gray-50 text-gray-900`}>
     
     <ToastContainer position="top-right" autoClose={3000} />
     
@@ -64,12 +64,12 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
       </>
     ) : null}
     <main
-      className={`flex min-h-screen min-w-0 flex-1 flex-col overflow-x-hidden bg-gray-50 px-3 pb-4 pt-24 transition-[margin] duration-300 ${
+      className={`dashboard-main flex min-h-screen min-w-0 w-full flex-1 flex-col overflow-x-hidden bg-gray-50 px-3 pb-6 pt-24 transition-[margin,width] duration-300 ${
         shouldHideDashboardUI(pathname)
           ? ""
           : SidebarCollapsed
-            ? "md:ml-16 md:px-4"
-            : "md:ml-64 md:px-5"
+            ? "md:ml-16 md:w-[calc(100%-4rem)] md:flex-none md:px-4"
+            : "md:ml-64 md:w-[calc(100%-16rem)] md:flex-none md:px-5"
       }`}
     >
     

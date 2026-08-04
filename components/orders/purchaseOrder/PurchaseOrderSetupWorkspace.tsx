@@ -235,7 +235,7 @@ export default function PurchaseOrderSetupWorkspace() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 lg:px-8">
+    <div className="purchase-orders-workspace mx-auto w-full max-w-7xl space-y-6 px-4 py-6 lg:px-8">
       {showWorkspaceLoading ? <WorkspaceSetupLoadingCard /> : null}
       {isOwner ? (
         <CollapsibleSetupGuide

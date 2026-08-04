@@ -205,12 +205,14 @@ export function WorkspaceSetupShell({
   title,
   description,
   children,
+  className,
 }: {
   activeStage: WorkspaceSetupStageId
   eyebrow?: string
   title: string
   description: string
   children: ReactNode
+  className?: string
 }) {
   const { activeMembership, completionPercentage, isOwner, isWorkspaceContextLoading, nextRecommendedStage, stages } = useWorkspaceSetupProgress()
   const pathname = usePathname()
@@ -218,7 +220,7 @@ export function WorkspaceSetupShell({
   const [setupGuideOpen, setSetupGuideOpen] = useState(false)
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 lg:px-8">
+    <div className={cn("mx-auto w-full max-w-[1800px] space-y-6 px-4 py-6 lg:px-8 2xl:px-10", className)}>
       {showSetupProgress ? (
         <div className="flex justify-end">
           <Button
@@ -348,7 +350,7 @@ export function WorkspaceSetupOverview() {
   }
 
   return (
-    <Card className="border-gray-200 shadow-sm">
+    <Card className="dashboard-onboarding-card border-gray-200 shadow-sm">
       <CardHeader className="p-6 text-left text-inherit">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
@@ -363,7 +365,7 @@ export function WorkspaceSetupOverview() {
               Use these setup milestones to keep company context, team access, and AI configuration aligned before you move deeper into products, inventory, and POS.
             </CardDescription>
           </div>
-          <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
+          <div className="dashboard-onboarding-progress rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Progress</p>
             <p className="mt-1 text-2xl font-semibold text-gray-900">{completionPercentage}%</p>
           </div>
@@ -372,7 +374,7 @@ export function WorkspaceSetupOverview() {
       <CardContent className="space-y-5 p-6 pt-0">
         <div className="grid gap-3 lg:grid-cols-3">
           {stages.map((stage) => (
-            <Link key={stage.id} href={stage.href} className="rounded-2xl border border-gray-200 bg-white p-4 transition-colors hover:border-blue-300">
+            <Link key={stage.id} href={stage.href} className="dashboard-onboarding-stage rounded-2xl border border-gray-200 bg-white p-4 transition-colors hover:border-blue-300">
               <div className="flex items-start gap-3">
                 <div className={cn("rounded-xl p-2", stage.complete ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700")}>
                   {stage.complete ? <CheckCircle2 className="h-4 w-4" /> : <stage.icon className="h-4 w-4" />}
@@ -386,7 +388,7 @@ export function WorkspaceSetupOverview() {
           ))}
         </div>
 
-        <div className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="dashboard-onboarding-actions flex flex-col gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="text-sm text-gray-700">
             {nextRecommendedStage ? (
               <span>
@@ -400,14 +402,14 @@ export function WorkspaceSetupOverview() {
           </div>
           <div className="flex flex-wrap gap-2">
             {nextRecommendedStage ? (
-              <Button asChild>
+              <Button asChild className="dashboard-onboarding-primary">
                 <Link href={nextRecommendedStage.href}>
                   Continue setup
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
             ) : null}
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className="dashboard-onboarding-secondary">
               <Link href="/profile">
                 {readiness.basicsComplete && readiness.addressComplete ? "Review company setup" : "Open company setup"}
               </Link>

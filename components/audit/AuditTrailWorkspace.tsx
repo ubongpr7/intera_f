@@ -543,7 +543,7 @@ export default function AuditTrailWorkspace() {
   }
 
   return (
-    <div className="space-y-6 pb-8 text-gray-900">
+    <div className="audit-workspace mx-auto w-full max-w-[1800px] space-y-6 px-4 pb-8 pt-6 text-gray-900 lg:px-8 2xl:px-10">
       <Card className="overflow-hidden border-gray-200 bg-white shadow-sm">
         <CardHeader className="gap-4 border-b border-gray-100 bg-gray-100/50 p-6 text-left">
           <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-700">

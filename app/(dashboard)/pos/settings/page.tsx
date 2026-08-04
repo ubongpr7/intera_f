@@ -44,8 +44,8 @@ export default function POSSettingsPage() {
   ]
 
   return (
-    <div className="space-y-6">
-      <Card className="border-gray-200 bg-white shadow-sm">
+    <div className="pos-settings-workspace space-y-6">
+      <Card className="pos-settings-hero border-gray-200 bg-white shadow-sm">
         <CardHeader className="gap-3 p-6 text-left">
           <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
             POS Admin Workspace
@@ -58,25 +58,25 @@ export default function POSSettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4 p-6 pt-0">
-          <div className="grid gap-4 md:grid-cols-4">
-            <div className="rounded-[24px] border border-gray-200 bg-gray-50 p-4">
+          <div className="pos-settings-stat-grid grid gap-4 md:grid-cols-4">
+            <div className="pos-settings-stat rounded-[24px] border border-gray-200 bg-gray-50 p-4">
               <div className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Active policy</div>
               <div className="mt-2 text-sm font-semibold text-gray-900">{currentConfiguration?.name || "Default POS"}</div>
             </div>
-            <div className="rounded-[24px] border border-gray-200 bg-gray-50 p-4">
+            <div className="pos-settings-stat rounded-[24px] border border-gray-200 bg-gray-50 p-4">
               <div className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Tax</div>
               <div className="mt-2 text-sm font-semibold text-gray-900">
                 {currentConfiguration?.tax_inclusive ? "Inclusive" : "Exclusive"} ·{" "}
                 {currentConfiguration?.default_tax_rate ? `${currentConfiguration.default_tax_rate}%` : "0%"}
               </div>
             </div>
-            <div className="rounded-[24px] border border-gray-200 bg-gray-50 p-4">
+            <div className="pos-settings-stat rounded-[24px] border border-gray-200 bg-gray-50 p-4">
               <div className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Split payments</div>
               <div className="mt-2 text-sm font-semibold text-gray-900">
                 {currentConfiguration?.allow_split_payment ? "Enabled" : "Disabled"}
               </div>
             </div>
-            <div className="rounded-[24px] border border-gray-200 bg-gray-50 p-4">
+            <div className="pos-settings-stat rounded-[24px] border border-gray-200 bg-gray-50 p-4">
               <div className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Currency</div>
               <div className="mt-2 text-sm font-semibold text-gray-900">{currentConfiguration?.currency || "NGN"}</div>
             </div>
@@ -86,7 +86,7 @@ export default function POSSettingsPage() {
             {settingCards.map((item) => {
               const Icon = item.icon
               return (
-                <div key={item.title} className="rounded-[24px] border border-gray-200 bg-gray-50 p-4">
+                <div key={item.title} className="pos-settings-feature rounded-[24px] border border-gray-200 bg-gray-50 p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">{item.title}</div>
                     <Icon className="h-4 w-4 text-gray-400" />
@@ -97,14 +97,14 @@ export default function POSSettingsPage() {
             })}
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <Button asChild variant="outline">
+          <div className="pos-settings-actions flex flex-wrap gap-3">
+            <Button asChild variant="outline" className="pos-settings-secondary-action">
               <Link href="/pos">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to cashier POS
               </Link>
             </Button>
-            <Button asChild>
+            <Button asChild className="pos-settings-primary-action">
               <Link href="/pos/remittances">
                 <Wallet className="mr-2 h-4 w-4" />
                 Open remittance workspace
@@ -114,29 +114,29 @@ export default function POSSettingsPage() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="policy" className="space-y-4">
-        <TabsList className="h-auto flex-wrap justify-start gap-2 rounded-[24px] bg-slate-100 p-1">
+      <Tabs defaultValue="policy" className="pos-settings-tabs space-y-4">
+        <TabsList className="pos-settings-tab-list h-auto flex-wrap justify-start gap-2 rounded-[24px] bg-slate-100 p-1">
           <TabsTrigger
             value="policy"
-            className="rounded-[18px] px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-blue-700"
+            className="pos-settings-tab rounded-[18px] px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-blue-700"
           >
             Checkout policy
           </TabsTrigger>
           <TabsTrigger
             value="terminals"
-            className="rounded-[18px] px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-blue-700"
+            className="pos-settings-tab rounded-[18px] px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-blue-700"
           >
             {tablesEnabled ? "Terminals and tables" : "Terminals"}
           </TabsTrigger>
           <TabsTrigger
             value="customers"
-            className="rounded-[18px] px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-blue-700"
+            className="pos-settings-tab rounded-[18px] px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-blue-700"
           >
             Customers
           </TabsTrigger>
           <TabsTrigger
             value="discounts"
-            className="rounded-[18px] px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-blue-700"
+            className="pos-settings-tab rounded-[18px] px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:text-blue-700"
           >
             Discounts
           </TabsTrigger>

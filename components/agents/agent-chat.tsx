@@ -15,6 +15,30 @@ import {
   Download,
   RotateCcw,
   AudioLines,
+  AlertTriangle,
+  BadgeCheck,
+  CalendarDays,
+  ChartNoAxesCombined,
+  CircleHelp,
+  ClipboardList,
+  Code2,
+  FilePenLine,
+  FolderUp,
+  GitFork,
+  Hourglass,
+  Image,
+  LayoutDashboard,
+  MessageCircle,
+  PanelTop,
+  Pencil,
+  Scale,
+  Search,
+  SlidersHorizontal,
+  Store,
+  Table2,
+  Users,
+  WandSparkles,
+  Zap,
 } from "lucide-react"
 import { getCookie } from "cookies-next"
 import { toast } from "react-toastify"
@@ -908,37 +932,37 @@ export default function AgentChat({
 
   const getInteractionStyle = (type: string) => {
     const styles = {
-      confirmation: { color: "bg-yellow-50 border-yellow-200", textColor: "text-gray-900", icon: "⚠️" },
-      multiple_choice: { color: "bg-blue-50 border-blue-200", textColor: "text-gray-900", icon: "❓" },
-      file_upload: { color: "bg-green-50 border-green-200", textColor: "text-gray-900", icon: "📁" },
-      progress_tracker: { color: "bg-purple-50 border-purple-200", textColor: "text-gray-900", icon: "⏳" },
-      data_table: { color: "bg-indigo-50 border-indigo-200", textColor: "text-gray-900", icon: "📊" },
-      data_table_review: { color: "bg-indigo-50 border-indigo-200", textColor: "text-gray-900", icon: "📋" },
-      dynamic_form: { color: "bg-pink-50 border-pink-200", textColor: "text-gray-900", icon: "📝" },
-      update_form: { color: "bg-blue-50 border-blue-200", textColor: "text-gray-900", icon: "✏️" },
-      date_time_picker: { color: "bg-teal-50 border-teal-200", textColor: "text-gray-900", icon: "📅" },
-      slider_input: { color: "bg-orange-50 border-orange-200", textColor: "text-gray-900", icon: "🎚️" },
-      priority_ranking: { color: "bg-red-50 border-red-200", textColor: "text-gray-900", icon: "📋" },
-      code_review: { color: "bg-gray-50 border-gray-200", textColor: "text-gray-900", icon: "💻" },
-      image_annotation: { color: "bg-yellow-50 border-yellow-200", textColor: "text-gray-900", icon: "🖼️" },
-      searchable_selection: { color: "bg-cyan-50 border-cyan-200", textColor: "text-gray-900", icon: "🔍" },
-      hierarchical_selection: { color: "bg-emerald-50 border-emerald-200", textColor: "text-gray-900", icon: "🌳" },
-      autocomplete_selection: { color: "bg-violet-50 border-violet-200", textColor: "text-gray-900", icon: "⚡" },
-      comparison_view: { color: "bg-rose-50 border-rose-200", textColor: "text-gray-900", icon: "⚖️" },
-      bulk_action_selector: { color: "bg-gray-50 border-gray-200", textColor: "text-gray-900", icon: "⚡" },
-      marketplace_results: { color: "bg-yellow-50 border-yellow-200", textColor: "text-gray-900", icon: "🛍️" },
-      dashboard_builder: { color: "bg-blue-50 border-blue-200", textColor: "text-gray-900", icon: "📊" },
-      master_detail_table: { color: "bg-indigo-50 border-indigo-200", textColor: "text-gray-900", icon: "📋" },
-      alert_manager: { color: "bg-yellow-50 border-yellow-200", textColor: "text-gray-900", icon: "🔔" },
-      task_assignment: { color: "bg-green-50 border-green-200", textColor: "text-gray-900", icon: "👥" },
-      comment_thread: { color: "bg-purple-50 border-purple-200", textColor: "text-gray-900", icon: "💬" },
-      report_builder: { color: "bg-orange-50 border-orange-200", textColor: "text-gray-900", icon: "📈" },
-      data_visualization: { color: "bg-teal-50 border-teal-200", textColor: "text-gray-900", icon: "📊" },
-      timeline_activity: { color: "bg-gray-50 border-gray-200", textColor: "text-gray-900", icon: "⏰" },
-      kanban_board: { color: "bg-pink-50 border-pink-200", textColor: "text-gray-900", icon: "📌" },
-      approval_workflow: { color: "bg-emerald-50 border-emerald-200", textColor: "text-gray-900", icon: "✅" },
-      wizard_flow: { color: "bg-purple-50 border-purple-200", textColor: "text-gray-900", icon: "🧙" },
-      conditional_form: { color: "bg-purple-50 border-purple-200", textColor: "text-gray-900", icon: "🧙" },
+      confirmation: { color: "bg-yellow-50 border-yellow-200", textColor: "text-gray-900", icon: AlertTriangle },
+      multiple_choice: { color: "bg-blue-50 border-blue-200", textColor: "text-gray-900", icon: CircleHelp },
+      file_upload: { color: "bg-green-50 border-green-200", textColor: "text-gray-900", icon: FolderUp },
+      progress_tracker: { color: "bg-purple-50 border-purple-200", textColor: "text-gray-900", icon: Hourglass },
+      data_table: { color: "bg-indigo-50 border-indigo-200", textColor: "text-gray-900", icon: Table2 },
+      data_table_review: { color: "bg-indigo-50 border-indigo-200", textColor: "text-gray-900", icon: ClipboardList },
+      dynamic_form: { color: "bg-pink-50 border-pink-200", textColor: "text-gray-900", icon: FilePenLine },
+      update_form: { color: "bg-blue-50 border-blue-200", textColor: "text-gray-900", icon: Pencil },
+      date_time_picker: { color: "bg-teal-50 border-teal-200", textColor: "text-gray-900", icon: CalendarDays },
+      slider_input: { color: "bg-orange-50 border-orange-200", textColor: "text-gray-900", icon: SlidersHorizontal },
+      priority_ranking: { color: "bg-red-50 border-red-200", textColor: "text-gray-900", icon: ClipboardList },
+      code_review: { color: "bg-gray-50 border-gray-200", textColor: "text-gray-900", icon: Code2 },
+      image_annotation: { color: "bg-yellow-50 border-yellow-200", textColor: "text-gray-900", icon: Image },
+      searchable_selection: { color: "bg-cyan-50 border-cyan-200", textColor: "text-gray-900", icon: Search },
+      hierarchical_selection: { color: "bg-emerald-50 border-emerald-200", textColor: "text-gray-900", icon: GitFork },
+      autocomplete_selection: { color: "bg-violet-50 border-violet-200", textColor: "text-gray-900", icon: Zap },
+      comparison_view: { color: "bg-rose-50 border-rose-200", textColor: "text-gray-900", icon: Scale },
+      bulk_action_selector: { color: "bg-gray-50 border-gray-200", textColor: "text-gray-900", icon: Zap },
+      marketplace_results: { color: "bg-yellow-50 border-yellow-200", textColor: "text-gray-900", icon: Store },
+      dashboard_builder: { color: "bg-blue-50 border-blue-200", textColor: "text-gray-900", icon: LayoutDashboard },
+      master_detail_table: { color: "bg-indigo-50 border-indigo-200", textColor: "text-gray-900", icon: PanelTop },
+      alert_manager: { color: "bg-yellow-50 border-yellow-200", textColor: "text-gray-900", icon: AlertTriangle },
+      task_assignment: { color: "bg-green-50 border-green-200", textColor: "text-gray-900", icon: Users },
+      comment_thread: { color: "bg-purple-50 border-purple-200", textColor: "text-gray-900", icon: MessageCircle },
+      report_builder: { color: "bg-orange-50 border-orange-200", textColor: "text-gray-900", icon: ChartNoAxesCombined },
+      data_visualization: { color: "bg-teal-50 border-teal-200", textColor: "text-gray-900", icon: ChartNoAxesCombined },
+      timeline_activity: { color: "bg-gray-50 border-gray-200", textColor: "text-gray-900", icon: Clock },
+      kanban_board: { color: "bg-pink-50 border-pink-200", textColor: "text-gray-900", icon: PanelTop },
+      approval_workflow: { color: "bg-emerald-50 border-emerald-200", textColor: "text-gray-900", icon: BadgeCheck },
+      wizard_flow: { color: "bg-purple-50 border-purple-200", textColor: "text-gray-900", icon: WandSparkles },
+      conditional_form: { color: "bg-purple-50 border-purple-200", textColor: "text-gray-900", icon: WandSparkles },
     }
     return styles[type as keyof typeof styles] || styles.confirmation
   }
@@ -1413,7 +1437,7 @@ export default function AgentChat({
                         )}
                         {isInteractionDisabled && (
                           <div className="w-full bg-green-100 text-green-700 py-2 px-3 rounded-lg text-sm font-medium text-center">
-                            ✓ Response Sent
+                            <Check className="mr-1 inline h-4 w-4" aria-hidden="true" /> Response Sent
                           </div>
                         )}
                       </div>
@@ -1429,7 +1453,7 @@ export default function AgentChat({
                       className={`max-w-[95%] ${style.color} rounded-2xl rounded-bl-none border px-4 py-4 text-gray-800 shadow-lg`}
                     >
                     <div className={`font-semibold text-xs mb-3 ${style.textColor} flex items-center gap-2`}>
-                      <span>{style.icon}</span>
+                      <style.icon className="h-4 w-4" aria-hidden="true" />
                       {type.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase())}
                       {isInteractionDisabled && (
                         <span className="ml-auto text-green-600 flex items-center gap-1">

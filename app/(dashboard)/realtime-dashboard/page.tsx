@@ -148,7 +148,7 @@ export default function RealtimeDashboardPage() {
       }))
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] space-y-6 px-4 py-6 lg:px-8">
+    <div className="realtime-dashboard mx-auto w-full max-w-[1600px] space-y-6 px-4 py-6 lg:px-8">
       <StructuralLocationScopeSelect
         allowMultiSelect
         className="max-w-sm"
@@ -157,7 +157,7 @@ export default function RealtimeDashboardPage() {
         onValuesChange={setSelectedStructuralLocationIds}
         description="Focus the live monitor on one structural location when you want store-level stock and POS pressure."
       />
-      <Card className="overflow-hidden border-gray-200 shadow-sm">
+      <Card className="realtime-overview-hero overflow-hidden border-gray-200 shadow-sm">
         <CardContent className="p-0">
           <div className="border-b border-gray-100 bg-gray-100/50 px-6 py-6">
             <div className="flex flex-wrap items-start justify-between gap-5">
@@ -186,7 +186,7 @@ export default function RealtimeDashboardPage() {
             </div>
           </div>
 
-          <div className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-6">
+          <div className="realtime-metrics-grid grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-6">
             {canReadPos ? (
               <StatTile
                 label="Today sales"
@@ -256,7 +256,7 @@ export default function RealtimeDashboardPage() {
       </Card>
 
       {canViewAuditTrail ? (
-        <div className="space-y-6">
+        <div className="realtime-live-stream space-y-6">
           <AuditRealtimeCommandCenter currencyCode={currencyCode} {...realtimeDashboard} />
           <LiveProductActivity snapshot={realtimeDashboard.snapshot} socketState={realtimeDashboard.socketState} isLoading={realtimeDashboard.isLoading} />
           <LiveReceivingActivity snapshot={realtimeDashboard.snapshot} socketState={realtimeDashboard.socketState} isLoading={realtimeDashboard.isLoading} />
@@ -269,7 +269,7 @@ export default function RealtimeDashboardPage() {
         />
       )}
 
-      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+      <div className="realtime-insight-grid grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         {canReadInventory || canViewInventoryReports ? (
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="border-b border-gray-100 p-5 text-left text-inherit">
@@ -405,7 +405,7 @@ export default function RealtimeDashboardPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+      <div className="realtime-insight-grid grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         {canReadPurchaseOrders ? (
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="border-b border-gray-100 p-5 text-left text-inherit">

@@ -29,7 +29,7 @@ export default function DomainLaunchCard({
   ctaLabel = "Open workspace",
 }: DomainLaunchCardProps) {
   return (
-    <Card className="border-gray-200 shadow-sm transition-shadow hover:shadow-md">
+    <Card className="dashboard-domain-card border-gray-200 shadow-sm transition-shadow hover:shadow-md">
       <CardHeader className="border-b border-gray-100 p-5 text-left text-inherit">
         <div className="inline-flex w-fit items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gray-700">
           <Icon className="h-3.5 w-3.5" />

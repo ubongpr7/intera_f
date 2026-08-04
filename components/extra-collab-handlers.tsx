@@ -728,7 +728,7 @@ export function WizardFlowHandler({ data, onResponse, compact = false, disabled 
                           : "bg-gray-300 text-gray-600"
                     }`}
                   >
-                    {index < currentStep ? "✓" : index + 1}
+                    {index < currentStep ? <CheckCircle className="h-4 w-4" aria-label="Completed" /> : index + 1}
                   </div>
                   {index < data.steps.length - 1 && (
                     <div className={`w-4 h-0.5 ${index < currentStep ? "bg-green-500" : "bg-gray-300"}`} />

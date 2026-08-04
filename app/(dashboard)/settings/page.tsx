@@ -50,8 +50,8 @@ const settingAreas = [
 
 export default function SettingsHubPage() {
   return (
-    <div className="space-y-6">
-      <Card className="border-gray-200 bg-white shadow-sm">
+    <div className="settings-hub-workspace mx-auto w-full max-w-[1800px] space-y-6 px-4 py-6 lg:px-8 2xl:px-10">
+      <Card className="settings-hub-hero border-gray-200 bg-white shadow-sm">
         <CardHeader className="gap-3 p-6 text-left">
           <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
             <Settings2 className="h-3.5 w-3.5" />
@@ -85,7 +85,7 @@ export default function SettingsHubPage() {
         {settingAreas.map((item) => {
           const Icon = item.icon
           return (
-            <Card key={item.title} className="border-gray-200 bg-white shadow-sm">
+            <Card key={item.title} className="settings-hub-area border-gray-200 bg-white shadow-sm">
               <CardHeader className="p-6 text-left">
                 <div className="flex items-center justify-between gap-3">
                   <div className="rounded-2xl bg-gray-50 p-3 text-blue-700">
@@ -113,7 +113,7 @@ export default function SettingsHubPage() {
         })}
       </div>
 
-      <Card className="border-gray-200 shadow-sm">
+      <Card className="settings-hub-domain border-gray-200 shadow-sm">
         <CardHeader className="p-6 text-left">
           <CardTitle className="flex items-center gap-2 text-xl text-gray-900">
             <ShieldCheck className="h-5 w-5 text-blue-600" />

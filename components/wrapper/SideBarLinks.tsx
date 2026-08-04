@@ -43,12 +43,12 @@ interface SidebarLinkProps {
 
     const linkBody = (
       <div
-        className={`flex cursor-pointer items-center gap-3 rounded-2xl transition-colors ${
+        className={`dashboard-nav-item flex cursor-pointer items-center gap-3 rounded-2xl transition-colors ${
           isCollapsed ? "justify-center px-2 py-3" : "justify-start px-4 py-3"
         } ${
           isActive
-            ? "border border-blue-200 bg-blue-50 text-blue-700"
-            : "border border-transparent text-gray-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+            ? "dashboard-nav-item-active border border-transparent text-gray-950"
+            : "border border-transparent text-gray-700"
         }`}
       >
         <Icon className={`h-4 w-4 ${isActive ? "text-blue-700" : "text-gray-500"}`} />
@@ -104,7 +104,7 @@ interface SidebarLinkProps {
         ) : primaryControl}
 
         {showSubLinks ? (
-          <div className="ml-6 space-y-1 border-l border-gray-200 pl-3">
+          <div className="dashboard-subnav ml-6 space-y-1 border-l border-gray-200 pl-3">
             {subLinks.map((subLink) => {
               const subActive = pathname === subLink.href || pathname.startsWith(`${subLink.href}/`);
               const subAccess = canAccessPath(subLink.href);
@@ -114,8 +114,8 @@ interface SidebarLinkProps {
                   <div
                     className={`rounded-xl px-3 py-2 text-sm transition-colors ${
                       subActive
-                        ? "bg-blue-50 font-medium text-blue-700"
-                        : "text-gray-600 hover:bg-blue-50 hover:text-blue-700"
+                        ? "dashboard-subnav-item-active font-medium text-gray-950"
+                        : "text-gray-600"
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2">

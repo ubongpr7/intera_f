@@ -1,10 +1,10 @@
 'use client'
+import Link from "next/link";
 import { getCookie } from "cookies-next";
 import { readCookieValue } from "@/lib/authCookies";
 import { canAccessPath } from "@/lib/permissionsGuard";
 import { useAppSelector, useAppDispatch } from "../../redux/store";
 import { setIsSidebarCollapsed } from "../../redux/state";
-import { generateColorFromName } from '../utils/colorGenerator';
 import { SidebarLink } from './SideBarLinks';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import {
@@ -23,21 +23,25 @@ import {
   Undo2,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  UserRound,
+  Building2,
   X,
   ShieldAlert,
 } from 'lucide-react';
 import { UserData } from "@/redux/features/users/userTypes";
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 interface SideBarDataProps{
   user?:UserData
   mobileOpen: boolean
   onMobileClose: () => void
 }
-const SideBar = ({ mobileOpen, onMobileClose }:SideBarDataProps) => {
+const SideBar = ({ user, mobileOpen, onMobileClose }:SideBarDataProps) => {
   const SidebarCollapsed = useAppSelector((state) => state.global.isSidebarCollapsed);
     const navigationCollapsed = SidebarCollapsed && !mobileOpen;
     const dispatch = useAppDispatch();
     const sidebarRef = useRef<HTMLElement>(null);
+    const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
     useEffect(() => {
       if (SidebarCollapsed) return;
@@ -53,7 +57,7 @@ const SideBar = ({ mobileOpen, onMobileClose }:SideBarDataProps) => {
       return () => document.removeEventListener('mousedown', collapseOnDesktopClickAway);
     }, [SidebarCollapsed, dispatch]);
   
-    const sideBarClasses = `fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-white transition-[transform,width] duration-300 ease-out md:z-40 md:translate-x-0 ${
+    const sideBarClasses = `dashboard-sidebar fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-white transition-[transform,width] duration-300 ease-out md:z-40 md:translate-x-0 ${
       mobileOpen ? "translate-x-0" : "-translate-x-full"
     } ${SidebarCollapsed ? "md:w-16" : "md:w-64"}
     min-h-screen border-r border-gray-200 shadow-xl md:shadow-sm
@@ -89,29 +93,31 @@ const SideBar = ({ mobileOpen, onMobileClose }:SideBarDataProps) => {
           {SidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </button>
         
-        <div className={`flex justify-between items-center md:justify-normal pt-6 ${navigationCollapsed?"px-3":"px-5"}`}>
+        <div className={`dashboard-sidebar-brand flex items-center justify-between md:justify-normal pt-6 ${navigationCollapsed?"px-3":"px-5"}`}>
             <div  className={`flex items-center gap-4`}>
-                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center`}
-                style={{backgroundColor: generateColorFromName(companyName)}}>
+                <div className="dashboard-sidebar-mark flex h-10 w-10 items-center justify-center rounded-2xl">
                 {companyLogo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={companyLogo} alt={companyName} className="h-full w-full rounded-2xl object-cover" />
                 ) : (
-                  <h1 className={` text-2xl text-center font-extrabold  text-gray-800`}>
+                  <h1 className="text-2xl text-center font-extrabold text-gray-800">
                       {(companyName || 'I').trim().charAt(0).toUpperCase()}
                   </h1>
                 )}
                 </div>
-                    <h1 className={`${navigationCollapsed?"hidden":""} text-xl font-extrabold text-gray-800`}>
+                    <div className={`${navigationCollapsed?"hidden":""} min-w-0`}>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-gray-400">Workspace</p>
+                    <h1 className="truncate text-base font-extrabold text-gray-800">
                         {companyName}
                     </h1>
+                    </div>
 
             </div>
             
             </div>
             {/* Links */}
             <nav
-              className="mt-6 flex-grow space-y-1 overflow-y-auto px-2 pb-4"
+              className="dashboard-sidebar-nav mt-6 flex-grow space-y-1 overflow-y-auto px-2 pb-4"
               onClick={(event) => {
                 if ((event.target as HTMLElement).closest('a')) onMobileClose();
               }}
@@ -144,6 +150,8 @@ const SideBar = ({ mobileOpen, onMobileClose }:SideBarDataProps) => {
                 />
               </div>
             ) : null}
+            <div className={`dashboard-nav-divider ${navigationCollapsed ? "mx-1" : "mx-3"}`} />
+            <div className={`dashboard-nav-group-label ${navigationCollapsed ? "hidden" : ""}`}>Operations</div>
             <SidebarLink href="/inventory" icon={Package} label="Inventory" isCollapsed={navigationCollapsed} />
             <SidebarLink
               href="/pos"
@@ -180,13 +188,34 @@ const SideBar = ({ mobileOpen, onMobileClose }:SideBarDataProps) => {
                 { href: "/product/global-catalog-admin", label: "Global catalog admin" },
               ]}
             />
+            <div className={`dashboard-nav-divider ${navigationCollapsed ? "mx-1" : "mx-3"}`} />
+            <div className={`dashboard-nav-group-label ${navigationCollapsed ? "hidden" : ""}`}>Workspace</div>
             <SidebarLink href="/settings" icon={Settings} label="Workspace settings" isCollapsed={navigationCollapsed} />
             </nav>
-            {/* Footer 
-            <div className={`text-gray-500 text-xs text-center  ${SidebarCollapsed?"hidden":""} `}>
-            &copy; 2025 Intera
+            <div className={`dashboard-sidebar-profile ${navigationCollapsed ? "p-2" : "p-3"}`}>
+              <button
+                type="button"
+                onClick={() => setProfileMenuOpen((current) => !current)}
+                className={`dashboard-profile-trigger ${navigationCollapsed ? "justify-center px-2" : "px-3"}`}
+                aria-expanded={profileMenuOpen}
+                aria-label="Open account menu"
+              >
+                {user?.picture || user?.profile_image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={user.picture || user.profile_image || ""} alt="" className="h-9 w-9 rounded-xl object-cover" />
+                ) : (
+                  <span className="dashboard-profile-avatar">{(user?.first_name || user?.email || "U").charAt(0).toUpperCase()}</span>
+                )}
+                {!navigationCollapsed ? <span className="min-w-0 flex-1 text-left"><span className="block truncate text-sm font-semibold">{user?.get_full_name || `${user?.first_name || ""} ${user?.last_name || ""}`.trim() || "Workspace member"}</span><span className="block truncate text-xs">{user?.role || user?.email || "Account"}</span></span> : null}
+                {!navigationCollapsed ? <ChevronDown className={`h-4 w-4 transition-transform ${profileMenuOpen ? "rotate-180" : ""}`} /> : null}
+              </button>
+              {profileMenuOpen && !navigationCollapsed ? (
+                <div className="dashboard-profile-menu">
+                  <Link href="/user/settings" onClick={() => setProfileMenuOpen(false)}><UserRound className="h-4 w-4" />Account settings</Link>
+                  <Link href="/profile" onClick={() => setProfileMenuOpen(false)}><Building2 className="h-4 w-4" />Company profile</Link>
+                </div>
+              ) : null}
             </div>
-            */}
 
 
 

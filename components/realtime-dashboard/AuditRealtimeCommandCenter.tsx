@@ -327,7 +327,7 @@ export default function AuditRealtimeCommandCenter({
   ]
 
   return (
-    <Card className="overflow-hidden border-gray-200 bg-white shadow-sm">
+    <Card className="realtime-command-center overflow-hidden border-gray-200 bg-white shadow-sm">
       <CardHeader className="border-b border-gray-100 bg-white p-5 text-left text-inherit">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-3xl">
