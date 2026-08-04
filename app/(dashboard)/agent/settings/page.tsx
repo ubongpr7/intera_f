@@ -185,7 +185,7 @@ const WorkspaceAiSetupSheet = ({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full max-w-3xl border-gray-800 bg-[linear-gradient(180deg,#020617_0%,#0f172a_58%,#111827_100%)] p-0 text-gray-100 shadow-[0_40px_90px_rgba(2,6,23,0.82)] sm:max-w-3xl"
+        className="agent-settings-sheet w-full max-w-3xl border-gray-800 bg-[linear-gradient(180deg,#020617_0%,#0f172a_58%,#111827_100%)] p-0 text-gray-100 shadow-[0_40px_90px_rgba(2,6,23,0.82)] sm:max-w-3xl"
       >
         <div className="flex h-full flex-col">
           <SheetHeader className="border-b border-gray-800/80 bg-[linear-gradient(115deg,rgba(15,23,42,0.98),rgba(17,24,39,0.96),rgba(30,41,59,0.96))] px-7 py-7 text-left md:px-8">
@@ -435,6 +435,7 @@ export default function SettingsPage() {
     return (
       <WorkspaceSetupShell
         activeStage="agent"
+        className="agent-settings-page"
         title="Manage workspace settings"
         description="Keep agent configuration here. Conversations stay on the agent console, but setup, model selection, and default-agent installs live in this settings workspace."
       >
@@ -447,6 +448,7 @@ export default function SettingsPage() {
     return (
       <WorkspaceSetupShell
         activeStage="agent"
+        className="agent-settings-page"
         title="Manage workspace settings"
         description="Agent setup is restricted to the workspace owner or a staff member with explicit setup permission."
       >
@@ -461,11 +463,12 @@ export default function SettingsPage() {
   return (
     <WorkspaceSetupShell
       activeStage="agent"
+      className="agent-settings-page"
       title="Manage workspace settings"
       description="Keep setup separate from chat. Configure workspace AI, install default agents, and manage custom agents here. Live conversations stay on the agent console."
     >
-      <div className="grid gap-6">
-        <Card className="border-gray-200 bg-white shadow-sm">
+      <div className="agent-settings-content grid gap-6">
+        <Card className="agent-settings-hero border-gray-200 bg-white shadow-sm">
           <CardHeader className="gap-3 p-6 text-left">
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
               <Settings2 className="h-3.5 w-3.5" />
@@ -479,29 +482,29 @@ export default function SettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4 p-6 pt-0 lg:flex-row lg:items-center lg:justify-between">
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-[24px] border border-blue-100 bg-blue-50 px-4 py-4">
+            <div className="agent-settings-status-grid grid gap-3 sm:grid-cols-3">
+              <div className="agent-settings-status-card rounded-[24px] border border-blue-100 bg-blue-50 px-4 py-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">Access Mode</p>
                 <p className="mt-2 text-lg font-semibold text-gray-900">
                   {ownerOverride ? "Workspace owner" : "Permission-based"}
                 </p>
               </div>
-              <div className="rounded-[24px] border border-emerald-100 bg-emerald-50 px-4 py-4">
+              <div className="agent-settings-status-card rounded-[24px] border border-emerald-100 bg-emerald-50 px-4 py-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">Workspace AI</p>
                 <p className="mt-2 text-lg font-semibold text-gray-900">{aiConfigured ? "Configured" : "Not configured"}</p>
               </div>
-              <div className="rounded-[24px] border border-violet-100 bg-violet-50 px-4 py-4">
+              <div className="agent-settings-status-card rounded-[24px] border border-violet-100 bg-violet-50 px-4 py-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-700">Runtime Surface</p>
                 <p className="mt-2 text-lg font-semibold text-gray-900">Separated from setup</p>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-3">
-              <Button type="button" variant="outline" onClick={openSetupSheet}>
+            <div className="agent-settings-hero-actions flex flex-wrap gap-3">
+              <Button type="button" variant="outline" className="agent-settings-secondary-action" onClick={openSetupSheet}>
                 <Bot className="mr-2 h-4 w-4" />
                 Configure workspace AI
               </Button>
-              <Button asChild>
+              <Button asChild className="agent-settings-primary-action">
                 <Link href="/agent">
                   <Sparkles className="mr-2 h-4 w-4" />
                   Open agent console
@@ -511,17 +514,17 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="h-auto flex-wrap justify-start gap-2 rounded-[24px] bg-gray-100 p-1">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="agent-settings-tabs space-y-4">
+          <TabsList className="agent-settings-tab-list h-auto flex-wrap justify-start gap-2 rounded-[24px] bg-gray-100 p-1">
             <TabsTrigger
               value="workspace-ai"
-              className="rounded-[18px] border-transparent bg-transparent px-4 py-2.5 data-[state=active]:border-blue-300 data-[state=active]:bg-white data-[state=active]:text-blue-700"
+              className="agent-settings-tab rounded-[18px] border-transparent bg-transparent px-4 py-2.5 data-[state=active]:border-blue-300 data-[state=active]:bg-white data-[state=active]:text-blue-700"
             >
               Workspace AI
             </TabsTrigger>
             <TabsTrigger
               value="workspace-agents"
-              className="rounded-[18px] border-transparent bg-transparent px-4 py-2.5 data-[state=active]:border-blue-300 data-[state=active]:bg-white data-[state=active]:text-blue-700"
+              className="agent-settings-tab rounded-[18px] border-transparent bg-transparent px-4 py-2.5 data-[state=active]:border-blue-300 data-[state=active]:bg-white data-[state=active]:text-blue-700"
             >
               Agent Setup
             </TabsTrigger>

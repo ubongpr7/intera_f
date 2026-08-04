@@ -184,7 +184,7 @@ function MetricCard({
   hint: string
 }) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 shadow-sm">
+    <div className="agent-runtime-metric rounded-2xl border border-gray-200 bg-gray-50 p-4 shadow-sm">
       <div className="flex items-center gap-3">
         <div className="rounded-2xl bg-white p-2.5 text-gray-700 shadow-sm">{icon}</div>
         <div>
@@ -754,10 +754,10 @@ export default function AgentRuntimeWorkspace() {
   }
 
   return (
-    <div className="flex min-h-0 flex-col gap-4 xl:h-[calc(100vh-9.5rem)]">
+    <div className="agent-runtime-workspace flex min-h-0 flex-col gap-4 xl:h-[calc(100vh-9.5rem)]">
       <div
         ref={overviewRef}
-        className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm"
+        className="agent-runtime-overview rounded-3xl border border-gray-200 bg-white p-5 shadow-sm"
       >
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
@@ -1100,7 +1100,7 @@ export default function AgentRuntimeWorkspace() {
             <div className="hidden sm:block" />
           </div>
 
-          <div className="mt-5 min-h-0 flex-1 overflow-hidden rounded-[26px] border border-gray-200 bg-white">
+          <div className="agent-runtime-chat mt-5 min-h-0 flex-1 overflow-hidden rounded-[26px] border border-gray-200 bg-white">
             <AgentChat
               onClose={() => undefined}
               isFullScreen={false}

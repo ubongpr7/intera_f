@@ -205,12 +205,14 @@ export function WorkspaceSetupShell({
   title,
   description,
   children,
+  className,
 }: {
   activeStage: WorkspaceSetupStageId
   eyebrow?: string
   title: string
   description: string
   children: ReactNode
+  className?: string
 }) {
   const { activeMembership, completionPercentage, isOwner, isWorkspaceContextLoading, nextRecommendedStage, stages } = useWorkspaceSetupProgress()
   const pathname = usePathname()
@@ -218,7 +220,7 @@ export function WorkspaceSetupShell({
   const [setupGuideOpen, setSetupGuideOpen] = useState(false)
 
   return (
-    <div className="mx-auto w-full max-w-[1800px] space-y-6 px-4 py-6 lg:px-8 2xl:px-10">
+    <div className={cn("mx-auto w-full max-w-[1800px] space-y-6 px-4 py-6 lg:px-8 2xl:px-10", className)}>
       {showSetupProgress ? (
         <div className="flex justify-end">
           <Button

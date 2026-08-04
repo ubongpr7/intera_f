@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ArrowLeft, FileText, ShieldCheck } from "lucide-react";
+import { ArrowLeft, FileText, ScrollText, ShieldCheck } from "lucide-react";
 
 import { LandingFooter } from "@/components/landing/LandingFooter";
 import { LandingHeader } from "@/components/landing/LandingHeader";
@@ -21,39 +21,44 @@ export function LegalPageLayout({
   children,
 }: LegalPageLayoutProps) {
   return (
-    <div className="landing-page min-h-screen">
+    <div className="legal-page-shell landing-page min-h-screen">
       <LandingHeader />
-      <main className="landing-hero min-h-screen text-gray-950 dark:text-gray-50">
-        <section className="mx-auto max-w-7xl px-4 pb-12 pt-16 sm:px-6 lg:px-8 lg:pb-16 lg:pt-24">
+      <main className="legal-page-main min-h-screen text-gray-950 dark:text-gray-50">
+        <section className="legal-page-hero mx-auto max-w-7xl px-4 pb-12 pt-16 sm:px-6 lg:px-8 lg:pb-16 lg:pt-24">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 transition hover:text-blue-700 dark:text-gray-300 dark:hover:text-blue-300"
+            className="legal-page-back inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition"
           >
             <ArrowLeft className="h-4 w-4" /> Back to Intera IMS
           </Link>
-          <div className="mt-12 max-w-4xl">
-            <p className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-blue-700 dark:border-blue-300/20 dark:bg-blue-300/10 dark:text-blue-200">
+          <div className="legal-page-intro mt-12 max-w-4xl">
+            <p className="legal-page-eyebrow inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.2em]">
               <ShieldCheck className="h-3.5 w-3.5" /> {eyebrow}
             </p>
             <h1 className="mt-6 text-4xl font-bold tracking-tight sm:text-6xl">{title}</h1>
-            <p className="mt-6 max-w-3xl text-lg leading-8 text-gray-600 dark:text-gray-300">{description}</p>
-            <div className="mt-8 flex flex-wrap gap-3 text-sm text-gray-600 dark:text-gray-300">
-              <span className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white/70 px-4 py-2 dark:border-white/10 dark:bg-white/5">
-                <FileText className="h-4 w-4 text-blue-600 dark:text-blue-300" /> Effective {effectiveDate}
+            <p className="legal-page-description mt-6 max-w-3xl text-lg leading-8">{description}</p>
+            <div className="legal-page-meta mt-8 flex flex-wrap gap-3 text-sm">
+              <span className="legal-page-effective inline-flex items-center gap-2 rounded-full px-4 py-2">
+                <ScrollText className="h-4 w-4" /> Effective {effectiveDate}
               </span>
-              <Link href="/terms" className="rounded-full border border-gray-200 bg-white/70 px-4 py-2 hover:border-blue-300 dark:border-white/10 dark:bg-white/5 dark:hover:border-blue-300/50">
+              <Link href="/terms" className="legal-page-policy-link inline-flex items-center gap-2 rounded-full px-4 py-2">
+                <FileText className="h-4 w-4" />
                 Terms and Conditions
               </Link>
-              <Link href="/privacy" className="rounded-full border border-gray-200 bg-white/70 px-4 py-2 hover:border-blue-300 dark:border-white/10 dark:bg-white/5 dark:hover:border-blue-300/50">
+              <Link href="/privacy" className="legal-page-policy-link inline-flex items-center gap-2 rounded-full px-4 py-2">
+                <ShieldCheck className="h-4 w-4" />
                 Privacy Policy
               </Link>
             </div>
           </div>
         </section>
 
-        <article className="mx-auto max-w-5xl px-4 pb-24 sm:px-6 lg:px-8">
-          <div className="legal-document rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-2xl shadow-blue-950/10 backdrop-blur sm:p-10 lg:p-14 dark:border-white/10 dark:bg-[#0d192e]/90">
-            {children}
+        <article className="legal-page-article mx-auto max-w-6xl px-4 pb-24 sm:px-6 lg:px-8">
+          <div className="legal-reading-frame">
+            <span className="legal-reading-rail" aria-hidden="true" />
+            <div className="legal-document rounded-3xl border p-6 backdrop-blur sm:p-10 lg:p-14">
+              {children}
+            </div>
           </div>
         </article>
       </main>
