@@ -330,7 +330,7 @@ const Navbar = ({ user, onOpenMobileSidebar, sidebarCollapsed }: NavbarProps) =>
           onClick={onOpenMobileSidebar}
           aria-label="Open navigation menu"
           title="Open navigation menu"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 md:hidden"
+          className="dashboard-mobile-menu inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 md:hidden"
         >
           <Menu className="h-5 w-5" />
         </button>
@@ -344,7 +344,7 @@ const Navbar = ({ user, onOpenMobileSidebar, sidebarCollapsed }: NavbarProps) =>
                 value={selectedCompanyCode}
                 onChange={(e) => handleSwitchCompany(e.target.value)}
                 disabled={isSwitchingCompany}
-                className="min-w-0 max-w-[10rem] rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 md:max-w-[12rem] lg:max-w-[14rem] xl:max-w-[18rem]"
+                className="dashboard-workspace-switcher min-w-0 max-w-[10rem] rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 md:max-w-[12rem] lg:max-w-[14rem] xl:max-w-[18rem]"
               >
                 {companyMemberships.profiles.map((profile) => (
                   <option key={`${profile.id}`} value={profile.company_code}>
@@ -354,7 +354,7 @@ const Navbar = ({ user, onOpenMobileSidebar, sidebarCollapsed }: NavbarProps) =>
               </select>
               <Link
                 href="/profile/create?mode=new"
-                className="inline-flex h-10 items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:border-blue-300 hover:bg-blue-100 md:px-2.5"
+                className="dashboard-new-workspace inline-flex h-10 items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition-colors md:px-2.5"
                 aria-label="Create a new workspace"
                 title="Create a new workspace"
               >
@@ -374,7 +374,7 @@ const Navbar = ({ user, onOpenMobileSidebar, sidebarCollapsed }: NavbarProps) =>
               }}
               aria-label={`Open notifications${unreadNotificationCount ? `, ${unreadNotificationCount} unread` : ''}`}
               aria-expanded={notificationMenuOpen}
-              className="relative rounded-full p-2 transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="dashboard-header-icon-button relative rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
               <Bell size={24} className="cursor-pointer text-gray-500" />
               {unreadNotificationCount > 0 ? (
@@ -385,7 +385,7 @@ const Navbar = ({ user, onOpenMobileSidebar, sidebarCollapsed }: NavbarProps) =>
             </button>
 
             {notificationMenuOpen ? (
-              <div className="absolute right-0 z-50 mt-3 w-[min(26rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
+              <div className="dashboard-header-menu dashboard-notification-menu absolute right-0 z-50 mt-3 w-[min(26rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
                 <div className="flex items-center justify-between gap-4 border-b border-gray-100 px-5 py-4">
                     <div>
                       <div className="text-base font-semibold text-gray-900">Notifications</div>
@@ -496,7 +496,7 @@ const Navbar = ({ user, onOpenMobileSidebar, sidebarCollapsed }: NavbarProps) =>
             <button
               type="button"
               onClick={() => setUserMenuOpen((current) => !current)}
-              className="flex items-center gap-3 rounded-full p-1 transition-colors hover:bg-gray-100"
+              className="dashboard-account-trigger flex items-center gap-3 rounded-xl p-1 transition-colors"
               aria-label="Open account menu"
             >
               <Avatar className="h-9 w-9 border border-gray-200">
@@ -506,7 +506,7 @@ const Navbar = ({ user, onOpenMobileSidebar, sidebarCollapsed }: NavbarProps) =>
             </button>
 
             {userMenuOpen ? (
-              <div className="absolute right-0 z-50 mt-2 w-72 rounded-xl border bg-white py-1 shadow-lg">
+              <div className="dashboard-header-menu dashboard-account-menu absolute right-0 z-50 mt-2 w-72 rounded-xl border bg-white py-1 shadow-lg">
                 <div className="border-b border-gray-100 px-4 py-3">
                   <div className="text-sm font-semibold text-gray-900">{userDisplayName}</div>
                   <div className="mt-1 text-xs text-gray-500">{fallbackUser.email || 'Personal account'}</div>
@@ -602,13 +602,13 @@ const Navbar = ({ user, onOpenMobileSidebar, sidebarCollapsed }: NavbarProps) =>
           <button
             type="button"
             onClick={() => setSettingsMenuOpen((current) => !current)}
-            className="rounded-full p-2 transition-colors hover:bg-gray-100"
+            className="dashboard-header-icon-button rounded-xl p-2"
             aria-label="Open settings menu"
           >
             <SettingsIcon size={24} className="cursor-pointer text-gray-500" />
           </button>
           {settingsMenuOpen ? (
-            <div className="absolute right-0 z-50 mt-2 w-56 rounded-xl border bg-white py-1 shadow-lg">
+            <div className="dashboard-header-menu dashboard-settings-menu absolute right-0 z-50 mt-2 w-56 rounded-xl border bg-white py-1 shadow-lg">
               {settingsLinks.map((item) => {
                 const Icon = item.icon
                 const accessLabel = getPermissionRequirementLabel(item.access)

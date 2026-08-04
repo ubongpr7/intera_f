@@ -1,7 +1,7 @@
 'use client';
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ClipboardEvent } from "react";
 import {
   useMfaEmailRequestMutation,
   useMfaEmailVerifyMutation,
@@ -20,7 +20,8 @@ const RESEND_COOLDOWN_SECONDS = 60;
 
 export default function MfaVerifyCard() {
   const router = useRouter();
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
+  const autoVerificationRef = useRef("");
   const [method, setMethod] = useState<"app" | "email">("app");
   const [code, setCode] = useState("");
   const [email, setEmail] = useState("");
@@ -41,6 +42,11 @@ export default function MfaVerifyCard() {
     }, 1000);
     return () => window.clearInterval(timerId);
   }, [cooldown]);
+
+  useEffect(() => {
+    const focusTimer = window.setTimeout(() => inputsRef.current[0]?.focus(), 50);
+    return () => window.clearTimeout(focusTimer);
+  }, [method]);
 
   const handleSendEmailCode = async () => {
     setErrorMessage("");
@@ -113,7 +119,42 @@ export default function MfaVerifyCard() {
   const handleCodeChange = (value: string) => {
     setErrorMessage("");
     setCode(value.replace(/\D/g, "").slice(0, 6));
+    autoVerificationRef.current = "";
   };
+
+  const handleDigitChange = (index: number, value: string) => {
+    const digits = value.replace(/\D/g, "");
+    if (digits.length > 1) {
+      const nextCode = `${code.slice(0, index)}${digits}${code.slice(index + digits.length)}`.slice(0, 6);
+      handleCodeChange(nextCode);
+      inputsRef.current[Math.min(index + digits.length, 5)]?.focus();
+      return;
+    }
+
+    const nextDigits = code.split("");
+    nextDigits[index] = digits;
+    handleCodeChange(nextDigits.join("").slice(0, 6));
+    if (digits && index < 5) {
+      inputsRef.current[index + 1]?.focus();
+    }
+  };
+
+  const handlePaste = (event: ClipboardEvent<HTMLInputElement>) => {
+    event.preventDefault();
+    const pastedCode = event.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (!pastedCode) return;
+    handleCodeChange(pastedCode);
+    inputsRef.current[Math.min(pastedCode.length, 6) - 1]?.focus();
+  };
+
+  useEffect(() => {
+    const verificationKey = `${method}:${code}`;
+    if (code.length !== 6 || isLoadingAny || autoVerificationRef.current === verificationKey) {
+      return;
+    }
+    autoVerificationRef.current = verificationKey;
+    void handleVerify();
+  }, [code, isLoadingAny, method]);
 
   return (
     <div className="auth-mfa-card relative w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 bg-white/95 p-8 shadow-2xl backdrop-blur-md dark:border-white/10 dark:bg-[#101727]/95">
@@ -170,49 +211,47 @@ export default function MfaVerifyCard() {
         ) : null}
 
         <div className="mt-6 space-y-3">
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={() => inputRef.current?.focus()}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                inputRef.current?.focus();
-              }
-            }}
-            className="grid grid-cols-6 gap-2 rounded-2xl border border-slate-200 p-3 dark:border-white/10"
-          >
+          <div className="auth-mfa-otp-grid grid grid-cols-6 gap-2 rounded-2xl border border-slate-200 p-3 dark:border-white/10">
             {codeDigits.map((digit, index) => (
-              <div
+              <input
                 key={`otp-digit-${index}`}
-                className={`flex h-12 items-center justify-center rounded-xl border text-lg font-semibold transition ${
+                ref={(element) => {
+                  inputsRef.current[index] = element;
+                }}
+                type="text"
+                inputMode="numeric"
+                autoComplete={index === 0 ? "one-time-code" : "off"}
+                pattern="[0-9]*"
+                maxLength={1}
+                value={digit}
+                onChange={(event) => handleDigitChange(index, event.target.value)}
+                onPaste={handlePaste}
+                onKeyDown={(event) => {
+                  if (event.key === "Backspace" && !digit && index > 0) {
+                    inputsRef.current[index - 1]?.focus();
+                  }
+                  if (event.key === "ArrowLeft" && index > 0) {
+                    event.preventDefault();
+                    inputsRef.current[index - 1]?.focus();
+                  }
+                  if (event.key === "ArrowRight" && index < 5) {
+                    event.preventDefault();
+                    inputsRef.current[index + 1]?.focus();
+                  }
+                  if (event.key === "Enter" && code.length === 6) {
+                    event.preventDefault();
+                    void handleVerify();
+                  }
+                }}
+                aria-label={`MFA verification digit ${index + 1} of 6`}
+                className={`auth-mfa-otp-input h-12 min-w-0 rounded-xl border text-center text-lg font-semibold transition ${
                   code.length === index
                     ? "border-blue-200 bg-blue-50 text-blue-700 shadow-sm dark:border-[#98fcc2]/20 dark:bg-[#98fcc2]/10 dark:text-[#98fcc2]"
-                    : "border-slate-200 bg-white text-slate-400 dark:border-white/10 dark:bg-white/5 dark:text-slate-500"
+                    : "border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-white"
                 }`}
-              >
-                {digit || "•"}
-              </div>
+              />
             ))}
           </div>
-
-          <input
-            ref={inputRef}
-            type="text"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            maxLength={6}
-            value={code}
-            onChange={(event) => handleCodeChange(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && code.length === 6) {
-                event.preventDefault();
-                void handleVerify();
-              }
-            }}
-            className="sr-only"
-            aria-label="MFA verification code"
-          />
         </div>
 
         {errorMessage ? (

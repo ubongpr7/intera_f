@@ -2222,6 +2222,50 @@ option {
   color: #e2e8f0 !important;
 }
 
+/* OTP boxes stay individually legible and tactile in every auth theme. */
+.auth-mfa-otp-grid {
+  border-color: rgba(142, 171, 215, .24) !important;
+  background: rgba(6, 16, 34, .18);
+}
+
+.auth-mfa-otp-input {
+  border-color: rgba(142, 171, 215, .42) !important;
+  background: rgba(22, 38, 64, .88) !important;
+  color: #f8fbff !important;
+  caret-color: #98fcc2;
+  outline: none;
+  box-shadow: inset 0 1px rgba(255, 255, 255, .035);
+}
+
+.auth-mfa-otp-input:focus {
+  border-color: #8bbcff !important;
+  background: rgba(31, 55, 91, .98) !important;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, .2), inset 0 1px rgba(255, 255, 255, .05);
+}
+
+.auth-mfa-otp-input:not(:placeholder-shown) {
+  color: #fff !important;
+}
+
+html.light .auth-mfa-otp-grid {
+  border-color: rgba(55, 86, 133, .18) !important;
+  background: rgba(239, 245, 253, .72);
+}
+
+html.light .auth-mfa-otp-input {
+  border-color: rgba(55, 86, 133, .28) !important;
+  background: #fff !important;
+  color: #17385f !important;
+  caret-color: #2563d8;
+  box-shadow: inset 0 1px rgba(255, 255, 255, .9);
+}
+
+html.light .auth-mfa-otp-input:focus {
+  border-color: #3c83f7 !important;
+  background: #fff !important;
+  box-shadow: 0 0 0 3px rgba(60, 131, 247, .14);
+}
+
 /* Dashboard design system: scoped so product workflows retain their existing behavior. */
 :root {
   --dash-canvas: #f4f7fc;
@@ -5231,6 +5275,159 @@ html.light .agent-settings-sheet textarea {
   border: 1px solid var(--dash-line);
   background: color-mix(in srgb, var(--dash-surface) 90%, transparent) !important;
   box-shadow: 0 14px 35px -28px rgba(24, 51, 92, .55);
+}
+
+/* Dashboard command bar: intentionally compact, neutral, and easy to scan. */
+.dashboard-topbar {
+  min-height: 4.15rem;
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--dash-surface) 96%, transparent) !important;
+  box-shadow: 0 10px 28px -24px rgba(15, 23, 42, .32);
+}
+
+.dashboard-workspace-switcher {
+  height: 2.55rem;
+  border-color: var(--dash-line) !important;
+  background: var(--dash-surface-muted) !important;
+  color: var(--dash-ink) !important;
+  font-weight: 650;
+  outline: none;
+  transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
+}
+
+.dashboard-workspace-switcher:hover,
+.dashboard-workspace-switcher:focus {
+  border-color: color-mix(in srgb, var(--dash-ink) 26%, var(--dash-line)) !important;
+  background: var(--dash-surface) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--dash-ink) 7%, transparent);
+}
+
+.dashboard-new-workspace {
+  min-width: 2.55rem;
+  border-color: var(--dash-line) !important;
+  background: var(--dash-surface-muted) !important;
+  color: var(--dash-ink) !important;
+  font-weight: 700;
+}
+
+.dashboard-new-workspace:hover {
+  border-color: color-mix(in srgb, var(--dash-ink) 26%, var(--dash-line)) !important;
+  background: var(--dash-surface) !important;
+  color: var(--dash-ink) !important;
+}
+
+.dashboard-mobile-menu,
+.dashboard-header-icon-button {
+  display: inline-flex;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  color: var(--dash-muted);
+  transition: border-color .2s ease, background .2s ease, color .2s ease, transform .2s ease;
+}
+
+.dashboard-mobile-menu {
+  border-color: var(--dash-line) !important;
+  background: var(--dash-surface-muted) !important;
+}
+
+.dashboard-header-icon-button:hover,
+.dashboard-mobile-menu:hover {
+  border-color: var(--dash-line);
+  background: var(--dash-surface-muted);
+  color: var(--dash-ink);
+  transform: translateY(-1px);
+}
+
+.dashboard-header-icon-button .text-gray-500,
+.dashboard-mobile-menu .text-gray-700 {
+  color: inherit;
+}
+
+.dashboard-account-trigger {
+  border: 1px solid transparent;
+  transition: border-color .2s ease, background .2s ease, transform .2s ease;
+}
+
+.dashboard-account-trigger:hover {
+  border-color: var(--dash-line);
+  background: var(--dash-surface-muted);
+  transform: translateY(-1px);
+}
+
+.dashboard-account-trigger [data-slot="avatar"] {
+  border-color: var(--dash-line);
+  box-shadow: none;
+}
+
+.dashboard-account-trigger [data-slot="avatar-fallback"] {
+  background: var(--dash-ink);
+  color: var(--dash-surface);
+}
+
+.dashboard-header-menu {
+  border-color: var(--dash-line) !important;
+  background: var(--dash-surface) !important;
+  box-shadow: 0 20px 45px -28px rgba(15, 23, 42, .4) !important;
+  animation: dashboard-header-menu-in .16s ease-out;
+}
+
+.dashboard-header-menu .border-gray-100 {
+  border-color: var(--dash-line);
+}
+
+.dashboard-header-menu .text-gray-900 {
+  color: var(--dash-ink);
+}
+
+.dashboard-header-menu .text-gray-600,
+.dashboard-header-menu .text-gray-500,
+.dashboard-header-menu .text-gray-400 {
+  color: var(--dash-muted);
+}
+
+.dashboard-header-menu .bg-gray-50,
+.dashboard-header-menu .bg-gray-100,
+.dashboard-header-menu .bg-white {
+  background: var(--dash-surface-muted);
+}
+
+.dashboard-header-menu a > div,
+.dashboard-header-menu button:not(.dashboard-header-icon-button) {
+  transition: background .16s ease, color .16s ease;
+}
+
+.dashboard-header-menu a > div:hover,
+.dashboard-header-menu button:not(.dashboard-header-icon-button):hover {
+  background: var(--dash-surface-muted) !important;
+  color: var(--dash-ink) !important;
+}
+
+.dashboard-notification-menu .bg-blue-50\/60 {
+  background: color-mix(in srgb, var(--dash-surface-muted) 88%, transparent);
+}
+
+.dashboard-notification-menu .bg-blue-500 {
+  background: var(--dash-ink);
+}
+
+@keyframes dashboard-header-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.dark .dashboard-topbar {
+  background: rgba(13, 23, 40, .96) !important;
+  box-shadow: 0 10px 28px -22px rgba(0, 0, 0, .52);
 }
 
 .workspace-dashboard [data-slot="card"] {
