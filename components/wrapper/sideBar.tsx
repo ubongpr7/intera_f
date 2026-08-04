@@ -5,7 +5,6 @@ import { readCookieValue } from "@/lib/authCookies";
 import { canAccessPath } from "@/lib/permissionsGuard";
 import { useAppSelector, useAppDispatch } from "../../redux/store";
 import { setIsSidebarCollapsed } from "../../redux/state";
-import { generateColorFromName } from '../utils/colorGenerator';
 import { SidebarLink } from './SideBarLinks';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import {
@@ -96,13 +95,12 @@ const SideBar = ({ user, mobileOpen, onMobileClose }:SideBarDataProps) => {
         
         <div className={`dashboard-sidebar-brand flex items-center justify-between md:justify-normal pt-6 ${navigationCollapsed?"px-3":"px-5"}`}>
             <div  className={`flex items-center gap-4`}>
-                <div className={`dashboard-sidebar-mark flex h-10 w-10 items-center justify-center rounded-2xl`}
-                style={{backgroundColor: generateColorFromName(companyName)}}>
+                <div className="dashboard-sidebar-mark flex h-10 w-10 items-center justify-center rounded-2xl">
                 {companyLogo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={companyLogo} alt={companyName} className="h-full w-full rounded-2xl object-cover" />
                 ) : (
-                  <h1 className={` text-2xl text-center font-extrabold text-gray-800`}>
+                  <h1 className="text-2xl text-center font-extrabold text-gray-800">
                       {(companyName || 'I').trim().charAt(0).toUpperCase()}
                   </h1>
                 )}

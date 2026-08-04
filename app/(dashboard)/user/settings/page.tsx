@@ -170,8 +170,8 @@ export default function UserSettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="border-gray-200 bg-white shadow-sm">
+    <div className="user-settings-workspace space-y-6">
+      <Card className="user-settings-hero border-gray-200 bg-white shadow-sm">
         <CardHeader className="gap-4 p-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
@@ -199,14 +199,14 @@ export default function UserSettingsPage() {
         </CardHeader>
       </Card>
 
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "profile" | "security")} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 rounded-2xl bg-white p-1 shadow-sm md:w-[340px]">
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "profile" | "security")} className="user-settings-tabs space-y-6">
+        <TabsList className="user-settings-tab-list grid w-full grid-cols-2 rounded-2xl bg-white p-1 shadow-sm md:w-[340px]">
+          <TabsTrigger className="user-settings-tab" value="profile">Profile</TabsTrigger>
+          <TabsTrigger className="user-settings-tab" value="security">Security</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="space-y-6">
-          <Card className="border-gray-200 shadow-sm">
+          <Card className="user-settings-card border-gray-200 shadow-sm">
             <CardHeader className="p-6">
               <CardTitle className="flex items-center gap-2 text-xl text-gray-900">
                 <UserRound className="h-5 w-5 text-blue-600" />
@@ -215,7 +215,7 @@ export default function UserSettingsPage() {
               <CardDescription>Update the personal details and avatar shown across your account.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 p-6 pt-0">
-              <div className="flex flex-col gap-5 rounded-3xl border border-gray-200 bg-gray-50 p-5 md:flex-row md:items-center md:justify-between">
+              <div className="user-settings-avatar-panel flex flex-col gap-5 rounded-3xl border border-gray-200 bg-gray-50 p-5 md:flex-row md:items-center md:justify-between">
                 <div className="flex items-center gap-4">
                   <Avatar className="h-16 w-16 border border-gray-200">
                     <AvatarImage src={avatarUrl ?? undefined} alt={displayName} />
@@ -316,7 +316,7 @@ export default function UserSettingsPage() {
         </TabsContent>
 
         <TabsContent value="security" className="space-y-6">
-          <Card className="border-gray-200 shadow-sm">
+          <Card className="user-settings-card border-gray-200 shadow-sm">
             <CardHeader className="p-6">
               <CardTitle className="flex items-center gap-2 text-xl text-gray-900">
                 <ShieldCheck className="h-5 w-5 text-blue-600" />
@@ -326,7 +326,7 @@ export default function UserSettingsPage() {
             </CardHeader>
             <CardContent className="space-y-6 p-6 pt-0">
               <div className="grid gap-4 md:grid-cols-2">
-                <Card className="border-gray-200 shadow-none">
+                <Card className="user-settings-security-card border-gray-200 shadow-none">
                   <CardHeader className="p-5">
                     <CardTitle className="text-lg text-gray-900">Multi-factor authentication</CardTitle>
                     <CardDescription>
@@ -345,7 +345,7 @@ export default function UserSettingsPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="border-gray-200 shadow-none">
+                <Card className="user-settings-security-card border-gray-200 shadow-none">
                   <CardHeader className="p-5">
                     <CardTitle className="text-lg text-gray-900">Account verification</CardTitle>
                     <CardDescription>
