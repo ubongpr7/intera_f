@@ -3,6 +3,12 @@ import { PrivacyPolicyContent } from "@/components/legal/LegalPolicyContent";
 
 const effectiveDate = "2 August 2026";
 
+export const metadata = {
+  title: "Privacy Policy | Intera IMS",
+  description: "How InteraProTech handles personal data when you visit, contact, or use Intera IMS.",
+  alternates: { canonical: "/privacy" },
+};
+
 export default function PrivacyPolicyPage() {
   return (
     <LegalPageLayout

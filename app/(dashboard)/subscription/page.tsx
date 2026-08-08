@@ -161,14 +161,32 @@ export default function SubscriptionPage() {
   const coinAllocation = entitlements?.coins?.monthly_allocation ?? 0
   const coinUsed = entitlements?.coins?.used ?? Math.max(coinAllocation - coinBalance, 0)
   const coinPercent = coinAllocation > 0 ? Math.min(100, Math.round((coinBalance / coinAllocation) * 100)) : 0
-  const usageByFeature = useMemo(() => new Map(usageRows.map((row) => [row.feature, row])), [usageRows])
+  const usageCountsByFeature = useMemo(() => {
+    const rawCounts = entitlements?.usage_counts ?? {}
+    const entries = Object.keys(rawCounts).length > 0
+      ? Object.entries(rawCounts)
+      : usageRows.map((row) => [row.feature, row.usage] as const)
+    return new Map<string, number | null>(
+      entries.map(([feature, usage]) => [feature, usage === null || usage === undefined ? null : Number(usage)]),
+    )
+  }, [entitlements?.usage_counts, usageRows])
+  const workspaceFootprintRows = useMemo(
+    () =>
+      Array.from(usageCountsByFeature.entries())
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([feature, usage]) => ({
+          feature,
+          name: label(feature),
+          usage,
+        })),
+    [usageCountsByFeature],
+  )
 
   const getPlanLimitIssues = (plan: SubscriptionPlanRecord) =>
     (plan.features ?? [])
       .filter((feature) => feature.limit_type === "COUNT" && !feature.is_unlimited && feature.limit_value !== null)
       .map((feature) => {
-        const row = usageByFeature.get(feature.slug)
-        const usage = row?.usage
+        const usage = usageCountsByFeature.get(feature.slug)
         if (usage === null || usage === undefined || Number(usage) <= Number(feature.limit_value ?? 0)) {
           return null
         }
@@ -426,10 +444,22 @@ export default function SubscriptionPage() {
                       ))}
                     </ul>
                     {blockedByUsage ? (
-                      <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-50">
-                        Current usage is above this plan: {limitIssues.slice(0, 3).join("; ")}
-                        {limitIssues.length > 3 ? ` and ${limitIssues.length - 3} more.` : "."}
-                      </div>
+                      <details className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-50">
+                        <summary className="cursor-pointer list-none font-semibold">
+                          Why can&apos;t I choose this plan?
+                        </summary>
+                        <p className="mt-2">
+                          This workspace is already above one or more limits in this plan.
+                        </p>
+                        <ul className="mt-2 space-y-1">
+                          {limitIssues.map((issue) => (
+                            <li key={issue} className="flex items-start gap-2">
+                              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                              <span>{issue}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
                     ) : null}
                     <Button
                       className="mt-4 w-full"
@@ -567,7 +597,17 @@ export default function SubscriptionPage() {
                 )}
               </div>
             )
-          }) : features.length === 0 ? (
+          }) : workspaceFootprintRows.length > 0 ? workspaceFootprintRows.map((row) => (
+            <div key={row.feature} className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
+              <div className="flex items-center justify-between gap-3">
+                <p className="font-semibold">{row.name}</p>
+                <ShieldCheck className="h-4 w-4 text-emerald-600" />
+              </div>
+              <p className="mt-2 text-sm text-slate-500">
+                {row.usage === null ? "Usage unavailable" : `${Number(row.usage).toLocaleString()} currently in workspace`}
+              </p>
+            </div>
+          )) : features.length === 0 ? (
             <p className="text-sm text-slate-500">No entitlement is active until a plan trial is selected.</p>
           ) : features.map(([slug, feature]) => (
             <div key={slug} className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">

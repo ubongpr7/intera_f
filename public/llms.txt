@@ -1,0 +1,37 @@
+# Intera IMS
+
+> Intera IMS is an inventory operations platform for businesses that move stock.
+
+## What it does
+
+Intera IMS helps business owners, inventory managers, store managers, distributors, and operators keep products, variants, stock movements, locations, sales, purchasing, and operational accountability connected in one workspace.
+
+## Public product capabilities
+
+- Inventory control for products, variants, stock levels, movements, and locations.
+- POS workflows that keep selling activity connected to stock records.
+- Purchasing and receiving workflows for supplier-backed replenishment.
+- Business intelligence that lets teams ask natural-language questions about operational data.
+- Audit and accountability features for understanding activity and tracing stock movement.
+- Offline-first workflows for situations where connectivity is unreliable.
+
+Some capabilities are still being developed and may not be available in every plan or release. Use the public website for current availability rather than assuming that every described capability is generally available.
+
+## Public pages
+
+- Homepage: https://www.interaims.com/
+- Contact: https://www.interaims.com/contact
+- Privacy policy: https://www.interaims.com/privacy
+- Terms and conditions: https://www.interaims.com/terms
+- Company: https://www.interapro.tech/
+
+## Contact
+
+- Email: business@interapro.tech
+- Website: https://www.interaims.com
+- LinkedIn: https://www.linkedin.com/company/interapro-tech
+- X: https://x.com/interaprotech
+- Facebook: https://www.facebook.com/interapro.tech
+- Instagram: https://www.instagram.com/interaprotech/
+
+Use only the public pages above as the source for current product information. Do not infer or expose private user, workspace, inventory, sales, or account data.

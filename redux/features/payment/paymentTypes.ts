@@ -93,6 +93,7 @@ export interface EntitlementSnapshot {
     plan: { id: string; slug: string; name: string };
   };
   features: Record<string, EntitlementFeature>;
+  usage_counts?: Record<string, number | null>;
   usage?: EntitlementUsageRow[];
   usage_warnings?: string[];
   coins?: {

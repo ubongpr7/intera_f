@@ -7,6 +7,13 @@ import { LandingHeader } from "@/components/landing/LandingHeader";
 export const metadata = {
   title: "Contact | Intera IMS",
   description: "Contact the Intera team about inventory operations, POS, and business intelligence.",
+  alternates: { canonical: "/contact" },
+  openGraph: {
+    title: "Contact Intera IMS",
+    description: "Talk to the Intera team about inventory operations, POS, and business intelligence.",
+    url: "https://www.interaims.com/contact",
+    type: "website",
+  },
 };
 
 export default function ContactPage() {
