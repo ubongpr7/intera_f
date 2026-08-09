@@ -305,6 +305,27 @@ export function useVoiceChat({
     setIsListening(false)
   }, [])
 
+  const disconnectLivekitClient = useCallback(
+    async (room: Room | null, track: Awaited<ReturnType<typeof createLocalAudioTrack>> | null) => {
+      if (track) {
+        try {
+          track.stop()
+        } catch {
+          // ignore local track cleanup errors
+        }
+      }
+
+      if (room) {
+        try {
+          room.disconnect()
+        } catch {
+          // ignore room disconnect errors
+        }
+      }
+    },
+    [],
+  )
+
   const cleanupLivekitSession = useCallback(async () => {
     if (livekitStopPromiseRef.current) {
       return livekitStopPromiseRef.current
@@ -365,28 +386,8 @@ export function useVoiceChat({
       }
 
       try {
+        await disconnectLivekitClient(room, track)
         await stopLivekitRoom(roomName)
-        if (room && track) {
-          try {
-            await room.localParticipant.unpublishTrack(track)
-          } catch {
-            // ignore unpublish errors on disconnect
-          }
-        }
-        if (track) {
-          try {
-            track.stop()
-          } catch {
-            // ignore cleanup errors
-          }
-        }
-        if (room) {
-          try {
-            room.disconnect()
-          } catch {
-            // ignore cleanup errors
-          }
-        }
       } finally {
         livekitRoomRef.current = null
         livekitTrackRef.current = null
@@ -402,7 +403,7 @@ export function useVoiceChat({
         livekitStopPromiseRef.current = null
       }
     }
-  }, [stopLivekitRoom])
+  }, [disconnectLivekitClient, stopLivekitRoom])
 
   useEffect(() => {
     onTranscriptRef.current = onTranscript
@@ -924,17 +925,7 @@ export function useVoiceChat({
         })
         await room.localParticipant.publishTrack(localTrack)
         if (isStaleStart()) {
-          try {
-            await room.localParticipant.unpublishTrack(localTrack)
-          } catch {
-            // ignore stale cleanup errors
-          }
-          try {
-            localTrack.stop()
-          } catch {
-            // ignore stale cleanup errors
-          }
-          room.disconnect()
+          await disconnectLivekitClient(room, localTrack)
           forgetStoredLivekitRoom(generatedRoomName)
           await stopLivekitRoom(generatedRoomName)
           return
@@ -983,7 +974,9 @@ export function useVoiceChat({
   }, [
     appendConversationEntry,
     cleanupLivekitSession,
+    disconnectLivekitClient,
     livekitAgentName,
+    livekitEnabled,
     livekitMetadata,
     livekitParticipantName,
     livekitRoomName,
@@ -1091,16 +1084,7 @@ export function useVoiceChat({
       }
       remoteAudioElementsRef.current.clear()
 
-      try {
-        track?.stop()
-      } catch {
-        // ignore unload cleanup errors
-      }
-      try {
-        room?.disconnect()
-      } catch {
-        // ignore unload cleanup errors
-      }
+      void disconnectLivekitClient(room, track)
       if (speakingIdleTimeoutRef.current) {
         clearTimeout(speakingIdleTimeoutRef.current)
         speakingIdleTimeoutRef.current = null
@@ -1135,7 +1119,7 @@ export function useVoiceChat({
       window.removeEventListener("beforeunload", disconnectLivekitImmediately)
       disconnectLivekitImmediately()
     }
-  }, [stopLivekitRoom])
+  }, [disconnectLivekitClient, stopLivekitRoom])
 
   return {
     isListening,

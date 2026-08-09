@@ -184,7 +184,7 @@ const SideBar = ({ user, mobileOpen, onMobileClose }:SideBarDataProps) => {
               isCollapsed={navigationCollapsed}
               subLinks={[
                 { href: "/product", label: "Workspace products" },
-                { href: "/product/import", label: "Import Products" },
+                { href: "/product/imports", label: "Import Products" },
               ]}
             />
             <div className={`dashboard-nav-divider ${navigationCollapsed ? "mx-1" : "mx-3"}`} />
