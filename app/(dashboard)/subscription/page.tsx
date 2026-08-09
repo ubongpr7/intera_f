@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { readCookieValue } from "@/lib/authCookies"
 import {
   useGetCurrentEntitlementsQuery,
+  useGetPaymentsQuery,
   useGetSubscriptionPlansQuery,
   useInitiatePaymentMutation,
   useVerifyPaymentMutation,
@@ -18,7 +19,7 @@ import {
   useGetCoinTransactionsQuery,
   useTopUpCoinsMutation,
 } from "@/redux/features/payment/paymentAPISlice"
-import type { EntitlementUsageRow, SubscriptionPlanRecord } from "@/redux/features/payment/paymentTypes"
+import type { EntitlementUsageRow, PaymentRecord, SubscriptionPlanRecord } from "@/redux/features/payment/paymentTypes"
 
 type Claims = {
   user_id?: string | number
@@ -55,14 +56,45 @@ const formatPrice = (plan: SubscriptionPlanRecord) => {
   }).format(Number(plan.price))
 }
 
+const formatNaira = (amount: number) =>
+  new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(amount)
+
 const formatDate = (value?: string | null) => {
   if (!value) return "Not set"
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value))
 }
 
+const formatSubscriptionStatus = (status?: string | null, pendingCancellation?: boolean) => {
+  if (pendingCancellation) return "Scheduled to end"
+  const value = `${status ?? ""}`.trim().toUpperCase()
+  if (value === "TRIAL") return "Trial"
+  if (value === "ACTIVE") return "Active"
+  if (!value) return "Not set"
+  return value.charAt(0) + value.slice(1).toLowerCase()
+}
+
 const formatFeatureLimit = (feature: SubscriptionPlanRecord["features"][number]) => {
   if (feature.limit_type === "BOOLEAN" || feature.is_unlimited) return feature.name
   return `${Number(feature.limit_value ?? 0).toLocaleString()} ${feature.name.toLowerCase()}`
+}
+
+const calculateIncludedCoinsFromPlanPrice = (price: string | number | undefined) => {
+  const numericPrice = Number(price ?? 0)
+  if (!Number.isFinite(numericPrice) || numericPrice <= 0) return 0
+  return Math.round((numericPrice / 50) / 100) * 100
+}
+
+const fallbackCoinRateByPlanSlug: Record<string, number> = {
+  basic: 50,
+  starter: 50,
+  growth: 40,
+  scale: 40,
+  enterprise: 40,
 }
 
 const formatUsageStatus = (status?: string) => {
@@ -88,6 +120,27 @@ const usagePercentage = (row: EntitlementUsageRow) => {
   if (row.is_unlimited || row.limit_type === "BOOLEAN" || row.limit_value === null || row.usage === null) return 0
   if (row.limit_value <= 0) return 0
   return Math.min(100, Math.round((row.usage / row.limit_value) * 100))
+}
+
+const normalizePaymentStatus = (status?: string | null) => `${status ?? ""}`.trim().toLowerCase()
+
+const paymentLabel = (payment: PaymentRecord) => {
+  const kind = `${payment.metadata?.payment_kind ?? ""}`.trim().toLowerCase()
+  if (kind === "coin_topup") return "Intera coin top-up"
+  if (payment.plan_name) return payment.plan_name
+  return "Subscription charge"
+}
+
+const paymentCardLabel = (payment?: PaymentRecord) => {
+  const billingCard = payment?.metadata?.billing_card as Record<string, unknown> | undefined
+  if (!billingCard) return "No saved card reference yet"
+  const brand = `${billingCard.brand ?? billingCard.type ?? "Card"}`
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+  const last4 = `${billingCard.last4 ?? billingCard.last_4digits ?? ""}`.trim()
+  const expiryMonth = `${billingCard.exp_month ?? ""}`.trim()
+  const expiryYear = `${billingCard.exp_year ?? ""}`.trim()
+  const expiry = expiryMonth && expiryYear ? ` • Expires ${expiryMonth}/${expiryYear}` : ""
+  return last4 ? `${brand} ending in ${last4}${expiry}` : `${brand}${expiry}`
 }
 
 function SkeletonLine({ className = "" }: { className?: string }) {
@@ -147,6 +200,7 @@ export default function SubscriptionPage() {
     isError: entitlementsError,
     refetch,
   } = useGetCurrentEntitlementsQuery(undefined, { refetchOnMountOrArgChange: true })
+  const { data: payments = [], isLoading: loadingPayments, refetch: refetchPayments } = useGetPaymentsQuery(undefined, { refetchOnMountOrArgChange: true })
   const { data: coinTransactions = [], refetch: refetchCoinTransactions } = useGetCoinTransactionsQuery(undefined, { refetchOnMountOrArgChange: true })
   const { data: plans = [], isLoading: loadingPlans } = useGetSubscriptionPlansQuery(
     { application__slug: "intera-ims" },
@@ -156,16 +210,29 @@ export default function SubscriptionPage() {
   const [verifyPayment, { isLoading: verifyingPayment }] = useVerifyPaymentMutation()
   const [cancelSubscription, { isLoading: cancellingSubscription }] = useCancelSubscriptionMutation()
   const [topUpCoins, { isLoading: toppingUpCoins }] = useTopUpCoinsMutation()
-  const [coinTopUpAmount, setCoinTopUpAmount] = useState("5")
+  const [coinTopUpAmount, setCoinTopUpAmount] = useState("100")
   const activePlan = entitlements?.subscription?.plan
+  const activePlanRecord = useMemo(
+    () => plans.find((plan) => plan.slug === activePlan?.slug),
+    [plans, activePlan?.slug],
+  )
   const activeSubscriptionId = entitlements?.subscription?.id
+  const subscriptionPendingCancellation = Boolean(entitlements?.subscription?.pending_cancellation)
+  const subscriptionAccessUntil = entitlements?.subscription?.access_until ?? entitlements?.subscription?.current_period_end ?? null
   const billingAuthorized = Boolean(entitlements?.subscription?.billing_authorized)
   const usageRows = useMemo(() => entitlements?.usage ?? [], [entitlements?.usage])
   const features = useMemo(() => Object.entries(entitlements?.features ?? {}), [entitlements?.features])
   const coinBalance = entitlements?.coins?.balance ?? 0
-  const coinAllocation = entitlements?.coins?.monthly_allocation ?? 0
-  const coinUsed = entitlements?.coins?.used ?? Math.max(coinAllocation - coinBalance, 0)
-  const coinPercent = coinAllocation > 0 ? Math.min(100, Math.round((coinBalance / coinAllocation) * 100)) : 0
+  const coinAllocation = activePlanRecord
+    ? calculateIncludedCoinsFromPlanPrice(activePlanRecord.price)
+    : entitlements?.coins?.included_allocation ?? entitlements?.coins?.monthly_allocation ?? 0
+  const coinPurchaseRate = entitlements?.coins?.purchase_rate_naira
+    ?? activePlanRecord?.coin_purchase_rate_naira
+    ?? (activePlan?.slug ? fallbackCoinRateByPlanSlug[activePlan.slug] ?? null : null)
+  const rolloverEnabled = activePlan ? (entitlements?.coins?.rollover_enabled ?? true) : false
+  const canTopUpCoins = Boolean(owner && activePlan && coinPurchaseRate)
+  const coinTopUpQuantity = Math.max(Number(coinTopUpAmount) || 0, 0)
+  const coinTopUpCost = coinPurchaseRate ? coinTopUpQuantity * coinPurchaseRate : 0
   const usageCountsByFeature = useMemo(() => {
     const rawCounts = entitlements?.usage_counts ?? {}
     const entries = Object.keys(rawCounts).length > 0
@@ -185,6 +252,18 @@ export default function SubscriptionPage() {
           usage,
         })),
     [usageCountsByFeature],
+  )
+  const billingHistory = useMemo(
+    () =>
+      payments.filter((payment) => {
+        const status = normalizePaymentStatus(payment.status)
+        return ["completed", "processing", "failed", "cancelled", "refunded"].includes(status)
+      }),
+    [payments],
+  )
+  const latestBillingPayment = useMemo(
+    () => billingHistory.find((payment) => Boolean(payment.metadata?.billing_card) || Boolean(payment.customer_email) || Boolean(payment.customer_name)),
+    [billingHistory],
   )
 
   const getPlanLimitIssues = (plan: SubscriptionPlanRecord) =>
@@ -216,10 +295,11 @@ export default function SubscriptionPage() {
       .then(async () => {
         toast.success("Billing authorization confirmed.")
         await refetch()
+        await refetchPayments()
         await refetchCoinTransactions()
       })
       .catch(() => toast.error("Unable to verify billing authorization."))
-  }, [refetch, refetchCoinTransactions, searchParams, verifyPayment])
+  }, [refetch, refetchCoinTransactions, refetchPayments, searchParams, verifyPayment])
 
   const authorizeBilling = async (planSlug: string) => {
     if (!owner) return
@@ -262,6 +342,7 @@ export default function SubscriptionPage() {
       await cancelSubscription(activeSubscriptionId).unwrap()
       toast.success("Subscription cancelled.")
       await refetch()
+      await refetchPayments()
       await refetchCoinTransactions()
     } catch {
       toast.error("Unable to cancel subscription.")
@@ -270,9 +351,13 @@ export default function SubscriptionPage() {
 
   const startCoinTopUp = async () => {
     if (!owner) return
-    const amount = Number(coinTopUpAmount)
-    if (!Number.isFinite(amount) || amount < 5) {
-      toast.error("Minimum Intera coin top-up is 5 units.")
+    if (!activePlan || !coinPurchaseRate) {
+      toast.error("Choose a subscription plan before buying Intera coins.")
+      return
+    }
+    const coinsAmount = Number(coinTopUpAmount)
+    if (!Number.isFinite(coinsAmount) || coinsAmount < 1) {
+      toast.error("Minimum Intera coin top-up is 1 coin.")
       return
     }
     const customerEmail = readCookieValue("userEmail", (name) => getCookie(name))
@@ -284,7 +369,7 @@ export default function SubscriptionPage() {
     }
     try {
       const response = await topUpCoins({
-        amount: amount,
+        coins_amount: Math.round(coinsAmount),
         application_slug: "intera-ims",
         provider_slug: "paystack",
         customer_email: customerEmail,
@@ -328,19 +413,24 @@ export default function SubscriptionPage() {
             <div className="grid gap-3 md:grid-cols-5">
               <div className="subscription-stat rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Status</p>
-                <p className="mt-2 text-lg font-semibold">{entitlements?.subscription?.status ?? "Unknown"}</p>
+                <p className="mt-2 text-lg font-semibold">
+                  {formatSubscriptionStatus(entitlements?.subscription?.status, entitlements?.subscription?.pending_cancellation)}
+                </p>
               </div>
               <div className="subscription-stat rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Trial ends</p>
-                <p className="mt-2 text-lg font-semibold">{formatDate(entitlements?.subscription?.trial_end_date)}</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Access until</p>
+                <p className="mt-2 text-lg font-semibold">{formatDate(subscriptionAccessUntil)}</p>
               </div>
               <div className="subscription-stat rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Billing</p>
-                <p className="mt-2 text-lg font-semibold">{verifyingPayment ? "Verifying..." : "Secure billing"}</p>
+                <p className="mt-2 text-lg font-semibold">
+                  {verifyingPayment ? "Verifying..." : subscriptionPendingCancellation ? "Renewal paused" : "Secure billing"}
+                </p>
               </div>
               <div className="subscription-stat rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Intera coins</p>
-                <p className="mt-2 text-lg font-semibold">{coinBalance.toLocaleString()} / {coinAllocation.toLocaleString()}</p>
+                <p className="mt-2 text-lg font-semibold">{coinBalance.toLocaleString()} available</p>
+                <p className="mt-1 text-sm text-slate-500">Includes {coinAllocation.toLocaleString()} per cycle</p>
               </div>
               <div className={`subscription-stat rounded-2xl border p-4 ${ 
                 billingAuthorized
@@ -360,6 +450,94 @@ export default function SubscriptionPage() {
           )}
         </CardContent>
       </Card>
+
+      {owner ? (
+        <Card className="subscription-billing-details border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-blue-600" />
+              Billing details
+            </CardTitle>
+            <CardDescription>Review the current plan, saved card reference, billing contact, and recent charges for this workspace.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 xl:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
+            <div className="space-y-4 rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Current plan</p>
+                <p className="mt-2 text-lg font-semibold">{activePlan?.name ?? "No active plan"}</p>
+                <p className="mt-1 text-sm text-slate-500">
+                  {subscriptionPendingCancellation
+                    ? `Access remains available until ${formatDate(subscriptionAccessUntil)}.`
+                    : `Billing status: ${formatSubscriptionStatus(entitlements?.subscription?.status, entitlements?.subscription?.pending_cancellation)}.`}
+                </p>
+              </div>
+              <div className="border-t border-slate-200 pt-4 dark:border-slate-800">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Saved card</p>
+                <p className="mt-2 text-sm font-medium">{paymentCardLabel(latestBillingPayment)}</p>
+                <p className="mt-1 text-sm text-slate-500">
+                  {latestBillingPayment?.provider_name ?? latestBillingPayment?.provider?.name ?? "Billing provider unavailable"}
+                </p>
+              </div>
+              <div className="border-t border-slate-200 pt-4 dark:border-slate-800">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Billing contact</p>
+                <p className="mt-2 text-sm font-medium">{latestBillingPayment?.customer_email ?? "No billing email recorded yet"}</p>
+                <p className="mt-1 text-sm text-slate-500">{latestBillingPayment?.customer_name ?? "No billing name recorded yet"}</p>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Transaction history</p>
+                  <p className="mt-1 text-sm text-slate-500">Recent subscription and coin top-up bills for this workspace.</p>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => refetchPayments()}>Refresh</Button>
+              </div>
+              {loadingPayments ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <div key={index} className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
+                      <SkeletonLine className="h-4 w-40" />
+                      <SkeletonLine className="mt-3 h-4 w-24" />
+                    </div>
+                  ))}
+                </div>
+              ) : billingHistory.length === 0 ? (
+                <p className="rounded-2xl border border-dashed border-slate-300 p-4 text-sm text-slate-500 dark:border-slate-700">
+                  No billing transactions have been recorded yet.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {billingHistory.slice(0, 8).map((payment) => {
+                    const status = normalizePaymentStatus(payment.status)
+                    const paid = status === "completed"
+                    return (
+                      <div key={payment.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
+                        <div>
+                          <p className="font-medium">{paymentLabel(payment)}</p>
+                          <p className="text-sm text-slate-500">
+                            {formatDate(payment.created_at)} • {payment.customer_email ?? "No billing email"}
+                          </p>
+                          <p className="text-sm text-slate-500">{paymentCardLabel(payment)}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                            paid
+                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
+                              : "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                          }`}>
+                            {status ? status.charAt(0).toUpperCase() + status.slice(1) : "Unknown"}
+                          </span>
+                          <p className="mt-2 text-base font-semibold">{formatNaira(Number(payment.amount ?? 0))}</p>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {!owner ? (
         <Card className="subscription-restricted border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
@@ -388,15 +566,28 @@ export default function SubscriptionPage() {
               <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm dark:border-slate-800 dark:bg-slate-900/60">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <span>
-                    Current plan: <strong>{activePlan.name}</strong>. Switching plans will set up billing for the new plan and replace the current active subscription after confirmation.
+                    Current plan: <strong>{activePlan.name}</strong>.{" "}
+                    {subscriptionPendingCancellation
+                      ? `Renewal is paused and access ends on ${formatDate(subscriptionAccessUntil)}. Resume billing before that date to keep the workspace active.`
+                      : "Switching plans will set up billing for the new plan and replace the current active subscription after confirmation."}
                   </span>
-                  <Button
-                    variant="outline"
-                    onClick={cancelActiveSubscription}
-                    disabled={cancellingSubscription || initiatingPayment || verifyingPayment}
-                  >
-                    {cancellingSubscription ? "Cancelling..." : "Cancel subscription"}
-                  </Button>
+                  {subscriptionPendingCancellation ? (
+                    <Button
+                      variant="outline"
+                      onClick={() => void authorizeBilling(activePlan.slug)}
+                      disabled={initiatingPayment || verifyingPayment}
+                    >
+                      {initiatingPayment ? "Opening checkout..." : "Resume renewal"}
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      onClick={cancelActiveSubscription}
+                      disabled={cancellingSubscription || initiatingPayment || verifyingPayment}
+                    >
+                      {cancellingSubscription ? "Cancelling..." : "Cancel subscription"}
+                    </Button>
+                  )}
                 </div>
                 {!billingAuthorized ? (
                   <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-50">
@@ -469,10 +660,12 @@ export default function SubscriptionPage() {
                     <Button
                       className="mt-4 w-full"
                       variant={selected ? "outline" : "default"}
-                      disabled={selected || busy || blockedByUsage}
+                      disabled={(selected && !subscriptionPendingCancellation) || busy || blockedByUsage}
                       onClick={() => authorizeBilling(plan.slug)}
                     >
-                      {selected ? "Active" : blockedByUsage ? "Usage too high" : activePlan ? "Switch to this plan" : "Choose plan"}
+                      {selected
+                        ? subscriptionPendingCancellation ? "Resume renewal" : "Current plan"
+                        : blockedByUsage ? "Usage too high" : activePlan ? "Switch to this plan" : "Choose plan"}
                     </Button>
                   </div>
                 )
@@ -505,38 +698,56 @@ export default function SubscriptionPage() {
           ) : (
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)]">
             <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
-              <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="grid gap-4 md:grid-cols-3">
                 <div>
                   <p className="text-sm text-slate-500">Available coins</p>
-                  <p className="mt-1 text-3xl font-bold">{coinBalance.toLocaleString()} / {coinAllocation.toLocaleString()}</p>
+                  <p className="mt-1 text-3xl font-bold">{coinBalance.toLocaleString()}</p>
                 </div>
-                <div className="text-right text-sm text-slate-500">
-                  <p>{coinUsed.toLocaleString()} used</p>
-                  <p>{coinPercent}% remaining</p>
+                <div>
+                  <p className="text-sm text-slate-500">Included this cycle</p>
+                  <p className="mt-1 text-2xl font-semibold">{coinAllocation.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500">Current top-up rate</p>
+                  <p className="mt-1 text-2xl font-semibold">
+                    {coinPurchaseRate ? `${formatNaira(coinPurchaseRate)} / coin` : "Choose a plan"}
+                  </p>
                 </div>
               </div>
-              <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                <div className="h-full rounded-full bg-blue-600" style={{ width: `${coinPercent}%` }} />
-              </div>
+              <p className="mt-4 text-sm text-slate-500">
+                {rolloverEnabled
+                  ? "Unused coins roll over while the workspace subscription remains active."
+                  : "Unused coins do not roll over."}
+              </p>
             </div>
             {owner ? (
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/60">
                 <div>
                   <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Buy more coins</label>
-                  <p className="mt-2 text-sm text-slate-500">Each billing unit adds 1,000 Intera coins. Minimum top-up is 5 units.</p>
+                  <p className="mt-2 text-sm text-slate-500">
+                    {canTopUpCoins
+                      ? `Your current plan buys coins at ${formatNaira(coinPurchaseRate ?? 0)} per coin.`
+                      : "Choose an active subscription plan before buying Intera coins."}
+                  </p>
                   <div className="mt-2 flex overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950">
                     <input
                       value={coinTopUpAmount}
                       onChange={(event) => setCoinTopUpAmount(event.target.value)}
                       type="number"
-                      min={5}
+                      min={1}
                       step={1}
+                      disabled={!canTopUpCoins}
                       className="w-full bg-transparent px-2 py-2 outline-none"
                     />
                   </div>
+                  <p className="mt-2 text-sm text-slate-500">
+                    {canTopUpCoins
+                      ? `You will be charged ${formatNaira(coinTopUpCost)} for ${coinTopUpQuantity.toLocaleString()} coins.`
+                      : "Coin top-up unlocks after a plan is active."}
+                  </p>
                 </div>
-                <Button className="mt-3 w-full" onClick={startCoinTopUp} disabled={toppingUpCoins || verifyingPayment}>
-                  {toppingUpCoins ? "Opening checkout..." : `Buy ${(Math.max(Number(coinTopUpAmount) || 0, 0) * 1000).toLocaleString()} coins`}
+                <Button className="mt-3 w-full" onClick={startCoinTopUp} disabled={!canTopUpCoins || toppingUpCoins || verifyingPayment || coinTopUpQuantity < 1}>
+                  {toppingUpCoins ? "Opening checkout..." : `Buy ${coinTopUpQuantity.toLocaleString()} coins for ${formatNaira(coinTopUpCost)}`}
                 </Button>
               </div>
             ) : null}

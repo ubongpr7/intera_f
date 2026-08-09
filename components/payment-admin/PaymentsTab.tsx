@@ -16,25 +16,38 @@ export function PaymentsTab() {
   const { data: payments = [], isLoading, refetch } = useGetPaymentsQuery(filters)
 
   const getStatusBadge = (status: PaymentStatus) => {
-    const variants: Record<PaymentStatus, "secondary" | "default" | "destructive" | "outline"> = {
-      pending: "secondary",
-      completed: "default",
-      failed: "destructive",
-      cancelled: "outline",
-    }
-    return <Badge variant={variants[status]}>{formatMachineLabel(status)}</Badge>
+    const normalized = `${status ?? ""}`.trim().toLowerCase()
+    const variant =
+      normalized === "completed"
+        ? "default"
+        : normalized === "failed"
+          ? "destructive"
+          : normalized === "cancelled"
+            ? "outline"
+            : "secondary"
+    return <Badge variant={variant}>{formatMachineLabel(normalized || "unknown")}</Badge>
   }
 
   const columns: ColumnDef<PaymentRecord>[] = [
     {
-      accessorKey: "reference",
+      accessorKey: "external_payment_id",
       header: "Reference",
-      cell: ({ row }) => <span className="font-mono text-sm">{String(row.getValue("reference"))}</span>,
+      cell: ({ row }) => (
+        <span className="font-mono text-sm">
+          {row.original.external_payment_id || row.original.reference || "N/A"}
+        </span>
+      ),
     },
     {
       accessorKey: "amount",
       header: "Amount",
-      cell: ({ row }) => `$${Number.parseFloat(String(row.getValue("amount") ?? 0)).toFixed(2)}`,
+      cell: ({ row }) =>
+        new Intl.NumberFormat("en-NG", {
+          style: "currency",
+          currency: String(row.original.metadata?.currency ?? "NGN"),
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2,
+        }).format(Number(row.getValue("amount") ?? 0)),
     },
     {
       accessorKey: "status",
@@ -83,7 +96,7 @@ export function PaymentsTab() {
           <CardDescription>All payment transactions processed through your system.</CardDescription>
         </CardHeader>
         <CardContent>
-          <DataTable columns={columns} data={payments} loading={isLoading} searchKey="reference" />
+          <DataTable columns={columns} data={payments} loading={isLoading} searchKey="external_payment_id" />
         </CardContent>
       </Card>
     </div>

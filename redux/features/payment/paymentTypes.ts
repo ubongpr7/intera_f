@@ -15,13 +15,31 @@ export interface PaymentProviderInput {
   api_config: string;
 }
 
-export type PaymentStatus = "pending" | "completed" | "failed" | "cancelled";
+export type PaymentStatus =
+  | "pending"
+  | "completed"
+  | "failed"
+  | "cancelled"
+  | "processing"
+  | "PENDING"
+  | "COMPLETED"
+  | "FAILED"
+  | "CANCELLED"
+  | "PROCESSING"
+  | "REFUNDED";
 
 export interface PaymentRecord {
   id: string;
-  reference: string;
+  reference?: string;
+  external_payment_id?: string;
   amount: string | number;
   status: PaymentStatus;
+  provider_name?: string;
+  application_name?: string;
+  plan_name?: string;
+  customer_email?: string;
+  customer_name?: string;
+  metadata?: Record<string, any>;
   provider?: {
     id?: string;
     name?: string;
@@ -35,9 +53,20 @@ export interface SubscriptionRecord {
   id: string;
   status: SubscriptionStatus;
   created_at: string;
+  start_date?: string | null;
+  end_date?: string | null;
+  trial_end_date?: string | null;
   current_period_end?: string | null;
+  pending_cancellation?: boolean;
+  access_until?: string | null;
+  auto_renew?: boolean;
+  billing_authorized?: boolean;
+  billing_provider?: string | null;
+  current_payment_status?: string | null;
+  is_active_status?: boolean;
   plan?: {
     id?: string;
+    slug?: string;
     name?: string;
   } | null;
 }
@@ -60,6 +89,7 @@ export interface SubscriptionAnalyticsResponse {
   active_count: number;
   subscription_change: number;
   status_breakdown: Partial<Record<SubscriptionStatus, number>>;
+  scheduled_cancellation_count?: number;
 }
 
 export interface EntitlementFeature {
@@ -87,6 +117,9 @@ export interface EntitlementSnapshot {
     start_date: string;
     end_date: string | null;
     trial_end_date: string | null;
+    current_period_end?: string | null;
+    pending_cancellation?: boolean;
+    access_until?: string | null;
     billing_authorized?: boolean;
     billing_provider?: string | null;
     current_payment_status?: string | null;
@@ -98,8 +131,12 @@ export interface EntitlementSnapshot {
   usage_warnings?: string[];
   coins?: {
     balance: number;
+    included_allocation: number;
     monthly_allocation: number;
-    used: number;
+    purchase_rate_naira: number | null;
+    rollover_enabled: boolean;
+    can_top_up: boolean;
+    used: number | null;
   };
 }
 
@@ -130,6 +167,7 @@ export interface SubscriptionPlanRecord {
   display_order?: number;
   is_featured?: boolean;
   intera_coins_reward: any;
+  coin_purchase_rate_naira?: number | null;
   app: string;
   created_at: string;
   updated_at: string;
@@ -157,9 +195,11 @@ export interface CoinTopUpResponse {
   success: boolean;
   checkout_url?: string;
   coins_amount: number;
+  charge_amount?: string;
   rate: {
-    usd: number;
-    coins: number;
-    minimum_usd: number;
+    naira_per_coin: number;
+    minimum_coins: number;
+    currency: string;
+    plan_slug?: string;
   };
 }

@@ -59,6 +59,13 @@ export default function PaymentAdminPage() {
         tone: "blue" as const,
       },
       {
+        label: "Ending soon",
+        value: formatNumber(subscriptionAnalytics?.scheduled_cancellation_count ?? 0),
+        description: "Subscriptions set to stop at period end",
+        icon: BellRing,
+        tone: "amber" as const,
+      },
+      {
         label: "Billing plans",
         value: formatNumber(plans.length),
         description: "Available subscription plans",
@@ -73,7 +80,7 @@ export default function PaymentAdminPage() {
         tone: "default" as const,
       },
     ],
-    [paymentAnalytics?.total_revenue, subscriptionAnalytics?.active_count, plans.length, payments.length],
+    [paymentAnalytics?.total_revenue, subscriptionAnalytics?.active_count, subscriptionAnalytics?.scheduled_cancellation_count, plans.length, payments.length],
   )
 
   return (
@@ -124,7 +131,7 @@ export default function PaymentAdminPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         {headerStats.map((stat) => (
           <StatTile key={stat.label} label={stat.label} value={stat.value} description={stat.description} icon={stat.icon} tone={stat.tone} />
         ))}
