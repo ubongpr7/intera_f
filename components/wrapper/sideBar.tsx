@@ -143,7 +143,6 @@ const SideBar = ({ user, mobileOpen, onMobileClose }:SideBarDataProps) => {
                     { href: "/payment-admin", label: "Billing & subscriptions" },
                     { href: "/product/global-catalog-admin", label: "Global catalog admin" },
                     { href: "/audit", label: "Audit trail" },
-                    { href: "/profile/staff", label: "Staff & roles" },
                     { href: "/realtime-dashboard", label: "Realtime operations" },
                     { href: "/notifications", label: "Notifications" },
                   ]}
@@ -185,7 +184,7 @@ const SideBar = ({ user, mobileOpen, onMobileClose }:SideBarDataProps) => {
               isCollapsed={navigationCollapsed}
               subLinks={[
                 { href: "/product", label: "Workspace products" },
-                { href: "/product/global-catalog-admin", label: "Global catalog admin" },
+                { href: "/product/import", label: "Import Products" },
               ]}
             />
             <div className={`dashboard-nav-divider ${navigationCollapsed ? "mx-1" : "mx-3"}`} />

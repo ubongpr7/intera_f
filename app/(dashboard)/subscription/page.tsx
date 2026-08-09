@@ -9,6 +9,8 @@ import { toast } from "react-toastify"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { readCookieValue } from "@/lib/authCookies"
+import { useGetTerminalsQuery } from "@/redux/features/pos/posAPISlice"
+import { useGetProductDataQuery } from "@/redux/features/product/productAPISlice"
 import {
   useGetCurrentEntitlementsQuery,
   useGetPaymentsQuery,
@@ -19,13 +21,24 @@ import {
   useGetCoinTransactionsQuery,
   useTopUpCoinsMutation,
 } from "@/redux/features/payment/paymentAPISlice"
+import { useListStockLocationsQuery } from "@/redux/features/stock/stockAPISlice"
 import type { EntitlementUsageRow, PaymentRecord, SubscriptionPlanRecord } from "@/redux/features/payment/paymentTypes"
+import { useGetCompanyUsersQuery, useGetPendingInvitationsQuery } from "@/redux/features/users/userApiSlice"
+import type { CompanyInvitation } from "@/redux/features/management/companyProfileTypes"
 
 type Claims = {
   user_id?: string | number
   owner_id?: string | number
   membership_role?: string
   role?: string
+}
+
+type PlanLimitIssue = {
+  featureSlug: string
+  featureName: string
+  usage: number
+  limit: number
+  message: string
 }
 
 const label = (value: string) => value.replaceAll("-", " ").replace(/\b\w/g, (char) => char.toUpperCase())
@@ -193,6 +206,15 @@ function UsageCardsSkeleton() {
 export default function SubscriptionPage() {
   const searchParams = useSearchParams()
   const owner = useMemo(() => isWorkspaceOwner(), [])
+  const accessToken = readCookieValue("accessToken", (name) => getCookie(name))
+  const tokenClaims = useMemo(() => {
+    if (!accessToken) return null
+    try {
+      return jwtDecode<Claims>(accessToken)
+    } catch {
+      return null
+    }
+  }, [accessToken])
   const handledPaymentVerificationRef = useRef<string | null>(null)
   const {
     data: entitlements,
@@ -202,6 +224,11 @@ export default function SubscriptionPage() {
   } = useGetCurrentEntitlementsQuery(undefined, { refetchOnMountOrArgChange: true })
   const { data: payments = [], isLoading: loadingPayments, refetch: refetchPayments } = useGetPaymentsQuery(undefined, { refetchOnMountOrArgChange: true })
   const { data: coinTransactions = [], refetch: refetchCoinTransactions } = useGetCoinTransactionsQuery(undefined, { refetchOnMountOrArgChange: true })
+  const { data: companyUsers = [], isLoading: loadingCompanyUsers } = useGetCompanyUsersQuery()
+  const { data: pendingInvitations = [], isLoading: loadingPendingInvitations } = useGetPendingInvitationsQuery()
+  const { data: stockLocations = [], isLoading: loadingStockLocations } = useListStockLocationsQuery()
+  const { data: terminals = [], isLoading: loadingTerminals } = useGetTerminalsQuery()
+  const { data: products = [], isLoading: loadingProducts } = useGetProductDataQuery()
   const { data: plans = [], isLoading: loadingPlans } = useGetSubscriptionPlansQuery(
     { application__slug: "intera-ims" },
     { refetchOnMountOrArgChange: true },
@@ -233,7 +260,53 @@ export default function SubscriptionPage() {
   const canTopUpCoins = Boolean(owner && activePlan && coinPurchaseRate)
   const coinTopUpQuantity = Math.max(Number(coinTopUpAmount) || 0, 0)
   const coinTopUpCost = coinPurchaseRate ? coinTopUpQuantity * coinPurchaseRate : 0
+  const localUsageCounts = useMemo(() => {
+    const activeUserIds = new Set<string>()
+    const activeEmails = new Set<string>()
+
+    companyUsers.forEach((assignment) => {
+      const userId = assignment.user?.id
+      if (userId !== undefined && userId !== null) {
+        activeUserIds.add(String(userId))
+      }
+      const email = `${assignment.user?.email ?? ""}`.trim().toLowerCase()
+      if (email) {
+        activeEmails.add(email)
+      }
+    })
+
+    const ownerId = tokenClaims?.owner_id
+    if (ownerId !== undefined && ownerId !== null) {
+      activeUserIds.add(String(ownerId))
+    }
+
+    const distinctPendingEmails = new Set<string>()
+    pendingInvitations.forEach((invite: CompanyInvitation) => {
+      const email = `${invite.email ?? ""}`.trim().toLowerCase()
+      const status = `${invite.status ?? ""}`.trim().toLowerCase()
+      if (!email || status !== "pending" || activeEmails.has(email)) {
+        return
+      }
+      distinctPendingEmails.add(email)
+    })
+
+    return {
+      "staff-users": activeUserIds.size + distinctPendingEmails.size,
+      "structural-locations": stockLocations.filter((location) => Boolean(location.structural)).length,
+      "pos-terminals": terminals.length,
+      products: products.length,
+      "product-variants": products.reduce((total, product) => total + Number(product.variant_count ?? 0), 0),
+    } as Record<string, number>
+  }, [companyUsers, pendingInvitations, products, stockLocations, terminals, tokenClaims?.owner_id])
+  const workspaceUsageLoading =
+    loadingCompanyUsers || loadingPendingInvitations || loadingStockLocations || loadingTerminals || loadingProducts
   const usageCountsByFeature = useMemo(() => {
+    const localEntries = Object.entries(localUsageCounts)
+    if (localEntries.length > 0) {
+      return new Map<string, number | null>(
+        localEntries.map(([feature, usage]) => [feature, Number.isFinite(Number(usage)) ? Number(usage) : null]),
+      )
+    }
     const rawCounts = entitlements?.usage_counts ?? {}
     const entries = Object.keys(rawCounts).length > 0
       ? Object.entries(rawCounts)
@@ -241,7 +314,7 @@ export default function SubscriptionPage() {
     return new Map<string, number | null>(
       entries.map(([feature, usage]) => [feature, usage === null || usage === undefined ? null : Number(usage)]),
     )
-  }, [entitlements?.usage_counts, usageRows])
+  }, [entitlements?.usage_counts, localUsageCounts, usageRows])
   const workspaceFootprintRows = useMemo(
     () =>
       Array.from(usageCountsByFeature.entries())
@@ -266,17 +339,28 @@ export default function SubscriptionPage() {
     [billingHistory],
   )
 
-  const getPlanLimitIssues = (plan: SubscriptionPlanRecord) =>
+  const getPlanLimitIssues = (plan: SubscriptionPlanRecord): PlanLimitIssue[] =>
     (plan.features ?? [])
       .filter((feature) => feature.limit_type === "COUNT" && !feature.is_unlimited && feature.limit_value !== null)
       .map((feature) => {
         const usage = usageCountsByFeature.get(feature.slug)
-        if (usage === null || usage === undefined || Number(usage) <= Number(feature.limit_value ?? 0)) {
+        if (usage === null || usage === undefined || Number.isNaN(Number(usage)) || Number(usage) <= Number(feature.limit_value ?? 0)) {
           return null
         }
-        return `${feature.name}: ${Number(usage).toLocaleString()} / ${Number(feature.limit_value ?? 0).toLocaleString()}`
+        const normalizedUsage = Number(usage)
+        const normalizedLimit = Number(feature.limit_value ?? 0)
+        if (normalizedUsage > normalizedLimit) {
+          return {
+            featureSlug: feature.slug,
+            featureName: feature.name,
+            usage: normalizedUsage,
+            limit: normalizedLimit,
+            message: `You have ${normalizedUsage.toLocaleString()} ${feature.name.toLowerCase()}, while this plan allows ${normalizedLimit.toLocaleString()}.`,
+          }
+        }
+        return null
       })
-      .filter(Boolean) as string[]
+      .filter(Boolean) as PlanLimitIssue[]
 
   useEffect(() => {
     const transactionId = searchParams.get("transaction_id") || searchParams.get("id")
@@ -613,6 +697,7 @@ export default function SubscriptionPage() {
                 const busy = initiatingPayment || verifyingPayment || cancellingSubscription
                 const limitIssues = getPlanLimitIssues(plan)
                 const blockedByUsage = limitIssues.length > 0
+                const blockedByLoadingUsage = !selected && workspaceUsageLoading
                 return (
                   <div
                     key={plan.id}
@@ -649,22 +734,27 @@ export default function SubscriptionPage() {
                         </p>
                         <ul className="mt-2 space-y-1">
                           {limitIssues.map((issue) => (
-                            <li key={issue} className="flex items-start gap-2">
+                            <li key={issue.featureSlug} className="flex items-start gap-2">
                               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                              <span>{issue}</span>
+                              <span>{issue.message}</span>
                             </li>
                           ))}
                         </ul>
                       </details>
+                    ) : blockedByLoadingUsage ? (
+                      <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300">
+                        Checking current workspace usage for this plan.
+                      </div>
                     ) : null}
                     <Button
                       className="mt-4 w-full"
                       variant={selected ? "outline" : "default"}
-                      disabled={(selected && !subscriptionPendingCancellation) || busy || blockedByUsage}
+                      disabled={(selected && !subscriptionPendingCancellation) || busy || blockedByUsage || blockedByLoadingUsage}
                       onClick={() => authorizeBilling(plan.slug)}
                     >
                       {selected
                         ? subscriptionPendingCancellation ? "Resume renewal" : "Current plan"
+                        : blockedByLoadingUsage ? "Checking usage..."
                         : blockedByUsage ? "Usage too high" : activePlan ? "Switch to this plan" : "Choose plan"}
                     </Button>
                   </div>
