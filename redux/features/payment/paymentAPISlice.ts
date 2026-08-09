@@ -273,11 +273,14 @@ getFeatures: builder.query({
     }),
 
     topUpCoins: builder.mutation<CoinTopUpResponse, {
-      amount_usd: number;
+      amount?: number;
+      amount_ngn?: number;
+      amount_usd?: number;
       customer_email: string;
       customer_name?: string;
       application_slug?: string;
       provider_slug?: string;
+      currency?: string;
       success_url?: string;
       cancel_url?: string;
       metadata?: Record<string, unknown>;

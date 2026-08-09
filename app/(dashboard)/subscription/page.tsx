@@ -47,7 +47,12 @@ const isWorkspaceOwner = () => {
 
 const formatPrice = (plan: SubscriptionPlanRecord) => {
   if (Number(plan.price) <= 0 && plan.slug === "enterprise") return "Custom"
-  return `$${Number(plan.price).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
+  return new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(Number(plan.price))
 }
 
 const formatDate = (value?: string | null) => {
@@ -196,17 +201,17 @@ export default function SubscriptionPage() {
 
   useEffect(() => {
     const transactionId = searchParams.get("transaction_id") || searchParams.get("id")
-    const txRef = searchParams.get("tx_ref")
+    const reference = searchParams.get("reference") || searchParams.get("tx_ref")
     const status = searchParams.get("status")
-    if (!transactionId && !txRef) return
-    const verificationKey = [transactionId ?? "", txRef ?? "", status ?? ""].join("|")
+    if (!transactionId && !reference) return
+    const verificationKey = [transactionId ?? "", reference ?? "", status ?? ""].join("|")
     if (handledPaymentVerificationRef.current === verificationKey) return
     handledPaymentVerificationRef.current = verificationKey
-    if (status && status !== "successful" && status !== "completed") {
+    if (status && status !== "successful" && status !== "completed" && status !== "success") {
       toast.error("Billing authorization was not completed.")
       return
     }
-    void verifyPayment({ transaction_id: transactionId, tx_ref: txRef })
+    void verifyPayment({ transaction_id: transactionId, reference })
       .unwrap()
       .then(async () => {
         toast.success("Billing authorization confirmed.")
@@ -235,7 +240,7 @@ export default function SubscriptionPage() {
       const response = await initiatePayment({
         application_slug: "intera-ims",
         plan_slug: planSlug,
-        provider_slug: "flutterwave",
+        provider_slug: "paystack",
         customer_email: customerEmail,
         customer_name: [firstName, lastName].filter(Boolean).join(" ").trim() || customerEmail,
         success_url: `${window.location.origin}/subscription`,
@@ -267,7 +272,7 @@ export default function SubscriptionPage() {
     if (!owner) return
     const amount = Number(coinTopUpAmount)
     if (!Number.isFinite(amount) || amount < 5) {
-      toast.error("Minimum Intera coin top-up is $5.")
+      toast.error("Minimum Intera coin top-up is 5 units.")
       return
     }
     const customerEmail = readCookieValue("userEmail", (name) => getCookie(name))
@@ -279,9 +284,9 @@ export default function SubscriptionPage() {
     }
     try {
       const response = await topUpCoins({
-        amount_usd: amount,
+        amount: amount,
         application_slug: "intera-ims",
-        provider_slug: "flutterwave",
+        provider_slug: "paystack",
         customer_email: customerEmail,
         customer_name: [firstName, lastName].filter(Boolean).join(" ").trim() || customerEmail,
         success_url: `${window.location.origin}/subscription`,
@@ -370,7 +375,7 @@ export default function SubscriptionPage() {
               <CalendarClock className="h-5 w-5 text-blue-600" />
               Set up subscription billing
             </CardTitle>
-            <CardDescription>Select the plan that matches the current workspace size. Card details are handled by secure billing; Intera stores provider references, not raw card data. A small card authorization may appear during setup; monthly plan billing starts after the trial.</CardDescription>
+            <CardDescription>Select the plan that matches the current workspace size. Card details are handled by secure billing; Intera stores provider references, not raw card data. A small setup charge may appear during billing authorization; monthly plan billing starts after the trial.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {loadingEntitlements ? (
@@ -518,9 +523,8 @@ export default function SubscriptionPage() {
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/60">
                 <div>
                   <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Buy more coins</label>
-                  <p className="mt-2 text-sm text-slate-500">$1 buys 1,000 Intera coins. Minimum top-up is $5.</p>
+                  <p className="mt-2 text-sm text-slate-500">Each billing unit adds 1,000 Intera coins. Minimum top-up is 5 units.</p>
                   <div className="mt-2 flex overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950">
-                    <span className="px-3 py-2 text-slate-500">$</span>
                     <input
                       value={coinTopUpAmount}
                       onChange={(event) => setCoinTopUpAmount(event.target.value)}

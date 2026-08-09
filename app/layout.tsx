@@ -103,6 +103,11 @@ export default function RootLayout({
       url: "https://www.interaims.com",
       image: "https://www.interaims.com/assets/interapro-gradient-dark.png",
       description: "An inventory operations platform for businesses that move stock, with inventory control, POS, purchasing, reporting, and AI-assisted workflows.",
+      isPartOf: {
+        "@type": "WebSite",
+        name: "InteraProTech",
+        url: "https://www.interapro.tech",
+      },
       publisher: { "@type": "Organization", name: "InteraProTech", url: "https://www.interapro.tech" },
       featureList: [
         "Inventory control",
@@ -119,6 +124,7 @@ export default function RootLayout({
       name: "Intera IMS",
       url: "https://www.interaims.com",
       description: "Inventory operations software for businesses that move stock.",
+      publisher: { "@type": "Organization", name: "InteraProTech", url: "https://www.interapro.tech" },
     },
   ];
 

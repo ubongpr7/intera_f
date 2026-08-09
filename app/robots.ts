@@ -23,17 +23,38 @@ const privatePaths = [
   "/invitations/",
 ];
 
+const publicPaths = ["/", "/contact", "/terms", "/privacy", "/llms.txt", "/llms-full.txt"];
+
+const aiCrawlers = [
+  "GPTBot",
+  "OAI-SearchBot",
+  "ChatGPT-User",
+  "ClaudeBot",
+  "Claude-Web",
+  "PerplexityBot",
+  "Google-Extended",
+  "Bytespider",
+  "Applebot-Extended",
+  "Amazonbot",
+  "FacebookBot",
+  "meta-externalagent",
+  "CCBot",
+  "cohere-ai",
+  "Diffbot",
+  "YouBot",
+];
+
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/contact", "/terms", "/privacy", "/llms.txt"],
+        allow: publicPaths,
         disallow: privatePaths,
       },
       {
-        userAgent: ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "PerplexityBot", "Google-Extended"],
-        allow: ["/", "/contact", "/terms", "/privacy", "/llms.txt"],
+        userAgent: aiCrawlers,
+        allow: publicPaths,
         disallow: privatePaths,
       },
     ],
