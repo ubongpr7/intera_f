@@ -22,6 +22,7 @@ export type ChatMessage = {
   timestamp: string;
   serverMessageId?: string;
   structuredPayload?: AgentStructuredPayload;
+  voiceTurnId?: string;
 };
 
 export type EventLogItem = {
@@ -57,6 +58,8 @@ export type Ka2aSession = {
   awaitingInput: boolean;
   resumeTaskId?: string;
   error?: string;
+  pendingVoiceTurnId?: string;
+  pendingVoiceUserText?: string;
 };
 
 export type Ka2aState = {
@@ -169,6 +172,47 @@ const isIgnorableAssistantPayloadText = (value: string): boolean => {
   return normalized === "[]" || normalized === "{}" || normalized === "null";
 };
 
+const stableSerialize = (value: unknown): string => {
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableSerialize(item)).join(",")}]`;
+  }
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value as Record<string, unknown>)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableSerialize((value as Record<string, unknown>)[key])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
+};
+
+const payloadSignature = (payload?: AgentStructuredPayload): string =>
+  payload ? stableSerialize(payload) : "";
+
+const comparableStructuredIdentity = (payload?: AgentStructuredPayload): string => {
+  if (!payload) {
+    return "";
+  }
+
+  const record = payload as Record<string, unknown>;
+  const identity = {
+    interaction_type: record.interaction_type,
+    kind: record.kind,
+    type: record.type,
+    title: record.title,
+    question: record.question,
+    description: record.description,
+    workflow_id: record.workflow_id,
+    step_id: record.step_id,
+    field_name: record.field_name,
+    options: record.options,
+    choices: record.choices,
+    fields: record.fields,
+    widgets: record.widgets,
+  };
+
+  return stableSerialize(identity);
+};
+
 const upsertAssistantMessage = (
   session: Ka2aSession,
   payload: {
@@ -186,6 +230,9 @@ const upsertAssistantMessage = (
     return;
   }
 
+  const incomingSignature = payloadSignature(payload.structuredPayload);
+  const incomingComparableIdentity = comparableStructuredIdentity(payload.structuredPayload);
+
   const existing = payload.serverMessageId
     ? session.messages.find((message) => message.role === "assistant" && message.serverMessageId === payload.serverMessageId)
     : undefined;
@@ -197,6 +244,46 @@ const upsertAssistantMessage = (
     return;
   }
 
+  const equivalentExisting = [...session.messages]
+    .reverse()
+    .find((message) => {
+      if (message.role !== "assistant") {
+        return false;
+      }
+      if (payload.taskId && message.taskId && message.taskId !== payload.taskId) {
+        return false;
+      }
+
+      const messageContent = message.content.trim();
+      const sameContent = Boolean(content) && messageContent === content;
+      const existingSignature = payloadSignature(message.structuredPayload);
+      const sameStructuredPayload = Boolean(incomingSignature) && existingSignature === incomingSignature;
+      const existingComparableIdentity = comparableStructuredIdentity(message.structuredPayload);
+      const sameComparableStructuredPayload =
+        Boolean(incomingComparableIdentity) &&
+        Boolean(existingComparableIdentity) &&
+        existingComparableIdentity === incomingComparableIdentity;
+      const sameSummary =
+        Boolean(incomingSignature) &&
+        Boolean(message.structuredPayload) &&
+        messageContent === fallbackText &&
+        fallbackText.length > 0;
+
+      return sameContent || sameStructuredPayload || sameComparableStructuredPayload || sameSummary;
+    });
+
+  if (equivalentExisting) {
+    equivalentExisting.content = content;
+    equivalentExisting.timestamp = payload.timestamp;
+    equivalentExisting.taskId = payload.taskId || equivalentExisting.taskId;
+    equivalentExisting.serverMessageId = payload.serverMessageId || equivalentExisting.serverMessageId;
+    equivalentExisting.structuredPayload = mergeStructuredPayload(
+      equivalentExisting.structuredPayload,
+      payload.structuredPayload,
+    );
+    return;
+  }
+
   session.messages.push({
     id: createId(),
     role: "assistant",
@@ -205,6 +292,36 @@ const upsertAssistantMessage = (
     timestamp: payload.timestamp,
     serverMessageId: payload.serverMessageId,
     structuredPayload: payload.structuredPayload,
+  });
+};
+
+const ensurePendingVoiceUserMessage = (session: Ka2aSession) => {
+  const pendingText = session.pendingVoiceUserText?.trim();
+  if (!pendingText) {
+    return;
+  }
+
+  const pendingTurnId = session.pendingVoiceTurnId?.trim();
+  const alreadyExists = session.messages.some((message) => {
+    if (message.role !== "user") {
+      return false;
+    }
+    if (pendingTurnId && message.voiceTurnId === pendingTurnId) {
+      return true;
+    }
+    return message.content.trim() === pendingText;
+  });
+
+  if (alreadyExists) {
+    return;
+  }
+
+  session.messages.push({
+    id: createId(),
+    role: "user",
+    content: pendingText,
+    timestamp: nowIso(),
+    voiceTurnId: pendingTurnId || undefined,
   });
 };
 
@@ -293,7 +410,16 @@ const ka2aSlice = createSlice({
       }
       session.contextId = action.payload.contextId;
     },
-    streamStarted: (state, action: PayloadAction<{ sessionId: string; userText: string; silent?: boolean }>) => {
+    streamStarted: (
+      state,
+      action: PayloadAction<{
+        sessionId: string;
+        userText: string;
+        silent?: boolean;
+        showUserMessage?: boolean;
+        turnId?: string;
+      }>,
+    ) => {
       const session = state.sessions[action.payload.sessionId];
       if (!session) {
         return;
@@ -307,15 +433,19 @@ const ka2aSlice = createSlice({
       session.currentStatusText = action.payload.silent
         ? "Assistant is processing your voice request."
         : undefined;
+      const normalizedUserText = action.payload.userText.trim();
+      session.pendingVoiceTurnId = action.payload.turnId?.trim() || undefined;
+      session.pendingVoiceUserText = normalizedUserText || undefined;
       if (!resumingExistingTask) {
         session.activeSpecialist = undefined;
       }
-      if (!action.payload.silent) {
+      if (normalizedUserText && (!action.payload.silent || action.payload.showUserMessage)) {
         session.messages.push({
           id: createId(),
           role: "user",
-          content: action.payload.userText,
+          content: normalizedUserText,
           timestamp: nowIso(),
+          voiceTurnId: action.payload.turnId?.trim() || undefined,
         });
       }
     },
@@ -352,9 +482,17 @@ const ka2aSlice = createSlice({
         structuredPayload: action.payload.structuredPayload,
       });
     },
-    streamEnded: (state, action: PayloadAction<{ sessionId: string }>) => {
+    streamEnded: (state, action: PayloadAction<{ sessionId: string; turnId?: string }>) => {
       const session = state.sessions[action.payload.sessionId];
       if (!session) {
+        return;
+      }
+      const normalizedTurnId = action.payload.turnId?.trim();
+      if (
+        normalizedTurnId &&
+        session.pendingVoiceTurnId &&
+        session.pendingVoiceTurnId !== normalizedTurnId
+      ) {
         return;
       }
       session.isStreaming = false;
@@ -362,14 +500,16 @@ const ka2aSlice = createSlice({
       const hasAssistantAfterLastUser =
         lastUserIndex >= 0 && session.messages.slice(lastUserIndex + 1).some((message) => message.role === "assistant");
       if (lastUserIndex >= 0 && !hasAssistantAfterLastUser) {
-        session.messages.push({
-          id: createId(),
-          role: "assistant",
-          content:
-            "I could not complete that answer from the agent service. Please retry, or ask me to regenerate the analysis if you need fresh data.",
+      session.messages.push({
+        id: createId(),
+        role: "assistant",
+        content:
+          "I could not complete that answer from the agent service. Please retry, or ask me to regenerate the analysis if you need fresh data.",
           timestamp: nowIso(),
         });
       }
+      session.pendingVoiceTurnId = undefined;
+      session.pendingVoiceUserText = undefined;
     },
     streamErrored: (state, action: PayloadAction<{ sessionId: string; error: string }>) => {
       const session = state.sessions[action.payload.sessionId];
@@ -391,12 +531,46 @@ const ka2aSlice = createSlice({
           timestamp: nowIso(),
         });
       }
+      session.pendingVoiceTurnId = undefined;
+      session.pendingVoiceUserText = undefined;
+    },
+    syncedVoiceAssistantResolved: (
+      state,
+      action: PayloadAction<{ sessionId: string; content: string; timestamp?: string; turnId?: string }>,
+    ) => {
+      const session = state.sessions[action.payload.sessionId];
+      if (!session) {
+        return;
+      }
+      ensurePendingVoiceUserMessage(session);
+      const content = action.payload.content.trim();
+      if (!content) {
+        session.isStreaming = false;
+        session.currentStatusText = undefined;
+        session.pendingVoiceTurnId = undefined;
+        session.pendingVoiceUserText = undefined;
+        return;
+      }
+      session.isStreaming = false;
+      session.awaitingInput = false;
+      session.resumeTaskId = undefined;
+      session.currentTaskState = "completed";
+      session.currentStatusText = undefined;
+      session.messages.push({
+        id: createId(),
+        role: "assistant",
+        content,
+        timestamp: action.payload.timestamp || nowIso(),
+      });
+      session.pendingVoiceTurnId = undefined;
+      session.pendingVoiceUserText = undefined;
     },
     eventReceived: (state, action: PayloadAction<{ sessionId: string; event: Ka2aEvent }>) => {
       const session = state.sessions[action.payload.sessionId];
       if (!session) {
         return;
       }
+      ensurePendingVoiceUserMessage(session);
 
       const receivedAt = nowIso();
       session.eventLog.push({ id: createId(), receivedAt, event: action.payload.event });
@@ -514,6 +688,15 @@ const ka2aSlice = createSlice({
             session.runs[taskId] = run;
             session.lastTaskId = taskId;
           }
+
+          if (resultText || structuredPayload) {
+            upsertAssistantMessage(session, {
+              taskId: taskId || undefined,
+              content: resultText,
+              timestamp: receivedAt,
+              structuredPayload,
+            });
+          }
         }
       }
     },
@@ -532,6 +715,8 @@ const ka2aSlice = createSlice({
       session.currentStatusText = undefined;
       session.awaitingInput = false;
       session.resumeTaskId = undefined;
+      session.pendingVoiceTurnId = undefined;
+      session.pendingVoiceUserText = undefined;
     },
   },
 });
@@ -547,6 +732,7 @@ export const {
   streamStarted,
   streamEnded,
   streamErrored,
+  syncedVoiceAssistantResolved,
   eventReceived,
   clearSession,
 } = ka2aSlice.actions;

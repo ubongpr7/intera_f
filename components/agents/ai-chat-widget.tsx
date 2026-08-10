@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { MessageSquareText, X } from "lucide-react"
 import { toast } from "react-toastify"
 
@@ -14,6 +14,7 @@ import {
   eventReceived,
   streamEnded,
   streamStarted,
+  syncedVoiceAssistantResolved,
   type ChatMessage,
   type Ka2aEvent,
 } from "@/redux/features/ka2a/ka2aSlice"
@@ -35,6 +36,7 @@ export default function AIChatWidget() {
   const [sessionId, setSessionId] = useState<string | null>(null)
   const lastActivityAtRef = useRef<number | null>(null)
   const syncedVoiceTurnIdsRef = useRef<Set<string>>(new Set())
+  const sessionIdRef = useRef<string | null>(null)
 
   const widgetRef = useRef<HTMLDivElement>(null)
   const toggleBtnRef = useRef<HTMLButtonElement>(null)
@@ -89,19 +91,33 @@ export default function AIChatWidget() {
     lastActivityAtRef.current = Date.now()
   }
 
+  const ensureSessionId = useCallback(() => {
+    if (sessionIdRef.current) {
+      return sessionIdRef.current
+    }
+
+    const id = createLocalId()
+    sessionIdRef.current = id
+    setSessionId(id)
+    dispatch(
+      createSessionWithConfig({
+        sessionId: id,
+        title: "Assistant",
+        agentName: "host",
+        historyLength: 10,
+        makeActive: false,
+      }),
+    )
+    return id
+  }, [dispatch])
+
+  useEffect(() => {
+    sessionIdRef.current = sessionId
+  }, [sessionId])
+
   const toggleChat = () => {
     if (!isOpen && !sessionId) {
-      const id = createLocalId()
-      setSessionId(id)
-      dispatch(
-        createSessionWithConfig({
-          sessionId: id,
-          title: "Assistant",
-          agentName: "host",
-          historyLength: 10,
-          makeActive: false,
-        }),
-      )
+      ensureSessionId()
     }
     setIsOpen((prev) => !prev)
     if (!isOpen) {
@@ -183,40 +199,57 @@ export default function AIChatWidget() {
   }, [isOpen, pendingCount, session?.awaitingInput])
 
   const handleSend = async (text: string) => {
-    if (!text.trim() || !sessionId) return
-    if (session?.isStreaming) {
+    if (!text.trim()) return
+    const resolvedSessionId = sessionIdRef.current ?? ensureSessionId()
+    const resolvedSession = resolvedSessionId ? (resolvedSessionId === sessionId ? session : undefined) : undefined
+    if ((resolvedSession ?? session)?.isStreaming) {
       toast.info("AI Assistant is still responding. Please wait for the current answer before sending another message.")
       return
     }
     markActivity()
-    await dispatch(sendStreamMessage({ text, sessionId }))
+    await dispatch(sendStreamMessage({ text, sessionId: resolvedSessionId }))
   }
 
   const handleUserActivity = () => markActivity()
 
   const handleSyncedVoiceTurnStart = (text: string, turnId: string) => {
-    if (!sessionId || !text.trim() || syncedVoiceTurnIdsRef.current.has(turnId)) {
+    if (!text.trim() || syncedVoiceTurnIdsRef.current.has(turnId)) {
       return
     }
+    const resolvedSessionId = sessionIdRef.current ?? ensureSessionId()
     syncedVoiceTurnIdsRef.current.add(turnId)
     markActivity()
-    dispatch(streamStarted({ sessionId, userText: text, silent: true }))
+    dispatch(streamStarted({ sessionId: resolvedSessionId, userText: text, silent: true, showUserMessage: true, turnId }))
   }
 
-  const handleSyncedVoiceA2aEvent = (event: Ka2aEvent) => {
-    if (!sessionId) {
+  const handleSyncedVoiceA2aEvent = (event: Ka2aEvent, turnId?: string) => {
+    const resolvedSessionId = sessionIdRef.current ?? ensureSessionId()
+    markActivity()
+    dispatch(eventReceived({ sessionId: resolvedSessionId, event }))
+    if (turnId) {
+      syncedVoiceTurnIdsRef.current.add(turnId)
+    }
+  }
+
+  const handleSyncedVoiceAssistantResult = (text: string, turnId?: string) => {
+    if (!text.trim()) {
+      return
+    }
+    const resolvedSessionId = sessionIdRef.current ?? ensureSessionId()
+    markActivity()
+    dispatch(syncedVoiceAssistantResolved({ sessionId: resolvedSessionId, content: text, turnId }))
+  }
+
+  const handleSyncedVoiceTurnEnd = (turnId?: string) => {
+    const resolvedSessionId = sessionIdRef.current
+    if (!resolvedSessionId) {
       return
     }
     markActivity()
-    dispatch(eventReceived({ sessionId, event }))
-  }
-
-  const handleSyncedVoiceTurnEnd = () => {
-    if (!sessionId) {
-      return
+    dispatch(streamEnded({ sessionId: resolvedSessionId, turnId }))
+    if (turnId) {
+      syncedVoiceTurnIdsRef.current.delete(turnId)
     }
-    markActivity()
-    dispatch(streamEnded({ sessionId }))
   }
 
   const handleClearConversation = () => {
@@ -299,6 +332,7 @@ export default function AIChatWidget() {
             onClearConversation={handleClearConversation}
             onSyncedVoiceTurnStart={handleSyncedVoiceTurnStart}
             onSyncedVoiceA2aEvent={handleSyncedVoiceA2aEvent}
+            onSyncedVoiceAssistantResult={handleSyncedVoiceAssistantResult}
             onSyncedVoiceTurnEnd={handleSyncedVoiceTurnEnd}
           />
         </div>

@@ -22,6 +22,7 @@ interface UseVoiceChatOptions {
   livekitEnabled?: boolean
   onSyncedVoiceTurnStart?: (text: string, turnId: string) => void
   onSyncedVoiceA2aEvent?: (event: unknown, turnId?: string) => void
+  onSyncedVoiceAssistantResult?: (text: string, turnId?: string) => void
   onSyncedVoiceTurnEnd?: (turnId?: string) => void
 }
 
@@ -55,6 +56,7 @@ interface UseVoiceChatReturn {
   setAutoSubmitEnabled: (enabled: boolean) => void
   estimatedCoins: number
   sessionRoomName: string | null
+  appendLocalConversationEntry: (speaker: "user" | "assistant", text: string) => void
 }
 
 const normalizeTranscriptText = (value: string) => value.trim().replace(/\s+/g, " ")
@@ -192,6 +194,7 @@ export function useVoiceChat({
   livekitEnabled = false,
   onSyncedVoiceTurnStart,
   onSyncedVoiceA2aEvent,
+  onSyncedVoiceAssistantResult,
   onSyncedVoiceTurnEnd,
 }: UseVoiceChatOptions): UseVoiceChatReturn {
   const [isListening, setIsListening] = useState(false)
@@ -226,6 +229,7 @@ export function useVoiceChat({
   const onInputMethodChangeRef = useRef(onInputMethodChange)
   const onSyncedVoiceTurnStartRef = useRef(onSyncedVoiceTurnStart)
   const onSyncedVoiceA2aEventRef = useRef(onSyncedVoiceA2aEvent)
+  const onSyncedVoiceAssistantResultRef = useRef(onSyncedVoiceAssistantResult)
   const onSyncedVoiceTurnEndRef = useRef(onSyncedVoiceTurnEnd)
   const livekitRoomRef = useRef<Room | null>(null)
   const livekitTrackRef = useRef<Awaited<ReturnType<typeof createLocalAudioTrack>> | null>(null)
@@ -238,6 +242,16 @@ export function useVoiceChat({
   const remoteAudioElementsRef = useRef<Map<string, HTMLMediaElement>>(new Map())
   const speakingIdleTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const syncedVoiceTurnIdsRef = useRef<Set<string>>(new Set())
+
+  const ensureSyncedVoiceTurnStarted = useCallback((text: string, turnId?: string) => {
+    const normalizedTurnId = typeof turnId === "string" ? turnId.trim() : ""
+    const normalizedText = collapseRepeatedTranscriptText(text)
+    if (!normalizedTurnId || !normalizedText || syncedVoiceTurnIdsRef.current.has(normalizedTurnId)) {
+      return
+    }
+    syncedVoiceTurnIdsRef.current.add(normalizedTurnId)
+    onSyncedVoiceTurnStartRef.current?.(normalizedText, normalizedTurnId)
+  }, [])
 
   const stopLivekitRoom = useCallback(
     async (roomName: string | null, keepalive = false) => {
@@ -424,6 +438,10 @@ export function useVoiceChat({
   useEffect(() => {
     onSyncedVoiceA2aEventRef.current = onSyncedVoiceA2aEvent
   }, [onSyncedVoiceA2aEvent])
+
+  useEffect(() => {
+    onSyncedVoiceAssistantResultRef.current = onSyncedVoiceAssistantResult
+  }, [onSyncedVoiceAssistantResult])
 
   useEffect(() => {
     onSyncedVoiceTurnEndRef.current = onSyncedVoiceTurnEnd
@@ -797,80 +815,94 @@ export function useVoiceChat({
             return
           }
 
-          try {
-            const event = JSON.parse(decodedPayload) as {
-              source?: string
-              type?: string
-              role?: string
-              text?: string
-              syncChat?: boolean
-              displayInTranscript?: boolean
-              turnId?: string
-              event?: unknown
-              payload?: Record<string, unknown>
-            }
-            if (event.source !== "ka2a_voice") {
-              return
-            }
+        try {
+          const event = JSON.parse(decodedPayload) as {
+            source?: string
+            type?: string
+            role?: string
+            text?: string
+            syncChat?: boolean
+            displayInTranscript?: boolean
+            turnId?: string
+            event?: unknown
+            payload?: Record<string, unknown>
+            voiceLocalResult?: boolean
+          }
+          if (event.source !== "ka2a_voice") {
+            return
+          }
 
-            if (event.type === "a2a_event" && event.event) {
-              onSyncedVoiceA2aEventRef.current?.(event.event, event.turnId)
-              return
-            }
+          const eventPayload =
+            event.payload && typeof event.payload === "object" && !Array.isArray(event.payload)
+              ? event.payload
+              : undefined
+          const mirroredA2aEvent = event.event ?? eventPayload?.event
 
-            if (!event.text?.trim()) {
-              return
+          if (event.type === "a2a_event" && mirroredA2aEvent) {
+            if (event.turnId && lastFinalTranscriptBySpeakerRef.current.user) {
+              ensureSyncedVoiceTurnStarted(lastFinalTranscriptBySpeakerRef.current.user, event.turnId)
             }
+            onSyncedVoiceA2aEventRef.current?.(mirroredA2aEvent, event.turnId)
+            return
+          }
 
-            const eventPayload =
-              event.payload && typeof event.payload === "object" && !Array.isArray(event.payload)
-                ? event.payload
+          if (!event.text?.trim()) {
+            return
+          }
+
+          const syncChat = event.syncChat === true || eventPayload?.syncChat === true
+          const turnId =
+            typeof event.turnId === "string" && event.turnId.trim()
+              ? event.turnId
+              : typeof eventPayload?.turnId === "string"
+                ? eventPayload.turnId
                 : undefined
-            const syncChat =
-              event.syncChat === true || eventPayload?.syncChat === true
-            const turnId =
-              typeof event.turnId === "string" && event.turnId.trim()
-                ? event.turnId
-                : typeof eventPayload?.turnId === "string"
-                  ? eventPayload.turnId
-                  : undefined
-            const displayInTranscript =
-              event.displayInTranscript === false || eventPayload?.displayInTranscript === false ? false : true
+          const displayInTranscript =
+            event.displayInTranscript === false || eventPayload?.displayInTranscript === false ? false : true
+          const voiceLocalResult = eventPayload?.voiceLocalResult === true || event.voiceLocalResult === true
 
-            if (event.type === "status") {
-              setIsSpeaking(false)
-              if (displayInTranscript) {
-                appendConversationEntry("assistant", event.text)
-              }
-              return
-            }
-
-            const speaker = event.role === "user" ? "user" : "assistant"
-            if (displayInTranscript) {
-              appendConversationEntry(speaker, event.text)
-            }
-            if (speaker === "user") {
-              const normalizedText = collapseRepeatedTranscriptText(event.text)
-              if (syncChat && turnId && !syncedVoiceTurnIdsRef.current.has(turnId)) {
-                syncedVoiceTurnIdsRef.current.add(turnId)
-                onSyncedVoiceTurnStartRef.current?.(normalizedText, turnId)
-              }
-              lastTranscriptRef.current = normalizedText
-              lastFinalTranscriptBySpeakerRef.current.user = normalizedText
-              setFinalTranscript(normalizedText)
-              setTranscript("")
-              setIsListening(false)
-              return
-            }
-            lastFinalTranscriptBySpeakerRef.current.assistant = collapseRepeatedTranscriptText(event.text)
-            if (syncChat && (event.type === "result" || event.type === "error")) {
-              onSyncedVoiceTurnEndRef.current?.(turnId)
+          if (event.type === "status") {
+            if (syncChat && turnId && lastFinalTranscriptBySpeakerRef.current.user) {
+              ensureSyncedVoiceTurnStarted(lastFinalTranscriptBySpeakerRef.current.user, turnId)
             }
             setIsSpeaking(false)
-          } catch {
-            // Ignore unrelated data messages.
+            if (displayInTranscript) {
+              appendConversationEntry("assistant", event.text)
+            }
+            return
           }
-        })
+
+          const speaker = event.role === "user" ? "user" : "assistant"
+          if (displayInTranscript) {
+            appendConversationEntry(speaker, event.text)
+          }
+          if (speaker === "user") {
+            const normalizedText = collapseRepeatedTranscriptText(event.text)
+            if (syncChat && turnId) {
+              ensureSyncedVoiceTurnStarted(normalizedText, turnId)
+            }
+            lastTranscriptRef.current = normalizedText
+            lastFinalTranscriptBySpeakerRef.current.user = normalizedText
+            setFinalTranscript(normalizedText)
+            setTranscript("")
+            setIsListening(false)
+            return
+          }
+          lastFinalTranscriptBySpeakerRef.current.assistant = collapseRepeatedTranscriptText(event.text)
+          if (syncChat && turnId && lastFinalTranscriptBySpeakerRef.current.user) {
+            ensureSyncedVoiceTurnStarted(lastFinalTranscriptBySpeakerRef.current.user, turnId)
+          }
+          if (syncChat && voiceLocalResult && (event.type === "result" || event.type === "error")) {
+            onSyncedVoiceAssistantResultRef.current?.(lastFinalTranscriptBySpeakerRef.current.assistant, turnId)
+          }
+          if (syncChat && (event.type === "result" || event.type === "error")) {
+            onSyncedVoiceTurnEndRef.current?.(turnId)
+          }
+          setIsSpeaking(false)
+        } catch {
+          // Ignore unrelated data messages.
+        }
+      })
         room.on(RoomEvent.TrackUnsubscribed, (track) => {
           if (track.kind !== "audio") {
             return
@@ -975,6 +1007,7 @@ export function useVoiceChat({
     appendConversationEntry,
     cleanupLivekitSession,
     disconnectLivekitClient,
+    ensureSyncedVoiceTurnStarted,
     livekitAgentName,
     livekitEnabled,
     livekitMetadata,
@@ -1151,5 +1184,6 @@ export function useVoiceChat({
     setAutoSubmitEnabled,
     estimatedCoins,
     sessionRoomName,
+    appendLocalConversationEntry: appendConversationEntry,
   }
 }

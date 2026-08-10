@@ -338,6 +338,21 @@ export default function SubscriptionPage() {
     () => billingHistory.find((payment) => Boolean(payment.metadata?.billing_card) || Boolean(payment.customer_email) || Boolean(payment.customer_name)),
     [billingHistory],
   )
+  const clearPaymentRedirectParams = () => {
+    if (typeof window === "undefined") return
+    const url = new URL(window.location.href)
+    const removableKeys = ["trxref", "reference", "tx_ref", "transaction_id", "id", "status"]
+    let changed = false
+    removableKeys.forEach((key) => {
+      if (url.searchParams.has(key)) {
+        url.searchParams.delete(key)
+        changed = true
+      }
+    })
+    if (!changed) return
+    const nextUrl = `${url.pathname}${url.search ? `?${url.searchParams.toString()}` : ""}${url.hash}`
+    window.history.replaceState({}, "", nextUrl)
+  }
 
   const getPlanLimitIssues = (plan: SubscriptionPlanRecord): PlanLimitIssue[] =>
     (plan.features ?? [])
@@ -372,6 +387,7 @@ export default function SubscriptionPage() {
     handledPaymentVerificationRef.current = verificationKey
     if (status && status !== "successful" && status !== "completed" && status !== "success") {
       toast.error("Billing authorization was not completed.")
+      clearPaymentRedirectParams()
       return
     }
     void verifyPayment({ transaction_id: transactionId, reference })
@@ -381,8 +397,12 @@ export default function SubscriptionPage() {
         await refetch()
         await refetchPayments()
         await refetchCoinTransactions()
+        clearPaymentRedirectParams()
       })
-      .catch(() => toast.error("Unable to verify billing authorization."))
+      .catch(() => {
+        toast.error("Unable to verify billing authorization.")
+        clearPaymentRedirectParams()
+      })
   }, [refetch, refetchCoinTransactions, refetchPayments, searchParams, verifyPayment])
 
   const authorizeBilling = async (planSlug: string) => {

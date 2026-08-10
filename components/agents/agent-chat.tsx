@@ -124,6 +124,7 @@ interface AgentChatProps {
   onClearConversation?: () => void
   onSyncedVoiceTurnStart?: (text: string, turnId: string) => void
   onSyncedVoiceA2aEvent?: (event: Ka2aEvent, turnId?: string) => void
+  onSyncedVoiceAssistantResult?: (text: string, turnId?: string) => void
   onSyncedVoiceTurnEnd?: (turnId?: string) => void
 }
 
@@ -244,6 +245,25 @@ const formatRelativeTime = (timestamp?: number) => {
     return `${hours}h ago`
   }
   return `${Math.floor(hours / 24)}d ago`
+}
+
+const formatMessageTimestamp = (value?: string | number) => {
+  if (value === undefined || value === null || value === "") {
+    return ""
+  }
+  const date = typeof value === "number" ? new Date(value) : new Date(String(value))
+  if (Number.isNaN(date.getTime())) {
+    return ""
+  }
+  const sameDay = new Date().toDateString() === date.toDateString()
+  return sameDay
+    ? date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+    : date.toLocaleString([], {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      })
 }
 
 const humanizeTechnicalMessage = (content: string) => {
@@ -385,6 +405,7 @@ export default function AgentChat({
   onClearConversation,
   onSyncedVoiceTurnStart,
   onSyncedVoiceA2aEvent,
+  onSyncedVoiceAssistantResult,
   onSyncedVoiceTurnEnd,
 }: AgentChatProps) {
   const [input, setInput] = useState("")
@@ -492,6 +513,7 @@ export default function AgentChat({
       }
       onSyncedVoiceA2aEvent?.(record as Ka2aEvent, turnId)
     },
+    onSyncedVoiceAssistantResult,
     onSyncedVoiceTurnEnd,
   })
 
@@ -604,6 +626,15 @@ export default function AgentChat({
   const voiceLiveTranscript = useMemo(() => {
     return (voiceChat.transcript || voiceChat.finalTranscript || "").trim()
   }, [voiceChat.finalTranscript, voiceChat.transcript])
+  const widgetBridgeRef = useRef<{
+    active: boolean
+    lastStatusText: string
+    lastAssistantMessageId: string
+  }>({
+    active: false,
+    lastStatusText: "",
+    lastAssistantMessageId: "",
+  })
 
   useEffect(() => {
     if (!isCallModeActive) {
@@ -618,9 +649,85 @@ export default function AgentChat({
     })
   }, [isCallModeActive, voiceConversationEntries, voiceLiveTranscript])
 
+  useEffect(() => {
+    if (!isCallModeActive) {
+      widgetBridgeRef.current = {
+        active: false,
+        lastStatusText: "",
+        lastAssistantMessageId: "",
+      }
+      return
+    }
+
+    const bridge = widgetBridgeRef.current
+    if (!bridge.active) {
+      return
+    }
+
+    const normalizedStatus = humanizeTechnicalMessage(statusText?.trim() || "")
+    if (normalizedStatus && normalizedStatus !== bridge.lastStatusText) {
+      voiceChat.appendLocalConversationEntry("assistant", normalizedStatus)
+      bridge.lastStatusText = normalizedStatus
+    }
+
+    const latestAssistantMessage = [...messages].reverse().find((message) => message.role === "assistant")
+    if (latestAssistantMessage && latestAssistantMessage.id !== bridge.lastAssistantMessageId) {
+      const interactionData = detectInteractionRequest(
+        latestAssistantMessage.content,
+        latestAssistantMessage.structuredPayload,
+      )
+      if (interactionData) {
+        const prompt =
+          asString(interactionData.data?.title)
+          || asString(interactionData.data?.question)
+          || asString(interactionData.data?.description)
+          || interactionData.type.replace(/_/g, " ")
+        if (prompt) {
+          voiceChat.appendLocalConversationEntry("assistant", prompt)
+        }
+      } else {
+        const summarized = humanizeTechnicalMessage(latestAssistantMessage.content)
+        if (summarized) {
+          voiceChat.appendLocalConversationEntry("assistant", summarized)
+        }
+      }
+      bridge.lastAssistantMessageId = latestAssistantMessage.id
+    }
+
+    if (!isBusy && pendingCount === 0 && !awaitingInput) {
+      bridge.active = false
+      bridge.lastStatusText = ""
+      bridge.lastAssistantMessageId = latestAssistantMessage?.id || bridge.lastAssistantMessageId
+    }
+  }, [awaitingInput, isBusy, isCallModeActive, messages, pendingCount, statusText, voiceChat])
+
   function scrollToBottom() {
     endRef.current?.scrollIntoView({ behavior: "smooth" })
     setUnreadCount(0)
+  }
+
+  const activateVoiceWidgetBridge = () => {
+    widgetBridgeRef.current = {
+      active: true,
+      lastStatusText: "",
+      lastAssistantMessageId: "",
+    }
+  }
+
+  const acknowledgeVoiceLinkedSubmission = (responseText: string, fallbackTitle: string) => {
+    if (!isCallModeActive) {
+      return
+    }
+    const summary = detectInteractionResponseSummary(responseText)
+    voiceChat.appendLocalConversationEntry(
+      "user",
+      summary?.detail ? `${summary.title}. ${summary.detail}` : summary?.title || fallbackTitle,
+    )
+    voiceChat.appendLocalConversationEntry(
+      "assistant",
+      "Thanks. I’ve sent that through the workspace chat and I’ll keep tracking the progress here.",
+    )
+    activateVoiceWidgetBridge()
   }
 
   function restorePrimaryChatScrollAfterCallMode() {
@@ -655,6 +762,8 @@ export default function AgentChat({
     e.preventDefault()
     if (!input.trim()) return
 
+    const submittedText = input.trim()
+    acknowledgeVoiceLinkedSubmission(submittedText, submittedText)
     onSend(input)
     onActivity?.()
     setInput("")
@@ -1048,6 +1157,7 @@ export default function AgentChat({
     setRespondedInteractions((prev) => new Set(prev).add(messageId))
 
     const responseText = typeof response === "string" ? response : JSON.stringify(response)
+    acknowledgeVoiceLinkedSubmission(responseText, "I submitted that selection.")
     onSend(responseText)
     onActivity?.()
   }
@@ -1058,6 +1168,7 @@ export default function AgentChat({
     }
 
     const responseText = typeof response === "string" ? response : JSON.stringify(response)
+    acknowledgeVoiceLinkedSubmission(responseText, "I confirmed that request.")
     onSend(responseText)
     onActivity?.()
     setConfirmationDialog(null)
@@ -1207,9 +1318,12 @@ export default function AgentChat({
                       : "mr-auto max-w-[94%] bg-gray-100 text-gray-900"
                   }`}
                 >
-                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] opacity-75">
-                    {entry.speaker === "user" ? "You" : "Assistant"}
-                  </p>
+                  <div className="mb-1 flex items-center justify-between gap-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-75">
+                      {entry.speaker === "user" ? "You" : "Assistant"}
+                    </p>
+                    <span className="shrink-0 text-[10px] opacity-75">{formatMessageTimestamp(entry.timestamp)}</span>
+                  </div>
                   <p>{entry.text}</p>
                 </div>
               ))}
@@ -1318,12 +1432,17 @@ export default function AgentChat({
           >
             {workflowSummary ? <WorkflowSummaryStrip summary={workflowSummary} /> : null}
             {statusText && statusText.trim() !== workflowSummary?.detail?.trim() && (
-              <div className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${
+                <div className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${
                 statusTone.borderClass
               }`}>
-                <div className="flex items-center gap-2 font-medium">
-                  <ChatAvatar role="assistant" userInitials={userIdentity.initials} className="h-6 w-6" />
-                  <span>{activeAgentName}</span>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 font-medium">
+                    <ChatAvatar role="assistant" userInitials={userIdentity.initials} className="h-6 w-6" />
+                    <span>{activeAgentName}</span>
+                  </div>
+                  {lastUpdatedAt ? (
+                    <span className="shrink-0 text-xs text-gray-500">{formatMessageTimestamp(lastUpdatedAt)}</span>
+                  ) : null}
                 </div>
                 <p className="mt-1">{humanizeTechnicalMessage(statusText)}</p>
               </div>
@@ -1353,7 +1472,11 @@ export default function AgentChat({
                 <div key={m.id} className="mb-8 flex items-end justify-start gap-3">
                   <ChatAvatar role="assistant" userInitials={userIdentity.initials} />
                   <div className="max-w-[95%] rounded-3xl rounded-bl-none border border-gray-200 bg-white px-4 py-4 shadow-lg">
-                    <div className="mb-3 flex flex-wrap justify-end gap-2">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
+                        {formatMessageTimestamp(m.timestamp)}
+                      </span>
+                      <div className="flex flex-wrap justify-end gap-2">
                       <button
                         type="button"
                         onMouseDown={(event) => event.stopPropagation()}
@@ -1370,6 +1493,7 @@ export default function AgentChat({
                         <Download className="h-3.5 w-3.5" strokeWidth={2.2} />
                         Download
                       </button>
+                      </div>
                     </div>
                     <InsightWidgetRenderer
                       payload={insightData.data}
@@ -1412,13 +1536,16 @@ export default function AgentChat({
                     <div
                       className={`max-w-[95%] ${style.color} rounded-2xl rounded-bl-none border px-4 py-4 text-gray-800 shadow-lg`}
                     >
-                      <div className={`font-semibold text-xs mb-3 ${style.textColor} flex items-center gap-2`}>
-                        {isInteractionDisabled ? (
-                          <Check className="h-3 w-3 text-green-600" />
-                        ) : (
-                          <Clock className="h-3 w-3" />
-                        )}
-                        {isInteractionDisabled ? "Response Sent" : "Awaiting Confirmation"}
+                      <div className="mb-3 flex items-center justify-between gap-3 text-xs font-semibold">
+                        <div className="flex items-center gap-2">
+                          {isInteractionDisabled ? (
+                            <Check className="h-3 w-3 text-green-600" />
+                          ) : (
+                            <Clock className="h-3 w-3 text-gray-700" />
+                          )}
+                          <span className="text-gray-900">{isInteractionDisabled ? "Response Sent" : "Awaiting Confirmation"}</span>
+                        </div>
+                        <span className="shrink-0 text-gray-600">{formatMessageTimestamp(m.timestamp)}</span>
                       </div>
                       <div className="space-y-3">
                         <p className="text-sm font-medium text-gray-900">
@@ -1452,15 +1579,18 @@ export default function AgentChat({
                   <div
                       className={`max-w-[95%] ${style.color} rounded-2xl rounded-bl-none border px-4 py-4 text-gray-800 shadow-lg`}
                     >
-                    <div className={`font-semibold text-xs mb-3 ${style.textColor} flex items-center gap-2`}>
-                      <style.icon className="h-4 w-4" aria-hidden="true" />
-                      {type.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase())}
-                      {isInteractionDisabled && (
-                        <span className="ml-auto text-green-600 flex items-center gap-1">
-                          <Check className="h-3 w-3" />
-                          <span className="text-xs">Response Sent</span>
-                        </span>
-                      )}
+                    <div className="mb-3 flex items-center justify-between gap-3 text-xs font-semibold">
+                      <div className="flex items-center gap-2">
+                        <style.icon className="h-4 w-4 text-gray-700" aria-hidden="true" />
+                        <span className="text-gray-900">{type.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase())}</span>
+                        {isInteractionDisabled && (
+                          <span className="ml-1 inline-flex items-center gap-1 text-green-600">
+                            <Check className="h-3 w-3" />
+                            <span className="text-xs">Response Sent</span>
+                          </span>
+                        )}
+                      </div>
+                      <span className="shrink-0 text-gray-600">{formatMessageTimestamp(m.timestamp)}</span>
                     </div>
                     <div className="space-y-3">
                       <div className="text-sm">{renderInlineInteraction(type, data, m.id)}</div>
@@ -1488,9 +1618,10 @@ export default function AgentChat({
                   }`}
                 >
                   <div
-                    className={`font-semibold text-xs mb-3 flex items-center justify-between ${isUserMessage ? "text-blue-100" : "text-gray-500"}`}
+                    className={`mb-3 flex items-center justify-between text-xs font-semibold ${isUserMessage ? "text-blue-100" : "text-gray-500"}`}
                   >
                     <div className="flex items-center gap-2">
+                      <span className="uppercase tracking-[0.18em]">{isUserMessage ? "You" : "Assistant"}</span>
                       {copiedMessageId === m.id && (
                         <span className="inline-flex items-center gap-1 text-green-600">
                           <Check className="h-3 w-3" />
@@ -1498,6 +1629,9 @@ export default function AgentChat({
                         </span>
                       )}
                     </div>
+                    <span className={isUserMessage ? "text-blue-100" : "text-gray-500"}>
+                      {formatMessageTimestamp(m.timestamp)}
+                    </span>
                   </div>
                   {interactionResponseSummary ? (
                     <div className="space-y-1">
