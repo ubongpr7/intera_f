@@ -32,6 +32,7 @@ import { Button } from "@/components/ui/button";
 import { useAppSelector } from "@/redux/store";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 import { LandingHeader } from "@/components/landing/LandingHeader";
+import { WaitlistForm } from "@/components/landing/WaitlistForm";
 // import { Feature, SubscriptionPlan } from "@/components/interfaces/payment";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -771,6 +772,7 @@ function PlanCard({ plan, highlighted = false }: { plan: SubscriptionPlan; highl
 */
 
 export default function HomePage() {
+  const waitlistMode = process.env.NEXT_PUBLIC_WAITLIST_MODE?.trim().toLowerCase() === "true";
   const [activeDemoIndex, setActiveDemoIndex] = useState(() => Math.floor(Math.random() * demoConversations.length));
   const [visibleMessageCount, setVisibleMessageCount] = useState(0);
   const [typedDemoText, setTypedDemoText] = useState("");
@@ -868,12 +870,15 @@ export default function HomePage() {
                 noise of fragmented tools.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
-                <Button asChild size="lg">
-                  <Link href="/accounts">
-                    Start free setup
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
+                {waitlistMode ? (
+                  <Button asChild size="lg">
+                    <a href="#waitlist">Join the waitlist <ArrowRight className="h-4 w-4" /></a>
+                  </Button>
+                ) : (
+                  <Button asChild size="lg">
+                    <Link href="/accounts">Start free setup <ArrowRight className="h-4 w-4" /></Link>
+                  </Button>
+                )}
                 {/* Pricing is intentionally hidden until after registration. */}
               </div>
               <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -1253,7 +1258,21 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="landing-cta bg-blue-700">
+        {waitlistMode ? (
+          <section id="waitlist" className="landing-cta bg-blue-700">
+            <div className="landing-cta-inner mx-auto grid max-w-7xl gap-8 px-4 py-14 text-white sm:px-6 lg:grid-cols-[.8fr_1.2fr] lg:items-center lg:px-8">
+              <div className="max-w-2xl">
+                <span className="landing-cta-kicker"><Sparkles className="h-3.5 w-3.5" /> Early access</span>
+                <h2 className="mt-5 text-3xl font-semibold sm:text-4xl">The launch date will be announced soon.</h2>
+                <p className="mt-4 max-w-xl text-blue-100">Join the list for the launch announcement and updates about Intera IMS.</p>
+              </div>
+              <div className="landing-cta-panel rounded-2xl bg-white p-5 text-gray-900 sm:p-6">
+                <WaitlistForm />
+              </div>
+            </div>
+          </section>
+        ) : (
+          <section className="landing-cta bg-blue-700">
           <div className="landing-cta-inner mx-auto grid max-w-7xl gap-8 px-4 py-14 text-white sm:px-6 lg:grid-cols-[1.25fr_.75fr] lg:items-center lg:px-8">
             <div className="max-w-2xl">
               <span className="landing-cta-kicker"><Sparkles className="h-3.5 w-3.5" /> A calmer way to run operations</span>
@@ -1268,7 +1287,8 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-        </section>
+          </section>
+        )}
       </main>
 
       <LandingFooter />

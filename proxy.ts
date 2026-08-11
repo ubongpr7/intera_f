@@ -4,6 +4,7 @@ import { getCookieCandidates, type AuthCookieKey } from "./lib/authCookies"
 
 export function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname
+  const waitlistMode = process.env.NEXT_PUBLIC_WAITLIST_MODE?.trim().toLowerCase() === "true"
   const isPublicAsset =
     path.startsWith("/assets/") ||
     path.startsWith("/landing/") ||
@@ -44,6 +45,17 @@ export function proxy(request: NextRequest) {
     path.startsWith("/_next/static") ||
     path.startsWith("/_next/image")
 
+  if (path.startsWith("/api/")) {
+    if (waitlistMode && path !== "/api/waitlist") {
+      return NextResponse.redirect(new URL("/", request.url))
+    }
+    return NextResponse.next()
+  }
+
+  if (waitlistMode && path !== "/" && !isPublicAsset && !isLegalPath) {
+    return NextResponse.redirect(new URL("/", request.url))
+  }
+
   const refreshToken = readCookie("refreshToken")
   const accessToken = readCookie("accessToken")
   const hasAuthCookie = Boolean(refreshToken || accessToken)
@@ -81,5 +93,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|.*\\..*).*)"],
+  matcher: ["/((?!_next/static|_next/image|.*\\..*).*)"],
 }

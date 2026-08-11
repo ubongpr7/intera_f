@@ -10,6 +10,7 @@ import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { setIsDarkMode } from "@/redux/state";
 
 export function LandingHeader() {
+  const waitlistMode = process.env.NEXT_PUBLIC_WAITLIST_MODE?.trim().toLowerCase() === "true";
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
@@ -44,14 +45,16 @@ export function LandingHeader() {
           <a href="/#capabilities" className="text-sm text-gray-600 md:text-base hover:text-gray-900">Capabilities</a>
           <a href="/#demo" className="text-sm text-gray-600 md:text-base hover:text-gray-900">Demo</a>
           <a href="/#faq" className="text-sm text-gray-600 md:text-base hover:text-gray-900">FAQ</a>
-          <Link href="/contact" className="text-sm text-gray-600 md:text-base hover:text-gray-900">Contact</Link>
+          {!waitlistMode ? <Link href="/contact" className="text-sm text-gray-600 md:text-base hover:text-gray-900">Contact</Link> : null}
         </nav>
         <div className="hidden items-center gap-3 md:flex">
           <button type="button" onClick={toggleLandingTheme} className="landing-theme-toggle" aria-label={`Switch to ${isDarkMode ? "light" : "dark"} theme`}>
             {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
-          <Button variant="secondary" asChild><Link className="landing-nav-secondary" href="/accounts/signin"><LogIn className="h-4 w-4" />Sign in</Link></Button>
-          <Button asChild><Link className="landing-nav-primary" href="/accounts">Get started <ArrowRight className="h-4 w-4" /></Link></Button>
+          {waitlistMode ? <a href="#waitlist" className="text-sm font-semibold text-blue-700">Launch date to be announced</a> : <>
+            <Button variant="secondary" asChild><Link className="landing-nav-secondary" href="/accounts/signin"><LogIn className="h-4 w-4" />Sign in</Link></Button>
+            <Button asChild><Link className="landing-nav-primary" href="/accounts">Get started <ArrowRight className="h-4 w-4" /></Link></Button>
+          </>}
         </div>
         <button type="button" className="landing-menu-trigger inline-flex md:hidden" onClick={() => setIsMobileMenuOpen((currentValue) => !currentValue)} aria-label="Toggle menu" aria-expanded={isMobileMenuOpen} aria-controls="landing-mobile-menu">
           {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -64,14 +67,16 @@ export function LandingHeader() {
               <a href="/#capabilities" onClick={() => setIsMobileMenuOpen(false)}>Capabilities <ArrowRight className="h-4 w-4" /></a>
               <a href="/#demo" onClick={() => setIsMobileMenuOpen(false)}>Demo <ArrowRight className="h-4 w-4" /></a>
               <a href="/#faq" onClick={() => setIsMobileMenuOpen(false)}>FAQ <ArrowRight className="h-4 w-4" /></a>
-              <Link href="/contact" onClick={() => setIsMobileMenuOpen(false)}>Contact <ArrowRight className="h-4 w-4" /></Link>
+              {!waitlistMode ? <Link href="/contact" onClick={() => setIsMobileMenuOpen(false)}>Contact <ArrowRight className="h-4 w-4" /></Link> : null}
             </div>
             <div className="landing-mobile-actions">
               <button type="button" onClick={toggleLandingTheme} className="landing-theme-toggle" aria-label={`Switch to ${isDarkMode ? "light" : "dark"} theme`}>
                 {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </button>
-              <Button variant="ghost" asChild className="flex-1"><Link className="landing-nav-secondary" href="/accounts/signin" onClick={() => setIsMobileMenuOpen(false)}><LogIn className="h-4 w-4" />Sign in</Link></Button>
-              <Button asChild className="flex-1"><Link className="landing-nav-primary" href="/accounts" onClick={() => setIsMobileMenuOpen(false)}>Get started <ArrowRight className="h-4 w-4" /></Link></Button>
+              {waitlistMode ? <a href="#waitlist" onClick={() => setIsMobileMenuOpen(false)} className="flex-1 text-center text-sm font-semibold text-blue-700">Launch date to be announced</a> : <>
+                <Button variant="ghost" asChild className="flex-1"><Link className="landing-nav-secondary" href="/accounts/signin" onClick={() => setIsMobileMenuOpen(false)}><LogIn className="h-4 w-4" />Sign in</Link></Button>
+                <Button asChild className="flex-1"><Link className="landing-nav-primary" href="/accounts" onClick={() => setIsMobileMenuOpen(false)}>Get started <ArrowRight className="h-4 w-4" /></Link></Button>
+              </>}
             </div>
           </motion.div>
         ) : null}
