@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { X, UploadCloud, UserPlus, Trash2 } from "lucide-react";
+import { X, UploadCloud, UserPlus, Trash2, RotateCcw } from "lucide-react";
 import { getCookie } from "cookies-next";
 import { toast } from "react-toastify";
 import { readCookieValue } from "@/lib/authCookies";
@@ -13,14 +13,18 @@ import UserPermissionForm from "../permissions/customPermission";
 import UserGroupManager from "../permissions/manytomany";
 import CustomUpdateForm from "../common/updateForm";
 import RoleManager from "./roleManager";
+import StaffAccessSummary from "./StaffAccessSummary";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { StaffManagementRefetchProp } from "./roles";
-import { UserData } from "../interfaces/User";
+import { UserData } from "@/redux/features/users/userTypes";
 import {
   useCreateStaffUserMutation,
   useGetCompanyUsersQuery,
   useGetPendingInvitationsQuery,
   useInviteStaffBulkMutation,
   useRemoveCompanyMemberMutation,
+  useResendInvitationMutation,
   useRevokeInvitationMutation,
 } from "../../redux/features/users/userApiSlice";
 import {
@@ -28,7 +32,9 @@ import {
   useUpdateUserPermissionMutation,
 } from "../../redux/features/permission/permit";
 import { useUpdateUserMutation } from "../../redux/features/users/userApiSlice";
-import { RoleAssignment } from "components/interfaces/management";
+import { RoleAssignment } from "@/redux/features/management/managementTypes";
+import { useGetUserCompaniesQuery } from "@/redux/features/auth/authApiSlice";
+import { useSubscriptionQuota } from "@/hooks/useSubscriptionQuota";
 
 type StaffRow = UserData & {
   rowType: "member" | "invitation";
@@ -89,6 +95,7 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
     isLoading: membersLoading,
     refetch: refetchMembers,
   } = useGetCompanyUsersQuery();
+  const { data: companyMemberships } = useGetUserCompaniesQuery();
   const {
     data: pendingInvitations,
     isLoading: invitationsLoading,
@@ -98,6 +105,7 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
   const [inviteStaff, { isLoading: singleInviteLoading }] = useCreateStaffUserMutation();
   const [inviteStaffBulk, { isLoading: bulkInviteLoading }] = useInviteStaffBulkMutation();
   const [removeMember, { isLoading: removeMemberLoading }] = useRemoveCompanyMemberMutation();
+  const [resendInvitation, { isLoading: resendInvitationLoading }] = useResendInvitationMutation();
   const [revokeInvitation, { isLoading: revokeInvitationLoading }] = useRevokeInvitationMutation();
 
   const {
@@ -114,6 +122,7 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
     singleInviteLoading ||
     bulkInviteLoading ||
     removeMemberLoading ||
+    resendInvitationLoading ||
     revokeInvitationLoading;
 
   const refreshAll = useCallback(async () => {
@@ -127,11 +136,65 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
   }, [refetchData, refreshAll, setRefetchData]);
 
   const tableData = useMemo<StaffRow[]>(() => {
-    const activeRows: StaffRow[] = (members || []).map((member) => ({
-      ...member,
-      rowType: "member",
-      inviteStatus: "active",
-    }));
+    const activeOwnerId =
+      companyMemberships?.profiles?.find((profile) => `${profile.id}` === `${activeProfileId}`)?.owner_id ?? null;
+
+    const activeRows: StaffRow[] = (members || [])
+      .filter((member) => {
+        const memberUserId = member.user?.id != null ? `${member.user.id}` : null;
+        if (member.membership_role === "owner") {
+          return false;
+        }
+        if (activeOwnerId && memberUserId === `${activeOwnerId}`) {
+          return false;
+        }
+        return true;
+      })
+      .map((member) => {
+        const rawMember = member as typeof member & {
+          start_date?: string;
+          end_date?: string | null;
+          is_active?: boolean;
+          assigned_at?: string;
+          assigned_by?: { id?: number | string } | number | string | null;
+          profile?: string;
+        };
+        const assignedBy =
+          typeof rawMember.assigned_by === "object" && rawMember.assigned_by !== null
+            ? rawMember.assigned_by.id
+            : rawMember.assigned_by;
+        const roleAssignment: RoleAssignment[] = member.role?.id
+          ? [
+              {
+                id: Number(member.id),
+                user: `${member.user?.id ?? ""}`,
+                role_name: member.role.name ?? "Assigned role",
+                role: `${member.role.id}`,
+                start_date: rawMember.start_date ?? rawMember.assigned_at ?? new Date().toISOString(),
+                end_date: rawMember.end_date ?? "",
+                is_active: rawMember.is_active ?? true,
+                assigned_by: Number(assignedBy ?? 0),
+                assigned_at: rawMember.assigned_at ?? new Date().toISOString(),
+                profile: rawMember.profile ?? activeProfileId,
+              },
+            ]
+          : [];
+
+        return {
+          id: Number(member.user?.id ?? member.id),
+          first_name: member.user?.first_name ?? "",
+          last_name: member.user?.last_name ?? "",
+          email: member.user?.email ?? "",
+          phone: member.user?.phone ?? null,
+          is_verified: true,
+          is_staff: false,
+          date_joined: new Date().toISOString(),
+          password: "",
+          roles: roleAssignment,
+          rowType: "member",
+          inviteStatus: "active",
+        };
+      });
 
     const inviteRows: StaffRow[] = (pendingInvitations || []).map((invite, idx) => ({
       id: Number(`${invite.id}`.replace(/\D/g, "").slice(0, 9) || idx + 1),
@@ -149,7 +212,8 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
     }));
 
     return [...activeRows, ...inviteRows];
-  }, [members, pendingInvitations]);
+  }, [activeProfileId, companyMemberships?.profiles, members, pendingInvitations]);
+  const staffQuota = useSubscriptionQuota("staff-users", tableData.length + 1);
 
   const handleUpdatePermissionSubmit = async (createdData: { permissions: string[] }) => {
     await updatePermission({ id: userId, data: createdData }).unwrap();
@@ -233,13 +297,41 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
     await refetchMembers();
   };
 
+  const handleResendInvite = async (row: StaffRow) => {
+    if (row.rowType !== "invitation") {
+      return;
+    }
+    if (!row.invitationId) {
+      toast.error("Invitation id is missing.");
+      return;
+    }
+
+    await resendInvitation(row.invitationId).unwrap();
+    toast.success(`Invitation resent to ${row.email}.`);
+    await refetchInvitations();
+  };
+
   const handleUpdate = async (createdData: Partial<UserData>) => {
     const updateData = await updateUser({ id: userId, data: createdData }).unwrap();
-    setUserDetail(updateData);
+    setUserDetail((previous) => (previous ? { ...previous, ...updateData } : undefined));
     await refetchMembers();
   };
 
   const actionButtons: ActionButton<StaffRow>[] = [
+    {
+      label: "Resend",
+      icon: RotateCcw,
+      variant: "secondary",
+      hidden: (row) => row.rowType !== "invitation",
+      onClick: async (row) => {
+        try {
+          await handleResendInvite(row);
+        } catch (error: any) {
+          const message = error?.data?.detail || error?.data?.error || "Unable to resend invitation.";
+          toast.error(message);
+        }
+      },
+    },
     {
       label: "Remove",
       icon: Trash2,
@@ -263,79 +355,122 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
         isLoading={isLoading}
         onRowClick={handleRowClick}
         actionButtons={actionButtons}
-        searchableFields={["first_name", "email", "phone"]}
-        filterableFields={[]}
-        sortableFields={["first_name", "email", "phone"]}
+        searchableFields={["first_name", "last_name", "email", "phone", "inviteStatus"]}
+        filterableFields={["rowType", "inviteStatus", "is_verified"]}
+        sortableFields={["first_name", "last_name", "email", "phone", "inviteStatus"]}
         title="Staff"
-        onClose={() => setIsInviteOpen(true)}
+        onClose={() => {
+          if (!staffQuota.canCreate) {
+            toast.error(staffQuota.message);
+            return;
+          }
+          setIsInviteOpen(true);
+        }}
       />
 
-      <div className={`fixed inset-0 z-50 items-center justify-center bg-black/50 p-4 ${isInviteOpen ? "flex" : "hidden"}`}>
-        <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-xl">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-xl font-semibold text-gray-900">Invite Staff Members</h3>
+      <div className={`fixed inset-0 z-50 items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm ${isInviteOpen ? "flex" : "hidden"}`}>
+        <div className="w-full max-w-3xl overflow-hidden rounded-[30px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] shadow-[0_36px_90px_rgba(15,23,42,0.28)] dark:border-slate-800 dark:bg-[linear-gradient(180deg,#020617_0%,#0f172a_58%,#111827_100%)]">
+          <div className="relative border-b border-slate-200 bg-white/85 px-6 py-5 backdrop-blur dark:border-slate-800 dark:bg-slate-950/72">
+            <div className="mb-3 inline-flex rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200">
+              Team workspace
+            </div>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-50">Invite Staff Members</h3>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+                  Add people one by one or upload a CSV of email addresses. Invitations stay inside the active workspace.
+                </p>
+              </div>
+            </div>
             <button
               type="button"
-              className="rounded-md p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+              className="absolute right-6 top-6 rounded-full border border-white/70 bg-white/85 p-2 text-slate-500 shadow-sm transition hover:bg-white hover:text-slate-800 dark:border-slate-700 dark:bg-slate-950/85 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white"
               onClick={() => setIsInviteOpen(false)}
             >
               <X size={18} />
             </button>
           </div>
 
-          <div className="space-y-6">
-            <form onSubmit={handleSingleInvite} className="rounded-lg border border-gray-200 p-4">
-              <div className="mb-3 flex items-center gap-2 text-sm font-medium text-gray-700">
+          <div className="grid gap-4 p-6 md:grid-cols-2">
+            <form onSubmit={handleSingleInvite} className="rounded-[26px] border border-slate-200 bg-white/88 p-5 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.4)] dark:border-slate-800 dark:bg-slate-950/72">
+              <div className="mb-3 flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
                 <UserPlus size={16} />
                 Invite by email
               </div>
-              <div className="flex gap-3">
-                <input
+              <p className="mb-4 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                Send an invitation immediately to one staff member.
+              </p>
+              <div className="flex flex-col gap-3">
+                <Input
                   type="email"
                   value={inviteEmail}
                   onChange={(event) => setInviteEmail(event.target.value)}
                   placeholder="staff@company.com"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  className="rounded-2xl border-slate-200 bg-slate-50 shadow-none dark:border-slate-700 dark:bg-slate-900"
                 />
-                <button
+                <Button
                   type="submit"
-                  disabled={singleInviteLoading}
-                  className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={singleInviteLoading || !staffQuota.canCreate}
+                  className="rounded-2xl"
                 >
                   {singleInviteLoading ? "Sending..." : "Send Invite"}
-                </button>
+                </Button>
               </div>
             </form>
 
-            <form onSubmit={handleBulkInvite} className="rounded-lg border border-gray-200 p-4">
-              <div className="mb-3 flex items-center gap-2 text-sm font-medium text-gray-700">
+            <form onSubmit={handleBulkInvite} className="rounded-[26px] border border-slate-200 bg-white/88 p-5 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.4)] dark:border-slate-800 dark:bg-slate-950/72">
+              <div className="mb-3 flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
                 <UploadCloud size={16} />
                 Invite by CSV (emails only)
               </div>
+              <p className="mb-4 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                Upload a CSV when onboarding several staff members at once. One email address per row works best.
+              </p>
               <div className="space-y-3">
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept=".csv,text/csv"
                   onChange={(event) => setBulkFile(event.target.files?.[0] || null)}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700"
+                  className="w-full rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-3 py-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                 />
-                <button
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-500 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-400">
+                  Sample format:
+                  <span className="mt-1 block font-mono text-[11px] text-slate-600 dark:text-slate-300">
+                    jane@company.com
+                    <br />
+                    john@company.com
+                  </span>
+                </div>
+                <Button
                   type="submit"
-                  disabled={bulkInviteLoading || !bulkFile}
-                  className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={bulkInviteLoading || !bulkFile || !staffQuota.canCreate}
+                  variant="secondary"
+                  className="rounded-2xl"
                 >
                   {bulkInviteLoading ? "Uploading..." : "Upload & Invite"}
-                </button>
+                </Button>
               </div>
             </form>
           </div>
         </div>
       </div>
 
-      <div className={`fixed inset-0 z-50 items-center justify-center bg-black/50 p-4 ${openTabs ? "flex" : "hidden"}`}>
+      {openTabs ? (
         <VerticalTabs
           items={[
+            {
+              id: "access-summary",
+              label: "Access Summary",
+              content: (
+                <StaffAccessSummary
+                  userId={userId}
+                  user={userDetail}
+                  permissionsData={permissionsData}
+                  permissionLoading={permissionDataLoading}
+                />
+              ),
+            },
             {
               id: "activities",
               label: "Staff Activities",
@@ -403,7 +538,7 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
           onClose={() => setOpenTabs(false)}
           className="rounded-lg border p-4"
         />
-      </div>
+      ) : null}
     </div>
   );
 };

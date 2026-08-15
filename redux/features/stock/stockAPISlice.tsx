@@ -1,130 +1,357 @@
-import { apiSlice } from '../../services/apiSlice';
-import { StockItem, StockLocation, StockLocationType  } from '../../../components/interfaces/stock';
-const management_api='stock_api';
-const service ='inventory';
+import { apiSlice, unwrapListResponse } from "../../services/apiSlice";
+import { buildQuery } from "../common/queryParams";
+import type { StructuralLocationScopeParams } from "@/lib/structuralLocationScope";
+import type {
+  CreateInventoryVariantPayload,
+  InventoryItem,
+  InventoryItemListParams,
+  LowStockItem,
+  StockBalanceListParams,
+  StockBalanceRow,
+  StockAnalyticsResponse,
+  StockLot,
+  StockLotListParams,
+  StockLocation,
+  StockLocationListParams,
+  StockLocationType,
+  StockReservation,
+  StockReservationListParams,
+  StockReservationMutationPayload,
+  StockReservationPayload,
+  StockSerial,
+  StockSerialListParams,
+  StockStatusUpdatePayload,
+  StockStatusUpdateResponse,
+  StockTrackingEntry,
+  StockMovement,
+  StockMovementListParams,
+  StockTransferPayload,
+  StockTransferResponse,
+} from "./stockTypes";
 
-interface StockItemData {
-  reference: string;
-  stockData: Partial<StockItem>;
-}
+const stockApi = "stock_api";
+const service = "inventory";
+
+type EntityId = string | number;
+type StructuralScopeParams = StructuralLocationScopeParams & {
+  stock_location?: string;
+};
+
 export const stockApiSlice = apiSlice.injectEndpoints({
-  endpoints: builder => ({
-    createStockItem: builder.mutation({
-      query: (stockData: Partial<StockItem>) => ({
-        url: `/${management_api}/stock-items/`,
-        method: 'POST',
-        body: stockData,
-				service:service,
-      }),
-    }),
-    
-    updateStockItem: builder.mutation({
-      query: ({ id, data }) => ({
-        url: `/${management_api}/stock-items/${id}/`,
-        method: 'PATCH',
-        body: data,
-				service:service,
-      }),
-    }),
-    deleteStockItem: builder.mutation({
-      query: (id) => ({
-        url: `/${management_api}/stock-items/${id}/`,
-        method: 'DELETE',
-				service:service,
-      }),
-    }),
-    getStockItem: builder.query({
-      query: (id) => ({
-        url:`/${management_api}/stock-items/${id}/`,
-				service:service,
-    }),
-  }),
-  
-    getStockItemData: builder.query<StockItem[], string>({
+  endpoints: (builder) => ({
+    listStockLocationTypes: builder.query<StockLocationType[], void>({
       query: () => ({
-        url: `/${management_api}/stock-items/`,
-        method: 'GET',
-				service:service,
+        url: `/${stockApi}/location-types/`,
+        service,
       }),
+      transformResponse: (response: StockLocationType[] | { results?: StockLocationType[] }) =>
+        unwrapListResponse<StockLocationType>(response),
     }),
-    createStockItemLocation: builder.mutation({
-      query: (stockData: Partial<StockLocation>) => ({
-        url: `/${management_api}/locations/`,
-        method: 'POST',
-        body: stockData,
-				service:service,
-      }),
-    }),
-    
-    updateStockItemLocation: builder.mutation({
-      query: ({ id, data }) => ({
-        url: `/${management_api}/locations/${id}/`,
-        method: 'PATCH',
-        body: data,
-				service:service,
-      }),
-    }),
-    deleteStockItemLocation: builder.mutation({
-      query: (id) => ({
-        url: `/${management_api}/locations/${id}/`,
-        method: 'DELETE',
-				service:service,
-      }),
-    }),
-    getStockItemLocation: builder.query({
-      query: (id) => ({
-        url:`/${management_api}/locations/${id}/`,
-				service:service,
-      
-      }),
-    }),
-    getStockItemDataForInventory: builder.query({
-      query: (id) => ({
-        url:`/${management_api}/stock-items/get_inventory_items/?inventory_id=${id}`,
-				service:service,
-      
-      }),
-    }),
-  
-    getStockItemDataLocation: builder.query<StockLocation[], void>({
-      query: () => ({
-        url: `/${management_api}/locations/`,
-        method: 'GET',
-				service:service,
 
+    listStockLocations: builder.query<StockLocation[], StockLocationListParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${stockApi}/locations/`, params),
+        service,
+      }),
+      transformResponse: (response: StockLocation[] | { results?: StockLocation[] }) =>
+        unwrapListResponse<StockLocation>(response),
+    }),
+
+    createStockLocation: builder.mutation<StockLocation, Partial<StockLocation>>({
+      query: (data) => ({
+        url: `/${stockApi}/locations/`,
+        method: "POST",
+        body: data,
+        service,
       }),
     }),
-    getFilteredStockItemDataLocation: builder.query({
-        query: (reference) => ({
-            url: `/${management_api}/locations/?reference=${reference}`,
-            method: 'GET',
-				service:service,
-        }),
-    }),
-      getStockLocationTypes: builder.query<StockLocationType[], string>({
-        query: () => ({
-          url: `/${management_api}/location-types/`,
-				service:service,
-        }),
-        
+
+    getStockLocation: builder.query<StockLocation, EntityId>({
+      query: (id) => ({
+        url: `/${stockApi}/locations/${id}/`,
+        service,
       }),
+    }),
+
+    updateStockLocation: builder.mutation<StockLocation, { id: EntityId; data: Partial<StockLocation> }>({
+      query: ({ id, data }) => ({
+        url: `/${stockApi}/locations/${id}/`,
+        method: "PATCH",
+        body: data,
+        service,
+      }),
+    }),
+
+    deleteStockLocation: builder.mutation<void, EntityId>({
+      query: (id) => ({
+        url: `/${stockApi}/locations/${id}/`,
+        method: "DELETE",
+        service,
+      }),
+    }),
+
+    getLocationInventoryItems: builder.query<InventoryItem[], { id: EntityId; status?: string } | EntityId>({
+      query: (arg) => {
+        const payload = typeof arg === "object" ? arg : { id: arg };
+        return {
+          url: buildQuery(`/${stockApi}/locations/${payload.id}/inventory_items/`, { status: payload.status }),
+          service,
+        };
+      },
+      transformResponse: (response: InventoryItem[] | { results?: InventoryItem[] }) =>
+        unwrapListResponse<InventoryItem>(response),
+    }),
+
+    transferLocationStock: builder.mutation<StockTransferResponse, { id: EntityId; data: StockTransferPayload }>({
+      query: ({ id, data }) => ({
+        url: `/${stockApi}/locations/${id}/transfer_stock/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+
+    listInventoryItems: builder.query<InventoryItem[], InventoryItemListParams | string | void>({
+      query: (params) => ({
+        url:
+          typeof params === "string"
+            ? buildQuery(`/${stockApi}/inventory-items/`, { purchase_order: params })
+            : buildQuery(`/${stockApi}/inventory-items/`, params),
+        service,
+      }),
+      transformResponse: (response: InventoryItem[] | { results?: InventoryItem[] }) =>
+        unwrapListResponse<InventoryItem>(response),
+    }),
+
+    createInventoryItem: builder.mutation<InventoryItem, Partial<InventoryItem>>({
+      query: (stockData) => ({
+        url: `/${stockApi}/inventory-items/`,
+        method: "POST",
+        body: stockData,
+        service,
+      }),
+    }),
+
+    getInventoryItem: builder.query<InventoryItem, EntityId>({
+      query: (id) => ({
+        url: `/${stockApi}/inventory-items/${id}/`,
+        service,
+      }),
+    }),
+
+    updateInventoryItem: builder.mutation<InventoryItem, { id: EntityId; data: Partial<InventoryItem> }>({
+      query: ({ id, data }) => ({
+        url: `/${stockApi}/inventory-items/${id}/`,
+        method: "PATCH",
+        body: data,
+        service,
+      }),
+    }),
+
+    deleteInventoryItem: builder.mutation<void, EntityId>({
+      query: (id) => ({
+        url: `/${stockApi}/inventory-items/${id}/`,
+        method: "DELETE",
+        service,
+      }),
+    }),
+
+    getExpiringInventoryItems: builder.query<InventoryItem[], ({ days?: number } & StructuralScopeParams) | void>({
+      query: (params) => ({
+        url: buildQuery(`/${stockApi}/inventory-items/expiring_soon/`, params),
+        service,
+      }),
+      transformResponse: (response: InventoryItem[] | { results?: InventoryItem[] }) =>
+        unwrapListResponse<InventoryItem>(response),
+    }),
+
+    updateInventoryItemStatus: builder.mutation<StockStatusUpdateResponse, { id: EntityId; data: StockStatusUpdatePayload }>({
+      query: ({ id, data }) => ({
+        url: `/${stockApi}/inventory-items/${id}/update_status/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+
+    createInventoryItemForVariant: builder.mutation<InventoryItem, CreateInventoryVariantPayload>({
+      query: (data) => ({
+        url: `/${stockApi}/inventory-items/create_for_variants/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+
+    getInventoryStockItems: builder.query<InventoryItem[], InventoryItemListParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${stockApi}/inventory-items/`, params),
+        service,
+      }),
+      transformResponse: (response: InventoryItem[] | { results?: InventoryItem[] }) =>
+        unwrapListResponse<InventoryItem>(response),
+    }),
+
+    getInventoryItemTrackingHistory: builder.query<StockTrackingEntry[], EntityId>({
+      query: (id) => ({
+        url: `/${stockApi}/inventory-items/${id}/tracking_history/`,
+        service,
+      }),
+    }),
+
+    getStockAnalytics: builder.query<StockAnalyticsResponse, StructuralScopeParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${stockApi}/inventory-items/analytics/`, params),
+        service,
+      }),
+    }),
+
+    getLowStockItems: builder.query<LowStockItem[], StructuralScopeParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${stockApi}/inventory-items/low_stock/`, params),
+        service,
+      }),
+      transformResponse: (response: LowStockItem[] | { results?: LowStockItem[] }) =>
+        unwrapListResponse<LowStockItem>(response),
+    }),
+
+    listStockBalances: builder.query<StockBalanceRow[], StockBalanceListParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${stockApi}/balances/`, params),
+        service,
+      }),
+      transformResponse: (response: StockBalanceRow[] | { results?: StockBalanceRow[] }) =>
+        unwrapListResponse<StockBalanceRow>(response),
+    }),
+
+    listStockLots: builder.query<StockLot[], StockLotListParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${stockApi}/lots/`, params),
+        service,
+      }),
+      transformResponse: (response: StockLot[] | { results?: StockLot[] }) =>
+        unwrapListResponse<StockLot>(response),
+    }),
+
+    listStockSerials: builder.query<StockSerial[], StockSerialListParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${stockApi}/serials/`, params),
+        service,
+      }),
+      transformResponse: (response: StockSerial[] | { results?: StockSerial[] }) =>
+        unwrapListResponse<StockSerial>(response),
+    }),
+
+    listStockMovements: builder.query<StockMovement[], StockMovementListParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${stockApi}/movements/`, params),
+        service,
+      }),
+      transformResponse: (response: StockMovement[] | { results?: StockMovement[] }) =>
+        unwrapListResponse<StockMovement>(response),
+    }),
+
+    listReservations: builder.query<StockReservation[], StockReservationListParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${stockApi}/reservations/`, params),
+        service,
+      }),
+      transformResponse: (response: StockReservation[] | { results?: StockReservation[] }) =>
+        unwrapListResponse<StockReservation>(response),
+    }),
+
+    createReservation: builder.mutation<StockReservation, StockReservationPayload>({
+      query: (data) => ({
+        url: `/${stockApi}/reservations/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+
+    getReservation: builder.query<StockReservation, EntityId>({
+      query: (id) => ({
+        url: `/${stockApi}/reservations/${id}/`,
+        service,
+      }),
+    }),
+
+    releaseReservation: builder.mutation<StockReservation, { id: EntityId; data: StockReservationMutationPayload }>({
+      query: ({ id, data }) => ({
+        url: `/${stockApi}/reservations/${id}/release/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+
+    fulfillReservation: builder.mutation<StockReservation, { id: EntityId; data: StockReservationMutationPayload }>({
+      query: ({ id, data }) => ({
+        url: `/${stockApi}/reservations/${id}/fulfill/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+
+    getFilteredStockItemDataLocation: builder.query<StockLocation[], string>({
+      query: (reference) => ({
+        url: buildQuery(`/${stockApi}/locations/`, { search: reference }),
+        service,
+      }),
+      transformResponse: (response: StockLocation[] | { results?: StockLocation[] }) =>
+        unwrapListResponse<StockLocation>(response),
+    }),
   }),
-  
 });
 
-export const { 
-  useCreateStockItemMutation,
-  useUpdateStockItemMutation,
-  useDeleteStockItemMutation,
-  useGetStockItemQuery,
-  useGetStockItemDataQuery,
+export const {
+  useListStockLocationTypesQuery,
+  useListStockLocationsQuery,
+  useCreateStockLocationMutation,
+  useGetStockLocationQuery,
+  useUpdateStockLocationMutation,
+  useDeleteStockLocationMutation,
+  useGetLocationInventoryItemsQuery,
+  useTransferLocationStockMutation,
+  useListInventoryItemsQuery,
+  useCreateInventoryItemMutation,
+  useGetInventoryItemQuery,
+  useUpdateInventoryItemMutation,
+  useDeleteInventoryItemMutation,
+  useGetExpiringInventoryItemsQuery,
+  useUpdateInventoryItemStatusMutation,
+  useCreateInventoryItemForVariantMutation,
+  useGetInventoryStockItemsQuery,
+  useGetInventoryItemTrackingHistoryQuery,
+  useGetStockAnalyticsQuery,
+  useGetLowStockItemsQuery,
+  useListStockBalancesQuery,
+  useListStockLotsQuery,
+  useListStockSerialsQuery,
+  useListStockMovementsQuery,
+  useListReservationsQuery,
+  useCreateReservationMutation,
+  useGetReservationQuery,
+  useReleaseReservationMutation,
+  useFulfillReservationMutation,
+  useGetFilteredStockItemDataLocationQuery,
+} = stockApiSlice;
 
-  useCreateStockItemLocationMutation,
-  useUpdateStockItemLocationMutation,
-  useDeleteStockItemLocationMutation,
-  useGetStockItemLocationQuery,
-  useGetStockItemDataLocationQuery,
-    useGetFilteredStockItemDataLocationQuery,
-  useGetStockItemDataForInventoryQuery,
-    useGetStockLocationTypesQuery,
-} = stockApiSlice ;
+export const useGetStockItemDataQuery = useListInventoryItemsQuery;
+export const useCreateStockItemLocationMutation = useCreateStockLocationMutation;
+export const useUpdateStockItemLocationMutation = useUpdateStockLocationMutation;
+export const useDeleteStockItemLocationMutation = useDeleteStockLocationMutation;
+export const useGetStockItemDataLocationQuery = useListStockLocationsQuery;
+export const useGetStockItemDataForInventoryQuery = useGetInventoryStockItemsQuery;
+export const useGetStockLocationTypesQuery = useListStockLocationTypesQuery;
+export const useGetLocationStockItemsQuery = useGetLocationInventoryItemsQuery;
+export const useListStockItemsQuery = useListInventoryItemsQuery;
+export const useCreateStockItemMutation = useCreateInventoryItemMutation;
+export const useGetStockItemQuery = useGetInventoryItemQuery;
+export const useUpdateStockItemMutation = useUpdateInventoryItemMutation;
+export const useDeleteStockItemMutation = useDeleteInventoryItemMutation;
+export const useGetExpiringStockItemsQuery = useGetExpiringInventoryItemsQuery;
+export const useUpdateStockItemStatusMutation = useUpdateInventoryItemStatusMutation;
+export const useCreateStockItemForVariantMutation = useCreateInventoryItemForVariantMutation;
+export const useGetStockItemTrackingHistoryQuery = useGetInventoryItemTrackingHistoryQuery;

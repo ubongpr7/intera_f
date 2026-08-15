@@ -1,103 +1,280 @@
 
 "use client"
-import React, { useState } from 'react';
-import { DataTable, Column, ActionButton } from '@/components/common/DataTable/DataTable';
-import { useGetTerminalsQuery, useCreateTerminalMutation, useUpdateTerminalMutation, useDeleteTerminalMutation } from '@/redux/features/pos/posAPISlice';
-import CustomCreateCard from '@/components/common/createCard';
-import { toast } from 'react-toastify';
-import { extractErrorMessage } from '@/lib/utils';
 
-interface POSTerminal {
-  id: string;
-  name: string;
-  terminal_id: string;
-  location: string;
-  is_active: boolean;
+import { useMemo, useState } from "react"
+import { type Column } from "@/components/common/DataTable/DataTable"
+import POSResourceManager from "@/components/pos/POSResourceManager"
+import { getPosDeviceLabel } from "@/lib/deviceIdentity"
+import { extractErrorMessage } from "@/lib/utils"
+import { confirmAction } from "@/components/common/confirmAction"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  useAssignCurrentDeviceTerminalMutation,
+  useCreateTerminalMutation,
+  useDetachCurrentDeviceTerminalMutation,
+  useDetachTerminalBindingMutation,
+  useGetCurrentTerminalBindingQuery,
+  useDeleteTerminalMutation,
+  useGetConfigurationsQuery,
+  useGetTerminalsQuery,
+  useUpdateTerminalMutation,
+} from "@/redux/features/pos/posAPISlice"
+import type { POSTerminal } from "@/redux/features/pos/posTypes"
+import { useListStockLocationsQuery } from "@/redux/features/stock/stockAPISlice"
+import type { StockLocation } from "@/redux/features/stock/stockTypes"
+import { toast } from "react-toastify"
+import { useSubscriptionQuota } from "@/hooks/useSubscriptionQuota"
+
+const columns: Column<POSTerminal>[] = [
+  { header: "Name", accessor: "name" },
+  { header: "Terminal key", accessor: "sync_identifier" },
+  { header: "Location", accessor: "location" },
+  { header: "Status", accessor: "is_active", render: (value) => (value ? "Active" : "Inactive") },
+  {
+    header: "Browser assignment",
+    accessor: "assigned_device_identifier",
+    render: (_value, row) =>
+      row.assigned_device_identifier
+        ? row.is_bound_to_current_device
+          ? "Assigned to this browser"
+          : "Assigned elsewhere"
+        : "Unassigned",
+  },
+]
+
+const formatStructuralLocationLabel = (location: StockLocation) =>
+  [location.parent_name, location.name].filter((value) => value && String(value).trim().length > 0).join(" / ") || location.name
+
+const normalizeTerminalLocationPayload = (
+  input: Partial<POSTerminal>,
+  structuralLocations: StockLocation[],
+): Partial<POSTerminal> => {
+  const selectedLocationLabel = typeof input.location === "string" ? input.location.trim() : ""
+  if (!selectedLocationLabel) {
+    throw new Error("Choose a structural location for this terminal.")
+  }
+
+  const structuralLocation = structuralLocations.find(
+    (location) => formatStructuralLocationLabel(location) === selectedLocationLabel,
+  )
+  if (!structuralLocation) {
+    throw new Error("Choose a valid structural location for this terminal.")
+  }
+
+  const structuralLocationId = String(structuralLocation.id)
+  return {
+    ...input,
+    location: selectedLocationLabel,
+    location_sync_identifier: structuralLocationId,
+    structural_location_sync_identifier: structuralLocationId,
+  }
 }
 
-const Terminals = () => {
-  const [isCreateCardOpen, setCreateCardOpen] = useState(false);
-  const [editingTerminal, setEditingTerminal] = useState<POSTerminal | null>(null);
+export default function Terminals() {
+  const { data: terminals = [], isLoading, refetch } = useGetTerminalsQuery()
+  const { data: configurations = [] } = useGetConfigurationsQuery()
+  const { data: structuralLocations = [] } = useListStockLocationsQuery({ structural: true, ordering: "name" })
+  const { data: currentBinding, refetch: refetchBinding } = useGetCurrentTerminalBindingQuery()
+  const [createTerminal] = useCreateTerminalMutation()
+  const [updateTerminal] = useUpdateTerminalMutation()
+  const [deleteTerminal] = useDeleteTerminalMutation()
+  const [assignCurrentDeviceTerminal, { isLoading: isAssigningTerminal }] = useAssignCurrentDeviceTerminalMutation()
+  const [detachCurrentDeviceTerminal, { isLoading: isDetachingTerminal }] = useDetachCurrentDeviceTerminalMutation()
+  const [detachTerminalBinding, { isLoading: isForceDetachingTerminal }] = useDetachTerminalBindingMutation()
+  const [selectedTerminalId, setSelectedTerminalId] = useState("")
+  const terminalQuota = useSubscriptionQuota("pos-terminals", terminals.length)
 
-  const { data: terminals, isLoading, refetch } = useGetTerminalsQuery("");
-  const [createTerminal, { isLoading: isCreating }] = useCreateTerminalMutation();
-  const [updateTerminal, { isLoading: isUpdating }] = useUpdateTerminalMutation();
-  const [deleteTerminal, { isLoading: isDeleting }] = useDeleteTerminalMutation();
+  const availableAssignmentTargets = useMemo(
+    () =>
+      terminals.filter(
+        (terminal) =>
+          terminal.is_active && (!terminal.assigned_device_identifier || terminal.is_bound_to_current_device),
+      ),
+    [terminals],
+  )
 
-  const handleCreate = async (data: Partial<POSTerminal>) => {
-    try {
-      await createTerminal(data).unwrap();
-      toast.success("Terminal created successfully");
-      setCreateCardOpen(false);
-      refetch();
-    } catch (error) {
-      toast.error(extractErrorMessage(error));
-    }
-  };
-
-  const handleUpdate = async (data: Partial<POSTerminal>) => {
-    if (!editingTerminal) return;
-    try {
-      await updateTerminal({ id: editingTerminal.id, ...data }).unwrap();
-      toast.success("Terminal updated successfully");
-      setEditingTerminal(null);
-      setCreateCardOpen(false);
-      refetch();
-    } catch (error) {
-      toast.error(extractErrorMessage(error));
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this terminal?")) {
-      try {
-        await deleteTerminal(id).unwrap();
-        toast.success("Terminal deleted successfully");
-        refetch();
-      } catch (error) {
-        toast.error(extractErrorMessage(error));
+  const terminalLocationOptions = useMemo(() => {
+    const seen = new Set<string>()
+    return structuralLocations.flatMap((location) => {
+      const label = formatStructuralLocationLabel(location)
+      if (!label || seen.has(label)) {
+        return []
       }
+      seen.add(label)
+      return [{ value: label, text: label }]
+    })
+  }, [structuralLocations])
+
+  const bindingTerminalName = useMemo(() => {
+    if (!currentBinding?.terminal) {
+      return ""
     }
-  };
+    const bound = terminals.find(
+      (terminal) => terminal.sync_identifier === currentBinding.terminal || terminal.id === currentBinding.terminal,
+    )
+    return bound?.name || currentBinding.terminal_name || "Assigned terminal"
+  }, [currentBinding, terminals])
 
-  const columns: Column<POSTerminal>[] = [
-    { header: 'Name', accessor: 'name' },
-    { header: 'Terminal ID', accessor: 'terminal_id' },
-    { header: 'Location', accessor: 'location' },
-    { header: 'Active', accessor: 'is_active', render: (value) => (value ? 'Yes' : 'No') },
-  ];
+  const handleAssignCurrentBrowser = async () => {
+    if (!selectedTerminalId) {
+      toast.error("Choose a terminal before assigning this browser.")
+      return
+    }
 
-  const actionButtons: ActionButton<POSTerminal>[] = [
-    { label: 'Edit', onClick: (row) => { setEditingTerminal(row); setCreateCardOpen(true); } },
-    { label: 'Delete', onClick: (row) => handleDelete(row.id), variant: 'danger' },
-  ];
+    try {
+      await assignCurrentDeviceTerminal({
+        terminal_id: selectedTerminalId,
+        device_label: getPosDeviceLabel(),
+      }).unwrap()
+      await Promise.all([refetch(), refetchBinding()])
+      toast.success("This browser is now assigned to the selected terminal.")
+    } catch (error) {
+      toast.error(extractErrorMessage(error, ["terminal_id"]))
+    }
+  }
+
+  const handleDetachCurrentBrowser = async () => {
+    const confirmed = await confirmAction({
+      title: "Detach this browser?",
+      description: "Cashiers on this machine will no longer be able to use POS until an admin reassigns it.",
+      confirmText: "Detach browser",
+      destructive: true,
+    })
+    if (!confirmed) return
+
+    try {
+      await detachCurrentDeviceTerminal().unwrap()
+      await Promise.all([refetch(), refetchBinding()])
+      setSelectedTerminalId("")
+      toast.success("This browser has been detached from its terminal.")
+    } catch (error) {
+      toast.error(extractErrorMessage(error, ["terminal_id"]))
+    }
+  }
+
+  const handleForceDetachTerminal = async (terminal: POSTerminal) => {
+    const assignedLabel = terminal.assigned_device_label?.trim() || terminal.assigned_device_identifier || "the assigned device"
+    const confirmed = await confirmAction({
+      title: "Force-detach terminal?",
+      description: `Force-detach ${terminal.name} from ${assignedLabel}? Use this only when the original device is lost or unavailable.`,
+      confirmText: "Force detach",
+      destructive: true,
+    })
+    if (!confirmed) return
+
+    try {
+      await detachTerminalBinding(terminal.id).unwrap()
+      await Promise.all([refetch(), refetchBinding()])
+      if (currentBinding?.terminal === terminal.sync_identifier || currentBinding?.terminal === terminal.id) {
+        setSelectedTerminalId("")
+      }
+      toast.success(`${terminal.name} has been detached from its assigned device.`)
+    } catch (error) {
+      toast.error(extractErrorMessage(error, ["terminal_id"]))
+    }
+  }
 
   return (
-    <div>
-      <div className="flex justify-end mb-4">
-        <button onClick={() => { setEditingTerminal(null); setCreateCardOpen(true); }} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-          Create Terminal
-        </button>
-      </div>
-      <DataTable
-        columns={columns}
-        data={terminals || []}
-        isLoading={isLoading}
-        actionButtons={actionButtons}
-        showActionsColumn
-      />
-      {isCreateCardOpen && (
-        <CustomCreateCard<POSTerminal>
-          defaultValues={editingTerminal || {}}
-          onClose={() => setCreateCardOpen(false)}
-          onSubmit={editingTerminal ? handleUpdate : handleCreate}
-          isLoading={isCreating || isUpdating}
-          interfaceKeys={['name', 'terminal_id', 'location', 'is_active']}
-          itemTitle={editingTerminal ? "Update Terminal" : "Create Terminal"}
-        />
-      )}
-    </div>
-  );
-};
+    <div className="space-y-5">
+      <Card className="border-gray-200 shadow-sm">
+        <CardHeader className="border-b border-gray-100 p-5 text-left text-inherit">
+          <CardTitle className="text-lg">This browser&apos;s POS terminal</CardTitle>
+          <CardDescription className="mt-2 text-sm leading-6 text-gray-600">
+            Assign this browser or machine to exactly one terminal. Cashiers using this browser will inherit that
+            terminal automatically, and only an administrator can detach it later.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 p-5">
+          {currentBinding ? (
+            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+              <div className="text-sm font-semibold text-blue-900">Assigned terminal</div>
+              <div className="mt-2 text-lg font-semibold text-gray-900">{bindingTerminalName}</div>
+              <div className="mt-2 text-xs text-blue-900">
+                This browser is locked to that terminal until an administrator detaches it.
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              This browser is not assigned to any selling terminal yet. Cashiers on this machine cannot use POS until
+              an administrator assigns one here.
+            </div>
+          )}
 
-export default Terminals;
+          {!currentBinding ? (
+            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+              <div className="space-y-2">
+                <Label>Assign this browser to terminal</Label>
+                <Select value={selectedTerminalId} onValueChange={setSelectedTerminalId}>
+                  <SelectTrigger className="bg-white">
+                    <SelectValue placeholder="Choose an available terminal" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableAssignmentTargets.map((terminal) => (
+                      <SelectItem key={terminal.id} value={terminal.sync_identifier || terminal.id}>
+                        {terminal.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={() => void handleAssignCurrentBrowser()} disabled={!selectedTerminalId || isAssigningTerminal}>
+                {isAssigningTerminal ? "Assigning..." : "Assign browser"}
+              </Button>
+            </div>
+          ) : (
+            <Button variant="outline" onClick={() => void handleDetachCurrentBrowser()} disabled={isDetachingTerminal}>
+              {isDetachingTerminal ? "Detaching..." : "Detach this browser"}
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      <POSResourceManager<POSTerminal>
+        title="Selling terminals"
+        description="Create the physical checkout endpoints that cashiers will open sessions against. Every terminal must be tied to one structural stock location."
+        data={terminals}
+        isLoading={isLoading}
+        columns={columns}
+        createLabel="New terminal"
+        itemTitle="Terminal"
+        interfaceKeys={["name", "location", "is_active", "configuration"]}
+        selectOptions={{
+          configuration: configurations.map((configuration) => ({
+            value: configuration.sync_identifier || configuration.id,
+            text: configuration.name,
+          })),
+          location: terminalLocationOptions,
+        }}
+        onCreate={async (data) => {
+          if (!terminalQuota.canCreate) {
+            toast.error(terminalQuota.message)
+            return
+          }
+          await createTerminal(normalizeTerminalLocationPayload(data, structuralLocations)).unwrap()
+          await refetch()
+        }}
+        onUpdate={async (id, data) => {
+          await updateTerminal({ id, data: normalizeTerminalLocationPayload(data, structuralLocations) }).unwrap()
+          await refetch()
+        }}
+        onDelete={async (id) => {
+          await deleteTerminal(id).unwrap()
+          await refetch()
+        }}
+        actionButtons={[
+          {
+            label: "Force detach",
+            variant: "warning",
+            hidden: (row) => !row.assigned_device_identifier,
+            disabled: (row) => isForceDetachingTerminal || !row.assigned_device_identifier,
+            onClick: (row) => void handleForceDetachTerminal(row),
+          },
+        ]}
+        emptyState="Create at least one active terminal so staff can open POS sessions."
+      />
+    </div>
+  )
+}

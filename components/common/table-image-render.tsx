@@ -15,6 +15,7 @@ export function TableImageHover({ src, alt, productName, className = "" }: Table
   return (
     <div className="relative inline-block">
       {/* Original small image */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src || "/placeholder.png"}
         alt={alt}
@@ -27,6 +28,7 @@ export function TableImageHover({ src, alt, productName, className = "" }: Table
       {isHovered && (
         <div className="fixed inset-0 pointer-events-none z-[9999] flex items-center justify-center">
           <div className="bg-white border-2 border-gray-300 rounded-lg shadow-2xl p-4 animate-in fade-in zoom-in duration-200">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={src || "/placeholder.png"}
               alt={alt}

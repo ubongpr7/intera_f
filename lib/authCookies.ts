@@ -2,9 +2,15 @@ export type AuthCookieKey =
   | "accessToken"
   | "refreshToken"
   | "userID"
+  | "userFirstName"
+  | "userLastName"
+  | "userEmail"
+  | "userPicture"
   | "profileId"
   | "profile"
   | "companyCode"
+  | "companyName"
+  | "companyLogo"
   | "currency"
   | "model_name"
   | "provider"
@@ -13,7 +19,9 @@ export type AuthCookieKey =
   | "tavily_api_key"
   | "mfaVerified"
   | "mfaSetupRequired"
-  | "mfaNextPath";
+  | "mfaNextPath"
+  | "isStaff"
+  | "isSuperuser";
 
 const rawPrefix = (process.env.NEXT_PUBLIC_AUTH_COOKIE_PREFIX || "interaims").trim();
 const normalizedPrefix = rawPrefix.endsWith("_") ? rawPrefix : `${rawPrefix}_`;
@@ -25,9 +33,15 @@ export const AUTH_COOKIE_NAMES: Record<AuthCookieKey, string> = {
   accessToken: withPrefix("accessToken"),
   refreshToken: withPrefix("refreshToken"),
   userID: withPrefix("userID"),
+  userFirstName: withPrefix("userFirstName"),
+  userLastName: withPrefix("userLastName"),
+  userEmail: withPrefix("userEmail"),
+  userPicture: withPrefix("userPicture"),
   profileId: withPrefix("profileId"),
   profile: withPrefix("profile"),
   companyCode: withPrefix("companyCode"),
+  companyName: withPrefix("companyName"),
+  companyLogo: withPrefix("companyLogo"),
   currency: withPrefix("currency"),
   model_name: withPrefix("model_name"),
   provider: withPrefix("provider"),
@@ -37,15 +51,23 @@ export const AUTH_COOKIE_NAMES: Record<AuthCookieKey, string> = {
   mfaVerified: withPrefix("mfaVerified"),
   mfaSetupRequired: withPrefix("mfaSetupRequired"),
   mfaNextPath: withPrefix("mfaNextPath"),
+  isStaff: withPrefix("isStaff"),
+  isSuperuser: withPrefix("isSuperuser"),
 };
 
 const LEGACY_COOKIE_NAMES: Record<AuthCookieKey, string> = {
   accessToken: "accessToken",
   refreshToken: "refreshToken",
   userID: "userID",
+  userFirstName: "userFirstName",
+  userLastName: "userLastName",
+  userEmail: "userEmail",
+  userPicture: "userPicture",
   profileId: "profileId",
   profile: "profile",
   companyCode: "companyCode",
+  companyName: "companyName",
+  companyLogo: "companyLogo",
   currency: "currency",
   model_name: "model_name",
   provider: "provider",
@@ -55,6 +77,8 @@ const LEGACY_COOKIE_NAMES: Record<AuthCookieKey, string> = {
   mfaVerified: "mfaVerified",
   mfaSetupRequired: "mfaSetupRequired",
   mfaNextPath: "mfaNextPath",
+  isStaff: "isStaff",
+  isSuperuser: "isSuperuser",
 };
 
 export const AUTH_COOKIE_KEYS: AuthCookieKey[] = Object.keys(AUTH_COOKIE_NAMES) as AuthCookieKey[];

@@ -11,11 +11,13 @@ export  type RegisterFormInputs = {
     email: string;
     password: string;
     re_password: string;
+    terms_accepted: boolean;
+    privacy_accepted: boolean;
   };
 
 // verify
 export interface VerificationProps {
-  userId: string;
+  email: string;
   redirectTo:string
 }
 

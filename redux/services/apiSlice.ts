@@ -3,17 +3,79 @@ import type { BaseQueryFn, FetchArgs as OriginalFetchArgs, FetchBaseQueryError }
 import { setAuth, logout } from "../features/authSlice"
 import { Mutex } from "async-mutex"
 import { setCookie, getCookie, deleteCookie } from "cookies-next"
-import { jwtDecode, type JwtPayload as JWTPayload } from "jwt-decode"
+import { jwtDecode } from "jwt-decode"
 import { AUTH_COOKIE_NAMES, AUTH_COOKIE_KEYS, readCookieValue } from "@/lib/authCookies"
-const BACKEND_HOST_URL = process.env.NEXT_PUBLIC_BACKEND_HOST_URL ?? ''
-const COMMON_BACKEND_URL = process.env.NEXT_PUBLIC_COMMON_BACKEND_URL ?? ''
-const INVENNTORY_BACKEND_URL = process.env.NEXT_PUBLIC_INVENNTORY_BACKEND_URL ?? ''
-const PRODUCT_BACKEND_URL = process.env.NEXT_PUBLIC_PRODUCT_BACKEND_URL ?? ''
-const POS_BACKEND_URL = process.env.NEXT_PUBLIC_POS_BACKEND_URL ?? ''
-const AGENT_BACKEND_URL = process.env.NEXT_PUBLIC_AGENT_BACKEND_URL ?? ''
-const PAYMENT_BACKEND_URL = process.env.NEXT_PUBLIC_PAYMENT_BACKEND_URL ?? ''
+import { getOrCreatePosDeviceId } from "@/lib/deviceIdentity"
 
-export type serviceType = "users" | "inventory"| "common"|"product"|'pos'| "agent"|'payment'
+const toBooleanClaim = (value: unknown): boolean | undefined => {
+  if (typeof value === "boolean") {
+    return value
+  }
+
+  if (typeof value === "number") {
+    if (value === 1) {
+      return true
+    }
+    if (value === 0) {
+      return false
+    }
+    return undefined
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase()
+    if (["true", "1", "yes", "on"].includes(normalized)) {
+      return true
+    }
+    if (["false", "0", "no", "off"].includes(normalized)) {
+      return false
+    }
+  }
+
+  return undefined
+}
+
+const resolveBaseUrl = (publicUrl: string, internalUrl?: string) =>
+  typeof window === "undefined" ? (internalUrl ?? publicUrl) : publicUrl
+
+const BACKEND_HOST_URL = resolveBaseUrl(
+  process.env.NEXT_PUBLIC_BACKEND_HOST_URL ?? "",
+  process.env.USERS_INTERNAL_URL,
+)
+const COMMON_BACKEND_URL = resolveBaseUrl(
+  process.env.NEXT_PUBLIC_COMMON_BACKEND_URL ?? "",
+  process.env.COMMON_INTERNAL_URL,
+)
+const INVENNTORY_BACKEND_URL = resolveBaseUrl(
+  process.env.NEXT_PUBLIC_INVENNTORY_BACKEND_URL ?? "",
+  process.env.INVENTORY_INTERNAL_URL,
+)
+const PRODUCT_BACKEND_URL = resolveBaseUrl(
+  process.env.NEXT_PUBLIC_PRODUCT_BACKEND_URL ?? "",
+  process.env.PRODUCT_INTERNAL_URL,
+)
+const POS_BACKEND_URL = resolveBaseUrl(
+  process.env.NEXT_PUBLIC_POS_BACKEND_URL ?? "",
+  process.env.POS_INTERNAL_URL,
+)
+const AGENT_BACKEND_URL = resolveBaseUrl(
+  process.env.NEXT_PUBLIC_AGENT_BACKEND_URL ?? "",
+  process.env.AGENT_INTERNAL_URL,
+)
+const PAYMENT_BACKEND_URL = resolveBaseUrl(
+  process.env.NEXT_PUBLIC_PAYMENT_BACKEND_URL ?? "",
+  process.env.PAYMENT_INTERNAL_URL,
+)
+const AUDIT_BACKEND_URL = resolveBaseUrl(
+  process.env.NEXT_PUBLIC_AUDIT_BACKEND_URL ?? "http://localhost:8091",
+  process.env.AUDIT_INTERNAL_URL ?? "http://localhost:8091",
+)
+const NOTIFICATION_BACKEND_URL = resolveBaseUrl(
+  process.env.NEXT_PUBLIC_NOTIFICATION_BACKEND_URL ?? "http://localhost:8092",
+  process.env.NOTIFICATION_INTERNAL_URL ?? "http://localhost:8092",
+)
+
+export type serviceType = "users" | "inventory"| "common"|"product"|'pos'| "agent"|'payment' | "audit" | "notification"
 const accessAge = 60*60*24
 const refreshAge = 60*60*24
 export const serviceMap: Record<serviceType, string> = {
@@ -24,6 +86,8 @@ export const serviceMap: Record<serviceType, string> = {
   pos: POS_BACKEND_URL,
   agent: AGENT_BACKEND_URL,
   payment: PAYMENT_BACKEND_URL,
+  audit: AUDIT_BACKEND_URL,
+  notification: NOTIFICATION_BACKEND_URL,
 }
 
 const mutex = new Mutex()
@@ -38,6 +102,8 @@ interface FetchArgs extends OriginalFetchArgs {
 interface ProfileContext {
   id?: string | number | null
   company_code?: string | null
+  name?: string | null
+  logo?: string | null
   currency?: string | null
 }
 
@@ -45,35 +111,27 @@ interface AuthResponsePayload {
   access?: string
   refresh?: string
   id?: string | number
+  username?: string
+  is_staff?: boolean
+  is_superuser?: boolean
   profile?: string | number | null
   profile_context?: ProfileContext | null
   currency?: string | null
   model_name?: string | null
   provider?: string | null
   agent_name?: string | null
+  email?: string | null
+  first_name?: string | null
+  last_name?: string | null
+  picture?: string | null
 }
 
-type AccessTokenPayload = JWTPayload & {
-  has_onboarded?: boolean
-  user_id?: number
-  email?: string
-  permissions?: string[]
-  plan_name?: string
-  ai_simulations_left?: number
-  role?: string
+interface AuthTokenClaims {
+  mfa_verified?: boolean
   mfa_enabled?: boolean
+  has_setup_mfa?: boolean
   is_staff?: boolean
   is_superuser?: boolean
-  has_setup_mfa?: boolean
-}
-
-const decodeAccessToken = (token: string): AccessTokenPayload | null => {
-  try {
-    return jwtDecode<AccessTokenPayload>(token)
-  } catch (error) {
-    console.error("Failed to decode access token", error)
-    return null
-  }
 }
 
 const AUTH_RESPONSE_URLS = new Set(["/auth/login/", "/auth/refresh/", "/auth/switch-company/", "/accounts/mfa/verify/"])
@@ -98,16 +156,78 @@ const deleteAuthCookie = (key: keyof typeof AUTH_COOKIE_NAMES) => {
   }
 }
 
-const persistAuthSession = (response: AuthResponsePayload) => {
+type UserIdentityPayload = {
+  first_name?: string | null
+  last_name?: string | null
+  email?: string | null
+  picture?: string | null
+}
+
+export const persistWorkspaceBranding = (profileContext?: ProfileContext | null) => {
+  const companyName = profileContext?.name ?? null
+  const companyLogo = profileContext?.logo ?? null
+  if (companyName) {
+    setAuthCookie("companyName", companyName, refreshAge)
+  } else {
+    deleteAuthCookie("companyName")
+  }
+  if (companyLogo) {
+    setAuthCookie("companyLogo", companyLogo, refreshAge)
+  } else {
+    deleteAuthCookie("companyLogo")
+  }
+}
+
+export const persistUserIdentity = (user?: UserIdentityPayload | null) => {
+  const hasField = (field: keyof UserIdentityPayload) =>
+    Boolean(user) && Object.prototype.hasOwnProperty.call(user, field)
+
+  if (hasField("first_name")) {
+    if (user?.first_name) {
+      setAuthCookie("userFirstName", user.first_name, refreshAge)
+    } else {
+      deleteAuthCookie("userFirstName")
+    }
+  }
+  if (hasField("last_name")) {
+    if (user?.last_name) {
+      setAuthCookie("userLastName", user.last_name, refreshAge)
+    } else {
+      deleteAuthCookie("userLastName")
+    }
+  }
+  if (hasField("email")) {
+    if (user?.email) {
+      setAuthCookie("userEmail", user.email, refreshAge)
+    } else {
+      deleteAuthCookie("userEmail")
+    }
+  }
+  if (hasField("picture")) {
+    if (user?.picture) {
+      setAuthCookie("userPicture", user.picture, refreshAge)
+    } else {
+      deleteAuthCookie("userPicture")
+    }
+  }
+}
+
+export const persistAuthSession = (response: AuthResponsePayload) => {
   const profileContext = response.profile_context ?? {}
   const activeProfileId = profileContext.id ?? response.profile ?? null
   const companyCode = profileContext.company_code ?? null
   const currency = response.currency ?? profileContext.currency ?? null
+  let tokenClaims: AuthTokenClaims | null = null
 
   if (response.access) {
-    const decodedTokenPayload = decodeAccessToken(response.access)
-    console.log("Decoded access token payload:", decodedTokenPayload)
+    try {
+      tokenClaims = jwtDecode<AuthTokenClaims>(response.access)
+    } catch {
+      tokenClaims = null
+    }
+  }
 
+  if (response.access) {
     setAuthCookie("accessToken", response.access, accessAge)
   }
   if (response.refresh) {
@@ -128,11 +248,13 @@ const persistAuthSession = (response: AuthResponsePayload) => {
   } else {
     deleteAuthCookie("companyCode")
   }
+  persistWorkspaceBranding(profileContext)
   if (currency) {
     setAuthCookie("currency", currency, refreshAge)
   } else {
     deleteAuthCookie("currency")
   }
+  persistUserIdentity(response)
   if (response.model_name) {
     setAuthCookie("model_name", response.model_name, accessAge)
   } else {
@@ -148,6 +270,45 @@ const persistAuthSession = (response: AuthResponsePayload) => {
   } else {
     deleteAuthCookie("agent_name")
   }
+
+  if (tokenClaims?.mfa_verified === true) {
+    setAuthCookie("mfaVerified", "true", refreshAge)
+    setAuthCookie("mfaSetupRequired", "false", refreshAge)
+  } else if (
+    tokenClaims?.mfa_enabled === true ||
+    tokenClaims?.has_setup_mfa === true
+  ) {
+    setAuthCookie("mfaVerified", "false", refreshAge)
+    setAuthCookie("mfaSetupRequired", "false", refreshAge)
+  } else if (
+    tokenClaims?.mfa_enabled === false &&
+    tokenClaims?.has_setup_mfa === false
+  ) {
+    setAuthCookie("mfaVerified", "false", refreshAge)
+    setAuthCookie("mfaSetupRequired", "true", refreshAge)
+  }
+
+  const isStaffClaim =
+    toBooleanClaim(tokenClaims?.is_staff) ??
+    toBooleanClaim(response.is_staff) ??
+    false
+  const isSuperuserClaim =
+    toBooleanClaim(tokenClaims?.is_superuser) ??
+    toBooleanClaim(response.is_superuser) ??
+    false
+
+  if (typeof isStaffClaim === "boolean") {
+    setAuthCookie("isStaff", isStaffClaim ? "true" : "false", refreshAge)
+  } else {
+    deleteAuthCookie("isStaff")
+  }
+
+  if (typeof isSuperuserClaim === "boolean") {
+    setAuthCookie("isSuperuser", isSuperuserClaim ? "true" : "false", refreshAge)
+  } else {
+    deleteAuthCookie("isSuperuser")
+  }
+
   deleteAuthCookie("api_key")
   deleteAuthCookie("tavily_api_key")
 }
@@ -166,15 +327,16 @@ const createBaseQuery = (baseUrl: string, isFileUpload = false) => {
     timeout: 600000,
     prepareHeaders: (headers) => {
       const token = readAuthCookie("accessToken")
-      const profile = readAuthCookie("profileId") ?? readAuthCookie("profile")
-
+     
       if (token) {
         headers.set("Authorization", `Bearer ${token}`)
       }
 
-      if (profile) {
-        headers.set("X-Profile-ID", `${profile}`)
+      const posDeviceId = getOrCreatePosDeviceId()
+      if (posDeviceId) {
+        headers.set("X-Device-ID", posDeviceId)
       }
+
 
       if (!isFileUpload) {
         headers.set("Content-Type", "application/json")
@@ -194,6 +356,8 @@ const baseQueries = {
   pos: createBaseQuery(serviceMap.pos),
   agent: createBaseQuery(serviceMap.agent),
   payment: createBaseQuery(serviceMap.payment),
+  audit: createBaseQuery(serviceMap.audit),
+  notification: createBaseQuery(serviceMap.notification),
 }
 
 const fileUploadQueries = {
@@ -204,6 +368,8 @@ const fileUploadQueries = {
   pos: createBaseQuery(serviceMap.pos, true),
   agent: createBaseQuery(serviceMap.agent, true),
   payment: createBaseQuery(serviceMap.payment, true),
+  audit: createBaseQuery(serviceMap.audit, true),
+  notification: createBaseQuery(serviceMap.notification, true),
 
 }
 
@@ -273,8 +439,12 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
   if (result?.data && service === "users") {
     const url = enhancedArgs.url
     if (AUTH_RESPONSE_URLS.has(url) || url.startsWith("/auth/o/")) {
-      persistAuthSession(result.data as AuthResponsePayload)
-      api.dispatch(setAuth())
+      try {
+        persistAuthSession(result.data as AuthResponsePayload)
+        api.dispatch(setAuth())
+      } catch {
+        // A local cookie persistence failure must not convert a successful auth response into a failed request.
+      }
     } else if (AUTH_LOGOUT_URLS.has(url)) {
       clearAuthSession()
       api.dispatch(logout())
@@ -349,7 +519,10 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
 export const apiSlice = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["User", "Inventory", "Category"], // Add tag types for caching
+  refetchOnFocus: true,
+  refetchOnReconnect: true,
+  refetchOnMountOrArgChange: true,
+  tagTypes: ["User", "Inventory", "Category", "Agent", "AgentConversation", "GlobalCatalog", "Product"], // Add tag types for caching
   endpoints: (builder) => ({}),
 })
 
@@ -383,4 +556,36 @@ export const createServiceRequest = (
     service,
     mode: "cors",
   }
+}
+
+type ListEnvelope<T> =
+  | T[]
+  | {
+      results?: T[]
+      data?: T[]
+      items?: T[]
+    }
+
+export const unwrapListResponse = <T>(payload: ListEnvelope<T> | unknown): T[] => {
+  if (Array.isArray(payload)) {
+    return payload
+  }
+
+  if (payload && typeof payload === "object") {
+    const record = payload as Record<string, unknown>
+
+    if (Array.isArray(record.results)) {
+      return record.results as T[]
+    }
+
+    if (Array.isArray(record.data)) {
+      return record.data as T[]
+    }
+
+    if (Array.isArray(record.items)) {
+      return record.items as T[]
+    }
+  }
+
+  return []
 }

@@ -1,16 +1,30 @@
 import { apiSlice } from "../../services/apiSlice"
+import { buildQuery } from "../common/queryParams"
+import type {
+  PaymentAnalyticsResponse,
+  PaymentProvider,
+  PaymentProviderInput,
+  PaymentRecord,
+  SubscriptionAnalyticsResponse,
+  SubscriptionRecord,
+  EntitlementSnapshot,
+  StartTrialResponse,
+  SubscriptionPlanRecord,
+  CoinTransactionRecord,
+  CoinTopUpResponse,
+} from "./paymentTypes"
 
 export const paymentApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // Payment Providers
-    getPaymentProviders: builder.query({
+    getPaymentProviders: builder.query<PaymentProvider[], Record<string, unknown> | void>({
       query: () => ({
         url: "providers/",
         service: "payment",
       }),
     }),
 
-    createPaymentProvider: builder.mutation({
+    createPaymentProvider: builder.mutation<PaymentProvider, PaymentProviderInput>({
       query: (data) => ({
         url: "providers/",
         method: "POST",
@@ -19,7 +33,7 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    updatePaymentProvider: builder.mutation({
+    updatePaymentProvider: builder.mutation<PaymentProvider, { id: string } & Partial<PaymentProviderInput>>({
       query: ({ id, ...data }) => ({
         url: `providers/${id}/`,
         method: "PATCH",
@@ -71,9 +85,9 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
     }),
 
     // Subscription Plans
-    getSubscriptionPlans: builder.query({
-      query: (params = {}) => ({
-        url: `subscriptions/?${new URLSearchParams(params).toString()}`,
+    getSubscriptionPlans: builder.query<SubscriptionPlanRecord[], Record<string, string> | void>({
+      query: (params) => ({
+        url: `subscriptions/?${new URLSearchParams(params ?? {}).toString()}`,
         service: "payment",
       }),
     }),
@@ -105,9 +119,9 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
     }),
 
     // Payments
-    getPayments: builder.query({
+    getPayments: builder.query<PaymentRecord[], Record<string, unknown> | void>({
       query: (params = {}) => ({
-        url: `payments/?${new URLSearchParams(params).toString()}`,
+        url: buildQuery("payments/", params),
         service: "payment",
       }),
     }),
@@ -138,9 +152,9 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
     }),
 
     // Subscriptions
-    getSubscriptions: builder.query({
+    getSubscriptions: builder.query<SubscriptionRecord[], Record<string, unknown> | void>({
       query: (params = {}) => ({
-        url: `subscriptions-to-plans/?${new URLSearchParams(params).toString()}`,
+        url: buildQuery("subscriptions-to-plans/", params),
         service: "payment",
       }),
     }),
@@ -187,16 +201,16 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
     }),
 
     // Analytics
-    getPaymentAnalytics: builder.query({
+    getPaymentAnalytics: builder.query<PaymentAnalyticsResponse, Record<string, unknown> | void>({
       query: (params = {}) => ({
-        url: `analytics/payments/?${new URLSearchParams(params).toString()}`,
+        url: buildQuery("analytics/payments/", params),
         service: "payment",
       }),
     }),
 
-    getSubscriptionAnalytics: builder.query({
+    getSubscriptionAnalytics: builder.query<SubscriptionAnalyticsResponse, Record<string, unknown> | void>({
       query: (params = {}) => ({
-        url: `analytics/subscriptions/?${new URLSearchParams(params).toString()}`,
+        url: buildQuery("analytics/subscriptions/", params),
         service: "payment",
       }),
     }),
@@ -240,6 +254,60 @@ getFeatures: builder.query({
         url: `subscriptions/${planId}/features/`,
         service: "payment",
       }),
+    }),
+
+    getCurrentEntitlements: builder.query<EntitlementSnapshot, void>({
+      query: () => ({
+        url: "subscriptions-to-plans/entitlements/?application=intera-ims&include_usage=true",
+        service: "payment",
+      }),
+      keepUnusedDataFor: 60,
+    }),
+
+    getCoinTransactions: builder.query<CoinTransactionRecord[], void>({
+      query: () => ({
+        url: "coin-transactions/",
+        service: "payment",
+      }),
+      keepUnusedDataFor: 30,
+    }),
+
+    topUpCoins: builder.mutation<CoinTopUpResponse, {
+      coins_amount: number;
+      customer_email: string;
+      customer_name?: string;
+      application_slug?: string;
+      provider_slug?: string;
+      currency?: string;
+      success_url?: string;
+      cancel_url?: string;
+      metadata?: Record<string, unknown>;
+    }>({
+      query: (body) => ({
+        url: "payments/coins/top-up/",
+        method: "POST",
+        body,
+        service: "payment",
+      }),
+    }),
+
+    startSubscriptionTrial: builder.mutation<StartTrialResponse, { plan_slug: string; application?: string }>({
+      query: (body) => ({
+        url: "subscriptions-to-plans/start-trial/",
+        method: "POST",
+        body,
+        service: "payment",
+      }),
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled
+          dispatch(
+            paymentApiSlice.util.updateQueryData("getCurrentEntitlements", undefined, () => data.entitlements),
+          )
+        } catch {
+          // The page-level mutation handler owns user-facing error feedback.
+        }
+      },
     }),
 
   }),
@@ -288,4 +356,8 @@ export const {
   useAddFeatureToPlanMutation,
   useRemoveFeatureFromPlanMutation,
   useGetPlanFeaturesQuery,
+  useGetCurrentEntitlementsQuery,
+  useStartSubscriptionTrialMutation,
+  useGetCoinTransactionsQuery,
+  useTopUpCoinsMutation,
 } = paymentApiSlice

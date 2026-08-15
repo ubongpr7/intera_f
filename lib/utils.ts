@@ -113,8 +113,14 @@ export function getInitials(name: string): string {
 
 export const extractErrorMessage = (error: any, listOfKeys: string[]): string => {
     if (!error) return "An unknown error occurred";
+    if (error instanceof Error && error.message) {
+        return error.message;
+    }
+    if (typeof error === "string" && error.trim()) {
+        return error;
+    }
 
-    const errorData = error.data || {};
+    const errorData = error?.data || {};
 
     // Check for field-specific errors
     for (const key of listOfKeys) {
@@ -137,13 +143,13 @@ export const extractErrorMessage = (error: any, listOfKeys: string[]): string =>
     if (!navigator.onLine) {
         return "Network error: Please check your internet connection";
     }
-    if (error.data.error ) {
+    if (error?.data?.error ) {
         return `Error: ${error.data.error}`;
     }
 
 
     // Default error messages based on status code
-    switch (error.status) {
+    switch (error?.status) {
 
         case 400:
             return "Invalid request: Please check your information";
@@ -156,9 +162,9 @@ export const extractErrorMessage = (error: any, listOfKeys: string[]): string =>
         case 429:
             return "Too many attempts: Please wait a moment before trying again";
         case 500:
-          return 'Check your data entry and try again, ensure you abide by the unique constraint' 
+          return "Something went wrong while loading this data. Please refresh and try again."
         case 'PARSING_ERROR':
-          return 'Check your data entry and try again, ensure you abide by the unique constraint, item with same name or data already exist' 
+          return "Something went wrong while loading this data. Please refresh and try again."
         case 502:
         case 503:
             return "Server error: We're experiencing technical difficulties";
@@ -170,11 +176,72 @@ export const extractErrorMessage = (error: any, listOfKeys: string[]): string =>
 import {jwtDecode} from 'jwt-decode'
 import {getCookie} from 'cookies-next'
 import { readCookieValue } from './authCookies'
+
+const parseBooleanCookie = (value: string | undefined): boolean | undefined => {
+  if (value === undefined) {
+    return undefined
+  }
+
+  const normalized = value.trim().toLowerCase()
+  if (["true", "1", "yes", "on"].includes(normalized)) {
+    return true
+  }
+  if (["false", "0", "no", "off"].includes(normalized)) {
+    return false
+  }
+
+  return undefined
+}
+
+const toBooleanClaim = (value: unknown): boolean | undefined => {
+  if (typeof value === "boolean") {
+    return value
+  }
+
+  if (typeof value === "number") {
+    if (value === 1) {
+      return true
+    }
+    if (value === 0) {
+      return false
+    }
+    return undefined
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase()
+    if (["true", "1", "yes", "on"].includes(normalized)) {
+      return true
+    }
+    if (["false", "0", "no", "off"].includes(normalized)) {
+      return false
+    }
+  }
+
+  return undefined
+}
+
 export function getDecodedToken(){
   const token= readCookieValue("accessToken", getCookie)
+  const isStaffFromCookie = parseBooleanCookie(readCookieValue("isStaff", getCookie))
+  const isSuperuserFromCookie = parseBooleanCookie(readCookieValue("isSuperuser", getCookie))
   try{
-    return jwtDecode(`${token}`)
+    const decoded = jwtDecode<Record<string, unknown>>(`${token}`)
+    const tokenIsStaff = toBooleanClaim(decoded?.is_staff)
+    const tokenIsSuperuser = toBooleanClaim(decoded?.is_superuser)
+
+    return {
+      ...decoded,
+      is_staff: tokenIsStaff ?? isStaffFromCookie,
+      is_superuser: tokenIsSuperuser ?? isSuperuserFromCookie,
+    }
   } catch{
+    if (isStaffFromCookie !== undefined || isSuperuserFromCookie !== undefined) {
+      return {
+        is_staff: isStaffFromCookie,
+        is_superuser: isSuperuserFromCookie,
+      }
+    }
     return null
   }
 }

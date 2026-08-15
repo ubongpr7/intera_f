@@ -20,14 +20,14 @@ import type {
   ProductAttributeLink,
   ProductAttributeValue,
   ProductVariantAttribute,
-} from "@/components/interfaces/product"
+} from "@/redux/features/product/productTypes"
 import { getCurrencySymbolForProfile } from "@/lib/currency-utils"
 import { toast } from "react-toastify"
+import { extractErrorMessage } from "@/lib/utils"
 
 interface VariantAttributesTabProps {
   variant: ProductVariant
   onSuccess: () => void
-  refetchData: boolean
 }
 
 interface EditingAttribute {
@@ -38,7 +38,14 @@ interface EditingAttribute {
   currentCustomModifier: string
 }
 
-const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttributesTabProps) => {
+const VariantAttributesTab = ({ variant, onSuccess }: VariantAttributesTabProps) => {
+  const getSingleOption = (option: SelectOption | readonly SelectOption[] | null): SelectOption | null => {
+    if (!option || Array.isArray(option)) {
+      return null
+    }
+    return option as SelectOption
+  }
+
   const [attributeFormData, setAttributeFormData] = useState({
     attribute_link_id: "",
     attribute_id: "",
@@ -55,9 +62,6 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
   })
 
   const [validationError, setValidationError] = useState<string>("")
-
-  console.log("Variant attribute details:", variant?.attribute_details)
-  console.log("Editing attribute:", editingAttribute)
 
   // Get all attribute links for the product
   const {
@@ -165,7 +169,6 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
       onSuccess()
       toast.success("Attribute added successfully")
     } catch (error: any) {
-      console.error("Failed to add attribute:", error)
       toast.error(error?.data?.detail || "Failed to add attribute")
     }
   }
@@ -177,20 +180,14 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
       refetchLinks()
       toast.success("Attribute removed successfully")
     } catch (error: any) {
-      console.error("Failed to remove attribute:", error)
       toast.error(error?.data?.detail || "Failed to remove attribute")
     }
   }
 
   const handleStartEdit = (attr: ProductVariantAttribute) => {
-    console.log("Starting edit for attribute:", attr)
-
     // Find the attribute ID from the attribute link
     const attributeLink = allAttributeLinks.find((link) => link.id === attr.attribute_link)
     const attributeId = attributeLink?.attribute || ""
-
-    console.log("Found attribute link:", attributeLink)
-    console.log("Attribute ID:", attributeId)
 
     const editingData = {
       attributeLinkId: attr.attribute_link,
@@ -199,8 +196,6 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
       currentCustomValue: attr.custom_value || "",
       currentCustomModifier: attr.custom_modifier?.toString() || "",
     }
-
-    console.log("Setting editing attribute:", editingData)
 
     setEditingAttribute(editingData)
     setEditFormData({
@@ -234,8 +229,6 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
         custom_modifier: Number.parseFloat(editFormData.custom_modifier) || undefined,
       }
 
-      console.log("Saving edit data:", data)
-
       await editAttribute({
         variantId: variant.id,
         attributeLinkId: attributeLinkId,
@@ -253,7 +246,6 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
       refetchLinks()
       toast.success("Attribute updated successfully")
     } catch (error: any) {
-      console.error("Failed to edit attribute:", error)
       const errorMessage = error?.data?.detail || "Failed to update attribute"
       toast.error(errorMessage)
       setValidationError(errorMessage)
@@ -292,7 +284,7 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
   if (attributeLinksError) {
     return (
       <div className="p-4 text-red-500">
-        Error loading attributes: {(attributeLinksError as any).message || "Unknown error"}
+        Unable to load variant attributes: {extractErrorMessage(attributeLinksError, ["detail", "error"])}
       </div>
     )
   }
@@ -317,11 +309,12 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
                   attributeLinkOptions.find((option) => option.value === attributeFormData.attribute_link_id) || null
                 }
                 onChange={(option) => {
-                  if (option && !Array.isArray(option)) {
-                    const attributeId = attributeLinkToAttributeMap[option.value] || ""
+                  const selectedOption = getSingleOption(option)
+                  if (selectedOption) {
+                    const attributeId = attributeLinkToAttributeMap[String(selectedOption.value)] || ""
                     setAttributeFormData((prev) => ({
                       ...prev,
-                      attribute_link_id: option.value,
+                      attribute_link_id: String(selectedOption.value),
                       attribute_id: attributeId,
                       value_id: "", // Reset dependent field
                     }))
@@ -347,7 +340,7 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
                 ) : attributeValuesError ? (
                   <Alert className="border-red-500 bg-red-50">
                     <AlertDescription className="text-red-700">
-                      Error loading attribute values: {(attributeValuesError as any).message || "Unknown error"}
+                      Unable to load attribute values: {extractErrorMessage(attributeValuesError, ["detail", "error"])}
                     </AlertDescription>
                   </Alert>
                 ) : (
@@ -360,10 +353,11 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
                           attributeValueOptions.find((option) => option.value === attributeFormData.value_id) || null
                         }
                         onChange={(option) => {
-                          if (option && !Array.isArray(option)) {
+                          const selectedOption = getSingleOption(option)
+                          if (selectedOption) {
                             setAttributeFormData((prev) => ({
                               ...prev,
-                              value_id: option.value,
+                              value_id: String(selectedOption.value),
                             }))
                           } else {
                             setAttributeFormData((prev) => ({
@@ -451,10 +445,6 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
             {variant.attribute_details.map((attr: ProductVariantAttribute) => {
               const isEditing = editingAttribute && editingAttribute.attributeLinkId === attr.attribute_link
 
-              console.log(`Attribute ${attr.attribute_name} - isEditing:`, isEditing)
-              console.log(`Current editing:`, editingAttribute)
-              console.log(`Attr link:`, attr.attribute_link)
-
               return (
                 <Card key={attr.id}>
                   <CardContent className="p-4">
@@ -480,8 +470,7 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
                         ) : editAttributeValuesError ? (
                           <Alert className="border-red-500 bg-red-50">
                             <AlertDescription className="text-red-700">
-                              Error loading attribute values:{" "}
-                              {(editAttributeValuesError as any).message || "Unknown error"}
+                              Unable to load attribute values: {extractErrorMessage(editAttributeValuesError, ["detail", "error"])}
                             </AlertDescription>
                           </Alert>
                         ) : (
@@ -497,8 +486,9 @@ const VariantAttributesTab = ({ variant, onSuccess, refetchData }: VariantAttrib
                                   null
                                 }
                                 onChange={(option) => {
-                                  if (option && !Array.isArray(option)) {
-                                    handleEditFormChange("value_id", option.value)
+                                  const selectedOption = getSingleOption(option)
+                                  if (selectedOption) {
+                                    handleEditFormChange("value_id", String(selectedOption.value))
                                   } else {
                                     handleEditFormChange("value_id", "")
                                   }

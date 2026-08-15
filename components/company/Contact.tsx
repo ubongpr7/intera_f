@@ -2,13 +2,15 @@
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { Column, DataTable, ActionButton } from "../common/DataTable/DataTable";
-import { ContactPersonInterface } from "../interfaces/company";
+import { ContactPersonInterface } from "@/redux/features/company/companyTypes";
 import { useGetContactPersonQuery, useCreateContactPersonMutation, useUpdateContactPersonMutation, useDeleteContactPersonMutation } from '../../redux/features/company/companyAPISlice';
 import CustomCreateCard from '../common/createCard';
 import { contactPersonInterfaceKeys } from './selectOptions';
 import { CompanyAddressKeyInfo } from './selectOptions';
 import { toast } from 'react-toastify';
 import { Edit, Trash2 } from 'lucide-react';
+import { extractErrorMessage } from '@/lib/utils';
+import { confirmAction } from '../common/confirmAction';
 
 const inventoryColumns: Column<ContactPersonInterface>[] = [
   {
@@ -63,15 +65,21 @@ function ContactPersonView({company_id}:CompanyProps) {
     toast.success("Contact updated successfully!");
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this contact?")) {
-      try {
-        await deleteContact(id).unwrap();
-        await refetch();
-        toast.success("Contact deleted successfully!");
-      } catch (error) {
-        toast.error("Failed to delete contact.");
-      }
+  const handleDelete = async (id: string | number) => {
+    const confirmed = await confirmAction({
+      title: "Delete contact?",
+      description: "This removes the contact from the company record.",
+      confirmText: "Delete contact",
+      destructive: true,
+    });
+    if (!confirmed) return;
+
+    try {
+      await deleteContact(id).unwrap();
+      await refetch();
+      toast.success("Contact deleted successfully!");
+    } catch (error) {
+      toast.error(extractErrorMessage(error, ["detail"]) || "Failed to delete contact.");
     }
   };
 
@@ -92,7 +100,7 @@ function ContactPersonView({company_id}:CompanyProps) {
   if (error) {
     return (
       <div className="p-4 text-red-500">
-        Error loading contact data: {(error as any).message || 'Unknown error'}
+        Unable to load contact records: {extractErrorMessage(error, ["detail", "error"])}
       </div>
     );
   }
@@ -115,28 +123,26 @@ function ContactPersonView({company_id}:CompanyProps) {
         onClose={() => setIsCreateOpen(true)}
       />
 
-      {(isCreateOpen || editingContact) && (
-        <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50`}>
-          <CustomCreateCard
-            defaultValues={editingContact || {}}
-            onClose={() => {
-              setIsCreateOpen(false);
-              setEditingContact(null);
-            }}
-            onSubmit={editingContact ? handleUpdate : handleCreate}
-            isLoading={createLoading || updateLoading}
-            selectOptions={{}}
-            keyInfo={{}}
-            notEditableFields={notEditableCompanyFields}
-            interfaceKeys={contactPersonInterfaceKeys}
-            optionalFields={[]}
-            hiddenFields={{
-            company:company_id
-            }}
-            itemTitle={editingContact ? 'Update Contact' : 'Create Contact'}
-          />
-        </div>
-      )}
+      {(isCreateOpen || editingContact) ? (
+        <CustomCreateCard
+          defaultValues={editingContact || {}}
+          onClose={() => {
+            setIsCreateOpen(false);
+            setEditingContact(null);
+          }}
+          onSubmit={editingContact ? handleUpdate : handleCreate}
+          isLoading={createLoading || updateLoading}
+          selectOptions={{}}
+          keyInfo={{}}
+          notEditableFields={notEditableCompanyFields}
+          interfaceKeys={contactPersonInterfaceKeys}
+          optionalFields={[]}
+          hiddenFields={{
+          company:company_id
+          }}
+          itemTitle={editingContact ? 'Update Contact' : 'Create Contact'}
+        />
+      ) : null}
     </div>
   );
 }

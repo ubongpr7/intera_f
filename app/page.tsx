@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -9,29 +9,82 @@ import {
   Bot,
   Boxes,
   Building2,
-  CheckCircle2,
+  // CheckCircle2,
+  ChevronDown,
   ClipboardList,
   Clock3,
-  Globe2,
   Menu,
+  LogIn,
+  Moon,
+  Radio,
+  ScanBarcode,
+  Send,
   ShieldCheck,
   Sparkles,
+  Sun,
   Users2,
   WifiOff,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useGetSubscriptionPlansQuery } from "@/redux/features/payment/paymentAPISlice";
-import { Feature, SubscriptionPlan } from "@/components/interfaces/payment";
+// import { Skeleton } from "@/components/ui/skeleton";
+// import { useGetSubscriptionPlansQuery } from "@/redux/features/payment/paymentAPISlice";
+import { useAppSelector } from "@/redux/store";
+import { LandingFooter } from "@/components/landing/LandingFooter";
+import { LandingHeader } from "@/components/landing/LandingHeader";
+import { WaitlistForm } from "@/components/landing/WaitlistForm";
+// import { Feature, SubscriptionPlan } from "@/components/interfaces/payment";
 import { AnimatePresence, motion } from "framer-motion";
 
+/*
 const billingLabel: Record<SubscriptionPlan["billing_cycle"], string> = {
   MONTHLY: "month",
   QUARTERLY: "quarter",
   YEARLY: "year",
   ONE_TIME: "one-time",
 };
+
+const planHighlights: Record<string, string[]> = {
+  basic: [
+    "1 staff user",
+    "1 structural stock location",
+    "1 POS terminal",
+    "200 products and 800 variants",
+    "Offline POS and realtime operations",
+    "30-day free trial",
+  ],
+  starter: [
+    "Up to 8 staff users",
+    "3 structural stock locations",
+    "6 POS terminals",
+    "500 products and 2,500 variants",
+    "Audit trails, team access, and realtime operations",
+    "30-day free trial",
+  ],
+  growth: [
+    "Up to 30 staff users",
+    "10 structural stock locations",
+    "25 POS terminals",
+    "5,000 products and 25,000 variants",
+    "Business intelligence and inventory traceability",
+    "30-day free trial",
+  ],
+  scale: [
+    "Up to 120 staff users",
+    "30 structural stock locations",
+    "100 POS terminals",
+    "10,000 products and 50,000 variants",
+    "High-volume operations and anti-theft oversight",
+    "30-day free trial",
+  ],
+  enterprise: [
+    "Custom users, locations, and terminals",
+    "Custom onboarding and rollout support",
+    "Custom operational scope and integrations",
+    "Custom audit and intelligence limits",
+  ],
+};
+*/
 
 const coreHighlights = [
   {
@@ -41,15 +94,15 @@ const coreHighlights = [
     icon: Boxes,
   },
   {
-    title: "Made for real-world constraints",
+    title: "Made for real-world control",
     description:
-      "Run retail and warehouse workflows with confidence using offline-first POS, role controls, and audit trails.",
+      "Run retail and warehouse workflows with confidence using offline-first POS, role controls, audit trails, and controlled activity monitoring.",
     icon: WifiOff,
   },
   {
     title: "AI where it matters",
     description:
-      "Use agent assistance to answer business questions, detect risk early, and execute routine tasks faster.",
+      "Use configurable workspace agents and offline operational intelligence to ask your inventory questions in natural language and surface risk faster.",
     icon: Bot,
   },
 ];
@@ -57,33 +110,55 @@ const coreHighlights = [
 const capabilityGrid = [
   {
     title: "Inventory Control",
-    description: "Track stock across locations with reorder rules, adjustments, and movement history.",
+    description: "Track products, balances, reorder rules, adjustments, reservations, and movement history across structural locations.",
     icon: ClipboardList,
   },
   {
-    title: "Supplier & Purchasing",
-    description: "Create and monitor purchase orders with full supplier performance visibility.",
+    title: "Purchasing & Replenishment",
+    description: "Run purchase orders, approvals, receiving, supplier returns, and delivery timing from one workflow.",
     icon: Building2,
   },
   {
-    title: "POS & Sales",
-    description: "Process sales quickly in-store and sync reliably with back-office inventory.",
-    icon: Globe2,
+    title: "POS & Offline Selling",
+    description: "Operate terminals, sessions, discounts, orders, remittances, and inventory-aware in-store sales even when connectivity drops.",
+    icon: ScanBarcode,
   },
   {
     title: "Team Access",
-    description: "Assign roles per company context with clean separation of permissions and actions.",
+    description: "Invite staff and assign roles, groups, and permissions independently for each workspace.",
     icon: Users2,
   },
   {
+    title: "Audit & Traceability",
+    description: "Search controlled activity trails and trace stock movements through event-backed monitoring.",
+    icon: ShieldCheck,
+  },
+  {
     title: "Business Intelligence",
-    description: "Turn operations data into decisions with dashboards, trend analysis, and alerts.",
+    description: "Review inventory, purchasing, POS, and realtime operational analytics, then query years of history in natural language and get answers in seconds.",
     icon: BarChart3,
   },
   {
-    title: "Security & Compliance",
-    description: "Protect operations with MFA, context-aware access, and traceable activity logs.",
+    title: "Conversational Intelligence",
+    description: "Ask plain-language questions about sales, stock, purchasing, and staff activity, then turn the answer into charts, lists, or actions.",
+    icon: Sparkles,
+  },
+  {
+    title: "Live Operations Monitor",
+    description: "Follow sales, receiving, stock signals, and risk changes as they happen through realtime operational streams.",
+    icon: Radio,
+  },
+  {
+    title: "Anti-theft Oversight",
+    description: "Planned monitoring that will help teams identify suspicious stock patterns and investigate operational risk after launch.",
+    availability: "Coming soon",
     icon: ShieldCheck,
+  },
+  {
+    title: "External API Platform",
+    description: "Build custom integrations on top of the platform API when you need a separate, metered developer surface.",
+    availability: "Coming soon",
+    icon: Menu,
   },
 ];
 
@@ -101,62 +176,518 @@ const workflowSteps = [
   {
     title: "Scale with intelligence",
     description:
-      "Use analytics and AI guidance to reduce stockouts, improve cash flow, and tighten margins.",
+      "Use realtime analytics, workspace agents, and offline operational intelligence to identify risks and guide decisions.",
   },
 ];
 
 const faqItems = [
   {
-    question: "Can I start without using AI agents?",
+    question: "Can I run Intera without AI agents?",
     answer:
-      "Yes. Inventory, purchasing, POS, and reporting work independently. AI can be enabled later when you are ready.",
+      "Yes. Inventory, purchasing, POS, receiving, reporting, audit, and team workflows operate independently. Workspace agents can be configured later.",
   },
   {
-    question: "Is this suitable for multi-tenant setups?",
+    question: "What happens when the internet connection drops?",
     answer:
-      "Yes. The platform is designed for company-context switching, role isolation, and organization-level access control.",
+      "The Intera POS application can continue from locally available operational data, queue supported work, and synchronize it when connectivity returns. The web application requires a connection.",
   },
   {
-    question: "Does the system support secure authentication?",
+    question: "Can I manage multiple stores and warehouses?",
     answer:
-      "Yes. The current flow enforces authenticator-based MFA and supports SSO integration with controlled session handling.",
+      "Yes. Structural locations model stores and warehouses, while operational locations model areas such as shelves, racks, backrooms, and receiving points.",
   },
   {
-    question: "How quickly can a team go live?",
+    question: "How do I set up products and variants?",
     answer:
-      "Most teams can start operations quickly by loading products, defining roles, and configuring locations in the first setup pass.",
+      "You can create products directly, use bulk workflows, or start from shared product data, then customize the product names, variants, and media for your workspace.",
   },
+  {
+    question: "Does stock update after sales and receiving?",
+    answer:
+      "Yes. Paid POS activity and goods receiving feed inventory and audit workflows. Realtime views surface participating sales, receiving, and operational events as they arrive.",
+  },
+  {
+    question: "Who can view sensitive audit activity?",
+    answer:
+      "Workspace owners and explicitly authorized staff can access the audit trail. Audit APIs and realtime streams enforce workspace and permission checks.",
+  },
+  {
+    question: "How will the platform help prevent theft?",
+    answer:
+      "Current audit and traceability tools keep a record of stock movement, user activity, receiving, sales, and approvals. Dedicated anti-theft oversight is planned for release within two months after the 01 September launch.",
+  },
+  /* Pricing and plan questions are intentionally hidden until after registration.
+  {
+    question: "Is there a free trial?",
+    answer:
+      "Yes. Each standard plan includes a 30-day trial so a workspace can configure its operation and evaluate the relevant plan limits before monthly billing begins.",
+  },
+  {
+    question: "Can I change plans as the business grows?",
+    answer:
+      "The plan model is designed around increasing staff, locations, terminals, products, variants, and operational capabilities as your requirements grow.",
+  },
+  */
 ];
 
-const demoConversations = [
+type DemoWidget =
+  | { type: "metric-grid"; items: Array<{ label: string; value: string; helper: string }> }
+  | { type: "bar-list"; title: string; items: Array<{ label: string; value: string; width: number }> }
+  | { type: "ranked-list"; title: string; items: Array<{ label: string; meta: string; tone?: "good" | "warn" | "risk" }> }
+  | { type: "action-form"; title: string; fields: string[]; cta: string }
+  | { type: "risk-panel"; title: string; score: string; items: string[] }
+
+type DemoMessage = {
+  role: "user" | "assistant"
+  text: string
+  widget?: DemoWidget
+}
+
+type DemoConversation = {
+  title: string
+  specialist: string
+  availability?: "Ready" | "Coming soon"
+  messages: DemoMessage[]
+}
+
+const demoConversations: DemoConversation[] = [
   {
-    title: "Low-stock and purchasing action",
+    title: "Today’s sales by location",
+    specialist: "Sales insight agent",
     messages: [
-      { role: "user", text: "Show items below reorder point in Lagos warehouse." },
-      { role: "assistant", text: "14 SKUs are below threshold. Top 3 risks: Printer Ink, POS Paper Roll, Barcode Labels." },
-      { role: "user", text: "Create draft PO for our primary supplier." },
-      { role: "assistant", text: "Draft PO ready: 14 SKUs, estimated cost $9,420, expected delivery in 3 days." },
+      { role: "user", text: "How many sales have we made today across all locations?" },
+      {
+        role: "assistant",
+        text: "You have 184 paid sales today across three active locations.",
+        widget: {
+          type: "metric-grid",
+          items: [
+            { label: "Paid sales", value: "184", helper: "Across 3 locations" },
+            { label: "Gross value", value: "NGN 2.68M", helper: "+18% vs yesterday" },
+            { label: "Avg basket", value: "NGN 14.6K", helper: "Best: Agric Ikorodu" },
+          ],
+        },
+      },
+      { role: "user", text: "Which location is leading by value?" },
+      {
+        role: "assistant",
+        text: "Agric Ikorodu Store is leading by value with NGN 1.42M from 96 sales. Airport Road follows with NGN 870K, then Gberigbe with NGN 390K.",
+        widget: {
+          type: "bar-list",
+          title: "Location sales value",
+          items: [
+            { label: "Agric Ikorodu Store", value: "NGN 1.42M", width: 100 },
+            { label: "Airport Road Oshodi", value: "NGN 870K", width: 61 },
+            { label: "Gberigbe Store", value: "NGN 390K", width: 27 },
+          ],
+        },
+      },
     ],
   },
   {
-    title: "Sales signal and stock transfer",
+    title: "Stock risk and fast movers",
+    specialist: "Inventory risk agent",
     messages: [
-      { role: "user", text: "Any unusual sales spikes today?" },
-      { role: "assistant", text: "Yes. Mobile accessories are +31% in Lekki store vs 7-day baseline." },
-      { role: "user", text: "Recommend immediate transfer to avoid stockout." },
-      { role: "assistant", text: "Move 120 units from Ikeja to Lekki. Projected stock coverage improves from 0.9 to 3.2 days." },
+      { role: "user", text: "Which of my products are currently out of stock?" },
+      {
+        role: "assistant",
+        text: "There are 12 out-of-stock variants across three locations. The highest-risk items are below because they also sold recently.",
+        widget: {
+          type: "ranked-list",
+          title: "Out-of-stock priority",
+          items: [
+            { label: "Nivea Cocoa Butter 400ml", meta: "0 left - sold 42 this week", tone: "risk" },
+            { label: "Sure Men Invisible Ice", meta: "0 left - sold 37 this week", tone: "risk" },
+            { label: "Ritz Oud Perfume 100ml", meta: "0 left - sold 21 this week", tone: "warn" },
+          ],
+        },
+      },
+      { role: "user", text: "Which products have sold best in the past seven days?" },
+      {
+        role: "assistant",
+        text: "Your top seven-day movers are Sure Men Invisible Ice, Nivea Cocoa Butter 400ml, and Ritz Oud Perfume 100ml.",
+        widget: {
+          type: "bar-list",
+          title: "Seven-day movers",
+          items: [
+            { label: "Sure Men Invisible Ice", value: "314 units", width: 100 },
+            { label: "Nivea Cocoa Butter 400ml", value: "271 units", width: 86 },
+            { label: "Ritz Oud Perfume 100ml", value: "188 units", width: 60 },
+          ],
+        },
+      },
+    ],
+  },
+  {
+    title: "Inventory onboarding",
+    specialist: "Onboarding agent",
+    messages: [
+      { role: "user", text: "I just created my workspace. What should I set up first so inventory works properly?" },
+      {
+        role: "assistant",
+        text: "Start with company profile, structural locations, product catalog, inventory items, and POS terminals. I can guide the setup in that order.",
+        widget: {
+          type: "ranked-list",
+          title: "Recommended setup path",
+          items: [
+            { label: "Company profile", meta: "Currency, logo, business identity", tone: "good" },
+            { label: "Structural locations", meta: "Stores, warehouses, branches", tone: "good" },
+            { label: "Products and variants", meta: "Use global catalog where possible", tone: "good" },
+            { label: "Inventory items", meta: "Opening quantities and reorder points", tone: "warn" },
+          ],
+        },
+      },
+      { role: "user", text: "Can you prepare the form for adding my first warehouse?" },
+      {
+        role: "assistant",
+        text: "Yes. I would open a guided location form and ask only for the fields required to create the first structural stock location.",
+        widget: {
+          type: "action-form",
+          title: "Create structural location",
+          fields: ["Location name", "Location code", "Physical address", "Official in charge"],
+          cta: "Create location",
+        },
+      },
+    ],
+  },
+  {
+    title: "Purchase order planning",
+    specialist: "Purchasing agent",
+    messages: [
+      { role: "user", text: "What should I reorder this week based on sales and current stock?" },
+      {
+        role: "assistant",
+        text: "I found 18 variants that should be reviewed. Six are urgent because they are below reorder point and still selling daily.",
+        widget: {
+          type: "risk-panel",
+          title: "Reorder pressure",
+          score: "6 urgent",
+          items: ["Nivea Cocoa Butter 400ml - 3 days cover", "Sure Men Invisible Ice - 2 days cover", "Ritz Oud Perfume 100ml - supplier lead time risk"],
+        },
+      },
+      { role: "user", text: "Create a draft purchase order grouped by supplier." },
+      {
+        role: "assistant",
+        text: "I can prepare a supplier-grouped draft so your purchasing team reviews quantities before approval.",
+        widget: {
+          type: "action-form",
+          title: "Draft purchase order",
+          fields: ["Supplier", "Suggested variants", "Recommended quantity", "Expected delivery date"],
+          cta: "Prepare draft",
+        },
+      },
+    ],
+  },
+  {
+    title: "Cashier coaching",
+    specialist: "POS agent",
+    messages: [
+      { role: "user", text: "A cashier says a product is not showing on the POS. What should we check?" },
+      {
+        role: "assistant",
+        text: "Check product status, variant POS visibility, barcode assignment, price availability, and whether the terminal location has stock.",
+        widget: {
+          type: "ranked-list",
+          title: "POS visibility checklist",
+          items: [
+            { label: "Variant is active and POS-ready", meta: "Required before checkout", tone: "good" },
+            { label: "Barcode or searchable name exists", meta: "Needed for fast cashier lookup", tone: "warn" },
+            { label: "Terminal location has stock", meta: "Prevents unavailable item errors", tone: "risk" },
+          ],
+        },
+      },
+      { role: "user", text: "Which terminal sold the most today?" },
+      {
+        role: "assistant",
+        text: "Terminal IKD-Front-01 is leading today with 72 paid orders and NGN 940K in value.",
+        widget: {
+          type: "bar-list",
+          title: "Terminal performance",
+          items: [
+            { label: "IKD-Front-01", value: "NGN 940K", width: 100 },
+            { label: "OSH-Counter-02", value: "NGN 610K", width: 65 },
+            { label: "GBG-Mobile-01", value: "NGN 250K", width: 27 },
+          ],
+        },
+      },
+    ],
+  },
+  {
+    title: "Audit investigation",
+    specialist: "Audit agent",
+    messages: [
+      { role: "user", text: "Who changed the reorder point for Sure Men Invisible Ice?" },
+      {
+        role: "assistant",
+        text: "The audit trail shows Ederson changed the reorder point from 20 to 40 yesterday at 4:18 PM from the inventory settings page.",
+        widget: {
+          type: "ranked-list",
+          title: "Audit evidence",
+          items: [
+            { label: "Actor", meta: "Ederson - inventory role", tone: "good" },
+            { label: "Change", meta: "Reorder point 20 to 40", tone: "warn" },
+            { label: "Source", meta: "Inventory settings - web", tone: "good" },
+          ],
+        },
+      },
+      { role: "user", text: "Show me risky permission changes this week." },
+      {
+        role: "assistant",
+        text: "I found two permission changes that should be reviewed because they added purchasing approval access.",
+        widget: {
+          type: "risk-panel",
+          title: "Permission risk",
+          score: "2 reviews",
+          items: ["Purchase approval granted to one staff member", "Support access created and revoked after 42 minutes", "No owner credential sharing detected"],
+        },
+      },
+    ],
+  },
+  {
+    title: "Anti-theft investigation",
+    specialist: "Audit agent",
+    availability: "Coming soon",
+    messages: [
+      { role: "user", text: "Can you help me spot a stock movement that looks suspicious?" },
+      {
+        role: "assistant",
+        text: "Yes. I can inspect the stock trail, receiving history, sales pattern, and user activity to highlight where the movement no longer looks consistent.",
+        widget: {
+          type: "metric-grid",
+          items: [
+            { label: "Stock trail checks", value: "184", helper: "Across movements and adjustments" },
+            { label: "Suspicious gaps", value: "4", helper: "Needs review" },
+            { label: "Risk flags", value: "2", helper: "Approval and receiving mismatch" },
+          ],
+        },
+      },
+      { role: "user", text: "What should I review first?" },
+      {
+        role: "assistant",
+        text: "Start with the adjustment log, then check who handled the last receiving and sales events around the missing stock.",
+        widget: {
+          type: "ranked-list",
+          title: "Review order",
+          items: [
+            { label: "Adjustment log", meta: "Look for recent manual edits", tone: "risk" },
+            { label: "Receiving history", meta: "Compare expected and received", tone: "warn" },
+            { label: "Sales and stock trail", meta: "Confirm the full movement chain", tone: "good" },
+          ],
+        },
+      },
+    ],
+  },
+  {
+    title: "Manager morning briefing",
+    specialist: "Operations manager agent",
+    messages: [
+      { role: "user", text: "Give me a morning briefing before I open the stores." },
+      {
+        role: "assistant",
+        text: "Here is the operational picture: sales momentum is strong, two stores need replenishment review, and one POS terminal has unresolved sync work.",
+        widget: {
+          type: "metric-grid",
+          items: [
+            { label: "Revenue trend", value: "+18%", helper: "Versus yesterday" },
+            { label: "Stock risks", value: "12", helper: "Out-of-stock variants" },
+            { label: "Sync attention", value: "1", helper: "Terminal queue pending" },
+          ],
+        },
+      },
+      { role: "user", text: "What should I act on first?" },
+      {
+        role: "assistant",
+        text: "Approve replenishment for the fastest movers first, then review the terminal sync queue before opening peak-hour checkout.",
+        widget: {
+          type: "ranked-list",
+          title: "Priority actions",
+          items: [
+            { label: "Approve urgent purchase draft", meta: "Prevents fast-mover stockout", tone: "risk" },
+            { label: "Resolve terminal sync queue", meta: "Avoid reporting gaps", tone: "warn" },
+            { label: "Check cashier readiness", meta: "Terminals and remittance owners", tone: "good" },
+          ],
+        },
+      },
+    ],
+  },
+  {
+    title: "Supplier performance",
+    specialist: "Supplier insight agent",
+    messages: [
+      { role: "user", text: "Which supplier is delaying my replenishment most often?" },
+      {
+        role: "assistant",
+        text: "Supplier BlueMart has the highest delay impact: three late deliveries affected six fast-moving variants this month.",
+        widget: {
+          type: "bar-list",
+          title: "Supplier delay impact",
+          items: [
+            { label: "BlueMart Distribution", value: "3 late POs", width: 100 },
+            { label: "PrimeCare Wholesale", value: "1 late PO", width: 33 },
+            { label: "DailyMart Supply", value: "0 late POs", width: 6 },
+          ],
+        },
+      },
+      { role: "user", text: "What alternative action should I take?" },
+      {
+        role: "assistant",
+        text: "Split urgent replenishment between BlueMart and PrimeCare, then keep BlueMart on non-urgent quantities until performance improves.",
+        widget: {
+          type: "action-form",
+          title: "Supplier action",
+          fields: ["Primary supplier", "Backup supplier", "Urgent quantity split", "Review date"],
+          cta: "Prepare supplier split",
+        },
+      },
+    ],
+  },
+  {
+    title: "Role and staff control",
+    specialist: "Access control agent",
+    messages: [
+      { role: "user", text: "I want my cashier to sell products but not approve purchase orders. Can you check the role?" },
+      {
+        role: "assistant",
+        text: "The cashier role should include POS checkout and product read access, but exclude purchasing approval and inventory deletion.",
+        widget: {
+          type: "ranked-list",
+          title: "Role review",
+          items: [
+            { label: "Allow POS checkout", meta: "Required for sales", tone: "good" },
+            { label: "Allow product lookup", meta: "Required for catalog search", tone: "good" },
+            { label: "Block PO approval", meta: "Manager-only permission", tone: "risk" },
+          ],
+        },
+      },
+      { role: "user", text: "Notify the staff member when the role is updated." },
+      {
+        role: "assistant",
+        text: "The platform records the change in the audit trail and surfaces it wherever the workspace owner reviews access changes.",
+        widget: {
+          type: "action-form",
+          title: "Access update record",
+          fields: ["Staff member", "Role summary", "Reason for change"],
+          cta: "Save change",
+        },
+      },
     ],
   },
 ];
 
-const metricCards = [
-  { label: "Stockout Risk", value: "8.4%", delta: "-2.1%" },
-  { label: "Fulfillment Time", value: "1.9 days", delta: "-0.4d" },
-  { label: "Inventory Accuracy", value: "98.7%", delta: "+1.3%" },
-  { label: "Gross Margin Trend", value: "+6.8%", delta: "+1.1%" },
+const demoSignalCoverage = [
+  { label: "Hourly sales value", source: "Audit projection", delivery: "WebSocket" },
+  { label: "Hourly receiving units", source: "Audit projection", delivery: "WebSocket" },
+  { label: "Audit and risk activity", source: "Audit ledger", delivery: "WebSocket" },
+  { label: "Inventory and catalog snapshot", source: "Domain services", delivery: "API refresh" },
 ];
 
-const weeklyOpsSeries = [54, 61, 58, 69, 74, 72, 81];
+function DemoWidgetView({ widget }: { widget?: DemoWidget }) {
+  if (!widget) return null
+
+  if (widget.type === "metric-grid") {
+    return (
+      <div className="mt-3 grid gap-2 sm:grid-cols-3">
+        {widget.items.map((item) => (
+          <div key={item.label} className="rounded-xl border border-blue-100 bg-blue-50/70 p-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-blue-700">{item.label}</p>
+            <p className="mt-1 text-lg font-semibold text-gray-950">{item.value}</p>
+            <p className="mt-1 text-[11px] text-gray-500">{item.helper}</p>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  if (widget.type === "bar-list") {
+    return (
+      <div className="mt-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">{widget.title}</p>
+        <div className="mt-3 space-y-3">
+          {widget.items.map((item) => (
+            <div key={item.label}>
+              <div className="flex items-center justify-between gap-3 text-xs">
+                <span className="font-medium text-gray-700">{item.label}</span>
+                <span className="font-semibold text-gray-900">{item.value}</span>
+              </div>
+              <div className="mt-1 h-2 overflow-hidden rounded-full bg-gray-200">
+                <motion.div
+                  initial={{ width: 0 }}
+                  whileInView={{ width: `${item.width}%` }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.55 }}
+                  className="h-full rounded-full bg-gradient-to-r from-blue-500 to-emerald-400"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (widget.type === "ranked-list") {
+    const toneClass = {
+      good: "border-emerald-100 bg-emerald-50 text-emerald-800",
+      warn: "border-amber-100 bg-amber-50 text-amber-800",
+      risk: "border-red-100 bg-red-50 text-red-800",
+    }
+    return (
+      <div className="mt-3 rounded-xl border border-gray-200 bg-white p-3">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">{widget.title}</p>
+        <div className="mt-3 space-y-2">
+          {widget.items.map((item, index) => (
+            <div key={item.label} className={`rounded-xl border px-3 py-2 ${toneClass[item.tone || "good"]}`}>
+              <div className="flex gap-2">
+                <span className="font-semibold">{index + 1}.</span>
+                <div>
+                  <p className="text-sm font-semibold">{item.label}</p>
+                  <p className="text-xs opacity-80">{item.meta}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (widget.type === "action-form") {
+    return (
+      <div className="mt-3 rounded-xl border border-gray-200 bg-white p-3">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">{widget.title}</p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {widget.fields.map((field) => (
+            <div key={field} className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-500">
+              {field}
+            </div>
+          ))}
+        </div>
+        <button className="mt-3 rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm">
+          {widget.cta}
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-3 rounded-xl border border-red-100 bg-red-50 p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-red-700">{widget.title}</p>
+          <p className="mt-1 text-2xl font-semibold text-red-900">{widget.score}</p>
+        </div>
+        <ShieldCheck className="h-5 w-5 text-red-600" />
+      </div>
+      <div className="mt-3 space-y-2">
+        {widget.items.map((item) => (
+          <p key={item} className="rounded-lg bg-white/80 px-3 py-2 text-xs text-red-900">
+            {item}
+          </p>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 const revealCard = (index = 0) => ({
   initial: { opacity: 0, y: 18 },
@@ -171,6 +702,7 @@ const liftOnHover = {
   transition: { duration: 0.2, ease: "easeOut" as const },
 };
 
+/*
 function formatPlanPrice(plan: SubscriptionPlan) {
   if (plan.name.toLowerCase().includes("enterprise")) {
     return "Contact sales";
@@ -182,14 +714,25 @@ function formatPlanPrice(plan: SubscriptionPlan) {
   return `$${parsedPrice.toFixed(parsedPrice % 1 === 0 ? 0 : 2)}`;
 }
 
+function formatPlanFeature(feature: Feature) {
+  if (feature.limit_type === "COUNT" && !feature.is_unlimited) {
+    const limit = Number(feature.limit_value ?? 0).toLocaleString();
+    return `${limit} ${feature.name.toLowerCase()}`;
+  }
+  if (feature.limit_type === "COUNT" && feature.is_unlimited) {
+    return `Unlimited ${feature.name.toLowerCase()}`;
+  }
+  return feature.name;
+}
+
 function PlanCard({ plan, highlighted = false }: { plan: SubscriptionPlan; highlighted?: boolean }) {
-  const planFeatures = useMemo(() => {
-    const items: string[] = plan.features.map((feature: Feature) => feature.name);
-    if (plan.intera_coins_reward > 0) {
-      items.unshift(`${plan.intera_coins_reward} Intera Coins included`);
-    }
-    return items.slice(0, 8);
-  }, [plan.features, plan.intera_coins_reward]);
+  const planFeatures: string[] = plan.features.map(formatPlanFeature);
+  if (planFeatures.length === 0) {
+    planFeatures.push(...(planHighlights[plan.slug] ?? []));
+  }
+  if (plan.intera_coins_reward > 0) {
+    planFeatures.unshift(`${plan.intera_coins_reward} Intera Coins included`);
+  }
 
   return (
     <motion.div
@@ -226,15 +769,23 @@ function PlanCard({ plan, highlighted = false }: { plan: SubscriptionPlan; highl
     </motion.div>
   );
 }
+*/
 
 export default function HomePage() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [activeDemoIndex, setActiveDemoIndex] = useState(0);
+  const waitlistMode = process.env.NEXT_PUBLIC_WAITLIST_MODE?.trim().toLowerCase() === "true";
+  const [activeDemoIndex, setActiveDemoIndex] = useState(() => Math.floor(Math.random() * demoConversations.length));
   const [visibleMessageCount, setVisibleMessageCount] = useState(0);
+  const [typedDemoText, setTypedDemoText] = useState("");
+  const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
+  /* Pricing is intentionally hidden until after registration.
   const { data: pricingPlans, isLoading, isError } = useGetSubscriptionPlansQuery({
-    application__slug: "inventory-system",
+    application__slug: "intera-ims",
   });
-
+  */
+  const demoAvatarForRole = {
+    assistant: isDarkMode ? "/assets/img/favicons/favicon-dark.png" : "/assets/img/favicons/favicon-light.png",
+    user: "/assets/intera-logo.png",
+  } as const;
   useEffect(() => {
     const intervalId = window.setInterval(() => {
       setActiveDemoIndex((currentValue) => (currentValue + 1) % demoConversations.length);
@@ -244,114 +795,67 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    let timeoutId: number | undefined;
+    const timerIds: number[] = [];
     let cancelled = false;
-    const totalMessages = demoConversations[activeDemoIndex].messages.length;
+    const messages = demoConversations[activeDemoIndex].messages;
 
-    setVisibleMessageCount(0);
-
-    const revealNext = (nextCount: number) => {
-      if (cancelled) return;
-      setVisibleMessageCount(nextCount);
-      if (nextCount < totalMessages) {
-        timeoutId = window.setTimeout(() => revealNext(nextCount + 1), 1300);
-      }
+    const schedule = (callback: () => void, delay: number) => {
+      const timerId = window.setTimeout(callback, delay);
+      timerIds.push(timerId);
     };
 
-    timeoutId = window.setTimeout(() => revealNext(1), 350);
+    const typeText = (text: string, onDone: () => void, index = 0) => {
+      if (cancelled) return;
+      if (index > text.length) {
+        onDone();
+        return;
+      }
+      setTypedDemoText(text.slice(0, index));
+      schedule(() => typeText(text, onDone, index + 1), index === 0 ? 250 : 22);
+    };
+
+    const revealMessage = (index: number) => {
+      if (cancelled || index >= messages.length) return;
+      const message = messages[index];
+      if (message.role === "user") {
+        typeText(message.text, () => {
+          if (cancelled) return;
+          schedule(() => {
+            setVisibleMessageCount(index + 1);
+            setTypedDemoText("");
+            schedule(() => revealMessage(index + 1), 600);
+          }, 180);
+        });
+        return;
+      }
+      schedule(() => {
+        if (cancelled) return;
+        setVisibleMessageCount(index + 1);
+        schedule(() => revealMessage(index + 1), 900);
+      }, 850);
+    };
+
+    schedule(() => {
+      setVisibleMessageCount(0);
+      setTypedDemoText("");
+      schedule(() => revealMessage(0), 350);
+    }, 0);
 
     return () => {
       cancelled = true;
-      if (timeoutId) {
-        window.clearTimeout(timeoutId);
-      }
+      timerIds.forEach((timerId) => window.clearTimeout(timerId));
     };
   }, [activeDemoIndex]);
 
+  const nextDemoMessage = demoConversations[activeDemoIndex].messages[visibleMessageCount];
+  const isAssistantThinking = Boolean(nextDemoMessage?.role === "assistant" && !typedDemoText);
+
   return (
-    <div className="min-h-screen bg-white text-gray-900">
-      <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-2">
-            <Image
-              src="https://interabucket.s3.amazonaws.com/attachments/product/light_intera-202508252032.png"
-              alt="Intera"
-              width={52}
-              height={52}
-            />
-            <span className="text-lg font-semibold tracking-tight">Intera Inventory</span>
-          </Link>
-
-          <nav className="hidden items-center gap-8 md:flex">
-            <a href="#capabilities" className="text-sm text-gray-600 hover:text-gray-900">
-              Capabilities
-            </a>
-            <a href="#workflow" className="text-sm text-gray-600 hover:text-gray-900">
-              Workflow
-            </a>
-            <a href="#demo" className="text-sm text-gray-600 hover:text-gray-900">
-              Demo
-            </a>
-            <a href="#pricing" className="text-sm text-gray-600 hover:text-gray-900">
-              Pricing
-            </a>
-            <a href="#faq" className="text-sm text-gray-600 hover:text-gray-900">
-              FAQ
-            </a>
-          </nav>
-
-          <div className="hidden items-center gap-3 md:flex">
-            <Button variant="ghost" asChild>
-              <Link href="/accounts/signin">Sign in</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/accounts">Get started</Link>
-            </Button>
-          </div>
-
-          <button
-            type="button"
-            className="inline-flex rounded-md p-2 text-gray-700 hover:bg-gray-100 md:hidden"
-            onClick={() => setIsMobileMenuOpen((currentValue) => !currentValue)}
-            aria-label="Toggle menu"
-          >
-            {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-        </div>
-
-        {isMobileMenuOpen ? (
-          <div className="border-t border-gray-200 bg-white px-4 py-4 md:hidden">
-            <div className="flex flex-col gap-3">
-              <a href="#capabilities" onClick={() => setIsMobileMenuOpen(false)}>
-                Capabilities
-              </a>
-              <a href="#workflow" onClick={() => setIsMobileMenuOpen(false)}>
-                Workflow
-              </a>
-              <a href="#demo" onClick={() => setIsMobileMenuOpen(false)}>
-                Demo
-              </a>
-              <a href="#pricing" onClick={() => setIsMobileMenuOpen(false)}>
-                Pricing
-              </a>
-              <a href="#faq" onClick={() => setIsMobileMenuOpen(false)}>
-                FAQ
-              </a>
-              <div className="mt-2 flex gap-2">
-                <Button variant="ghost" asChild className="flex-1">
-                  <Link href="/accounts/signin">Sign in</Link>
-                </Button>
-                <Button asChild className="flex-1">
-                  <Link href="/accounts">Get started</Link>
-                </Button>
-              </div>
-            </div>
-          </div>
-        ) : null}
-      </header>
+    <div className="landing-page min-h-screen bg-white text-gray-900">
+      <LandingHeader />
 
       <main>
-        <section className="bg-gradient-to-b from-blue-50 via-white to-white">
+        <section className="landing-hero bg-gradient-to-b from-blue-50 via-white to-white">
           <div className="mx-auto grid max-w-7xl gap-12 px-4 pb-16 pt-16 sm:px-6 lg:grid-cols-2 lg:px-8 lg:pt-20">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
@@ -366,15 +870,16 @@ export default function HomePage() {
                 noise of fragmented tools.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
-                <Button asChild size="lg">
-                  <Link href="/accounts">
-                    Start free setup
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" size="lg">
-                  <a href="#pricing">View plans</a>
-                </Button>
+                {waitlistMode ? (
+                  <Button asChild size="lg">
+                    <a href="#waitlist">Join the waitlist <ArrowRight className="h-4 w-4" /></a>
+                  </Button>
+                ) : (
+                  <Button asChild size="lg">
+                    <Link href="/accounts">Start free setup <ArrowRight className="h-4 w-4" /></Link>
+                  </Button>
+                )}
+                {/* Pricing is intentionally hidden until after registration. */}
               </div>
               <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
                 {coreHighlights.map(({ title, icon: IconComponent }, index) => (
@@ -424,7 +929,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="capabilities" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <section id="capabilities" className="landing-section mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">Capabilities</p>
             <h2 className="mt-3 text-3xl font-semibold text-gray-900 sm:text-4xl">
@@ -436,23 +941,39 @@ export default function HomePage() {
           </div>
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {capabilityGrid.map(({ title, description, icon: IconComponent }, index) => (
+            {capabilityGrid.map(({ title, description, availability, icon: IconComponent }, index) => (
               <motion.div
                 key={title}
                 {...revealCard(index)}
                 whileHover={liftOnHover}
-                className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-colors hover:border-blue-300"
+                className={`rounded-2xl border p-6 shadow-sm transition-colors hover:border-blue-300 ${availability ? "border-blue-200 bg-blue-50/40" : "border-gray-200 bg-white"}`}
               >
-                <IconComponent className="h-5 w-5 text-blue-700" />
+                <div className="flex items-start justify-between gap-3">
+                  <IconComponent className="h-5 w-5 text-blue-700" />
+                  {availability ? (
+                    <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700">
+                      {availability}
+                    </span>
+                  ) : null}
+                </div>
                 <h3 className="mt-4 text-lg font-semibold text-gray-900">{title}</h3>
                 <p className="mt-2 text-sm text-gray-600">{description}</p>
               </motion.div>
             ))}
           </div>
         </section>
-
+        {/* 
         <section className="border-y border-gray-200 bg-gray-50">
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+            <div className="max-w-2xl">
+              <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">Core Capabilities</p>
+              <h2 className="mt-3 text-3xl font-semibold text-gray-900 sm:text-4xl">
+                The essentials behind a modern inventory operation.
+              </h2>
+              <p className="mt-4 text-lg text-gray-600">
+                These are the primary capabilities that define how the platform helps teams run stock, selling, control, and insight from one workspace.
+              </p>
+            </div>
             <div className="grid gap-6 lg:grid-cols-3">
               {coreHighlights.map(({ title, description, icon: IconComponent }, index) => (
                 <motion.div
@@ -469,8 +990,8 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-
-        <section id="workflow" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <section id="workflow" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 bg-gray-50">
+          
           <div className="max-w-2xl">
             <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">Workflow</p>
             <h2 className="mt-3 text-3xl font-semibold text-gray-900 sm:text-4xl">
@@ -492,8 +1013,9 @@ export default function HomePage() {
             ))}
           </div>
         </section>
+*/}
 
-        <section id="demo" className="border-y border-gray-200 bg-gray-50">
+        <section id="demo" className="landing-demo border-y border-gray-200 bg-gray-50">
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             <div className="max-w-3xl">
               <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">Conversation Demo</p>
@@ -509,19 +1031,46 @@ export default function HomePage() {
               <motion.div
                 {...revealCard(0)}
                 whileHover={liftOnHover}
-                className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-colors hover:border-blue-300 lg:col-span-3"
+                className="flex h-[620px] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-colors hover:border-blue-300 lg:col-span-3 lg:h-[650px]"
               >
-                <div className="mb-4 flex items-center justify-between border-b border-gray-100 pb-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Live Agent Session</p>
-                    <p className="text-sm font-medium text-gray-800">{demoConversations[activeDemoIndex].title}</p>
+                <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-700 p-4 text-white">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <Bot className="h-5 w-5 shrink-0" />
+                      <span className="truncate text-sm font-semibold uppercase tracking-[0.18em] text-blue-100">
+                        Intera operations agent
+                      </span>
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${demoConversations[activeDemoIndex].availability === "Coming soon" ? "bg-blue-50 text-blue-700" : "bg-emerald-100 text-emerald-900"}`}>
+                        {demoConversations[activeDemoIndex].availability ?? "Ready"}
+                      </span>
+                    </div>
+                    <p className="mt-2 truncate text-sm text-blue-50/90">
+                      {demoConversations[activeDemoIndex].availability === "Coming soon"
+                        ? "Planned post-launch feature preview."
+                        : "Demonstration conversation using supported workflows."}
+                    </p>
                   </div>
-                  <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">
-                    Online
+                  <span className="hidden rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-medium sm:inline-flex">
+                    Product preview
                   </span>
                 </div>
 
-                <div className="space-y-3">
+                <div className="min-h-0 flex-1 overflow-y-auto bg-gray-50 p-4">
+                  <div className="mb-4 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Workflow</p>
+                    <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">{demoConversations[activeDemoIndex].title}</p>
+                          <p className="text-xs text-gray-500">{demoConversations[activeDemoIndex].specialist}</p>
+                        </div>
+                      </div>
+                      <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${demoConversations[activeDemoIndex].availability === "Coming soon" ? "bg-blue-50 text-blue-700" : "bg-gray-100 text-gray-700"}`}>
+                        {demoConversations[activeDemoIndex].availability ?? "Ready"}
+                      </span>
+                    </div>
+                  </div>
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={`demo-thread-${activeDemoIndex}`}
@@ -529,34 +1078,51 @@ export default function HomePage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -12 }}
                       transition={{ duration: 0.25 }}
-                      className="space-y-3"
+                      className="space-y-5"
                     >
-                      {demoConversations[activeDemoIndex].messages.slice(0, visibleMessageCount).map((message, index) => (
-                        <motion.div
-                          key={`${message.role}-${index}`}
-                          initial={{ opacity: 0, x: message.role === "user" ? 12 : -12 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.25, delay: index * 0.1 }}
-                          className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-                        >
-                          <div
-                            className={`max-w-[90%] rounded-2xl px-4 py-3 text-sm ${
-                              message.role === "user"
-                                ? "bg-blue-700 text-white"
-                                : "border border-gray-200 bg-gray-100 text-gray-800"
-                            }`}
+                      {demoConversations[activeDemoIndex].messages.slice(0, visibleMessageCount).map((message, index) => {
+                        const isUser = message.role === "user";
+                        return (
+                          <motion.div
+                            key={`${message.role}-${index}`}
+                            initial={{ opacity: 0, x: isUser ? 12 : -12 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.25, delay: index * 0.1 }}
+                            className={`flex items-end gap-3 ${isUser ? "justify-end" : "justify-start"}`}
                           >
-                            {message.text}
-                          </div>
-                        </motion.div>
-                      ))}
-                      {visibleMessageCount < demoConversations[activeDemoIndex].messages.length ? (
+                            {!isUser ? (
+                              <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-blue-100 bg-white shadow-sm">
+                                <Image src={demoAvatarForRole.assistant} alt="Intera AI" fill sizes="40px" className="object-cover" />
+                              </span>
+                            ) : null}
+                            <div
+                              className={`max-w-[82%] rounded-2xl px-5 py-4 text-sm shadow-sm ${
+                                isUser
+                                  ? "rounded-br-none bg-blue-500 text-white"
+                                  : "rounded-bl-none border border-gray-100 bg-white text-gray-800"
+                              }`}
+                            >
+                              <p className="leading-6">{message.text}</p>
+                              {!isUser ? <DemoWidgetView widget={message.widget} /> : null}
+                            </div>
+                            {isUser ? (
+                              <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-blue-200 bg-blue-600 shadow-sm">
+                                <Image src={demoAvatarForRole.user} alt="Store operator" fill sizes="40px" className="object-cover" />
+                              </span>
+                            ) : null}
+                          </motion.div>
+                        );
+                      })}
+                      {isAssistantThinking ? (
                         <motion.div
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
-                          className="flex justify-start"
+                          className="flex items-end justify-start gap-3"
                         >
-                          <div className="inline-flex items-center gap-1 rounded-2xl border border-gray-200 bg-gray-100 px-3 py-2">
+                          <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-blue-100 bg-white shadow-sm">
+                            <Image src={demoAvatarForRole.assistant} alt="Intera AI" fill sizes="40px" className="object-cover" />
+                          </span>
+                          <div className="inline-flex items-center gap-1 rounded-2xl rounded-bl-none border border-gray-100 bg-white px-4 py-3 shadow-sm">
                             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-gray-500" />
                             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-gray-500 [animation-delay:120ms]" />
                             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-gray-500 [animation-delay:220ms]" />
@@ -566,6 +1132,23 @@ export default function HomePage() {
                     </motion.div>
                   </AnimatePresence>
                 </div>
+                <div className="border-t border-gray-200 bg-white p-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex min-h-10 flex-1 items-center rounded-2xl border border-gray-300 bg-gray-100 px-4 py-2 text-sm text-gray-700">
+                      {typedDemoText ? (
+                        <span>
+                          {typedDemoText}
+                          <span className="ml-0.5 inline-block h-4 w-[2px] translate-y-0.5 animate-pulse bg-blue-600" />
+                        </span>
+                      ) : (
+                        <span className="text-gray-500">Type your operational question...</span>
+                      )}
+                    </div>
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm">
+                      <Send className="h-4 w-4" />
+                    </span>
+                  </div>
+                </div>
               </motion.div>
 
               <div className="space-y-6 lg:col-span-2">
@@ -574,28 +1157,23 @@ export default function HomePage() {
                   whileHover={liftOnHover}
                   className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-colors hover:border-blue-300"
                 >
-                  <div className="mb-4 flex items-center justify-between">
-                    <p className="text-sm font-semibold text-gray-900">Operations Snapshot</p>
-                    <p className="text-xs text-gray-500">Last 7 days</p>
+                  <div className="mb-4 flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">Operational signal coverage</p>
+                      <p className="mt-1 text-xs leading-5 text-gray-500">Actual delivery contracts used by the current dashboard.</p>
+                    </div>
+                    <Radio className="h-5 w-5 shrink-0 text-blue-600" />
                   </div>
-                  <div className="mb-4 flex h-24 items-end gap-2">
-                    {weeklyOpsSeries.map((value, index) => (
-                      <motion.div
-                        key={`ops-bar-${index}`}
-                        initial={{ height: 0, opacity: 0 }}
-                        whileInView={{ height: `${value}%`, opacity: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.35, delay: index * 0.05 }}
-                        className="w-full rounded-t-md bg-blue-500/80"
-                      />
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    {metricCards.map((metric) => (
-                      <div key={metric.label} className="rounded-lg border border-gray-100 bg-gray-50 p-3">
-                        <p className="text-xs text-gray-500">{metric.label}</p>
-                        <p className="mt-1 text-sm font-semibold text-gray-900">{metric.value}</p>
-                        <p className="text-xs font-medium text-green-700">{metric.delta}</p>
+                  <div className="space-y-2">
+                    {demoSignalCoverage.map((signal) => (
+                      <div key={signal.label} className="rounded-xl border border-gray-100 bg-gray-50 p-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="text-sm font-semibold text-gray-900">{signal.label}</p>
+                          <span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold ${signal.delivery === "WebSocket" ? "bg-emerald-100 text-emerald-800" : "bg-blue-100 text-blue-800"}`}>
+                            {signal.delivery}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500">{signal.source}</p>
                       </div>
                     ))}
                   </div>
@@ -619,7 +1197,8 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="pricing" className="border-y border-gray-200 bg-white">
+        {/* Pricing is intentionally hidden until after registration.
+        <section id="pricing" className="landing-pricing border-y border-gray-200 bg-white">
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             <div className="max-w-3xl">
               <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">Pricing</p>
@@ -642,68 +1221,77 @@ export default function HomePage() {
                   Unable to load pricing plans right now. Please refresh or try again shortly.
                 </div>
               ) : null}
-              {pricingPlans?.map((plan, index) => (
+              {pricingPlans
+                ?.filter((plan: SubscriptionPlan) => plan.slug !== "enterprise")
+                .map((plan: SubscriptionPlan, index: number) => (
                 <PlanCard key={plan.id} plan={plan} highlighted={index === 1} />
               ))}
             </div>
           </div>
         </section>
+        */}
 
-        <section id="faq" className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
+        <section id="faq" className="landing-faq">
+          <div className="landing-faq-inner mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="text-center">
             <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">FAQ</p>
             <h2 className="mt-3 text-3xl font-semibold text-gray-900 sm:text-4xl">Common questions, clear answers.</h2>
           </div>
-          <div className="mt-10 space-y-4">
+          <div className="mt-10 grid items-start gap-4 md:grid-cols-2">
             {faqItems.map((item, index) => (
               <motion.details
                 key={item.question}
                 {...revealCard(index)}
                 whileHover={liftOnHover}
-                className="rounded-xl border border-gray-200 bg-white p-5 transition-colors hover:border-blue-300"
+                className="group rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-colors open:border-blue-300 open:shadow-md hover:border-blue-300"
               >
-                <summary className="cursor-pointer list-none text-base font-semibold text-gray-900">
-                  {item.question}
+                <summary className="flex cursor-pointer list-none items-start justify-between gap-4 text-left [&::-webkit-details-marker]:hidden">
+                  <span className="text-base font-semibold leading-6 text-gray-900">{item.question}</span>
+                  <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-gray-50 text-gray-500 transition group-open:rotate-180 group-open:border-blue-200 group-open:bg-blue-50 group-open:text-blue-700">
+                    <ChevronDown className="h-4 w-4" />
+                  </span>
                 </summary>
-                <p className="mt-3 text-sm leading-relaxed text-gray-600">{item.answer}</p>
+                <p className="mt-4 border-t border-gray-100 pt-4 text-sm font-normal leading-6 text-gray-600">{item.answer}</p>
               </motion.details>
             ))}
           </div>
-        </section>
-
-        <section className="bg-blue-700">
-          <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-14 text-white sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-            <div className="max-w-2xl">
-              <h2 className="text-3xl font-semibold">Ready to simplify inventory operations for your team?</h2>
-              <p className="mt-3 text-blue-100">
-                Start with a structured setup, enforce secure access with MFA, and scale into AI-assisted execution.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <Button asChild className="bg-white text-blue-700 hover:bg-blue-100">
-                <Link href="/accounts">Create account</Link>
-              </Button>
-              <Button asChild variant="outline" className="border-white text-white hover:bg-blue-600 hover:text-white">
-                <Link href="/accounts/signin">Sign in</Link>
-              </Button>
-            </div>
           </div>
         </section>
+
+        {waitlistMode ? (
+          <section id="waitlist" className="landing-cta bg-blue-700">
+            <div className="landing-cta-inner mx-auto grid max-w-7xl gap-8 px-4 py-14 text-white sm:px-6 lg:grid-cols-[.8fr_1.2fr] lg:items-center lg:px-8">
+              <div className="max-w-2xl">
+                <span className="landing-cta-kicker"><Sparkles className="h-3.5 w-3.5" /> Early access</span>
+                <h2 className="mt-5 text-3xl font-semibold sm:text-4xl">The launch date will be announced soon.</h2>
+                <p className="mt-4 max-w-xl text-blue-100">Join the list for the launch announcement and updates about Intera IMS.</p>
+              </div>
+              <div className="landing-cta-panel rounded-2xl bg-white p-5 text-gray-900 sm:p-6">
+                <WaitlistForm />
+              </div>
+            </div>
+          </section>
+        ) : (
+          <section className="landing-cta bg-blue-700">
+          <div className="landing-cta-inner mx-auto grid max-w-7xl gap-8 px-4 py-14 text-white sm:px-6 lg:grid-cols-[1.25fr_.75fr] lg:items-center lg:px-8">
+            <div className="max-w-2xl">
+              <span className="landing-cta-kicker"><Sparkles className="h-3.5 w-3.5" /> A calmer way to run operations</span>
+              <h2 className="mt-5 text-3xl font-semibold sm:text-4xl">Give every stock decision a clearer next move.</h2>
+              <p className="mt-4 max-w-xl text-blue-100">Set up your workspace, bring the team into one controlled flow, and let Intera turn daily operational data into confident action.</p>
+            </div>
+            <div className="landing-cta-panel rounded-2xl p-5 sm:p-6">
+              <div className="flex items-start gap-3"><span className="landing-cta-icon"><ShieldCheck className="h-5 w-5" /></span><div><p className="font-semibold">Start with a secure foundation</p><p className="mt-1 text-sm leading-6 text-blue-100">Invite the right people, set up locations, then grow at your own pace.</p></div></div>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                <Button asChild><Link href="/accounts">Create account <ArrowRight className="h-4 w-4" /></Link></Button>
+                <Button asChild variant="secondary"><Link href="/accounts/signin">Sign in</Link></Button>
+              </div>
+            </div>
+          </div>
+          </section>
+        )}
       </main>
 
-      <footer className="border-t border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8 text-sm text-gray-500 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-          <p>© 2026 Intera Inventory. Built for dependable operations.</p>
-          <div className="flex items-center gap-4">
-            <Link href="/accounts/signin" className="hover:text-gray-700">
-              Sign in
-            </Link>
-            <Link href="/accounts" className="hover:text-gray-700">
-              Create account
-            </Link>
-          </div>
-        </div>
-      </footer>
+      <LandingFooter />
     </div>
   );
 }

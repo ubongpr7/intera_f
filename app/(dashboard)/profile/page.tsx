@@ -1,8 +1,14 @@
+import CompanyProfileContainer from "@/components/company/CompanyProfileContainer";
+import { WorkspaceSetupShell } from "@/components/onboarding/WorkspaceSetupShell";
 
-const Company = () => {
+export default function CreateCompanyPage() {
   return (
-    <div>Company</div>
-  )
+    <WorkspaceSetupShell
+      activeStage="company"
+      title="Create and activate your company workspace"
+      description="Manage company identity, address, social links, and policies for the active workspace."
+    >
+      <CompanyProfileContainer />
+    </WorkspaceSetupShell>
+  );
 }
-
-export default Company

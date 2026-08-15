@@ -288,13 +288,11 @@ export function AlertManagerHandler({ data, onResponse, compact = false, disable
                 placeholder="Condition"
                 value={newAlert.condition}
                 onChange={(e) => setNewAlert({ ...newAlert, condition: e.target.value })}
-                size={compact ? "sm" : "default"}
               />
               <Input
                 placeholder="Value"
                 value={newAlert.value}
                 onChange={(e) => setNewAlert({ ...newAlert, value: e.target.value })}
-                size={compact ? "sm" : "default"}
               />
             </div>
             <Button onClick={handleCreateAlert} className="w-full mt-2" size={compact ? "sm" : "default"}>
@@ -396,7 +394,6 @@ export function TaskAssignmentHandler({ data, onResponse, compact = false, disab
                 type="datetime-local"
                 value={assignment.due_date}
                 onChange={(e) => setAssignment({ ...assignment, due_date: e.target.value })}
-                size={compact ? "sm" : "default"}
               />
             </div>
           )}
@@ -583,9 +580,11 @@ export function ApprovalWorkflowHandler({ data, onResponse, compact = false, dis
 }
 
 export function WizardFlowHandler({ data, onResponse, compact = false, disabled = false }: ExtraCollabProps) {
-  const [currentStep, setCurrentStep] = useState(data.current_step || 0)
-  const [responses, setResponses] = useState<Record<string, any>>(data.existing_responses || {})
-  const [currentStepData, setCurrentStepData] = useState<Record<string, any>>({})
+  const initialStep = data.current_step || 0
+  const initialResponses = data.existing_responses || {}
+  const [currentStep, setCurrentStep] = useState(initialStep)
+  const [responses, setResponses] = useState<Record<string, any>>(initialResponses)
+  const [currentStepData, setCurrentStepData] = useState<Record<string, any>>(initialResponses[`step_${initialStep}`] || {})
 
   const handleFieldChange = (fieldName: string, value: any) => {
     setCurrentStepData((prev) => ({
@@ -603,8 +602,9 @@ export function WizardFlowHandler({ data, onResponse, compact = false, disabled 
     setResponses(updatedResponses)
 
     if (currentStep < data.steps.length - 1) {
-      setCurrentStep(currentStep + 1)
-      setCurrentStepData({})
+      const nextStep = currentStep + 1
+      setCurrentStep(nextStep)
+      setCurrentStepData(updatedResponses[`step_${nextStep}`] || {})
     } else {
       // Final step - submit all responses
       onResponse({
@@ -618,9 +618,9 @@ export function WizardFlowHandler({ data, onResponse, compact = false, disabled 
 
   const handlePrevious = () => {
     if (currentStep > 0) {
-      setCurrentStep(currentStep - 1)
-      // Load previous step data
-      setCurrentStepData(responses[`step_${currentStep - 1}`] || {})
+      const previousStep = currentStep - 1
+      setCurrentStep(previousStep)
+      setCurrentStepData(responses[`step_${previousStep}`] || {})
     }
   }
 
@@ -635,9 +635,76 @@ export function WizardFlowHandler({ data, onResponse, compact = false, disabled 
 
   const currentStepInfo = data.steps[currentStep]
   const isLastStep = currentStep === data.steps.length - 1
+  const submittedResponses = {
+    ...responses,
+    ...(Object.keys(currentStepData).length > 0 ? { [`step_${currentStep}`]: currentStepData } : {}),
+  }
+  const shouldShowField = (field: any) => {
+    const showWhen = field?.show_when
+    if (!showWhen || typeof showWhen !== "object") {
+      return true
+    }
+    const dependentField = String(showWhen.field || "").trim()
+    if (!dependentField) {
+      return true
+    }
+    const expectedValue = showWhen.equals
+    return currentStepData[dependentField] === expectedValue
+  }
+
+  if (disabled) {
+    return (
+      <Card className={compact ? "text-sm opacity-60" : "opacity-60"}>
+        <CardHeader className={compact ? "pb-2" : ""}>
+          <CardTitle className={`flex items-center gap-2 ${compact ? "text-sm" : ""}`}>
+            <CheckCircle className={compact ? "h-4 w-4 text-green-600" : "h-5 w-5 text-green-600"} />
+            {data.title}
+          </CardTitle>
+          <p className={`text-gray-600 ${compact ? "text-xs" : "text-sm"}`}>Wizard submitted. Waiting for the next step.</p>
+        </CardHeader>
+        <CardContent className={compact ? "pt-0" : ""}>
+          <div className="space-y-3">
+            {data.steps.map((step: any, index: number) => {
+              const stepValues = submittedResponses[`step_${index}`]
+              if (!stepValues || typeof stepValues !== "object" || Object.keys(stepValues).length === 0) {
+                return null
+              }
+
+              return (
+                <div key={step.title || index} className="rounded-lg border border-gray-200 bg-white/70 p-3/70">
+                  <div className={`font-medium text-gray-800 ${compact ? "text-xs" : "text-sm"}`}>{step.title}</div>
+                  <div className="mt-2 space-y-1">
+                    {step.fields.map((field: any) => {
+                      const value = stepValues[field.name]
+                      if (value === undefined || value === null || value === "") {
+                        return null
+                      }
+
+                      const renderedValue = Array.isArray(value)
+                        ? value.join(", ")
+                        : typeof value === "boolean"
+                          ? value ? "Yes" : "No"
+                          : String(value)
+
+                      return (
+                        <div key={field.name} className={`flex flex-col gap-1 ${compact ? "text-xs" : "text-sm"}`}>
+                          <span className="font-medium text-gray-600">{field.label}</span>
+                          <span className="whitespace-pre-wrap break-words text-gray-800">{renderedValue}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
-    <Card className={`${compact ? "text-sm" : ""} ${disabled ? "opacity-50 pointer-events-none" : ""}`}>
+    <Card className={compact ? "text-sm" : ""}>
       <CardHeader className={compact ? "pb-2" : ""}>
         <CardTitle className={`flex items-center gap-2 ${compact ? "text-sm" : ""}`}>
           <CheckCircle className={compact ? "h-4 w-4" : "h-5 w-5"} />
@@ -661,7 +728,7 @@ export function WizardFlowHandler({ data, onResponse, compact = false, disabled 
                           : "bg-gray-300 text-gray-600"
                     }`}
                   >
-                    {index < currentStep ? "✓" : index + 1}
+                    {index < currentStep ? <CheckCircle className="h-4 w-4" aria-label="Completed" /> : index + 1}
                   </div>
                   {index < data.steps.length - 1 && (
                     <div className={`w-4 h-0.5 ${index < currentStep ? "bg-green-500" : "bg-gray-300"}`} />
@@ -682,7 +749,7 @@ export function WizardFlowHandler({ data, onResponse, compact = false, disabled 
             {/* Render step fields */}
             <div className="space-y-3">
               {currentStepInfo.fields.map((field: any, index: number) => (
-                <div key={index}>
+                <div key={index} className={shouldShowField(field) ? "" : "hidden"}>
                   {field.type !== "checkbox" && field.type !== "boolean" && (
                     <label className={`block font-medium mb-1 ${compact ? "text-xs" : "text-sm"}`}>
                       {field.label}
@@ -695,7 +762,6 @@ export function WizardFlowHandler({ data, onResponse, compact = false, disabled 
                       value={currentStepData[field.name] || ""}
                       onChange={(e) => handleFieldChange(field.name, e.target.value)}
                       placeholder={field.placeholder}
-                      size={compact ? "sm" : "default"}
                     />
                   )}
 
@@ -715,7 +781,7 @@ export function WizardFlowHandler({ data, onResponse, compact = false, disabled 
                       onChange={(e) => handleFieldChange(field.name, e.target.value)}
                       className={`w-full border rounded px-3 py-2 ${compact ? "text-xs" : "text-sm"}`}
                     >
-                      <option value="">Select {field.label}</option>
+                      <option value="">{field.placeholder || `Select ${field.label}`}</option>
                       {field.options.map((option: any, optIndex: number) => (
                         <option key={optIndex} value={option.value}>
                           {option.label}

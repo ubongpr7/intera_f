@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useGetLoggedInUserQuery } from './userApiSlice';
-import { UserData } from '@/components/interfaces/User';
+import type { UserData } from './userTypes';
 
 export const publicRoutes = ['/accounts/signin','/','','/accounts/signin/verify', '/accounts','/accounts/verify', '/accounts/forgot-password'];
 
@@ -29,6 +29,5 @@ export const useAuth = () => {
     isPublic,
   };
 };
-
 
 

@@ -1,428 +1,693 @@
 import { apiSlice } from "../../services/apiSlice"
+import type { StructuralLocationScopeParams } from "@/lib/structuralLocationScope"
+import type {
+  DecimalValue,
+  POSAddOrderItemPayload,
+  POSConfiguration,
+  POSCreateOrGetDraftPayload,
+  POSCustomer,
+  POSDailySalesAnalytics,
+  POSDiscount,
+  POSHoldOrder,
+  POSOrder,
+  POSOrderInventoryMutationPayload,
+  POSOrderInventorySummary,
+  POSOrderItem,
+  POSProcessPaymentPayload,
+  POSRemittance,
+  POSRemittanceActionPayload,
+  POSRetrieveHeldOrderPayload,
+  POSSession,
+  POSSessionCloseoutSummary,
+  POSSessionOpeningDefaults,
+  POSTable,
+  POSTerminalDeviceBinding,
+  POSTerminal,
+  POSUpdateOrderItemPayload,
+} from "./posTypes"
+
+const pos_api = "pos_api"
+const service = "pos"
+type POSStructuralScopeParams = StructuralLocationScopeParams
+type POSDailySalesQueryParams = POSStructuralScopeParams & {
+  date?: string
+}
+
+const unsupportedEndpoint = (detail: string) => async () => ({
+  error: {
+    status: 501,
+    data: { detail },
+  } as const,
+})
 
 export const posAPISlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    // Session endpoints
-    getCurrentSession: builder.query({
+    getCurrentSession: builder.query<POSSession | null, void | string>({
       query: () => ({
-        url: "/pos_api/sessions/current/",
-        service: "pos" ,
+        url: `/${pos_api}/sessions/current/`,
+        service,
       }),
     }),
-
-    openSession: builder.mutation({
-      query: (data) => ({
-        url: "/pos_api/sessions/open_session/",
-        method: "POST",
-        body: data,
-        service: "pos" ,
+    getSessionOpeningDefaults: builder.query<POSSessionOpeningDefaults, string | void>({
+      query: (terminalId) => ({
+        url: `/${pos_api}/sessions/opening_defaults/`,
+        params: terminalId ? { terminal: terminalId } : undefined,
+        service,
       }),
     }),
-
-    closeSession: builder.mutation({
+    getSessionCloseoutSummary: builder.query<POSSessionCloseoutSummary, { sessionId: string; closingBalance?: DecimalValue | null }>({
       query: ({ sessionId, closingBalance }) => ({
-        url: `/pos_api/sessions/${sessionId}/close_session/`,
-        method: "POST",
-        body: { closing_balance: closingBalance },
-        service: "pos" ,
+        url: `/${pos_api}/sessions/${sessionId}/closeout_summary/`,
+        params: closingBalance !== undefined && closingBalance !== null && closingBalance !== "" ? { closing_balance: closingBalance } : undefined,
+        service,
       }),
     }),
-
-    getSessions: builder.query({
-      query: () => ({
-        url: "/pos_api/sessions/",
-        service: "pos",
-      }),
-    }),
-
-    // Order endpoints
-    getCurrentOrder: builder.query({
-      query: (sessionId) => ({
-        url: `/pos_api/orders/current_draft/?session_id=${sessionId}`,
-        service: "pos" ,
-      }),
-    }),
-
-    createOrGetDraftOrder: builder.mutation({
+    openSession: builder.mutation<POSSession, Partial<POSSession>>({
       query: (data) => ({
-        url: "/pos_api/orders/create_or_get_draft/",
+        url: `/${pos_api}/sessions/open_session/`,
         method: "POST",
         body: data,
-        service: "pos" ,
+        service,
+      }),
+    }),
+    closeSession: builder.mutation<POSSession, { sessionId: string; closingBalance: DecimalValue; force?: boolean }>({
+      query: ({ sessionId, closingBalance, force }) => ({
+        url: `/${pos_api}/sessions/${sessionId}/close_session/`,
+        method: "POST",
+        body: { closing_balance: closingBalance, force },
+        service,
+      }),
+    }),
+    getSessions: builder.query<POSSession[], void | string>({
+      query: () => ({
+        url: `/${pos_api}/sessions/`,
+        service,
+      }),
+    }),
+    getSession: builder.query<POSSession, string>({
+      query: (id) => ({
+        url: `/${pos_api}/sessions/${id}/`,
+        service,
+      }),
+    }),
+    createSession: builder.mutation<POSSession, Partial<POSSession>>({
+      query: (data) => ({
+        url: `/${pos_api}/sessions/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+    updateSession: builder.mutation<POSSession, { id: string; data: Partial<POSSession> }>({
+      query: ({ id, data }) => ({
+        url: `/${pos_api}/sessions/${id}/`,
+        method: "PUT",
+        body: data,
+        service,
+      }),
+    }),
+    partialUpdateSession: builder.mutation<POSSession, { id: string; data: Partial<POSSession> }>({
+      query: ({ id, data }) => ({
+        url: `/${pos_api}/sessions/${id}/`,
+        method: "PATCH",
+        body: data,
+        service,
+      }),
+    }),
+    deleteSession: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/${pos_api}/sessions/${id}/`,
+        method: "DELETE",
+        service,
       }),
     }),
 
-    addItemToOrder: builder.mutation({
+    getCurrentOrder: builder.query<POSOrder, string>({
+      query: (sessionId) => ({
+        url: `/${pos_api}/orders/current_draft/`,
+        params: { session_id: sessionId },
+        service,
+      }),
+    }),
+    getCurrentDraftOrder: builder.query<POSOrder, string>({
+      query: (sessionId) => ({
+        url: `/${pos_api}/orders/current_draft/`,
+        params: { session_id: sessionId },
+        service,
+      }),
+    }),
+    getCurrentActiveOrder: builder.query<POSOrder, string>({
+      query: (sessionId) => ({
+        url: `/${pos_api}/orders/current_active/`,
+        params: { session_id: sessionId },
+        service,
+      }),
+    }),
+    createOrGetDraftOrder: builder.mutation<POSOrder, POSCreateOrGetDraftPayload>({
+      query: (data) => ({
+        url: `/${pos_api}/orders/create_or_get_draft/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+    addItemToOrder: builder.mutation<POSOrderItem, { orderId: string } & POSAddOrderItemPayload>({
       query: ({ orderId, ...data }) => ({
-        url: `/pos_api/orders/${orderId}/add_item/`,
+        url: `/${pos_api}/orders/${orderId}/add_item/`,
         method: "POST",
         body: data,
-        service: "pos" ,
+        service,
       }),
     }),
-
-    updateOrderItem: builder.mutation({
+    updateOrderItem: builder.mutation<POSOrderItem, { orderId: string } & POSUpdateOrderItemPayload>({
       query: ({ orderId, ...data }) => ({
-        url: `/pos_api/orders/${orderId}/update_item/`,
+        url: `/${pos_api}/orders/${orderId}/update_item/`,
         method: "POST",
         body: data,
-        service: "pos" ,
+        service,
       }),
     }),
-
-    removeOrderItem: builder.mutation({
+    removeOrderItem: builder.mutation<{ detail: string }, { orderId: string; itemId: string }>({
       query: ({ orderId, itemId }) => ({
-        url: `/pos_api/orders/${orderId}/remove_item/`,
+        url: `/${pos_api}/orders/${orderId}/remove_item/`,
         method: "POST",
         body: { item_id: itemId },
-        service: "pos" ,
+        service,
       }),
     }),
-
-    processPayment: builder.mutation({
+    processPayment: builder.mutation<POSOrder, { orderId: string } & POSProcessPaymentPayload>({
       query: ({ orderId, ...data }) => ({
-        url: `/pos_api/orders/${orderId}/process_payment/`,
+        url: `/${pos_api}/orders/${orderId}/process_payment/`,
         method: "POST",
         body: data,
-        service: "pos" ,
+        service,
       }),
     }),
-
-    holdOrder: builder.mutation({
+    holdOrder: builder.mutation<POSHoldOrder, { orderId: string; hold_reason?: string }>({
       query: ({ orderId, ...data }) => ({
-        url: `/pos_api/orders/${orderId}/hold_order/`,
+        url: `/${pos_api}/orders/${orderId}/hold_order/`,
         method: "POST",
         body: data,
-        service: "pos" ,
+        service,
       }),
     }),
-
-    getHeldOrders: builder.query({
-      query: () => ({
-        url: "/pos_api/orders/held_orders/",
-        service: "pos" ,
+    getHeldOrders: builder.query<POSHoldOrder[], POSStructuralScopeParams | void>({
+      query: (params) => ({
+        url: `/${pos_api}/orders/held_orders/`,
+        params: params || undefined,
+        service,
       }),
     }),
-
-    retrieveHeldOrder: builder.mutation({
+    retrieveHeldOrder: builder.mutation<POSOrder, POSRetrieveHeldOrderPayload>({
       query: (data) => ({
-        url: "/pos_api/orders/retrieve_held_order/",
+        url: `/${pos_api}/orders/retrieve_held_order/`,
         method: "POST",
         body: data,
-        service: "pos" ,
+        service,
       }),
     }),
-
-    // Product endpoints (proxy to product service)
-    searchProducts: builder.query({
-      query: (searchTerm) => ({
-        url: `/pos_api/products/search/?q=${searchTerm}`,
-        service: "pos" ,
-      }),
+    searchProducts: builder.query<Record<string, never>[], string>({
+      queryFn: unsupportedEndpoint("POS product search is not exposed by the current pos_backend_service backend."),
+    }),
+    getPOSCategories: builder.query<Record<string, never>[], void>({
+      queryFn: unsupportedEndpoint("POS category listing is not exposed by the current pos_backend_service backend."),
+    }),
+    getFeaturedProducts: builder.query<Record<string, never>[], void>({
+      queryFn: unsupportedEndpoint("Featured POS products are not exposed by the current pos_backend_service backend."),
     }),
 
-    getPOSCategories: builder.query({
-      query: () => ({
-        url: "/pos_api/products/categories/",
-        service: "pos" ,
-      }),
-    }),
-
-    getFeaturedProducts: builder.query({
-      query: () => ({
-        url: "/pos_api/products/featured/",
-        service: "pos" ,
-      }),
-    }),
-
-    
-
-    // Customer endpoints
-    getCustomers: builder.query({
+    getCustomers: builder.query<POSCustomer[], string | void>({
       query: (search = "") => ({
-        url: `/pos_api/customers/?search=${search}`,
-        service: "pos" ,
+        url: `/${pos_api}/customers/`,
+        params: search ? { search } : undefined,
+        service,
       }),
     }),
-
-    createCustomer: builder.mutation({
+    getPOSCustomer: builder.query<POSCustomer, string>({
+      query: (id) => ({
+        url: `/${pos_api}/customers/${id}/`,
+        service,
+      }),
+    }),
+    createCustomer: builder.mutation<POSCustomer, Partial<POSCustomer>>({
       query: (data) => ({
-        url: "/pos_api/customers/",
+        url: `/${pos_api}/customers/`,
         method: "POST",
         body: data,
-        service: "pos",
+        service,
       }),
     }),
-
-    updateCustomer: builder.mutation({
-      query: ({ id, ...data }) => ({
-        url: `/pos_api/customers/${id}/`,
-        method: "PUT",
-        body: data,
-        service: "pos",
-      }),
+    updateCustomer: builder.mutation<POSCustomer, { id: string; data: Partial<POSCustomer> } | ({ id: string } & Partial<POSCustomer>)>({
+      query: (input) => {
+        const { id, ...rest } = input as { id: string; data?: Partial<POSCustomer> } & Partial<POSCustomer>
+        const body = "data" in input ? input.data : rest
+        return {
+          url: `/${pos_api}/customers/${id}/`,
+          method: "PUT",
+          body,
+          service,
+        }
+      },
     }),
-
-    deleteCustomer: builder.mutation({
-      query: (id) => ({
-        url: `/pos_api/customers/${id}/`,
-        method: "DELETE",
-        service: "pos",
-      }),
-    }),
-
-    // Table endpoints
-    getTables: builder.query({
-      query: () => ({
-        url: "/pos_api/tables/",
-        service: "pos" ,
-      }),
-    }),
-
-    createTable: builder.mutation({
-      query: (data) => ({
-        url: "/pos_api/tables/",
-        method: "POST",
-        body: data,
-        service: "pos",
-      }),
-    }),
-
-    updateTable: builder.mutation({
-      query: ({ id, ...data }) => ({
-        url: `/pos_api/tables/${id}/`,
-        method: "PUT",
-        body: data,
-        service: "pos",
-      }),
-    }),
-
-    deleteTable: builder.mutation({
-      query: (id) => ({
-        url: `/pos_api/tables/${id}/`,
-        method: "DELETE",
-        service: "pos",
-      }),
-    }),
-
-    // Analytics
-    getDailySales: builder.query({
-      query: (date) => ({
-        url: `/pos_api/analytics/daily_sales/?date=${date}`,
-        service: "pos" ,
-      }),
-    }),
-
-    // Configuration endpoints
-    getConfigurations: builder.query({
-      query: () => ({
-        url: "/pos_api/configurations/",
-        service: "pos",
-      }),
-    }),
-    createConfiguration: builder.mutation({
-      query: (data) => ({
-        url: "/pos_api/configurations/",
-        method: "POST",
-        body: data,
-        service: "pos",
-      }),
-    }),
-    getCurrentConfiguration: builder.query({
-      query: () => ({
-        url: "/pos_api/configurations/current/",
-        service: "pos",
-      }),
-    }),
-    getConfiguration: builder.query({
-      query: (id) => ({
-        url: `/pos_api/configurations/${id}/`,
-        service: "pos",
-      }),
-    }),
-    updateConfiguration: builder.mutation({
-      query: ({ id, ...data }) => ({
-        url: `/pos_api/configurations/${id}/`,
-        method: "PUT",
-        body: data,
-        service: "pos",
-      }),
-    }),
-    partialUpdateConfiguration: builder.mutation({
-      query: ({ id, ...data }) => ({
-        url: `/pos_api/configurations/${id}/`,
+    partialUpdateCustomer: builder.mutation<POSCustomer, { id: string; data: Partial<POSCustomer> }>({
+      query: ({ id, data }) => ({
+        url: `/${pos_api}/customers/${id}/`,
         method: "PATCH",
         body: data,
-        service: "pos",
+        service,
       }),
     }),
-    deleteConfiguration: builder.mutation({
+    deleteCustomer: builder.mutation<void, string>({
       query: (id) => ({
-        url: `/pos_api/configurations/${id}/`,
+        url: `/${pos_api}/customers/${id}/`,
         method: "DELETE",
-        service: "pos",
+        service,
       }),
     }),
 
-    // Discount endpoints
-    getDiscounts: builder.query({
+    getTables: builder.query<POSTable[], void | string>({
       query: () => ({
-        url: "/pos_api/discounts/",
-        service: "pos",
+        url: `/${pos_api}/tables/`,
+        service,
       }),
     }),
-    createDiscount: builder.mutation({
+    getTable: builder.query<POSTable, string>({
+      query: (id) => ({
+        url: `/${pos_api}/tables/${id}/`,
+        service,
+      }),
+    }),
+    createTable: builder.mutation<POSTable, Partial<POSTable>>({
       query: (data) => ({
-        url: "/pos_api/discounts/",
+        url: `/${pos_api}/tables/`,
         method: "POST",
         body: data,
-        service: "pos",
+        service,
       }),
     }),
-    getDiscount: builder.query({
-      query: (id) => ({
-        url: `/pos_api/discounts/${id}/`,
-        service: "pos",
-      }),
+    updateTable: builder.mutation<POSTable, { id: string; data: Partial<POSTable> } | ({ id: string } & Partial<POSTable>)>({
+      query: (input) => {
+        const { id, ...rest } = input as { id: string; data?: Partial<POSTable> } & Partial<POSTable>
+        const body = "data" in input ? input.data : rest
+        return {
+          url: `/${pos_api}/tables/${id}/`,
+          method: "PUT",
+          body,
+          service,
+        }
+      },
     }),
-    updateDiscount: builder.mutation({
-      query: ({ id, ...data }) => ({
-        url: `/pos_api/discounts/${id}/`,
-        method: "PUT",
-        body: data,
-        service: "pos",
-      }),
-    }),
-    partialUpdateDiscount: builder.mutation({
-      query: ({ id, ...data }) => ({
-        url: `/pos_api/discounts/${id}/`,
+    partialUpdateTable: builder.mutation<POSTable, { id: string; data: Partial<POSTable> }>({
+      query: ({ id, data }) => ({
+        url: `/${pos_api}/tables/${id}/`,
         method: "PATCH",
         body: data,
-        service: "pos",
+        service,
       }),
     }),
-    deleteDiscount: builder.mutation({
+    deleteTable: builder.mutation<void, string>({
       query: (id) => ({
-        url: `/pos_api/discounts/${id}/`,
+        url: `/${pos_api}/tables/${id}/`,
         method: "DELETE",
-        service: "pos",
+        service,
       }),
     }),
 
-    // Order endpoints
-    getOrders: builder.query({
-        query: (search = "") => ({
-            url: `/pos_api/orders/?search=${search}`,
-            service: "pos",
-        }),
-    }),
-    createOrder: builder.mutation({
-        query: (data) => ({
-            url: "/pos_api/orders/",
-            method: "POST",
-            body: data,
-            service: "pos",
-        }),
-    }),
-    getOrder: builder.query({
-        query: (id) => ({
-            url: `/pos_api/orders/${id}/`,
-            service: "pos",
-        }),
-    }),
-    updateOrder: builder.mutation({
-        query: ({ id, ...data }) => ({
-            url: `/pos_api/orders/${id}/`,
-            method: "PUT",
-            body: data,
-            service: "pos",
-        }),
-    }),
-    partialUpdateOrder: builder.mutation({
-        query: ({ id, ...data }) => ({
-            url: `/pos_api/orders/${id}/`,
-            method: "PATCH",
-            body: data,
-            service: "pos",
-        }),
-    }),
-    deleteOrder: builder.mutation({
-        query: (id) => ({
-            url: `/pos_api/orders/${id}/`,
-            method: "DELETE",
-            service: "pos",
-        }),
-    }),
-    addTipToOrder: builder.mutation({
-        query: ({ id, ...data }) => ({
-            url: `/pos_api/orders/${id}/add_tip/`,
-            method: "POST",
-            body: data,
-            service: "pos",
-        }),
-    }),
-    applyDiscountToOrder: builder.mutation({
-        query: ({ id, ...data }) => ({
-            url: `/pos_api/orders/${id}/apply_discount/`,
-            method: "POST",
-            body: data,
-            service: "pos",
-        }),
+    getDailySales: builder.query<POSDailySalesAnalytics, POSDailySalesQueryParams | string | void>({
+      query: (arg) => ({
+        url: `/${pos_api}/analytics/daily-sales/`,
+        params:
+          typeof arg === "string"
+            ? { date: arg }
+            : arg || undefined,
+        service,
+      }),
     }),
 
-    // Terminal endpoints
-    getTerminals: builder.query({
-        query: () => ({
-            url: "/pos_api/terminals/",
-            service: "pos",
-        }),
+    getConfigurations: builder.query<POSConfiguration[], void | string>({
+      query: () => ({
+        url: `/${pos_api}/configurations/`,
+        service,
+      }),
     }),
-    createTerminal: builder.mutation({
-        query: (data) => ({
-            url: "/pos_api/terminals/",
-            method: "POST",
-            body: data,
-            service: "pos",
-        }),
+    createConfiguration: builder.mutation<POSConfiguration, Partial<POSConfiguration>>({
+      query: (data) => ({
+        url: `/${pos_api}/configurations/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
     }),
-    getTerminal: builder.query({
-        query: (id) => ({
-            url: `/pos_api/terminals/${id}/`,
-            service: "pos",
-        }),
+    getCurrentConfiguration: builder.query<POSConfiguration, void | string>({
+      query: () => ({
+        url: `/${pos_api}/configurations/current/`,
+        service,
+      }),
     }),
-    updateTerminal: builder.mutation({
-        query: ({ id, ...data }) => ({
-            url: `/pos_api/terminals/${id}/`,
-            method: "PUT",
-            body: data,
-            service: "pos",
-        }),
+    getConfiguration: builder.query<POSConfiguration, string>({
+      query: (id) => ({
+        url: `/${pos_api}/configurations/${id}/`,
+        service,
+      }),
     }),
-    partialUpdateTerminal: builder.mutation({
-        query: ({ id, ...data }) => ({
-            url: `/pos_api/terminals/${id}/`,
-            method: "PATCH",
-            body: data,
-            service: "pos",
-        }),
+    updateConfiguration: builder.mutation<POSConfiguration, { id: string; data: Partial<POSConfiguration> } | ({ id: string } & Partial<POSConfiguration>)>({
+      query: (input) => {
+        const { id, ...rest } = input as { id: string; data?: Partial<POSConfiguration> } & Partial<POSConfiguration>
+        const body = "data" in input ? input.data : rest
+        return {
+          url: `/${pos_api}/configurations/${id}/`,
+          method: "PUT",
+          body,
+          service,
+        }
+      },
     }),
-    deleteTerminal: builder.mutation({
-        query: (id) => ({
-            url: `/pos_api/terminals/${id}/`,
-            method: "DELETE",
-            service: "pos",
-        }),
+    partialUpdateConfiguration: builder.mutation<POSConfiguration, { id: string; data: Partial<POSConfiguration> }>({
+      query: ({ id, data }) => ({
+        url: `/${pos_api}/configurations/${id}/`,
+        method: "PATCH",
+        body: data,
+        service,
+      }),
+    }),
+    deleteConfiguration: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/${pos_api}/configurations/${id}/`,
+        method: "DELETE",
+        service,
+      }),
+    }),
+
+    getDiscounts: builder.query<POSDiscount[], void | string>({
+      query: () => ({
+        url: `/${pos_api}/discounts/`,
+        service,
+      }),
+    }),
+    createDiscount: builder.mutation<POSDiscount, Partial<POSDiscount>>({
+      query: (data) => ({
+        url: `/${pos_api}/discounts/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+    getDiscount: builder.query<POSDiscount, string>({
+      query: (id) => ({
+        url: `/${pos_api}/discounts/${id}/`,
+        service,
+      }),
+    }),
+    updateDiscount: builder.mutation<POSDiscount, { id: string; data: Partial<POSDiscount> } | ({ id: string } & Partial<POSDiscount>)>({
+      query: (input) => {
+        const { id, ...rest } = input as { id: string; data?: Partial<POSDiscount> } & Partial<POSDiscount>
+        const body = "data" in input ? input.data : rest
+        return {
+          url: `/${pos_api}/discounts/${id}/`,
+          method: "PUT",
+          body,
+          service,
+        }
+      },
+    }),
+    partialUpdateDiscount: builder.mutation<POSDiscount, { id: string; data: Partial<POSDiscount> }>({
+      query: ({ id, data }) => ({
+        url: `/${pos_api}/discounts/${id}/`,
+        method: "PATCH",
+        body: data,
+        service,
+      }),
+    }),
+    deleteDiscount: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/${pos_api}/discounts/${id}/`,
+        method: "DELETE",
+        service,
+      }),
+    }),
+
+    getRemittances: builder.query<POSRemittance[], Record<string, unknown> | void>({
+      query: (params) => ({
+        url: `/${pos_api}/remittances/`,
+        params: params || undefined,
+        service,
+      }),
+    }),
+    handoverRemittance: builder.mutation<POSRemittance, { id: string } & POSRemittanceActionPayload>({
+      query: ({ id, ...data }) => ({
+        url: `/${pos_api}/remittances/${id}/handover/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+    receiveRemittance: builder.mutation<POSRemittance, { id: string } & POSRemittanceActionPayload>({
+      query: ({ id, ...data }) => ({
+        url: `/${pos_api}/remittances/${id}/receive/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+    depositRemittance: builder.mutation<POSRemittance, { id: string } & POSRemittanceActionPayload>({
+      query: ({ id, ...data }) => ({
+        url: `/${pos_api}/remittances/${id}/deposit/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+    reconcileRemittance: builder.mutation<POSRemittance, { id: string } & POSRemittanceActionPayload>({
+      query: ({ id, ...data }) => ({
+        url: `/${pos_api}/remittances/${id}/reconcile/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+    disputeRemittance: builder.mutation<POSRemittance, { id: string } & POSRemittanceActionPayload>({
+      query: ({ id, ...data }) => ({
+        url: `/${pos_api}/remittances/${id}/dispute/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+
+    getOrders: builder.query<POSOrder[], string | void>({
+      query: (search = "") => ({
+        url: `/${pos_api}/orders/`,
+        params: search ? { search } : undefined,
+        service,
+      }),
+    }),
+    createOrder: builder.mutation<POSOrder, Partial<POSOrder>>({
+      query: (data) => ({
+        url: `/${pos_api}/orders/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+    getOrder: builder.query<POSOrder, string>({
+      query: (id) => ({
+        url: `/${pos_api}/orders/${id}/`,
+        service,
+      }),
+    }),
+    updateOrder: builder.mutation<POSOrder, { id: string; data: Partial<POSOrder> } | ({ id: string } & Partial<POSOrder>)>({
+      query: (input) => {
+        const { id, ...rest } = input as { id: string; data?: Partial<POSOrder> } & Partial<POSOrder>
+        const body = "data" in input ? input.data : rest
+        return {
+          url: `/${pos_api}/orders/${id}/`,
+          method: "PUT",
+          body,
+          service,
+        }
+      },
+    }),
+    partialUpdateOrder: builder.mutation<POSOrder, { id: string; data: Partial<POSOrder> }>({
+      query: ({ id, data }) => ({
+        url: `/${pos_api}/orders/${id}/`,
+        method: "PATCH",
+        body: data,
+        service,
+      }),
+    }),
+    deleteOrder: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/${pos_api}/orders/${id}/`,
+        method: "DELETE",
+        service,
+      }),
+    }),
+    addTipToOrder: builder.mutation<POSOrder, { id: string; tip_amount?: DecimalValue; tip_percent?: DecimalValue }>({
+      query: ({ id, ...data }) => ({
+        url: `/${pos_api}/orders/${id}/add_tip/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+    applyDiscountToOrder: builder.mutation<POSOrder, { id: string; discount_amount?: DecimalValue; discount_percent?: DecimalValue }>({
+      query: ({ id, ...data }) => ({
+        url: `/${pos_api}/orders/${id}/apply_discount/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+    getOrderInventorySummary: builder.query<POSOrderInventorySummary, string>({
+      query: (id) => ({
+        url: `/${pos_api}/orders/${id}/inventory_summary/`,
+        service,
+      }),
+    }),
+    requestOrderReservation: builder.mutation<POSOrder, { id: string } & POSOrderInventoryMutationPayload>({
+      query: ({ id, ...data }) => ({
+        url: `/${pos_api}/orders/${id}/request_reservation/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+    confirmOrderReservation: builder.mutation<POSOrder, { id: string } & POSOrderInventoryMutationPayload>({
+      query: ({ id, ...data }) => ({
+        url: `/${pos_api}/orders/${id}/confirm_reservation/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+    releaseOrderReservation: builder.mutation<POSOrder, { id: string } & POSOrderInventoryMutationPayload>({
+      query: ({ id, ...data }) => ({
+        url: `/${pos_api}/orders/${id}/release_reservation/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+    confirmOrderFulfillment: builder.mutation<POSOrder, { id: string } & POSOrderInventoryMutationPayload>({
+      query: ({ id, ...data }) => ({
+        url: `/${pos_api}/orders/${id}/confirm_fulfillment/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+    markOrderInventoryFailed: builder.mutation<POSOrder, { id: string } & POSOrderInventoryMutationPayload>({
+      query: ({ id, ...data }) => ({
+        url: `/${pos_api}/orders/${id}/mark_inventory_failed/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+    cancelOrder: builder.mutation<POSOrder, string>({
+      query: (id) => ({
+        url: `/${pos_api}/orders/${id}/cancel_order/`,
+        method: "POST",
+        body: {},
+        service,
+      }),
+    }),
+
+    getTerminals: builder.query<POSTerminal[], void | string>({
+      query: () => ({
+        url: `/${pos_api}/terminals/`,
+        service,
+      }),
+    }),
+    getCurrentTerminalBinding: builder.query<POSTerminalDeviceBinding | null, void>({
+      query: () => ({
+        url: `/${pos_api}/terminals/device_binding/`,
+        service,
+      }),
+    }),
+    assignCurrentDeviceTerminal: builder.mutation<POSTerminalDeviceBinding, { terminal_id: string; device_label?: string }>({
+      query: (body) => ({
+        url: `/${pos_api}/terminals/assign_device/`,
+        method: "POST",
+        body,
+        service,
+      }),
+    }),
+    detachCurrentDeviceTerminal: builder.mutation<{ detail: string }, void>({
+      query: () => ({
+        url: `/${pos_api}/terminals/detach_device/`,
+        method: "POST",
+        body: {},
+        service,
+      }),
+    }),
+    detachTerminalBinding: builder.mutation<{ detail: string }, string>({
+      query: (id) => ({
+        url: `/${pos_api}/terminals/${id}/detach_terminal_binding/`,
+        method: "POST",
+        body: {},
+        service,
+      }),
+    }),
+    createTerminal: builder.mutation<POSTerminal, Partial<POSTerminal>>({
+      query: (data) => ({
+        url: `/${pos_api}/terminals/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+    getTerminal: builder.query<POSTerminal, string>({
+      query: (id) => ({
+        url: `/${pos_api}/terminals/${id}/`,
+        service,
+      }),
+    }),
+    updateTerminal: builder.mutation<POSTerminal, { id: string; data: Partial<POSTerminal> } | ({ id: string } & Partial<POSTerminal>)>({
+      query: (input) => {
+        const { id, ...rest } = input as { id: string; data?: Partial<POSTerminal> } & Partial<POSTerminal>
+        const body = "data" in input ? input.data : rest
+        return {
+          url: `/${pos_api}/terminals/${id}/`,
+          method: "PUT",
+          body,
+          service,
+        }
+      },
+    }),
+    partialUpdateTerminal: builder.mutation<POSTerminal, { id: string; data: Partial<POSTerminal> }>({
+      query: ({ id, data }) => ({
+        url: `/${pos_api}/terminals/${id}/`,
+        method: "PATCH",
+        body: data,
+        service,
+      }),
+    }),
+    deleteTerminal: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/${pos_api}/terminals/${id}/`,
+        method: "DELETE",
+        service,
+      }),
     }),
   }),
 })
 
 export const {
   useGetCurrentSessionQuery,
+  useGetSessionOpeningDefaultsQuery,
+  useGetSessionCloseoutSummaryQuery,
   useOpenSessionMutation,
   useCloseSessionMutation,
   useGetSessionsQuery,
+  useGetSessionQuery,
+  useCreateSessionMutation,
+  useUpdateSessionMutation,
+  usePartialUpdateSessionMutation,
+  useDeleteSessionMutation,
   useGetCurrentOrderQuery,
+  useGetCurrentDraftOrderQuery,
+  useGetCurrentActiveOrderQuery,
   useCreateOrGetDraftOrderMutation,
   useAddItemToOrderMutation,
   useUpdateOrderItemMutation,
@@ -435,12 +700,16 @@ export const {
   useGetPOSCategoriesQuery,
   useGetFeaturedProductsQuery,
   useGetCustomersQuery,
+  useGetPOSCustomerQuery,
   useCreateCustomerMutation,
   useUpdateCustomerMutation,
+  usePartialUpdateCustomerMutation,
   useDeleteCustomerMutation,
   useGetTablesQuery,
+  useGetTableQuery,
   useCreateTableMutation,
   useUpdateTableMutation,
+  usePartialUpdateTableMutation,
   useDeleteTableMutation,
   useGetDailySalesQuery,
   useGetConfigurationsQuery,
@@ -456,6 +725,12 @@ export const {
   useUpdateDiscountMutation,
   usePartialUpdateDiscountMutation,
   useDeleteDiscountMutation,
+  useGetRemittancesQuery,
+  useHandoverRemittanceMutation,
+  useReceiveRemittanceMutation,
+  useDepositRemittanceMutation,
+  useReconcileRemittanceMutation,
+  useDisputeRemittanceMutation,
   useGetOrdersQuery,
   useCreateOrderMutation,
   useGetOrderQuery,
@@ -464,7 +739,18 @@ export const {
   useDeleteOrderMutation,
   useAddTipToOrderMutation,
   useApplyDiscountToOrderMutation,
+  useGetOrderInventorySummaryQuery,
+  useRequestOrderReservationMutation,
+  useConfirmOrderReservationMutation,
+  useReleaseOrderReservationMutation,
+  useConfirmOrderFulfillmentMutation,
+  useMarkOrderInventoryFailedMutation,
+  useCancelOrderMutation,
   useGetTerminalsQuery,
+  useGetCurrentTerminalBindingQuery,
+  useAssignCurrentDeviceTerminalMutation,
+  useDetachCurrentDeviceTerminalMutation,
+  useDetachTerminalBindingMutation,
   useCreateTerminalMutation,
   useGetTerminalQuery,
   useUpdateTerminalMutation,

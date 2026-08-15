@@ -1,5 +1,5 @@
 'use client'
-import { RoleData } from "../interfaces/management";
+import { RoleData } from "@/redux/features/management/managementTypes";
 import CustomCreateCard from "../common/createCard";
 
 import { useState,useEffect } from "react";
@@ -9,7 +9,7 @@ import { useRouter } from 'nextjs-toploader/app';
 import VerticalTabs from '../common/verticalTabs'
 import RolePermissionForm from '../permissions/customPermission';
 import { useUpdateRolePermissionMutation,useGetRolePermissionQuery } from "../../redux/features/permission/permit";
-import { Permission } from "../interfaces/common";
+import { Permission } from "@/redux/features/common/commonTypes";
 import CustomUpdateForm from "../common/updateForm";
 
 
@@ -70,12 +70,10 @@ const StaffRole =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
   };
   useEffect(()=>{
     if (refetchData){
-      console.log('before: ',refetchData)
       refetch();
       setRefetchData(false);
-      console.log('after',refetchData)
     }
-    },[refetchData])
+    },[refetch, refetchData, setRefetchData])
  
   const handleCreate = async (createdData: Partial<RoleData>) => {
     await createGroup(createdData).unwrap();
@@ -115,12 +113,13 @@ const StaffRole =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
             onRowClick={handleRowClick}
             searchableFields={['name', 'description']}
             filterableFields={[]}
-            sortableFields={['name', 'description']}
+            sortableFields={['name', 'description', 'permission_count', 'assignments_count']}
+            rangeFilterFields={['permission_count', 'assignments_count']}
              title="Roles"
             onClose={() => setIsCreateOpen(true)}
             />
 
-            <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>
+            {isCreateOpen ? (
                 <CustomCreateCard
                     defaultValues={{}}
                     onClose={() => setIsCreateOpen(false)}
@@ -132,9 +131,9 @@ const StaffRole =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
                     interfaceKeys={['name', 'description' ]}
                     optionalFields={[]}
                 />
-                </div>
+            ) : null}
 
-            <div className={`fixed  inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${openTabs ? 'block' : 'hidden'}`}>
+            {openTabs ? (
                 <VerticalTabs
                         items={[
                         
@@ -169,11 +168,8 @@ const StaffRole =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
                         onClose={()=>setOpenTabs(false)}
                         className="border rounded-lg p-4"
                       />
-
-                </div>
+            ) : null}
         </div>
     )
 }
 export default StaffRole;
-
-

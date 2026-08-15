@@ -3,25 +3,23 @@
 import { useGetDashboardPendingPurchaseOrdersQuery } from '@/redux/features/dashboard/dashboardApiSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Clock } from 'lucide-react';
-import LoadingAnimation from '../common/LoadingAnimation';
-import { PendingPurchaseOrder } from '../interfaces/dashboard';
+import { QueryStateBoundary } from '../common/QueryStateBoundary';
 
 const PendingPurchaseOrders = () => {
-  const { data, error, isLoading } = useGetDashboardPendingPurchaseOrdersQuery('');
-
-  if (isLoading) return <div className="h-full flex justify-center items-center"><LoadingAnimation /></div>;
-  if (error) return <div>Error loading pending purchase orders</div>;
+  const { data, error, isLoading, isFetching, refetch } = useGetDashboardPendingPurchaseOrdersQuery('');
 
   return (
+    <QueryStateBoundary isLoading={isLoading} isFetching={isFetching} error={error} onRetry={refetch} loadingText="Loading pending purchase orders..." errorTitle="Unable to load pending purchase orders">
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">Pending Purchase Orders</CardTitle>
-        <Clock className="h-4 w-4 text-muted-foreground" />
+        <Clock className="h-4 w-4 text-gray-500" />
       </CardHeader>
       <CardContent>
         <p className="text-2xl font-bold">{data?.length || 0}</p>
       </CardContent>
     </Card>
+    </QueryStateBoundary>
   );
 };
 

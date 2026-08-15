@@ -15,7 +15,9 @@ import {
   useAddFeatureToPlanMutation,
   useRemoveFeatureFromPlanMutation,
 } from "@/redux/features/payment/paymentAPISlice"
+import type { SubscriptionPlanRecord } from "@/redux/features/payment/paymentTypes"
 import { toast } from "react-toastify"
+import { extractErrorMessage } from "@/lib/utils"
 
 interface Feature {
   id: string
@@ -28,26 +30,17 @@ interface Feature {
   application_name?: string
 }
 
-interface SubscriptionPlan {
+interface PlanFeature {
   id: string
-  name: string
-  description: string
-  price: string
-  billing_cycle: string
-  is_active: boolean
-  app: string
-  features: string[]
-  created_at: string
-  updated_at: string
-  application_name?: string
-  application: string
-  intera_coins_reward?: string
+  feature: Feature
+  limit_value: number | null
+  is_unlimited: boolean
 }
 
 interface FeatureManagementDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  plan: SubscriptionPlan | null
+  plan: SubscriptionPlanRecord | null
   onSuccess?: () => void
 }
 
@@ -73,7 +66,7 @@ export function FeatureManagementDialog({ open, onOpenChange, plan, onSuccess }:
 
   // Convert features to select options
   const availableFeatureOptions: SelectOption[] = appFeatures
-    .filter((feature: Feature) => !planFeatures.some((pf: Feature) => pf.id === feature.id))
+    .filter((feature: Feature) => !planFeatures.some((pf: PlanFeature) => pf.feature.id === feature.id))
     .map((feature: Feature) => ({
       value: feature.id,
       label: `${feature.name} (${feature.feature_type})`,
@@ -83,7 +76,8 @@ export function FeatureManagementDialog({ open, onOpenChange, plan, onSuccess }:
   // Reset selected features when dialog opens/closes
   useEffect(() => {
     if (!open) {
-      setSelectedFeatures([])
+      const timeoutId = window.setTimeout(() => setSelectedFeatures([]), 0)
+      return () => window.clearTimeout(timeoutId)
     }
   }, [open])
 
@@ -104,8 +98,7 @@ export function FeatureManagementDialog({ open, onOpenChange, plan, onSuccess }:
       refetchPlanFeatures()
       onSuccess?.()
     } catch (error) {
-      toast.error("Failed to add features to plan")
-      console.error("Error adding features:", error)
+      toast.error(extractErrorMessage(error, ["features", "detail"]) || "Failed to add features to plan")
     }
   }
 
@@ -122,8 +115,7 @@ export function FeatureManagementDialog({ open, onOpenChange, plan, onSuccess }:
       refetchPlanFeatures()
       onSuccess?.()
     } catch (error) {
-      toast.error("Failed to remove feature from plan")
-      console.error("Error removing feature:", error)
+      toast.error(extractErrorMessage(error, ["feature", "detail"]) || "Failed to remove feature from plan")
     }
   }
 
@@ -185,7 +177,7 @@ export function FeatureManagementDialog({ open, onOpenChange, plan, onSuccess }:
 
               {selectedFeatures.length > 0 && (
                 <div className="flex items-center justify-between pt-2">
-                  <span className="text-sm text-muted-foreground">{selectedFeatures.length} feature(s) selected</span>
+                  <span className="text-sm text-gray-500">{selectedFeatures.length} feature(s) selected</span>
                   <Button onClick={handleAddFeatures} disabled={isAdding} size="sm">
                     <Plus className="h-4 w-4 mr-2" />
                     {isAdding ? "Adding..." : "Add Features"}
@@ -205,17 +197,19 @@ export function FeatureManagementDialog({ open, onOpenChange, plan, onSuccess }:
             </CardHeader>
             <CardContent>
               {planFeatures.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="py-8 text-center text-gray-500">
                   <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No features added to this plan yet</p>
                   <p className="text-sm">Add features using the section above</p>
                 </div>
               ) : (
                 <div className="grid gap-3">
-                  {planFeatures.map((feature: Feature) => (
+                  {planFeatures.map((planFeature: PlanFeature) => {
+                    const feature = planFeature.feature
+                    return (
                     <div
-                      key={feature.id}
-                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors"
+                      key={planFeature.id}
+                      className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-gray-100/50"
                     >
                       <div className="flex items-center gap-3">
                         <div>
@@ -225,7 +219,7 @@ export function FeatureManagementDialog({ open, onOpenChange, plan, onSuccess }:
                               {feature.feature_type}
                             </Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground mt-1">{feature.description}</p>
+                          <p className="mt-1 text-sm text-gray-500">{feature.description}</p>
                         </div>
                       </div>
                       <Button
@@ -233,12 +227,13 @@ export function FeatureManagementDialog({ open, onOpenChange, plan, onSuccess }:
                         size="sm"
                         onClick={() => handleRemoveFeature(feature.id, feature.name)}
                         disabled={isRemoving}
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        className="text-red-600 hover:bg-red-50 hover:text-red-600"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </CardContent>

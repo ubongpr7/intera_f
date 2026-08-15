@@ -7,7 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
 import { useGetWebhookLogsQuery } from "@/redux/features/payment/paymentAPISlice"
-  import type { Row } from "@tanstack/react-table" // Adjust import path/type as needed
+import { formatMachineLabel } from "@/lib/displayLabels"
+import type { Row } from "@tanstack/react-table"
 
 interface WebhookProvider {
   name: string
@@ -38,7 +39,7 @@ export function WebhookLogsTab() {
       failed: "destructive",
       pending: "secondary",
     }
-  return <Badge variant={variants[status] || "secondary"}>{status}</Badge>
+  return <Badge variant={variants[status] || "secondary"}>{formatMachineLabel(status)}</Badge>
 }
 
 
@@ -56,7 +57,7 @@ export function WebhookLogsTab() {
     {
       accessorKey: "event_type",
       header: "Event Type",
-      cell: ({ row }: { row: Row<WebhookLog> }) => <Badge variant="secondary">{row.getValue("event_type")}</Badge>,
+      cell: ({ row }: { row: Row<WebhookLog> }) => <Badge variant="secondary">{formatMachineLabel(row.getValue("event_type"))}</Badge>,
     },
     {
       accessorKey: "status",
@@ -86,7 +87,7 @@ export function WebhookLogsTab() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Webhook Logs</h2>
-          <p className="text-muted-foreground">Monitor webhook events from payment providers.</p>
+          <p className="text-gray-500">Monitor webhook events from payment providers.</p>
         </div>
         <Button onClick={() => refetch()}>
           <RefreshCw className="h-4 w-4 mr-2" />

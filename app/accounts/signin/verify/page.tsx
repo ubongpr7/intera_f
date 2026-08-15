@@ -1,25 +1,29 @@
-"use client";
-import { useEffect, useState } from "react";
+import AuthSplitShell from "@/components/auth/AuthSplitShell";
 import VerificationForm from "../../../../components/auth/verificationForm";
-import { getCookie } from "cookies-next";
-import { readCookieValue } from "@/lib/authCookies";
 
-export default function VerifyPage() {
-  const [userId, setUserId] = useState<string | null>(null);
+export default async function VerifyPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ email?: string; next?: string }>;
+}) {
+  const { email, next } = await searchParams;
+  const normalizedEmail = email?.trim();
 
-  useEffect(() => {
-    const storedUserId = readCookieValue("userID", getCookie);
-    setUserId(storedUserId ?? null);
-
-  }, []);
-
-  if (!userId) {
+  if (!normalizedEmail) {
     return <div>Invalid verification request</div>;
   }
 
+  const redirectTo = next?.trim() || "/dashboard";
+
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <VerificationForm userId={userId} redirectTo={"/dashboard"} />
-    </div>
+    <AuthSplitShell
+      eyebrow="Email verification"
+      title="Verify your email"
+      description="Enter the code we sent to your inbox so you can continue into your workspace."
+    >
+      <div className="auth-card w-full p-6 sm:p-8">
+        <VerificationForm email={normalizedEmail} redirectTo={redirectTo} />
+      </div>
+    </AuthSplitShell>
   );
 }

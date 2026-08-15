@@ -1,12 +1,17 @@
-import RegisterForm from '../../components/auth/registerForm';
+import AuthSplitShell from "@/components/auth/AuthSplitShell";
+import RegisterForm from "../../components/auth/registerForm";
 
 export default function RegisterPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow-lg">
-        <h2 className="text-center text-3xl font-bold text-gray-900">Create a new account</h2>
+    <AuthSplitShell
+      eyebrow="Create access"
+      title="Create a new account"
+      description="Set up your workspace access, verify your email, and continue into the platform."
+      layout="reversed"
+    >
+      <div className="auth-card w-full p-6 sm:p-8">
         <RegisterForm />
       </div>
-    </div>
+    </AuthSplitShell>
   );
 }

@@ -1,25 +1,27 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ReactSelectField, type SelectOption } from "@/components/ui/react-select-field"
-import { Building2, Calendar, Users, FileText } from "lucide-react"
+import { Building2, Calendar, Users, FileText, ImageIcon, Upload } from "lucide-react"
 import {
   useCreateCompanyProfileMutation,
   useUpdateCompanyProfileMutation,
 } from "@/redux/features/management/companyProfileApiSlice"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import type { CompanyProfile, CompanyFormData } from "@/types/company-profile"
+import type { CompanyProfile, CompanyFormData } from "@/redux/features/management/companyProfileTypes"
 import { getCurrencySymbol } from "@/lib/currency-utils"
 import { CURRENCY_CODES } from "@/lib/currencyCode"
+import { extractErrorMessage } from "@/lib/utils"
 
 interface CompanyBasicInfoFormProps {
   profile: CompanyProfile | null
-  onSuccess?: () => void
+  onSuccess?: (profile: CompanyProfile) => void | Promise<void>
+  submitLabel?: string
 }
 
 interface FormErrors {
@@ -49,11 +51,18 @@ const INDUSTRY_OPTIONS: SelectOption[] = [
   { value: "Other", label: "Other" },
 ]
 
-export function CompanyBasicInfoForm({ profile, onSuccess }: CompanyBasicInfoFormProps) {
+export function CompanyBasicInfoForm({ profile, onSuccess, submitLabel = "Save Changes" }: CompanyBasicInfoFormProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const getSingleOption = (option: SelectOption | readonly SelectOption[] | null): SelectOption | null => {
+    if (Array.isArray(option)) {
+      return null;
+    }
+    return option as SelectOption | null;
+  };
+
   const [updateProfile, updateState] = useUpdateCompanyProfileMutation()
   const [createProfile, createState] = useCreateCompanyProfileMutation()
   const isLoading = updateState.isLoading || createState.isLoading
-  const isSuccess = updateState.isSuccess || createState.isSuccess
   const isError = updateState.isError || createState.isError
   const error = updateState.error || createState.error
 
@@ -75,11 +84,22 @@ export function CompanyBasicInfoForm({ profile, onSuccess }: CompanyBasicInfoFor
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const [showSuccessMessage, setShowSuccessMessage] = useState(false)
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+
+  const logoPreviewUrl = useMemo(() => {
+    if (logoFile) return URL.createObjectURL(logoFile)
+    if (!profile?.logo) return null
+    if (/^https?:\/\//i.test(profile.logo)) return profile.logo
+    const base = (process.env.NEXT_PUBLIC_BACKEND_HOST_URL ?? "").replace(/\/+$/, "")
+    return `${base}${profile.logo.startsWith("/") ? profile.logo : `/${profile.logo}`}`
+  }, [logoFile, profile?.logo])
 
   useEffect(() => {
     if (profile) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         name: profile.name || "",
+        logo: profile.logo || null,
         industry: profile.industry || "",
         currency:profile?.currency,
         description: profile.description || "",
@@ -90,21 +110,30 @@ export function CompanyBasicInfoForm({ profile, onSuccess }: CompanyBasicInfoFor
         phone: profile.phone || "",
         email: profile.email || "",
       })
+      return
     }
+    setFormData({
+      name: "",
+      logo: null,
+      industry: "",
+      currency: "",
+      description: "",
+      founded_date: "",
+      employees_count: undefined,
+      tax_id: "",
+      website: "",
+      phone: "",
+      email: "",
+    })
   }, [profile])
 
   useEffect(() => {
-    if (isSuccess) {
-      setShowSuccessMessage(true)
-      if (onSuccess) onSuccess()
-
-      const timer = setTimeout(() => {
-        setShowSuccessMessage(false)
-      }, 3000)
-
-      return () => clearTimeout(timer)
+    return () => {
+      if (logoFile && logoPreviewUrl?.startsWith("blob:")) {
+        URL.revokeObjectURL(logoPreviewUrl)
+      }
     }
-  }, [isSuccess, onSuccess])
+  }, [logoFile, logoPreviewUrl])
 
   const updateFormData = (data: Partial<CompanyFormData>) => {
     setFormData((prev) => ({ ...prev, ...data }))
@@ -165,14 +194,19 @@ export function CompanyBasicInfoForm({ profile, onSuccess }: CompanyBasicInfoFor
     }
 
     try {
+      let savedProfile: CompanyProfile
       if (profile?.id) {
-        await updateProfile({ id: profile.id, data: formData }).unwrap()
+        savedProfile = await updateProfile({ id: profile.id, data: formData }).unwrap()
       } else {
-        await createProfile(formData).unwrap()
+        savedProfile = await createProfile(formData).unwrap()
       }
-      onSuccess?.()
-    } catch (err) {
-      console.error("Failed to update company profile:", err)
+      setShowSuccessMessage(true)
+      setTimeout(() => {
+        setShowSuccessMessage(false)
+      }, 3000)
+      await onSuccess?.(savedProfile)
+    } catch {
+      setShowSuccessMessage(false)
     }
   }
 
@@ -184,15 +218,67 @@ export function CompanyBasicInfoForm({ profile, onSuccess }: CompanyBasicInfoFor
         </Alert>
       )}
 
-      {isError && (
+          {isError && (
         <Alert className="bg-red-50 border-red-200">
           <AlertDescription className="text-red-800">
-            {error ? `Error: ${JSON.stringify(error)}` : "Failed to update company information. Please try again."}
+            {extractErrorMessage(error, ["name", "industry", "currency", "website", "phone", "detail"])}
           </AlertDescription>
         </Alert>
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+        <div className="space-y-2 md:col-span-3">
+          <Label className="flex items-center gap-2">
+            <ImageIcon className="h-4 w-4" />
+            Company Logo
+          </Label>
+          <div className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-white">
+                {logoPreviewUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={logoPreviewUrl} alt={formData.name || "Company logo"} className="h-full w-full object-cover" />
+                ) : (
+                  <span className="text-xl font-bold text-gray-700">{(formData.name || "C").trim().charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-900">Brand logo</p>
+                <p className="text-sm text-gray-500">This logo will appear in the sidebar and workspace branding areas.</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(event) => {
+                  const nextFile = event.target.files?.[0] ?? null
+                  setLogoFile(nextFile)
+                  updateFormData({ logo: nextFile })
+                }}
+              />
+              <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                <Upload className="mr-2 h-4 w-4" />
+                {logoFile ? "Change logo" : "Upload logo"}
+              </Button>
+              {(logoFile || profile?.logo) ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setLogoFile(null)
+                    updateFormData({ logo: null })
+                    if (fileInputRef.current) fileInputRef.current.value = ""
+                  }}
+                >
+                  Remove logo
+                </Button>
+              ) : null}
+            </div>
+          </div>
+        </div>
         <div className="space-y-2">
           <Label htmlFor="name" className="flex items-center gap-2">
             <Building2 className="h-4 w-4" />
@@ -214,8 +300,9 @@ export function CompanyBasicInfoForm({ profile, onSuccess }: CompanyBasicInfoFor
             options={INDUSTRY_OPTIONS}
             value={INDUSTRY_OPTIONS.find((option) => option.value === formData.industry) || null}
             onChange={(option) => {
-              if (option && !Array.isArray(option)) {
-                updateFormData({ industry: option?.value })
+              const nextOption = getSingleOption(option)
+              if (nextOption) {
+                updateFormData({ industry: String(nextOption.value) })
               } else {
                 updateFormData({ industry: "" })
               }
@@ -234,8 +321,9 @@ export function CompanyBasicInfoForm({ profile, onSuccess }: CompanyBasicInfoFor
             options={currencyOptions}
             value={currencyOptions.find((option) => option.value === formData.currency) || null}
             onChange={(option) => {
-              if (option && !Array.isArray(option)) {
-                updateFormData({ currency: option?.value })
+              const nextOption = getSingleOption(option)
+              if (nextOption) {
+                updateFormData({ currency: String(nextOption.value) })
               } else {
                 updateFormData({ currency: undefined})
               }
@@ -358,7 +446,7 @@ export function CompanyBasicInfoForm({ profile, onSuccess }: CompanyBasicInfoFor
 
       <div className="flex justify-end">
         <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white" disabled={isLoading }>
-          {isLoading ? "Saving..." : "Save Changes"}
+          {isLoading ? "Saving..." : submitLabel}
         </Button>
       </div>
     </form>

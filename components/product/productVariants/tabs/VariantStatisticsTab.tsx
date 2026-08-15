@@ -1,25 +1,30 @@
 "use client"
 
 import { useGetVariantStatisticsQuery } from "@/redux/features/product/productAPISlice"
-import LoadingAnimation from "@/components/common/LoadingAnimation"
+import type { VariantStatisticsResponse } from "@/redux/features/product/productTypes"
+import { QueryStateBoundary } from "@/components/common/QueryStateBoundary"
 
 interface VariantStatisticsTabProps {
   variantId: string
 }
 
 const VariantStatisticsTab = ({ variantId }: VariantStatisticsTabProps) => {
-  const { data: statistics, isLoading, error } = useGetVariantStatisticsQuery(variantId)
+  const { data: statistics, isLoading, isFetching, error, refetch } = useGetVariantStatisticsQuery(variantId)
 
-  if (isLoading) {
+  if (isLoading || error) {
     return (
-      <div className="p-4 flex items-center justify-center">
-        <LoadingAnimation />
-      </div>
+      <QueryStateBoundary
+        isLoading={isLoading}
+        isFetching={isFetching}
+        error={error}
+        onRetry={refetch}
+        loadingText="Loading variant statistics..."
+        errorTitle="Unable to load variant statistics"
+        className="m-4"
+      >
+        <div />
+      </QueryStateBoundary>
     )
-  }
-
-  if (error) {
-    return <div className="p-4 text-red-500">Error loading statistics: {(error as any).message || "Unknown error"}</div>
   }
 
   if (!statistics) {
@@ -30,6 +35,11 @@ const VariantStatisticsTab = ({ variantId }: VariantStatisticsTabProps) => {
     )
   }
 
+  const safeStatistics: VariantStatisticsResponse = statistics
+  const stock = safeStatistics.stock ?? { available: 0, committed: 0, on_order: 0 }
+  const priceHistory = safeStatistics.price_history ?? []
+  const sales = safeStatistics.sales ?? { total_sales: 0, last_sale: null }
+
   return (
     <div className="p-4 max-h-[70vh] overflow-y-auto space-y-6">
       <div>
@@ -37,24 +47,24 @@ const VariantStatisticsTab = ({ variantId }: VariantStatisticsTabProps) => {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-gray-50 p-4 rounded-lg">
             <p className="text-sm text-gray-600">Available</p>
-            <p className="text-2xl font-bold text-green-600">{statistics.stock?.available || 0}</p>
+            <p className="text-2xl font-bold text-green-600">{stock.available || 0}</p>
           </div>
           <div className="bg-gray-50 p-4 rounded-lg">
             <p className="text-sm text-gray-600">Committed</p>
-            <p className="text-2xl font-bold text-orange-600">{statistics.stock?.committed || 0}</p>
+            <p className="text-2xl font-bold text-orange-600">{stock.committed || 0}</p>
           </div>
           <div className="bg-gray-50 p-4 rounded-lg">
             <p className="text-sm text-gray-600">On Order</p>
-            <p className="text-2xl font-bold text-blue-600">{statistics.stock?.on_order || 0}</p>
+            <p className="text-2xl font-bold text-blue-600">{stock.on_order || 0}</p>
           </div>
         </div>
       </div>
 
       <div>
         <h3 className="text-lg font-semibold mb-4">Price History</h3>
-        {statistics.price_history && statistics.price_history.length > 0 ? (
+        {priceHistory.length > 0 ? (
           <div className="space-y-2">
-            {statistics.price_history.map((ph: any) => (
+            {priceHistory.map((ph) => (
               <div key={ph.id} className="bg-gray-50 p-3 rounded-lg">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">{ph.timestamp}</span>
@@ -76,11 +86,11 @@ const VariantStatisticsTab = ({ variantId }: VariantStatisticsTabProps) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="bg-gray-50 p-4 rounded-lg">
             <p className="text-sm text-gray-600">Total Sales</p>
-            <p className="text-2xl font-bold">{statistics.sales?.total_sales || 0}</p>
+            <p className="text-2xl font-bold">{sales.total_sales || 0}</p>
           </div>
           <div className="bg-gray-50 p-4 rounded-lg">
             <p className="text-sm text-gray-600">Last Sale</p>
-            <p className="text-lg font-medium">{statistics.sales?.last_sale || "N/A"}</p>
+            <p className="text-lg font-medium">{sales.last_sale || "No sales yet"}</p>
           </div>
         </div>
       </div>

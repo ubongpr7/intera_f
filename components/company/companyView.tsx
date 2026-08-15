@@ -2,13 +2,14 @@
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { Column, DataTable } from "../common/DataTable/DataTable";
-import { CompanyDataInterface } from "../interfaces/company";
+import { CompanyDataInterface } from "@/redux/features/company/companyTypes";
 import { useGetCompanyDataQuery, useCreateCompanyMutation,useGetSupplersQuery } from '../../redux/features/company/companyAPISlice';
 import CustomCreateCard from '../common/createCard';
 import { CompanyInterfaceKeys,defaultValues } from './selectOptions';
 import { CompanyKeyInfo } from './selectOptions';
 import { getCurrencySymbol } from '@/lib/currency-utils';
 import { CURRENCY_CODES } from '@/lib/currencyCode';
+import { extractErrorMessage } from '@/lib/utils';
 
 const inventoryColumns: Column<CompanyDataInterface>[] = [
   {
@@ -84,7 +85,7 @@ function CompanyView() {
   if (error) {
     return (
       <div className="p-4 text-red-500">
-        Error loading inventory data: {(error as any).message || 'Unknown error'}
+        Unable to load company records: {extractErrorMessage(error, ["detail", "error"])}
       </div>
     );
   }
@@ -115,8 +116,7 @@ function CompanyView() {
         onClose={() => setIsCreateOpen(true)}
       />
 
-      {/* Always render CustomCreateCard but control visibility */}
-      <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>
+      {isCreateOpen ? (
         <CustomCreateCard
           defaultValues={defaultValues}
           onClose={() => setIsCreateOpen(false)}
@@ -126,9 +126,11 @@ function CompanyView() {
           keyInfo={CompanyKeyInfo}
           notEditableFields={notEditableCompanyFields}
           interfaceKeys={CompanyInterfaceKeys}
-          optionalFields={['is_supplier', 'is_customer','is_manufacturer']}
+          itemTitle='Create Company'
+
+          optionalFields={['is_supplier', 'is_customer','is_manufacturer','description', 'short_address', 'phone', 'email', 'company_type']}
         />
-      </div>
+      ) : null}
     </div>
   );
 }

@@ -1,9 +1,9 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
-import { useGetLoggedInUserQuery } from "@/redux/features/users/userApiSlice";
 import DashboardHeader from "@/components/wrapper/dashboardHeader";
+import { RouteAccessGuard } from "@/lib/permissionsGuard";
+import { SubscriptionRequiredGuard } from "@/components/subscription/SubscriptionRequiredGuard";
 
 
 export default function DashboardLayout({
@@ -11,15 +11,13 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-
   return (
     <DashboardHeader>
-        
-
-        {children}
-        
-
-        </DashboardHeader>
+      <RouteAccessGuard>
+        <SubscriptionRequiredGuard>
+          {children}
+        </SubscriptionRequiredGuard>
+      </RouteAccessGuard>
+    </DashboardHeader>
   )
 }

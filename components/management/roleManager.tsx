@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
-import { useDeactivateRoleMutation, useGetRolesQuery } from '../../redux/features/management/groups';
-import { RoleAssignment, RoleData } from '../interfaces/management';
+import { useGetRolesQuery } from '../../redux/features/management/groups';
+import { RoleAssignment, RoleData } from "@/redux/features/management/managementTypes";
 import CustomCreateForm from "../common/createForm";
-import { useAssignUserRoleMutation } from '../../redux/features/permission/permit';
 import { formatDateTime } from '../common/utils';
+import {
+  useCreateStaffRoleAssignmentMutation,
+  useGetStaffRoleAssignmentsQuery,
+  useUpdateStaffRoleAssignmentMutation,
+} from '@/redux/features/management/companyProfileApiSlice';
 interface RoleManagerProps {
   userId: string;
   roles: RoleAssignment[];
@@ -14,36 +17,82 @@ interface RoleManagerProps {
 }
 
 const RoleManager = ({ userId, roles, refetch,closeTab }: RoleManagerProps) => {
-  const [localRoles, setLocalRoles] = useState(roles);
-  const [deactivateRole, { isLoading }] = useDeactivateRoleMutation();
+  const [optimisticallyHiddenRoleIds, setOptimisticallyHiddenRoleIds] = useState<Set<number>>(() => new Set());
   const [showAssignForm, setShowAssignForm] = useState(false);
-  const [assignRole, { isLoading: assignRoleLoading }] = useAssignUserRoleMutation();
+  const [assignRole, { isLoading: assignRoleLoading }] = useCreateStaffRoleAssignmentMutation();
+  const [updateAssignment, { isLoading: isUpdatingAssignment }] = useUpdateStaffRoleAssignmentMutation();
+  const {
+    data: assignmentData = [],
+    isLoading: isLoadingAssignments,
+    refetch: refetchAssignments,
+  } = useGetStaffRoleAssignmentsQuery();
   
   const { data: userRoleData } = useGetRolesQuery();
-  const roleOptions = userRoleData?.map((role: RoleData) => ({
-    value: role.id.toString(),
-    text: role.name,
-  }));
+  const fetchedUserRoles = useMemo<RoleAssignment[]>(() => {
+    return assignmentData
+      .filter((assignment) => `${assignment.user}` === `${userId}` && assignment.is_active)
+      .map((assignment) => ({
+        id: Number(assignment.id),
+        user: `${assignment.user}`,
+        role_name: assignment.role_name || "Assigned role",
+        role: `${assignment.role}`,
+        start_date: assignment.start_date,
+        end_date: assignment.end_date || "",
+        is_active: assignment.is_active,
+        assigned_by: Number(assignment.assigned_by || 0),
+        assigned_at: assignment.assigned_at || assignment.start_date,
+        profile: assignment.profile ? `${assignment.profile}` : "",
+      }));
+  }, [assignmentData, userId]);
 
-  useEffect(() => {
-    setLocalRoles(roles);
-  }, [roles]);
+  const visibleRoles = useMemo(
+    () => (fetchedUserRoles.length > 0 ? fetchedUserRoles : roles).filter((role) => !optimisticallyHiddenRoleIds.has(role.id)),
+    [fetchedUserRoles, optimisticallyHiddenRoleIds, roles],
+  );
+
+  const assignedRoleIds = useMemo(
+    () => new Set(visibleRoles.filter((role) => role.is_active).map((role) => `${role.role}`)),
+    [visibleRoles],
+  );
+
+  const roleOptions = useMemo(
+    () =>
+      (userRoleData || [])
+        .filter((role: RoleData) => !assignedRoleIds.has(role.id.toString()))
+        .map((role: RoleData) => ({
+          value: role.id.toString(),
+          text: role.name,
+        })),
+    [assignedRoleIds, userRoleData],
+  );
 
   const handleDeactivate = async (roleId: number) => {
     try {
-      setLocalRoles(prev => prev.filter(role => role.id !== roleId));
-      await deactivateRole({id:roleId}).unwrap();
-      toast.success('Role deactivated successfully');
+      setOptimisticallyHiddenRoleIds((current) => new Set(current).add(roleId));
+      await updateAssignment({ id: `${roleId}`, data: { is_active: false } }).unwrap();
+      toast.success('Role assignment deactivated successfully');
+      await refetchAssignments();
       await refetch()
     } catch (error) {
-      toast.error('Failed to deactivate role');
-      setLocalRoles(roles); // Revert on error
+      toast.error('Failed to deactivate role assignment');
+      setOptimisticallyHiddenRoleIds((current) => {
+        const next = new Set(current);
+        next.delete(roleId);
+        return next;
+      });
     }
   };
 
   const handleAssignRole = async (createdData: Partial<RoleAssignment>) => {
     try {
-      await assignRole(createdData).unwrap();
+      await assignRole({
+        user: Number(userId),
+        role: `${createdData.role || ""}`,
+        start_date: createdData.start_date,
+        end_date: createdData.end_date || undefined,
+        is_active: true,
+      }).unwrap();
+      await refetchAssignments();
       await refetch();
       closeTab();
       setShowAssignForm(false);
@@ -72,27 +121,37 @@ const RoleManager = ({ userId, roles, refetch,closeTab }: RoleManagerProps) => {
 
       {showAssignForm && (
         <div className="mb-6">
-          <CustomCreateForm<RoleAssignment>
-            isLoading={assignRoleLoading}
-            onSubmit={handleAssignRole}
-            selectOptions={{ role: roleOptions }}
-            interfaceKeys={['role', 'start_date', 'end_date']}
-            datetimeFields={['start_date', 'end_date']}
-            optionalFields={['end_date']}
-            notEditableFields={[]}
-            hiddenFields={{ user: userId }}
-            defaultValues={{}}
-          />
+          {roleOptions.length === 0 ? (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              Every active role is already assigned to this user. Deactivate an existing assignment before adding it again.
+            </div>
+          ) : (
+            <CustomCreateForm<RoleAssignment>
+              isLoading={assignRoleLoading}
+              onSubmit={handleAssignRole}
+              selectOptions={{ role: roleOptions }}
+              interfaceKeys={['role', 'start_date', 'end_date']}
+              datetimeFields={['start_date', 'end_date']}
+              optionalFields={['end_date']}
+              notEditableFields={[]}
+              hiddenFields={{ user: userId }}
+              defaultValues={{}}
+            />
+          )}
         </div>
       )}
 
       <div className="space-y-3">
-        {localRoles.length === 0 ? (
+        {isLoadingAssignments ? (
+          <div className="text-center py-4 text-gray-500">
+            Loading active role assignments...
+          </div>
+        ) : visibleRoles.length === 0 ? (
           <div className="text-center py-4 text-gray-500">
             No active roles assigned
           </div>
         ) : (
-          localRoles.map((role) => (
+          visibleRoles.map((role) => (
             <div
               key={role.id}
               className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group"
@@ -102,7 +161,7 @@ const RoleManager = ({ userId, roles, refetch,closeTab }: RoleManagerProps) => {
                   type="checkbox"
                   checked={role.is_active}
                   onChange={() => handleDeactivate(role.id)}
-                  disabled={isLoading}
+                  disabled={isUpdatingAssignment}
                   className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed"
                 />
                 <div className="flex-1">

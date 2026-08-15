@@ -25,6 +25,70 @@ export function useAIBulkCreate() {
   const [aiBulkCreate, { isLoading: isCreating }] = useAiBulkCreateProductsMutation()
   const [getTaskStatus] = useLazyGetBulkTaskStatusQuery()
 
+  const pollTaskStatus = useCallback(
+    async (taskId: string) => {
+      const pollInterval = window.setInterval(async () => {
+        try {
+          const result = await getTaskStatus(taskId)
+
+          if (result.data) {
+            const { status: taskStatus, error_message } = result.data
+
+            if (taskStatus === "COMPLETED") {
+              setState((prev) => ({
+                ...prev,
+                status: "completed",
+                progress: 100,
+              }))
+              window.clearInterval(pollInterval)
+              toast.success("AI processing completed successfully!")
+            } else if (taskStatus === "FAILED") {
+              setState((prev) => ({
+                ...prev,
+                status: "error",
+                error: error_message || "Processing failed",
+              }))
+              window.clearInterval(pollInterval)
+              toast.error(error_message || "Processing failed")
+            } else if (taskStatus === "PROCESSING") {
+              setState((prev) => ({
+                ...prev,
+                progress: Math.min(prev.progress + 5, 90),
+              }))
+            }
+          }
+        } catch {
+          setState((prev) => ({
+            ...prev,
+            status: "error",
+            error: "Failed to check processing status",
+          }))
+          window.clearInterval(pollInterval)
+          toast.error("Failed to check processing status")
+        }
+      }, 3000)
+
+      window.setTimeout(
+        () => {
+          window.clearInterval(pollInterval)
+          setState((prev) => {
+            if (prev.status === "processing") {
+              toast.error("Processing timeout. Please check the task status manually.")
+              return {
+                ...prev,
+                status: "error",
+                error: "Processing timeout",
+              }
+            }
+            return prev
+          })
+        },
+        10 * 60 * 1000,
+      )
+    },
+    [getTaskStatus],
+  )
+
   const startBulkCreate = useCallback(
     async (images: File[], excelFile?: File) => {
       if (images.length === 0) {
@@ -65,8 +129,6 @@ export function useAIBulkCreate() {
         pollTaskStatus(result.task_id)
         return true
       } catch (error: any) {
-        console.error("Failed to start AI processing:", error)
-
         const errorMessage = error?.data?.detail || error?.message || "Failed to start AI processing"
         setState({
           status: "error",
@@ -79,73 +141,7 @@ export function useAIBulkCreate() {
         return false
       }
     },
-    [aiBulkCreate],
-  )
-
-  const pollTaskStatus = useCallback(
-    async (taskId: string) => {
-      const pollInterval = setInterval(async () => {
-        try {
-          const result = await getTaskStatus(taskId)
-
-          if (result.data) {
-            const { status: taskStatus, error_message } = result.data
-
-            if (taskStatus === "COMPLETED") {
-              setState((prev) => ({
-                ...prev,
-                status: "completed",
-                progress: 100,
-              }))
-              clearInterval(pollInterval)
-              toast.success("AI processing completed successfully!")
-            } else if (taskStatus === "FAILED") {
-              setState((prev) => ({
-                ...prev,
-                status: "error",
-                error: error_message || "Processing failed",
-              }))
-              clearInterval(pollInterval)
-              toast.error(error_message || "Processing failed")
-            } else if (taskStatus === "PROCESSING") {
-              setState((prev) => ({
-                ...prev,
-                progress: Math.min(prev.progress + 5, 90),
-              }))
-            }
-          }
-        } catch (err) {
-          console.error("Failed to check processing status:", err)
-          setState((prev) => ({
-            ...prev,
-            status: "error",
-            error: "Failed to check processing status",
-          }))
-          clearInterval(pollInterval)
-          toast.error("Failed to check processing status")
-        }
-      }, 3000) // Poll every 3 seconds
-
-      // Cleanup interval after 10 minutes to prevent infinite polling
-      setTimeout(
-        () => {
-          clearInterval(pollInterval)
-          setState((prev) => {
-            if (prev.status === "processing") {
-              toast.error("Processing timeout. Please check the task status manually.")
-              return {
-                ...prev,
-                status: "error",
-                error: "Processing timeout",
-              }
-            }
-            return prev
-          })
-        },
-        10 * 60 * 1000,
-      ) // 10 minutes
-    },
-    [getTaskStatus],
+    [aiBulkCreate, pollTaskStatus],
   )
 
   const reset = useCallback(() => {

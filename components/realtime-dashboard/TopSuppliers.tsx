@@ -3,20 +3,18 @@
 import { useGetDashboardTopSuppliersQuery } from '@/redux/features/dashboard/dashboardApiSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Truck } from 'lucide-react';
-import LoadingAnimation from '../common/LoadingAnimation';
 import { Supplier } from '../interfaces/dashboard';
+import { QueryStateBoundary } from '../common/QueryStateBoundary';
 
 const TopSuppliers = () => {
-  const { data, error, isLoading } = useGetDashboardTopSuppliersQuery('');
-
-  if (isLoading) return <div className="h-full flex justify-center items-center"><LoadingAnimation /></div>;
-  if (error) return <div>Error loading top suppliers</div>;
+  const { data, error, isLoading, isFetching, refetch } = useGetDashboardTopSuppliersQuery('');
 
   return (
+    <QueryStateBoundary isLoading={isLoading} isFetching={isFetching} error={error} onRetry={refetch} loadingText="Loading top suppliers..." errorTitle="Unable to load top suppliers">
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">Top Suppliers</CardTitle>
-        <Truck className="h-4 w-4 text-muted-foreground" />
+        <Truck className="h-4 w-4 text-gray-500" />
       </CardHeader>
       <CardContent>
         {data && data.length > 0 ? (
@@ -33,6 +31,7 @@ const TopSuppliers = () => {
         )}
       </CardContent>
     </Card>
+    </QueryStateBoundary>
   );
 };
 

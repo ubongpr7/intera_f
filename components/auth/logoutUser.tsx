@@ -1,5 +1,5 @@
 import { deleteCookie } from 'cookies-next';
-import { useLogoutMutation } from '../../redux/features/authApiSlice';
+import { useLogoutMutation } from '../../redux/features/auth/authApiSlice';
 import { useRouter } from 'nextjs-toploader/app';
 import { toast } from 'react-toastify';
 import { AUTH_COOKIE_KEYS, getCookieCandidates } from '@/lib/authCookies';

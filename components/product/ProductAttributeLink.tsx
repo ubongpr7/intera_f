@@ -8,17 +8,17 @@ import {
   useDeleteProductAttributeLinkMutation,
   useGetProductAttributesQuery,
 } from "@/redux/features/product/productAPISlice"
-
-import { useRouter } from "nextjs-toploader/app"
+import type { ProductAttributeLink, ProductAttribute, Product } from "@/redux/features/product/productTypes"
 import { Column, DataTable } from "../common/DataTable/DataTable"
-import { ProductAttributeLink, ProductAttribute, Product } from "../interfaces/product"
 import CustomCreateCard from "../common/createCard"
 import LoadingAnimation from "../common/LoadingAnimation"
+import { Trash2 } from "lucide-react"
+import { toast } from "react-toastify"
+import { extractErrorMessage } from "@/lib/utils"
 
 interface ProductAttributeLinksProps {
   productId: string;
   product:Partial<Product>;
-  setRefetchData:(arg:boolean)=>void;
 }
 
 const attributeLinkColumns: Column<ProductAttributeLink>[] = [
@@ -67,8 +67,7 @@ const defaultValues: Partial<ProductAttributeLink> = {
   is_visible_in_pos: true,
 }
 
-export default function ProductAttributeLinks({ productId,product,setRefetchData }: ProductAttributeLinksProps) {
-  const router = useRouter()
+export default function ProductAttributeLinks({ productId, product }: ProductAttributeLinksProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [editingAttributeLink, setEditingAttributeLink] = useState<ProductAttributeLink | null>(null)
 
@@ -94,6 +93,22 @@ export default function ProductAttributeLinks({ productId,product,setRefetchData
     text: attr.name,
   })) || []
 
+  const actionButtons = [
+    {
+      label: "Delete",
+      icon: Trash2,
+      variant: "danger" as const,
+      tooltip: "Remove this attribute link",
+      disabled: () => deleteLoading,
+      onClick: (row: ProductAttributeLink) => {
+        if (typeof window !== "undefined" && !window.confirm(`Remove ${row.attribute_name || "this attribute"} from this product?`)) {
+          return
+        }
+        void handleDelete(row.id)
+      },
+    },
+  ]
+
   const selectOptions = {
     attribute: attributeOptions,
   }
@@ -103,9 +118,8 @@ export default function ProductAttributeLinks({ productId,product,setRefetchData
       await createAttributeLink({ productId, data }).unwrap()
       setIsCreateOpen(false)
       refetchAttributeLinks()
-      setRefetchData(true)
-    } catch (error) {
-      console.error('Failed to create attribute link:', error)
+    } catch {
+      toast.error("Failed to link attribute to product.")
     }
   }
 
@@ -115,10 +129,9 @@ export default function ProductAttributeLinks({ productId,product,setRefetchData
       await updateAttributeLink({ productId, id: editingAttributeLink.id, data }).unwrap()
       setEditingAttributeLink(null)
       setIsCreateOpen(false)
-      setRefetchData(true)
       refetchAttributeLinks()
-    } catch (error) {
-      console.error('Failed to update attribute link:', error)
+    } catch {
+      toast.error("Failed to update product attribute link.")
     }
   }
 
@@ -126,10 +139,8 @@ export default function ProductAttributeLinks({ productId,product,setRefetchData
     try {
       await deleteAttributeLink({ productId, id: attributeLinkId }).unwrap()
       refetchAttributeLinks()
-      setRefetchData(true)
-
-    } catch (error) {
-      console.error('Failed to delete attribute link:', error)
+    } catch {
+      toast.error("Failed to remove product attribute link.")
     }
   }
 
@@ -150,9 +161,9 @@ const interfaceKeys: (keyof ProductAttributeLink)[] = [
   if (attributeLinksError || attributesError) {
     return (
       <div className="p-4 text-red-500">
-        Error loading data: 
-        {attributeLinksError && <p>Attribute Links: {(attributeLinksError as any).message || 'Unknown error'}</p>}
-        {attributesError && <p>Attributes: {(attributesError as any).message || 'Unknown error'}</p>}
+        Unable to load product attribute setup.
+        {attributeLinksError ? <p>Attribute links: {extractErrorMessage(attributeLinksError, ["detail", "error"])}</p> : null}
+        {attributesError ? <p>Attributes: {extractErrorMessage(attributesError, ["detail", "error"])}</p> : null}
       </div>
     )
   }
@@ -162,47 +173,54 @@ const interfaceKeys: (keyof ProductAttributeLink)[] = [
   }
 
   return (
-    <div className="p-4">
-      
-      
+    <div className="space-y-4 p-4">
+      <div className="rounded-[24px] border border-blue-100 bg-blue-50 p-4">
+        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">Current product attributes</div>
+        <h3 className="mt-2 text-lg font-semibold text-gray-900">Attributes linked to {product?.name || "this product"}</h3>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
+          This table is the product-specific list. Only attributes linked here should drive this product’s variants, POS display, pricing
+          modifiers, or required product data. The shared library below is just the pool of reusable templates.
+        </p>
+      </div>
+
       <DataTable<ProductAttributeLink>
         columns={attributeLinkColumns}
         data={attributeLinks || []}
         isLoading={isAttributeLinksLoading}
         onRowClick={handleRowClick}
-        searchableFields={['attribute_name']}
-        filterableFields={['attribute_type']}
-        sortableFields={['attribute_name', 'attribute_type']}
-        title={`Attribute Links for ${product?.name || 'Product'}`}
+        actionButtons={actionButtons}
+        searchableFields={['attribute_name', 'attribute_type']}
+        filterableFields={['attribute_type', 'required', 'is_visible_in_pos']}
+        sortableFields={['attribute_name', 'attribute_type', 'order', 'default_modifier']}
+        rangeFilterFields={['order', 'default_modifier']}
+        title={`Linked attributes for ${product?.name || 'Product'}`}
         onClose={() => setIsCreateOpen(true)}
       />
 
 
-      {isCreateOpen && (
-        <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>
-          <CustomCreateCard
-            defaultValues={editingAttributeLink || defaultValues}
-            onClose={() => {
-              setIsCreateOpen(false)
-              setEditingAttributeLink(null)
-            }}
-            onSubmit={editingAttributeLink ? handleUpdate : handleCreate}
-            isLoading={editingAttributeLink ? updateLoading : createLoading}
-            selectOptions={selectOptions}
-            keyInfo={{
-              attribute: 'The attribute to link to this product',
-              required: 'Is this attribute required for variants?',
-              order: 'Priority order for display',
-              default_modifier: 'Default price adjustment for this attribute',
-              is_visible_in_pos: 'Show this attribute in POS interface',
-            }}
-            notEditableFields={['id', 'product','attribute_type']}
-            interfaceKeys={interfaceKeys}
-            optionalFields={['order', 'default_modifier','required','is_visible_in_pos']}
-            itemTitle={`${editingAttributeLink ? 'Update' : 'Create'}  Attribute Link`}
-          />
-        </div>
-      )}
+      {isCreateOpen ? (
+        <CustomCreateCard
+          defaultValues={editingAttributeLink || defaultValues}
+          onClose={() => {
+            setIsCreateOpen(false)
+            setEditingAttributeLink(null)
+          }}
+          onSubmit={editingAttributeLink ? handleUpdate : handleCreate}
+          isLoading={editingAttributeLink ? updateLoading : createLoading}
+          selectOptions={selectOptions}
+          keyInfo={{
+            attribute: 'The attribute to link to this product',
+            required: 'Is this attribute required for variants?',
+            order: 'Priority order for display',
+            default_modifier: 'Default price adjustment for this attribute',
+            is_visible_in_pos: 'Show this attribute in POS interface',
+          }}
+          notEditableFields={['id', 'product','attribute_type']}
+          interfaceKeys={interfaceKeys}
+          optionalFields={['order', 'default_modifier','required','is_visible_in_pos']}
+          itemTitle={`${editingAttributeLink ? 'Update' : 'Link'} Attribute to Product`}
+        />
+      ) : null}
     </div>
   )
 }

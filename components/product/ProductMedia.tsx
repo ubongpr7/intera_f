@@ -3,9 +3,9 @@
 import type React from "react"
 
 import { useState } from "react"
+import { FileText } from "lucide-react"
 import {
   useGetAttachmentsQuery,
-  useCreateAttachmentMutation,
   useUpdateAttachmentMutation,
   useDeleteAttachmentMutation,
   useSetPrimaryAttachmentMutation,
@@ -13,6 +13,9 @@ import {
 } from "@/redux/features/product/productAPISlice"
 import LoadingAnimation from "../common/LoadingAnimation"
 import Modal from "../common/Modal"
+import { extractErrorMessage } from "@/lib/utils"
+import { toast } from "react-toastify"
+import { confirmAction } from "../common/confirmAction"
 
 interface ProductMediaProps {
   productId: string
@@ -21,18 +24,15 @@ interface ProductMediaProps {
 export default function ProductMedia({ productId }: ProductMediaProps) {
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [editingAttachment, setEditingAttachment] = useState<any>(null)
-  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null)
 
   const {
     data: attachments = [],
     isLoading,
     refetch,
   } = useGetAttachmentsQuery({
-    content_type: "product",
-    object_id: productId,
+    product_id: productId,
   })
 
-  const [createAttachment, { isLoading: isCreating }] = useCreateAttachmentMutation()
   const [updateAttachment, { isLoading: isUpdating }] = useUpdateAttachmentMutation()
   const [deleteAttachment] = useDeleteAttachmentMutation()
   const [setPrimary] = useSetPrimaryAttachmentMutation()
@@ -45,33 +45,33 @@ export default function ProductMedia({ productId }: ProductMediaProps) {
       formData.append("files", file)
     })
 
-    formData.append("content_type_id", "1") // Product content type
+    formData.append("content_type", "product")
     formData.append("object_id", productId)
     formData.append("purpose", purpose)
 
     try {
       await bulkUpload(formData).unwrap()
-      setSelectedFiles(null)
       setShowUploadModal(false)
       refetch()
     } catch (error) {
-      console.error("Error uploading files:", error)
+      toast.error(extractErrorMessage(error, ["files", "detail"]))
     }
   }
 
   const handleSingleUpload = async (file: File, purpose: string, description: string) => {
     const formData = new FormData()
-    formData.append("file", file)
-    formData.append("content_type_id", "1") // Product content type
+    formData.append("files", file)
+    formData.append("content_type", "product")
     formData.append("object_id", productId)
     formData.append("purpose", purpose)
     formData.append("description", description)
 
     try {
-      await createAttachment(formData).unwrap()
+      await bulkUpload(formData).unwrap()
+      setShowUploadModal(false)
       refetch()
     } catch (error) {
-      console.error("Error uploading file:", error)
+      toast.error(extractErrorMessage(error, ["files", "description", "detail"]))
     }
   }
 
@@ -81,18 +81,24 @@ export default function ProductMedia({ productId }: ProductMediaProps) {
       setEditingAttachment(null)
       refetch()
     } catch (error) {
-      console.error("Error updating attachment:", error)
+      toast.error(extractErrorMessage(error, ["description", "purpose", "detail"]))
     }
   }
 
   const handleDeleteAttachment = async (attachmentId: string) => {
-    if (confirm("Are you sure you want to delete this attachment?")) {
-      try {
-        await deleteAttachment(attachmentId).unwrap()
-        refetch()
-      } catch (error) {
-        console.error("Error deleting attachment:", error)
-      }
+    const confirmed = await confirmAction({
+      title: "Delete attachment?",
+      description: "This removes the media file from the product record.",
+      confirmText: "Delete attachment",
+      destructive: true,
+    })
+    if (!confirmed) return
+
+    try {
+      await deleteAttachment(attachmentId).unwrap()
+      refetch()
+    } catch (error) {
+      toast.error(extractErrorMessage(error, ["detail"]))
     }
   }
 
@@ -101,7 +107,7 @@ export default function ProductMedia({ productId }: ProductMediaProps) {
       await setPrimary(attachmentId).unwrap()
       refetch()
     } catch (error) {
-      console.error("Error setting primary:", error)
+      toast.error(extractErrorMessage(error, ["detail"]))
     }
   }
 
@@ -148,17 +154,20 @@ export default function ProductMedia({ productId }: ProductMediaProps) {
                 {/* Media Preview */}
                 <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
                   {attachment.file_type === "IMAGE" ? (
-                    <img
-                      src={attachment.file_url || "/placeholder.svg"}
-                      alt={attachment.description || "Product image"}
-                      className="w-full h-full object-cover"
-                    />
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={attachment.file_url || "/placeholder.svg"}
+                        alt={attachment.description || "Product image"}
+                        className="w-full h-full object-cover"
+                      />
+                    </>
                   ) : attachment.file_type === "VIDEO" ? (
                     <video src={attachment.file_url} className="w-full h-full object-cover" controls />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <div className="text-center">
-                        <div className="text-2xl text-gray-400 mb-2">📄</div>
+                        <FileText className="mb-2 h-7 w-7 text-gray-400" aria-label="Document attachment" />
                         <p className="text-xs text-gray-600">{attachment.file_type}</p>
                       </div>
                     </div>
@@ -223,12 +232,12 @@ export default function ProductMedia({ productId }: ProductMediaProps) {
       )}
 
       {/* Upload Modal */}
-      <Modal isOpen={showUploadModal} onClose={() => setShowUploadModal(false)} title="Upload Media Files" size="large">
+      <Modal isOpen={showUploadModal} onClose={() => setShowUploadModal(false)} title="Upload Media Files" size="lg">
         <MediaUploadForm
           onUpload={handleFileUpload}
           onSingleUpload={handleSingleUpload}
           onCancel={() => setShowUploadModal(false)}
-          isLoading={isBulkUploading || isCreating}
+          isLoading={isBulkUploading}
         />
       </Modal>
 
@@ -281,21 +290,25 @@ function MediaUploadForm({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.08),_transparent_38%)] p-6 text-slate-100">
       {/* Upload Mode Toggle */}
       <div className="flex space-x-4">
         <button
           onClick={() => setUploadMode("bulk")}
-          className={`px-4 py-2 rounded-lg ${
-            uploadMode === "bulk" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+          className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+            uploadMode === "bulk"
+              ? "bg-blue-600 text-white shadow-lg shadow-blue-900/30"
+              : "border border-slate-700 bg-slate-900/70 text-slate-200 hover:border-slate-500 hover:bg-slate-800"
           }`}
         >
           Bulk Upload
         </button>
         <button
           onClick={() => setUploadMode("single")}
-          className={`px-4 py-2 rounded-lg ${
-            uploadMode === "single" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+          className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+            uploadMode === "single"
+              ? "bg-blue-600 text-white shadow-lg shadow-blue-900/30"
+              : "border border-slate-700 bg-slate-900/70 text-slate-200 hover:border-slate-500 hover:bg-slate-800"
           }`}
         >
           Single Upload
@@ -304,24 +317,24 @@ function MediaUploadForm({
 
       {/* File Selection */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Select Files</label>
+        <label className="mb-2 block text-sm font-medium text-slate-200">Select Files</label>
         <input
           type="file"
           multiple={uploadMode === "bulk"}
           accept="image/*,video/*,.pdf,.doc,.docx"
           onChange={handleFileSelect}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-800 file:px-3 file:py-2 file:text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
         />
-        {selectedFiles && <p className="text-sm text-gray-600 mt-1">{selectedFiles.length} file(s) selected</p>}
+        {selectedFiles && <p className="mt-1 text-sm text-slate-400">{selectedFiles.length} file(s) selected</p>}
       </div>
 
       {/* Purpose Selection */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Purpose</label>
+        <label className="mb-2 block text-sm font-medium text-slate-200">Purpose</label>
         <select
           value={purpose}
           onChange={(e) => setPurpose(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
         >
           <option value="MAIN_IMAGE">Main Product Image</option>
           <option value="GALLERY">Gallery Image</option>
@@ -335,11 +348,11 @@ function MediaUploadForm({
       {/* Description (for single upload) */}
       {uploadMode === "single" && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+          <label className="mb-2 block text-sm font-medium text-slate-200">Description</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
             rows={3}
             placeholder="File description..."
           />
@@ -347,19 +360,19 @@ function MediaUploadForm({
       )}
 
       {/* Actions */}
-      <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+      <div className="flex justify-end space-x-3 border-t border-slate-800 pt-6">
         <button
           onClick={onCancel}
-          className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+          className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
         >
           Cancel
         </button>
         <button
           onClick={uploadMode === "bulk" ? handleBulkUpload : handleSingleUpload}
           disabled={!selectedFiles || isLoading}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center"
+          className="flex items-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isLoading && <LoadingAnimation text="" ringColor="#ffffff" size="sm" />}
+          {isLoading && <LoadingAnimation text="" ringColor="#ffffff" size={14} />}
           Upload {uploadMode === "bulk" ? "Files" : "File"}
         </button>
       </div>
@@ -391,31 +404,34 @@ function AttachmentEditForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.08),_transparent_38%)] p-6 text-slate-100">
       {/* File Preview */}
       <div className="text-center">
-        {attachment.file_type === "IMAGE" ? (
-          <img
-            src={attachment.file_url || "/placeholder.svg"}
-            alt={attachment.description}
-            className="max-w-full max-h-48 mx-auto rounded-lg"
-          />
+          {attachment.file_type === "IMAGE" ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={attachment.file_url || "/placeholder.svg"}
+              alt={attachment.description || attachment.file || "Attachment"}
+              className="mx-auto max-h-48 max-w-full rounded-2xl border border-slate-800 object-contain"
+            />
+          </>
         ) : (
-          <div className="w-24 h-24 mx-auto bg-gray-100 rounded-lg flex items-center justify-center">
-            <span className="text-2xl">📄</span>
+          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-2xl border border-slate-800 bg-slate-900">
+            <FileText className="h-6 w-6 text-gray-500" aria-label="Document attachment" />
           </div>
         )}
-        <p className="text-sm text-gray-600 mt-2">
+        <p className="mt-2 text-sm text-slate-400">
           {attachment.file_size_formatted} • {attachment.mime_type}
         </p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Purpose</label>
+        <label className="mb-1 block text-sm font-medium text-slate-200">Purpose</label>
         <select
           value={formData.purpose}
           onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
         >
           <option value="MAIN_IMAGE">Main Product Image</option>
           <option value="GALLERY">Gallery Image</option>
@@ -427,11 +443,11 @@ function AttachmentEditForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+        <label className="mb-1 block text-sm font-medium text-slate-200">Description</label>
         <textarea
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
           rows={3}
           placeholder="File description..."
         />
@@ -443,27 +459,27 @@ function AttachmentEditForm({
           id="is_primary"
           checked={formData.is_primary}
           onChange={(e) => setFormData({ ...formData, is_primary: e.target.checked })}
-          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          className="h-4 w-4 rounded border-slate-600 text-blue-600 focus:ring-blue-500"
         />
-        <label htmlFor="is_primary" className="ml-2 block text-sm text-gray-900">
+        <label htmlFor="is_primary" className="ml-2 block text-sm text-slate-100">
           Set as primary image
         </label>
       </div>
 
-      <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+      <div className="flex justify-end space-x-3 border-t border-slate-800 pt-6">
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+          className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isLoading}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center"
+          className="flex items-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isLoading && <LoadingAnimation text="" ringColor="#ffffff" size="sm" />}
+          {isLoading && <LoadingAnimation text="" ringColor="#ffffff" size={14} />}
           Update Attachment
         </button>
       </div>

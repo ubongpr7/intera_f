@@ -1,12 +1,13 @@
 'use client'
 import DetailCard from '../common/Detail';
-import { useGetInventoryCategoriesQuery, useGetInventoryQuery } from '@/redux/features/inventory/inventoryAPiSlice';
-import { InventoryData, inventoryTypes } from '../interfaces/inventory';
+import { useGetInventoryQuery } from '@/redux/features/inventory/inventoryAPiSlice';
+import { InventoryData, inventoryTypes } from "@/redux/features/inventory/inventoryTypes";
 import { useUpdateInventoryMutation } from '../../redux/features/inventory/inventoryAPiSlice';
 import LoadingAnimation from '../common/LoadingAnimation';
 import { InventoryInterfaceKeys, InventoryKeyInfo } from './selectOptions';
-import { useGetCompanyUsersQuery } from '@/redux/features/users/userApiSlice';
 import { useGetUnitsQuery } from '@/redux/features/common/typeOF';
+import { useGetSupplersQuery } from '@/redux/features/company/companyAPISlice';
+import { RecordNotFoundCard } from '../common/RecordNotFoundCard';
 
 
 
@@ -14,8 +15,8 @@ export default function InventoryDetail({ id }: { id: string }) {
   const { data: inventory, isLoading,refetch  } = useGetInventoryQuery(id);
   const inventoryData = inventory as InventoryData;
   const [updateInventory,{isLoading:updateIsLoading}] = useUpdateInventoryMutation();
-  const { data: userData, isLoading: userLoading,  } = useGetCompanyUsersQuery();
-  const { data: units=[], isLoading: unitIsloading,  } = useGetUnitsQuery();
+  const { data: units=[] } = useGetUnitsQuery();
+  const { data: suppliers=[] } = useGetSupplersQuery();
 
   
   const handleUpdate = async (updatedData: Partial<InventoryData>) => {
@@ -25,60 +26,30 @@ export default function InventoryDetail({ id }: { id: string }) {
   };
 
 
-const { data: categories = [], isLoading: isCatLoading, error: catError } = useGetInventoryCategoriesQuery(1);
-const categoryOptions = categories.map((cat: any) => ({
-  value: cat.id,
-  text: cat.name,
-}));
 const unitOptions = units.map((unit: any) => ({
-   value: `${unit.name} (${unit.dimension_type})`,
-  text: `${unit.name} (${unit.dimension_type})`,
+   value: unit.code,
+  text: `${unit.name}${unit.abbreviated_name ? ` (${unit.abbreviated_name})` : ""}`,
+}));
+const supplierOptions = suppliers.map((supplier) => ({
+  value: String(supplier.id),
+  text: supplier.name,
 }));
 const typeOptions = inventoryTypes ? inventoryTypes.map((inventory_type: any) => ({
         value: inventory_type.id,
         text: inventory_type.text,
       })) : [];
-      
-    const userOptions = userData?.map((user:{first_name:string,email:string,id:number}) => ({
-        text: `${user.first_name} ${user.email}`,
-        value: user.id.toString(),
-      })) || [];    
 const  selectOptions = {
     
-      category:categoryOptions,
       inventory_type:typeOptions,
-      officer_in_charge:userOptions,
-      unit:unitOptions,
-
-
-      reorder_strategy: [
-        { value: 'FQ', text: 'Fixed Quantity' },
-        { value: 'FI', text: 'Fixed Interval' },
-        { value: 'DY', text: 'Demand-Based' }
+      default_uom_code:unitOptions,
+      stock_uom_code:unitOptions,
+      default_supplier:supplierOptions,
+      status: [
+        { value: 'draft', text: 'Draft' },
+        { value: 'active', text: 'Active' },
+        { value: 'archived', text: 'Archived' },
+        { value: 'discontinued', text: 'Discontinued' }
       ],
-      expiration_policy: [
-        { value: '0', text: 'Dispose of Stock' },
-        { value: '1', text: 'Return to Manufacturer' }
-      ],
-      recall_policy: [
-        { value: '0', text: 'Remove from Stock' },
-        { value: '1', text: 'Notify Customers' },
-        { value: '3', text: 'Replace Item' },
-        { value: '4', text: 'Destroy Item' },
-        { value: '5', text: 'Repair Item' }
-      ],
-      near_expiry_policy: [
-        { value: 'DISCOUNT', text: 'Sell at Discount' },
-        { value: 'DONATE', text: 'Donate to Charity' },
-        { value: 'DESTROY', text: 'Destroy Immediately' },
-        { value: 'RETURN', text: 'Return to Supplier' }
-      ],
-      forecast_method: [
-        { value: 'SA', text: 'Simple Average' },
-        { value: 'MA', text: 'Moving Average' },
-        { value: 'ES', text: 'Exponential Smoothing' }
-      ],
-    
 }
 
 //////////////////////////////
@@ -91,20 +62,67 @@ const  selectOptions = {
   <LoadingAnimation text="Loading..." ringColor="#3b82f6" />
   </div>
   </div>;
-  if (!inventory) return <div>Inventory not found</div>;
+  if (!inventory) return <RecordNotFoundCard title="Inventory item not found" description="This inventory item may have been deleted, archived, or filtered out of the current workspace context." />;
 
   
   return (
     <DetailCard 
       data={inventoryData}
-            interfaceKeys={InventoryInterfaceKeys}
+      interfaceKeys={InventoryInterfaceKeys}
+      displayFields={[
+        'display_image',
+        'description',
+        'sku_snapshot',
+        'barcode_snapshot',
+        'inventory_type',
+        'default_supplier_name',
+        'default_uom_code',
+        'stock_uom_code',
+        'status',
+        'stock_status',
+        'quantity',
+        'quantity_reserved',
+        'quantity_available',
+        'location_name',
+        'location_count',
+        'purchase_price',
+        'total_stock_value',
+        'lot_count',
+        'serial_count',
+        'minimum_stock_level',
+        'reorder_point',
+        'reorder_quantity',
+        'safety_stock_level',
+        'track_stock',
+        'track_lot',
+        'track_serial',
+        'track_expiry',
+        'allow_negative_stock',
+        'created_at',
+        'updated_at',
+      ]}
       updateMutation={handleUpdate}
-      excludeFields={['id','external_references','unit','officer_in_charge','last_sync_timestamp','sync_error_message','sync_status','officer_in_charge_details','modified_by_details','created_by', 'created_by_details','stock_analytics','category_details','category','forecast_method','expiration_policy','recall_policy','reorder_strategy','profile','batch_tracking_enabled',]}
+      excludeFields={[
+        'id',
+        'name_snapshot',
+        'created_by',
+        'created_by_user_id',
+        'updated_by_user_id',
+        'modified_by',
+        'created_by_details',
+        'modified_by_details',
+        'updated_by_details',
+        'metadata',
+        'default_supplier',
+        'product_template_id',
+        'product_variant_id',
+        'product_variant_image_url',
+      ]}
       selectOptions={selectOptions}
       isLoading={updateIsLoading}
       policyFields={['description']}
       keyInfo={InventoryKeyInfo}
-      optionalFields={['description','assembly','batch_tracking_enabled','automate_reorder','component','trackable','purchaseable','active','salable','locked','testable','virtual']}
+      optionalFields={['description','default_supplier','stock_uom_code']}
 
     />
   );

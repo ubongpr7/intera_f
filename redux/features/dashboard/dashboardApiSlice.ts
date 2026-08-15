@@ -1,8 +1,15 @@
 import { apiSlice } from '../../services/apiSlice';
+import { buildQuery } from '../common/queryParams';
+import type { StructuralLocationScopeParams } from '@/lib/structuralLocationScope';
+
+type DashboardStructuralScopeParams = StructuralLocationScopeParams & {
+  date?: string;
+  stock_status?: string;
+};
 
 export const dashboardApiSlice = apiSlice.injectEndpoints({
   endpoints: builder => ({
-    getDashboardStats: builder.query({
+    getRealtimeDashboardStats: builder.query({
       query: () => ({
         url: `/product_api/dashboard/stats/`,
         service: 'product',
@@ -27,8 +34,8 @@ export const dashboardApiSlice = apiSlice.injectEndpoints({
       }),
     }),
     getDashboardRecentSales: builder.query({
-        query: (date) => ({
-            url: `/pos_api/analytics/daily_sales/?date=${date}`,
+        query: (params?: string | DashboardStructuralScopeParams) => ({
+            url: typeof params === "string" ? buildQuery(`/pos_api/analytics/daily-sales/`, { date: params }) : buildQuery(`/pos_api/analytics/daily-sales/`, params),
             service: "pos" ,
           }),
     }),
@@ -52,15 +59,9 @@ export const dashboardApiSlice = apiSlice.injectEndpoints({
         }),
       }),
       getDashboardHeldOrders: builder.query({
-        query: () => ({
-          url: `/pos_api/orders/held_orders/`,
+        query: (params?: StructuralLocationScopeParams) => ({
+          url: buildQuery(`/pos_api/orders/held_orders/`, params),
           service: 'pos',
-        }),
-      }),
-      getDashboardInventoryByCategory: builder.query({
-        query: () => ({
-          url: `/inventory_api/categories/`,
-          service: 'inventory',
         }),
       }),
       getDashboardStockValueByLocation: builder.query({
@@ -99,27 +100,27 @@ export const dashboardApiSlice = apiSlice.injectEndpoints({
             service: 'pos',
         }),
       }),
-      getStockAnalytics: builder.query({
-        query: () => ({
-          url: `/stock_api/stock-items/analytics/`,
+      getDashboardStockAnalytics: builder.query({
+        query: (params?: StructuralLocationScopeParams) => ({
+          url: buildQuery(`/stock_api/inventory-items/analytics/`, params),
           service: 'inventory',
         }),
       }),
-      getPurchaseOrderAnalytics: builder.query({
-        query: () => ({
-          url: `/order_api/purchase-orders/analytics/`,
+      getDashboardPurchaseOrderAnalytics: builder.query({
+        query: (params?: StructuralLocationScopeParams) => ({
+          url: buildQuery(`/order_api/purchase-orders/analytics/`, params),
           service: 'inventory',
         }),
       }),
       getPurchaseOrderSummary: builder.query({
-        query: () => ({
-          url: `/order_api/purchase-orders/dashboard_summary/`,
+        query: (params?: StructuralLocationScopeParams) => ({
+          url: buildQuery(`/order_api/purchase-orders/dashboard_summary/`, params),
           service: 'inventory',
         }),
       }),
-      getLowStockItems: builder.query({
-        query: (params={}) => ({
-          url: `/stock_api/stock-items/low_stock/?${new URLSearchParams(params)}`,
+      getDashboardLowStockItems: builder.query({
+        query: (params: DashboardStructuralScopeParams = {}) => ({
+          url: buildQuery(`/stock_api/inventory-items/low_stock/`, params),
           service: 'inventory',
         }),
       }),
@@ -127,7 +128,7 @@ export const dashboardApiSlice = apiSlice.injectEndpoints({
 });
 
 export const {
-    useGetDashboardStatsQuery,
+    useGetRealtimeDashboardStatsQuery,
     useGetDashboardInventorySummaryQuery,
     useGetDashboardStockAlertsQuery,
     useGetDashboardRecentOrdersQuery,
@@ -136,15 +137,14 @@ export const {
     useGetDashboardTopSellingProductsQuery,
     useGetDashboardRecentPriceChangesQuery,
     useGetDashboardHeldOrdersQuery,
-    useGetDashboardInventoryByCategoryQuery,
     useGetDashboardStockValueByLocationQuery,
     useGetDashboardTopSuppliersQuery,
     useGetDashboardPendingPurchaseOrdersQuery,
     useGetDashboardRecentCustomersQuery,
     useGetDashboardBulkTaskStatusQuery,
     useGetDashboardPosSessionStatusQuery,
-    useGetStockAnalyticsQuery,
-    useGetPurchaseOrderAnalyticsQuery,
+    useGetDashboardStockAnalyticsQuery,
+    useGetDashboardPurchaseOrderAnalyticsQuery,
     useGetPurchaseOrderSummaryQuery,
-    useGetLowStockItemsQuery,
+    useGetDashboardLowStockItemsQuery,
 } = dashboardApiSlice;

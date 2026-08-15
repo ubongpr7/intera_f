@@ -1,5 +1,5 @@
 'use client'
-import { ActionItem } from '../interfaces/common'
+import { ActionItem } from "@/redux/features/common/commonTypes"
 import { LucideIcon } from 'lucide-react'
 import { useState } from 'react'
 

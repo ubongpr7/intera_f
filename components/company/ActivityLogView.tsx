@@ -9,7 +9,6 @@
 // import { Search, Download, Activity, AlertCircle } from "lucide-react"
 // import { Alert, AlertDescription } from "@/components/ui/alert"
 // import { useGetActivityLogsQuery, useExportActivityLogsMutation } from "@/redux/features/management/companyProfileApiSlice"
-// import type { ActivityLog } from "@/types/company-profile"
 
 // interface ActivityLogViewProps {
 //   profileId: string
@@ -96,9 +95,7 @@
 //       a.click()
 //       window.URL.revokeObjectURL(url)
 //       document.body.removeChild(a)
-//     } catch (error) {
-//       console.error("Failed to export activity logs:", error)
-//     }
+//     } catch {}
 //   }
 
 //   const getActionBadgeVariant = (action: string) => {
@@ -161,7 +158,7 @@
 //             <div className="space-y-2">
 //               <Label htmlFor="search">Search</Label>
 //               <div className="relative">
-//                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+//                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
 //                 <Input
 //                   id="search"
 //                   value={filters.search}
@@ -223,7 +220,7 @@
 //       <div className="space-y-4">
 //         {logs.length === 0 ? (
 //           <Card>
-//             <CardContent className="p-6 text-center text-muted-foreground">
+//             <CardContent className="p-6 text-center text-gray-500">
 //               No activity logs found. Try adjusting your filters.
 //             </CardContent>
 //           </Card>
@@ -236,19 +233,19 @@
 //                     <div className="flex items-center gap-2">
 //                       <Badge variant={getActionBadgeVariant(log.action)}>{log.action}</Badge>
 //                       <span className="text-sm font-medium">{log.model_name}</span>
-//                       <span className="text-sm text-muted-foreground">#{log.object_id}</span>
+//                       <span className="text-sm text-gray-500">#{log.object_id}</span>
 //                     </div>
 //                     <p className="text-sm">
 //                       <span className="font-medium">{log.user || "System"}</span> performed{" "}
 //                       <span className="lowercase">{log.action}</span> on {log.model_name}
 //                     </p>
 //                     {log.details && Object.keys(log.details).length > 0 && (
-//                       <div className="text-xs text-muted-foreground">
+//                       <div className="text-xs text-gray-500">
 //                         <pre className="whitespace-pre-wrap">{JSON.stringify(log.details, null, 2)}</pre>
 //                       </div>
 //                     )}
 //                   </div>
-//                   <div className="text-xs text-muted-foreground">{new Date(log.timestamp).toLocaleString()}</div>
+//                   <div className="text-xs text-gray-500">{new Date(log.timestamp).toLocaleString()}</div>
 //                 </div>
 //               </CardContent>
 //             </Card>
@@ -259,7 +256,7 @@
 //       {/* Pagination */}
 //       {totalCount > pageSize && (
 //         <div className="flex justify-between items-center">
-//           <div className="text-sm text-muted-foreground">
+//           <div className="text-sm text-gray-500">
 //             Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, totalCount)} of {totalCount} entries
 //           </div>
 //           <div className="flex gap-2">

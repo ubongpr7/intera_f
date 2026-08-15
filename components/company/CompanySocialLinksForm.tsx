@@ -8,11 +8,13 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Linkedin, Twitter, Instagram, Facebook, Link2 } from "lucide-react"
 import { useUpdateCompanyProfileMutation } from "@/redux/features/management/companyProfileApiSlice"
-import type { CompanyProfile } from "@/types/company-profile"
+import type { CompanyProfile } from "@/redux/features/management/companyProfileTypes"
+import { extractErrorMessage } from "@/lib/utils"
 
 interface CompanySocialLinksFormProps {
   profile: CompanyProfile | null
   onUpdate?: () => Promise<any> | void
+  submitLabel?: string
 }
 
 interface SocialLinksData {
@@ -31,8 +33,8 @@ interface FormErrors {
   other_link?: string
 }
 
-export function CompanySocialLinksForm({ profile, onUpdate,  }: CompanySocialLinksFormProps) {
-  const [updateProfile, { isLoading: isSaving, isError, error, isSuccess }] = useUpdateCompanyProfileMutation()
+export function CompanySocialLinksForm({ profile, onUpdate, submitLabel = "Save Social Links" }: CompanySocialLinksFormProps) {
+  const [updateProfile, { isLoading: isSaving, isError, error }] = useUpdateCompanyProfileMutation()
   const [formData, setFormData] = useState<SocialLinksData>({
     linkedin: "",
     twitter: "",
@@ -44,24 +46,24 @@ export function CompanySocialLinksForm({ profile, onUpdate,  }: CompanySocialLin
   const [showSuccessMessage, setShowSuccessMessage] = useState(false)
 
   useEffect(() => {
-    if (profile) {
-      setFormData({
+    const nextFormData = profile
+      ? {
         linkedin: profile.linkedin || "",
         twitter: profile.twitter || "",
         instagram: profile.instagram || "",
         facebook: profile.facebook || "",
         other_link: profile.other_link || "",
-      })
+      }
+      : {
+      linkedin: "",
+      twitter: "",
+      instagram: "",
+      facebook: "",
+      other_link: "",
     }
+    const timer = window.setTimeout(() => setFormData(nextFormData), 0)
+    return () => window.clearTimeout(timer)
   }, [profile])
-
-  useEffect(() => {
-    if (isSuccess) {
-      setShowSuccessMessage(true)
-      const timer = setTimeout(() => setShowSuccessMessage(false), 3000)
-      return () => clearTimeout(timer)
-    }
-  }, [isSuccess])
 
   const updateFormData = (data: Partial<SocialLinksData>) => {
     setFormData((prev) => ({ ...prev, ...data }))
@@ -118,9 +120,11 @@ export function CompanySocialLinksForm({ profile, onUpdate,  }: CompanySocialLin
       }
 
       await updateProfile({ id: profile.id, data: formData }).unwrap()
+      setShowSuccessMessage(true)
+      window.setTimeout(() => setShowSuccessMessage(false), 3000)
       await onUpdate?.()
     } catch (error) {
-      console.error("Failed to update social links:", error)
+      setErrors({ other_link: extractErrorMessage(error, ["linkedin", "twitter", "instagram", "facebook", "website", "other_link", "detail"]) })
     }
   }
 
@@ -135,7 +139,7 @@ export function CompanySocialLinksForm({ profile, onUpdate,  }: CompanySocialLin
       {isError && (
         <Alert className="border-red-200 bg-red-50">
           <AlertDescription className="text-red-800">
-            {error ? `Error: ${JSON.stringify(error)}` : "Failed to save social links. Please try again."}
+            {extractErrorMessage(error, ["linkedin", "twitter", "instagram", "facebook", "website", "other_link", "detail"])}
           </AlertDescription>
         </Alert>
       )}
@@ -144,7 +148,7 @@ export function CompanySocialLinksForm({ profile, onUpdate,  }: CompanySocialLin
         <div className="flex items-center gap-2 mb-4">
           <Link2 className="h-5 w-5 text-blue-600" />
           <h3 className="text-lg font-medium">Social Media & Links</h3>
-          <span className="text-sm text-muted-foreground">(All optional)</span>
+          <span className="text-sm text-gray-500">(All optional)</span>
         </div>
 
         <div className="space-y-2">
@@ -230,7 +234,7 @@ export function CompanySocialLinksForm({ profile, onUpdate,  }: CompanySocialLin
 
       <div className="flex justify-end">
         <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white" disabled={isSaving}>
-          {isSaving ? "Saving..." : "Save Social Links"}
+          {isSaving ? "Saving..." : submitLabel}
         </Button>
       </div>
     </form>

@@ -1,10 +1,8 @@
 'use client';
 
-import { makeStore } from "./store";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
-import { persistor } from "./store";
-import { useRef,useEffect } from "react";
+import { persistor, store } from "./store";
 
 
 interface Props {
@@ -12,12 +10,8 @@ interface Props {
 }
 
 export default function StoreProvider({ children }: Props) {
-  const storeRef = useRef<ReturnType<typeof makeStore> | null>(null);
-  if (!storeRef.current) {
-    storeRef.current = makeStore();
-  }
-    return (
-    <Provider store={storeRef.current}>
+  return (
+    <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         {children}
       </PersistGate>

@@ -13,11 +13,13 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Plus, Edit, Trash2, FileText, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
-import type { InventoryPolicy } from "@/types/company-profile"
+import type { InventoryPolicy } from "@/redux/features/management/companyProfileTypes"
 import { useCreateInventoryPolicyMutation, 
   useDeleteInventoryPolicyMutation,
    useGetInventoryPoliciesQuery, 
    useUpdateInventoryPolicyMutation } from "@/redux/features/management/companyProfileApiSlice"
+import { extractErrorMessage } from "@/lib/utils"
+import { confirmAction } from "@/components/common/confirmAction"
 
 interface InventoryPolicyManagementProps {
   profileId: number
@@ -71,8 +73,8 @@ export function InventoryPolicyManagement({profileId}:InventoryPolicyManagementP
 
   // Reset form when editing policy changes
   useEffect(() => {
-    if (editingPolicy) {
-      setFormData({
+    const nextFormData = editingPolicy
+      ? {
         name: editingPolicy.name,
         description: editingPolicy.description,
         policy_type: editingPolicy.policy_type,
@@ -84,9 +86,8 @@ export function InventoryPolicyManagement({profileId}:InventoryPolicyManagementP
         is_active: editingPolicy.is_active,
         profile:profileId
 
-      })
-    } else {
-      setFormData({
+      }
+      : {
         name: "",
         description: "",
         policy_type: "other",
@@ -98,19 +99,26 @@ export function InventoryPolicyManagement({profileId}:InventoryPolicyManagementP
         is_active: true,
         profile:profileId
 
-      })
-    }
-  }, [editingPolicy])
+      }
+    const timer = window.setTimeout(() => setFormData(nextFormData), 0)
+    return () => window.clearTimeout(timer)
+  }, [editingPolicy, profileId])
 
   // Handle errors
   useEffect(() => {
     const error = fetchError || createError || updateError || deleteError
     if (error) {
-      setErrorMessage(JSON.stringify(error))
+      const errorTimer = window.setTimeout(
+        () => setErrorMessage(extractErrorMessage(error, ["name", "policy_type", "details", "effective_date", "expiry_date", "detail"])),
+        0,
+      )
       const timer = setTimeout(() => {
         setErrorMessage(null)
       }, 5000)
-      return () => clearTimeout(timer)
+      return () => {
+        window.clearTimeout(errorTimer)
+        clearTimeout(timer)
+      }
     }
   }, [fetchError, createError, updateError, deleteError])
 
@@ -133,7 +141,7 @@ export function InventoryPolicyManagement({profileId}:InventoryPolicyManagementP
         setSuccessMessage(null)
       }, 3000)
     } catch (error) {
-      console.error("Failed to save inventory policy:", error)
+      setErrorMessage(extractErrorMessage(error, ["name", "policy_type", "details", "effective_date", "expiry_date", "detail"]))
     }
   }
 
@@ -143,18 +151,24 @@ export function InventoryPolicyManagement({profileId}:InventoryPolicyManagementP
   }
 
   const handleDelete = async (policyId: string) => {
-    if (confirm("Are you sure you want to delete this inventory policy?")) {
-      try {
-        await deletePolicy(policyId).unwrap()
-        setSuccessMessage("Policy deleted successfully")
-        await refetch()
-        // Clear success message after 3 seconds
-        setTimeout(() => {
-          setSuccessMessage(null)
-        }, 3000)
-      } catch (error) {
-        console.error("Failed to delete policy:", error)
-      }
+    const confirmed = await confirmAction({
+      title: "Delete inventory policy?",
+      description: "This removes the policy from this company profile.",
+      confirmText: "Delete policy",
+      destructive: true,
+    })
+    if (!confirmed) return
+
+    try {
+      await deletePolicy(policyId).unwrap()
+      setSuccessMessage("Policy deleted successfully")
+      await refetch()
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage(null)
+      }, 3000)
+    } catch (error) {
+      setErrorMessage(extractErrorMessage(error, ["detail", "error"]))
     }
   }
 
@@ -171,7 +185,7 @@ export function InventoryPolicyManagement({profileId}:InventoryPolicyManagementP
         setSuccessMessage(null)
       }, 3000)
     } catch (error) {
-      console.error("Failed to toggle policy status:", error)
+      setErrorMessage(extractErrorMessage(error, ["is_active", "detail", "error"]))
     }
   }
 
@@ -234,8 +248,9 @@ export function InventoryPolicyManagement({profileId}:InventoryPolicyManagementP
                     options={POLICY_TYPE_OPTIONS}
                     value={POLICY_TYPE_OPTIONS.find((option) => option.value === formData.policy_type) || null}
                     onChange={(option) => {
-                      if (option && !Array.isArray(option)) {
-                        setFormData((prev) => ({ ...prev, policy_type: option.value }))
+                      const nextOption = Array.isArray(option) ? null : (option as SelectOption | null)
+                      if (nextOption) {
+                        setFormData((prev) => ({ ...prev, policy_type: String(nextOption.value) }))
                       }
                     }}
                     placeholder="Select policy type"
@@ -327,7 +342,7 @@ export function InventoryPolicyManagement({profileId}:InventoryPolicyManagementP
       <div className="grid gap-4">
         {policies.length === 0 ? (
           <Card>
-            <CardContent className="p-6 text-center text-muted-foreground">
+            <CardContent className="p-6 text-center text-gray-500">
               No inventory policies found. Create your first policy to get started.
             </CardContent>
           </Card>
@@ -338,7 +353,7 @@ export function InventoryPolicyManagement({profileId}:InventoryPolicyManagementP
                 <div className="flex justify-between items-start">
                   <div className="space-y-2">
                     <h4 className="font-medium">{policy.name}</h4>
-                    <p className="text-sm text-muted-foreground">{policy.description}</p>
+                    <p className="text-sm text-gray-500">{policy.description}</p>
                     <div className="flex gap-2">
                       <Badge variant={policy.is_active ? "default" : "secondary"}>
                         {policy.is_active ? "Active" : "Inactive"}
@@ -352,7 +367,7 @@ export function InventoryPolicyManagement({profileId}:InventoryPolicyManagementP
                         <Badge variant="outline">Specific Categories</Badge>
                       )}
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-gray-500">
                       Effective: {new Date(policy.effective_date).toLocaleDateString()}
                       {policy.expiry_date && ` - ${new Date(policy.expiry_date).toLocaleDateString()}`}
                     </div>

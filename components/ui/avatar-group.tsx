@@ -15,7 +15,7 @@ const AvatarGroup = React.forwardRef<HTMLDivElement, AvatarGroupProps>(
       <div ref={ref} className={cn("flex -space-x-2", className)} {...props}>
         {visibleAvatars}
         {remainingAvatars > 0 && (
-          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-xs font-medium">
             +{remainingAvatars}
           </div>
         )}

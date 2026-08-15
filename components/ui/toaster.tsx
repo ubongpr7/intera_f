@@ -2,6 +2,8 @@
 
 import { useToast } from "@/hooks/use-toast"
 import {
+  type ToastActionElement,
+  type ToastProps,
   Toast,
   ToastClose,
   ToastDescription,
@@ -12,10 +14,16 @@ import {
 
 export function Toaster() {
   const { toasts } = useToast()
+  type ToastWithContent = ToastProps & {
+    id: string
+    title?: React.ReactNode
+    description?: React.ReactNode
+    action?: ToastActionElement
+  }
 
   return (
     <ToastProvider>
-      {toasts?.map(function ({ id, title, description, action, ...props }) {
+      {toasts?.map(function ({ id, title, description, action, ...props }: ToastWithContent) {
         return (
           <Toast key={id} {...props}>
             <div className="grid gap-1">

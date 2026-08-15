@@ -11,13 +11,21 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ReactSelectField, type SelectOption } from "@/components/ui/react-select-field"
 import { cn } from "@/lib/utils"
 import LoadingAnimation from "@/components/common/LoadingAnimation"
-import type { Attachment } from "@/components/interfaces/product"
-import Image from 'next/image';
+import type { Attachment } from "@/redux/features/product/productTypes"
+import Image from "next/image"
+import { toast } from "react-toastify"
 interface VariantMediaTabProps {
   variantId: string
 }
 
 const VariantMediaTab = ({ variantId }: VariantMediaTabProps) => {
+  const getSingleOption = (option: SelectOption | readonly SelectOption[] | null): SelectOption | null => {
+    if (!option || Array.isArray(option)) {
+      return null
+    }
+    return option as SelectOption
+  }
+
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -97,20 +105,8 @@ const VariantMediaTab = ({ variantId }: VariantMediaTabProps) => {
         formData.append("description", uploadDescription.trim())
       }
 
-      // Debug log to see what we're sending
-      console.log("FormData contents:")
-      for (const [key, value] of formData.entries()) {
-        console.log(`${key}:`, value)
-      }
+      await addMedia({ variantId, data: formData }).unwrap()
 
-      // Use the same pattern as your working example - call the mutation directly
-      // Instead of using fetch, let's use the RTK Query mutation but with proper FormData handling
-    //   const response = await fetch(`//product/variants/${variantId}/add_media/`, {
-    //     method: "POST",
-    //     body: formData,
-    //   })
-      const response = await addMedia({ variantId, data: formData })
-          // Reset upload state on success
       setUploadedFile(null)
       setPreviewUrl(null)
       setUploadDescription("")
@@ -122,8 +118,8 @@ const VariantMediaTab = ({ variantId }: VariantMediaTabProps) => {
 
       // Refresh media list
       refetchMedia()
+      toast.success("Media uploaded successfully.")
     } catch (error: any) {
-      console.error("Upload failed:", error)
       setUploadError(error.message || "Failed to upload media. Please try again.")
     } finally {
       setIsUploading(false)
@@ -134,8 +130,9 @@ const VariantMediaTab = ({ variantId }: VariantMediaTabProps) => {
     try {
       await removeMedia({ variantId, attachmentId }).unwrap()
       refetchMedia()
-    } catch (error) {
-      console.error("Failed to remove media:", error)
+      toast.success("Media removed.")
+    } catch {
+      toast.error("Failed to remove media.")
     }
   }
 
@@ -230,9 +227,10 @@ const VariantMediaTab = ({ variantId }: VariantMediaTabProps) => {
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row items-start space-y-4 sm:space-y-0 sm:space-x-4">
                   <div className="flex-shrink-0 w-full sm:w-auto flex justify-center">
-                    {uploadedFile.type.startsWith("image/") ? (
-                      <div className="relative">
-                        <img
+	                    {uploadedFile.type.startsWith("image/") ? (
+	                      <div className="relative">
+	                        {/* eslint-disable-next-line @next/next/no-img-element */}
+	                        <img
                           src={previewUrl || ""}
                           alt="Preview"
                           className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-lg border"
@@ -276,8 +274,9 @@ const VariantMediaTab = ({ variantId }: VariantMediaTabProps) => {
                       options={purposeOptions}
                       value={purposeOptions.find((option) => option.value === uploadPurpose) || null}
                       onChange={(option) => {
-                        if (option && !Array.isArray(option)) {
-                          setUploadPurpose(option.value)
+                        const selectedOption = getSingleOption(option)
+                        if (selectedOption) {
+                          setUploadPurpose(String(selectedOption.value))
                         }
                       }}
                       placeholder="Select Purpose"
@@ -331,7 +330,12 @@ const VariantMediaTab = ({ variantId }: VariantMediaTabProps) => {
                 <CardContent className="p-0">
                   <div className="aspect-square relative bg-gray-100 flex items-center justify-center">
                     {attachment.file_type === "IMAGE" ? (
-                      <Image src={attachment.file_url} fill className='object-cover' alt={attachment.file}/>
+                      <Image
+                        src={attachment.file_url || "/placeholder.svg"}
+                        fill
+                        className="object-cover"
+                        alt={attachment.file || attachment.description || "Variant media"}
+                      />
                     ) : (
                       <Video className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400" />
                     )}

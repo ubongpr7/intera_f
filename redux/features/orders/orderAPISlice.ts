@@ -1,130 +1,479 @@
-import { apiSlice } from '../../services/apiSlice';
-import { PurchaseOrderInterface, PurchaseOrderLineItem  } from '../../../components/interfaces/order';
-const management_api='order_api';
-const service = 'inventory';
-export const purchaseOderApiSlice = apiSlice.injectEndpoints({
-  endpoints: builder => ({
-    createPurchaseOder: builder.mutation({
-      query: (PurchaseOderData: Partial<PurchaseOrderInterface>) => ({
-        url: `/${management_api}/purchase-orders/`,
-        method: 'POST',
-        body: PurchaseOderData,
-        service: service,
+import { apiSlice, unwrapListResponse } from "../../services/apiSlice";
+import { buildQuery } from "../common/queryParams";
+import type { StructuralLocationScopeParams } from "@/lib/structuralLocationScope";
+import type {
+  GoodsReceiptInterface,
+  GoodsReceiptListParams,
+  OrderListParams,
+  PurchaseOrderAnalyticsResponse,
+  PurchaseOrderDashboardSummary,
+  PurchaseOrderInterface,
+  PurchaseOrderLineItem,
+  PurchaseOrderReceiveItemsPayload,
+  PurchaseOrderReturnPayload,
+  PurchaseOrderWorkflowPayload,
+  ReturnOrderInterface,
+  ReturnOrderProcessPayload,
+  SalesOrderInterface,
+  SalesOrderLineItem,
+  SalesOrderReleasePayload,
+  SalesOrderReservePayload,
+  SalesOrderShipPayload,
+  SalesOrderShipmentInterface,
+  SalesOrderShipmentListParams,
+} from "./orderTypes";
+
+const orderApi = "order_api";
+const service = "inventory";
+
+type EntityId = string | number;
+type OrderScopeParams = StructuralLocationScopeParams & Pick<OrderListParams, "stock_location">
+
+export const orderApiSlice = apiSlice.injectEndpoints({
+  endpoints: (builder) => ({
+    listGoodsReceipts: builder.query<GoodsReceiptInterface[], GoodsReceiptListParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${orderApi}/goods-receipts/`, params),
+        service,
+      }),
+      transformResponse: (response: GoodsReceiptInterface[] | { results?: GoodsReceiptInterface[] }) =>
+        unwrapListResponse<GoodsReceiptInterface>(response),
+    }),
+
+    getGoodsReceipt: builder.query<GoodsReceiptInterface, EntityId>({
+      query: (id) => ({
+        url: `/${orderApi}/goods-receipts/${id}/`,
+        service,
       }),
     }),
-    
-    updatePurchaseOder: builder.mutation({
+
+    listSalesOrderShipments: builder.query<SalesOrderShipmentInterface[], SalesOrderShipmentListParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${orderApi}/sales-order-shipments/`, params),
+        service,
+      }),
+      transformResponse: (response: SalesOrderShipmentInterface[] | { results?: SalesOrderShipmentInterface[] }) =>
+        unwrapListResponse<SalesOrderShipmentInterface>(response),
+    }),
+
+    listPurchaseOrders: builder.query<PurchaseOrderInterface[], OrderListParams | string | void>({
+      query: (params) => ({
+        url:
+          typeof params === "string"
+            ? buildQuery(`/${orderApi}/purchase-orders/`, { search: params })
+            : buildQuery(`/${orderApi}/purchase-orders/`, params),
+        service,
+      }),
+      transformResponse: (response: PurchaseOrderInterface[] | { results?: PurchaseOrderInterface[] }) =>
+        unwrapListResponse<PurchaseOrderInterface>(response),
+    }),
+
+    createPurchaseOrder: builder.mutation<PurchaseOrderInterface, Partial<PurchaseOrderInterface>>({
+      query: (data) => ({
+        url: `/${orderApi}/purchase-orders/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+
+    getPurchaseOrder: builder.query<PurchaseOrderInterface, EntityId>({
+      query: (id) => ({
+        url: `/${orderApi}/purchase-orders/${id}/`,
+        service,
+      }),
+    }),
+
+    updatePurchaseOrder: builder.mutation<PurchaseOrderInterface, { id: EntityId; data: Partial<PurchaseOrderInterface> }>({
       query: ({ id, data }) => ({
-        url: `/${management_api}/purchase-orders/${id}/`,
-        method: 'PATCH',
+        url: `/${orderApi}/purchase-orders/${id}/`,
+        method: "PATCH",
         body: data,
-        service: service,
-      }),
-    }),
-    getPurchaseOder: builder.query({
-      query: (id) =>({
-        url: `/${management_api}/purchase-orders/${id}/`,
-        service: service,
-      })
-    }),
-  
-    getPurchaseOderData: builder.query({
-      query: () => ({
-        url: `/${management_api}/purchase-orders/`,
-        method: 'GET',
-        service: service,
+        service,
       }),
     }),
 
+    listPurchaseOrderLineItems: builder.query<PurchaseOrderLineItem[], EntityId>({
+      query: (purchaseOrderId) => ({
+        url: `/${orderApi}/purchase-orders/${purchaseOrderId}/line_items/`,
+        service,
+      }),
+      transformResponse: (response: PurchaseOrderLineItem[] | { results?: PurchaseOrderLineItem[] }) =>
+        unwrapListResponse<PurchaseOrderLineItem>(response),
+    }),
 
-    getPurchseOrderLineItems: builder.query({
-      query: (reference) => ({
-        url: `/${management_api}/purchase-orders/${reference}/line_items/`,
-        method: 'GET',
-        service: service,
-      }),
-    }),
-    createPurchaseOrderLineItem: builder.mutation({
-      query: ({ data, purchase_order_id }: { data: Partial<PurchaseOrderLineItem>, purchase_order_id: string }) => ({
-        url: `/${management_api}/purchase-orders/${purchase_order_id}/add_line_item/`,
-        method: 'POST',
+    createPurchaseOrderLineItem: builder.mutation<
+      PurchaseOrderLineItem,
+      { data: Partial<PurchaseOrderLineItem>; purchase_order_id: EntityId }
+    >({
+      query: ({ data, purchase_order_id }) => ({
+        url: `/${orderApi}/purchase-orders/${purchase_order_id}/add_line_item/`,
+        method: "POST",
         body: data,
-        service: service,
-      }),
-    }),
-    updatePurchaseOrderLineItem: builder.mutation({
-      query: ({ reference,id, data }) => ({
-        url: `/${management_api}/line-item/${id}/?reference=${reference}`,
-        method: 'PATCH',
-        body: data,
-        service: service,
-      }),
-    }),
-    deletePurchaseOrderLineItem: builder.mutation({
-      query: ({reference,id}) => ({
-        url: `/${management_api}/line-item/${id}/?reference=${reference}`,
-        method: 'DELETE',
-        service: service,
+        service,
       }),
     }),
 
-    
+    updatePurchaseOrderLineItem: builder.mutation<
+      PurchaseOrderLineItem,
+      { reference: EntityId; id: EntityId; data: Partial<PurchaseOrderLineItem> }
+    >({
+      query: ({ reference, id, data }) => ({
+        url: `/${orderApi}/purchase-orders/${reference}/update_line_item/`,
+        method: "PATCH",
+        body: { line_item_id: id, ...data },
+        service,
+      }),
+    }),
+
+    deletePurchaseOrderLineItem: builder.mutation<void, { reference: EntityId; id: EntityId }>({
+      query: ({ reference, id }) => ({
+        url: buildQuery(`/${orderApi}/purchase-orders/${reference}/remove_line_item/`, { line_item_id: id }),
+        method: "DELETE",
+        service,
+      }),
+    }),
+
+    approvePurchaseOrder: builder.mutation<Record<string, unknown>, EntityId>({
+      query: (id) => ({
+        url: `/${orderApi}/purchase-orders/${id}/approve/`,
+        method: "PUT",
+        service,
+      }),
+    }),
+
+    issuePurchaseOrder: builder.mutation<Record<string, unknown>, { id: EntityId; data?: PurchaseOrderWorkflowPayload } | EntityId>({
+      query: (arg) => {
+        const payload = typeof arg === "object" ? arg : { id: arg };
+        return {
+          url: `/${orderApi}/purchase-orders/${payload.id}/issue/`,
+          method: "PUT",
+          body: payload.data,
+          service,
+        };
+      },
+    }),
+
+    receivePurchaseOrder: builder.mutation<Record<string, unknown>, EntityId>({
+      query: (id) => ({
+        url: `/${orderApi}/purchase-orders/${id}/receive/`,
+        method: "PUT",
+        service,
+      }),
+    }),
+
+    receivePurchaseOrderItems: builder.mutation<Record<string, unknown>, { id: EntityId; data: PurchaseOrderReceiveItemsPayload }>({
+      query: ({ id, data }) => ({
+        url: `/${orderApi}/purchase-orders/${id}/receive_items/`,
+        method: "PUT",
+        body: data,
+        service,
+      }),
+    }),
+
+    completePurchaseOrder: builder.mutation<Record<string, unknown>, EntityId>({
+      query: (id) => ({
+        url: `/${orderApi}/purchase-orders/${id}/complete/`,
+        method: "PUT",
+        service,
+      }),
+    }),
+
+    cancelPurchaseOrder: builder.mutation<Record<string, unknown>, { id: EntityId; notes?: string } | EntityId>({
+      query: (arg) => {
+        const payload = typeof arg === "object" ? arg : { id: arg };
+        return {
+          url: `/${orderApi}/purchase-orders/${payload.id}/cancel/`,
+          method: "PUT",
+          body: typeof arg === "object" ? { notes: payload.notes } : undefined,
+          service,
+        };
+      },
+    }),
+
+    createReturnOrderFromPurchaseOrder: builder.mutation<Record<string, unknown>, { id: EntityId; data: PurchaseOrderReturnPayload }>({
+      query: ({ id, data }) => ({
+        url: `/${orderApi}/purchase-orders/${id}/create_return_order/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+
+    getPurchaseOrderAnalytics: builder.query<PurchaseOrderAnalyticsResponse, OrderScopeParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${orderApi}/purchase-orders/analytics/`, params),
+        service,
+      }),
+    }),
+
+    getPurchaseOrderDashboardSummary: builder.query<PurchaseOrderDashboardSummary, OrderScopeParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${orderApi}/purchase-orders/dashboard_summary/`, params),
+        service,
+      }),
+    }),
+
+    downloadPurchaseOrderPdf: builder.query<Blob, EntityId>({
+      query: (id) => ({
+        url: `/${orderApi}/purchase-orders/${id}/download_pdf/`,
+        service,
+        responseHandler: (response: Response) => response.blob(),
+      }),
+    }),
+
+    bulkDownloadPurchaseOrderPdf: builder.mutation<Blob, Record<string, unknown>>({
+      query: (data) => ({
+        url: `/${orderApi}/purchase-orders/bulk_pdf_download/`,
+        method: "POST",
+        body: data,
+        service,
+        responseHandler: (response: Response) => response.blob(),
+      }),
+    }),
+
+    resendPurchaseOrderEmail: builder.mutation<Record<string, unknown>, Record<string, unknown>>({
+      query: (data) => ({
+        url: `/${orderApi}/purchase-orders/resend_email/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+
+    listSalesOrders: builder.query<SalesOrderInterface[], OrderListParams | string | void>({
+      query: (params) => ({
+        url:
+          typeof params === "string"
+            ? buildQuery(`/${orderApi}/sales-orders/`, { search: params })
+            : buildQuery(`/${orderApi}/sales-orders/`, params),
+        service,
+      }),
+      transformResponse: (response: SalesOrderInterface[] | { results?: SalesOrderInterface[] }) =>
+        unwrapListResponse<SalesOrderInterface>(response),
+    }),
+
+    createSalesOrder: builder.mutation<SalesOrderInterface, Partial<SalesOrderInterface>>({
+      query: (data) => ({
+        url: `/${orderApi}/sales-orders/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+
+    getSalesOrder: builder.query<SalesOrderInterface, EntityId>({
+      query: (id) => ({
+        url: `/${orderApi}/sales-orders/${id}/`,
+        service,
+      }),
+    }),
+
+    updateSalesOrder: builder.mutation<SalesOrderInterface, { id: EntityId; data: Partial<SalesOrderInterface> }>({
+      query: ({ id, data }) => ({
+        url: `/${orderApi}/sales-orders/${id}/`,
+        method: "PATCH",
+        body: data,
+        service,
+      }),
+    }),
+
+    getSalesOrderLineItems: builder.query<SalesOrderLineItem[], EntityId>({
+      query: (id) => ({
+        url: `/${orderApi}/sales-orders/${id}/line_items/`,
+        service,
+      }),
+      transformResponse: (response: SalesOrderLineItem[] | { results?: SalesOrderLineItem[] }) =>
+        unwrapListResponse<SalesOrderLineItem>(response),
+    }),
+
+    getSalesOrderShipments: builder.query<SalesOrderShipmentInterface[], EntityId>({
+      query: (id) => ({
+        url: `/${orderApi}/sales-orders/${id}/shipments/`,
+        service,
+      }),
+      transformResponse: (response: SalesOrderShipmentInterface[] | { results?: SalesOrderShipmentInterface[] }) =>
+        unwrapListResponse<SalesOrderShipmentInterface>(response),
+    }),
+
+    createSalesOrderLineItem: builder.mutation<SalesOrderLineItem, { id: EntityId; data: Partial<SalesOrderLineItem> }>({
+      query: ({ id, data }) => ({
+        url: `/${orderApi}/sales-orders/${id}/add_line_item/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+
+    updateSalesOrderLineItem: builder.mutation<SalesOrderLineItem, { id: EntityId; line_item_id: EntityId; data: Partial<SalesOrderLineItem> }>({
+      query: ({ id, line_item_id, data }) => ({
+        url: `/${orderApi}/sales-orders/${id}/update_line_item/`,
+        method: "PATCH",
+        body: { line_item_id, ...data },
+        service,
+      }),
+    }),
+
+    deleteSalesOrderLineItem: builder.mutation<void, { id: EntityId; line_item_id: EntityId }>({
+      query: ({ id, line_item_id }) => ({
+        url: buildQuery(`/${orderApi}/sales-orders/${id}/remove_line_item/`, { line_item_id }),
+        method: "DELETE",
+        service,
+      }),
+    }),
+
+    reserveSalesOrderStock: builder.mutation<Record<string, unknown>, { id: EntityId; data: SalesOrderReservePayload }>({
+      query: ({ id, data }) => ({
+        url: `/${orderApi}/sales-orders/${id}/reserve/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+
+    releaseSalesOrderStock: builder.mutation<Record<string, unknown>, { id: EntityId; data: SalesOrderReleasePayload }>({
+      query: ({ id, data }) => ({
+        url: `/${orderApi}/sales-orders/${id}/release/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+
+    shipSalesOrder: builder.mutation<SalesOrderShipmentInterface, { id: EntityId; data: SalesOrderShipPayload }>({
+      query: ({ id, data }) => ({
+        url: `/${orderApi}/sales-orders/${id}/ship/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+
+    completeSalesOrder: builder.mutation<SalesOrderInterface, EntityId>({
+      query: (id) => ({
+        url: `/${orderApi}/sales-orders/${id}/complete/`,
+        method: "POST",
+        service,
+      }),
+    }),
+
+    cancelSalesOrder: builder.mutation<SalesOrderInterface, { id: EntityId; notes?: string } | EntityId>({
+      query: (arg) => {
+        const payload = typeof arg === "object" ? arg : { id: arg };
+        return {
+          url: `/${orderApi}/sales-orders/${payload.id}/cancel/`,
+          method: "POST",
+          body: typeof arg === "object" ? { notes: payload.notes } : undefined,
+          service,
+        };
+      },
+    }),
+
+    listReturnOrders: builder.query<ReturnOrderInterface[], OrderListParams | string | void>({
+      query: (params) => ({
+        url:
+          typeof params === "string"
+            ? buildQuery(`/${orderApi}/return-orders/`, { search: params })
+            : buildQuery(`/${orderApi}/return-orders/`, params),
+        service,
+      }),
+      transformResponse: (response: ReturnOrderInterface[] | { results?: ReturnOrderInterface[] }) =>
+        unwrapListResponse<ReturnOrderInterface>(response),
+    }),
+
+    getReturnOrder: builder.query<ReturnOrderInterface, EntityId>({
+      query: (id) => ({
+        url: `/${orderApi}/return-orders/${id}/`,
+        service,
+      }),
+    }),
+
+    dispatchReturnOrder: builder.mutation<Record<string, unknown>, { id: EntityId; data: ReturnOrderProcessPayload }>({
+      query: ({ id, data }) => ({
+        url: `/${orderApi}/return-orders/${id}/dispatch/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+
+    completeReturnOrder: builder.mutation<ReturnOrderInterface, EntityId>({
+      query: (id) => ({
+        url: `/${orderApi}/return-orders/${id}/complete/`,
+        method: "POST",
+        service,
+      }),
+    }),
+
+    cancelReturnOrder: builder.mutation<ReturnOrderInterface, { id: EntityId; notes?: string } | EntityId>({
+      query: (arg) => {
+        const payload = typeof arg === "object" ? arg : { id: arg };
+        return {
+          url: `/${orderApi}/return-orders/${payload.id}/cancel/`,
+          method: "POST",
+          body: typeof arg === "object" ? { notes: payload.notes } : undefined,
+          service,
+        };
+      },
+    }),
   }),
-  
 });
 
-export const { 
-  useCreatePurchaseOderMutation,
-  useUpdatePurchaseOderMutation,
-  useGetPurchaseOderQuery,
+export const purchaseOderApiSlice = orderApiSlice;
+export const purchaseOderManagementApiSlice = orderApiSlice;
 
-  useGetPurchaseOderDataQuery,
-
-  useGetPurchseOrderLineItemsQuery,
+export const {
+  useListGoodsReceiptsQuery,
+  useGetGoodsReceiptQuery,
+  useListSalesOrderShipmentsQuery,
+  useListPurchaseOrdersQuery,
+  useCreatePurchaseOrderMutation,
+  useGetPurchaseOrderQuery,
+  useUpdatePurchaseOrderMutation,
+  useListPurchaseOrderLineItemsQuery,
   useCreatePurchaseOrderLineItemMutation,
   useUpdatePurchaseOrderLineItemMutation,
   useDeletePurchaseOrderLineItemMutation,
-  
-} = purchaseOderApiSlice ;
+  useApprovePurchaseOrderMutation,
+  useIssuePurchaseOrderMutation,
+  useReceivePurchaseOrderMutation,
+  useReceivePurchaseOrderItemsMutation,
+  useCompletePurchaseOrderMutation,
+  useCancelPurchaseOrderMutation,
+  useCreateReturnOrderFromPurchaseOrderMutation,
+  useGetPurchaseOrderAnalyticsQuery,
+  useGetPurchaseOrderDashboardSummaryQuery,
+  useDownloadPurchaseOrderPdfQuery,
+  useLazyDownloadPurchaseOrderPdfQuery,
+  useBulkDownloadPurchaseOrderPdfMutation,
+  useResendPurchaseOrderEmailMutation,
+  useListSalesOrdersQuery,
+  useCreateSalesOrderMutation,
+  useGetSalesOrderQuery,
+  useUpdateSalesOrderMutation,
+  useGetSalesOrderLineItemsQuery,
+  useGetSalesOrderShipmentsQuery,
+  useCreateSalesOrderLineItemMutation,
+  useUpdateSalesOrderLineItemMutation,
+  useDeleteSalesOrderLineItemMutation,
+  useReserveSalesOrderStockMutation,
+  useReleaseSalesOrderStockMutation,
+  useShipSalesOrderMutation,
+  useCompleteSalesOrderMutation,
+  useCancelSalesOrderMutation,
+  useListReturnOrdersQuery,
+  useGetReturnOrderQuery,
+  useDispatchReturnOrderMutation,
+  useCompleteReturnOrderMutation,
+  useCancelReturnOrderMutation,
+} = orderApiSlice;
 
-
-export const purchaseOderManagementApiSlice = apiSlice.injectEndpoints({
-  endpoints: builder => ({
-    approvePurchaseOder: builder.mutation({
-      query: (id) => ({
-        url: `/${management_api}/purchase-orders/${id}/approve/`,
-        method: 'PUT',
-        service: service,
-      }),
-    }),
-    issuePurchaseOder: builder.mutation({
-      query: (id) => ({
-        url: `/${management_api}/purchase-orders/${id}/issue/`,
-        method: 'PUT',
-        service: service,
-      }),
-    }),
-    receivePurchaseOder: builder.mutation({
-      query: (id) => ({
-        url: `/${management_api}/purchase-orders/${id}/receive/`,
-        method: 'PUT',
-        service: service,
-      }),
-    }),
-    completePurchaseOder: builder.mutation({
-      query: (id) => ({
-        url: `/${management_api}/purchase-orders/${id}/complete/`,
-        method: 'PUT',
-        service: service,
-      }),
-    }),
-  }),
-  
-});
-
-export const { 
-  useApprovePurchaseOderMutation,
-  useIssuePurchaseOderMutation,
-  useReceivePurchaseOderMutation,
-  useCompletePurchaseOderMutation,
-} = purchaseOderManagementApiSlice ;
+export const useCreatePurchaseOderMutation = useCreatePurchaseOrderMutation;
+export const useUpdatePurchaseOderMutation = useUpdatePurchaseOrderMutation;
+export const useGetPurchaseOderQuery = useGetPurchaseOrderQuery;
+export const useGetPurchaseOderDataQuery = useListPurchaseOrdersQuery;
+export const useGetPurchseOrderLineItemsQuery = useListPurchaseOrderLineItemsQuery;
+export const useApprovePurchaseOderMutation = useApprovePurchaseOrderMutation;
+export const useIssuePurchaseOderMutation = useIssuePurchaseOrderMutation;
+export const useReceivePurchaseOderMutation = useReceivePurchaseOrderMutation;
+export const useCompletePurchaseOderMutation = useCompletePurchaseOrderMutation;

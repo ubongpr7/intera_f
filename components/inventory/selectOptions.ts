@@ -1,74 +1,54 @@
 
-import { InventoryData } from "../interfaces/inventory";
+import { InventoryData } from "@/redux/features/inventory/inventoryTypes";
 
+export const InventoryKeyInfo = {
+  name_snapshot: "Human-readable name for the inventory item.",
+  description: "Short operational description for warehouse and purchasing teams.",
+  inventory_type: "Operational stock type such as raw material, finished good, or consumable.",
+  default_supplier: "Preferred supplier used when planning replenishment for this item.",
+  default_uom_code: "Default unit of measure code used when this item is referenced.",
+  stock_uom_code: "Unit of measure used when stock is counted on hand.",
+  status: "Lifecycle state for this inventory item.",
+  minimum_stock_level: "Lowest quantity that should remain available before the item is considered low stock.",
+  reorder_point: "Threshold that should trigger replenishment planning.",
+  reorder_quantity: "Suggested replenishment quantity once the reorder point is reached.",
+  safety_stock_level: "Buffer stock to absorb unexpected demand or lead-time variance.",
+  track_stock: "Enable stock accounting for this inventory item.",
+  track_lot: "Enable lot or batch tracking for received stock.",
+  track_serial: "Enable serial tracking for individual units.",
+  track_expiry: "Enable expiry-date tracking for lots.",
+  allow_negative_stock: "Allow transactions that temporarily push stock below zero.",
+};
 
-
-  export const InventoryKeyInfo = {
-    // Step 1
-    // name: 'The name of the inventory item. This should be unique and descriptive.',
-    description: 'A brief description of the inventory item.',
-    inventory_type: 'The type of inventory (e.g., raw material, finished goods).',
-    profile: 'The profile associated with this inventory item (if applicable).',
-    category: 'The category to which this inventory item belongs.',
-  
-    // Step 2
-    minimum_stock_level: 'The minimum stock level is the lowest quantity of this item that should be kept in stock.',
-    re_order_point: 'The re-order point is the stock level at which a new order should be placed.',
-    re_order_quantity: 'The quantity to re-order when the stock level reaches the re-order point.',
-    safety_stock_level: 'The safety stock level is the extra stock kept to prevent stockouts.',
-    automate_reorder: 'Enable this to automatically re-order stock when it reaches the re-order point.',
-  
-    // Step 3
-    supplier_lead_time: 'The time it takes for the supplier to deliver the item after placing an order.',
-    internal_processing_time: 'The time it takes to process the item internally after receiving it.',
-    reorder_strategy: 'The strategy used for re-ordering stock (e.g., Fixed Quantity, Fixed Interval, Demand-Based).',
-  
-    // Step 4
-    expiration_threshold: 'The number of days before the item expires.',
-    batch_tracking_enabled: 'Enable this to track items by batch or lot number.',
-    expiration_policy: 'The policy for handling expired items (e.g., Dispose of Stock, Return to Manufacturer).',
-    recall_policy: 'The policy for handling recalled items (e.g., Remove from Stock, Notify Customers).',
-    near_expiry_policy: 'The policy for handling items nearing expiration (e.g., Sell at Discount, Donate to Charity).',
-  
-    // Step 5
-    holding_cost_per_unit: 'The cost of holding one unit of this item in stock.',
-    ordering_cost: 'The cost of placing an order for this item.',
-    stockout_cost: 'The cost incurred when this item is out of stock.',
-  
-    // Step 6
-    forecast_method: 'The method used to forecast demand for this item (e.g., Simple Average, Moving Average).',
-    supplier_reliability_score: 'A score indicating the reliability of the supplier for this item.',
-    alert_threshold: 'The stock level at which an alert should be triggered.',
-  };
-
-
-export const InventoryInterfaceKeys: (keyof InventoryData)[]=[
-    'name', 'description','category','officer_in_charge', 'inventory_type','reorder_strategy',
-     'expiration_policy', 'recall_policy', 'near_expiry_policy',
-    'forecast_method','unit',
-    're_order_quantity','safety_stock_level', 'minimum_stock_level', 're_order_point','alert_threshold',
-      'automate_reorder', 'supplier_lead_time',
-    'internal_processing_time', 'expiration_threshold', 
-    'batch_tracking_enabled',
-    'supplier_reliability_score',
-  
-]
+export const InventoryInterfaceKeys: (keyof InventoryData)[] = [
+  "name_snapshot",
+  "description",
+  "default_supplier",
+  "inventory_type",
+  "status",
+  "default_uom_code",
+  "stock_uom_code",
+  "minimum_stock_level",
+  "reorder_point",
+  "reorder_quantity",
+  "safety_stock_level",
+  "track_stock",
+  "track_lot",
+  "track_serial",
+  "track_expiry",
+  "allow_negative_stock",
+];
 
 export const defaultValues: Partial<InventoryData> = {
-    // name: 'New Inventory Item',
-    // description: 'A new item in the inventory',
-    internal_processing_time:2,
-    expiration_threshold:0,
-    minimum_stock_level: 25,
-    re_order_point: 30,
-    re_order_quantity: 10000,
-    alert_threshold:35,
-    safety_stock_level: 20,
-    automate_reorder: true,
-    supplier_lead_time:7,
-    holding_cost_per_unit:75,
-    batch_tracking_enabled:false,
-    stockout_cost:75,
-    supplier_reliability_score:50,
-    ordering_cost:0
-  };
+  inventory_type: "finished_good",
+  status: "active",
+  track_stock: true,
+  track_lot: false,
+  track_serial: false,
+  track_expiry: false,
+  allow_negative_stock: false,
+  minimum_stock_level: 0,
+  reorder_point: 0,
+  reorder_quantity: 0,
+  safety_stock_level: 0,
+};

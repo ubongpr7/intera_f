@@ -129,8 +129,11 @@ export function CustomDatePicker({
   // Set default date when opening the picker
   useEffect(() => {
     if (open && !value && initialFocusDate) {
-      setYear(initialFocusDate.getFullYear())
-      setMonth(initialFocusDate.getMonth())
+      const timeoutId = window.setTimeout(() => {
+        setYear(initialFocusDate.getFullYear())
+        setMonth(initialFocusDate.getMonth())
+      }, 0)
+      return () => window.clearTimeout(timeoutId)
     }
   }, [open, value, initialFocusDate])
 
@@ -174,7 +177,7 @@ export function CustomDatePicker({
           variant="outline"
           className={cn(
             "w-full justify-start text-left font-normal",
-            !value && "text-muted-foreground",
+            !value && "text-gray-500",
             error && "border-red-500",
             className,
           )}

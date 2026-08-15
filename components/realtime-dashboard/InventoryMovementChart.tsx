@@ -6,17 +6,14 @@ import { Button } from '../buttons/button';
 import { ArrowUp, ArrowDown, Activity } from 'lucide-react';
 import { useGetDashboardRecentSalesQuery } from '@/redux/features/dashboard/dashboardApiSlice';
 import { useGetDashboardRecentOrdersQuery } from '@/redux/features/dashboard/dashboardApiSlice';
-import LoadingAnimation from '../common/LoadingAnimation';
+import { QueryStateBoundary } from '../common/QueryStateBoundary';
 
 const InventoryMovementChart = () => {
   const [viewMode, setViewMode] = useState<'daily' | 'weekly'>('daily');
   const today = new Date().toISOString().slice(0, 10);
 
-  const { data: salesData, error: salesError, isLoading: salesLoading } = useGetDashboardRecentSalesQuery(today);
-  const { data: orderData, error: orderError, isLoading: orderLoading } = useGetDashboardRecentOrdersQuery('');
-
-  if (salesLoading || orderLoading) return <div className="h-full flex justify-center items-center"><LoadingAnimation /></div>;
-  if (salesError || orderError) return <div>Error loading chart data</div>;
+  const { data: salesData, error: salesError, isLoading: salesLoading, isFetching: salesFetching, refetch: refetchSales } = useGetDashboardRecentSalesQuery(today);
+  const { data: orderData, error: orderError, isLoading: orderLoading, isFetching: orderFetching, refetch: refetchOrders } = useGetDashboardRecentOrdersQuery('');
 
   const processChartData = () => {
     const salesByDate = salesData?.sales_data?.reduce((acc: any, sale: any) => {
@@ -46,6 +43,17 @@ const InventoryMovementChart = () => {
   const avgOutgoing = chartData.reduce((acc, item) => acc + item.outgoing, 0) / chartData.length;
 
   return (
+    <QueryStateBoundary
+      isLoading={salesLoading || orderLoading}
+      isFetching={salesFetching || orderFetching}
+      error={salesError || orderError}
+      onRetry={() => {
+        refetchSales()
+        refetchOrders()
+      }}
+      loadingText="Loading inventory movement..."
+      errorTitle="Unable to load inventory movement chart"
+    >
     <div className="rounded-xl bg-white p-6 shadow-sm border border-gray-100">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-4">
@@ -127,6 +135,7 @@ const InventoryMovementChart = () => {
         </div>
       </div>
     </div>
+    </QueryStateBoundary>
   );
 }
 

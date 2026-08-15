@@ -1,15 +1,12 @@
 'use client'
+import { useEffect, useState } from 'react';
 import Navbar from './navbar'
 import SideBar from './sideBar'
-import { useAppSelector, useAppDispatch } from "../../redux/store";
-import { useEffect } from 'react';
+import { useAppSelector } from "../../redux/store";
 import { usePathname } from 'next/navigation';
-import { toast } from "react-toastify"
 import { ToastContainer } from "react-toastify";
 import { useGetLoggedInUserQuery } from '../../redux/features/users/userApiSlice';
 import { publicRoutes } from '../../redux/features/users/useAuth';
-import NextTopLoader from 'nextjs-toploader';
-import { useRefreshMutation } from '@/redux/features/authApiSlice';
 
 import { getCookie } from 'cookies-next';
 import A2AChat from '../agents/ai-chat-widget';
@@ -18,12 +15,11 @@ import { readCookieValue } from '@/lib/authCookies';
 const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
 
   const SidebarCollapsed = useAppSelector((state) => state.global.isSidebarCollapsed);
-  const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
-  const dispatch = useAppDispatch();
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const pathname = usePathname();
   const isPublic = publicRoutes.includes(pathname);
 
-  const { data: user, isLoading, isSuccess } = useGetLoggedInUserQuery(undefined, {
+  const { data: user } = useGetLoggedInUserQuery(undefined, {
     skip: isPublic,
     refetchOnMountOrArgChange: true,
   });
@@ -31,20 +27,59 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
   
 
   const shouldHideDashboardUI = (path: string) => {
-    return path.startsWith('/accounts')|| path ==='/profile' || path === '/'|| path==='/features';
+    return path.startsWith('/accounts') || path === '/';
   };
 
   const shouldShowLegacyAgentWidget = pathname !== "/agent" && Boolean(readCookieValue("accessToken", getCookie));
+
+  useEffect(() => {
+    if (!mobileSidebarOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mobileSidebarOpen]);
   
   return (
-    <div className={`flex bg-gray-50 text-gray-900 w-full min-h-screen`}>
+    <div className={`dashboard-shell ${SidebarCollapsed ? "sidebar-is-collapsed" : "sidebar-is-expanded"} flex w-full min-h-screen bg-gray-50 text-gray-900`}>
     
     <ToastContainer position="top-right" autoClose={3000} />
     
-    {!shouldHideDashboardUI(pathname) && <SideBar user={user} />}
-    <main className={`flex flex-col w-full h-full py-7 px-2 bg-gray-50 ${((SidebarCollapsed) ? "md:pl-24": "md:pl-4")}`}>
+    {!shouldHideDashboardUI(pathname) ? (
+      <>
+        <SideBar
+          user={user}
+          mobileOpen={mobileSidebarOpen}
+          onMobileClose={() => setMobileSidebarOpen(false)}
+        />
+        {mobileSidebarOpen ? (
+          <button
+            type="button"
+            aria-label="Close navigation menu"
+            className="fixed inset-0 z-40 bg-slate-950/45 backdrop-blur-[2px] md:hidden"
+            onClick={() => setMobileSidebarOpen(false)}
+          />
+        ) : null}
+      </>
+    ) : null}
+    <main
+      className={`dashboard-main flex min-h-screen min-w-0 w-full flex-1 flex-col overflow-x-hidden bg-gray-50 px-3 pb-6 pt-24 transition-[margin,width] duration-300 ${
+        shouldHideDashboardUI(pathname)
+          ? ""
+          : SidebarCollapsed
+            ? "md:ml-16 md:w-[calc(100%-4rem)] md:flex-none md:px-4"
+            : "md:ml-64 md:w-[calc(100%-16rem)] md:flex-none md:px-5"
+      }`}
+    >
     
-    {!shouldHideDashboardUI(pathname) &&  <Navbar user={user} />}
+    {!shouldHideDashboardUI(pathname) && (
+      <Navbar
+        user={user}
+        onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+        sidebarCollapsed={SidebarCollapsed}
+      />
+    )}
     
     {children}
     

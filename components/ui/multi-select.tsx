@@ -44,7 +44,7 @@ export function MultiSelect({
       placeholder={placeholder}
       isDisabled={isDisabled}
       styles={selectStyles}
-      className={`react-select-container ${className || ""}`}
+      className={`react-select-container [--select-border:#d1d5db] [--select-chip:#e0e7ff] [--select-focused:#dbeafe] [--select-menu-surface:#fff] [--select-muted:#6b7280] [--select-selected:#2563eb] [--select-surface:#fff] [--select-text:#111827] dark:[--select-border:#475569] dark:[--select-chip:#334155] dark:[--select-focused:#1e3a5f] dark:[--select-menu-surface:#0f172a] dark:[--select-muted:#94a3b8] dark:[--select-selected:#2563eb] dark:[--select-surface:#1e293b] dark:[--select-text:#f8fafc] ${className || ""}`}
       classNamePrefix="react-select"
     />
   )

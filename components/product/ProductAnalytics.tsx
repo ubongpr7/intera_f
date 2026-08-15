@@ -3,9 +3,9 @@
 import React, { useState } from 'react';
 import {
   useGetProductAnalyticsQuery,
-  useGetStockAlertsQuery,
   useGetPriceTrendsQuery,
 } from "@/redux/features/product/productAPISlice"
+import type { ProductAnalyticsResponse } from "@/redux/features/product/productTypes"
 import LoadingAnimation from "../common/LoadingAnimation"
 import { getCurrencySymbolForProfile } from "@/lib/currency-utils"
 import { 
@@ -55,7 +55,6 @@ const CustomTooltip = ({ active, payload, label, currencySymbol }: any) => {
 
 export default function ProductAnalytics({ productId }: ProductAnalyticsProps) {
   const { data: analytics, isLoading: analyticsLoading } = useGetProductAnalyticsQuery(productId)
-  const { data: stockAlerts, isLoading: alertsLoading } = useGetStockAlertsQuery('')
   const { data: priceTrends, isLoading: trendsLoading } = useGetPriceTrendsQuery(30)
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
@@ -68,17 +67,35 @@ export default function ProductAnalytics({ productId }: ProductAnalyticsProps) {
   }
 
   const currencySymbol = getCurrencySymbolForProfile();
+  const safeAnalytics: ProductAnalyticsResponse = analytics ?? {
+    variant_stats: { total_variants: 0, active_variants: 0, inactive_variants: 0 },
+    stock_stats: { total_stock: 0, tracked_variants: 0, low_stock_variants: 0, out_of_stock_variants: 0, alerts: [] },
+    price_stats: { min_price: 0, max_price: 0, avg_price: 0 },
+    profit_margin: 0,
+    recent_price_changes: 0,
+    pos_ready: false,
+  }
+  const activeVariantRatio =
+    safeAnalytics.variant_stats.total_variants > 0
+      ? (safeAnalytics.variant_stats.active_variants / safeAnalytics.variant_stats.total_variants) * 100
+      : 0
+
+  const trackedVariants = safeAnalytics.stock_stats.tracked_variants ?? safeAnalytics.variant_stats.active_variants
+  const healthyVariantCount = Math.max(
+    trackedVariants - safeAnalytics.stock_stats.low_stock_variants - safeAnalytics.stock_stats.out_of_stock_variants,
+    0,
+  )
 
   // Prepare data for charts
   const variantData = [
-    { name: 'Active', value: analytics?.variant_stats.active_variants || 0, color: '#10B981' },
-    { name: 'Inactive', value: analytics?.variant_stats.inactive_variants || 0, color: '#EF4444' }
+    { name: 'Active', value: safeAnalytics.variant_stats.active_variants, color: '#10B981' },
+    { name: 'Inactive', value: safeAnalytics.variant_stats.inactive_variants, color: '#EF4444' }
   ];
 
   const stockData = [
-    { name: 'In Stock', value: (analytics?.stock_stats.total_stock || 0) - (analytics?.stock_stats.out_of_stock_variants || 0), color: '#10B981' },
-    { name: 'Low Stock', value: analytics?.stock_stats.low_stock_variants || 0, color: '#F59E0B' },
-    { name: 'Out of Stock', value: analytics?.stock_stats.out_of_stock_variants || 0, color: '#EF4444' }
+    { name: 'In Stock', value: healthyVariantCount, color: '#10B981' },
+    { name: 'Low Stock', value: safeAnalytics.stock_stats.low_stock_variants, color: '#F59E0B' },
+    { name: 'Out of Stock', value: safeAnalytics.stock_stats.out_of_stock_variants, color: '#EF4444' }
   ];
 
   return (
@@ -106,24 +123,24 @@ export default function ProductAnalytics({ productId }: ProductAnalyticsProps) {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Total:</span>
-                <span className="text-lg font-bold text-gray-900">{analytics.variant_stats.total_variants}</span>
+                <span className="text-lg font-bold text-gray-900">{safeAnalytics.variant_stats.total_variants}</span>
               </div>
               
               <div className="bg-gray-100 rounded-full h-2">
                 <div 
                   className="bg-indigo-500 h-2 rounded-full" 
-                  style={{ width: `${(analytics.variant_stats.active_variants / analytics.variant_stats.total_variants) * 100}%` }}
+                  style={{ width: `${activeVariantRatio}%` }}
                 ></div>
               </div>
               
               <div className="grid grid-cols-2 gap-2">
                 <div className="text-center p-2 bg-green-50 rounded-lg">
                   <p className="text-sm text-green-800 font-medium">Active</p>
-                  <p className="text-lg font-bold text-green-700">{analytics.variant_stats.active_variants}</p>
+                  <p className="text-lg font-bold text-green-700">{safeAnalytics.variant_stats.active_variants}</p>
                 </div>
                 <div className="text-center p-2 bg-red-50 rounded-lg">
                   <p className="text-sm text-red-800 font-medium">Inactive</p>
-                  <p className="text-lg font-bold text-red-700">{analytics.variant_stats.inactive_variants}</p>
+                  <p className="text-lg font-bold text-red-700">{safeAnalytics.variant_stats.inactive_variants}</p>
                 </div>
               </div>
             </div>
@@ -140,7 +157,7 @@ export default function ProductAnalytics({ productId }: ProductAnalyticsProps) {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Total Stock:</span>
-                <span className="text-lg font-bold text-gray-900">{analytics.stock_stats.total_stock}</span>
+                <span className="text-lg font-bold text-gray-900">{safeAnalytics.stock_stats.total_stock}</span>
               </div>
               
               <div className="h-20">
@@ -181,25 +198,25 @@ export default function ProductAnalytics({ productId }: ProductAnalyticsProps) {
               </div>
             </div>
             <div className="space-y-4">
-              {analytics.price_stats.min_price !== undefined && (
+              {safeAnalytics.price_stats.min_price !== undefined && (
                 <>
                   <div className="grid grid-cols-3 gap-2">
                     <div className="text-center p-2 bg-gray-50 rounded-lg">
                       <p className="text-xs text-gray-600">Min</p>
                       <p className="text-sm font-bold text-gray-900">
-                        {currencySymbol} {analytics.price_stats.min_price.toFixed(2)}
+                        {currencySymbol} {safeAnalytics.price_stats.min_price.toFixed(2)}
                       </p>
                     </div>
                     <div className="text-center p-2 bg-gray-50 rounded-lg">
                       <p className="text-xs text-gray-600">Avg</p>
                       <p className="text-sm font-bold text-gray-900">
-                        {currencySymbol} {analytics.price_stats.avg_price.toFixed(2)}
+                        {currencySymbol} {safeAnalytics.price_stats.avg_price.toFixed(2)}
                       </p>
                     </div>
                     <div className="text-center p-2 bg-gray-50 rounded-lg">
                       <p className="text-xs text-gray-600">Max</p>
                       <p className="text-sm font-bold text-gray-900">
-                        {currencySymbol} {analytics.price_stats.max_price.toFixed(2)}
+                        {currencySymbol} {safeAnalytics.price_stats.max_price.toFixed(2)}
                       </p>
                     </div>
                   </div>
@@ -208,10 +225,11 @@ export default function ProductAnalytics({ productId }: ProductAnalyticsProps) {
                     <div 
                       className="bg-blue-500 h-2 rounded-full" 
                       style={{ 
-                        width: `${((analytics.price_stats.avg_price - analytics.price_stats.min_price) / 
-                          (analytics.price_stats.max_price - analytics.price_stats.min_price)) * 100}%`,
-                        marginLeft: `${((analytics.price_stats.min_price - analytics.price_stats.min_price) / 
-                          (analytics.price_stats.max_price - analytics.price_stats.min_price)) * 100}%`
+                        width: `${safeAnalytics.price_stats.max_price > safeAnalytics.price_stats.min_price
+                          ? ((safeAnalytics.price_stats.avg_price - safeAnalytics.price_stats.min_price) /
+                            (safeAnalytics.price_stats.max_price - safeAnalytics.price_stats.min_price)) * 100
+                          : 0}%`,
+                        marginLeft: "0%"
                       }}
                     ></div>
                   </div>
@@ -220,8 +238,8 @@ export default function ProductAnalytics({ productId }: ProductAnalyticsProps) {
               
               <div className="text-center p-3 bg-green-50 rounded-lg">
                 <p className="text-xs text-gray-600">Profit Margin</p>
-                <p className={`text-lg font-bold ${analytics.profit_margin > 0 ? "text-green-600" : "text-red-600"}`}>
-                  {analytics.profit_margin > 0 ? '+' : ''}{analytics.profit_margin.toFixed(2)}%
+                <p className={`text-lg font-bold ${safeAnalytics.profit_margin > 0 ? "text-green-600" : "text-red-600"}`}>
+                  {safeAnalytics.profit_margin > 0 ? '+' : ''}{safeAnalytics.profit_margin.toFixed(2)}%
                 </p>
               </div>
             </div>
@@ -238,13 +256,13 @@ export default function ProductAnalytics({ productId }: ProductAnalyticsProps) {
             <div className="space-y-4">
               <div className="text-center p-3 bg-blue-50 rounded-lg">
                 <p className="text-xs text-gray-600">Price Changes (30d)</p>
-                <p className="text-lg font-bold text-blue-700">{analytics.recent_price_changes}</p>
+                <p className="text-lg font-bold text-blue-700">{safeAnalytics.recent_price_changes}</p>
               </div>
               
               <div className="text-center p-3 rounded-lg border border-gray-200">
                 <p className="text-xs text-gray-600">POS Ready</p>
                 <div className="flex items-center justify-center">
-                  {analytics.pos_ready ? (
+                  {safeAnalytics.pos_ready ? (
                     <>
                       <CheckCircle className="w-5 h-5 text-green-500 mr-1" />
                       <span className="text-sm font-medium text-green-700">Yes</span>
@@ -263,7 +281,7 @@ export default function ProductAnalytics({ productId }: ProductAnalyticsProps) {
       )}
 
       {/* Stock Alerts */}
-      {!alertsLoading && stockAlerts && (
+      {safeAnalytics.stock_stats.alerts && (
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center">
@@ -277,10 +295,10 @@ export default function ProductAnalytics({ productId }: ProductAnalyticsProps) {
             </button>
           </div>
           
-          {stockAlerts.low_stock_items && stockAlerts.low_stock_items.length > 0 ? (
+          {safeAnalytics.stock_stats.alerts.length > 0 ? (
             <div className="space-y-3">
-              {(expandedSection === 'alerts' ? stockAlerts.low_stock_items : stockAlerts.low_stock_items.slice(0, 3)).map((item: any, index: number) => {
-                const stockPercentage = (item.quantity / item.threshold) * 100;
+              {(expandedSection === 'alerts' ? safeAnalytics.stock_stats.alerts : safeAnalytics.stock_stats.alerts.slice(0, 3)).map((item, index: number) => {
+                const stockPercentage = item.threshold > 0 ? (item.available / item.threshold) * 100 : 0
                 return (
                   <div
                     key={index}
@@ -288,12 +306,12 @@ export default function ProductAnalytics({ productId }: ProductAnalyticsProps) {
                   >
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">{item.name}</p>
-                      <p className="text-xs text-gray-600">SKU: {item.sku}</p>
+                      <p className="text-xs text-gray-600">Status: {item.status || "unknown"}</p>
                     </div>
                     
                     <div className="w-24 mx-4">
                       <div className="flex justify-between text-xs text-amber-800 mb-1">
-                        <span>{item.quantity}</span>
+                        <span>{item.available}</span>
                         <span>{item.threshold}</span>
                       </div>
                       <div className="bg-amber-200 rounded-full h-2">
@@ -305,8 +323,8 @@ export default function ProductAnalytics({ productId }: ProductAnalyticsProps) {
                     </div>
                     
                     <div className="text-right">
-                      <p className={`text-sm font-medium ${stockPercentage < 30 ? 'text-red-600' : 'text-amber-600'}`}>
-                        {item.quantity} remaining
+                      <p className={`text-sm font-medium ${item.available <= 0 ? 'text-red-600' : 'text-amber-600'}`}>
+                        {item.available} available
                       </p>
                       <p className="text-xs text-amber-600">Threshold: {item.threshold}</p>
                     </div>
@@ -314,9 +332,9 @@ export default function ProductAnalytics({ productId }: ProductAnalyticsProps) {
                 );
               })}
               
-              {stockAlerts.low_stock_items.length > 3 && !expandedSection && (
+              {safeAnalytics.stock_stats.alerts.length > 3 && !expandedSection && (
                 <p className="text-sm text-gray-600 text-center pt-2">
-                  +{stockAlerts.low_stock_items.length - 3} more items with low stock
+                  +{safeAnalytics.stock_stats.alerts.length - 3} more variants with stock alerts
                 </p>
               )}
             </div>
@@ -347,7 +365,7 @@ export default function ProductAnalytics({ productId }: ProductAnalyticsProps) {
           {priceTrends.price_changes_by_type && priceTrends.price_changes_by_type.length > 0 ? (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {priceTrends.price_changes_by_type.map((change: any, index: number) => {
+                {priceTrends.price_changes_by_type.map((change, index: number) => {
                   const isPositive = change.avg_change > 0;
                   return (
                     <div key={index} className="text-center p-4 bg-gray-50 rounded-xl border border-gray-200 transition-all duration-300 hover:shadow-sm">
@@ -392,7 +410,7 @@ export default function ProductAnalytics({ productId }: ProductAnalyticsProps) {
                   </div>
                   
                   <div className="mt-4 space-y-2 max-h-40 overflow-y-auto">
-                    {priceTrends.daily_trends.map((trend: any, index: number) => (
+                    {priceTrends.daily_trends.map((trend, index: number) => (
                       <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded-lg text-sm">
                         <span className="text-gray-600">{trend.day}</span>
                         <div className="flex space-x-4">

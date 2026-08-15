@@ -1,106 +1,59 @@
 
 "use client"
-import React, { useState } from 'react';
-import { DataTable, Column, ActionButton } from '@/components/common/DataTable/DataTable';
-import { useGetDiscountsQuery, useCreateDiscountMutation, useUpdateDiscountMutation, useDeleteDiscountMutation } from '@/redux/features/pos/posAPISlice';
-import CustomCreateCard from '@/components/common/createCard';
-import { toast } from 'react-toastify';
-import { extractErrorMessage } from '@/lib/utils';
 
-interface POSDiscount {
-  id: string;
-  name: string;
-  discount_type: 'percentage' | 'fixed';
-  value: string;
-  is_active: boolean;
-  requires_approval: boolean;
-  min_order_amount: string;
-  max_discount_amount: string;
-}
+import { type Column } from "@/components/common/DataTable/DataTable"
+import POSResourceManager from "@/components/pos/POSResourceManager"
+import {
+  useCreateDiscountMutation,
+  useDeleteDiscountMutation,
+  useGetDiscountsQuery,
+  useUpdateDiscountMutation,
+} from "@/redux/features/pos/posAPISlice"
+import type { POSDiscount } from "@/redux/features/pos/posTypes"
 
-const Discounts = () => {
-  const [isCreateCardOpen, setCreateCardOpen] = useState(false);
-  const [editingDiscount, setEditingDiscount] = useState<POSDiscount | null>(null);
+const columns: Column<POSDiscount>[] = [
+  { header: "Name", accessor: "name" },
+  { header: "Type", accessor: "discount_type" },
+  { header: "Value", accessor: "value" },
+  { header: "Approval", accessor: "requires_approval", render: (value) => (value ? "Required" : "Auto") },
+]
 
-  const { data: discounts, isLoading, refetch } = useGetDiscountsQuery("");
-  const [createDiscount, { isLoading: isCreating }] = useCreateDiscountMutation();
-  const [updateDiscount, { isLoading: isUpdating }] = useUpdateDiscountMutation();
-  const [deleteDiscount, { isLoading: isDeleting }] = useDeleteDiscountMutation();
+const discountTypeOptions = [
+  { value: "percentage", text: "Percentage" },
+  { value: "fixed", text: "Fixed amount" },
+]
 
-  const handleCreate = async (data: Partial<POSDiscount>) => {
-    try {
-      await createDiscount(data).unwrap();
-      toast.success("Discount created successfully");
-      setCreateCardOpen(false);
-      refetch();
-    } catch (error) {
-      toast.error(extractErrorMessage(error));
-    }
-  };
-
-  const handleUpdate = async (data: Partial<POSDiscount>) => {
-    if (!editingDiscount) return;
-    try {
-      await updateDiscount({ id: editingDiscount.id, ...data }).unwrap();
-      toast.success("Discount updated successfully");
-      setEditingDiscount(null);
-      setCreateCardOpen(false);
-      refetch();
-    } catch (error) {
-      toast.error(extractErrorMessage(error));
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this discount?")) {
-      try {
-        await deleteDiscount(id).unwrap();
-        toast.success("Discount deleted successfully");
-        refetch();
-      } catch (error) {
-        toast.error(extractErrorMessage(error));
-      }
-    }
-  };
-
-  const columns: Column<POSDiscount>[] = [
-    { header: 'Name', accessor: 'name' },
-    { header: 'Type', accessor: 'discount_type' },
-    { header: 'Value', accessor: 'value' },
-    { header: 'Active', accessor: 'is_active', render: (value) => (value ? 'Yes' : 'No') },
-  ];
-
-  const actionButtons: ActionButton<POSDiscount>[] = [
-    { label: 'Edit', onClick: (row) => { setEditingDiscount(row); setCreateCardOpen(true); } },
-    { label: 'Delete', onClick: (row) => handleDelete(row.id), variant: 'danger' },
-  ];
+export default function Discounts() {
+  const { data: discounts = [], isLoading, refetch } = useGetDiscountsQuery()
+  const [createDiscount] = useCreateDiscountMutation()
+  const [updateDiscount] = useUpdateDiscountMutation()
+  const [deleteDiscount] = useDeleteDiscountMutation()
 
   return (
-    <div>
-      <div className="flex justify-end mb-4">
-        <button onClick={() => { setEditingDiscount(null); setCreateCardOpen(true); }} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-          Create Discount
-        </button>
-      </div>
-      <DataTable
-        columns={columns}
-        data={discounts || []}
-        isLoading={isLoading}
-        actionButtons={actionButtons}
-        showActionsColumn
-      />
-      {isCreateCardOpen && (
-        <CustomCreateCard<POSDiscount>
-          defaultValues={editingDiscount || {}}
-          onClose={() => setCreateCardOpen(false)}
-          onSubmit={editingDiscount ? handleUpdate : handleCreate}
-          isLoading={isCreating || isUpdating}
-          interfaceKeys={['name', 'discount_type', 'value', 'is_active', 'requires_approval', 'min_order_amount', 'max_discount_amount']}
-          itemTitle={editingDiscount ? "Update Discount" : "Create Discount"}
-        />
-      )}
-    </div>
-  );
-};
-
-export default Discounts;
+    <POSResourceManager<POSDiscount>
+      title="Discount controls"
+      description="Create reusable discount policies that cashiers can apply safely during live selling."
+      data={discounts}
+      isLoading={isLoading}
+      columns={columns}
+      createLabel="New discount"
+      itemTitle="Discount"
+      interfaceKeys={["name", "discount_type", "value", "is_active", "requires_approval", "min_order_amount", "max_discount_amount"]}
+      optionalFields={["min_order_amount", "max_discount_amount"]}
+      selectOptions={{ discount_type: discountTypeOptions }}
+      onCreate={async (data) => {
+        await createDiscount(data).unwrap()
+        await refetch()
+      }}
+      onUpdate={async (id, data) => {
+        await updateDiscount({ id, data }).unwrap()
+        await refetch()
+      }}
+      onDelete={async (id) => {
+        await deleteDiscount(id).unwrap()
+        await refetch()
+      }}
+      emptyState="Add discount policies if your checkout team needs controlled promotional or override tools."
+    />
+  )
+}

@@ -16,7 +16,9 @@ import {
   useUpdateRecallPolicyMutation,
   useDeleteRecallPolicyMutation,
 } from "@/redux/features/management/companyProfileApiSlice"
-import type { RecallPolicy } from "@/types/company-profile"
+import type { RecallPolicy } from "@/redux/features/management/companyProfileTypes"
+import { extractErrorMessage } from "@/lib/utils"
+import { confirmAction } from "@/components/common/confirmAction"
 
 interface RecallPolicyManagementProps {
   profileId: number
@@ -54,8 +56,8 @@ export function RecallPolicyManagement({profileId}:RecallPolicyManagementProps) 
 
   // Reset form when editing policy changes
   useEffect(() => {
-    if (editingPolicy) {
-      setFormData({
+    const nextFormData = editingPolicy
+      ? {
         name: editingPolicy.name,
         description: editingPolicy.description || "",
         severity_levels: editingPolicy.severity_levels,
@@ -63,9 +65,8 @@ export function RecallPolicyManagement({profileId}:RecallPolicyManagementProps) 
         contact_information: editingPolicy.contact_information,
         is_active: editingPolicy.is_active,
         profile:profileId
-      })
-    } else {
-      setFormData({
+      }
+      : {
         name: "",
         description: "",
         severity_levels: [],
@@ -74,19 +75,26 @@ export function RecallPolicyManagement({profileId}:RecallPolicyManagementProps) 
         is_active: true,
         profile:profileId
 
-      })
-    }
-  }, [editingPolicy])
+      }
+    const timer = window.setTimeout(() => setFormData(nextFormData), 0)
+    return () => window.clearTimeout(timer)
+  }, [editingPolicy, profileId])
 
   // Handle errors
   useEffect(() => {
     const error = fetchError || createError || updateError || deleteError
     if (error) {
-      setErrorMessage(JSON.stringify(error))
+      const errorTimer = window.setTimeout(
+        () => setErrorMessage(extractErrorMessage(error, ["name", "severity_levels", "notification_template", "detail"])),
+        0,
+      )
       const timer = setTimeout(() => {
         setErrorMessage(null)
       }, 5000)
-      return () => clearTimeout(timer)
+      return () => {
+        window.clearTimeout(errorTimer)
+        clearTimeout(timer)
+      }
     }
   }, [fetchError, createError, updateError, deleteError])
 
@@ -109,7 +117,7 @@ export function RecallPolicyManagement({profileId}:RecallPolicyManagementProps) 
         setSuccessMessage(null)
       }, 3000)
     } catch (error) {
-      console.error("Failed to save recall policy:", error)
+      setErrorMessage(extractErrorMessage(error, ["name", "severity_levels", "notification_template", "detail"]))
     }
   }
 
@@ -119,18 +127,24 @@ export function RecallPolicyManagement({profileId}:RecallPolicyManagementProps) 
   }
 
   const handleDelete = async (policyId: string) => {
-    if (confirm("Are you sure you want to delete this recall policy?")) {
-      try {
-        await deletePolicy(policyId).unwrap()
-        setSuccessMessage("Policy deleted successfully")
+    const confirmed = await confirmAction({
+      title: "Delete recall policy?",
+      description: "This removes the recall policy from this company profile.",
+      confirmText: "Delete policy",
+      destructive: true,
+    })
+    if (!confirmed) return
 
-        // Clear success message after 3 seconds
-        setTimeout(() => {
-          setSuccessMessage(null)
-        }, 3000)
-      } catch (error) {
-        console.error("Failed to delete policy:", error)
-      }
+    try {
+      await deletePolicy(policyId).unwrap()
+      setSuccessMessage("Policy deleted successfully")
+
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage(null)
+      }, 3000)
+    } catch (error) {
+      setErrorMessage(extractErrorMessage(error, ["detail", "error"]))
     }
   }
 
@@ -147,7 +161,7 @@ export function RecallPolicyManagement({profileId}:RecallPolicyManagementProps) 
         setSuccessMessage(null)
       }, 3000)
     } catch (error) {
-      console.error("Failed to toggle policy status:", error)
+      setErrorMessage(extractErrorMessage(error, ["is_active", "detail", "error"]))
     }
   }
 

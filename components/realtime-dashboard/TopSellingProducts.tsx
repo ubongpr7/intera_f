@@ -3,20 +3,18 @@
 import { useGetDashboardTopSellingProductsQuery } from '@/redux/features/dashboard/dashboardApiSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp } from 'lucide-react';
-import LoadingAnimation from '../common/LoadingAnimation';
 import { TopSellingProduct } from '../interfaces/dashboard';
+import { QueryStateBoundary } from '../common/QueryStateBoundary';
 
 const TopSellingProducts = () => {
-  const { data, error, isLoading } = useGetDashboardTopSellingProductsQuery('');
-
-  if (isLoading) return <div className="h-full flex justify-center items-center"><LoadingAnimation /></div>;
-  if (error) return <div>Error loading top selling products</div>;
+  const { data, error, isLoading, isFetching, refetch } = useGetDashboardTopSellingProductsQuery('');
 
   return (
+    <QueryStateBoundary isLoading={isLoading} isFetching={isFetching} error={error} onRetry={refetch} loadingText="Loading top selling products..." errorTitle="Unable to load top selling products">
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">Top Selling Products</CardTitle>
-        <TrendingUp className="h-4 w-4 text-muted-foreground" />
+        <TrendingUp className="h-4 w-4 text-gray-500" />
       </CardHeader>
       <CardContent>
         {data && data.length > 0 ? (
@@ -33,6 +31,7 @@ const TopSellingProducts = () => {
         )}
       </CardContent>
     </Card>
+    </QueryStateBoundary>
   );
 };
 

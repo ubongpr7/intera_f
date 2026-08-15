@@ -1,87 +1,130 @@
-import { RoleAssignment } from '../../../components/interfaces/management';
-import { apiSlice } from '../../services/apiSlice';
+import { apiSlice } from "../../services/apiSlice";
+import type { RoleAssignment } from "../management/managementTypes";
+import type {
+  PermissionUpdatePayload,
+  RoleAssignmentRecord,
+  UserGroupsResponse,
+  UserGroupUpdatePayload,
+  UserPermissionsResponse,
+} from "./permissionTypes";
 
-const management_api=`permission_api`
-const service= 'users'
+const permissionApi = "permission_api";
+const service = "users";
 
 export const permisionsAPISlice = apiSlice.injectEndpoints({
-  endpoints: builder => ({
-    
-    updateUserPermission: builder.mutation({
-      query: ({ id, data }) => ({
-        url: `/${management_api}/users/${id}/permissions/`,
-        method: 'PUT',
-        body: data,
-        service: service,
+  endpoints: (builder) => ({
+    listRoleAssignments: builder.query<RoleAssignmentRecord[], void>({
+      query: () => ({
+        url: `/${permissionApi}/role-assignments/`,
+        service,
       }),
     }),
-    assignUserRole: builder.mutation({
-      query: (  data:Partial<RoleAssignment> ) => ({
-        url: `/${management_api}/role-assignments/roles/`,
-        method: 'POST',
-        body: data,
-        service: service,
-      }),
-    }),
-    getUserPermission: builder.query({
-      query: (id) =>({
-        url: `/${management_api}/users/${id}/permissions/`,
-        service: service,
-      })
-    }),
-  
-    getUserGroups: builder.query({
-      query: (id) =>({
-        url: `/${management_api}/user/${id}/groups/`,
-        service: service,
-      })
-    }),
-  
-    updateGroupPermission: builder.mutation({
-      query: ({ id, data }) => ({
-        url: `/${management_api}/groups/${id}/permissions/`,
-        method: 'PUT',
-        body: data,
-        service: service,
-      }),
-    }),
-    updateUserGroup: builder.mutation({
-      query: ({ id, data }) => ({
-        url: `/${management_api}/user/${id}/groups/`,
-        method: 'PUT',
-        body: data,
-        service: service,
-      }),
-    }),
-    
-    getGroupPermission: builder.query({
-      query: (id) =>({
-        url: `/${management_api}/groups/${id}/permissions/`,
-        service: service,
-      })
-    }),
-    updateRolePermission: builder.mutation({
-      query: ({ id, data }) => ({
-        url: `/${management_api}/roles/${id}/permissions/`,
-        method: 'PUT',
-        body: data,
-        service: service,
-      }),
-    }),
-    
-    getRolePermission: builder.query({
-      query: (id) =>({
-        url: `/${management_api}/roles/${id}/permissions/`,
-        service: service,
-      })
-    }),
-  
-  }),
 
+    getRoleAssignment: builder.query<RoleAssignmentRecord, string>({
+      query: (id) => ({
+        url: `/${permissionApi}/role-assignments/${id}/`,
+        service,
+      }),
+    }),
+
+    assignUserRole: builder.mutation<RoleAssignmentRecord, Partial<RoleAssignment>>({
+      query: (data) => ({
+        url: `/${permissionApi}/role-assignments/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+
+    updateRoleAssignment: builder.mutation<RoleAssignmentRecord, { id: string; data: Partial<RoleAssignment> }>({
+      query: ({ id, data }) => ({
+        url: `/${permissionApi}/role-assignments/${id}/`,
+        method: "PATCH",
+        body: data,
+        service,
+      }),
+    }),
+
+    deleteRoleAssignment: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/${permissionApi}/role-assignments/${id}/`,
+        method: "DELETE",
+        service,
+      }),
+    }),
+
+    getUserPermission: builder.query<UserPermissionsResponse, string | number>({
+      query: (id) => ({
+        url: `/${permissionApi}/users/${id}/permissions/`,
+        service,
+      }),
+    }),
+
+    updateUserPermission: builder.mutation<{ status: string }, { id: string | number; data: PermissionUpdatePayload }>({
+      query: ({ id, data }) => ({
+        url: `/${permissionApi}/users/${id}/permissions/`,
+        method: "PUT",
+        body: data,
+        service,
+      }),
+    }),
+
+    getUserGroups: builder.query<UserGroupsResponse, string | number>({
+      query: (id) => ({
+        url: `/${permissionApi}/users/${id}/groups/`,
+        service,
+      }),
+    }),
+
+    updateUserGroup: builder.mutation<{ status: string }, { id: string | number; data: UserGroupUpdatePayload }>({
+      query: ({ id, data }) => ({
+        url: `/${permissionApi}/users/${id}/groups/`,
+        method: "PUT",
+        body: data,
+        service,
+      }),
+    }),
+
+    getGroupPermission: builder.query<UserPermissionsResponse, string>({
+      query: (id) => ({
+        url: `/${permissionApi}/groups/${id}/permissions/`,
+        service,
+      }),
+    }),
+
+    updateGroupPermission: builder.mutation<{ status: string }, { id: string; data: PermissionUpdatePayload }>({
+      query: ({ id, data }) => ({
+        url: `/${permissionApi}/groups/${id}/permissions/`,
+        method: "PUT",
+        body: data,
+        service,
+      }),
+    }),
+
+    getRolePermission: builder.query<UserPermissionsResponse, string>({
+      query: (id) => ({
+        url: `/${permissionApi}/roles/${id}/permissions/`,
+        service,
+      }),
+    }),
+
+    updateRolePermission: builder.mutation<{ status: string }, { id: string; data: PermissionUpdatePayload }>({
+      query: ({ id, data }) => ({
+        url: `/${permissionApi}/roles/${id}/permissions/`,
+        method: "PUT",
+        body: data,
+        service,
+      }),
+    }),
+  }),
 });
 
 export const {
+  useListRoleAssignmentsQuery,
+  useGetRoleAssignmentQuery,
   useAssignUserRoleMutation,
+  useUpdateRoleAssignmentMutation,
+  useDeleteRoleAssignmentMutation,
   useUpdateUserPermissionMutation,
   useGetUserPermissionQuery,
   useUpdateGroupPermissionMutation,
@@ -90,5 +133,4 @@ export const {
   useGetRolePermissionQuery,
   useUpdateUserGroupMutation,
   useGetUserGroupsQuery,
-
 } = permisionsAPISlice;

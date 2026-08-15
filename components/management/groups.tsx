@@ -1,5 +1,5 @@
 'use client'
-import { GroupData } from "../interfaces/management";
+import { GroupData } from "@/redux/features/management/managementTypes";
 import CustomCreateCard from "../common/createCard";
 
 import { useEffect, useState } from "react";
@@ -9,7 +9,7 @@ import { useRouter } from 'nextjs-toploader/app';
 import VerticalTabs from '../common/verticalTabs'
 import GroupPermissionForm from '../permissions/customPermission';
 import { useUpdateGroupPermissionMutation,useGetGroupPermissionQuery } from "../../redux/features/permission/permit";
-import { Permission } from "components/interfaces/common";
+import { Permission } from "@/redux/features/common/commonTypes";
 import CustomUpdateForm from "../common/updateForm";
 import { StaffManagementRefetchProp } from "./roles";
 
@@ -63,12 +63,10 @@ const StaffGroup =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
 
  useEffect(()=>{
    if (refetchData){
-     console.log('before: ',refetchData)
      refetch();
      setRefetchData(false);
-     console.log('after',refetchData)
    }
-   },[refetchData])
+   },[refetch, refetchData, setRefetchData])
   
   const handleUpdatePermissionSubmit = async (createdData: { permissions: string[] }) => {
     await updatePermission({id:groupId,data: createdData}).unwrap();
@@ -110,13 +108,14 @@ const StaffGroup =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
             onRowClick={handleRowClick}
             searchableFields={['name', 'description']}
             filterableFields={[]}
-            sortableFields={['name', 'description']}
+            sortableFields={['name', 'description', 'permission_count', 'users_count']}
+            rangeFilterFields={['permission_count', 'users_count']}
             title="Groups"
             onClose={() => setIsCreateOpen(true)}
             
             />
 
-            <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>
+            {isCreateOpen ? (
                 <CustomCreateCard
                     defaultValues={{}}
                     onClose={() => setIsCreateOpen(false)}
@@ -128,10 +127,10 @@ const StaffGroup =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
                     interfaceKeys={['name', 'description' ]}
                     optionalFields={[]}
                 />
-                </div>
+            ) : null}
 
                 
-            <div className={`fixed  inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${openTabs ? 'block' : 'hidden'}`}>
+            {openTabs ? (
                 <VerticalTabs
                     items={[
                 
@@ -163,11 +162,8 @@ const StaffGroup =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
                     onClose={() => setOpenTabs(false)}
                     className="border rounded-lg p-4"
                   />
-
-                </div>
+            ) : null}
         </div>
     )
 }
 export default StaffGroup;
-
-

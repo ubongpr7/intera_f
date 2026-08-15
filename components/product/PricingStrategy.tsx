@@ -2,6 +2,8 @@
 
 import type React from "react"
 import { useState } from "react"
+import { toast } from "react-toastify"
+import { Trash2 } from "lucide-react"
 import {
   useGetPricingStrategiesQuery,
   useCreatePricingStrategyMutation,
@@ -10,11 +12,11 @@ import {
   
 } from "@/redux/features/product/productAPISlice"
 
-import { useRouter } from "nextjs-toploader/app"
 import { Column, DataTable } from "../common/DataTable/DataTable"
-import { PricingStrategy, Product } from "../interfaces/product"
+import { PricingStrategy, Product } from "@/redux/features/product/productTypes"
 import CustomCreateCard from "../common/createCard"
 import LoadingAnimation from "../common/LoadingAnimation"
+import { extractErrorMessage } from "@/lib/utils"
 
 interface ProductPricingStrategiesProps {
   productId: string;
@@ -77,18 +79,18 @@ const pricingStrategyColumns: Column<PricingStrategy>[] = [
 const defaultValues: Partial<PricingStrategy> = {
   name: '',
   strategy: 'margin',
-  margin_percentage: undefined,
+  margin_percentage: 10,
   market_multiplier: undefined,
   min_price: undefined,
   max_price: undefined,
   demand_factor: 1.0,
   seasonal_factor: 1.0,
   tier_1_quantity: 1,
-  tier_1_discount: 1,
+  tier_1_discount: 0,
   tier_2_quantity: 1,
-  tier_2_discount: 1,
+  tier_2_discount: 0,
   tier_3_quantity: 1,
-  tier_3_discount: 1,
+  tier_3_discount: 0,
   is_active: true,
 }
 
@@ -112,7 +114,6 @@ const interfaceKeys: (keyof PricingStrategy)[] = [
 ]
 
 export default function ProductPricingStrategies({ productId,product }: ProductPricingStrategiesProps) {
-  const router = useRouter()
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [editingStrategy, setEditingStrategy] = useState<PricingStrategy | null>(null)
 
@@ -141,19 +142,27 @@ export default function ProductPricingStrategies({ productId,product }: ProductP
   }
 
   const handleCreate = async (data: Partial<PricingStrategy>) => {
+    try {
       const strategyData = { ...data, product: productId }
       await createPricingStrategy(strategyData).unwrap()
       setIsCreateOpen(false)
       refetch()
+    } catch (error) {
+      toast.error(extractErrorMessage(error, ["detail", "error"]) || "Failed to create pricing strategy.")
+    }
    
   }
 
   const handleUpdate = async (data: Partial<PricingStrategy>) => {
     if (!editingStrategy) return
+    try {
       await updatePricingStrategy({ id: editingStrategy.id,data }).unwrap()
       setEditingStrategy(null)
       setIsCreateOpen(false)
       refetch()
+    } catch (error) {
+      toast.error(extractErrorMessage(error, ["detail", "error"]) || "Failed to update pricing strategy.")
+    }
     
   }
 
@@ -161,8 +170,8 @@ export default function ProductPricingStrategies({ productId,product }: ProductP
     try {
       await deletePricingStrategy(strategyId).unwrap()
       refetch()
-    } catch (error) {
-      console.error('Failed to delete pricing strategy:', error)
+    } catch {
+      toast.error('Failed to delete pricing strategy.')
     }
   }
 
@@ -185,6 +194,10 @@ export default function ProductPricingStrategies({ productId,product }: ProductP
   const actionButtons = [
     {
       label: 'Delete',
+      icon: Trash2,
+      variant: 'danger' as const,
+      tooltip: 'Remove this pricing strategy',
+      disabled: () => deleteLoading,
       onClick: (row: PricingStrategy) => handleDelete(row.id),
       className: 'text-red-500',
     },
@@ -193,7 +206,7 @@ export default function ProductPricingStrategies({ productId,product }: ProductP
   if (error) {
     return (
       <div className="p-4 text-red-500">
-        Error loading pricing strategies: {(error as any).message || 'Unknown error'}
+        Unable to load pricing strategies: {extractErrorMessage(error, ["detail", "error"])}
       </div>
     )
   }
@@ -211,54 +224,53 @@ export default function ProductPricingStrategies({ productId,product }: ProductP
         data={pricingStrategies || []}
         isLoading={isLoading}
         onRowClick={handleRowClick}
+        actionButtons={actionButtons}
         searchableFields={['name']}
-        filterableFields={['strategy']}
-        sortableFields={['name', 'strategy']}
+        filterableFields={['strategy', 'is_active']}
+        sortableFields={['name', 'strategy', 'margin_percentage', 'market_multiplier', 'min_price', 'max_price', 'calculated_price_example']}
+        rangeFilterFields={['margin_percentage', 'market_multiplier', 'min_price', 'max_price', 'demand_factor', 'seasonal_factor', 'calculated_price_example']}
         title={`Pricing Strategies for ${product?.name || 'Product'}`}
         onClose={() => setIsCreateOpen(true)}
       />
 
       {/* Create/Edit Pricing Strategy Modal */}
-      {isCreateOpen && (
-
-        <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 ${isCreateOpen ? 'block' : 'hidden'}`}>
-          <CustomCreateCard
-            defaultValues={ editingStrategy || defaultValues}
-            onClose={() => {
-              setIsCreateOpen(false)
-            }}
-            onSubmit={editingStrategy?handleUpdate:handleCreate}
-            isLoading={editingStrategy?updateLoading:createLoading }
-            selectOptions={selectOptions}
-            keyInfo={{
-              margin_percentage: 'Required for Cost-Plus Margin strategy',
-              market_multiplier: 'Required for Market Multiplier strategy',
-              min_price: 'Optional price floor for calculations',
-              max_price: 'Optional price ceiling for calculations',
-              demand_factor: 'Multiplier for demand-based pricing (Dynamic strategy)',
-              seasonal_factor: 'Multiplier for seasonal pricing (Dynamic strategy)',
-              tier_1_quantity: 'Minimum quantity for Tier 1 discount (Tiered strategy)',
-              tier_1_discount: 'Discount percentage for Tier 1 (Tiered strategy)',
-              tier_2_quantity: 'Minimum quantity for Tier 2 discount (Tiered strategy)',
-              tier_2_discount: 'Discount percentage for Tier 2 (Tiered strategy)',
-              tier_3_quantity: 'Minimum quantity for Tier 3 discount (Tiered strategy)',
-              tier_3_discount: 'Discount percentage for Tier 3 (Tiered strategy)',
-            }}
-            notEditableFields={notEditableFields}
-            interfaceKeys={interfaceKeys}
-            optionalFields={[
-              'margin_percentage',
-              'market_multiplier',
-              'min_price',
-              'max_price',
-              'demand_factor',
-              'seasonal_factor',
-              
-            ]}
-              itemTitle={`${editingStrategy?'Update':'Create'} Strategy`}
-          />
-        </div>
-      )}
+      {isCreateOpen ? (
+        <CustomCreateCard
+          defaultValues={ editingStrategy || defaultValues}
+          onClose={() => {
+            setIsCreateOpen(false)
+          }}
+          onSubmit={editingStrategy?handleUpdate:handleCreate}
+          isLoading={editingStrategy?updateLoading:createLoading }
+          selectOptions={selectOptions}
+          keyInfo={{
+            margin_percentage: 'Required for Cost-Plus Margin strategy',
+            market_multiplier: 'Required for Market Multiplier strategy',
+            min_price: 'Optional price floor for calculations',
+            max_price: 'Optional price ceiling for calculations',
+            demand_factor: 'Multiplier for demand-based pricing (Dynamic strategy)',
+            seasonal_factor: 'Multiplier for seasonal pricing (Dynamic strategy)',
+            tier_1_quantity: 'Minimum quantity for Tier 1 discount (Tiered strategy)',
+            tier_1_discount: 'Discount percentage for Tier 1 (Tiered strategy)',
+            tier_2_quantity: 'Minimum quantity for Tier 2 discount (Tiered strategy)',
+            tier_2_discount: 'Discount percentage for Tier 2 (Tiered strategy)',
+            tier_3_quantity: 'Minimum quantity for Tier 3 discount (Tiered strategy)',
+            tier_3_discount: 'Discount percentage for Tier 3 (Tiered strategy)',
+          }}
+          notEditableFields={notEditableFields}
+          interfaceKeys={interfaceKeys}
+          optionalFields={[
+            'margin_percentage',
+            'market_multiplier',
+            'min_price',
+            'max_price',
+            'demand_factor',
+            'seasonal_factor',
+            
+          ]}
+            itemTitle={`${editingStrategy?'Update':'Create'} Strategy`}
+        />
+      ) : null}
     </div>
   )
 }

@@ -1,17 +1,15 @@
 
 'use client';
 import { useGetDashboardRecentSalesQuery } from '@/redux/features/dashboard/dashboardApiSlice';
-import { ShoppingCart, Clock, CheckCircle } from 'lucide-react';
-import LoadingAnimation from '../common/LoadingAnimation';
+import { ShoppingCart, CheckCircle } from 'lucide-react';
+import { QueryStateBoundary } from '../common/QueryStateBoundary';
 
 const RecentSales = () => {
   const today = new Date().toISOString().slice(0, 10);
-  const { data, error, isLoading } = useGetDashboardRecentSalesQuery(today);
-
-  if (isLoading) return <div className="h-full flex justify-center items-center"><LoadingAnimation /></div>;
-  if (error) return <div>Error loading recent sales</div>;
+  const { data, error, isLoading, isFetching, refetch } = useGetDashboardRecentSalesQuery(today);
 
   return (
+    <QueryStateBoundary isLoading={isLoading} isFetching={isFetching} error={error} onRetry={refetch} loadingText="Loading recent sales..." errorTitle="Unable to load recent sales">
     <div className="rounded-xl bg-white p-6 shadow-sm border border-gray-100">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold">Recent Sales</h2>
@@ -40,6 +38,7 @@ const RecentSales = () => {
         )}
       </div>
     </div>
+    </QueryStateBoundary>
   );
 };
 

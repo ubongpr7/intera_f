@@ -1,81 +1,135 @@
-import { apiSlice } from '../../services/apiSlice';
-import { CategoryData, InventoryData } from '../../../components/interfaces/inventory';
-const management_api='inventory_api'
-const service = 'inventory'
+import { apiSlice } from "../../services/apiSlice";
+import { unwrapListResponse } from "../../services/apiSlice";
+import { buildQuery } from "../common/queryParams";
+import type { StructuralLocationScopeParams } from "@/lib/structuralLocationScope";
+import type {
+  AdjustStockPayload,
+  AdjustStockResponse,
+  InventoryAnalytics,
+  InventoryData,
+  InventoryListParams,
+  InventorySetupSummary,
+  InventoryStockSummary,
+  InventorySummary,
+} from "./inventoryTypes";
+
+const inventoryApi = "inventory_api";
+const service = "inventory";
+
+type EntityId = string | number;
+type InventoryScopeParams = StructuralLocationScopeParams & Pick<InventoryListParams, "stock_location_id">;
+
 export const inventoryApiSlice = apiSlice.injectEndpoints({
-  endpoints: builder => ({
-    createInventory: builder.mutation({
-      query: (inventoryData: Partial<InventoryData>) => ({
-        url: `/${management_api}/inventories/`,
-        method: 'POST',
+  endpoints: (builder) => ({
+    listInventories: builder.query<InventorySummary[], InventoryListParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${inventoryApi}/items/`, params),
+        service,
+      }),
+      transformResponse: (response: InventorySummary[] | { results?: InventorySummary[] }) => unwrapListResponse<InventorySummary>(response),
+    }),
+
+    createInventory: builder.mutation<InventoryData, Partial<InventoryData>>({
+      query: (inventoryData) => ({
+        url: `/${inventoryApi}/items/`,
+        method: "POST",
         body: inventoryData,
-				service:service,
+        service,
       }),
     }),
-    createCategory: builder.mutation({
-      query: (data: Partial<CategoryData>) => ({
-        url: `/${management_api}/categories/`,
-        method: 'POST',
-        body: data,
-				service:service,
 
-      }),
-    }),
-    updateCategory: builder.mutation({
-      query: ({data,id}) => ({
-        url: `/${management_api}/categories/${id}/`,
-        method: 'PUT',
-        body: data,
-				service:service,
-
-      }),
-    }),
-    deleteCategory: builder.mutation({
+    getInventory: builder.query<InventoryData, EntityId>({
       query: (id) => ({
-        url: `/${management_api}/categories/${id}/`,
-        method: 'DELETE',
-				service:service,
+        url: `/${inventoryApi}/items/${id}/`,
+        service,
       }),
     }),
-    updateInventory: builder.mutation({
+
+    updateInventory: builder.mutation<InventoryData, { id: EntityId; data: Partial<InventoryData> }>({
       query: ({ id, data }) => ({
-        url: `/${management_api}/inventories/${id}/`,
-        method: 'PATCH',
+        url: `/${inventoryApi}/items/${id}/`,
+        method: "PATCH",
         body: data,
-				service:service,
+        service,
       }),
     }),
-    getInventory: builder.query({
-      query: (id) => `/${management_api}/inventories/${id}/`,
+
+    deleteInventory: builder.mutation<void, EntityId>({
+      query: (id) => ({
+        url: `/${inventoryApi}/items/${id}/`,
+        method: "DELETE",
+        service,
+      }),
     }),
-    getMinimalInventory: builder.query<InventoryData,string>({
-      query: (id) => `/${management_api}/inventories/${id}/minimal_inventory/`,
+
+    getLowStockInventories: builder.query<InventorySummary[], InventoryScopeParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${inventoryApi}/items/low_stock/`, params),
+        service,
+      }),
+      transformResponse: (response: InventorySummary[] | { results?: InventorySummary[] }) => unwrapListResponse<InventorySummary>(response),
     }),
-  
-    getInventoryCategories: builder.query({
-      query: () => `/${management_api}/categories/`,
+
+    getInventoriesNeedingReorder: builder.query<InventorySummary[], InventoryScopeParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${inventoryApi}/items/needs_reorder/`, params),
+        service,
+      }),
+      transformResponse: (response: InventorySummary[] | { results?: InventorySummary[] }) => unwrapListResponse<InventorySummary>(response),
     }),
-  
-    getInventoryData: builder.query<InventoryData[], void>({
-      query: () => ({
-        url: `/${management_api}/inventories/`,
-        method: 'GET',
-				service:service,
+
+    getInventorySetupSummary: builder.query<InventorySetupSummary, InventoryScopeParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${inventoryApi}/items/summary/`, params),
+        service,
+      }),
+    }),
+
+    getInventoryStockSummary: builder.query<InventoryStockSummary, EntityId>({
+      query: (id) => ({
+        url: `/${inventoryApi}/items/${id}/stock_summary/`,
+        service,
+      }),
+    }),
+
+    getMinimalInventory: builder.query<InventorySummary, EntityId>({
+      query: (id) => ({
+        url: `/${inventoryApi}/items/${id}/minimal_item/`,
+        service,
+      }),
+    }),
+
+    adjustInventoryStock: builder.mutation<AdjustStockResponse, { id: EntityId; data: AdjustStockPayload }>({
+      query: ({ id, data }) => ({
+        url: `/${inventoryApi}/items/${id}/adjust_stock/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+
+    getInventoryAnalytics: builder.query<InventoryAnalytics, InventoryScopeParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/stock_api/inventory-items/analytics/`, params),
+        service,
       }),
     }),
   }),
-  // overrideExisting: true,
-
 });
 
-export const { 
+export const {
+  useListInventoriesQuery,
   useCreateInventoryMutation,
-  useCreateCategoryMutation,
-  useUpdateInventoryMutation,
   useGetInventoryQuery,
+  useUpdateInventoryMutation,
+  useDeleteInventoryMutation,
+  useGetLowStockInventoriesQuery,
+  useGetInventoriesNeedingReorderQuery,
+  useGetInventorySetupSummaryQuery,
+  useGetInventoryStockSummaryQuery,
   useGetMinimalInventoryQuery,
-  useGetInventoryCategoriesQuery,
-  useUpdateCategoryMutation,
-  useDeleteCategoryMutation,
-  useGetInventoryDataQuery
+  useAdjustInventoryStockMutation,
+  useGetInventoryAnalyticsQuery,
 } = inventoryApiSlice;
+
+export const useGetInventoryDataQuery = useListInventoriesQuery;

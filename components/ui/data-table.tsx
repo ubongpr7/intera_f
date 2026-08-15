@@ -1,6 +1,8 @@
 "use client"
 
 import {
+  type ColumnFiltersState,
+  type SortingState,
   flexRender,
   getCoreRowModel,
   useReactTable,
@@ -27,10 +29,11 @@ export function DataTable<TData, TValue>({
   loading = false,
   searchKey = "name",
 }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = useState([])
-  const [columnFilters, setColumnFilters] = useState([])
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [globalFilter, setGlobalFilter] = useState("")
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,
@@ -51,9 +54,9 @@ export function DataTable<TData, TValue>({
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="h-10 bg-muted animate-pulse rounded" />
+        <div className="h-10 rounded bg-gray-100 animate-pulse" />
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-16 bg-muted animate-pulse rounded" />
+          <div key={i} className="h-16 rounded bg-gray-100 animate-pulse" />
         ))}
       </div>
     )
@@ -104,7 +107,7 @@ export function DataTable<TData, TValue>({
       </div>
 
       <div className="flex items-center justify-between space-x-2 py-4">
-        <div className="text-sm text-muted-foreground">
+        <div className="text-sm text-gray-500">
           {table.getFilteredSelectedRowModel().rows.length} of {table.getFilteredRowModel().rows.length} row(s)
           selected.
         </div>

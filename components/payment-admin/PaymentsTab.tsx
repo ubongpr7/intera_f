@@ -1,52 +1,68 @@
 "use client"
 
 import { useState } from "react"
+import type { ColumnDef } from "@tanstack/react-table"
 import { Eye, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
 import { useGetPaymentsQuery } from "@/redux/features/payment/paymentAPISlice"
+import type { PaymentRecord, PaymentStatus } from "@/redux/features/payment/paymentTypes"
+import { formatMachineLabel } from "@/lib/displayLabels"
 
 export function PaymentsTab() {
-  const [filters, setFilters] = useState({})
+  const [filters, setFilters] = useState<Record<string, string>>({})
   const { data: payments = [], isLoading, refetch } = useGetPaymentsQuery(filters)
 
-  const getStatusBadge = (status) => {
-    const variants = {
-      pending: "secondary",
-      completed: "default",
-      failed: "destructive",
-      cancelled: "outline",
-    }
-    return <Badge variant={variants[status] || "secondary"}>{status}</Badge>
+  const getStatusBadge = (status: PaymentStatus) => {
+    const normalized = `${status ?? ""}`.trim().toLowerCase()
+    const variant =
+      normalized === "completed"
+        ? "default"
+        : normalized === "failed"
+          ? "destructive"
+          : normalized === "cancelled"
+            ? "outline"
+            : "secondary"
+    return <Badge variant={variant}>{formatMachineLabel(normalized || "unknown")}</Badge>
   }
 
-  const columns = [
+  const columns: ColumnDef<PaymentRecord>[] = [
     {
-      accessorKey: "reference",
+      accessorKey: "external_payment_id",
       header: "Reference",
-      cell: ({ row }) => <span className="font-mono text-sm">{row.getValue("reference")}</span>,
+      cell: ({ row }) => (
+        <span className="font-mono text-sm">
+          {row.original.external_payment_id || row.original.reference || "N/A"}
+        </span>
+      ),
     },
     {
       accessorKey: "amount",
       header: "Amount",
-      cell: ({ row }) => `$${Number.parseFloat(row.getValue("amount")).toFixed(2)}`,
+      cell: ({ row }) =>
+        new Intl.NumberFormat("en-NG", {
+          style: "currency",
+          currency: String(row.original.metadata?.currency ?? "NGN"),
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2,
+        }).format(Number(row.getValue("amount") ?? 0)),
     },
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }) => getStatusBadge(row.getValue("status")),
+      cell: ({ row }) => getStatusBadge(row.getValue("status") as PaymentStatus),
     },
     {
       accessorKey: "provider",
       header: "Provider",
-      cell: ({ row }) => <Badge variant="outline">{row.original.provider?.name}</Badge>,
+      cell: ({ row }) => <Badge variant="outline">{row.original.provider?.name ?? "Unknown"}</Badge>,
     },
     {
       accessorKey: "created_at",
       header: "Date",
-      cell: ({ row }) => new Date(row.getValue("created_at")).toLocaleDateString(),
+      cell: ({ row }) => new Date(String(row.getValue("created_at"))).toLocaleDateString(),
     },
     {
       id: "actions",
@@ -66,7 +82,7 @@ export function PaymentsTab() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Payments</h2>
-          <p className="text-muted-foreground">Monitor all payment transactions across your applications.</p>
+          <p className="text-gray-500">Monitor all payment transactions across your applications.</p>
         </div>
         <Button onClick={() => refetch()}>
           <RefreshCw className="h-4 w-4 mr-2" />
@@ -80,7 +96,7 @@ export function PaymentsTab() {
           <CardDescription>All payment transactions processed through your system.</CardDescription>
         </CardHeader>
         <CardContent>
-          <DataTable columns={columns} data={payments} loading={isLoading} searchKey="reference" />
+          <DataTable columns={columns} data={payments} loading={isLoading} searchKey="external_payment_id" />
         </CardContent>
       </Card>
     </div>

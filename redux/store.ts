@@ -1,4 +1,5 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
+import { setupListeners } from "@reduxjs/toolkit/query";
 import { persistStore, persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from "redux-persist";
 import createWebStorage from "redux-persist/lib/storage/createWebStorage";
 import authReducer from "./features/authSlice";
@@ -26,7 +27,7 @@ const storage = typeof window === "undefined"
 const globalPersistConfig = {
   key: "global",
   storage,
-  whitelist: ["isDarkMode", "isSidebarCollapsed"]
+  whitelist: ["isDarkMode", "isSystemTheme", "isSidebarCollapsed"]
 };
 
 const rootReducer = combineReducers({
@@ -37,7 +38,7 @@ const rootReducer = combineReducers({
 });
 
 export const makeStore = () => {
-  return configureStore({
+  const store = configureStore({
     reducer: rootReducer,
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({
@@ -46,9 +47,12 @@ export const makeStore = () => {
         },
       }).concat(apiSlice.middleware),
   });
+  setupListeners(store.dispatch);
+  return store;
 };
 
-export const persistor = persistStore(makeStore());
+export const store = makeStore();
+export const persistor = persistStore(store);
 
 // Keep existing types
 export type AppStore = ReturnType<typeof makeStore>;

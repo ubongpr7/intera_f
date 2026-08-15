@@ -3,8 +3,7 @@ import {
   CompanyAddressInterface, 
   CompanyDataInterface ,
   ContactPersonInterface
-
-} from "../interfaces/company";
+} from "@/redux/features/company/companyTypes";
 
 export const CompanyKeyInfo = {
     name: 'The legal name of the company (required, unique identifier)',
@@ -15,7 +14,6 @@ export const CompanyKeyInfo = {
     email: 'Main contact email address',
     link: 'Secondary URL (e.g., internal wiki page, CRM profile)',
     image: 'URL to company logo or profile image',
-    notes: 'Internal notes or comments about the company',
     is_customer: 'Flag indicating if company purchases from us',
     is_supplier: 'Flag indicating if we purchase from this company',
     is_manufacturer: 'Flag indicating if company manufactures components',
@@ -30,7 +28,6 @@ export const CompanyKeyInfo = {
     'email',
     'short_address',
     'link',
-    'notes',
     'is_supplier',
     'is_customer',
     'is_manufacturer',
@@ -55,18 +52,17 @@ export const CompanyKeyInfo = {
     // 'company'
   ];
   
-  export const defaultValues: Partial<CompanyDataInterface> = {
+export const defaultValues: Partial<CompanyDataInterface> = {
     is_customer: false,
     is_supplier: true,
     is_manufacturer: false,
     currency: 'NGN',
     description: '',
     website: '',
-    address: '',
+    short_address: '',
     phone: '',
     email: '',
     link: '',
-    notes: ''
   };
   
 export const CompanyAddressKeyInfo = {
@@ -81,10 +77,12 @@ export const CompanyAddressKeyInfo = {
 
 export const defaultAddressValues: Partial<CompanyAddressInterface> = {
   primary: false,
-  line1: '',
-  line2: '',
+  street: '',
   postal_code: '',
-  country: 'US',
+  country: null,
+  region: null,
+  subregion: null,
+  city: null,
   shipping_notes: '',
   internal_shipping_notes: ''
 };
@@ -97,4 +95,3 @@ export const nonEditableAddressFields: (keyof CompanyAddressInterface)[] = [
 export const contactPersonInterfaceKeys: (keyof ContactPersonInterface )[] =[
 'name','phone','email','role',
 ]
-

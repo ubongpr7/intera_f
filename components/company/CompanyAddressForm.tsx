@@ -15,8 +15,10 @@ import {
 } from "@/redux/features/common/typeOF"
 
 import { useCreateCompanyProfileAddressMutation,useUpdateCompanyProfileAddressMutation } from "@/redux/features/management/companyProfileApiSlice"
-import { Address } from "../interfaces/common"
-import { CompanyProfile } from "@/types/company-profile"
+import { Address } from "@/redux/features/common/commonTypes"
+import { CompanyProfile } from "@/redux/features/management/companyProfileTypes"
+import { extractErrorMessage } from "@/lib/utils"
+import { toast } from "react-toastify"
 
 
 
@@ -30,6 +32,7 @@ import { CompanyProfile } from "@/types/company-profile"
 interface CompanyAddressFormProps {
   profile: CompanyProfile | null
   onUpdate: () => Promise<any> | void
+  submitLabel?: string
 }
 
 interface FormErrors {
@@ -41,7 +44,14 @@ interface FormErrors {
   postal_code?: string
 }
 
-export function CompanyAddressForm({ profile, onUpdate }: CompanyAddressFormProps) {
+export function CompanyAddressForm({ profile, onUpdate, submitLabel = "Save Address" }: CompanyAddressFormProps) {
+  const getSingleOption = (option: SelectOption | readonly SelectOption[] | null): SelectOption | null => {
+    if (Array.isArray(option)) {
+      return null;
+    }
+    return option as SelectOption | null;
+  };
+
   const [formData, setFormData] = useState<Address>({
     country: null,
     region: null,
@@ -143,7 +153,20 @@ export function CompanyAddressForm({ profile, onUpdate }: CompanyAddressFormProp
         postal_code: profile.headquarters_address.postal_code || null,
         full_address: profile.headquarters_address.full_address || null,
       })
+      return
     }
+
+    setFormData({
+      country: null,
+      region: null,
+      subregion: null,
+      city: null,
+      apt_number: null,
+      street_number: null,
+      street: null,
+      postal_code: null,
+      full_address: null,
+    })
   }, [profile])
 
   // Update form data
@@ -172,13 +195,13 @@ export function CompanyAddressForm({ profile, onUpdate }: CompanyAddressFormProp
     try {
       // Determine if this is an update or new address (simplified logic)
       const addressAction = profile?.headquarters_address
-        ? updateAddress({ id: profile?.headquarters_address?.id, data: formData })
+        ? updateAddress({ id: String(profile.headquarters_address.id), data: formData })
         : addAddress(formData )
 
       await addressAction.unwrap()
       await onUpdate()
     } catch (error) {
-      console.error("Failed to update company address:", error)
+      toast.error(extractErrorMessage(error, ["street", "city", "detail"]))
     } finally {
       setIsLoading(false)
     }
@@ -198,7 +221,10 @@ export function CompanyAddressForm({ profile, onUpdate }: CompanyAddressFormProp
             <ReactSelectField
               options={countryOptions}
               value={countryOptions.find((option) => option.value === formData.country?.toString())}
-              onChange={(option) => updateFormData({ country: option ? Number(option.value) : null })}
+              onChange={(option) => {
+                const nextOption = getSingleOption(option);
+                updateFormData({ country: nextOption ? Number(nextOption.value) : null });
+              }}
               placeholder={getPlaceholder("country", isLoadingCountries)}
               isDisabled={isLoadingCountries}
               error={errors.country}
@@ -213,7 +239,10 @@ export function CompanyAddressForm({ profile, onUpdate }: CompanyAddressFormProp
             <ReactSelectField
               options={regionOptions}
               value={regionOptions.find((option) => option.value === formData.region?.toString())}
-              onChange={(option) => updateFormData({ region: option ? Number(option.value) : null })}
+              onChange={(option) => {
+                const nextOption = getSingleOption(option);
+                updateFormData({ region: nextOption ? Number(nextOption.value) : null });
+              }}
               placeholder={getPlaceholder("region", isLoadingRegions, formData.country)}
               isDisabled={isLoadingRegions || !formData.country}
               error={errors.region}
@@ -228,7 +257,10 @@ export function CompanyAddressForm({ profile, onUpdate }: CompanyAddressFormProp
             <ReactSelectField
               options={subregionOptions}
               value={subregionOptions.find((option) => option.value === formData.subregion?.toString())}
-              onChange={(option) => updateFormData({ subregion: option ? Number(option.value) : null })}
+              onChange={(option) => {
+                const nextOption = getSingleOption(option);
+                updateFormData({ subregion: nextOption ? Number(nextOption.value) : null });
+              }}
               placeholder={getPlaceholder("subregion", isLoadingSubregions, formData.region)}
               isDisabled={isLoadingSubregions || !formData.region}
               error={errors.subregion}
@@ -243,7 +275,10 @@ export function CompanyAddressForm({ profile, onUpdate }: CompanyAddressFormProp
             <ReactSelectField
               options={cityOptions}
               value={cityOptions.find((option) => option.value === formData.city?.toString())}
-              onChange={(option) => updateFormData({ city: option ? Number(option.value) : null })}
+              onChange={(option) => {
+                const nextOption = getSingleOption(option);
+                updateFormData({ city: nextOption ? Number(nextOption.value) : null });
+              }}
               placeholder={getPlaceholder("city", isLoadingCities, formData.subregion)}
               isDisabled={isLoadingCities || !formData.subregion}
               error={errors.city}
@@ -303,7 +338,7 @@ export function CompanyAddressForm({ profile, onUpdate }: CompanyAddressFormProp
 
       <div className="flex justify-end">
         <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white" disabled={isLoading || isAddressLoading}>
-          {isLoading || isAddressLoading ? "Saving..." : "Save Address"}
+          {isLoading || isAddressLoading ? "Saving..." : submitLabel}
         </Button>
       </div>
     </form>

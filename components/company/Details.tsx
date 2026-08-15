@@ -1,11 +1,12 @@
 'use client'
 import DetailCard from '../common/Detail';
-import { CompanyDataInterface } from '../interfaces/company';
+import { CompanyDataInterface } from "@/redux/features/company/companyTypes";
 import LoadingAnimation from '../common/LoadingAnimation';
 import { CompanyInterfaceKeys, CompanyKeyInfo } from './selectOptions';
 import { useGetCompanyQuery,useUpdateCompanyMutation } from '../../redux/features/company/companyAPISlice';
 import { getCurrencySymbol } from '@/lib/currency-utils';
 import { CURRENCY_CODES } from '@/lib/currencyCode';
+import { RecordNotFoundCard } from '../common/RecordNotFoundCard';
 
 export default function CompanyDetail({ id }: { id: string }) {
   const { data: Company, isLoading,refetch  } = useGetCompanyQuery(id);
@@ -42,7 +43,7 @@ export default function CompanyDetail({ id }: { id: string }) {
   <LoadingAnimation text="Loading..." ringColor="#3b82f6" />
   </div>
   </div>;
-  if (!Company) return <div>Company not found</div>;
+  if (!Company) return <RecordNotFoundCard title="Company not found" description="This company record may be unavailable in the current workspace context." />;
 
   
   return (
@@ -51,6 +52,16 @@ export default function CompanyDetail({ id }: { id: string }) {
     titleField={'name'}
       data={CompanyDataInterface}
       interfaceKeys={CompanyInterfaceKeys}
+      displayFields={[
+        'description',
+        'company_type',
+        'website',
+        'phone',
+        'email',
+        'short_address',
+        'link',
+        'currency',
+      ]}
       notEditableFields={['id','company_type', 'created_at','updated_at',]}
       updateMutation={handleUpdate}
       excludeFields={['id','is_customer','is_supplier','is_manufacturer',]}
@@ -58,7 +69,7 @@ export default function CompanyDetail({ id }: { id: string }) {
       isLoading={updateIsLoading}
       policyFields={['description']}
       keyInfo={CompanyKeyInfo}
-      optionalFields={['is_customer','is_supplier','is_manufacturer','notes']}
+      optionalFields={['is_customer','is_supplier','is_manufacturer']}
 
     />
   );

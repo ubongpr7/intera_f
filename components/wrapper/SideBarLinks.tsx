@@ -1,12 +1,21 @@
 import { usePathname } from "next/navigation";
-import {LucideIcon} from  "lucide-react";
+import { useMemo, useState } from "react";
+import { ChevronDown, LucideIcon, Lock } from  "lucide-react";
 import Link from "next/link";
+import { canAccessPath, getPermissionRequirementLabel } from "@/lib/permissionsGuard";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
+interface SidebarSubLink {
+    href: string;
+    label: string;
+}
 
 interface SidebarLinkProps {
     href: string;
     icon: LucideIcon;
     label: string;
     isCollapsed: boolean;
+    subLinks?: SidebarSubLink[];
   }
 
  export const SidebarLink = ({
@@ -14,34 +23,119 @@ interface SidebarLinkProps {
     icon: Icon,
     label,
     isCollapsed,
+    subLinks = [],
   }: SidebarLinkProps) => {
     const pathname = usePathname();
+    const hasSubLinks = subLinks.length > 0;
+    const access = canAccessPath(href);
+    const accessLabel = getPermissionRequirementLabel(access);
     const isActive =
-      pathname === href || (pathname === "/" && href === "/dashboard");
-  
-    return (
-      <Link href={href}>
+      pathname === href ||
+      (pathname === "/" && href === "/dashboard") ||
+      subLinks.some((subLink) => pathname === subLink.href || pathname.startsWith(`${subLink.href}/`));
+    const [isOpen, setIsOpen] = useState(isActive);
+    const expanded = isActive || isOpen;
 
+    const showSubLinks = useMemo(
+      () => hasSubLinks && !isCollapsed && expanded,
+      [hasSubLinks, isCollapsed, expanded],
+    );
+
+    const linkBody = (
       <div
-          className={`cursor-pointer flex items-center ${
-            isCollapsed ? "justify-center py-2" : "justify-start px-8 py-2"
-          }
-          hover:text-blue-500 hover:bg-blue-100 gap-3 transition-colors ${
-            isActive ? "bg-blue-200 text-white" : ""
-          }
+        className={`dashboard-nav-item flex cursor-pointer items-center gap-3 rounded-2xl transition-colors ${
+          isCollapsed ? "justify-center px-2 py-3" : "justify-start px-4 py-3"
+        } ${
+          isActive
+            ? "dashboard-nav-item-active border border-transparent text-gray-950"
+            : "border border-transparent text-gray-700"
         }`}
+      >
+        <Icon className={`h-4 w-4 ${isActive ? "text-blue-700" : "text-gray-500"}`} />
+
+        <span
+          className={`${isCollapsed ? "hidden" : "block"} text-sm font-medium ${isActive ? "text-blue-700" : "text-gray-700"}`}
         >
-          <Icon className="w-4 h-4 !text-gray-700" />
-  
-          <span
-            className={`${
-              isCollapsed ? "hidden" : "block"
-            } font-normal text-gray-700`}
+          {label}
+        </span>
+        {!access.allowed && !isCollapsed ? (
+          <div
+            className="ml-auto inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-700"
+            title={`Requires ${accessLabel}`}
           >
-            {label}
-          </span>
-        </div>
-      </Link>
+            <Lock className="h-3 w-3" />
+            Restricted
+          </div>
+        ) : null}
+        {hasSubLinks && !isCollapsed ? (
+          <ChevronDown
+            className={`h-4 w-4 transition-transform ${expanded ? "rotate-180 text-blue-700" : "text-gray-400"} ${!access.allowed && !isCollapsed ? "hidden" : "ml-auto"}`}
+          />
+        ) : null}
+      </div>
+    );
+  
+    const primaryControl = hasSubLinks && !isCollapsed ? (
+          <button type="button" className="w-full text-left" onClick={() => setIsOpen((current) => !current)}>
+            {linkBody}
+          </button>
+        ) : (
+          <Link href={href} aria-label={isCollapsed ? label : undefined}>
+            {linkBody}
+          </Link>
+        );
+
+    return (
+      <div className="space-y-1">
+        {isCollapsed ? (
+          <Tooltip>
+            <TooltipTrigger asChild>{primaryControl}</TooltipTrigger>
+            <TooltipContent
+              side="right"
+              sideOffset={10}
+              className="border border-slate-200/70 bg-white/85 text-slate-700 shadow-sm backdrop-blur-md dark:border-slate-600/60 dark:bg-slate-800/85 dark:text-slate-100"
+            >
+              <div className="flex items-center gap-2">
+                <span>{label}</span>
+                {!access.allowed ? <Lock className="h-3.5 w-3.5 text-amber-300" /> : null}
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        ) : primaryControl}
+
+        {showSubLinks ? (
+          <div className="dashboard-subnav ml-6 space-y-1 border-l border-gray-200 pl-3">
+            {subLinks.map((subLink) => {
+              const subActive = pathname === subLink.href || pathname.startsWith(`${subLink.href}/`);
+              const subAccess = canAccessPath(subLink.href);
+              const subAccessLabel = getPermissionRequirementLabel(subAccess);
+              return (
+                <Link key={subLink.href} href={subLink.href}>
+                  <div
+                    className={`rounded-xl px-3 py-2 text-sm transition-colors ${
+                      subActive
+                        ? "dashboard-subnav-item-active font-medium text-gray-950"
+                        : "text-gray-600"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span>{subLink.label}</span>
+                      {!subAccess.allowed ? (
+                        <div
+                          className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-700"
+                          title={`Requires ${subAccessLabel}`}
+                        >
+                          <Lock className="h-3 w-3" />
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        ) : null}
+      </div>
     );
   };
   

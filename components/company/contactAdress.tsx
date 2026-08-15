@@ -2,13 +2,15 @@
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'nextjs-toploader/app';
 import { Column, DataTable, ActionButton } from "../common/DataTable/DataTable";
-import { CompanyAddressDataInterface } from "../interfaces/company";
+import { CompanyAddressDataInterface } from "@/redux/features/company/companyTypes";
 import { useGetCompanyAddressesQuery, useCreateCompanyAddressMutation, useUpdateCompanyAddressMutation, useDeleteCompanyAddressMutation } from '../../redux/features/company/companyAPISlice';
 import CustomCreateCard from '../common/createCard';
 import { CompanyAddressInterfaceKeys } from './selectOptions';
 import { CompanyAddressKeyInfo } from './selectOptions';
 import { toast } from 'react-toastify';
 import { Edit, Trash2 } from 'lucide-react';
+import { extractErrorMessage } from '@/lib/utils';
+import { confirmAction } from '../common/confirmAction';
 
 const inventoryColumns: Column<CompanyAddressDataInterface>[] = [
   {
@@ -58,15 +60,21 @@ function CompanyAddressView({company_id}:CompanyProps) {
     toast.success("Address updated successfully!");
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this address?")) {
-      try {
-        await deleteAddress(id).unwrap();
-        await refetch();
-        toast.success("Address deleted successfully!");
-      } catch (error) {
-        toast.error("Failed to delete address.");
-      }
+  const handleDelete = async (id: string | number) => {
+    const confirmed = await confirmAction({
+      title: "Delete address?",
+      description: "This removes the address from the company record.",
+      confirmText: "Delete address",
+      destructive: true,
+    });
+    if (!confirmed) return;
+
+    try {
+      await deleteAddress(id).unwrap();
+      await refetch();
+      toast.success("Address deleted successfully!");
+    } catch (error) {
+      toast.error(extractErrorMessage(error, ["detail"]) || "Failed to delete address.");
     }
   };
 
@@ -94,7 +102,7 @@ function CompanyAddressView({company_id}:CompanyProps) {
   if (error) {
     return (
       <div className="p-4 text-red-500">
-        Error loading address data: {(error as any).message || 'Unknown error'}
+        Unable to load address records: {extractErrorMessage(error, ["detail", "error"])}
       </div>
     );
   }
@@ -116,32 +124,30 @@ function CompanyAddressView({company_id}:CompanyProps) {
         searchableFields={['title', 'postal_code', 'full_address']}
         filterableFields={['title', 'postal_code']}
         sortableFields={['title', 'postal_code', 'full_address']}
-        title="Company Adress"
+        title="Company Address"
         onClose={() => setIsCreateOpen(true)}
       />
 
-      {(isCreateOpen || editingAddress) && (
-        <div className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50`}>
-          <CustomCreateCard
-            defaultValues={editingAddress || AdrssDefaultValues}
-            onClose={() => {
-              setIsCreateOpen(false);
-              setEditingAddress(null);
-            }}
-            onSubmit={editingAddress ? handleUpdate : handleCreate}
-            isLoading={createLoading || updateLoading}
-            selectOptions={selectOptions}
-            keyInfo={CompanyAddressKeyInfo}
-            notEditableFields={notEditableCompanyFields}
-            interfaceKeys={CompanyAddressInterfaceKeys}
-            optionalFields={['primary','city','link', 'subregion','shipping_notes']}
-            hiddenFields={{
-            company:company_id
-            }}
-            itemTitle={editingAddress ? 'Update Address' : 'Create Address'}
-          />
-        </div>
-      )}
+      {(isCreateOpen || editingAddress) ? (
+        <CustomCreateCard
+          defaultValues={editingAddress || AdrssDefaultValues}
+          onClose={() => {
+            setIsCreateOpen(false);
+            setEditingAddress(null);
+          }}
+          onSubmit={editingAddress ? handleUpdate : handleCreate}
+          isLoading={createLoading || updateLoading}
+          selectOptions={selectOptions}
+          keyInfo={CompanyAddressKeyInfo}
+          notEditableFields={notEditableCompanyFields}
+          interfaceKeys={CompanyAddressInterfaceKeys}
+          optionalFields={['primary','city','link', 'subregion','shipping_notes']}
+          hiddenFields={{
+          company:company_id
+          }}
+          itemTitle={editingAddress ? 'Update Address' : 'Create Address'}
+        />
+      ) : null}
     </div>
   );
 }

@@ -18,7 +18,9 @@ import {
   useUpdateReorderStrategyMutation,
   useDeleteReorderStrategyMutation,
 } from "@/redux/features/management/companyProfileApiSlice"
-import type { ReorderStrategy } from "@/types/company-profile"
+import type { ReorderStrategy } from "@/redux/features/management/companyProfileTypes"
+import { extractErrorMessage } from "@/lib/utils"
+import { confirmAction } from "@/components/common/confirmAction"
 
 interface ReorderStrategyManagementProps {
   profileId: number
@@ -67,8 +69,8 @@ export function ReorderStrategyManagement({profileId}:ReorderStrategyManagementP
 
   // Reset form when editing strategy changes
   useEffect(() => {
-    if (editingStrategy) {
-      setFormData({
+    const nextFormData = editingStrategy
+      ? {
         name: editingStrategy.name,
         description: editingStrategy.description || "",
         strategy_type: editingStrategy.strategy_type,
@@ -77,9 +79,8 @@ export function ReorderStrategyManagement({profileId}:ReorderStrategyManagementP
         applies_to_all: editingStrategy.applies_to_all,
         is_active: editingStrategy.is_active,
         profile:profileId
-      })
-    } else {
-      setFormData({
+      }
+      : {
         name: "",
         description: "",
         strategy_type: "fixed",
@@ -89,19 +90,26 @@ export function ReorderStrategyManagement({profileId}:ReorderStrategyManagementP
         is_active: true,
         profile:profileId
 
-      })
-    }
-  }, [editingStrategy])
+      }
+    const timer = window.setTimeout(() => setFormData(nextFormData), 0)
+    return () => window.clearTimeout(timer)
+  }, [editingStrategy, profileId])
 
   // Handle errors
   useEffect(() => {
     const error = fetchError || createError || updateError || deleteError
     if (error) {
-      setErrorMessage(JSON.stringify(error))
+      const errorTimer = window.setTimeout(
+        () => setErrorMessage(extractErrorMessage(error, ["name", "strategy_type", "parameters", "detail"])),
+        0,
+      )
       const timer = setTimeout(() => {
         setErrorMessage(null)
       }, 5000)
-      return () => clearTimeout(timer)
+      return () => {
+        window.clearTimeout(errorTimer)
+        clearTimeout(timer)
+      }
     }
   }, [fetchError, createError, updateError, deleteError])
 
@@ -125,7 +133,7 @@ export function ReorderStrategyManagement({profileId}:ReorderStrategyManagementP
         setSuccessMessage(null)
       }, 3000)
     } catch (error) {
-      console.error("Failed to save reorder strategy:", error)
+      setErrorMessage(extractErrorMessage(error, ["name", "strategy_type", "parameters", "detail"]))
     }
   }
 
@@ -136,19 +144,25 @@ export function ReorderStrategyManagement({profileId}:ReorderStrategyManagementP
   }
 
   const handleDelete = async (strategyId: string) => {
-    if (confirm("Are you sure you want to delete this reorder strategy?")) {
-      try {
-        await deleteStrategy(strategyId).unwrap()
-        setSuccessMessage("Strategy deleted successfully")
-        await refetch()
+    const confirmed = await confirmAction({
+      title: "Delete reorder strategy?",
+      description: "This removes the reorder strategy from the company inventory policies.",
+      confirmText: "Delete strategy",
+      destructive: true,
+    })
+    if (!confirmed) return
 
-        // Clear success message after 3 seconds
-        setTimeout(() => {
-          setSuccessMessage(null)
-        }, 3000)
-      } catch (error) {
-        console.error("Failed to delete strategy:", error)
-      }
+    try {
+      await deleteStrategy(strategyId).unwrap()
+      setSuccessMessage("Strategy deleted successfully")
+      await refetch()
+
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage(null)
+      }, 3000)
+    } catch (error) {
+      setErrorMessage(extractErrorMessage(error, ["detail", "error"]))
     }
   }
 
@@ -165,7 +179,7 @@ export function ReorderStrategyManagement({profileId}:ReorderStrategyManagementP
         setSuccessMessage(null)
       }, 3000)
     } catch (error) {
-      console.error("Failed to toggle strategy status:", error)
+      setErrorMessage(extractErrorMessage(error, ["is_active", "detail", "error"]))
     }
   }
 
@@ -228,8 +242,9 @@ export function ReorderStrategyManagement({profileId}:ReorderStrategyManagementP
                     options={STRATEGY_TYPE_OPTIONS}
                     value={STRATEGY_TYPE_OPTIONS.find((option) => option.value === formData.strategy_type) || null}
                     onChange={(option) => {
-                      if (option && !Array.isArray(option)) {
-                        setFormData((prev) => ({ ...prev, strategy_type: option.value }))
+                      const nextOption = Array.isArray(option) ? null : (option as SelectOption | null)
+                      if (nextOption) {
+                        setFormData((prev) => ({ ...prev, strategy_type: String(nextOption.value) }))
                       }
                     }}
                     placeholder="Select strategy type"
@@ -297,7 +312,7 @@ export function ReorderStrategyManagement({profileId}:ReorderStrategyManagementP
       <div className="grid gap-4">
         {strategies.length === 0 ? (
           <Card>
-            <CardContent className="p-6 text-center text-muted-foreground">
+            <CardContent className="p-6 text-center text-gray-500">
               No reorder strategies found. Create your first strategy to get started.
             </CardContent>
           </Card>
@@ -308,7 +323,7 @@ export function ReorderStrategyManagement({profileId}:ReorderStrategyManagementP
                 <div className="flex justify-between items-start">
                   <div className="space-y-2">
                     <h4 className="font-medium">{strategy.name}</h4>
-                    {strategy.description && <p className="text-sm text-muted-foreground">{strategy.description}</p>}
+                    {strategy.description && <p className="text-sm text-gray-500">{strategy.description}</p>}
                     <div className="flex gap-2">
                       <Badge variant={strategy.is_active ? "default" : "secondary"}>
                         {strategy.is_active ? "Active" : "Inactive"}
