@@ -11,6 +11,7 @@ import { Eye, EyeOff, Loader2, Mail, LockKeyhole, Building2 } from 'lucide-react
 import { useState } from 'react';
 import { initializeMfaChallenge } from '@/lib/mfaFlow';
 import { continueWithSocialAuth } from '@/lib/socialAuth';
+import { persistAuthSession } from '@/redux/services/apiSlice';
 
 function GoogleIcon() {
   return <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4" focusable="false"><path fill="#4285F4" d="M21.8 12.23c0-.71-.06-1.23-.2-1.77H12v3.55h5.64c-.11.88-.73 2.2-2.1 3.09l-.02.12 3.05 2.31.21.02c1.93-1.74 3.02-4.29 3.02-7.32Z"/><path fill="#34A853" d="M12 22c2.76 0 5.08-.89 6.77-2.42l-3.23-2.45c-.86.59-2.02 1-3.54 1a6.12 6.12 0 0 1-5.78-4.14l-.12.01-3.17 2.4-.04.11A10.16 10.16 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.22 13.99A6.03 6.03 0 0 1 5.9 12c0-.69.12-1.36.31-1.99v-.13L2.99 7.46l-.1.05A9.78 9.78 0 0 0 1.8 12c0 1.62.39 3.15 1.09 4.49l3.33-2.5Z"/><path fill="#EA4335" d="M12 5.87c1.91 0 3.2.8 3.94 1.47l2.88-2.73C17.08 3.02 14.76 2 12 2a10.16 10.16 0 0 0-9.11 5.51l3.32 2.5A6.12 6.12 0 0 1 12 5.87Z"/></svg>;
@@ -31,6 +32,19 @@ export default function LoginForm() {
     },
   });
 
+  const normalizeNextPath = (value?: string | null) => {
+    const raw = `${value ?? ""}`.trim()
+    if (!raw.startsWith("/")) return "/dashboard"
+    if (
+      raw.startsWith("/accounts/signin") ||
+      raw.startsWith("/accounts/mfa/verify") ||
+      raw.startsWith("/accounts/mfa/setup")
+    ) {
+      return "/dashboard"
+    }
+    return raw
+  }
+
   const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
     try {
       const authResponse = await login({
@@ -39,10 +53,20 @@ export default function LoginForm() {
         company_code: data.company_code?.trim() || undefined,
       }).unwrap();
 
-      const nextPath = nextUrl || "/dashboard";
+      try {
+        persistAuthSession(authResponse)
+      } catch {
+        // Shared API layer also persists the session. Do not block login if local cookie write fails here.
+      }
+
+      const nextPath = normalizeNextPath(nextUrl);
       const mfaRoute = initializeMfaChallenge(nextPath, authResponse?.access);
       toast.success("Login successful. MFA verification required.");
-      router.push(mfaRoute);
+      if (typeof window !== "undefined") {
+        window.location.replace(mfaRoute);
+        return;
+      }
+      router.replace(mfaRoute);
     } catch (err) {
       const error = err as LoginErrorResponse;
       const errorMessage =

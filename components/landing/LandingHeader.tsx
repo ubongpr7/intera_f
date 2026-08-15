@@ -45,7 +45,7 @@ export function LandingHeader() {
           <a href="/#capabilities" className="text-sm text-gray-600 md:text-base hover:text-gray-900">Capabilities</a>
           <a href="/#demo" className="text-sm text-gray-600 md:text-base hover:text-gray-900">Demo</a>
           <a href="/#faq" className="text-sm text-gray-600 md:text-base hover:text-gray-900">FAQ</a>
-          {!waitlistMode ? <Link href="/contact" className="text-sm text-gray-600 md:text-base hover:text-gray-900">Contact</Link> : null}
+          <Link href="/contact" className="text-sm text-gray-600 md:text-base hover:text-gray-900">Contact</Link>
         </nav>
         <div className="hidden items-center gap-3 md:flex">
           <button type="button" onClick={toggleLandingTheme} className="landing-theme-toggle" aria-label={`Switch to ${isDarkMode ? "light" : "dark"} theme`}>
@@ -67,7 +67,7 @@ export function LandingHeader() {
               <a href="/#capabilities" onClick={() => setIsMobileMenuOpen(false)}>Capabilities <ArrowRight className="h-4 w-4" /></a>
               <a href="/#demo" onClick={() => setIsMobileMenuOpen(false)}>Demo <ArrowRight className="h-4 w-4" /></a>
               <a href="/#faq" onClick={() => setIsMobileMenuOpen(false)}>FAQ <ArrowRight className="h-4 w-4" /></a>
-              {!waitlistMode ? <Link href="/contact" onClick={() => setIsMobileMenuOpen(false)}>Contact <ArrowRight className="h-4 w-4" /></Link> : null}
+              <Link href="/contact" onClick={() => setIsMobileMenuOpen(false)}>Contact <ArrowRight className="h-4 w-4" /></Link>
             </div>
             <div className="landing-mobile-actions">
               <button type="button" onClick={toggleLandingTheme} className="landing-theme-toggle" aria-label={`Switch to ${isDarkMode ? "light" : "dark"} theme`}>

@@ -221,6 +221,7 @@ const upsertAssistantMessage = (
     timestamp: string;
     serverMessageId?: string;
     structuredPayload?: AgentStructuredPayload;
+    voiceTurnId?: string;
   },
 ) => {
   const text = payload.content.trim();
@@ -241,6 +242,23 @@ const upsertAssistantMessage = (
     existing.content = content;
     existing.timestamp = payload.timestamp;
     existing.structuredPayload = mergeStructuredPayload(existing.structuredPayload, payload.structuredPayload);
+    existing.voiceTurnId = payload.voiceTurnId || existing.voiceTurnId;
+    return;
+  }
+
+  const byVoiceTurn = payload.voiceTurnId
+    ? [...session.messages]
+        .reverse()
+        .find((message) => message.role === "assistant" && message.voiceTurnId === payload.voiceTurnId)
+    : undefined;
+
+  if (byVoiceTurn) {
+    byVoiceTurn.content = content || byVoiceTurn.content;
+    byVoiceTurn.timestamp = payload.timestamp;
+    byVoiceTurn.taskId = payload.taskId || byVoiceTurn.taskId;
+    byVoiceTurn.serverMessageId = payload.serverMessageId || byVoiceTurn.serverMessageId;
+    byVoiceTurn.voiceTurnId = payload.voiceTurnId || byVoiceTurn.voiceTurnId;
+    byVoiceTurn.structuredPayload = mergeStructuredPayload(byVoiceTurn.structuredPayload, payload.structuredPayload);
     return;
   }
 
@@ -248,6 +266,9 @@ const upsertAssistantMessage = (
     .reverse()
     .find((message) => {
       if (message.role !== "assistant") {
+        return false;
+      }
+      if (payload.voiceTurnId && message.voiceTurnId && message.voiceTurnId !== payload.voiceTurnId) {
         return false;
       }
       if (payload.taskId && message.taskId && message.taskId !== payload.taskId) {
@@ -277,6 +298,7 @@ const upsertAssistantMessage = (
     equivalentExisting.timestamp = payload.timestamp;
     equivalentExisting.taskId = payload.taskId || equivalentExisting.taskId;
     equivalentExisting.serverMessageId = payload.serverMessageId || equivalentExisting.serverMessageId;
+    equivalentExisting.voiceTurnId = payload.voiceTurnId || equivalentExisting.voiceTurnId;
     equivalentExisting.structuredPayload = mergeStructuredPayload(
       equivalentExisting.structuredPayload,
       payload.structuredPayload,
@@ -292,6 +314,7 @@ const upsertAssistantMessage = (
     timestamp: payload.timestamp,
     serverMessageId: payload.serverMessageId,
     structuredPayload: payload.structuredPayload,
+    voiceTurnId: payload.voiceTurnId,
   });
 };
 
@@ -556,11 +579,10 @@ const ka2aSlice = createSlice({
       session.resumeTaskId = undefined;
       session.currentTaskState = "completed";
       session.currentStatusText = undefined;
-      session.messages.push({
-        id: createId(),
-        role: "assistant",
+      upsertAssistantMessage(session, {
         content,
         timestamp: action.payload.timestamp || nowIso(),
+        voiceTurnId: action.payload.turnId?.trim() || session.pendingVoiceTurnId,
       });
       session.pendingVoiceTurnId = undefined;
       session.pendingVoiceUserText = undefined;
@@ -653,6 +675,7 @@ const ka2aSlice = createSlice({
               timestamp: timestamp || nowIso(),
               serverMessageId: statusMessageId,
               structuredPayload: effectiveStructuredPayload,
+              voiceTurnId: session.pendingVoiceTurnId,
             });
           }
         }
@@ -695,7 +718,12 @@ const ka2aSlice = createSlice({
               content: resultText,
               timestamp: receivedAt,
               structuredPayload,
+              voiceTurnId: session.pendingVoiceTurnId,
             });
+            session.isStreaming = false;
+            session.currentStatusText = undefined;
+            session.pendingVoiceTurnId = undefined;
+            session.pendingVoiceUserText = undefined;
           }
         }
       }

@@ -17,6 +17,7 @@ export function proxy(request: NextRequest) {
     path === "/invitations/accept"
   const isActivationPath = path.startsWith("/activate/")
   const isLegalPath = path === "/privacy" || path === "/terms"
+  const isContactPath = path === "/contact"
   const readCookie = (key: AuthCookieKey) => {
     for (const name of getCookieCandidates(key)) {
       const value = request.cookies.get(name)?.value
@@ -46,13 +47,13 @@ export function proxy(request: NextRequest) {
     path.startsWith("/_next/image")
 
   if (path.startsWith("/api/")) {
-    if (waitlistMode && path !== "/api/waitlist") {
+    if (waitlistMode && path !== "/api/waitlist" && path !== "/api/contact") {
       return NextResponse.redirect(new URL("/", request.url))
     }
     return NextResponse.next()
   }
 
-  if (waitlistMode && path !== "/" && !isPublicAsset && !isLegalPath) {
+  if (waitlistMode && path !== "/" && !isPublicAsset && !isLegalPath && !isContactPath) {
     return NextResponse.redirect(new URL("/", request.url))
   }
 
@@ -66,7 +67,10 @@ export function proxy(request: NextRequest) {
   const shouldEnforceMfa = hasAuthCookie && mfaVerifiedCookie === "false"
 
   if (!hasAuthCookie) {
-    if (!isPublicPath || isMfaPath) {
+    if (isMfaPath) {
+      return NextResponse.next()
+    }
+    if (!isPublicPath) {
       const loginUrl = new URL("/accounts/signin", request.url)
       loginUrl.searchParams.set("next", path)
       return NextResponse.redirect(loginUrl)

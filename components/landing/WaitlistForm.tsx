@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 type WaitlistResponse = {
   ok?: boolean;
   alreadyRegistered?: boolean;
+  emailSent?: boolean;
   message?: string;
 };
 
@@ -42,7 +43,9 @@ export function WaitlistForm() {
       setMessage(
         result.alreadyRegistered
           ? "This email is already on the list. We will share launch news soon."
-          : "You are on the list. We will share the launch date soon.",
+          : result.emailSent === false
+            ? "You are on the list. We will share the launch date soon."
+            : "You are on the list. Check your inbox for a confirmation, and we will share the launch date soon.",
       );
     } catch {
       setStatus("error");

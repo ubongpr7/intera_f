@@ -243,15 +243,24 @@ export function useVoiceChat({
   const speakingIdleTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const syncedVoiceTurnIdsRef = useRef<Set<string>>(new Set())
 
+  const latestUserTranscriptForSync = useCallback(() => {
+    return collapseRepeatedTranscriptText(
+      lastFinalTranscriptBySpeakerRef.current.user
+        || pendingTranscriptBySpeakerRef.current.user
+        || finalTranscript
+        || transcript,
+    )
+  }, [finalTranscript, transcript])
+
   const ensureSyncedVoiceTurnStarted = useCallback((text: string, turnId?: string) => {
     const normalizedTurnId = typeof turnId === "string" ? turnId.trim() : ""
-    const normalizedText = collapseRepeatedTranscriptText(text)
+    const normalizedText = collapseRepeatedTranscriptText(text) || latestUserTranscriptForSync()
     if (!normalizedTurnId || !normalizedText || syncedVoiceTurnIdsRef.current.has(normalizedTurnId)) {
       return
     }
     syncedVoiceTurnIdsRef.current.add(normalizedTurnId)
     onSyncedVoiceTurnStartRef.current?.(normalizedText, normalizedTurnId)
-  }, [])
+  }, [latestUserTranscriptForSync])
 
   const stopLivekitRoom = useCallback(
     async (roomName: string | null, keepalive = false) => {
@@ -821,6 +830,7 @@ export function useVoiceChat({
             type?: string
             role?: string
             text?: string
+            userText?: string
             syncChat?: boolean
             displayInTranscript?: boolean
             turnId?: string
@@ -837,10 +847,13 @@ export function useVoiceChat({
               ? event.payload
               : undefined
           const mirroredA2aEvent = event.event ?? eventPayload?.event
+          const syncedUserText = collapseRepeatedTranscriptText(
+            String(event.userText || eventPayload?.userText || ""),
+          ) || latestUserTranscriptForSync()
 
           if (event.type === "a2a_event" && mirroredA2aEvent) {
-            if (event.turnId && lastFinalTranscriptBySpeakerRef.current.user) {
-              ensureSyncedVoiceTurnStarted(lastFinalTranscriptBySpeakerRef.current.user, event.turnId)
+            if (event.turnId) {
+              ensureSyncedVoiceTurnStarted(syncedUserText, event.turnId)
             }
             onSyncedVoiceA2aEventRef.current?.(mirroredA2aEvent, event.turnId)
             return
@@ -862,8 +875,8 @@ export function useVoiceChat({
           const voiceLocalResult = eventPayload?.voiceLocalResult === true || event.voiceLocalResult === true
 
           if (event.type === "status") {
-            if (syncChat && turnId && lastFinalTranscriptBySpeakerRef.current.user) {
-              ensureSyncedVoiceTurnStarted(lastFinalTranscriptBySpeakerRef.current.user, turnId)
+            if (syncChat && turnId) {
+              ensureSyncedVoiceTurnStarted(syncedUserText, turnId)
             }
             setIsSpeaking(false)
             if (displayInTranscript) {
@@ -889,10 +902,10 @@ export function useVoiceChat({
             return
           }
           lastFinalTranscriptBySpeakerRef.current.assistant = collapseRepeatedTranscriptText(event.text)
-          if (syncChat && turnId && lastFinalTranscriptBySpeakerRef.current.user) {
-            ensureSyncedVoiceTurnStarted(lastFinalTranscriptBySpeakerRef.current.user, turnId)
+          if (syncChat && turnId) {
+            ensureSyncedVoiceTurnStarted(syncedUserText, turnId)
           }
-          if (syncChat && voiceLocalResult && (event.type === "result" || event.type === "error")) {
+          if (syncChat && (event.type === "result" || event.type === "error")) {
             onSyncedVoiceAssistantResultRef.current?.(lastFinalTranscriptBySpeakerRef.current.assistant, turnId)
           }
           if (syncChat && (event.type === "result" || event.type === "error")) {

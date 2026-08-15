@@ -105,7 +105,7 @@ export default function AIChatWidget() {
         title: "Assistant",
         agentName: "host",
         historyLength: 10,
-        makeActive: false,
+        makeActive: true,
       }),
     )
     return id
