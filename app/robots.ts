@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { isProductionSite, productionSiteUrl } from "@/lib/seo";
 
 const privatePaths = [
   "/api/",
@@ -45,6 +46,12 @@ const aiCrawlers = [
 ];
 
 export default function robots(): MetadataRoute.Robots {
+  if (!isProductionSite) {
+    return {
+      rules: [{ userAgent: "*", disallow: "/" }],
+    };
+  }
+
   return {
     rules: [
       {
@@ -58,6 +65,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: privatePaths,
       },
     ],
-    sitemap: "https://www.interaims.com/sitemap.xml",
+    sitemap: `${productionSiteUrl}/sitemap.xml`,
   };
 }
