@@ -1,3 +1,5 @@
+import { isProductionSite } from "@/lib/seo";
+
 const content = `# Intera IMS: machine-readable product brief
 
 ## Identity
@@ -56,9 +58,13 @@ InteraProTech is a software agency based in Nigeria. It transforms ideas and dig
 - Instagram: https://www.instagram.com/interaprotech/
 `;
 
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
 export function GET() {
+  if (!isProductionSite) {
+    return new Response("Not Found", { status: 404 });
+  }
+
   return new Response(content, {
     headers: { "content-type": "text/plain; charset=utf-8" },
   });

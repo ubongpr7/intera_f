@@ -5,10 +5,11 @@ import DashboardHeader from "../components/wrapper/dashboardHeader";
 import NextTopLoader from 'nextjs-toploader';
 import ThemeProvider from "@/components/theme-provider";
 import MicrosoftClarity from "@/components/analytics/MicrosoftClarity";
+import { isProductionSite, productionSiteUrl, publicSiteUrl } from "@/lib/seo";
 
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.interaims.com"),
+  metadataBase: new URL(publicSiteUrl),
   title: {
     default: "Intera IMS | Inventory operations made clearer",
     template: "%s | Intera IMS",
@@ -28,8 +29,10 @@ export const metadata: Metadata = {
   authors: [{ name: "InteraProTech" }],
   creator: "InteraProTech",
   publisher: "InteraProTech",
-  alternates: { canonical: "/" },
-  robots: { index: true, follow: true },
+  alternates: { canonical: isProductionSite ? "/" : productionSiteUrl },
+  robots: isProductionSite
+    ? { index: true, follow: true }
+    : { index: false, follow: false, noarchive: true, nosnippet: true, noimageindex: true },
   manifest: "/site.webmanifest",
   openGraph: {
     title: "Intera IMS | Inventory operations made clearer",

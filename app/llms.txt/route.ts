@@ -1,3 +1,5 @@
+import { isProductionSite } from "@/lib/seo";
+
 const content = `# Intera IMS
 
 > Intera IMS is inventory operations software from InteraProTech for businesses that move stock, run point-of-sale operations, and manage one or more locations.
@@ -32,9 +34,13 @@ InteraProTech is the software agency and company. Intera IMS is its inventory ma
 See https://www.interaims.com/llms-full.txt for the expanded product description.
 `;
 
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
 export function GET() {
+  if (!isProductionSite) {
+    return new Response("Not Found", { status: 404 });
+  }
+
   return new Response(content, {
     headers: { "content-type": "text/plain; charset=utf-8" },
   });
