@@ -6,6 +6,7 @@ import { useAppSelector } from "../../redux/store";
 import { usePathname } from 'next/navigation';
 import { ToastContainer } from "react-toastify";
 import { useGetLoggedInUserQuery } from '../../redux/features/users/userApiSlice';
+import { useGetCompanyAgentSetupQuery } from '../../redux/features/management/companyProfileApiSlice';
 import { publicRoutes } from '../../redux/features/users/useAuth';
 
 import { getCookie } from 'cookies-next';
@@ -18,9 +19,15 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const pathname = usePathname();
   const isPublic = publicRoutes.includes(pathname);
+  const accessToken = readCookieValue("accessToken", getCookie);
 
   const { data: user } = useGetLoggedInUserQuery(undefined, {
     skip: isPublic,
+    refetchOnMountOrArgChange: true,
+  });
+
+  const { data: companyAgentSetup } = useGetCompanyAgentSetupQuery(undefined, {
+    skip: isPublic || !accessToken,
     refetchOnMountOrArgChange: true,
   });
   
@@ -30,7 +37,16 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
     return path.startsWith('/accounts') || path === '/';
   };
 
-  const shouldShowLegacyAgentWidget = pathname !== "/agent" && Boolean(readCookieValue("accessToken", getCookie));
+  const hasCompleteWorkspaceAiSetup = Boolean(
+    companyAgentSetup?.configured &&
+    companyAgentSetup?.agent?.has_api_key &&
+    companyAgentSetup?.agent?.has_tavily_api_key
+  );
+
+  const shouldShowLegacyAgentWidget =
+    pathname !== "/agent" &&
+    Boolean(accessToken) &&
+    hasCompleteWorkspaceAiSetup;
 
   useEffect(() => {
     if (!mobileSidebarOpen) return;

@@ -241,7 +241,7 @@ export function useVoiceChat({
   const sessionRoomNameRef = useRef<string | null>(null)
   const remoteAudioElementsRef = useRef<Map<string, HTMLMediaElement>>(new Map())
   const speakingIdleTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const syncedVoiceTurnIdsRef = useRef<Set<string>>(new Set())
+  const syncedVoiceTurnTextsRef = useRef<Map<string, string>>(new Map())
 
   const latestUserTranscriptForSync = useCallback(() => {
     return collapseRepeatedTranscriptText(
@@ -255,10 +255,14 @@ export function useVoiceChat({
   const ensureSyncedVoiceTurnStarted = useCallback((text: string, turnId?: string) => {
     const normalizedTurnId = typeof turnId === "string" ? turnId.trim() : ""
     const normalizedText = collapseRepeatedTranscriptText(text) || latestUserTranscriptForSync()
-    if (!normalizedTurnId || !normalizedText || syncedVoiceTurnIdsRef.current.has(normalizedTurnId)) {
+    if (!normalizedTurnId || !normalizedText) {
       return
     }
-    syncedVoiceTurnIdsRef.current.add(normalizedTurnId)
+    const previousText = syncedVoiceTurnTextsRef.current.get(normalizedTurnId)
+    if (previousText === normalizedText) {
+      return
+    }
+    syncedVoiceTurnTextsRef.current.set(normalizedTurnId, normalizedText)
     onSyncedVoiceTurnStartRef.current?.(normalizedText, normalizedTurnId)
   }, [latestUserTranscriptForSync])
 
@@ -320,7 +324,7 @@ export function useVoiceChat({
     lastTranscriptRef.current = ""
     lastAutoSentTranscriptRef.current = { text: "", timestamp: 0 }
     lastFinalTranscriptBySpeakerRef.current = { user: "", assistant: "" }
-    syncedVoiceTurnIdsRef.current.clear()
+    syncedVoiceTurnTextsRef.current.clear()
     pendingTranscriptBySpeakerRef.current = { user: "", assistant: "" }
     setTranscript("")
     setFinalTranscript("")
@@ -376,7 +380,7 @@ export function useVoiceChat({
       lastTranscriptRef.current = ""
       lastAutoSentTranscriptRef.current = { text: "", timestamp: 0 }
       lastFinalTranscriptBySpeakerRef.current = { user: "", assistant: "" }
-      syncedVoiceTurnIdsRef.current.clear()
+      syncedVoiceTurnTextsRef.current.clear()
       pendingTranscriptBySpeakerRef.current = { user: "", assistant: "" }
       if (transcriptFlushTimeoutRef.current.user) {
         clearTimeout(transcriptFlushTimeoutRef.current.user)
@@ -1021,6 +1025,7 @@ export function useVoiceChat({
     cleanupLivekitSession,
     disconnectLivekitClient,
     ensureSyncedVoiceTurnStarted,
+    latestUserTranscriptForSync,
     livekitAgentName,
     livekitEnabled,
     livekitMetadata,
@@ -1058,7 +1063,7 @@ export function useVoiceChat({
     lastTranscriptRef.current = ""
     lastAutoSentTranscriptRef.current = { text: "", timestamp: 0 }
     lastFinalTranscriptBySpeakerRef.current = { user: "", assistant: "" }
-    syncedVoiceTurnIdsRef.current.clear()
+    syncedVoiceTurnTextsRef.current.clear()
     pendingTranscriptBySpeakerRef.current = { user: "", assistant: "" }
     await startPushToTalk()
   }, [startPushToTalk])

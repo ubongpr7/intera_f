@@ -35,7 +35,7 @@ export default function AIChatWidget() {
   const [isFullScreen, setIsFullScreen] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const lastActivityAtRef = useRef<number | null>(null)
-  const syncedVoiceTurnIdsRef = useRef<Set<string>>(new Set())
+  const syncedVoiceTurnTextsRef = useRef<Map<string, string>>(new Map())
   const sessionIdRef = useRef<string | null>(null)
 
   const widgetRef = useRef<HTMLDivElement>(null)
@@ -213,22 +213,24 @@ export default function AIChatWidget() {
   const handleUserActivity = () => markActivity()
 
   const handleSyncedVoiceTurnStart = (text: string, turnId: string) => {
-    if (!text.trim() || syncedVoiceTurnIdsRef.current.has(turnId)) {
+    const normalizedText = text.trim()
+    if (!normalizedText) {
+      return
+    }
+    const previousText = syncedVoiceTurnTextsRef.current.get(turnId)
+    if (previousText === normalizedText) {
       return
     }
     const resolvedSessionId = sessionIdRef.current ?? ensureSessionId()
-    syncedVoiceTurnIdsRef.current.add(turnId)
+    syncedVoiceTurnTextsRef.current.set(turnId, normalizedText)
     markActivity()
-    dispatch(streamStarted({ sessionId: resolvedSessionId, userText: text, silent: true, showUserMessage: true, turnId }))
+    dispatch(streamStarted({ sessionId: resolvedSessionId, userText: normalizedText, silent: true, showUserMessage: true, turnId }))
   }
 
   const handleSyncedVoiceA2aEvent = (event: Ka2aEvent, turnId?: string) => {
     const resolvedSessionId = sessionIdRef.current ?? ensureSessionId()
     markActivity()
     dispatch(eventReceived({ sessionId: resolvedSessionId, event }))
-    if (turnId) {
-      syncedVoiceTurnIdsRef.current.add(turnId)
-    }
   }
 
   const handleSyncedVoiceAssistantResult = (text: string, turnId?: string) => {
@@ -248,14 +250,14 @@ export default function AIChatWidget() {
     markActivity()
     dispatch(streamEnded({ sessionId: resolvedSessionId, turnId }))
     if (turnId) {
-      syncedVoiceTurnIdsRef.current.delete(turnId)
+      syncedVoiceTurnTextsRef.current.delete(turnId)
     }
   }
 
   const handleClearConversation = () => {
     if (!sessionId) return
     dispatch(clearSession({ sessionId }))
-    syncedVoiceTurnIdsRef.current.clear()
+    syncedVoiceTurnTextsRef.current.clear()
     markActivity()
     toast.info("Started a new AI chat.")
   }

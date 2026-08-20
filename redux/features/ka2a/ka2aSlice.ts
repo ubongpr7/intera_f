@@ -457,19 +457,31 @@ const ka2aSlice = createSlice({
         ? "Assistant is processing your voice request."
         : undefined;
       const normalizedUserText = action.payload.userText.trim();
-      session.pendingVoiceTurnId = action.payload.turnId?.trim() || undefined;
+      const normalizedVoiceTurnId = action.payload.turnId?.trim() || undefined;
+      session.pendingVoiceTurnId = normalizedVoiceTurnId;
       session.pendingVoiceUserText = normalizedUserText || undefined;
       if (!resumingExistingTask) {
         session.activeSpecialist = undefined;
       }
       if (normalizedUserText && (!action.payload.silent || action.payload.showUserMessage)) {
-        session.messages.push({
-          id: createId(),
-          role: "user",
-          content: normalizedUserText,
-          timestamp: nowIso(),
-          voiceTurnId: action.payload.turnId?.trim() || undefined,
-        });
+        const existingVoiceUserMessage = normalizedVoiceTurnId
+          ? [...session.messages]
+              .reverse()
+              .find((message) => message.role === "user" && message.voiceTurnId === normalizedVoiceTurnId)
+          : undefined;
+
+        if (existingVoiceUserMessage) {
+          existingVoiceUserMessage.content = normalizedUserText;
+          existingVoiceUserMessage.timestamp = nowIso();
+        } else {
+          session.messages.push({
+            id: createId(),
+            role: "user",
+            content: normalizedUserText,
+            timestamp: nowIso(),
+            voiceTurnId: normalizedVoiceTurnId,
+          });
+        }
       }
     },
     historyAnswerReturned: (
