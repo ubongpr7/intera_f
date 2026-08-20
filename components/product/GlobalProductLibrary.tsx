@@ -159,6 +159,20 @@ function buildVisiblePageNumbers(currentPage: number, totalPages: number) {
   return Array.from({ length: end - normalizedStart + 1 }, (_, index) => normalizedStart + index)
 }
 
+function getImportedVariantCount(product: GlobalCatalogProduct) {
+  return Number(product.imported_variant_count ?? 0)
+}
+
+function isFullyImportedGlobalProduct(product: GlobalCatalogProduct) {
+  if (!product.imported) {
+    return false
+  }
+  if (!product.variant_count) {
+    return true
+  }
+  return getImportedVariantCount(product) >= product.variant_count
+}
+
 type BrowserBarcodeDetector = {
   detect: (source: ImageBitmap) => Promise<Array<{ rawValue?: string }>>
 }
@@ -237,7 +251,9 @@ function ProductLibraryCard({
             {canImport ? (
               product.imported ? (
                 <Badge className="rounded-full border-green-200 bg-green-50 px-3 py-1 text-green-700 hover:bg-green-50">
-                  Imported
+                  {isFullyImportedGlobalProduct(product)
+                    ? "Imported"
+                    : `Partially imported (${getImportedVariantCount(product)}/${product.variant_count})`}
                 </Badge>
               ) : (
                 <Badge variant="outline" className="rounded-full px-3 py-1 text-gray-600">
@@ -477,7 +493,14 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
   const [createImport, { isLoading: importing }] = useCreateGlobalCatalogImportMutation()
   const [resolveBarcodes, { isLoading: resolvingBarcodes }] = useResolveGlobalCatalogBarcodesMutation()
 
-  const visibleProducts = useMemo(() => catalogPage?.results ?? [], [catalogPage])
+  const visibleProducts = useMemo(() => {
+    const results = catalogPage?.results ?? []
+    return results.filter((product) => !isFullyImportedGlobalProduct(product))
+  }, [catalogPage])
+  const hiddenFullyImportedProducts = useMemo(() => {
+    const results = catalogPage?.results ?? []
+    return results.filter((product) => isFullyImportedGlobalProduct(product))
+  }, [catalogPage])
   const brandOptions = useMemo<SelectOption[]>(
     () => (catalogStats?.filters?.brands ?? catalogPage?.filters?.brands ?? []).map((option) => ({ value: option, label: option })),
     [catalogPage?.filters?.brands, catalogStats?.filters?.brands],
@@ -929,6 +952,11 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
                   {importedProducts.toLocaleString()} imported
                 </span>
               ) : null}
+              {hiddenFullyImportedProducts.length > 0 ? (
+                <span className="rounded-full bg-white px-3 py-1 text-xs text-gray-600">
+                  {hiddenFullyImportedProducts.length} fully imported hidden
+                </span>
+              ) : null}
               {canImport ? <span className="rounded-full bg-white px-3 py-1 text-xs text-gray-600">{selectedCount} selected across pages</span> : null}
               {isFetching && !isLoading ? <span className="rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-700">Refreshing...</span> : null}
             </div>
@@ -963,6 +991,13 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
           {isLoading ? (
             <div className="rounded-3xl border border-gray-200 bg-gray-50 p-6 text-sm text-gray-600">
               Loading curated product families...
+            </div>
+          ) : visibleProducts.length === 0 && hiddenFullyImportedProducts.length > 0 ? (
+            <div className="rounded-3xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center">
+              <p className="text-base font-semibold text-gray-900">Everything on this page is already imported.</p>
+              <p className="mt-2 text-sm text-gray-600">
+                Partially imported families stay visible here. Fully imported ones are hidden from the import browser.
+              </p>
             </div>
           ) : visibleProducts.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center">
