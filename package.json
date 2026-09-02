@@ -36,6 +36,7 @@
     "@langchain/openai": "^0.6.2",
     "@livekit/components-react": "^2.9.14",
     "@livekit/components-styles": "^1.1.6",
+    "@livekit/protocol": "1.39.3",
     "@mastra/client-js": "^0.10.20",
     "@mastra/core": "^0.0.0-ai-v5-20250801192614",
     "@mastra/libsql": "^0.13.1",

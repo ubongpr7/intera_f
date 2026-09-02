@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { AccessToken, RoomAgentDispatch, RoomConfiguration } from "livekit-server-sdk"
+import { RoomAgentDispatch, RoomConfiguration } from "@livekit/protocol"
+import { AccessToken } from "livekit-server-sdk"
 
 export const runtime = "nodejs"
 
