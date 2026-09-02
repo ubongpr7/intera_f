@@ -5,9 +5,11 @@ import type { StructuralLocationScopeParams } from "@/lib/structuralLocationScop
 import type {
   AdjustStockPayload,
   AdjustStockResponse,
+  AvailableCatalogVariant,
   InventoryAnalytics,
   InventoryData,
   InventoryListParams,
+  PaginatedInventoryResponse,
   InventorySetupSummary,
   InventoryStockSummary,
   InventorySummary,
@@ -29,11 +31,25 @@ export const inventoryApiSlice = apiSlice.injectEndpoints({
       transformResponse: (response: InventorySummary[] | { results?: InventorySummary[] }) => unwrapListResponse<InventorySummary>(response),
     }),
 
+    listInventoryPage: builder.query<PaginatedInventoryResponse, InventoryListParams>({
+      query: (params) => ({
+        url: buildQuery(`/${inventoryApi}/items/`, params),
+        service,
+      }),
+    }),
+
     createInventory: builder.mutation<InventoryData, Partial<InventoryData>>({
       query: (inventoryData) => ({
         url: `/${inventoryApi}/items/`,
         method: "POST",
         body: inventoryData,
+        service,
+      }),
+    }),
+
+    getAvailableCatalogVariants: builder.query<AvailableCatalogVariant[], void>({
+      query: () => ({
+        url: `/${inventoryApi}/items/available-catalog-variants/`,
         service,
       }),
     }),
@@ -119,7 +135,9 @@ export const inventoryApiSlice = apiSlice.injectEndpoints({
 
 export const {
   useListInventoriesQuery,
+  useListInventoryPageQuery,
   useCreateInventoryMutation,
+  useGetAvailableCatalogVariantsQuery,
   useGetInventoryQuery,
   useUpdateInventoryMutation,
   useDeleteInventoryMutation,

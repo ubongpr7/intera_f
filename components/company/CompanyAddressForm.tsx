@@ -8,13 +8,17 @@ import { Label } from "@/components/ui/label"
 import { ReactSelectField, type SelectOption } from "@/components/ui/react-select-field"
 import { MapPin } from "lucide-react"
 import {
-  useGetCountriesQuery,
-  useGetRegionsQuery,
-  useGetSubregionsQuery,
-  useGetCitiesQuery,
-} from "@/redux/features/common/typeOF"
+  useListSharedCountriesQuery,
+  useListSharedRegionsQuery,
+  useListSharedSubregionsQuery,
+  useListSharedCitiesQuery,
+} from "@/redux/features/locations/locationsApiSlice"
 
-import { useCreateCompanyProfileAddressMutation,useUpdateCompanyProfileAddressMutation } from "@/redux/features/management/companyProfileApiSlice"
+import {
+  useCreateCompanyProfileAddressMutation,
+  useUpdateCompanyProfileAddressMutation,
+} from "@/redux/features/management/companyProfileApiSlice"
+import { useCreateSharedAddressMutation, useUpdateSharedAddressMutation } from "@/redux/features/locations/locationsApiSlice"
 import { Address } from "@/redux/features/common/commonTypes"
 import { CompanyProfile } from "@/redux/features/management/companyProfileTypes"
 import { extractErrorMessage } from "@/lib/utils"
@@ -66,23 +70,37 @@ export function CompanyAddressForm({ profile, onUpdate, submitLabel = "Save Addr
   const [errors, setErrors] = useState<FormErrors>({})
   const [isLoading, setIsLoading] = useState(false)
 
-  const [addAddress, { isLoading: isLoadingAddAddress }] = useCreateCompanyProfileAddressMutation()
-  const [updateAddress, { isLoading: isLoadingUpdateAddress }] = useUpdateCompanyProfileAddressMutation()
+  const [createCompanyProfileAddress] = useCreateCompanyProfileAddressMutation()
+  const [updateCompanyProfileAddress] = useUpdateCompanyProfileAddressMutation()
+  const [createSharedAddress, { isLoading: isLoadingAddAddress }] = useCreateSharedAddressMutation()
+  const [updateSharedAddress, { isLoading: isLoadingUpdateAddress }] = useUpdateSharedAddressMutation()
 
   // Memoize loading state
   const isAddressLoading = useMemo(() => isLoadingAddAddress || isLoadingUpdateAddress, [isLoadingAddAddress, isLoadingUpdateAddress])
 
   // Fetch cascading data
-  const { data: countries, isLoading: isLoadingCountries } = useGetCountriesQuery()
-  const { data: regions, isLoading: isLoadingRegions } = useGetRegionsQuery(formData.country || 0, {
+  const { data: countries, isLoading: isLoadingCountries } = useListSharedCountriesQuery()
+  const { data: regions, isLoading: isLoadingRegions } = useListSharedRegionsQuery(
+    { country_id: formData.country || undefined },
+    {
     skip: !formData.country,
-  })
-  const { data: subregions, isLoading: isLoadingSubregions } = useGetSubregionsQuery(formData.region || 0, {
+    },
+  )
+  const { data: subregions, isLoading: isLoadingSubregions } = useListSharedSubregionsQuery(
+    { region_id: formData.region || undefined },
+    {
     skip: !formData.region,
-  })
-  const { data: cities, isLoading: isLoadingCities } = useGetCitiesQuery(formData.subregion || 0, {
+    },
+  )
+  const { data: cities, isLoading: isLoadingCities } = useListSharedCitiesQuery(
+    {
+      region_id: formData.region || undefined,
+      subregion_id: formData.subregion || undefined,
+    },
+    {
     skip: !formData.subregion,
-  })
+    },
+  )
 
   // Memoize options
   const countryOptions: SelectOption[] = useMemo(
@@ -193,12 +211,35 @@ export function CompanyAddressForm({ profile, onUpdate, submitLabel = "Save Addr
 
     setIsLoading(true)
     try {
-      // Determine if this is an update or new address (simplified logic)
-      const addressAction = profile?.headquarters_address
-        ? updateAddress({ id: String(profile.headquarters_address.id), data: formData })
-        : addAddress(formData )
+      if (!profile?.id) {
+        throw new Error("Save the company profile before adding a headquarters address.")
+      }
 
-      await addressAction.unwrap()
+      const addressLine = [formData.street_number, formData.street].filter(Boolean).join(" ").trim()
+      const sharedAddressData = {
+        label: "headquarters",
+        address_line_1: addressLine,
+        postal_code: formData.postal_code || "",
+        country: formData.country,
+        region: formData.region,
+        subregion: formData.subregion,
+        city: formData.city,
+        is_primary: true,
+        external_reference: `users:company-profile:${profile.id}:headquarters`,
+      }
+      const sharedAddress = profile.headquarters_address_id
+        ? await updateSharedAddress({ id: profile.headquarters_address_id, data: sharedAddressData }).unwrap()
+        : await createSharedAddress(sharedAddressData).unwrap()
+
+      const legacyAddressData = { ...formData, shared_address_id: sharedAddress.id }
+      if (profile.headquarters_address?.id) {
+        await updateCompanyProfileAddress({
+          id: String(profile.headquarters_address.id),
+          data: legacyAddressData,
+        }).unwrap()
+      } else {
+        await createCompanyProfileAddress(legacyAddressData).unwrap()
+      }
       await onUpdate()
     } catch (error) {
       toast.error(extractErrorMessage(error, ["street", "city", "detail"]))

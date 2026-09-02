@@ -153,14 +153,13 @@ const SideBar = ({ user, mobileOpen, onMobileClose }:SideBarDataProps) => {
             <div className={`dashboard-nav-group-label ${navigationCollapsed ? "hidden" : ""}`}>Operations</div>
             <SidebarLink href="/inventory" icon={Package} label="Inventory" isCollapsed={navigationCollapsed} />
             <SidebarLink
-              href="/pos"
+              href="/pos/settings"
               icon={CreditCard}
-              label="POS"
+              label="POS Settings"
               isCollapsed={navigationCollapsed}
               subLinks={[
-                { href: "/pos", label: "Cashier POS" },
-                { href: "/pos/remittances", label: "Remittances" },
                 { href: "/pos/settings", label: "POS Settings" },
+                { href: "/pos/remittances", label: "Remittances" },
               ]}
             />
             <SidebarLink

@@ -1,7 +1,5 @@
-"use client"
-
-import POSExecutionWorkspace from "@/components/pos/POSExecutionWorkspace"
+import { redirect } from "next/navigation"
 
 export default function POSPage() {
-  return <POSExecutionWorkspace />
+  redirect("/dashboard")
 }

@@ -32,6 +32,8 @@ interface UseVoiceChatReturn {
   isSpeaking: boolean
   isConnecting: boolean
   isConnected: boolean
+  isMicMuted: boolean
+  isSpeakerMuted: boolean
   transcript: string
   finalTranscript: string
   conversationEntries: Array<{ speaker: "user" | "assistant"; text: string; timestamp: number }>
@@ -57,6 +59,9 @@ interface UseVoiceChatReturn {
   estimatedCoins: number
   sessionRoomName: string | null
   appendLocalConversationEntry: (speaker: "user" | "assistant", text: string) => void
+  speakChatUpdate: (text: string) => Promise<void>
+  toggleMicMuted: () => Promise<void>
+  toggleSpeakerMuted: () => void
 }
 
 const normalizeTranscriptText = (value: string) => value.trim().replace(/\s+/g, " ")
@@ -138,6 +143,7 @@ const uniqueTranscriptTexts = (texts: string[]) => {
 }
 
 const LIVEKIT_SESSION_ROOM_STORAGE_KEY = "intera.a2a.voice.room"
+const LIVEKIT_CONNECTING_TONE_URL = "/call-tones/hangouts_call.mp3"
 
 const readStoredLivekitRoom = () => {
   if (typeof window === "undefined") {
@@ -213,6 +219,8 @@ export function useVoiceChat({
   const [finalTranscript, setFinalTranscript] = useState("")
   const [conversationEntries, setConversationEntries] = useState<Array<{ speaker: "user" | "assistant"; text: string; timestamp: number }>>([])
   const [estimatedCoins, setEstimatedCoins] = useState(0)
+  const [isMicMuted, setIsMicMuted] = useState(false)
+  const [isSpeakerMuted, setIsSpeakerMuted] = useState(false)
 
   const autoSendTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const listeningResetTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -240,8 +248,12 @@ export function useVoiceChat({
   const livekitSessionGenerationRef = useRef(0)
   const sessionRoomNameRef = useRef<string | null>(null)
   const remoteAudioElementsRef = useRef<Map<string, HTMLMediaElement>>(new Map())
+  const connectingToneRef = useRef<HTMLAudioElement | null>(null)
   const speakingIdleTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const syncedVoiceTurnTextsRef = useRef<Map<string, string>>(new Map())
+  const lastPublishedChatSpeechRef = useRef("")
+  const isMicMutedRef = useRef(false)
+  const isSpeakerMutedRef = useRef(false)
 
   const latestUserTranscriptForSync = useCallback(() => {
     return collapseRepeatedTranscriptText(
@@ -325,12 +337,122 @@ export function useVoiceChat({
     lastAutoSentTranscriptRef.current = { text: "", timestamp: 0 }
     lastFinalTranscriptBySpeakerRef.current = { user: "", assistant: "" }
     syncedVoiceTurnTextsRef.current.clear()
+    lastPublishedChatSpeechRef.current = ""
     pendingTranscriptBySpeakerRef.current = { user: "", assistant: "" }
     setTranscript("")
     setFinalTranscript("")
     setConversationEntries([])
     setIsListening(false)
   }, [])
+
+  const applyMicMutedToTrack = useCallback(
+    async (track: Awaited<ReturnType<typeof createLocalAudioTrack>> | null, muted: boolean) => {
+      if (!track) {
+        return
+      }
+
+      const mutableTrack = track as Awaited<ReturnType<typeof createLocalAudioTrack>> & {
+        setMuted?: (muted: boolean) => Promise<void> | void
+        mute?: () => Promise<void> | void
+        unmute?: () => Promise<void> | void
+        mediaStreamTrack?: { enabled: boolean }
+      }
+
+      try {
+        if (typeof mutableTrack.setMuted === "function") {
+          await mutableTrack.setMuted(muted)
+          return
+        }
+        if (muted && typeof mutableTrack.mute === "function") {
+          await mutableTrack.mute()
+          return
+        }
+        if (!muted && typeof mutableTrack.unmute === "function") {
+          await mutableTrack.unmute()
+          return
+        }
+      } catch {
+        // Fall back to toggling the underlying MediaStreamTrack if the SDK call fails.
+      }
+
+      if (mutableTrack.mediaStreamTrack) {
+        mutableTrack.mediaStreamTrack.enabled = !muted
+      }
+    },
+    [],
+  )
+
+  const applySpeakerMutedToElements = useCallback((muted: boolean) => {
+    for (const element of remoteAudioElementsRef.current.values()) {
+      element.muted = muted
+    }
+  }, [])
+
+  const applySpeakerVolumeToElements = useCallback((nextVolume: number) => {
+    const normalizedVolume = Number.isFinite(nextVolume) ? Math.max(0, Math.min(1, nextVolume)) : 1
+    for (const element of remoteAudioElementsRef.current.values()) {
+      element.volume = normalizedVolume
+    }
+  }, [])
+
+  const resumeRemoteAudioPlayback = useCallback(
+    async (room: Room | null) => {
+      if (!room) {
+        return
+      }
+
+      try {
+        if (!room.canPlaybackAudio) {
+          await room.startAudio()
+        }
+      } catch {
+        // If the browser still blocks playback, keep the elements attached and retry later.
+      }
+
+      for (const element of remoteAudioElementsRef.current.values()) {
+        element.muted = isSpeakerMutedRef.current
+        element.volume = Number.isFinite(volume) ? Math.max(0, Math.min(1, volume)) : 1
+        if (element.muted) {
+          continue
+        }
+        try {
+          await element.play()
+        } catch {
+          // A later room playback status change or user interaction can retry this.
+        }
+      }
+    },
+    [volume],
+  )
+
+  const setMicMutedState = useCallback(
+    async (muted: boolean) => {
+      isMicMutedRef.current = muted
+      setIsMicMuted(muted)
+      await applyMicMutedToTrack(livekitTrackRef.current, muted)
+    },
+    [applyMicMutedToTrack],
+  )
+
+  const setSpeakerMutedState = useCallback(
+    (muted: boolean) => {
+      isSpeakerMutedRef.current = muted
+      setIsSpeakerMuted(muted)
+      applySpeakerMutedToElements(muted)
+      if (!muted) {
+        void resumeRemoteAudioPlayback(livekitRoomRef.current)
+      }
+    },
+    [applySpeakerMutedToElements, resumeRemoteAudioPlayback],
+  )
+
+  const toggleMicMuted = useCallback(async () => {
+    await setMicMutedState(!isMicMutedRef.current)
+  }, [setMicMutedState])
+
+  const toggleSpeakerMuted = useCallback(() => {
+    setSpeakerMutedState(!isSpeakerMutedRef.current)
+  }, [setSpeakerMutedState])
 
   const disconnectLivekitClient = useCallback(
     async (room: Room | null, track: Awaited<ReturnType<typeof createLocalAudioTrack>> | null) => {
@@ -353,7 +475,35 @@ export function useVoiceChat({
     [],
   )
 
+  const startConnectingTone = useCallback(() => {
+    if (typeof Audio === "undefined") {
+      return
+    }
+
+    const tone = connectingToneRef.current ?? new Audio(LIVEKIT_CONNECTING_TONE_URL)
+    tone.loop = true
+    tone.volume = 0.35
+    connectingToneRef.current = tone
+    void tone.play().catch(() => {
+      // Browsers may block audio despite the call button interaction; the call still proceeds.
+    })
+  }, [])
+
+  const stopConnectingTone = useCallback(() => {
+    const tone = connectingToneRef.current
+    if (!tone) {
+      return
+    }
+    try {
+      tone.pause()
+      tone.currentTime = 0
+    } catch {
+      // Ignore media cleanup failures.
+    }
+  }, [])
+
   const cleanupLivekitSession = useCallback(async () => {
+    stopConnectingTone()
     if (livekitStopPromiseRef.current) {
       return livekitStopPromiseRef.current
     }
@@ -381,6 +531,7 @@ export function useVoiceChat({
       lastAutoSentTranscriptRef.current = { text: "", timestamp: 0 }
       lastFinalTranscriptBySpeakerRef.current = { user: "", assistant: "" }
       syncedVoiceTurnTextsRef.current.clear()
+      lastPublishedChatSpeechRef.current = ""
       pendingTranscriptBySpeakerRef.current = { user: "", assistant: "" }
       if (transcriptFlushTimeoutRef.current.user) {
         clearTimeout(transcriptFlushTimeoutRef.current.user)
@@ -430,7 +581,7 @@ export function useVoiceChat({
         livekitStopPromiseRef.current = null
       }
     }
-  }, [disconnectLivekitClient, stopLivekitRoom])
+  }, [disconnectLivekitClient, stopConnectingTone, stopLivekitRoom])
 
   useEffect(() => {
     onTranscriptRef.current = onTranscript
@@ -459,6 +610,10 @@ export function useVoiceChat({
   useEffect(() => {
     onSyncedVoiceTurnEndRef.current = onSyncedVoiceTurnEnd
   }, [onSyncedVoiceTurnEnd])
+
+  useEffect(() => {
+    applySpeakerVolumeToElements(volume)
+  }, [applySpeakerVolumeToElements, volume])
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -507,6 +662,35 @@ export function useVoiceChat({
     },
     [],
   )
+
+  const speakChatUpdate = useCallback(async (text: string) => {
+    const normalizedText = collapseRepeatedTranscriptText(text).slice(0, 4000)
+    const room = livekitRoomRef.current
+    if (!normalizedText || !room) {
+      return
+    }
+
+    const textKey = transcriptComparisonKey(normalizedText)
+    if (!textKey || textKey === lastPublishedChatSpeechRef.current) {
+      return
+    }
+
+    try {
+      await room.localParticipant.publishData(
+        new TextEncoder().encode(
+          JSON.stringify({
+            source: "intera_a2a_chat",
+            type: "speak_chat_update",
+            text: normalizedText,
+          }),
+        ),
+        { reliable: true, topic: "ka2a.voice.control" },
+      )
+      lastPublishedChatSpeechRef.current = textKey
+    } catch {
+      // The text conversation remains authoritative if the call disconnects mid-update.
+    }
+  }, [])
 
   const flushBufferedTranscript = useCallback(
     (speaker: "user" | "assistant") => {
@@ -707,18 +891,23 @@ export function useVoiceChat({
           mediaElement.autoplay = true
           mediaElement.setAttribute("playsinline", "true")
           mediaElement.controls = false
-          mediaElement.muted = false
+          mediaElement.muted = isSpeakerMutedRef.current
+          mediaElement.volume = Number.isFinite(volume) ? Math.max(0, Math.min(1, volume)) : 1
           mediaElement.style.display = "none"
           if (!mediaElement.isConnected) {
             document.body.appendChild(mediaElement)
           }
-          void mediaElement.play().catch(() => {
-            // browsers may require a later user gesture; keep the element attached regardless
-          })
           if (!track.sid) {
+            void resumeRemoteAudioPlayback(room)
             return
           }
           remoteAudioElementsRef.current.set(track.sid, mediaElement)
+          void resumeRemoteAudioPlayback(room)
+        })
+        room.on(RoomEvent.AudioPlaybackStatusChanged, () => {
+          if (room.canPlaybackAudio) {
+            void resumeRemoteAudioPlayback(room)
+          }
         })
         room.on(RoomEvent.ActiveSpeakersChanged, (participants) => {
           const localIdentity = room.localParticipant.identity
@@ -947,6 +1136,7 @@ export function useVoiceChat({
           }
         })
         room.on("disconnected", () => {
+          stopConnectingTone()
           setIsConnected(false)
           setIsConnecting(false)
           setIsSpeaking(false)
@@ -956,6 +1146,7 @@ export function useVoiceChat({
         })
         room.on("reconnected", () => {
           setIsConnected(true)
+          void resumeRemoteAudioPlayback(room)
         })
 
         await room.connect(resolvedWsUrl, token, {
@@ -972,7 +1163,9 @@ export function useVoiceChat({
           echoCancellation: true,
           noiseSuppression: true,
         })
+        await applyMicMutedToTrack(localTrack, isMicMutedRef.current)
         await room.localParticipant.publishTrack(localTrack)
+        await resumeRemoteAudioPlayback(room)
         if (isStaleStart()) {
           await disconnectLivekitClient(room, localTrack)
           forgetStoredLivekitRoom(generatedRoomName)
@@ -1003,6 +1196,7 @@ export function useVoiceChat({
         sessionRoomNameRef.current = null
         throw error
       } finally {
+        stopConnectingTone()
         if (livekitStartAbortRef.current === abortController) {
           livekitStartAbortRef.current = null
         }
@@ -1021,6 +1215,7 @@ export function useVoiceChat({
       }
     }
   }, [
+    applyMicMutedToTrack,
     appendConversationEntry,
     cleanupLivekitSession,
     disconnectLivekitClient,
@@ -1033,7 +1228,10 @@ export function useVoiceChat({
     livekitRoomName,
     onSpeechEnd,
     onSpeechStart,
+    resumeRemoteAudioPlayback,
     stopLivekitRoom,
+    stopConnectingTone,
+    volume,
   ])
 
   const startPushToTalk = useCallback(async () => {
@@ -1057,6 +1255,9 @@ export function useVoiceChat({
   }, [])
 
   const startConversation = useCallback(async () => {
+    if (livekitEnabled) {
+      startConnectingTone()
+    }
     setTranscript("")
     setFinalTranscript("")
     setConversationEntries([])
@@ -1064,9 +1265,10 @@ export function useVoiceChat({
     lastAutoSentTranscriptRef.current = { text: "", timestamp: 0 }
     lastFinalTranscriptBySpeakerRef.current = { user: "", assistant: "" }
     syncedVoiceTurnTextsRef.current.clear()
+    lastPublishedChatSpeechRef.current = ""
     pendingTranscriptBySpeakerRef.current = { user: "", assistant: "" }
     await startPushToTalk()
-  }, [startPushToTalk])
+  }, [livekitEnabled, startConnectingTone, startPushToTalk])
 
   const stopConversation = useCallback(async () => {
     await stopPushToTalk()
@@ -1105,6 +1307,7 @@ export function useVoiceChat({
   useEffect(() => {
     const transcriptFlushTimeouts = transcriptFlushTimeoutRef.current
     const disconnectLivekitImmediately = () => {
+      stopConnectingTone()
       livekitSessionGenerationRef.current += 1
       livekitStartAbortRef.current?.abort()
       livekitStartAbortRef.current = null
@@ -1170,7 +1373,7 @@ export function useVoiceChat({
       window.removeEventListener("beforeunload", disconnectLivekitImmediately)
       disconnectLivekitImmediately()
     }
-  }, [disconnectLivekitClient, stopLivekitRoom])
+  }, [disconnectLivekitClient, stopConnectingTone, stopLivekitRoom])
 
   return {
     isListening,
@@ -1178,6 +1381,8 @@ export function useVoiceChat({
     isSpeaking,
     isConnecting,
     isConnected,
+    isMicMuted,
+    isSpeakerMuted,
     transcript,
     finalTranscript,
     conversationEntries,
@@ -1203,5 +1408,8 @@ export function useVoiceChat({
     estimatedCoins,
     sessionRoomName,
     appendLocalConversationEntry: appendConversationEntry,
+    speakChatUpdate,
+    toggleMicMuted,
+    toggleSpeakerMuted,
   }
 }

@@ -30,6 +30,7 @@ import { humanizeAgentDisplayName } from "@/lib/agent-display"
 import { hasTokenPermission } from "@/lib/agentPermissions"
 import { deriveWorkflowSummary } from "@/lib/agent-structured-output"
 import { cn, formatRelativeTime, truncateText } from "@/lib/utils"
+import { requestRealtimeWebSocketTicket } from "@/lib/serviceRealtime"
 import { useGetRuntimeAgentRegistryQuery } from "@/redux/features/agents/agentControlApiSlice"
 import {
   getAgentGatewayWebSocketBaseUrl,
@@ -162,15 +163,28 @@ const eventLabel = (event: Record<string, unknown>): string => {
 }
 
 const toChatMessages = (messages: AgentConversationMessage[]): ChatMessage[] =>
-  messages.map((message) => ({
-    id: message.id,
-    role: message.role === "user" ? "user" : "assistant",
-    content: message.content,
-    taskId: message.taskId ?? undefined,
-    timestamp: message.createdAt,
-    serverMessageId: message.serverMessageId ?? undefined,
-    structuredPayload: message.structuredPayload as ChatMessage["structuredPayload"],
-  }))
+  messages.map((message) => {
+    const metadata = asRecord(message.metadata)
+    const structuredPayload = message.structuredPayload as ChatMessage["structuredPayload"]
+    const widgets = Array.isArray(structuredPayload?.widgets) ? structuredPayload.widgets : []
+    const metadataMessageKind = asString(metadata.messageKind || metadata.message_kind)
+    const messageKind = metadataMessageKind === "specialist" || metadataMessageKind === "summary"
+      ? metadataMessageKind
+      : widgets.some((widget) => asString(asRecord(widget)?.type) === "section_stack")
+        ? "summary"
+        : undefined
+    return {
+      id: message.id,
+      role: message.role === "user" ? "user" : "assistant",
+      content: message.content,
+      taskId: message.taskId ?? undefined,
+      timestamp: message.createdAt,
+      serverMessageId: message.serverMessageId ?? undefined,
+      structuredPayload,
+      sourceAgent: asString(metadata.sourceAgent || metadata.source_agent || metadata.specialistSlug || metadata.specialist_slug) || undefined,
+      messageKind,
+    }
+  })
 
 function MetricCard({
   icon,
@@ -300,119 +314,107 @@ export default function AgentRuntimeWorkspace() {
       return
     }
     const baseUrl = getAgentGatewayWebSocketBaseUrl()
-    const socket = new WebSocket(
-      `${baseUrl}/ws/conversations/${encodeURIComponent(resolvedActiveConversationId)}?token=${encodeURIComponent(accessToken)}`,
-    )
-    socketRef.current = socket
+    let socket: WebSocket | null = null
+    let disposed = false
+    const connect = async () => {
+      const ticket = await requestRealtimeWebSocketTicket()
+      if (!ticket || disposed) return
+      socket = new WebSocket(
+        `${baseUrl}/ws/conversations/${encodeURIComponent(resolvedActiveConversationId)}?ws_ticket=${encodeURIComponent(ticket)}`,
+      )
+      socketRef.current = socket
+      socket.onopen = () => {
+        setSocketState("connected")
+      }
+
+      socket.onmessage = (event) => {
+        let envelope: SocketEnvelope | null = null
+        try {
+          envelope = JSON.parse(event.data) as SocketEnvelope
+        } catch {
+          return
+        }
+        if (!envelope) return
+        if (envelope.type === "conversation.snapshot") {
+          setLiveConversation(envelope.conversation)
+          setLiveMessages(envelope.messages)
+          setLiveActivities(envelope.activities)
+          setLiveStatusText("")
+          setRuntimeEvents([])
+          const queued = pendingOutboundMessageRef.current
+          if (queued && queued.conversationId === envelope.conversation.id && socket?.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ type: "message.send", text: queued.text }))
+            pendingOutboundMessageRef.current = null
+          }
+          return
+        }
+        if (envelope.type === "conversation.updated") {
+          setLiveConversation(envelope.conversation)
+          void refetchConversations()
+          return
+        }
+        if (envelope.type === "message.created") {
+          setLiveMessages((current) => {
+            if (current.some((message) => message.id === envelope.message.id)) {
+              return current.map((message) => (message.id === envelope.message.id ? envelope.message : message))
+            }
+            return [...current, envelope.message]
+          })
+          void refetchConversations()
+          return
+        }
+        if (envelope.type === "activity.created") {
+          setLiveActivities((current) => [envelope.activity, ...current.filter((item) => item.id !== envelope.activity.id)].slice(0, 40))
+          return
+        }
+        if (envelope.type === "task.status") {
+          setLiveStatusText(envelope.text || "")
+          if (envelope.final) setIsBusy(false)
+          return
+        }
+        if (envelope.type === "task.event") {
+          const eventPayload = asRecord(envelope.event)
+          setRuntimeEvents((current) => [{ id: createId(), label: eventLabel(eventPayload), receivedAt: new Date().toISOString(), kind: asString(eventPayload.kind) || "event" }, ...current].slice(0, 8))
+          return
+        }
+        if (envelope.type === "typing.started") {
+          setIsBusy(true)
+          return
+        }
+        if (envelope.type === "typing.stopped") {
+          setIsBusy(false)
+          return
+        }
+        if (envelope.type === "error") {
+          setIsBusy(false)
+          if (envelope.message) toast.error(envelope.message)
+        }
+      }
+
+      socket.onerror = () => {
+        setSocketState("disconnected")
+        setIsBusy(false)
+      }
+
+      socket.onclose = () => {
+        if (socketRef.current === socket) socketRef.current = null
+        setSocketState("disconnected")
+        setIsBusy(false)
+      }
+    }
+    void connect()
     const connectingTimer = window.setTimeout(() => {
       setSocketState("connecting")
       setIsBusy(false)
     }, 0)
 
-    socket.onopen = () => {
-      setSocketState("connected")
-    }
-
-    socket.onmessage = (event) => {
-      let envelope: SocketEnvelope | null = null
-      try {
-        envelope = JSON.parse(event.data) as SocketEnvelope
-      } catch {
-        return
-      }
-      if (!envelope) {
-        return
-      }
-      if (envelope.type === "conversation.snapshot") {
-        setLiveConversation(envelope.conversation)
-        setLiveMessages(envelope.messages)
-        setLiveActivities(envelope.activities)
-        setLiveStatusText("")
-        setRuntimeEvents([])
-        const queued = pendingOutboundMessageRef.current
-        if (queued && queued.conversationId === envelope.conversation.id && socket.readyState === WebSocket.OPEN) {
-          socket.send(JSON.stringify({ type: "message.send", text: queued.text }))
-          pendingOutboundMessageRef.current = null
-        }
-        return
-      }
-      if (envelope.type === "conversation.updated") {
-        setLiveConversation(envelope.conversation)
-        void refetchConversations()
-        return
-      }
-      if (envelope.type === "message.created") {
-        setLiveMessages((current) => {
-          if (current.some((message) => message.id === envelope.message.id)) {
-            return current.map((message) => (message.id === envelope.message.id ? envelope.message : message))
-          }
-          return [...current, envelope.message]
-        })
-        void refetchConversations()
-        return
-      }
-      if (envelope.type === "activity.created") {
-        setLiveActivities((current) => {
-          const next = [envelope.activity, ...current.filter((item) => item.id !== envelope.activity.id)]
-          return next.slice(0, 40)
-        })
-        return
-      }
-      if (envelope.type === "task.status") {
-        setLiveStatusText(envelope.text || "")
-        if (envelope.final) {
-          setIsBusy(false)
-        }
-        return
-      }
-      if (envelope.type === "task.event") {
-        const eventPayload = asRecord(envelope.event)
-        setRuntimeEvents((current) => [
-          {
-            id: createId(),
-            label: eventLabel(eventPayload),
-            receivedAt: new Date().toISOString(),
-            kind: asString(eventPayload.kind) || "event",
-          },
-          ...current,
-        ].slice(0, 8))
-        return
-      }
-      if (envelope.type === "typing.started") {
-        setIsBusy(true)
-        return
-      }
-      if (envelope.type === "typing.stopped") {
-        setIsBusy(false)
-        return
-      }
-      if (envelope.type === "error") {
-        setIsBusy(false)
-        if (envelope.message) {
-          toast.error(envelope.message)
-        }
-      }
-    }
-
-    socket.onerror = () => {
-      setSocketState("disconnected")
-      setIsBusy(false)
-    }
-
-    socket.onclose = () => {
-      if (socketRef.current === socket) {
-        socketRef.current = null
-      }
-      setSocketState("disconnected")
-      setIsBusy(false)
-    }
-
     return () => {
+      disposed = true
       window.clearTimeout(connectingTimer)
       if (socketRef.current === socket) {
         socketRef.current = null
       }
-      socket.close()
+      socket?.close()
     }
   }, [canInteractWithAgent, refetchConversations, resolvedActiveConversationId])
 

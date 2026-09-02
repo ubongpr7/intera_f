@@ -77,6 +77,16 @@ export interface InventoryData {
   [key: string]: unknown;
 }
 
+export interface AvailableCatalogVariant {
+  id: string;
+  display_name: string;
+  product_id: string;
+  product_name: string;
+  sku: string;
+  barcode: string;
+  image_url: string;
+}
+
 export interface InventorySummary extends InventoryData {
   current_stock_level?: string | number;
 }
@@ -157,4 +167,16 @@ export interface InventoryListParams {
   stock_location_id?: string;
   search?: string;
   ordering?: string;
+  page?: number;
+  page_size?: number;
+}
+
+export interface PaginatedInventoryResponse {
+  count: number;
+  next?: string | null;
+  previous?: string | null;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  results: InventorySummary[];
 }

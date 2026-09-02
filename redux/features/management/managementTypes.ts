@@ -23,6 +23,7 @@ export interface CompanyProfileData {
 export interface GroupData {
   id: number;
   name: string;
+  is_system?: boolean;
   description?: string;
   users: string;
   users_count: number;
@@ -31,6 +32,16 @@ export interface GroupData {
 }
 
 export type RoleData = GroupData;
+
+export interface PaginatedManagementResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  results: T[];
+}
 
 export interface CreateRoleAssignmentPayload {
   role: number;

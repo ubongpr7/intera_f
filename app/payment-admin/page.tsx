@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 import Link from "next/link"
 import {
   BarChart3,
@@ -15,7 +15,7 @@ import {
 } from "lucide-react"
 
 import StatTile from "@/components/dashboard/StatTile"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { TabsContent, TabsList, TabsTrigger, UrlTabs } from "@/components/ui/tabs"
 import { PaymentProvidersTab } from "@/components/payment-admin/PaymentProvidersTab"
 import { PaymentAppsTab } from "@/components/payment-admin/PaymentAppsTab"
 import { SubscriptionPlansTab } from "@/components/payment-admin/SubscriptionPlansTab"
@@ -32,8 +32,6 @@ import { useGetPaymentAppsQuery, useGetPaymentProvidersQuery, useGetSubscription
 const formatNumber = (value: number) => new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(value)
 
 export default function PaymentAdminPage() {
-  const [activeTab, setActiveTab] = useState("analytics")
-
   const { data: paymentAnalytics } = useGetPaymentAnalyticsQuery({ period: "30d" })
   const { data: subscriptionAnalytics } = useGetSubscriptionAnalyticsQuery({ period: "30d" })
   const { data: providers = [] } = useGetPaymentProvidersQuery({})
@@ -154,7 +152,11 @@ export default function PaymentAdminPage() {
         </CardHeader>
 
         <CardContent className="space-y-6 p-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <UrlTabs
+            defaultValue="analytics"
+            tabValues={["analytics", "providers", "apps", "plans", "payments", "subscriptions", "webhooks"]}
+            className="space-y-6"
+          >
             <TabsList className="grid w-full grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-2 md:grid-cols-4 xl:grid-cols-7">
               <TabsTrigger
                 value="analytics"
@@ -234,7 +236,7 @@ export default function PaymentAdminPage() {
             <TabsContent value="webhooks" className="space-y-6">
               <WebhookLogsTab />
             </TabsContent>
-          </Tabs>
+          </UrlTabs>
         </CardContent>
       </Card>
     </div>

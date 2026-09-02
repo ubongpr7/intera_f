@@ -28,6 +28,7 @@ import { formatCurrencyCompact } from "@/lib/currency-utils"
 import { buildStructuralLocationScopeParams } from "@/lib/structuralLocationScope"
 import { formatMachineLabel } from "@/lib/displayLabels"
 import { useStructuralLocationScope } from "@/hooks/useStructuralLocationScope"
+import { useUrlTabState } from "@/hooks/useUrlTabState"
 import {
   useGetInventoryDataQuery,
   useGetInventoriesNeedingReorderQuery,
@@ -45,6 +46,7 @@ type InventorySetupStep = {
 }
 
 type InventoryTab = "overview" | "locations" | "inventories" | "insights"
+const inventoryTabValues = ["overview", "locations", "inventories", "insights"] as const
 
 const displayCount = (value: number | undefined, isLoading: boolean) => {
   if (isLoading) {
@@ -78,7 +80,6 @@ const getLowStockBadge = (inventory: { current_stock_level?: unknown; current_st
 
 export default function InventoryPage() {
   const [refetchData, setRefetchData] = useState(false)
-  const [activeTab, setActiveTab] = useState<InventoryTab>("overview")
   const [setupGuideOpen, setSetupGuideOpen] = useState(false)
   const [selectedStructuralLocationIds, setSelectedStructuralLocationIds] = useStructuralLocationScope()
   const [loadedTabs, setLoadedTabs] = useState<Record<InventoryTab, boolean>>({
@@ -86,6 +87,13 @@ export default function InventoryPage() {
     locations: false,
     inventories: false,
     insights: false,
+  })
+  const { activeValue: activeTab, setActiveValue: setActiveTab } = useUrlTabState({
+    defaultValue: "overview",
+    values: inventoryTabValues,
+    onValueChange: (nextTab) => {
+      setLoadedTabs((current) => (current[nextTab] ? current : { ...current, [nextTab]: true }))
+    },
   })
   const { activeMembership, isWorkspaceContextLoading: loadingWorkspaceSetup, isOwner, nextRecommendedStage, profile, readiness } = useWorkspaceSetupProgress()
   const structuralScopeParams = useMemo(
@@ -232,8 +240,8 @@ export default function InventoryPage() {
   }
 
   return (
-    <div className="inventory-workspace mx-auto grid w-full max-w-[1800px] grid-cols-1 gap-6 px-4 py-6 lg:px-8 2xl:px-10">
-      <main className="min-w-0 space-y-6">
+    <div className="inventory-workspace mx-auto grid w-full max-w-[1800px] grid-cols-1 content-start items-start gap-6 px-4 py-6 lg:px-8 2xl:px-10">
+      <main className="min-w-0 self-start space-y-6">
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="border-b border-gray-100 p-6 text-left text-inherit">
             <CardTitle className="text-3xl tracking-tight">Inventory operations setup</CardTitle>
@@ -401,15 +409,7 @@ export default function InventoryPage() {
           </CardContent>
         </Card>
 
-        <Tabs
-          value={activeTab}
-          onValueChange={(value) => {
-            const nextTab = value as InventoryTab
-            setActiveTab(nextTab)
-            setLoadedTabs((current) => (current[nextTab] ? current : { ...current, [nextTab]: true }))
-          }}
-          className="space-y-5"
-        >
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as InventoryTab)} className="space-y-5">
           <TabsList className="h-auto flex-wrap justify-start gap-2 bg-transparent p-0">
             <TabsTrigger value="overview" className="rounded-xl bg-white px-4 py-2.5">
               Overview

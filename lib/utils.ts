@@ -245,3 +245,13 @@ export function getDecodedToken(){
     return null
   }
 }
+
+export function getDecodedAuthorizationContext(){
+  const token = readCookieValue("authorizationContext", getCookie)
+  if (!token) return null
+  try {
+    return jwtDecode<Record<string, unknown>>(token)
+  } catch {
+    return null
+  }
+}

@@ -27,7 +27,7 @@ import { extractErrorMessage } from "@/lib/utils"
 
 interface VariantAttributesTabProps {
   variant: ProductVariant
-  onSuccess: () => void
+  onSuccess: () => Promise<void>
 }
 
 interface EditingAttribute {
@@ -166,7 +166,7 @@ const VariantAttributesTab = ({ variant, onSuccess }: VariantAttributesTabProps)
         custom_value: "",
         custom_modifier: "",
       })
-      onSuccess()
+      await onSuccess()
       toast.success("Attribute added successfully")
     } catch (error: any) {
       toast.error(error?.data?.detail || "Failed to add attribute")
@@ -176,7 +176,7 @@ const VariantAttributesTab = ({ variant, onSuccess }: VariantAttributesTabProps)
   const handleRemoveAttribute = async (attributeLinkId: string) => {
     try {
       await removeAttribute({ variantId: variant.id, attributeLinkId }).unwrap()
-      onSuccess()
+      await onSuccess()
       refetchLinks()
       toast.success("Attribute removed successfully")
     } catch (error: any) {
@@ -242,7 +242,7 @@ const VariantAttributesTab = ({ variant, onSuccess }: VariantAttributesTabProps)
         custom_modifier: "",
       })
       setValidationError("")
-      onSuccess()
+      await onSuccess()
       refetchLinks()
       toast.success("Attribute updated successfully")
     } catch (error: any) {

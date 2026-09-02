@@ -6,6 +6,7 @@ import type {
   InventoryItem,
   InventoryItemListParams,
   LowStockItem,
+  PaginatedStockResponse,
   StockBalanceListParams,
   StockBalanceRow,
   StockAnalyticsResponse,
@@ -13,6 +14,7 @@ import type {
   StockLotListParams,
   StockLocation,
   StockLocationListParams,
+  PaginatedStockLocationResponse,
   StockLocationType,
   StockReservation,
   StockReservationListParams,
@@ -25,8 +27,10 @@ import type {
   StockTrackingEntry,
   StockMovement,
   StockMovementListParams,
+  StockMovementSummaryResponse,
   StockTransferPayload,
   StockTransferResponse,
+  StockReservationSummaryResponse,
 } from "./stockTypes";
 
 const stockApi = "stock_api";
@@ -55,6 +59,13 @@ export const stockApiSlice = apiSlice.injectEndpoints({
       }),
       transformResponse: (response: StockLocation[] | { results?: StockLocation[] }) =>
         unwrapListResponse<StockLocation>(response),
+    }),
+
+    listStockLocationsPage: builder.query<PaginatedStockLocationResponse, StockLocationListParams>({
+      query: (params) => ({
+        url: buildQuery(`/${stockApi}/locations/`, params),
+        service,
+      }),
     }),
 
     createStockLocation: builder.mutation<StockLocation, Partial<StockLocation>>({
@@ -224,6 +235,13 @@ export const stockApiSlice = apiSlice.injectEndpoints({
         unwrapListResponse<StockBalanceRow>(response),
     }),
 
+    listStockBalancesPage: builder.query<PaginatedStockResponse<StockBalanceRow>, StockBalanceListParams>({
+      query: (params) => ({
+        url: buildQuery(`/${stockApi}/balances/`, params),
+        service,
+      }),
+    }),
+
     listStockLots: builder.query<StockLot[], StockLotListParams | void>({
       query: (params) => ({
         url: buildQuery(`/${stockApi}/lots/`, params),
@@ -231,6 +249,13 @@ export const stockApiSlice = apiSlice.injectEndpoints({
       }),
       transformResponse: (response: StockLot[] | { results?: StockLot[] }) =>
         unwrapListResponse<StockLot>(response),
+    }),
+
+    listStockLotsPage: builder.query<PaginatedStockResponse<StockLot>, StockLotListParams>({
+      query: (params) => ({
+        url: buildQuery(`/${stockApi}/lots/`, params),
+        service,
+      }),
     }),
 
     listStockSerials: builder.query<StockSerial[], StockSerialListParams | void>({
@@ -242,6 +267,13 @@ export const stockApiSlice = apiSlice.injectEndpoints({
         unwrapListResponse<StockSerial>(response),
     }),
 
+    listStockSerialsPage: builder.query<PaginatedStockResponse<StockSerial>, StockSerialListParams>({
+      query: (params) => ({
+        url: buildQuery(`/${stockApi}/serials/`, params),
+        service,
+      }),
+    }),
+
     listStockMovements: builder.query<StockMovement[], StockMovementListParams | void>({
       query: (params) => ({
         url: buildQuery(`/${stockApi}/movements/`, params),
@@ -251,6 +283,20 @@ export const stockApiSlice = apiSlice.injectEndpoints({
         unwrapListResponse<StockMovement>(response),
     }),
 
+    listStockMovementsPage: builder.query<PaginatedStockResponse<StockMovement>, StockMovementListParams>({
+      query: (params) => ({
+        url: buildQuery(`/${stockApi}/movements/`, params),
+        service,
+      }),
+    }),
+
+    getStockMovementSummary: builder.query<StockMovementSummaryResponse, StockMovementListParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${stockApi}/movements/summary/`, params),
+        service,
+      }),
+    }),
+
     listReservations: builder.query<StockReservation[], StockReservationListParams | void>({
       query: (params) => ({
         url: buildQuery(`/${stockApi}/reservations/`, params),
@@ -258,6 +304,20 @@ export const stockApiSlice = apiSlice.injectEndpoints({
       }),
       transformResponse: (response: StockReservation[] | { results?: StockReservation[] }) =>
         unwrapListResponse<StockReservation>(response),
+    }),
+
+    listReservationsPage: builder.query<PaginatedStockResponse<StockReservation>, StockReservationListParams>({
+      query: (params) => ({
+        url: buildQuery(`/${stockApi}/reservations/`, params),
+        service,
+      }),
+    }),
+
+    getReservationSummary: builder.query<StockReservationSummaryResponse, StockReservationListParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${stockApi}/reservations/summary/`, params),
+        service,
+      }),
     }),
 
     createReservation: builder.mutation<StockReservation, StockReservationPayload>({
@@ -308,6 +368,7 @@ export const stockApiSlice = apiSlice.injectEndpoints({
 export const {
   useListStockLocationTypesQuery,
   useListStockLocationsQuery,
+  useListStockLocationsPageQuery,
   useCreateStockLocationMutation,
   useGetStockLocationQuery,
   useUpdateStockLocationMutation,
@@ -327,10 +388,17 @@ export const {
   useGetStockAnalyticsQuery,
   useGetLowStockItemsQuery,
   useListStockBalancesQuery,
+  useListStockBalancesPageQuery,
   useListStockLotsQuery,
+  useListStockLotsPageQuery,
   useListStockSerialsQuery,
+  useListStockSerialsPageQuery,
   useListStockMovementsQuery,
+  useListStockMovementsPageQuery,
+  useGetStockMovementSummaryQuery,
   useListReservationsQuery,
+  useListReservationsPageQuery,
+  useGetReservationSummaryQuery,
   useCreateReservationMutation,
   useGetReservationQuery,
   useReleaseReservationMutation,

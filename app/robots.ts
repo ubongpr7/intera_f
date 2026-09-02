@@ -12,7 +12,6 @@ const privatePaths = [
   "/user/",
   "/admin",
   "/agent",
-  "/pos",
   "/order",
   "/payment-admin",
   "/companies",

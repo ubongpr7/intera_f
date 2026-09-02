@@ -200,6 +200,9 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
   const [cancelNotes, setCancelNotes] = useState("")
 
   const { data: order, isLoading, refetch } = useGetSalesOrderQuery(salesOrderId)
+  const isTerminalOrder = [SalesOrderStatus.completed, SalesOrderStatus.cancelled].includes(order?.status as never)
+  const canEditHeader = !isTerminalOrder
+  const canEditLineItems = [SalesOrderStatus.pending, SalesOrderStatus.in_progress].includes(order?.status as never)
   const { data: customers = [] } = useGetCustomerQuery()
   const { data: users = [] } = useGetCompanyUsersQuery()
   const inventoryQuery = useMemo(
@@ -361,7 +364,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
   }
 
   const handleSaveHeader = async () => {
-    if (!order) {
+    if (!order || !canEditHeader) {
       return
     }
 
@@ -388,7 +391,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
   }
 
   const handleSubmitLineItem = async () => {
-    if (!order) {
+    if (!order || !canEditLineItems) {
       return
     }
 
@@ -430,6 +433,9 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
   }
 
   const handleEditLineItem = (lineItem: SalesOrderLineItem) => {
+    if (!canEditLineItems) {
+      return
+    }
     setEditingLineItemId(String(lineItem.id))
     setLineItemForm({
       inventory_item: lineItem.inventory_item ? String(lineItem.inventory_item) : "",
@@ -442,7 +448,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
   }
 
   const handleDeleteLineItem = async (lineItemId: string) => {
-    if (!order) {
+    if (!order || !canEditLineItems) {
       return
     }
 
@@ -459,7 +465,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
   }
 
   const handleReserveStock = async () => {
-    if (!order) {
+    if (!order || isTerminalOrder) {
       return
     }
 
@@ -501,7 +507,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
   }
 
   const handleReleaseReservations = async () => {
-    if (!order) {
+    if (!order || isTerminalOrder) {
       return
     }
 
@@ -539,7 +545,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
   }
 
   const handleShipOrder = async () => {
-    if (!order) {
+    if (!order || isTerminalOrder) {
       return
     }
 
@@ -705,7 +711,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="so-customer">Customer</Label>
-            <Select value={headerForm.customer} onValueChange={(value) => setHeaderFormDraft((current) => ({ ...current, customer: value }))}>
+            <Select value={headerForm.customer} onValueChange={(value) => setHeaderFormDraft((current) => ({ ...current, customer: value }))} disabled={!canEditHeader}>
               <SelectTrigger id="so-customer">
                 <SelectValue placeholder="Select customer" />
               </SelectTrigger>
@@ -720,7 +726,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
           </div>
           <div className="space-y-2">
             <Label htmlFor="so-responsible">Responsible owner</Label>
-            <Select value={headerForm.responsible} onValueChange={(value) => setHeaderFormDraft((current) => ({ ...current, responsible: value }))}>
+            <Select value={headerForm.responsible} onValueChange={(value) => setHeaderFormDraft((current) => ({ ...current, responsible: value }))} disabled={!canEditHeader}>
               <SelectTrigger id="so-responsible">
                 <SelectValue placeholder="Select owner" />
               </SelectTrigger>
@@ -735,7 +741,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
           </div>
           <div className="space-y-2">
             <Label htmlFor="so-currency">Order currency</Label>
-            <Select value={headerForm.order_currency} onValueChange={(value) => setHeaderFormDraft((current) => ({ ...current, order_currency: value }))}>
+            <Select value={headerForm.order_currency} onValueChange={(value) => setHeaderFormDraft((current) => ({ ...current, order_currency: value }))} disabled={!canEditHeader}>
               <SelectTrigger id="so-currency">
                 <SelectValue placeholder="Select currency" />
               </SelectTrigger>
@@ -754,6 +760,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
               id="so-customer-reference"
               value={headerForm.customer_reference}
               onChange={(event) => setHeaderFormDraft((current) => ({ ...current, customer_reference: event.target.value }))}
+              disabled={!canEditHeader}
             />
           </div>
           <div className="space-y-2 xl:col-span-2">
@@ -763,6 +770,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
               value={headerForm.description}
               onChange={(event) => setHeaderFormDraft((current) => ({ ...current, description: event.target.value }))}
               placeholder="What is this order for?"
+              disabled={!canEditHeader}
             />
           </div>
           <div className="space-y-2">
@@ -772,6 +780,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
               type="date"
               value={headerForm.delivery_date}
               onChange={(event) => setHeaderFormDraft((current) => ({ ...current, delivery_date: event.target.value }))}
+              disabled={!canEditHeader}
             />
           </div>
           <div className="space-y-2 xl:col-span-3">
@@ -781,6 +790,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
               value={headerForm.link}
               onChange={(event) => setHeaderFormDraft((current) => ({ ...current, link: event.target.value }))}
               placeholder="Optional sales portal or quote link"
+              disabled={!canEditHeader}
             />
           </div>
           <div className="space-y-2 xl:col-span-3">
@@ -791,11 +801,12 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
               value={headerForm.notes}
               onChange={(event) => setHeaderFormDraft((current) => ({ ...current, notes: event.target.value }))}
               placeholder="Capture fulfillment instructions, customer notes, or delivery context"
+              disabled={!canEditHeader}
             />
           </div>
         </div>
         <div className="mt-6">
-          <Button onClick={handleSaveHeader} disabled={savingHeader}>
+          <Button onClick={handleSaveHeader} disabled={savingHeader || !canEditHeader}>
             {savingHeader ? "Saving..." : "Save sales order header"}
           </Button>
         </div>
@@ -820,6 +831,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
             <Select
               value={lineItemForm.inventory_item}
               onValueChange={(value) => setLineItemForm((current) => ({ ...current, inventory_item: value }))}
+              disabled={!canEditLineItems}
             >
               <SelectTrigger id="sales-inventory-item">
                 <SelectValue placeholder="Select inventory item" />
@@ -842,6 +854,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
               step="0.01"
               value={lineItemForm.quantity}
               onChange={(event) => setLineItemForm((current) => ({ ...current, quantity: event.target.value }))}
+              disabled={!canEditLineItems}
             />
           </div>
           <div className="space-y-2">
@@ -853,6 +866,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
               step="0.01"
               value={lineItemForm.unit_price}
               onChange={(event) => setLineItemForm((current) => ({ ...current, unit_price: event.target.value }))}
+              disabled={!canEditLineItems}
             />
           </div>
           <div className="space-y-2">
@@ -864,6 +878,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
               step="0.01"
               value={lineItemForm.tax_rate}
               onChange={(event) => setLineItemForm((current) => ({ ...current, tax_rate: event.target.value }))}
+              disabled={!canEditLineItems}
             />
           </div>
           <div className="space-y-2">
@@ -875,6 +890,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
               step="0.01"
               value={lineItemForm.discount_rate}
               onChange={(event) => setLineItemForm((current) => ({ ...current, discount_rate: event.target.value }))}
+              disabled={!canEditLineItems}
             />
           </div>
           <div className="space-y-2 xl:col-span-4">
@@ -885,6 +901,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
               value={lineItemForm.description}
               onChange={(event) => setLineItemForm((current) => ({ ...current, description: event.target.value }))}
               placeholder="Optional line-specific note"
+              disabled={!canEditLineItems}
             />
           </div>
         </div>
@@ -902,7 +919,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
         ) : null}
 
         <div className="mt-6 flex flex-wrap gap-3">
-          <Button onClick={handleSubmitLineItem} disabled={creatingLineItem || updatingLineItem}>
+          <Button onClick={handleSubmitLineItem} disabled={creatingLineItem || updatingLineItem || !canEditLineItems}>
             {editingLineItemId ? "Save line item" : "Add line item"}
           </Button>
           <Button
@@ -911,7 +928,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
               setEditingLineItemId(null)
               setLineItemForm(emptyLineItemForm)
             }}
-            disabled={creatingLineItem || updatingLineItem}
+            disabled={creatingLineItem || updatingLineItem || !canEditLineItems}
           >
             {editingLineItemId ? "Cancel edit" : "Reset form"}
           </Button>
@@ -947,14 +964,18 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
                     <TableCell>{formatCurrencyCompact(activeCurrency, asNumber(lineItem.unit_price))}</TableCell>
                     <TableCell>{formatCurrencyCompact(activeCurrency, asNumber(lineItem.total_price))}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handleEditLineItem(lineItem)}>
-                          Edit
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleDeleteLineItem(String(lineItem.id))} disabled={deletingLineItem}>
-                          Remove
-                        </Button>
-                      </div>
+                      {canEditLineItems ? (
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="sm" onClick={() => handleEditLineItem(lineItem)}>
+                            Edit
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => handleDeleteLineItem(String(lineItem.id))} disabled={deletingLineItem}>
+                            Remove
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-500">Locked after fulfillment starts</span>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
@@ -1017,11 +1038,12 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
                             step="0.01"
                             value={entry.quantity}
                             onChange={(event) => setReservationField(String(lineItem.id), "quantity", event.target.value)}
+                            disabled={isTerminalOrder}
                           />
                         </div>
                         <div className="space-y-2">
                           <Label>Stock location</Label>
-                            <Select value={entry.location_id} onValueChange={(value) => setReservationField(String(lineItem.id), "location_id", value)}>
+                            <Select value={entry.location_id} onValueChange={(value) => setReservationField(String(lineItem.id), "location_id", value)} disabled={isTerminalOrder}>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select location" />
                               </SelectTrigger>
@@ -1040,6 +1062,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
                             value={entry.notes}
                             onChange={(event) => setReservationField(String(lineItem.id), "notes", event.target.value)}
                             placeholder="Optional reservation note"
+                            disabled={isTerminalOrder}
                           />
                         </div>
                       </div>
@@ -1047,7 +1070,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
                   )
                 })
               )}
-              <Button onClick={handleReserveStock} disabled={reservingStock || lineItems.length === 0}>
+              <Button onClick={handleReserveStock} disabled={isTerminalOrder || reservingStock || lineItems.length === 0}>
                 <PackagePlus className="mr-2 h-4 w-4" />
                 {reservingStock ? "Reserving..." : "Reserve selected stock"}
               </Button>
@@ -1067,6 +1090,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
                     type="date"
                     value={shipmentMeta.shipment_date}
                     onChange={(event) => setShipmentMeta((current) => ({ ...current, shipment_date: event.target.value }))}
+                    disabled={isTerminalOrder}
                   />
                 </div>
                 <div className="space-y-2">
@@ -1075,6 +1099,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
                     type="date"
                     value={shipmentMeta.delivery_date}
                     onChange={(event) => setShipmentMeta((current) => ({ ...current, delivery_date: event.target.value }))}
+                    disabled={isTerminalOrder}
                   />
                 </div>
                 <div className="space-y-2">
@@ -1083,6 +1108,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
                     value={shipmentMeta.tracking_number}
                     onChange={(event) => setShipmentMeta((current) => ({ ...current, tracking_number: event.target.value }))}
                     placeholder="Optional tracking number"
+                    disabled={isTerminalOrder}
                   />
                 </div>
                 <div className="space-y-2">
@@ -1091,6 +1117,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
                     value={shipmentMeta.invoice_number}
                     onChange={(event) => setShipmentMeta((current) => ({ ...current, invoice_number: event.target.value }))}
                     placeholder="Optional invoice number"
+                    disabled={isTerminalOrder}
                   />
                 </div>
                 <div className="space-y-2 xl:col-span-2">
@@ -1099,6 +1126,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
                     value={shipmentMeta.link}
                     onChange={(event) => setShipmentMeta((current) => ({ ...current, link: event.target.value }))}
                     placeholder="Optional carrier or fulfillment link"
+                    disabled={isTerminalOrder}
                   />
                 </div>
                 <div className="space-y-2 md:col-span-2 xl:col-span-3">
@@ -1108,6 +1136,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
                     value={shipmentMeta.notes}
                     onChange={(event) => setShipmentMeta((current) => ({ ...current, notes: event.target.value }))}
                     placeholder="Shared note for release or shipment actions"
+                    disabled={isTerminalOrder}
                   />
                 </div>
               </div>
@@ -1140,6 +1169,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
                               step="0.01"
                               value={entry.quantity}
                               onChange={(event) => setReservationActionField(String(reservation.id), "quantity", event.target.value)}
+                              disabled={isTerminalOrder}
                             />
                           </div>
                           <div className="space-y-2">
@@ -1148,6 +1178,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
                               value={entry.notes}
                               onChange={(event) => setReservationActionField(String(reservation.id), "notes", event.target.value)}
                               placeholder="Optional note"
+                              disabled={isTerminalOrder}
                             />
                           </div>
                         </div>
@@ -1181,11 +1212,12 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
                               step="0.01"
                               value={entry.quantity}
                               onChange={(event) => setShipmentField(String(lineItem.id), "quantity", event.target.value)}
+                              disabled={isTerminalOrder}
                             />
                           </div>
                           <div className="space-y-2">
                             <Label>Stock location</Label>
-                            <Select value={entry.location_id} onValueChange={(value) => setShipmentField(String(lineItem.id), "location_id", value)}>
+                            <Select value={entry.location_id} onValueChange={(value) => setShipmentField(String(lineItem.id), "location_id", value)} disabled={isTerminalOrder}>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select location" />
                               </SelectTrigger>
@@ -1204,6 +1236,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
                               value={entry.notes}
                               onChange={(event) => setShipmentField(String(lineItem.id), "notes", event.target.value)}
                               placeholder="Optional line shipment note"
+                              disabled={isTerminalOrder}
                             />
                           </div>
                         </div>
@@ -1214,11 +1247,11 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
               </div>
 
               <div className="flex flex-wrap gap-3">
-                <Button variant="outline" onClick={handleReleaseReservations} disabled={releasingReservations || filteredReservations.length === 0}>
+                <Button variant="outline" onClick={handleReleaseReservations} disabled={isTerminalOrder || releasingReservations || filteredReservations.length === 0}>
                   <Undo2 className="mr-2 h-4 w-4" />
                   {releasingReservations ? "Releasing..." : "Release selected reservations"}
                 </Button>
-                <Button onClick={handleShipOrder} disabled={shippingOrder || (filteredReservations.length === 0 && directShipmentLineItems.length === 0)}>
+                <Button onClick={handleShipOrder} disabled={isTerminalOrder || shippingOrder || (filteredReservations.length === 0 && directShipmentLineItems.length === 0)}>
                   <Truck className="mr-2 h-4 w-4" />
                   {shippingOrder ? "Shipping..." : "Ship selected items"}
                 </Button>
@@ -1302,6 +1335,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
                   value={cancelNotes}
                   onChange={(event) => setCancelNotes(event.target.value)}
                   placeholder="Explain why the order is being cancelled"
+                  disabled={isTerminalOrder}
                 />
               </div>
               <div className="flex flex-wrap gap-3">

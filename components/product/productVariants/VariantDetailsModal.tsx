@@ -12,12 +12,17 @@ import { extractErrorMessage } from "@/lib/utils"
 interface VariantDetailsModalProps {
   variantId: string
   onClose: () => void
-  onSuccess: () => void
+  onSuccess: () => Promise<void>
 }
 
 const VariantDetailsModal = ({ variantId, onClose, onSuccess }: VariantDetailsModalProps) => {
   const { data: variant, isLoading, error, refetch } = useGetProductVariantQuery(variantId)
   const useFallbackOverlay = Boolean(error) || isLoading || !variant
+
+  const handleVariantChanged = async () => {
+    await refetch()
+    await onSuccess()
+  }
 
   useOverlayDismiss({ enabled: useFallbackOverlay, onClose })
 
@@ -67,10 +72,7 @@ const VariantDetailsModal = ({ variantId, onClose, onSuccess }: VariantDetailsMo
           content: (
             <VariantDetailsTab
               variant={variant}
-              onSuccess={() => {
-                refetch()
-                onSuccess()
-              }}
+              onSuccess={handleVariantChanged}
             />
           ),
         },
@@ -90,10 +92,7 @@ const VariantDetailsModal = ({ variantId, onClose, onSuccess }: VariantDetailsMo
           content: (
             <VariantAttributesTab
               variant={variant}
-              onSuccess={() => {
-                refetch()
-                onSuccess()
-              }}
+              onSuccess={handleVariantChanged}
             />
           ),
         },

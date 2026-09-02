@@ -298,23 +298,49 @@ export default function SubscriptionPage() {
       "product-variants": products.reduce((total, product) => total + Number(product.variant_count ?? 0), 0),
     } as Record<string, number>
   }, [companyUsers, pendingInvitations, products, stockLocations, terminals, tokenClaims?.owner_id])
-  const workspaceUsageLoading =
-    loadingCompanyUsers || loadingPendingInvitations || loadingStockLocations || loadingTerminals || loadingProducts
+  const localUsageLoadingByFeature = useMemo<Record<string, boolean>>(
+    () => ({
+      "staff-users": loadingCompanyUsers || loadingPendingInvitations,
+      "structural-locations": loadingStockLocations,
+      "pos-terminals": loadingTerminals,
+      products: loadingProducts,
+      "product-variants": loadingProducts,
+    }),
+    [loadingCompanyUsers, loadingPendingInvitations, loadingProducts, loadingStockLocations, loadingTerminals],
+  )
   const usageCountsByFeature = useMemo(() => {
-    const localEntries = Object.entries(localUsageCounts)
-    if (localEntries.length > 0) {
-      return new Map<string, number | null>(
-        localEntries.map(([feature, usage]) => [feature, Number.isFinite(Number(usage)) ? Number(usage) : null]),
-      )
-    }
     const rawCounts = entitlements?.usage_counts ?? {}
-    const entries = Object.keys(rawCounts).length > 0
-      ? Object.entries(rawCounts)
-      : usageRows.map((row) => [row.feature, row.usage] as const)
+    const featuresWithUsage = new Set([
+      ...Object.keys(rawCounts),
+      ...Object.keys(localUsageCounts),
+      ...usageRows.map((row) => row.feature),
+    ])
     return new Map<string, number | null>(
-      entries.map(([feature, usage]) => [feature, usage === null || usage === undefined ? null : Number(usage)]),
+      Array.from(featuresWithUsage, (feature) => {
+        const serviceUsage = rawCounts[feature]
+        if (serviceUsage !== null && serviceUsage !== undefined && Number.isFinite(Number(serviceUsage))) {
+          return [feature, Number(serviceUsage)]
+        }
+
+        const localUsage = localUsageCounts[feature]
+        if (!localUsageLoadingByFeature[feature] && Number.isFinite(Number(localUsage))) {
+          return [feature, Number(localUsage)]
+        }
+
+        const entitlementUsage = usageRows.find((row) => row.feature === feature)?.usage
+        return [feature, entitlementUsage === null || entitlementUsage === undefined ? null : Number(entitlementUsage)]
+      }),
     )
-  }, [entitlements?.usage_counts, localUsageCounts, usageRows])
+  }, [entitlements?.usage_counts, localUsageCounts, localUsageLoadingByFeature, usageRows])
+  const workspaceUsageLoading = useMemo(
+    () => plans.some((plan) => plan.features.some((feature) => (
+      feature.limit_type === "COUNT" &&
+      !feature.is_unlimited &&
+      feature.limit_value !== null &&
+      usageCountsByFeature.get(feature.slug) === null
+    ))),
+    [plans, usageCountsByFeature],
+  )
   const workspaceFootprintRows = useMemo(
     () =>
       Array.from(usageCountsByFeature.entries())

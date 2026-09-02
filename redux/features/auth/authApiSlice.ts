@@ -73,14 +73,15 @@ export const authApiSlice = apiSlice.injectEndpoints({
         email: string;
         password: string;
         re_password: string;
+        referral_code?: string;
         terms_accepted: boolean;
         privacy_accepted: boolean;
       }
     >({
-      query: ({ first_name, last_name, email, password, re_password, terms_accepted, privacy_accepted }) => ({
+      query: ({ first_name, last_name, email, password, re_password, referral_code, terms_accepted, privacy_accepted }) => ({
         url: "/djoser/users/",
         method: "POST",
-        body: { first_name, last_name, email, password, re_password, terms_accepted, privacy_accepted },
+        body: { first_name, last_name, email, password, re_password, referral_code, terms_accepted, privacy_accepted },
         service: "users",
       }),
     }),

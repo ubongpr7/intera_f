@@ -11,6 +11,7 @@ import { useCompanyProfile } from "@/hooks/useCompanyProfile"
 import type {
   POSConfiguration,
   POSCustomer,
+  POSDiscount,
   POSHoldOrder,
   POSOrder,
   POSOrderInventorySummary,
@@ -24,6 +25,7 @@ import type {
   POSTerminalDeviceBinding,
   POSTerminal,
 } from "@/redux/features/pos/posTypes"
+import { useGetDiscountsPageQuery } from "@/redux/features/pos/posAPISlice"
 import type { Product, ProductVariant } from "@/redux/features/product/productTypes"
 import POSCartPanel from "@/components/pos/POSCartPanel"
 import POSCashierHeader from "@/components/pos/POSCashierHeader"
@@ -146,26 +148,29 @@ const buildLookup = <T extends { id: string; sync_identifier?: string }>(items: 
 
 const stripTrailingSlash = (value: string) => value.replace(/\/+$/, "")
 
-const normalizeLocalLoopback = (value: string) => value.replace("://localhost", "://127.0.0.1")
-
-const getPosHttpBaseUrl = () => {
-  const rawBase =
-    typeof window === "undefined"
-      ? (process.env.POS_INTERNAL_URL || process.env.NEXT_PUBLIC_POS_BACKEND_URL || "http://localhost:7004").trim()
-      : (process.env.NEXT_PUBLIC_POS_BACKEND_URL || "http://localhost:7004").trim()
-  return normalizeLocalLoopback(stripTrailingSlash(rawBase))
+const getHttpRequestTimeoutMs = () => {
+  const configuredTimeout = Number(process.env.NEXT_PUBLIC_POS_HTTP_TIMEOUT_MS || "15000")
+  return Number.isFinite(configuredTimeout) && configuredTimeout > 0 ? configuredTimeout : 15000
 }
 
-const getProductHttpBaseUrl = () => {
-  const rawBase =
-    typeof window === "undefined"
-      ? (process.env.PRODUCT_INTERNAL_URL || process.env.NEXT_PUBLIC_PRODUCT_BACKEND_URL || "http://localhost:7003").trim()
-      : (process.env.NEXT_PUBLIC_PRODUCT_BACKEND_URL || "http://localhost:7003").trim()
-  return normalizeLocalLoopback(stripTrailingSlash(rawBase))
+const productCatalogProxyPath = (path: string) => {
+  const endpoint = path.replace(/^\/product_api\/pos\//, "").replace(/^\/+/, "").replace(/\/$/, "")
+  if (endpoint === "products" || endpoint === "variants") {
+    return `/api/pos/catalog/${endpoint}`
+  }
+  throw new Error(`Unsupported POS catalog endpoint: ${path}`)
+}
+
+const getPosHttpBaseUrl = () => {
+  return stripTrailingSlash(process.env.POS_INTERNAL_URL || process.env.NEXT_PUBLIC_POS_BACKEND_URL || "http://localhost:7004")
 }
 
 const isAlreadyPaidError = (error: unknown) =>
   error instanceof Error && error.message.toLowerCase().includes("already fully paid")
+
+const isPaymentOutcomeUncertain = (error: unknown) =>
+  error instanceof Error &&
+  (isAlreadyPaidError(error) || error.message.toLowerCase().includes("request timed out"))
 
 const buildPermissionNotice = (
   resource: string,
@@ -406,6 +411,7 @@ export default function POSExecutionWorkspace() {
   const [itemQuantities, setItemQuantities] = useState<Record<string, string>>({})
   const [discountPercent, setDiscountPercent] = useState("")
   const [discountAmount, setDiscountAmount] = useState("")
+  const [selectedDiscountId, setSelectedDiscountId] = useState("")
   const [tipAmount, setTipAmount] = useState("")
   const [tipPercent, setTipPercent] = useState("")
   const [holdReason, setHoldReason] = useState("")
@@ -449,13 +455,23 @@ export default function POSExecutionWorkspace() {
   const quantitySyncInFlightRef = useRef<Record<string, boolean>>({})
   const quantityPendingValuesRef = useRef<Record<string, string>>({})
   const currentOrderRef = useRef<POSOrder | undefined>(undefined)
+  const terminalsRef = useRef<POSTerminal[]>([])
+  const deviceBindingRef = useRef<POSTerminalDeviceBinding | undefined>(undefined)
+  const bootstrapEffectKeyRef = useRef<string | undefined>(undefined)
   const sessionOpenInFlightRef = useRef(false)
+  const draftOrderInFlightRef = useRef<Promise<POSOrder | null> | null>(null)
+  const catalogRefreshRequestRef = useRef(0)
 
   const deferredCatalogQuery = useDeferredValue(catalogQuery.trim())
   const { profile } = useCompanyProfile()
   const tablesEnabled = supportsPosTables(profile?.industry)
   const canReadPos = hasPermission("read_pos")
   const canOperatePos = hasPermission("operate_pos")
+  const { data: discountPolicyPage } = useGetDiscountsPageQuery(
+    { page: 1, page_size: 100, is_active: true },
+    { skip: !canReadPos },
+  )
+  const discountPolicies = discountPolicyPage?.results ?? []
   const currencyCode = readCookieValue("currency", getCookie) || "NGN"
   const sessionReadNotice = !canReadPos
     ? buildPermissionNotice("POS session data", "read_pos", "You do not have permission to load POS session data.")
@@ -515,8 +531,15 @@ export default function POSExecutionWorkspace() {
       return terminalKeys.includes(boundTerminalId)
     })
   }, [boundTerminalId, sessions, terminals])
+  const posServiceNotice =
+    !bootstrapLoading && canReadPos && bootstrapUnavailable
+      ? {
+          title: "POS service unavailable",
+          message: "The cashier workspace could not load its POS data. Check the POS service connection and try again.",
+        }
+      : undefined
   const deviceBindingNotice =
-    !bootstrapLoading && canReadPos && !deviceBinding
+    !bootstrapLoading && canReadPos && !bootstrapUnavailable && !deviceBinding
       ? {
           title: "Terminal setup required",
           message:
@@ -535,14 +558,25 @@ export default function POSExecutionWorkspace() {
       if (!terminalRef) {
         return ""
       }
-      return terminalMap[terminalRef]?.sync_identifier || terminalMap[terminalRef]?.id || terminalRef
+      const terminal = terminalsRef.current.find(
+        (candidate) => candidate.sync_identifier === terminalRef || candidate.id === terminalRef,
+      )
+      return terminal?.sync_identifier || terminal?.id || terminalRef
     },
-    [terminalMap],
+    [],
   )
 
   useEffect(() => {
     currentOrderRef.current = currentOrder
   }, [currentOrder])
+
+  useEffect(() => {
+    terminalsRef.current = terminals
+  }, [terminals])
+
+  useEffect(() => {
+    deviceBindingRef.current = deviceBinding
+  }, [deviceBinding])
 
   const updateBusy = (key: BusyAction, value: boolean) => {
     setBusyActions((current) => {
@@ -586,8 +620,15 @@ export default function POSExecutionWorkspace() {
     const nextSessions = (bootstrap.sessions || [])
       .map((session) => normalizeSession(session))
       .filter((session): session is POSSession => Boolean(session))
-    const nextDeviceBinding = bootstrap.device_binding !== undefined ? bootstrap.device_binding || undefined : deviceBinding
-    const nextTerminals = bootstrap.terminals !== undefined ? bootstrap.terminals : terminals
+    const nextDeviceBinding =
+      bootstrap.device_binding !== undefined ? bootstrap.device_binding || undefined : deviceBindingRef.current
+    const nextTerminals = bootstrap.terminals !== undefined ? bootstrap.terminals : terminalsRef.current
+    if (bootstrap.device_binding !== undefined) {
+      deviceBindingRef.current = nextDeviceBinding
+    }
+    if (bootstrap.terminals !== undefined) {
+      terminalsRef.current = nextTerminals
+    }
     const occupiedTerminalIds = new Set(
       nextSessions
         .filter((session) => session.status === "open")
@@ -655,7 +696,7 @@ export default function POSExecutionWorkspace() {
       const firstTerminal = nextAvailableTerminals[0]
       return firstTerminal?.sync_identifier || firstTerminal?.id || ""
     })
-  }, [deviceBinding, terminals])
+  }, [])
 
   const fetchJson = useCallback(
     async <T,>(
@@ -668,10 +709,6 @@ export default function POSExecutionWorkspace() {
       },
     ): Promise<T> => {
       const accessToken = readCookieValue("accessToken", getCookie)
-      if (!accessToken) {
-        throw new Error("You are no longer authenticated.")
-      }
-
       const query = new URLSearchParams()
       Object.entries(init?.params || {}).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== "") {
@@ -680,15 +717,28 @@ export default function POSExecutionWorkspace() {
       })
       const suffix = query.size ? `${path.includes("?") ? "&" : "?"}${query.toString()}` : ""
 
-      const response = await fetch(`${baseUrl}${path}${suffix}`, {
-        method: init?.method || "GET",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          ...(getOrCreatePosDeviceId() ? { "X-Device-ID": getOrCreatePosDeviceId() as string } : {}),
-          ...(init?.body ? { "Content-Type": "application/json" } : {}),
-        },
-        ...(init?.body ? { body: JSON.stringify(init.body) } : {}),
-      })
+      const controller = new AbortController()
+      const timeoutId = window.setTimeout(() => controller.abort(), getHttpRequestTimeoutMs())
+      let response: Response
+      try {
+        response = await fetch(`${baseUrl}${path}${suffix}`, {
+          method: init?.method || "GET",
+          headers: {
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+            ...(getOrCreatePosDeviceId() ? { "X-Device-ID": getOrCreatePosDeviceId() as string } : {}),
+            ...(init?.body ? { "Content-Type": "application/json" } : {}),
+          },
+          signal: controller.signal,
+          ...(init?.body ? { body: JSON.stringify(init.body) } : {}),
+        })
+      } catch (error) {
+        if (controller.signal.aborted) {
+          throw new Error("POS request timed out. Please try again.")
+        }
+        throw error
+      } finally {
+        window.clearTimeout(timeoutId)
+      }
       const payload = await response.json().catch(() => ({}))
       if (!response.ok) {
         throw new Error(
@@ -720,7 +770,7 @@ export default function POSExecutionWorkspace() {
         body?: Record<string, unknown>
         params?: Record<string, string | number | boolean | undefined | null>
       },
-    ): Promise<T> => fetchJson<T>(getProductHttpBaseUrl(), path, init),
+    ): Promise<T> => fetchJson<T>("", productCatalogProxyPath(path), init),
     [fetchJson],
   )
 
@@ -767,8 +817,7 @@ export default function POSExecutionWorkspace() {
             customersResult,
             tablesResult,
             heldOrdersResult,
-            productsResult,
-            variantsResult,
+            catalogResult,
           ] = await Promise.all([
             settle(fetchPosJson<POSConfiguration>("/pos_api/configurations/current/")),
             settle(fetchOptionalPosJson<POSTerminalDeviceBinding>("/pos_api/terminals/device_binding/")),
@@ -778,12 +827,7 @@ export default function POSExecutionWorkspace() {
             settle(fetchPosJson<POSCustomer[]>("/pos_api/customers/")),
             settle(tablesEnabled ? fetchPosJson<POSTable[]>("/pos_api/tables/") : Promise.resolve([])),
             settle(fetchPosJson<POSHoldOrder[]>("/pos_api/orders/held_orders/")),
-            settle(
-              fetchProductJson<Record<string, unknown>[]>("/product_api/pos/products/", {
-                params: { page_size: 200 },
-              }),
-            ),
-            settle(fetchProductJson<Record<string, unknown>[]>("/product_api/pos/variants/")),
+            settle(fetchPosJson<CashierCatalogSnapshot>("/pos_api/orders/sellable/")),
           ])
 
           const sessionsData = sessionsResult.ok ? sessionsResult.value : []
@@ -835,7 +879,7 @@ export default function POSExecutionWorkspace() {
             (!tablesEnabled ? false : !tablesResult.ok) &&
             !heldOrdersResult.ok
 
-          const catalogUnavailable = !productsResult.ok
+          const catalogUnavailable = !catalogResult.ok
 
           return {
             type: "bootstrap.ready",
@@ -848,12 +892,7 @@ export default function POSExecutionWorkspace() {
               customers: customersResult.ok ? customersResult.value : undefined,
               tables: tablesEnabled ? (tablesResult.ok ? tablesResult.value : undefined) : [],
               held_orders: heldOrdersResult.ok ? heldOrdersResult.value : undefined,
-              catalog: productsResult.ok
-                ? buildCatalogSnapshotFromDjango(
-                    productsResult.value,
-                    variantsResult.ok ? variantsResult.value : [],
-                  )
-                : undefined,
+              catalog: catalogResult.ok ? catalogResult.value : undefined,
               current_order: currentOrder,
               inventory_summary: inventorySummary,
               pos_unavailable: posUnavailable,
@@ -974,6 +1013,7 @@ export default function POSExecutionWorkspace() {
             payload: await fetchPosJson(`/pos_api/orders/${payload.order_id}/apply_discount/`, {
               method: "POST",
               body: {
+                discount_id: payload.discount_id,
                 discount_percent: payload.discount_percent,
                 discount_amount: payload.discount_amount,
               },
@@ -1075,6 +1115,12 @@ export default function POSExecutionWorkspace() {
             }
           }
         case "order.hold":
+          await fetchPosJson(`/pos_api/orders/${payload.order_id}/hold_order/`, {
+            method: "POST",
+            body: {
+              hold_reason: payload.hold_reason || "",
+            },
+          })
           return {
             type: "held_orders.updated",
             payload: {
@@ -1109,30 +1155,18 @@ export default function POSExecutionWorkspace() {
           }
         case "catalog.snapshot": {
           const query = String(payload.query || "").trim()
-          const [productsData, variantsData] = await Promise.all([
-            fetchProductJson<Record<string, unknown>[]>(
-              query ? "/product_api/pos/products/search/" : "/product_api/pos/products/",
-              {
-                params: query ? { q: query } : { page_size: 200 },
-              },
-            ),
-            fetchProductJson<Record<string, unknown>[]>(
-              query ? "/product_api/pos/variants/search/" : "/product_api/pos/variants/",
-              {
-                params: query ? { q: query } : undefined,
-              },
-            ),
-          ])
           return {
             type: "catalog.updated",
-            payload: buildCatalogSnapshotFromDjango(productsData, variantsData),
+            payload: await fetchPosJson<CashierCatalogSnapshot>("/pos_api/orders/sellable/", {
+              params: query ? { q: query } : undefined,
+            }),
           }
         }
         default:
           throw new Error(`No HTTP fallback is configured for ${type}.`)
       }
     },
-    [fetchOptionalPosJson, fetchPosJson, fetchProductJson, resolveTerminalForeignKey, tablesEnabled],
+    [fetchJson, fetchOptionalPosJson, fetchPosJson, fetchProductJson, resolveTerminalForeignKey, tablesEnabled],
   )
 
   const sendCommand = useCallback(async (type: string, payload: Record<string, unknown> = {}) => {
@@ -1163,6 +1197,10 @@ export default function POSExecutionWorkspace() {
   }, [fetchPosJson, sendHttpCommandFallback])
 
   const refreshBootstrap = useCallback(async () => {
+    const requestId = ++catalogRefreshRequestRef.current
+    setBootstrapLoading(true)
+    setCatalogLoading(true)
+    setCatalogUnavailable(false)
     try {
       if (!canReadPos) {
         const [productsResult, variantsResult] = await Promise.allSettled([
@@ -1175,6 +1213,9 @@ export default function POSExecutionWorkspace() {
         const productsOk = productsResult.status === "fulfilled"
         const variantsOk = variantsResult.status === "fulfilled"
 
+        if (requestId !== catalogRefreshRequestRef.current) {
+          return
+        }
         applyBootstrap({
           configuration: null,
           session: null,
@@ -1201,7 +1242,7 @@ export default function POSExecutionWorkspace() {
       }
 
       const response = await sendCommand("bootstrap")
-      if (response.payload) {
+      if (requestId === catalogRefreshRequestRef.current && response.payload) {
         const bootstrap = response.payload as CashierBootstrap
         applyBootstrap(bootstrap)
         setSocketReady(true)
@@ -1209,8 +1250,10 @@ export default function POSExecutionWorkspace() {
         setCatalogUnavailable(!!bootstrap.catalog_unavailable)
       }
     } finally {
-      setBootstrapLoading(false)
-      setCatalogLoading(false)
+      if (requestId === catalogRefreshRequestRef.current) {
+        setBootstrapLoading(false)
+        setCatalogLoading(false)
+      }
     }
   }, [applyBootstrap, canReadPos, fetchProductJson, sendCommand])
 
@@ -1251,6 +1294,7 @@ export default function POSExecutionWorkspace() {
     setItemQuantities({})
     setDiscountPercent("")
     setDiscountAmount("")
+    setSelectedDiscountId("")
     setTipPercent("")
     setTipAmount("")
     setHoldReason("")
@@ -1258,18 +1302,29 @@ export default function POSExecutionWorkspace() {
 
   const recoverTimedOutPayment = useCallback(
     async (orderId: string) => {
-      const verifiedOrder = await fetchPosJson<POSOrder>(`/pos_api/orders/${orderId}/`)
-      if (verifiedOrder.payment_status !== "paid") {
-        throw new Error("Payment confirmation is still pending.")
+      // A browser timeout does not cancel a payment already executing on the server.
+      // Poll briefly before surfacing a failure so a retry cannot look like a second sale.
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const verifiedOrder = await fetchPosJson<POSOrder>(`/pos_api/orders/${orderId}/`)
+        if (verifiedOrder.payment_status !== "paid") {
+          if (attempt < 2) {
+            await new Promise<void>((resolve) => window.setTimeout(resolve, 750 * (attempt + 1)))
+            continue
+          }
+          break
+        }
+
+        toast.success(
+          verifiedOrder.requires_inventory_processing
+            ? "Payment went through. Inventory is being finalized automatically."
+            : "Payment went through.",
+        )
+        clearCurrentSale()
+        void refreshBootstrap().catch(() => undefined)
+        return
       }
 
-      toast.success(
-        verifiedOrder.requires_inventory_processing
-          ? "Payment went through. Finish the inventory step."
-          : "Payment went through.",
-      )
-      clearCurrentSale()
-      void refreshBootstrap().catch(() => undefined)
+      throw new Error("Payment confirmation is still pending.")
     },
     [clearCurrentSale, fetchPosJson, refreshBootstrap],
   )
@@ -1421,6 +1476,10 @@ export default function POSExecutionWorkspace() {
       return currentOrder
     }
 
+    if (draftOrderInFlightRef.current) {
+      return draftOrderInFlightRef.current
+    }
+
     if (currentOrder && !currentOrder.id) {
       setCurrentOrder(undefined)
     }
@@ -1434,17 +1493,27 @@ export default function POSExecutionWorkspace() {
       return null
     }
 
-    const response = await sendCommand("order.ensure_draft", {
-      session_id: resolveSessionForeignKey(currentSession),
-      customer_id: customerId || undefined,
-      table_id: tableId || undefined,
-    })
-    const nextOrder = response.payload as POSOrder
-    if (!nextOrder?.id) {
-      throw new Error("Draft order could not be created.")
+    const draftRequest = (async () => {
+      const response = await sendCommand("order.ensure_draft", {
+        session_id: resolveSessionForeignKey(currentSession),
+        customer_id: customerId || undefined,
+        table_id: tableId || undefined,
+      })
+      const nextOrder = response.payload as POSOrder
+      if (!nextOrder?.id) {
+        throw new Error("Draft order could not be created.")
+      }
+      setCurrentOrder(nextOrder)
+      return nextOrder
+    })()
+    draftOrderInFlightRef.current = draftRequest
+    try {
+      return await draftRequest
+    } finally {
+      if (draftOrderInFlightRef.current === draftRequest) {
+        draftOrderInFlightRef.current = null
+      }
     }
-    setCurrentOrder(nextOrder)
-    return nextOrder
   }
 
   const handleStartDraft = async () => {
@@ -1752,6 +1821,7 @@ export default function POSExecutionWorkspace() {
       await runBusy("applyingDiscount", async () => {
         const response = await sendCommand("order.discount.apply", {
           order_id: currentOrder.id,
+          discount_id: selectedDiscountId || undefined,
           discount_percent: discountPercent || undefined,
           discount_amount: discountAmount || undefined,
         })
@@ -1806,6 +1876,9 @@ export default function POSExecutionWorkspace() {
         })
       })
       clearCurrentSale()
+      if (sessionId) {
+        void refreshCloseoutSummary(sessionId)
+      }
       void refreshBootstrap().catch(() => undefined)
       toast.success("Order moved to held carts")
     } catch (error) {
@@ -1828,6 +1901,9 @@ export default function POSExecutionWorkspace() {
         await sendCommand("order.cancel", { order_id: currentOrder.id })
       })
       clearCurrentSale()
+      if (sessionId) {
+        void refreshCloseoutSummary(sessionId)
+      }
       void refreshBootstrap().catch(() => undefined)
       toast.success("Order cancelled")
     } catch (error) {
@@ -1933,7 +2009,7 @@ export default function POSExecutionWorkspace() {
           : "Payment processed",
       )
     } catch (error) {
-      if (isAlreadyPaidError(error)) {
+      if (isPaymentOutcomeUncertain(error)) {
         try {
           await recoverTimedOutPayment(currentOrder.id)
           return
@@ -1955,7 +2031,7 @@ export default function POSExecutionWorkspace() {
           message: `${boundTerminal.name} is already running another open session. Close that session before starting a new one on this browser.`,
         }
       : undefined
-  const sessionBlockingNotice = deviceBindingNotice || inactiveBindingNotice || occupiedBindingNotice
+  const sessionBlockingNotice = posServiceNotice || deviceBindingNotice || inactiveBindingNotice || occupiedBindingNotice
   const expectedOpeningBalance = Number(
     openingDefaults?.expected_opening_balance ?? openingDefaults?.recommended_opening_balance ?? 0,
   )
@@ -2093,6 +2169,11 @@ export default function POSExecutionWorkspace() {
   }, [currentOrder])
 
   useEffect(() => {
+    const bootstrapKey = `${canReadPos}:${tablesEnabled}`
+    if (bootstrapEffectKeyRef.current === bootstrapKey) {
+      return
+    }
+    bootstrapEffectKeyRef.current = bootstrapKey
     void refreshBootstrap().catch(() => {
       setSocketReady(false)
       setBootstrapUnavailable(true)
@@ -2100,7 +2181,7 @@ export default function POSExecutionWorkspace() {
       setBootstrapLoading(false)
       setCatalogLoading(false)
     })
-  }, [refreshBootstrap])
+  }, [canReadPos, refreshBootstrap, tablesEnabled])
 
   const scheduleItemQuantitySync = (itemId: string, value: string) => {
     const order = currentOrderRef.current
@@ -2253,8 +2334,23 @@ export default function POSExecutionWorkspace() {
               onStartDraft={handleStartDraft}
               discountPercent={discountPercent}
               discountAmount={discountAmount}
-              onDiscountPercentChange={setDiscountPercent}
-              onDiscountAmountChange={setDiscountAmount}
+              discountPolicies={discountPolicies}
+              selectedDiscountId={selectedDiscountId}
+              onDiscountPolicyChange={(discountId) => {
+                setSelectedDiscountId(discountId)
+                if (discountId) {
+                  setDiscountPercent("")
+                  setDiscountAmount("")
+                }
+              }}
+              onDiscountPercentChange={(value) => {
+                setSelectedDiscountId("")
+                setDiscountPercent(value)
+              }}
+              onDiscountAmountChange={(value) => {
+                setSelectedDiscountId("")
+                setDiscountAmount(value)
+              }}
               onApplyDiscount={handleApplyDiscount}
               tipPercent={tipPercent}
               tipAmount={tipAmount}
@@ -2267,7 +2363,7 @@ export default function POSExecutionWorkspace() {
               onCancelOrder={handleCancelOrder}
               hasInventoryControls={orderHasInventory}
               canStartDraft={hasCurrentSession && canOperatePos && !bootstrapLoading && !bootstrapUnavailable}
-              isCreatingDraft={!!busyActions.creatingDraft}
+              isCreatingDraft={!!busyActions.creatingDraft || (!currentOrder && Object.keys(pendingAddVariantIds).length > 0)}
               syncingItemIds={syncingItemIds}
               removingItemIds={removingItemIds}
               isApplyingDiscount={!!busyActions.applyingDiscount}

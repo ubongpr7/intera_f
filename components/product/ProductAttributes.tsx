@@ -292,6 +292,7 @@ export default function ProductAttributes({ mode = "embedded" }: ProductAttribut
           onEditAttribute={openEditAttribute}
           onDeleteAttribute={handleDeleteAttribute}
           onOpenValues={openValues}
+          insideSheet={false}
         />
         {managementSheet}
       </div>
@@ -341,6 +342,7 @@ function AttributeLibraryPanel({
   onEditAttribute,
   onDeleteAttribute,
   onOpenValues,
+  insideSheet = true,
 }: {
   attributes: ProductAttribute[]
   filteredAttributes: ProductAttribute[]
@@ -354,16 +356,27 @@ function AttributeLibraryPanel({
   onEditAttribute: (attribute: ProductAttribute) => void
   onDeleteAttribute: (attributeId: string) => void
   onOpenValues: (attribute: ProductAttribute) => void
+  insideSheet?: boolean
 }) {
   return (
     <>
-      <SheetHeader className="pr-8">
-        <SheetTitle>Workspace attribute template library</SheetTitle>
-        <SheetDescription>
-          These counts are for all reusable attribute templates in this workspace, not for the current product. Attach relevant templates to
-          the product from the “Attributes linked to this product” section.
-        </SheetDescription>
-      </SheetHeader>
+      {insideSheet ? (
+        <SheetHeader className="pr-8">
+          <SheetTitle>Workspace attribute template library</SheetTitle>
+          <SheetDescription>
+            These counts are for all reusable attribute templates in this workspace, not for the current product. Attach relevant templates to
+            the product from the “Attributes linked to this product” section.
+          </SheetDescription>
+        </SheetHeader>
+      ) : (
+        <div className="pr-8">
+          <h2 className="text-lg font-semibold text-gray-900">Workspace attribute template library</h2>
+          <p className="mt-1 text-sm text-gray-600">
+            These counts are for all reusable attribute templates in this workspace, not for the current product. Attach relevant templates to
+            the product from the “Attributes linked to this product” section.
+          </p>
+        </div>
+      )}
 
       <div className="mt-6 space-y-5">
         <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-blue-900">

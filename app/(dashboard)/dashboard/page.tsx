@@ -496,26 +496,6 @@ export default function DashboardPage() {
           />
         )}
 
-        {canReadPos ? (
-          <DomainLaunchCard
-            title="POS floor"
-            description="Run the cashier flow: sessions, held carts, customer assignment, inventory confirmation, and checkout."
-            href="/pos"
-            icon={CreditCard}
-            facts={[
-              { label: "Session", value: currentSession ? "Live" : "Closed" },
-              { label: "Held carts", value: heldOrders.length },
-              { label: "Orders today", value: posSalesCount },
-            ]}
-          />
-        ) : (
-          <PermissionLaunchCard
-            title="POS floor"
-            description="Run the cashier flow: sessions, held carts, customer assignment, inventory confirmation, and checkout."
-            requiredPermission="read_pos"
-          />
-        )}
-
         {canReadPurchaseOrders ? (
           <DomainLaunchCard
             title="Purchasing"
@@ -663,9 +643,9 @@ export default function DashboardPage() {
 
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="border-b border-gray-100 p-5 text-left text-inherit">
-            <CardTitle className="text-xl tracking-tight">Live checkout and team context</CardTitle>
+            <CardTitle className="text-xl tracking-tight">POS operations and team context</CardTitle>
             <CardDescription className="text-sm leading-6 text-gray-600">
-              Quick operational context without switching into the POS floor or settings pages.
+              Monitor POS activity here while cashier checkout runs in the dedicated POS application.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 p-5">
@@ -676,11 +656,11 @@ export default function DashboardPage() {
                 <p className="mt-1 text-sm text-gray-900">
                   {currentSession
                     ? `Started ${formatDateTime(currentSession.opening_time)}`
-                    : "Open the POS floor to start a selling session."}
+                    : "No active cashier session in the dedicated POS application."}
                 </p>
                 <div className="mt-4">
                   <Button asChild variant="outline" className="border-blue-300 bg-gray-900 text-gray-200 hover:bg-blue-100">
-                    <Link href="/pos">Open POS floor</Link>
+                    <Link href="/pos/settings">Manage POS settings</Link>
                   </Button>
                 </div>
               </div>

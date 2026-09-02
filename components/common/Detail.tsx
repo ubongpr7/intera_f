@@ -265,6 +265,8 @@ export default function DetailCard<T extends Record<string, any>>({
       {updateMutation && (
         <button
           onClick={() => setIsEditOpenOption(true)}
+          aria-label="Edit record details"
+          title="Edit record details"
           className="absolute right-6 top-6 rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <Edit className="h-5 w-5" />

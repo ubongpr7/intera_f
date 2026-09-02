@@ -17,7 +17,7 @@ export type ReactSelectFieldProps = ReactSelectProps<SelectOption, boolean> & {
   helperText?: string
   inputId?: string
   creatable?: boolean
-  [key: string]: any
+  formatCreateLabel?: (inputValue: string) => React.ReactNode
 }
 
 const customStyles: StylesConfig<SelectOption, boolean> = {

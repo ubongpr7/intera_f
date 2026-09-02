@@ -14,6 +14,8 @@ export interface CurrencyResponse {
 
 export interface Address {
   id?: number | string;
+  address_id?: string | null;
+  shared_address_id?: string | null;
   country: number | null;
   region: number | null;
   subregion: number | null;

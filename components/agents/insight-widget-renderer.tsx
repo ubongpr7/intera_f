@@ -64,6 +64,34 @@ const productImageFallback = (item: Record<string, unknown>) => {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
 }
 
+const productImageUrl = (item: Record<string, unknown>) => {
+  const media = asRecord(item.media)
+  return (
+    asString(item.image_url) ||
+    asString(item.display_image) ||
+    asString(item.product_variant_image_url) ||
+    asString(item.product_image_url) ||
+    asString(item.image) ||
+    asString(media?.image_url) ||
+    asString(media?.url) ||
+    ""
+  )
+}
+
+function ProductImage({ item, alt, className }: { item: Record<string, unknown>; alt: string; className: string }) {
+  const [hasError, setHasError] = useState(false)
+  const source = hasError || !productImageUrl(item) ? productImageFallback(item) : productImageUrl(item)
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={source}
+      alt={alt}
+      className={className}
+      onError={() => setHasError(true)}
+    />
+  )
+}
+
 const asNumber = (value: unknown): number | null => {
   if (typeof value === "number" && Number.isFinite(value)) {
     return value
@@ -109,7 +137,7 @@ const EXPLICIT_CURRENCY_HINTS = new Set(["currency", "money", "monetary"])
 const MONEY_HINT_PATTERN =
   /\b(revenue|sales|price|cost|basket|stock value|order value|payment|subtotal|inflow|outflow|profit|margin|gmv|value)\b/i
 const NUMBER_HINT_PATTERN =
-  /\b(count|quantity|qty|unit|units|item|items|location|locations|event|events|alert|alerts|days|rate|ratio|score|status|statuses|tracked|ranked|remaining)\b/i
+  /\b(count|quantity|qty|unit|units|item|items|location|locations|event|events|alert|alerts|days|rate|ratio|score|status|statuses|tracked|ranked|remaining|action|actions|offset|offsets|frequency|frequencies|occurrence|occurrences|staff)\b/i
 
 const resolveCurrencyCode = (...candidates: unknown[]) => {
   for (const candidate of candidates) {
@@ -203,6 +231,9 @@ const formatScalarValue = (
   }
 
   const numeric = asNumber(value)
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "No"
+  }
   if (numeric === null) {
     return asString(value) || "0"
   }
@@ -231,6 +262,76 @@ const formatMetricValue = (
 ) => {
   const formatted = formatScalarValue(value, options)
   return unit ? `${formatted}${unit}` : formatted
+}
+
+const plainActionText = (action: Record<string, unknown>, values?: Record<string, string>) => {
+  const payload = asRecord(action.payload)
+  const actionName =
+    asString(action.prompt).trim()
+    || asString(payload?.prompt).trim()
+    || asString(action.label).trim()
+    || asString(action.action).trim()
+    || asString(action.title).trim()
+    || "Continue"
+  const entries = Object.entries(values ?? {}).filter(([, value]) => value.trim())
+  return entries.length
+    ? `${actionName}\n${entries.map(([key, value]) => `${humanizeKey(key)}: ${value}`).join("\n")}`
+    : actionName
+}
+
+type DisplayValueContext = {
+  title?: string
+  label?: string
+  key?: string
+  explicitFormat?: unknown
+  currencyCode?: unknown
+}
+
+const displayValue = (value: unknown, context: DisplayValueContext = {}): string => {
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "No"
+  }
+  if (typeof value === "string" || typeof value === "number") {
+    return formatScalarValue(value, context)
+  }
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => displayValue(item, context))
+      .filter(Boolean)
+      .map((item) => `• ${item}`)
+      .join("\n")
+  }
+  const record = asRecord(value)
+  if (record) {
+    return Object.entries(record)
+      .filter(([, item]) => item !== undefined && item !== null && item !== "")
+      .map(([key, item]) => `${humanizeKey(key)}: ${displayValue(item, { ...context, key })}`)
+      .join("\n")
+  }
+  return ""
+}
+
+const INTERNAL_DISPLAY_KEYS = new Set([
+  "raw_json",
+  "agent_id",
+  "source_agent",
+  "source_agent_id",
+  "global_product_id",
+])
+
+const isImageKey = (key: string) => /(?:^|_)(?:image|thumbnail|photo|picture)(?:_url)?$/i.test(key)
+
+const isInternalDisplayKey = (key: string) => INTERNAL_DISPLAY_KEYS.has(key.toLowerCase())
+
+const normalizeDataRows = (value: unknown): Array<Record<string, unknown>> => {
+  if (!Array.isArray(value)) {
+    return []
+  }
+  const records = value.map(asRecord)
+  if (records.every(Boolean)) {
+    return records.filter(Boolean) as Array<Record<string, unknown>>
+  }
+  return value.map((item) => ({ value: item }))
 }
 
 const palette = ["#0f766e", "#1d4ed8", "#ca8a04", "#c2410c", "#9333ea", "#be185d"]
@@ -280,13 +381,10 @@ function InsightActionForm({
       className="space-y-3"
       onSubmit={(event) => {
         event.preventDefault()
-        onSend(
-          JSON.stringify({
-            type: "insight_action_form_submit",
-            action: asString(widget.action) || asString(widget.title) || "action_form",
-            values,
-          }),
-        )
+        onSend(plainActionText({
+          action: asString(widget.action),
+          title: asString(widget.title),
+        }, values))
       }}
     >
       {fields.map((field) => {
@@ -613,7 +711,6 @@ function renderWidget(
         <div className="space-y-2">
           {items.map((item, itemIndex) => {
             const barcodeValue = asString(item.barcode || asRecord(item.meta)?.barcode)
-            const imageUrl = asString(item.image_url) || productImageFallback(item)
             const hideValue = Boolean(item.hide_value)
             return (
             <div key={`${title}-${itemIndex}`} className="flex items-start justify-between gap-3 rounded-[20px] bg-gray-50 px-4 py-3">
@@ -621,10 +718,11 @@ function renderWidget(
                 <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-xs font-semibold text-gray-600">
                   {itemIndex + 1}
                 </span>
-                {imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={imageUrl} alt={asString(item.label) || asString(item.title) || "Item"} className="h-14 w-14 shrink-0 rounded-2xl object-cover" />
-                ) : null}
+                <ProductImage
+                  item={item}
+                  alt={asString(item.label) || asString(item.title) || "Item"}
+                  className="h-14 w-14 shrink-0 rounded-2xl object-cover"
+                />
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-gray-900">{asString(item.label) || asString(item.title) || "Item"}</p>
                   {asString(item.detail) ? <p className="mt-1 text-xs text-gray-500">{asString(item.detail)}</p> : null}
@@ -740,13 +838,25 @@ function renderWidget(
                 <tr key={`${title}-${rowIndex}`} className="rounded-2xl bg-gray-50">
                   {normalizedColumns.map((column) => (
                     <td key={`${rowIndex}-${column.key}`} className="px-3 py-3 text-gray-700">
-                      {formatScalarValue(row[column.key], {
-                        explicitFormat: column.format,
-                        title,
-                        label: column.label,
-                        key: column.key,
-                        currencyCode: column.currencyCode ?? row.currency_code ?? row.currency ?? widget.currency_code ?? widget.currency,
-                      })}
+                      {column.key.toLowerCase() === "already_imported" && typeof row[column.key] === "boolean" ? (
+                        row[column.key] ? "Already in inventory" : "New import candidate"
+                      ) : isImageKey(column.key) && asString(row[column.key]) ? (
+                        <ProductImage
+                          item={row}
+                          alt={asString(row.name) || asString(row.label) || "Product"}
+                          className="h-12 w-12 rounded-xl object-cover"
+                        />
+                      ) : (
+                        <span className="whitespace-pre-line">
+                          {displayValue(row[column.key], {
+                            title,
+                            label: column.label,
+                            key: column.key,
+                            explicitFormat: column.format,
+                            currencyCode: column.currencyCode ?? row.currency_code ?? row.currency ?? widget.currency_code ?? widget.currency,
+                          }) || "Not provided"}
+                        </span>
+                      )}
                     </td>
                   ))}
                 </tr>
@@ -787,6 +897,45 @@ function renderWidget(
     )
   }
 
+  if (type === "text_list") {
+    const items = asArray(widget.items)
+    return (
+      <WidgetCard key={`${type}-${index}`} title={title} subtitle={subtitle}>
+        <div className="space-y-2">
+          {items.map((rawItem, itemIndex) => {
+            const item = asRecord(rawItem)
+            const itemText = item
+              ? asString(item.detail) || asString(item.description) || asString(item.value)
+              : displayValue(rawItem, { title, key: "item" })
+            return (
+            <div key={`${title}-${itemIndex}`} className="rounded-[20px] bg-gray-50 px-4 py-3">
+              {item && asString(item.label) ? (
+                <p className="text-sm font-semibold text-gray-900">{asString(item.label)}</p>
+              ) : null}
+              {itemText ? (
+                <p className={`${item && asString(item.label) ? "mt-1" : ""} whitespace-pre-line text-sm leading-6 text-gray-700`}>
+                  {itemText}
+                </p>
+              ) : null}
+            </div>
+            )
+          })}
+        </div>
+      </WidgetCard>
+    )
+  }
+
+  if (type === "text_block") {
+    const text = asString(widget.content) || asString(widget.text) || displayValue(widget.value, { title, key: "value" })
+    return (
+      <WidgetCard key={`${type}-${index}`} title={title} subtitle={subtitle}>
+        <div className="rounded-[20px] bg-gray-50 px-4 py-3">
+          <p className="whitespace-pre-wrap text-sm leading-6 text-gray-700">{text}</p>
+        </div>
+      </WidgetCard>
+    )
+  }
+
   if (type === "progress_tracker") {
     const steps = asArray(widget.steps).map((item) => asRecord(item)).filter(Boolean) as Array<Record<string, unknown>>
     return (
@@ -817,6 +966,109 @@ function renderWidget(
     )
   }
 
+  if (type === "section_stack") {
+    const sections = asArray(widget.sections).map((item) => asRecord(item)).filter(Boolean) as Array<Record<string, unknown>>
+    return (
+      <div key={`${type}-${index}`} className="space-y-4">
+        <WidgetCard title={title} subtitle={subtitle}>
+          <p className="text-xs leading-5 text-gray-500">
+            This review combines the completed analyses below. Each card represents a separate business domain.
+          </p>
+        </WidgetCard>
+        {sections.map((section, sectionIndex) => {
+          const nestedWidgets = asArray(section.widgets).map((item) => asRecord(item)).filter(Boolean) as Array<Record<string, unknown>>
+          const sectionWarnings = asArray(section.warnings)
+            .map((item) => asString(item).trim())
+            .filter(Boolean)
+          return (
+            <WidgetCard
+              key={`${title}-section-${sectionIndex}`}
+              title={asString(section.title) || `Section ${sectionIndex + 1}`}
+              subtitle={asString(section.summary) || undefined}
+            >
+              {asString(section.status_label) ? (
+                <span className="inline-flex rounded-full bg-gray-50 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-gray-500">
+                  {asString(section.status_label)}
+                </span>
+              ) : null}
+              {sectionWarnings.length ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {sectionWarnings.map((warning, warningIndex) => (
+                    <span
+                      key={`${title}-section-${sectionIndex}-warning-${warningIndex}`}
+                      className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800"
+                    >
+                      {warning}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+
+              {nestedWidgets.length ? (
+                <div className="mt-4 space-y-4">
+                  {nestedWidgets.map((nestedWidget, nestedIndex) =>
+                    renderWidget(nestedWidget, sectionIndex * 100 + nestedIndex, onSend),
+                  )}
+                </div>
+              ) : asString(section.raw_text) ? (
+                <div className="mt-4 rounded-[20px] bg-gray-50 px-4 py-3">
+                  <p className="whitespace-pre-wrap text-sm leading-6 text-gray-700">{asString(section.raw_text)}</p>
+                </div>
+              ) : null}
+            </WidgetCard>
+          )
+        })}
+      </div>
+    )
+  }
+
+  if (["object", "data", "data_part", "data-table", "table"].includes(type)) {
+    const rawRows = widget.rows ?? widget.items ?? widget.data
+    const rows = normalizeDataRows(rawRows)
+    if (rows.length) {
+      const columnKeys = Array.from(new Set(rows.flatMap((row) => Object.keys(row))))
+        .filter((key) => !isInternalDisplayKey(key))
+      return renderWidget(
+        {
+          type: "comparison_table",
+          title: title || "Data",
+          subtitle,
+          columns: columnKeys,
+          rows,
+        },
+        index,
+        onSend,
+      )
+    }
+
+    const values = asRecord(widget.data) ?? asRecord(widget.value) ?? {}
+    return (
+      <WidgetCard key={`${type}-${index}`} title={title || "Data"} subtitle={subtitle}>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {Object.entries(values).map(([key, value]) => (
+            <div key={key} className="rounded-[20px] bg-gray-50 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">{humanizeKey(key)}</p>
+              <p className="mt-1 text-sm leading-6 text-gray-700">
+                {displayValue(value, { title, label: humanizeKey(key), key }) || "Not provided"}
+              </p>
+            </div>
+          ))}
+        </div>
+      </WidgetCard>
+    )
+  }
+
+  if (["text", "text_part"].includes(type)) {
+    const text = asString(widget.text) || asString(widget.content) || displayValue(widget.value, { title, key: "value" })
+    return (
+      <WidgetCard key={`${type}-${index}`} title={title || "Overview"} subtitle={subtitle}>
+        <p className="whitespace-pre-wrap rounded-[20px] bg-gray-50 px-4 py-3 text-sm leading-6 text-gray-700">
+          {text}
+        </p>
+      </WidgetCard>
+    )
+  }
+
   if (type === "action_form") {
     return (
       <WidgetCard key={`${type}-${index}`} title={title} subtitle={subtitle}>
@@ -836,15 +1088,7 @@ function renderWidget(
               type="button"
               className="rounded-full bg-gray-900 px-4 py-2 text-sm font-medium text-gray-50 transition hover:bg-gray-700"
               onClick={() =>
-                onSend(
-                  JSON.stringify(
-                    asRecord(widget.confirm_payload) ?? {
-                      type: "insight_confirmation",
-                      action: asString(widget.action) || asString(widget.title),
-                      approved: true,
-                    },
-                  ),
-                )
+                onSend(`Confirm: ${asString(widget.action) || asString(widget.title) || "this action"}`)
               }
             >
               Confirm
@@ -853,15 +1097,7 @@ function renderWidget(
               type="button"
               className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
               onClick={() =>
-                onSend(
-                  JSON.stringify(
-                    asRecord(widget.cancel_payload) ?? {
-                      type: "insight_confirmation",
-                      action: asString(widget.action) || asString(widget.title),
-                      approved: false,
-                    },
-                  ),
-                )
+                onSend(`Cancel: ${asString(widget.action) || asString(widget.title) || "this action"}`)
               }
             >
               Cancel
@@ -877,9 +1113,8 @@ function renderWidget(
     return (
       <WidgetCard key={`${type}-${index}`} title={title} subtitle={subtitle}>
         <div className="flex items-start gap-4 rounded-[20px] bg-gray-50 px-4 py-4">
-          {asString(entity.image_url) ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={asString(entity.image_url)} alt={asString(entity.title) || "Entity"} className="h-20 w-20 rounded-2xl object-cover" />
+          {productImageUrl(entity) ? (
+            <ProductImage item={entity} alt={asString(entity.title) || "Entity"} className="h-20 w-20 rounded-2xl object-cover" />
           ) : (
             <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
               {asString(entity.kind) || "Item"}
@@ -910,10 +1145,19 @@ function renderWidget(
   }
 
   return (
-    <WidgetCard key={`${type}-${index}`} title={title || "Unsupported widget"} subtitle={subtitle}>
-      <pre className="overflow-x-auto rounded-[20px] bg-gray-50 p-3 text-xs text-gray-700">
-        {JSON.stringify(widget, null, 2)}
-      </pre>
+    <WidgetCard key={`${type}-${index}`} title={title || humanizeKey(type) || "Data"} subtitle={subtitle}>
+      <div className="space-y-2 rounded-[20px] bg-gray-50 px-4 py-3">
+        {Object.entries(widget)
+          .filter(([key, value]) => !["type", "title", "subtitle"].includes(key) && !isInternalDisplayKey(key) && value !== undefined && value !== null)
+          .map(([key, value]) => (
+            <div key={key} className="flex items-start justify-between gap-4 border-b border-gray-200 py-2 last:border-b-0">
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">{humanizeKey(key)}</span>
+              <span className="max-w-[70%] text-right text-sm text-gray-700">
+                {displayValue(value, { title, label: humanizeKey(key), key }) || "Not provided"}
+              </span>
+            </div>
+          ))}
+      </div>
     </WidgetCard>
   )
 }
@@ -961,15 +1205,7 @@ export default function InsightWidgetRenderer({ payload, onSend }: InsightRender
                 type="button"
                 className="rounded-full border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
                 onClick={() =>
-                  onSend(
-                    JSON.stringify(
-                      asRecord(action.payload) ?? {
-                        type: "insight_suggested_action",
-                        action: asString(action.action) || asString(action.label),
-                        prompt: asString(action.prompt),
-                      },
-                    ),
-                  )
+                onSend(plainActionText(action))
                 }
               >
                 {asString(action.label) || asString(action.action) || "Continue"}

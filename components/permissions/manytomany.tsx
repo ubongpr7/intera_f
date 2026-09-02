@@ -163,11 +163,12 @@ const UserGroupSelectionWorkspace = ({
         </p>
         <Button
           type="button"
+          variant="default"
           onClick={handleSave}
           disabled={!hasChanges || updateGroupLoading}
           className="rounded-full px-5"
         >
-          {updateGroupLoading ? <LoadingAnimation text="Updating..." ringColor="#ffffff" /> : 'Save Group Access'}
+          {updateGroupLoading ? <LoadingAnimation text="Updating..." ringColor="#0f172a" /> : 'Save Group Access'}
         </Button>
       </div>
     </div>

@@ -222,6 +222,10 @@ function ProductLibraryCard({
   onPreview: (productId: string) => void
   onToggleSelect: (productId: string) => void
 }) {
+  const importedVariantCount = getImportedVariantCount(product)
+  const hasImportedVariants = importedVariantCount > 0
+  const isFullyImported = isFullyImportedGlobalProduct(product)
+
   return (
     <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:border-gray-300">
       <div className="flex items-start gap-4">
@@ -249,15 +253,17 @@ function ProductLibraryCard({
               </p>
             </div>
             {canImport ? (
-              product.imported ? (
+              isFullyImported ? (
                 <Badge className="rounded-full border-green-200 bg-green-50 px-3 py-1 text-green-700 hover:bg-green-50">
-                  {isFullyImportedGlobalProduct(product)
-                    ? "Imported"
-                    : `Partially imported (${getImportedVariantCount(product)}/${product.variant_count})`}
+                  Imported
+                </Badge>
+              ) : hasImportedVariants ? (
+                <Badge className="rounded-full border-amber-200 bg-amber-50 px-3 py-1 text-amber-700 hover:bg-amber-50">
+                  Partially imported ({importedVariantCount}/{product.variant_count})
                 </Badge>
               ) : (
                 <Badge variant="outline" className="rounded-full px-3 py-1 text-gray-600">
-                  Ready to import
+                  Not imported (0/{product.variant_count})
                 </Badge>
               )
             ) : (
@@ -281,7 +287,7 @@ function ProductLibraryCard({
               <Eye className="mr-2 h-4 w-4" />
               Preview
             </Button>
-            {canImport && product.imported && product.workspace_product_id ? (
+            {canImport && isFullyImported && product.workspace_product_id ? (
               <Button asChild variant="outline" className="rounded-full">
                 <Link href={`/product/${product.workspace_product_id}`}>
                   Open imported product
@@ -291,7 +297,7 @@ function ProductLibraryCard({
             ) : canImport ? (
               <Button type="button" onClick={() => void onImport([product.id])} disabled={importing} className="rounded-full">
                 <PackagePlus className="mr-2 h-4 w-4" />
-                {importing ? "Importing..." : "Import to workspace"}
+                {importing ? "Importing..." : hasImportedVariants ? "Import remaining variants" : "Import to workspace"}
               </Button>
             ) : null}
           </div>
@@ -521,7 +527,7 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
   const pageNumbers = useMemo(() => buildVisiblePageNumbers(currentPage, totalPages), [currentPage, totalPages])
   const hasNextPage = Boolean(catalogPage?.next)
   const hasPreviousPage = Boolean(catalogPage?.previous)
-  const selectableIds = useMemo(() => visibleProducts.filter((product) => !product.imported).map((product) => product.id), [visibleProducts])
+  const selectableIds = useMemo(() => visibleProducts.map((product) => product.id), [visibleProducts])
   const selectedCount = selectedProductIds.length
   const parsedBarcodes = useMemo(() => parseBarcodeText(barcodeText), [barcodeText])
   const workspaceProductCount = workspaceProducts.length
@@ -589,7 +595,13 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
       }).unwrap()
       setBarcodeResolution(response)
       setSelectedBarcodeProductIds(
-        Array.from(new Set(response.matches.filter((match) => !match.global_product.imported).map((match) => match.global_product_id))),
+        Array.from(
+          new Set(
+            response.matches
+              .filter((match) => !isFullyImportedGlobalProduct(match.global_product))
+              .map((match) => match.global_product_id),
+          ),
+        ),
       )
       toast.success(barcodeResolutionSummary(response))
     } catch (error: any) {

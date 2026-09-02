@@ -70,12 +70,12 @@ export default function CompanyProfileContainer() {
 
   const goToStep = useCallback(
     (nextStep: CompanySetupStep) => {
-      setActiveTab(nextStep)
-      const params = new URLSearchParams(searchParams.toString())
+      const params = new URLSearchParams(window.location.search)
       params.set("step", nextStep)
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+      window.history.pushState(null, "", `${pathname}?${params.toString()}`)
+      setActiveTab(nextStep)
     },
-    [pathname, router, searchParams],
+    [pathname],
   )
 
   const stepCompletion = useMemo(() => {

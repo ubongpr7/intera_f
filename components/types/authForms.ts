@@ -11,6 +11,7 @@ export  type RegisterFormInputs = {
     email: string;
     password: string;
     re_password: string;
+    referral_code?: string;
     terms_accepted: boolean;
     privacy_accepted: boolean;
   };

@@ -6,6 +6,7 @@ import { useMemo, useState } from "react"
 import {
   Bot,
   Building2,
+  ExternalLink,
   KeyRound,
   Loader2,
   Save,
@@ -27,6 +28,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { hasTokenPermission, isWorkspaceOwner } from "@/lib/agentPermissions"
+import { useUrlTabState } from "@/hooks/useUrlTabState"
 import { useGetUserCompaniesQuery, useRefreshMutation } from "@/redux/features/auth/authApiSlice"
 import {
   useGetCompanyAgentSetupQuery,
@@ -56,6 +58,25 @@ const EMPTY_FORM: AgentSetupFormState = {
   systemInstruction: "",
   assistantInstruction: "",
 }
+
+const agentSettingsTabValues = ["workspace-ai", "workspace-agents"] as const
+
+const providerApiKeyLinks: Record<string, { label: string; href: string }> = {
+  chatgpt: { label: "OpenAI API keys", href: "https://platform.openai.com/api-keys" },
+  openai: { label: "OpenAI API keys", href: "https://platform.openai.com/api-keys" },
+  gemini: { label: "Google AI Studio API keys", href: "https://aistudio.google.com/app/apikey" },
+  google: { label: "Google AI Studio API keys", href: "https://aistudio.google.com/app/apikey" },
+  google_genai: { label: "Google AI Studio API keys", href: "https://aistudio.google.com/app/apikey" },
+  "google-genai": { label: "Google AI Studio API keys", href: "https://aistudio.google.com/app/apikey" },
+  grok: { label: "xAI API keys", href: "https://console.x.ai/" },
+  xai: { label: "xAI API keys", href: "https://console.x.ai/" },
+  anthropic: { label: "Anthropic API keys", href: "https://console.anthropic.com/settings/keys" },
+  groq: { label: "Groq API keys", href: "https://console.groq.com/keys" },
+  mistral: { label: "Mistral API keys", href: "https://console.mistral.ai/api-keys/" },
+  cohere: { label: "Cohere API keys", href: "https://dashboard.cohere.com/api-keys" },
+}
+
+const tavilyApiKeyLink = "https://app.tavily.com/home"
 
 const parseApiError = (error: unknown): string => {
   const typedError = error as { data?: unknown; status?: number }
@@ -168,6 +189,8 @@ const WorkspaceAiSetupSheet = ({
     label: `${version.provider_label} · ${version.model_name}`,
   }))
   const selectedVersion = availableVersions.find((version) => String(version.id) === form.version)
+  const selectedProvider = String(selectedVersion?.provider || setupResponse?.agent?.provider || "").trim().toLowerCase()
+  const providerApiKeyLink = providerApiKeyLinks[selectedProvider]
   const fallbackSelectedVersionOption =
     form.version && setupResponse?.agent
       ? {
@@ -183,52 +206,45 @@ const WorkspaceAiSetupSheet = ({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="agent-settings-sheet w-full max-w-3xl border-gray-800 bg-[linear-gradient(180deg,#020617_0%,#0f172a_58%,#111827_100%)] p-0 text-gray-100 shadow-[0_40px_90px_rgba(2,6,23,0.82)] sm:max-w-3xl"
-      >
+      <SheetContent side="right" className="w-full max-w-3xl border-gray-200 bg-white p-0 text-gray-900 sm:max-w-3xl">
         <div className="flex h-full flex-col">
-          <SheetHeader className="border-b border-gray-800/80 bg-[linear-gradient(115deg,rgba(15,23,42,0.98),rgba(17,24,39,0.96),rgba(30,41,59,0.96))] px-7 py-7 text-left md:px-8">
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-200">
-              Workspace AI settings
-            </div>
-            <SheetTitle className="mt-4 text-3xl font-semibold tracking-tight text-gray-100">
-              {setupResponse?.configured ? "Update workspace AI" : "Configure workspace AI"}
-            </SheetTitle>
-            <SheetDescription className="max-w-2xl text-sm leading-6 text-gray-300">
+          <SheetHeader className="border-b border-gray-100 px-6 py-5">
+            <SheetTitle>{setupResponse?.configured ? "Update workspace AI" : "Configure workspace AI"}</SheetTitle>
+            <SheetDescription>
               Keep the page compact. Model selection, encrypted keys, and instruction layers are managed here in a side
               form instead of inline.
             </SheetDescription>
           </SheetHeader>
 
-          <div className="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(30,41,59,0.96)_0%,rgba(15,23,42,0.98)_52%,rgba(2,6,23,1)_100%)] px-7 py-6 md:px-8">
-            <div className="grid gap-4">
+          <div className="flex-1 overflow-y-auto">
+            <div className="space-y-6 px-6 py-5">
               <div className="grid gap-4 md:grid-cols-2">
-                <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-200">Agent name</span>
+                <div className="space-y-2">
+                  <Label htmlFor="workspace-agent-name">Agent name</Label>
                   <Input
-                    className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                    id="workspace-agent-name"
                     value={form.name}
                     onChange={(event) => updateField("name", event.target.value)}
                     placeholder="Intera workspace copilot"
                   />
-                </label>
-                <div className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-200">Model version</span>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="workspace-model-version">Model version</Label>
                   <ReactSelectField
+                    inputId="workspace-model-version"
                     options={resolvedVersionOptions}
                     value={selectedVersionOption}
-                  onChange={(option) => {
-                    const nextOption = Array.isArray(option) ? null : (option as SelectOption | null)
-                    updateField("version", nextOption ? String(nextOption.value) : "")
-                  }}
-                  placeholder="Select provider and model"
-                  isSearchable={false}
-                  isMulti={false}
-                  controlShouldRenderValue
+                    onChange={(option: unknown) => {
+                      const nextOption = Array.isArray(option) ? null : (option as SelectOption | null)
+                      updateField("version", nextOption ? String(nextOption.value) : "")
+                    }}
+                    placeholder="Select provider and model"
+                    isSearchable={false}
+                    isMulti={false}
+                    controlShouldRenderValue
                   />
                   {selectedVersion ? (
-                    <p className="text-xs text-gray-200">
+                    <p className="text-xs text-gray-500">
                       Selected: {selectedVersion.provider_label} · {selectedVersion.model_name}
                     </p>
                   ) : null}
@@ -236,13 +252,10 @@ const WorkspaceAiSetupSheet = ({
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
-                <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                  <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-200">
-                    <KeyRound className="h-4 w-4 text-gray-400" />
-                    LLM API key
-                  </span>
+                <div className="space-y-2">
+                  <Label htmlFor="workspace-llm-api-key">LLM API key</Label>
                   <Input
-                    className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                    id="workspace-llm-api-key"
                     type="password"
                     value={form.apiKey}
                     onChange={(event) => updateField("apiKey", event.target.value)}
@@ -250,62 +263,84 @@ const WorkspaceAiSetupSheet = ({
                       setupResponse?.agent?.has_api_key ? "Enter new key to rotate current value" : "Enter provider API key"
                     }
                   />
-                </label>
-                <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                  <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-200">
-                    <KeyRound className="h-4 w-4 text-gray-400" />
-                    Tavily API key
-                  </span>
+                  {providerApiKeyLink ? (
+                    <a
+                      href={providerApiKeyLink.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-900 hover:underline"
+                    >
+                      Don&apos;t have a key? Get one from {providerApiKeyLink.label}
+                      <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+                    </a>
+                  ) : (
+                    <p className="text-xs text-gray-500">Choose a provider to see where to create its API key.</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="workspace-tavily-api-key">Tavily API key</Label>
                   <Input
-                    className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                    id="workspace-tavily-api-key"
                     type="password"
                     value={form.tavilyApiKey}
                     onChange={(event) => updateField("tavilyApiKey", event.target.value)}
                     placeholder={
                       setupResponse?.agent?.has_tavily_api_key
                         ? "Enter new key to rotate current value"
-                        : "Enter Tavily API key"
+                      : "Enter Tavily API key"
                     }
                   />
-                </label>
+                  <a
+                    href={tavilyApiKeyLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-900 hover:underline"
+                  >
+                    Don&apos;t have a key? Get one from Tavily
+                    <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+                  </a>
+                </div>
               </div>
 
-              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-200">Special instruction</span>
+              <div className="space-y-2">
+                <Label htmlFor="workspace-special-instruction">Special instruction</Label>
                 <Textarea
-                  className="min-h-[140px] rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                  id="workspace-special-instruction"
+                  className="min-h-[140px]"
                   value={form.specialInstruction}
                   onChange={(event) => updateField("specialInstruction", event.target.value)}
                   placeholder="Organization-level guidance for how the workspace AI should behave."
                   rows={4}
                 />
-              </label>
+              </div>
 
-              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-200">System instruction</span>
+              <div className="space-y-2">
+                <Label htmlFor="workspace-system-instruction">System instruction</Label>
                 <Textarea
-                  className="min-h-[160px] rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                  id="workspace-system-instruction"
+                  className="min-h-[160px]"
                   value={form.systemInstruction}
                   onChange={(event) => updateField("systemInstruction", event.target.value)}
                   placeholder="Base operating instruction used by the workspace AI."
                   rows={4}
                 />
-              </label>
+              </div>
 
-              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-200">Assistant instruction</span>
+              <div className="space-y-2">
+                <Label htmlFor="workspace-assistant-instruction">Assistant instruction</Label>
                 <Textarea
-                  className="min-h-[160px] rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
+                  id="workspace-assistant-instruction"
+                  className="min-h-[160px]"
                   value={form.assistantInstruction}
                   onChange={(event) => updateField("assistantInstruction", event.target.value)}
                   placeholder="Response style, formatting, and interaction guidance."
                   rows={4}
                 />
-              </label>
+              </div>
             </div>
           </div>
 
-          <div className="border-t border-gray-800 bg-gray-950/95 px-7 py-4 md:px-8">
+          <div className="border-t border-gray-100 px-6 py-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
@@ -331,9 +366,167 @@ const WorkspaceAiSetupSheet = ({
   )
 }
 
+/* Deferred voice provider configuration. Kept out of the active product path pending a later release.
+const WorkspaceVoiceSetupSheet = ({
+  open,
+  onOpenChange,
+  form,
+  updateField,
+  setupResponse,
+  speakers,
+  speakersLoading,
+  saving,
+  onSave,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  form: VoiceSetupFormState
+  updateField: <T extends keyof VoiceSetupFormState>(field: T, value: VoiceSetupFormState[T]) => void
+  setupResponse?: CompanyVoiceSetupResponse
+  speakers?: CompanyVoiceSpeaker[]
+  speakersLoading: boolean
+  saving: boolean
+  onSave: () => void
+}) => {
+  const useNaijaLingo = form.provider === "naijalingo"
+  const speakerOptions: SelectOption[] = [
+    { value: "", label: "Provider default" },
+    ...(speakers ?? []).map((speaker) => ({ value: speaker.id, label: speakerOptionLabel(speaker) })),
+  ]
+  const selectedSpeakerOption = speakerOptions.find((option) => option.value === form.speakerId)
+    ?? (form.speakerId ? { value: form.speakerId, label: `Saved speaker - ${form.speakerId}` } : speakerOptions[0])
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full border-gray-200 bg-white p-0 text-gray-900 sm:max-w-xl">
+        <div className="flex h-full flex-col">
+          <SheetHeader className="border-b border-gray-100 px-6 py-5">
+            <SheetTitle>Nigerian voice output</SheetTitle>
+            <SheetDescription>
+              Naija Lingo is used only for speech synthesis. Recognition, A2A routing, and the workspace LLM remain on
+              the existing voice stack. If it is unavailable, calls fall back to the default voice provider.
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="flex-1 overflow-y-auto">
+            <div className="space-y-6 px-6 py-5">
+            <div className="space-y-2">
+              <Label htmlFor="workspace-voice-provider">Voice provider</Label>
+              <ReactSelectField
+                inputId="workspace-voice-provider"
+                options={[
+                  { value: "default", label: "Default workspace voice" },
+                  { value: "naijalingo", label: "Naija Lingo" },
+                ]}
+                value={{ value: form.provider, label: form.provider === "naijalingo" ? "Naija Lingo" : "Default workspace voice" }}
+                onChange={(option: unknown) => {
+                  const selected = Array.isArray(option) ? null : (option as SelectOption | null)
+                  updateField("provider", (selected?.value === "naijalingo" ? "naijalingo" : "default") as WorkspaceVoiceProvider)
+                }}
+                isSearchable={false}
+                isMulti={false}
+              />
+            </div>
+
+            {useNaijaLingo ? (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="workspace-naijalingo-api-key">Naija Lingo API key</Label>
+                  <Input
+                    id="workspace-naijalingo-api-key"
+                    type="password"
+                    value={form.apiKey}
+                    onChange={(event) => updateField("apiKey", event.target.value)}
+                    placeholder={setupResponse?.voice.has_naijalingo_api_key ? "Enter a new key to rotate it" : "Enter Naija Lingo API key"}
+                  />
+                  {setupResponse?.voice.naijalingo_api_key_masked ? (
+                    <span className="text-xs text-gray-500">Stored key: {renderMaskedPreview(setupResponse.voice.naijalingo_api_key_masked)}</span>
+                  ) : null}
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="workspace-voice-language">Synthesis language</Label>
+                    <ReactSelectField
+                      inputId="workspace-voice-language"
+                      options={[
+                        { value: "auto", label: "Automatic" },
+                        { value: "pcm", label: "Nigerian Pidgin" },
+                        { value: "yo", label: "Yoruba" },
+                        { value: "ig", label: "Igbo" },
+                        { value: "ha", label: "Hausa" },
+                        { value: "en", label: "English" },
+                      ]}
+                      value={{ value: form.preferredLanguage, label: VOICE_LANGUAGE_LABELS[form.preferredLanguage] }}
+                      onChange={(option: unknown) => {
+                        const selected = Array.isArray(option) ? null : (option as SelectOption | null)
+                        updateField("preferredLanguage", (selected?.value || "auto") as WorkspaceVoiceLanguage)
+                      }}
+                      isSearchable={false}
+                      isMulti={false}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="workspace-voice-speaker">Voice</Label>
+                    <ReactSelectField
+                      inputId="workspace-voice-speaker"
+                      options={speakerOptions}
+                      value={selectedSpeakerOption}
+                      onChange={(option: unknown) => {
+                        const selected = Array.isArray(option) ? null : (option as SelectOption | null)
+                        updateField("speakerId", selected ? String(selected.value) : "")
+                      }}
+                      placeholder={speakersLoading ? "Loading available voices..." : "Choose a voice"}
+                      isLoading={speakersLoading}
+                      isClearable={false}
+                      isMulti={false}
+                    />
+                    <span className="text-xs text-gray-500">Choose a provider voice, or keep the provider default.</span>
+                  </div>
+                </div>
+
+                <label className="flex items-start gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-900">
+                  <input
+                    type="checkbox"
+                    className="mt-1 h-4 w-4 rounded border-gray-300"
+                    checked={form.enabled}
+                    onChange={(event) => updateField("enabled", event.target.checked)}
+                  />
+                  <span>
+                    <span className="block font-semibold text-gray-900">Enable Naija Lingo for new voice calls</span>
+                    <span className="mt-1 block text-xs leading-5 text-gray-500">Existing calls keep their current provider until reconnected.</span>
+                  </span>
+                </label>
+              </>
+            ) : null}
+            </div>
+          </div>
+
+          <div className="border-t border-gray-100 px-6 py-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+                Cancel
+              </Button>
+              <Button type="button" onClick={onSave} disabled={saving}>
+              {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              Save voice setup
+              </Button>
+            </div>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  )
+}
+
+*/
+
 export default function SettingsPage() {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState("workspace-ai")
+  const { activeValue: activeTab, setActiveValue: setActiveTab } = useUrlTabState({
+    defaultValue: "workspace-ai",
+    values: agentSettingsTabValues,
+  })
   const [setupSheetOpen, setSetupSheetOpen] = useState(false)
   const [form, setForm] = useState<AgentSetupFormState>(EMPTY_FORM)
   const canManageAgentSettings = useMemo(() => hasTokenPermission("manage_agent_settings"), [])
@@ -351,7 +544,6 @@ export default function SettingsPage() {
   } = useGetCompanyAgentSetupQuery(undefined, {
     skip: !activeProfileId || !canManageAgentSettings,
   })
-
   const [saveCompanyAgentSetup, { isLoading: savingSetup }] = useSaveCompanyAgentSetupMutation()
   const [refreshSession] = useRefreshMutation()
 
@@ -514,7 +706,7 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="agent-settings-tabs space-y-4">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as (typeof agentSettingsTabValues)[number])} className="agent-settings-tabs space-y-4">
           <TabsList className="agent-settings-tab-list h-auto flex-wrap justify-start gap-2 rounded-[24px] bg-gray-100 p-1">
             <TabsTrigger
               value="workspace-ai"

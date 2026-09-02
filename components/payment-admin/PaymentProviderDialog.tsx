@@ -29,7 +29,7 @@ import { toast } from "react-toastify"
 const formSchema = z.object({
   name: z.string().min(1, "Provider name is required"),
   slug: z.string().min(1, "Slug is required"),
-  is_active: z.boolean().default(true),
+  is_active: z.boolean(),
   webhook_secret: z.string().min(1, "Webhook secret is required"),
   api_config: z.string().min(1, "API configuration is required"),
 })

@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import { useGetRolesQuery } from '../../redux/features/management/groups';
 import { RoleAssignment, RoleData } from "@/redux/features/management/managementTypes";
-import CustomCreateForm from "../common/createForm";
 import { formatDateTime } from '../common/utils';
+import { ReactSelectField, type SelectOption } from "@/components/ui/react-select-field";
+import { Button } from "@/components/ui/button";
 import {
   useCreateStaffRoleAssignmentMutation,
   useGetStaffRoleAssignmentsQuery,
@@ -19,6 +20,10 @@ interface RoleManagerProps {
 const RoleManager = ({ userId, roles, refetch,closeTab }: RoleManagerProps) => {
   const [optimisticallyHiddenRoleIds, setOptimisticallyHiddenRoleIds] = useState<Set<number>>(() => new Set());
   const [showAssignForm, setShowAssignForm] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<SelectOption | null>(null);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [isTemporary, setIsTemporary] = useState(false);
   const [assignRole, { isLoading: assignRoleLoading }] = useCreateStaffRoleAssignmentMutation();
   const [updateAssignment, { isLoading: isUpdatingAssignment }] = useUpdateStaffRoleAssignmentMutation();
   const {
@@ -83,19 +88,31 @@ const RoleManager = ({ userId, roles, refetch,closeTab }: RoleManagerProps) => {
     }
   };
 
-  const handleAssignRole = async (createdData: Partial<RoleAssignment>) => {
+  const handleAssignRole = async () => {
+    if (!selectedRole) {
+      toast.error("Select a role to assign.");
+      return;
+    }
+    if (isTemporary && !endDate) {
+      toast.error("Set an end date for a temporary role.");
+      return;
+    }
     try {
       await assignRole({
         user: Number(userId),
-        role: `${createdData.role || ""}`,
-        start_date: createdData.start_date,
-        end_date: createdData.end_date || undefined,
+        role: `${selectedRole.value}`,
+        ...(startDate ? { start_date: new Date(startDate).toISOString() } : {}),
+        ...(isTemporary && endDate ? { end_date: new Date(endDate).toISOString() } : {}),
         is_active: true,
       }).unwrap();
       await refetchAssignments();
       await refetch();
       closeTab();
       setShowAssignForm(false);
+      setSelectedRole(null);
+      setStartDate("");
+      setEndDate("");
+      setIsTemporary(false);
       toast.success('Role assigned successfully');
     } catch (error) {
       toast.error('Failed to assign role, Make sure the role is not already assigned');
@@ -107,16 +124,14 @@ const RoleManager = ({ userId, roles, refetch,closeTab }: RoleManagerProps) => {
     <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-semibold text-gray-800">Active Roles</h3>
-        <button
+        <Button
+          type="button"
+          variant={showAssignForm ? "outline" : "default"}
           onClick={() => setShowAssignForm(!showAssignForm)}
-          className={`px-4 py-2 rounded-md ${
-            showAssignForm 
-              ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              : 'bg-blue-600 text-white hover:bg-blue-700'
-          }`}
+          className="rounded-full px-4 py-2"
         >
           {showAssignForm ? 'Cancel' : 'Add New Role'}
-        </button>
+        </Button>
       </div>
 
       {showAssignForm && (
@@ -126,17 +141,51 @@ const RoleManager = ({ userId, roles, refetch,closeTab }: RoleManagerProps) => {
               Every active role is already assigned to this user. Deactivate an existing assignment before adding it again.
             </div>
           ) : (
-            <CustomCreateForm<RoleAssignment>
-              isLoading={assignRoleLoading}
-              onSubmit={handleAssignRole}
-              selectOptions={{ role: roleOptions }}
-              interfaceKeys={['role', 'start_date', 'end_date']}
-              datetimeFields={['start_date', 'end_date']}
-              optionalFields={['end_date']}
-              notEditableFields={[]}
-              hiddenFields={{ user: userId }}
-              defaultValues={{}}
-            />
+            <div className="space-y-5 rounded-3xl border border-slate-800 bg-slate-950/70 p-5">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-200">Role</label>
+                <ReactSelectField
+                  inputId="staff-role"
+                  options={roleOptions.map((role) => ({ value: role.value, label: role.text }))}
+                  value={selectedRole}
+                  onChange={(option) => setSelectedRole((option as SelectOption | null) ?? null)}
+                  placeholder="Select a role"
+                  isClearable
+                  isDisabled={assignRoleLoading}
+                  menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
+                />
+              </div>
+
+              <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-800 bg-slate-900/80 px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-100">Permanent role</p>
+                  <p className="mt-1 text-xs text-slate-400">Turn off for a temporary assignment with an end date.</p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={!isTemporary}
+                  onClick={() => setIsTemporary((current) => !current)}
+                  className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${!isTemporary ? "bg-[#98fcc2]" : "bg-slate-700"}`}
+                >
+                  <span className={`absolute top-1 h-5 w-5 rounded-full bg-slate-950 transition-transform ${!isTemporary ? "left-6" : "left-1"}`} />
+                </button>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2 text-sm font-semibold text-slate-200">
+                  Start date <span className="font-normal text-slate-500">(optional)</span>
+                  <input type="datetime-local" value={startDate} onChange={(event) => setStartDate(event.target.value)} disabled={assignRoleLoading} className="block w-full rounded-2xl border border-slate-700 bg-slate-900 px-3 py-3 font-normal text-slate-100 outline-none focus:border-[#98fcc2]" />
+                </label>
+                <label className="space-y-2 text-sm font-semibold text-slate-200">
+                  End date {isTemporary ? <span className="text-rose-300">(required)</span> : <span className="font-normal text-slate-500">(not used)</span>}
+                  <input type="datetime-local" value={endDate} onChange={(event) => setEndDate(event.target.value)} disabled={!isTemporary || assignRoleLoading} required={isTemporary} className="block w-full rounded-2xl border border-slate-700 bg-slate-900 px-3 py-3 font-normal text-slate-100 outline-none focus:border-[#98fcc2] disabled:cursor-not-allowed disabled:opacity-45" />
+                </label>
+              </div>
+              <Button type="button" variant="default" onClick={() => void handleAssignRole()} disabled={assignRoleLoading || !selectedRole} className="w-full rounded-full">
+                {assignRoleLoading ? "Assigning role..." : "Assign role"}
+              </Button>
+            </div>
           )}
         </div>
       )}
@@ -169,7 +218,7 @@ const RoleManager = ({ userId, roles, refetch,closeTab }: RoleManagerProps) => {
                     {role.role_name}
                   </span>
                   <div className="text-sm text-gray-500 mt-1">
-                    From {formatDateTime(role.start_date)}  To  {formatDateTime(role.end_date)}
+                    From {formatDateTime(role.start_date)}  To  {role.end_date ? formatDateTime(role.end_date) : "Present"}
                   </div>
                 </div>
               </div>

@@ -126,6 +126,81 @@ test("buildInsightReportBodyHtml renders ranked products as image cards", () => 
   assert.doesNotMatch(html, /ranked_item|Traceability|Data sources/)
 })
 
+test("business review section stacks export as separate domain cards", () => {
+  const payload = {
+    kind: "insight_response",
+    summary: "Business review for the last year",
+    widgets: [
+      {
+        type: "section_stack",
+        title: "Business review dashboard",
+        sections: [
+          {
+            title: "POS sales review",
+            summary: "Paid orders and revenue for the selected period.",
+            widgets: [
+              {
+                type: "metric_grid",
+                title: "Sales snapshot",
+                data: [{ label: "Paid orders", value: 9 }],
+              },
+            ],
+          },
+          {
+            title: "Inventory health review",
+            summary: "Stock risk across all locations.",
+            widgets: [
+              {
+                type: "ranked_list",
+                title: "Products to reorder",
+                items: [{ label: "Eva Premium Water 75cl", value: 4, barcode: "1234567890123" }],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  }
+
+  const html = buildInsightReportBodyHtml(payload)
+  const rows = buildInsightCsvRows(payload)
+
+  assert.match(html, /POS sales review/)
+  assert.match(html, /Inventory health review/)
+  assert.match(html, /Sales snapshot/)
+  assert.match(html, /Products to reorder/)
+  assert.doesNotMatch(html, /RAW_JSON|raw_widget|section_stack/)
+  assert.ok(rows.some((row) => row.section_title === "POS sales review" && row.label === "Paid orders"))
+  assert.ok(rows.some((row) => row.section_title === "Inventory health review" && row.label === "Eva Premium Water 75cl"))
+  assert.doesNotMatch(buildInsightCsv(payload), /raw_widget|section_stack|raw_json/)
+})
+
+test("business review section stacks render as a valid PDF", async () => {
+  const blob = await buildInsightPdfBlob(
+    {
+      kind: "insight_response",
+      widgets: [
+        {
+          type: "section_stack",
+          title: "Business review dashboard",
+          sections: [
+            {
+              title: "POS sales review",
+              summary: "Revenue and paid orders.",
+              widgets: [{ type: "metric_grid", title: "Sales snapshot", data: [{ label: "Revenue", value: 120500 }] }],
+            },
+          ],
+        },
+      ],
+    },
+    "Business Review",
+  )
+
+  const bytes = new Uint8Array(await blob.arrayBuffer())
+  assert.ok(bytes.length > 1000)
+  assert.equal(String.fromCharCode(...bytes.slice(0, 4)), "%PDF")
+})
+
 test("buildInsightCsv hides internal row_type column", () => {
   const csv = buildInsightCsv({
     kind: "insight_response",
@@ -224,6 +299,46 @@ test("buildInsightPdfBlob renders a real PDF with react-pdf renderer", async () 
   const bytes = new Uint8Array(await blob.arrayBuffer())
   assert.ok(bytes.length > 1000)
   assert.equal(String.fromCharCode(...bytes.slice(0, 4)), "%PDF")
+})
+
+test("chart widgets render on dedicated A4 landscape PDF pages", async () => {
+  const blob = await buildInsightPdfBlob(
+    {
+      kind: "insight_response",
+      summary: "Sales analysis",
+      widgets: [
+        {
+          type: "metric_grid",
+          title: "Snapshot",
+          data: [{ label: "Orders", value: 6 }],
+        },
+        {
+          type: "section_stack",
+          title: "Specialist findings",
+          sections: [
+            {
+              title: "POS sales review",
+              widgets: [
+                {
+                  type: "line_chart",
+                  title: "Daily sales trend",
+                  data: [
+                    { label: "2026-06-17", value: 1200 },
+                    { label: "2026-06-18", value: 900 },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    "Sales Analysis",
+  )
+
+  const pdf = Buffer.from(await blob.arrayBuffer()).toString("latin1")
+  assert.equal((pdf.match(/\/MediaBox \[0 0 841\.890015 595\.280029\]/g) || []).length, 1)
+  assert.equal((pdf.match(/\/MediaBox \[0 0 595\.280029 841\.890015\]/g) || []).length, 1)
 })
 
 test("buildChatPdfBlob renders a real PDF with chat messages", async () => {

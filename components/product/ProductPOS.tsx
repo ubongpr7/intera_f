@@ -1,15 +1,21 @@
 "use client"
 
+import { useState } from "react"
 import { toast } from "react-toastify"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
-  useGetProductPosVariantsQuery,
   useGetProductQuery,
+  useGetProductVariantsQuery,
   useToggleProductFeaturedMutation,
   useToggleProductQuickSaleMutation,
 } from "@/redux/features/product/productAPISlice"
 import type { Product } from "@/redux/features/product/productTypes"
+
+type ProductToggleResponse = {
+  quick_sale?: boolean
+  is_featured?: boolean
+}
 
 interface ProductPOSProps {
   productId: string
@@ -17,15 +23,18 @@ interface ProductPOSProps {
 }
 
 export default function ProductPOS({ productId, product }: ProductPOSProps) {
-  const { data: posVariants = [], isLoading } = useGetProductPosVariantsQuery(productId)
+  const { data: variants = [], isLoading } = useGetProductVariantsQuery(productId)
   const { data: currentProduct, refetch: refetchProduct } = useGetProductQuery(productId)
+  const [productToggleState, setProductToggleState] = useState<ProductToggleResponse>({})
   const [toggleQuickSale, { isLoading: isTogglingQuickSale }] = useToggleProductQuickSaleMutation()
   const [toggleFeatured, { isLoading: isTogglingFeatured }] = useToggleProductFeaturedMutation()
-  const productData = currentProduct ?? product
+  const productData = { ...product, ...(currentProduct ?? {}), ...productToggleState }
+  const posVariants = variants.filter((variant) => variant.active && variant.pos_visible)
 
   const handleToggleQuickSale = async () => {
     try {
-      await toggleQuickSale(productId).unwrap()
+      const result = await toggleQuickSale(productId).unwrap()
+      setProductToggleState((current) => ({ ...current, quick_sale: result.quick_sale }))
       await refetchProduct()
       toast.success("Quick-sale setting updated.")
     } catch {
@@ -35,7 +44,8 @@ export default function ProductPOS({ productId, product }: ProductPOSProps) {
 
   const handleToggleFeatured = async () => {
     try {
-      await toggleFeatured(productId).unwrap()
+      const result = await toggleFeatured(productId).unwrap()
+      setProductToggleState((current) => ({ ...current, is_featured: result.is_featured }))
       await refetchProduct()
       toast.success("Featured status updated.")
     } catch {
@@ -104,10 +114,10 @@ export default function ProductPOS({ productId, product }: ProductPOSProps) {
                   <div key={variant.id} className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-sm font-semibold text-gray-900">{variant.pos_display_name || variant.display_name || "Variant"}</p>
-                      <span className="text-xs uppercase tracking-wide text-gray-500">{variant.variant_barcode || "No barcode"}</span>
+                      <span className="text-xs uppercase tracking-wide text-gray-500">{variant.effective_barcode || variant.variant_barcode || "No barcode"}</span>
                     </div>
                     <p className="mt-2 text-sm text-gray-600">
-                      SKU: {variant.variant_sku || "N/A"} • Price: {variant.selling_price ?? 0}
+                      SKU: {variant.variant_sku || variant.effective_properties?.sku || "N/A"} • Price: {variant.selling_price ?? 0}
                     </p>
                   </div>
                 ))

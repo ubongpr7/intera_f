@@ -42,9 +42,9 @@ export function LandingHeader() {
           </span>
         </Link>
         <nav className="hidden items-center gap-8 md:flex">
-          <a href="/#capabilities" className="text-sm text-gray-600 md:text-base hover:text-gray-900">Capabilities</a>
-          <a href="/#demo" className="text-sm text-gray-600 md:text-base hover:text-gray-900">Demo</a>
-          <a href="/#faq" className="text-sm text-gray-600 md:text-base hover:text-gray-900">FAQ</a>
+          <Link href="/#capabilities" className="text-sm text-gray-600 md:text-base hover:text-gray-900">Capabilities</Link>
+          <Link href="/#demo" className="text-sm text-gray-600 md:text-base hover:text-gray-900">Demo</Link>
+          <Link href="/#faq" className="text-sm text-gray-600 md:text-base hover:text-gray-900">FAQ</Link>
           <Link href="/contact" className="text-sm text-gray-600 md:text-base hover:text-gray-900">Contact</Link>
         </nav>
         <div className="hidden items-center gap-3 md:flex">
@@ -64,9 +64,9 @@ export function LandingHeader() {
         {isMobileMenuOpen ? (
           <motion.div ref={mobileMenuRef} id="landing-mobile-menu" initial={{ opacity: 0, y: -10, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -10, scale: 0.98 }} transition={{ duration: 0.18, ease: "easeOut" }} className="landing-mobile-menu md:hidden">
             <div className="landing-mobile-links">
-              <a href="/#capabilities" onClick={() => setIsMobileMenuOpen(false)}>Capabilities <ArrowRight className="h-4 w-4" /></a>
-              <a href="/#demo" onClick={() => setIsMobileMenuOpen(false)}>Demo <ArrowRight className="h-4 w-4" /></a>
-              <a href="/#faq" onClick={() => setIsMobileMenuOpen(false)}>FAQ <ArrowRight className="h-4 w-4" /></a>
+              <Link href="/#capabilities" onClick={() => setIsMobileMenuOpen(false)}>Capabilities <ArrowRight className="h-4 w-4" /></Link>
+              <Link href="/#demo" onClick={() => setIsMobileMenuOpen(false)}>Demo <ArrowRight className="h-4 w-4" /></Link>
+              <Link href="/#faq" onClick={() => setIsMobileMenuOpen(false)}>FAQ <ArrowRight className="h-4 w-4" /></Link>
               <Link href="/contact" onClick={() => setIsMobileMenuOpen(false)}>Contact <ArrowRight className="h-4 w-4" /></Link>
             </div>
             <div className="landing-mobile-actions">

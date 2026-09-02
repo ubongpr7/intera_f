@@ -1,5 +1,23 @@
 export type DecimalValue = string | number;
 
+export interface PaginatedPOSResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  results: T[];
+}
+
+export interface POSListParams {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  ordering?: string;
+  [key: string]: string | number | boolean | undefined;
+}
+
 export type POSSessionStatus = "open" | "closed" | "suspended";
 export type POSOrderStatus = "draft" | "pending" | "completed" | "cancelled" | "refunded";
 export type POSPaymentStatus = "unpaid" | "partially_paid" | "paid" | "refunded";

@@ -59,6 +59,7 @@ export default function RegisterForm() {
   const searchParams = useSearchParams();
   const nextUrl = searchParams.get('next')?.trim();
   const lockedEmail = searchParams.get("email")?.trim() || "";
+  const referralCodeFromUrl = (searchParams.get("ref") || searchParams.get("referral_code") || "").trim().toUpperCase();
   const isEmailLocked = searchParams.get("locked") === "1" && Boolean(lockedEmail);
   const [password, setPassword] = useState('');
   const [showPassWord,setShowPassword]=useState(false)
@@ -74,6 +75,7 @@ export default function RegisterForm() {
   } = useForm<RegisterFormInputs>({
     defaultValues: {
       email: lockedEmail,
+      referral_code: referralCodeFromUrl,
     },
   });
 
@@ -87,6 +89,7 @@ export default function RegisterForm() {
     try {
       const userData = await registerUser({
         ...formData,
+        referral_code: formData.referral_code?.trim().toUpperCase() || undefined,
         last_name: formData.last_name ?? "",
         terms_accepted: legalAccepted.terms,
         privacy_accepted: legalAccepted.privacy,
@@ -187,6 +190,22 @@ export default function RegisterForm() {
             {errors.email.message}
           </p>
         )}
+      </div>
+
+      <div>
+        <label htmlFor="register-referral-code" className="auth-label cursor-pointer">
+          Referral code (Optional)
+        </label>
+        <input
+          {...register('referral_code')}
+          id="register-referral-code"
+          placeholder="Enter a referral code"
+          readOnly={Boolean(referralCodeFromUrl)}
+          className="auth-field mt-1.5"
+        />
+        {referralCodeFromUrl ? (
+          <p className="mt-2 text-xs text-slate-500">Referral code captured from your invitation link.</p>
+        ) : null}
       </div>
 
       {/* Password Field */}

@@ -2,15 +2,17 @@
 import { RoleData } from "@/redux/features/management/managementTypes";
 import CustomCreateCard from "../common/createCard";
 
-import { useState,useEffect } from "react";
-import { useCreateRoleMutation,useGetRolesQuery, useUpdateRoleMutation } from "../../redux/features/management/groups";
-import { Column, DataTable } from "../common/DataTable/DataTable";
+import { useDeferredValue, useEffect, useState } from "react";
+import { usePathname, useRouter as useNavigationRouter, useSearchParams } from "next/navigation";
+import { useCreateRoleMutation,useGetRolesPageQuery, useUpdateRoleMutation } from "../../redux/features/management/groups";
+import { Column, DataTable, type DataTableQueryState } from "../common/DataTable/DataTable";
 import { useRouter } from 'nextjs-toploader/app';
 import VerticalTabs from '../common/verticalTabs'
 import RolePermissionForm from '../permissions/customPermission';
 import { useUpdateRolePermissionMutation,useGetRolePermissionQuery } from "../../redux/features/permission/permit";
 import { Permission } from "@/redux/features/common/commonTypes";
 import CustomUpdateForm from "../common/updateForm";
+import { Pagination } from "@/components/ui/pagination";
 
 
 
@@ -35,7 +37,7 @@ const inventoryColumns: Column<RoleData>[] = [
     info: 'Number of Users',
   },
   {
-    header: 'Email',
+    header: 'Description',
     accessor: 'description',
     render: (value) => value || 'N/A',
     info: '',
@@ -51,7 +53,23 @@ const StaffRole =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
   const [isCreateOpen, setIsCreateOpen] = useState(false); 
   const [openTabs, setOpenTabs] = useState(false); 
   const [roleID, setRoleID] = useState('0'); 
-  const { data, isLoading, refetch, error } = useGetRolesQuery();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const navigationRouter = useNavigationRouter();
+  const tableStateKey = "table_roles";
+  const [queryState, setQueryState] = useState<DataTableQueryState | null>(null);
+  const search = queryState?.searchTerm ?? searchParams.get(`${tableStateKey}_search`) ?? "";
+  const sortField = queryState?.sortConfig?.key ?? searchParams.get(`${tableStateKey}_sort`);
+  const direction = queryState?.sortConfig?.direction ?? searchParams.get(`${tableStateKey}_direction`);
+  const ordering = sortField === "name" ? `${direction === "descending" ? "-" : ""}name` : undefined;
+  const page = Number(searchParams.get(`${tableStateKey}_page`)) || 1;
+  const { data: rolePage, isLoading, refetch, error } = useGetRolesPageQuery({
+    page,
+    page_size: 20,
+    search: useDeferredValue(search.trim()) || undefined,
+    ordering,
+  });
+  const data = rolePage?.results ?? [];
   const [createGroup, { isLoading: staffCreateLoading }] = useCreateRoleMutation();
   const { data: permissionsData,
      isLoading:permissionDataLoading,
@@ -108,16 +126,32 @@ const StaffRole =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
         <div>
             <DataTable<RoleData>
             columns={inventoryColumns}
-            data={data || []}
+            data={data}
             isLoading={isLoading}
+            error={error}
+            onRetry={refetch}
             onRowClick={handleRowClick}
             searchableFields={['name', 'description']}
             filterableFields={[]}
-            sortableFields={['name', 'description', 'permission_count', 'assignments_count']}
-            rangeFilterFields={['permission_count', 'assignments_count']}
-             title="Roles"
+            sortableFields={['name']}
+            serverSide
+            urlStateKey="roles"
+            onQueryStateChange={setQueryState}
+            title="Roles"
             onClose={() => setIsCreateOpen(true)}
             />
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-500">
+              <span>{rolePage?.count ?? 0} role{rolePage?.count === 1 ? "" : "s"}</span>
+              <Pagination
+                currentPage={rolePage?.page ?? page}
+                totalPages={rolePage?.total_pages ?? 0}
+                onPageChange={(nextPage) => {
+                  const params = new URLSearchParams(searchParams.toString());
+                  params.set(`${tableStateKey}_page`, String(nextPage));
+                  navigationRouter.push(`${pathname}?${params.toString()}`, { scroll: false });
+                }}
+              />
+            </div>
 
             {isCreateOpen ? (
                 <CustomCreateCard
@@ -145,6 +179,7 @@ const StaffRole =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
                             permissionLoading={permissionLoading}
                             isLoading= {permissionDataLoading}
                             onSubmit={handleUpdatePermissionSubmit}
+                            readOnly={Boolean(roleDetail?.is_system)}
 
                             />
                           },
@@ -160,6 +195,7 @@ const StaffRole =({refetchData, setRefetchData}:StaffManagementRefetchProp)=>{
                                 keyInfo={{}}
                                 notEditableFields={[]}
                                 displayKeys={['name', 'description']}
+                                readOnly={Boolean(roleDetail?.is_system)}
                               />
                             }] : []),
                          

@@ -1,4 +1,4 @@
-import { getDecodedToken } from "./utils";
+import { getDecodedAuthorizationContext, getDecodedToken } from "./utils";
 
 type DecodedToken = {
   permissions?: string[];
@@ -10,11 +10,17 @@ type DecodedToken = {
 
 export const getTokenPermissions = (): Set<string> => {
   const token = getDecodedToken() as DecodedToken | null;
-  const permissions = token?.permissions;
-  if (!Array.isArray(permissions)) {
-    return new Set();
-  }
-  return new Set(permissions);
+  const context = getDecodedAuthorizationContext() as (DecodedToken & {
+    wildcards?: string[];
+    wildcard_permissions?: Record<string, string[]>;
+  }) | null;
+  const wildcardPermissions = context?.wildcard_permissions ?? {};
+  const permissions = [
+    ...(Array.isArray(token?.permissions) ? token.permissions : []),
+    ...(Array.isArray(context?.permissions) ? context.permissions : []),
+    ...(context?.wildcards ?? []).flatMap((wildcard) => wildcardPermissions[wildcard] ?? []),
+  ];
+  return new Set(permissions.filter((permission): permission is string => typeof permission === "string"));
 };
 
 const normalizeId = (value: string | number | null | undefined): string | null => {

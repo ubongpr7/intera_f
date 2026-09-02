@@ -18,6 +18,7 @@ export interface StockLocationSummary {
   structural?: boolean;
   is_default_structural_location?: boolean;
   external?: boolean;
+  address_id?: string | null;
   physical_address?: string | null;
   structural_location_id?: string | number | null;
   structural_location_name?: string | null;
@@ -221,9 +222,16 @@ export interface StockReservationListParams {
   structural_location_ids?: string[];
   scope?: "all" | "all_locations";
   status?: string;
+  status_filter?: string;
   external_order_type?: string;
   external_order_id?: string;
   external_order_line_id?: string;
+  date_from?: string;
+  date_to?: string;
+  search?: string;
+  ordering?: string;
+  page?: number;
+  page_size?: number;
 }
 
 export interface StockReservationPayload {
@@ -301,6 +309,26 @@ export interface StockAnalyticsResponse {
   aging_analysis: Record<string, unknown>;
 }
 
+export interface StockMovementSummaryResponse {
+  total_movements: number;
+  total_quantity: string | number;
+  reference_count: number;
+  inventory_item_count: number;
+  location_count: number;
+  route_count: number;
+}
+
+export interface StockReservationSummaryResponse {
+  total_reservations: number;
+  open_reservations: number;
+  committed_quantity: string | number;
+  fulfilled_quantity: string | number;
+  remaining_quantity: string | number;
+  location_count: number;
+  inventory_item_count: number;
+  status_breakdown: Record<string, number>;
+}
+
 export interface StockLocationResponse {
   results: StockLocation[];
   count: number;
@@ -321,6 +349,8 @@ export interface InventoryItemListParams {
   status?: string;
   search?: string;
   ordering?: string;
+  page?: number;
+  page_size?: number;
 }
 
 export type StockItemListParams = InventoryItemListParams;
@@ -334,14 +364,24 @@ export interface StockBalanceListParams {
   stock_lot?: string;
   search?: string;
   ordering?: string;
+  page?: number;
+  page_size?: number;
 }
 
 export interface StockLotListParams {
   inventory_item?: string;
+  stock_location?: string;
+  structural_location_id?: string;
+  structural_location_ids?: string[];
+  scope?: "all" | "all_locations";
   supplier?: string;
   status?: string;
+  date_from?: string;
+  date_to?: string;
   search?: string;
   ordering?: string;
+  page?: number;
+  page_size?: number;
 }
 
 export interface StockSerialListParams {
@@ -354,6 +394,8 @@ export interface StockSerialListParams {
   status?: string;
   search?: string;
   ordering?: string;
+  page?: number;
+  page_size?: number;
 }
 
 export interface StockMovementListParams {
@@ -369,8 +411,12 @@ export interface StockMovementListParams {
   to_location?: string;
   stock_lot?: string;
   stock_serial?: string;
+  date_from?: string;
+  date_to?: string;
   search?: string;
   ordering?: string;
+  page?: number;
+  page_size?: number;
 }
 
 export interface StockLocationListParams {
@@ -380,4 +426,26 @@ export interface StockLocationListParams {
   parent?: string;
   search?: string;
   ordering?: string;
+  page?: number;
+  page_size?: number;
+}
+
+export interface PaginatedStockLocationResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  results: StockLocation[];
+}
+
+export interface PaginatedStockResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  results: T[];
 }

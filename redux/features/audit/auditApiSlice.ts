@@ -1,5 +1,5 @@
 import { apiSlice } from "../../services/apiSlice"
-import type { AuditEventListResponse, AuditQueryParams } from "./auditTypes"
+import type { AuditEventListResponse, AuditFilterOptions, AuditQueryParams } from "./auditTypes"
 import type { DashboardWorkspaceSnapshot } from "./auditRealtimeDashboardTypes"
 
 const service = "audit" as const
@@ -14,6 +14,14 @@ export const auditApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
+    getAuditFilterOptions: builder.query<AuditFilterOptions, { workspace_id?: string } | void>({
+      query: (params) => ({
+        url: "/api/v1/audits/filters",
+        params: params ?? undefined,
+        service,
+      }),
+    }),
+
     getRealtimeDashboardSnapshot: builder.query<DashboardWorkspaceSnapshot, string>({
       query: (workspaceId) => ({
         url: `/api/v1/realtime/workspaces/${encodeURIComponent(workspaceId)}/dashboard`,
@@ -23,4 +31,4 @@ export const auditApiSlice = apiSlice.injectEndpoints({
   }),
 })
 
-export const { useListAuditEventsQuery, useGetRealtimeDashboardSnapshotQuery } = auditApiSlice
+export const { useListAuditEventsQuery, useGetAuditFilterOptionsQuery, useGetRealtimeDashboardSnapshotQuery } = auditApiSlice

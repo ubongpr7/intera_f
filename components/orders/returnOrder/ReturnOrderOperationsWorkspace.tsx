@@ -77,6 +77,13 @@ export default function ReturnOrderOperationsWorkspace({ returnOrderId }: Return
     () => lineItems.filter((lineItem) => asNumber(lineItem.remaining_quantity) > 0),
     [lineItems],
   )
+  const canDispatch = Boolean(
+    order &&
+      (order.status === ReturnOrderStatus.pending ||
+        order.status === ReturnOrderStatus.awaiting_pickup ||
+        order.status === ReturnOrderStatus.in_transit) &&
+      dispatchableLineItems.length > 0,
+  )
 
   const setDispatchField = (lineItemId: string, field: keyof DispatchEntry, value: string) => {
     const lineItem = lineItems.find((entry) => String(entry.id) === lineItemId)
@@ -104,7 +111,7 @@ export default function ReturnOrderOperationsWorkspace({ returnOrderId }: Return
   }
 
   const handleDispatch = async () => {
-    if (!order) {
+    if (!order || !canDispatch) {
       return
     }
 
@@ -366,7 +373,7 @@ export default function ReturnOrderOperationsWorkspace({ returnOrderId }: Return
                   placeholder="Optional shared note for this outbound supplier return"
                 />
               </div>
-              <Button onClick={handleDispatch} disabled={dispatchingOrder || dispatchableLineItems.length === 0}>
+              <Button onClick={handleDispatch} disabled={dispatchingOrder || !canDispatch}>
                 <Truck className="mr-2 h-4 w-4" />
                 {dispatchingOrder ? "Dispatching..." : "Dispatch return order"}
               </Button>

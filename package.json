@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "yarn check:rtk-endpoints && next build",
+    "typecheck": "tsc --noEmit --pretty false --incremental false",
     "check:rtk-endpoints": "node ./scripts/check-rtk-endpoint-collisions.mjs",
     "start": "next start",
     "lint": "eslint .",

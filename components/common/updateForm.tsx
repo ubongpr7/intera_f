@@ -44,6 +44,7 @@ interface CustomUpdateCardProps<T> {
   hiddenFields?: Partial<Record<keyof T, any>>;
   notEditableFields?: (keyof T)[];
   displayKeys?: (keyof T)[];
+  readOnly?: boolean;
 }
 
 export default function CustomUpdateForm<T extends Record<string, any>>({
@@ -59,6 +60,7 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
   hiddenFields = {},
   notEditableFields = [],
   displayKeys = [],
+  readOnly = false,
 }: CustomUpdateCardProps<T>) {
   const safeData = data || {} as T;
   const {
@@ -221,18 +223,19 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
 
       />
       
-      <div className="sticky bottom-0 border-t border-border bg-card p-6">
-      <div className="flex justify-end gap-3">
-        
-        <button
-          type="button"
-          onClick={() => setEdit(true)}
-          className="rounded-2xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-ring"
-        >
-        Edit    
-      </button>
-      </div>
-      </div>
+      {!readOnly ? (
+        <div className="sticky bottom-0 border-t border-border bg-card p-6">
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setEdit(true)}
+              className="rounded-2xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-ring"
+            >
+              Edit
+            </button>
+          </div>
+        </div>
+      ) : null}
       </div>
     )}
       <div className="">

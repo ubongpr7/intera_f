@@ -6,6 +6,18 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  async rewrites() {
+    const posServiceUrl = (
+      process.env.POS_INTERNAL_URL || process.env.NEXT_PUBLIC_POS_BACKEND_URL || "http://localhost:7004"
+    ).replace(/\/+$/, "")
+
+    return [
+      {
+        source: "/cashier-items",
+        destination: `${posServiceUrl}/pos_api/orders/sellable/`,
+      },
+    ]
+  },
   async headers() {
     return [
       {

@@ -50,6 +50,9 @@ export default function AIChatWidget() {
         content: message.content,
         timestamp: message.timestamp,
         structuredPayload: message.structuredPayload,
+        taskId: message.taskId,
+        sourceAgent: message.sourceAgent,
+        messageKind: message.messageKind,
       })),
     [session?.messages],
   )

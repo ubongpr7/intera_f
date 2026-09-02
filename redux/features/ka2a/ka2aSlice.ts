@@ -1,6 +1,7 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import {
   extractInteractionPayloadFromParts,
+  isTransportDebugText,
   summarizeStructuredPayload,
   type AgentStructuredPayload,
 } from "@/lib/agent-structured-output";
@@ -23,6 +24,8 @@ export type ChatMessage = {
   serverMessageId?: string;
   structuredPayload?: AgentStructuredPayload;
   voiceTurnId?: string;
+  sourceAgent?: string;
+  messageKind?: "specialist" | "summary";
 };
 
 export type EventLogItem = {
@@ -100,18 +103,26 @@ const asId = (value: unknown): string => {
   return "";
 };
 
+const partKind = (part: Record<string, unknown>): string => asString(part.kind || part.type).toLowerCase();
+
 const extractTextParts = (value: unknown): string =>
   asArray(value)
     .map((part) => asObject(part))
-    .filter((part) => asString(part.kind) === "text" && typeof part.text === "string")
-    .map((part) => String(part.text))
-    .join("")
+    .filter((part) => partKind(part) === "text")
+    .map((part) => asString(part.text || part.content))
+    .filter(Boolean)
+    .join("\n")
     .trim();
+
+const extractAssistantText = (value: unknown): string => {
+  const text = extractTextParts(value);
+  return isTransportDebugText(text) ? "" : text;
+};
 
 const extractPrimaryData = (value: unknown): Record<string, unknown> | undefined => {
   const part = asArray(value)
     .map((item) => asObject(item))
-    .find((item) => asString(item.kind) === "data");
+    .find((item) => partKind(item) === "data" || partKind(item) === "object" || partKind(item) === "json");
   if (!part) {
     return undefined;
   }
@@ -222,9 +233,13 @@ const upsertAssistantMessage = (
     serverMessageId?: string;
     structuredPayload?: AgentStructuredPayload;
     voiceTurnId?: string;
+    sourceAgent?: string;
+    messageKind?: "specialist" | "summary";
   },
 ) => {
-  const text = payload.content.trim();
+  // A serialized TextPart can arrive alongside the real artifact/result. Do
+  // not persist it as a second assistant message or let it replace a widget.
+  const text = isTransportDebugText(payload.content) ? "" : payload.content.trim();
   const fallbackText = summarizeStructuredPayload(payload.structuredPayload);
   const content = text || fallbackText;
   if ((!content && !payload.structuredPayload) || (!payload.structuredPayload && isIgnorableAssistantPayloadText(content))) {
@@ -243,13 +258,21 @@ const upsertAssistantMessage = (
     existing.timestamp = payload.timestamp;
     existing.structuredPayload = mergeStructuredPayload(existing.structuredPayload, payload.structuredPayload);
     existing.voiceTurnId = payload.voiceTurnId || existing.voiceTurnId;
+    existing.sourceAgent = payload.sourceAgent || existing.sourceAgent;
+    existing.messageKind = payload.messageKind || existing.messageKind;
     return;
   }
 
   const byVoiceTurn = payload.voiceTurnId
+    && payload.messageKind !== "specialist"
     ? [...session.messages]
         .reverse()
-        .find((message) => message.role === "assistant" && message.voiceTurnId === payload.voiceTurnId)
+        .find(
+          (message) =>
+            message.role === "assistant" &&
+            message.voiceTurnId === payload.voiceTurnId &&
+            message.messageKind !== "specialist",
+        )
     : undefined;
 
   if (byVoiceTurn) {
@@ -259,6 +282,8 @@ const upsertAssistantMessage = (
     byVoiceTurn.serverMessageId = payload.serverMessageId || byVoiceTurn.serverMessageId;
     byVoiceTurn.voiceTurnId = payload.voiceTurnId || byVoiceTurn.voiceTurnId;
     byVoiceTurn.structuredPayload = mergeStructuredPayload(byVoiceTurn.structuredPayload, payload.structuredPayload);
+    byVoiceTurn.sourceAgent = payload.sourceAgent || byVoiceTurn.sourceAgent;
+    byVoiceTurn.messageKind = payload.messageKind || byVoiceTurn.messageKind;
     return;
   }
 
@@ -272,6 +297,12 @@ const upsertAssistantMessage = (
         return false;
       }
       if (payload.taskId && message.taskId && message.taskId !== payload.taskId) {
+        return false;
+      }
+      if (payload.sourceAgent && message.sourceAgent && payload.sourceAgent !== message.sourceAgent) {
+        return false;
+      }
+      if (payload.messageKind && message.messageKind && payload.messageKind !== message.messageKind) {
         return false;
       }
 
@@ -299,6 +330,8 @@ const upsertAssistantMessage = (
     equivalentExisting.taskId = payload.taskId || equivalentExisting.taskId;
     equivalentExisting.serverMessageId = payload.serverMessageId || equivalentExisting.serverMessageId;
     equivalentExisting.voiceTurnId = payload.voiceTurnId || equivalentExisting.voiceTurnId;
+    equivalentExisting.sourceAgent = payload.sourceAgent || equivalentExisting.sourceAgent;
+    equivalentExisting.messageKind = payload.messageKind || equivalentExisting.messageKind;
     equivalentExisting.structuredPayload = mergeStructuredPayload(
       equivalentExisting.structuredPayload,
       payload.structuredPayload,
@@ -315,6 +348,8 @@ const upsertAssistantMessage = (
     serverMessageId: payload.serverMessageId,
     structuredPayload: payload.structuredPayload,
     voiceTurnId: payload.voiceTurnId,
+    sourceAgent: payload.sourceAgent,
+    messageKind: payload.messageKind,
   });
 };
 
@@ -647,7 +682,7 @@ const ka2aSlice = createSlice({
         const statusMessageRole = asString(statusMessage.role) || undefined;
         const statusMessageId = asString(statusMessage.messageId) || undefined;
         const structuredPayload = extractInteractionPayloadFromParts(statusMessage.parts);
-        const finalText = extractTextParts(statusMessage.parts) || summarizeStructuredPayload(structuredPayload);
+        const finalText = extractAssistantText(statusMessage.parts) || summarizeStructuredPayload(structuredPayload);
         session.currentTaskState = stateValue || session.currentTaskState;
         if (!isFinal && finalText && statusMessageRole !== "user") {
           session.currentStatusText = finalText;
@@ -703,6 +738,7 @@ const ka2aSlice = createSlice({
 
         const artifact = asObject(event.artifact);
         const artifactName = asString(artifact.name);
+        const artifactId = asString(artifact.artifactId) || undefined;
         const artifactData = extractPrimaryData(artifact.parts);
 
         if (artifactName === "delegation" && artifactData) {
@@ -711,7 +747,7 @@ const ka2aSlice = createSlice({
         }
 
         if (artifactName === "result") {
-          const text = extractTextParts(artifact.parts);
+          const text = extractAssistantText(artifact.parts);
           const structuredPayload = extractInteractionPayloadFromParts(artifact.parts);
           const resultText = text || summarizeStructuredPayload(structuredPayload);
 
@@ -731,11 +767,44 @@ const ka2aSlice = createSlice({
               timestamp: receivedAt,
               structuredPayload,
               voiceTurnId: session.pendingVoiceTurnId,
+              messageKind:
+                Array.isArray(structuredPayload?.widgets) &&
+                structuredPayload.widgets.some(
+                  (widget) => asString(asObject(widget).type) === "section_stack",
+                )
+                ? "summary"
+                : undefined,
             });
             session.isStreaming = false;
             session.currentStatusText = undefined;
             session.pendingVoiceTurnId = undefined;
             session.pendingVoiceUserText = undefined;
+          }
+          return;
+        }
+
+        // Delegated specialist results arrive before the host's final aggregate
+        // as artifacts such as "pos.result" or "inventory.result". Preserve
+        // them as separate messages so the UI can render each domain in order.
+        const childResult = artifactName.includes(".") && (
+          artifactName.endsWith(".result") || Boolean(extractInteractionPayloadFromParts(artifact.parts))
+        );
+        if (childResult) {
+          const sourceAgent = artifactName.slice(0, artifactName.lastIndexOf(".")).trim() || undefined;
+          const text = extractAssistantText(artifact.parts);
+          const structuredPayload = extractInteractionPayloadFromParts(artifact.parts);
+          const resultText = text || summarizeStructuredPayload(structuredPayload);
+          if (resultText || structuredPayload) {
+            upsertAssistantMessage(session, {
+              taskId: taskId || undefined,
+              content: resultText,
+              timestamp: receivedAt,
+              serverMessageId: artifactId,
+              structuredPayload,
+              voiceTurnId: session.pendingVoiceTurnId,
+              sourceAgent,
+              messageKind: "specialist",
+            });
           }
         }
       }
@@ -748,6 +817,9 @@ const ka2aSlice = createSlice({
       session.messages = [];
       session.eventLog = [];
       session.runs = {};
+      // A new chat must not reuse the server-side context from the previous chat.
+      session.contextId = undefined;
+      session.lastTaskId = undefined;
       session.error = undefined;
       session.isStreaming = false;
       session.activeSpecialist = undefined;

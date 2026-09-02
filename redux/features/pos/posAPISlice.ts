@@ -23,6 +23,8 @@ import type {
   POSTable,
   POSTerminalDeviceBinding,
   POSTerminal,
+  PaginatedPOSResponse,
+  POSListParams,
   POSUpdateOrderItemPayload,
 } from "./posTypes"
 
@@ -223,6 +225,9 @@ export const posAPISlice = apiSlice.injectEndpoints({
         service,
       }),
     }),
+    getCustomersPage: builder.query<PaginatedPOSResponse<POSCustomer>, POSListParams>({
+      query: (params) => ({ url: `/${pos_api}/customers/`, params, service }),
+    }),
     getPOSCustomer: builder.query<POSCustomer, string>({
       query: (id) => ({
         url: `/${pos_api}/customers/${id}/`,
@@ -270,6 +275,9 @@ export const posAPISlice = apiSlice.injectEndpoints({
         url: `/${pos_api}/tables/`,
         service,
       }),
+    }),
+    getTablesPage: builder.query<PaginatedPOSResponse<POSTable>, POSListParams>({
+      query: (params) => ({ url: `/${pos_api}/tables/`, params, service }),
     }),
     getTable: builder.query<POSTable, string>({
       query: (id) => ({
@@ -330,6 +338,9 @@ export const posAPISlice = apiSlice.injectEndpoints({
         service,
       }),
     }),
+    getConfigurationsPage: builder.query<PaginatedPOSResponse<POSConfiguration>, POSListParams>({
+      query: (params) => ({ url: `/${pos_api}/configurations/`, params, service }),
+    }),
     createConfiguration: builder.mutation<POSConfiguration, Partial<POSConfiguration>>({
       query: (data) => ({
         url: `/${pos_api}/configurations/`,
@@ -383,6 +394,9 @@ export const posAPISlice = apiSlice.injectEndpoints({
         url: `/${pos_api}/discounts/`,
         service,
       }),
+    }),
+    getDiscountsPage: builder.query<PaginatedPOSResponse<POSDiscount>, POSListParams>({
+      query: (params) => ({ url: `/${pos_api}/discounts/`, params, service }),
     }),
     createDiscount: builder.mutation<POSDiscount, Partial<POSDiscount>>({
       query: (data) => ({
@@ -599,6 +613,9 @@ export const posAPISlice = apiSlice.injectEndpoints({
         service,
       }),
     }),
+    getTerminalsPage: builder.query<PaginatedPOSResponse<POSTerminal>, POSListParams>({
+      query: (params) => ({ url: `/${pos_api}/terminals/`, params, service }),
+    }),
     getCurrentTerminalBinding: builder.query<POSTerminalDeviceBinding | null, void>({
       query: () => ({
         url: `/${pos_api}/terminals/device_binding/`,
@@ -700,12 +717,14 @@ export const {
   useGetPOSCategoriesQuery,
   useGetFeaturedProductsQuery,
   useGetCustomersQuery,
+  useGetCustomersPageQuery,
   useGetPOSCustomerQuery,
   useCreateCustomerMutation,
   useUpdateCustomerMutation,
   usePartialUpdateCustomerMutation,
   useDeleteCustomerMutation,
   useGetTablesQuery,
+  useGetTablesPageQuery,
   useGetTableQuery,
   useCreateTableMutation,
   useUpdateTableMutation,
@@ -713,6 +732,7 @@ export const {
   useDeleteTableMutation,
   useGetDailySalesQuery,
   useGetConfigurationsQuery,
+  useGetConfigurationsPageQuery,
   useCreateConfigurationMutation,
   useGetCurrentConfigurationQuery,
   useGetConfigurationQuery,
@@ -720,6 +740,7 @@ export const {
   usePartialUpdateConfigurationMutation,
   useDeleteConfigurationMutation,
   useGetDiscountsQuery,
+  useGetDiscountsPageQuery,
   useCreateDiscountMutation,
   useGetDiscountQuery,
   useUpdateDiscountMutation,
@@ -747,6 +768,7 @@ export const {
   useMarkOrderInventoryFailedMutation,
   useCancelOrderMutation,
   useGetTerminalsQuery,
+  useGetTerminalsPageQuery,
   useGetCurrentTerminalBindingQuery,
   useAssignCurrentDeviceTerminalMutation,
   useDetachCurrentDeviceTerminalMutation,

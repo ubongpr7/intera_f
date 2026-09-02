@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import { ShieldAlert } from "lucide-react"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { getDecodedToken } from "./utils"
+import { getDecodedAuthorizationContext, getDecodedToken } from "./utils"
 
 type DecodedToken = {
   permissions?: string[]
@@ -18,6 +18,11 @@ type DecodedToken = {
   user_id?: string | number | null
   membership_role?: string | null
   role?: string | null
+}
+
+type AuthorizationContext = DecodedToken & {
+  wildcards?: string[]
+  wildcard_permissions?: Record<string, string[]>
 }
 
 type RouteGuardRule = {
@@ -56,10 +61,14 @@ export const truthyAccessClaim = (value: unknown): boolean => {
 
 export const getPermissionSnapshot = () => {
   const token = getDecodedToken() as DecodedToken | null
+  const context = getDecodedAuthorizationContext() as AuthorizationContext | null
+  const wildcardPermissions = context?.wildcard_permissions ?? {}
   const permissions = new Set(
-    Array.isArray(token?.permissions)
-      ? token.permissions.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
-      : [],
+    [
+      ...(Array.isArray(token?.permissions) ? token.permissions : []),
+      ...(Array.isArray(context?.permissions) ? context.permissions : []),
+      ...(context?.wildcards ?? []).flatMap((wildcard) => wildcardPermissions[wildcard] ?? []),
+    ].filter((value): value is string => typeof value === "string" && value.trim().length > 0),
   )
   const ownerId = normalizeId(token?.owner_id)
   const currentUserId = normalizeId(token?.id) ?? normalizeId(token?.user_id) ?? normalizeId(token?.sub)

@@ -100,7 +100,7 @@ const  selectOptions = {
       keyInfo={{}}
 
 
-      optionalFields={['description',"is_featured", "quick_sale", 'short_description','tax_inclusive', 'cost_price','is_template','allow_backorder', 'pos_category', 'unit', 'dimensions', 'weight', 'meta_title', 'meta_description']}
+      optionalFields={['description', 'category', "is_featured", "quick_sale", 'short_description', 'tax_inclusive', 'cost_price', 'is_template', 'allow_backorder', 'pos_category', 'unit', 'dimensions', 'weight', 'meta_title', 'meta_description']}
 
 
     />

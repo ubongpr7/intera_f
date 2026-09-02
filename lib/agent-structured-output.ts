@@ -33,6 +33,16 @@ export type InteractionResponseSummary = {
   detail?: string
 }
 
+/**
+ * Detects Python/A2A part representations that can leak through as text when
+ * an event is serialized twice. These are transport/debug values, not user
+ * facing assistant content.
+ */
+export const isTransportDebugText = (value: string): boolean => {
+  const normalized = value.trim()
+  return /^\[\s*(?:TextPart|DataPart|FilePart|ToolCallPart|ToolResultPart|MessagePart)\s*\(/i.test(normalized)
+}
+
 const asObject = (value: unknown): Record<string, unknown> | undefined => {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return undefined
@@ -43,6 +53,9 @@ const asObject = (value: unknown): Record<string, unknown> | undefined => {
 const asString = (value: unknown): string => (typeof value === "string" ? value : "")
 
 const asArray = (value: unknown): unknown[] => (Array.isArray(value) ? value : [])
+
+const partKind = (part: Record<string, unknown>): string =>
+  asString(part.kind || part.type).trim().toLowerCase()
 
 const normalizeInteractionType = (payload: AgentStructuredPayload): string | undefined => {
   const interactionType = asString(payload.interaction_type).trim()
@@ -64,7 +77,8 @@ const normalizeInteractionType = (payload: AgentStructuredPayload): string | und
 }
 
 const isInsightResponse = (payload: AgentStructuredPayload): boolean =>
-  asString(payload.kind).trim() === "insight_response" && Array.isArray(payload.widgets)
+  (asString(payload.kind).trim() === "insight_response" || asString(payload.type).trim() === "insight_response") &&
+  Array.isArray(payload.widgets)
 
 const slugifyChoiceValue = (value: string) =>
   value
@@ -257,7 +271,10 @@ const parseLegacyToolCodePayload = (toolCode: string): AgentStructuredPayload | 
   return buildLegacyInteractionPayload(functionName, parsedArgs)
 }
 
-export const parseStructuredPayloadFromValue = (value: unknown): AgentStructuredPayload | undefined => {
+export const parseStructuredPayloadFromValue = (value: unknown, depth = 0): AgentStructuredPayload | undefined => {
+  if (depth > 4) {
+    return undefined
+  }
   const payload = asObject(value)
   if (!payload) {
     return undefined
@@ -277,8 +294,24 @@ export const parseStructuredPayloadFromValue = (value: unknown): AgentStructured
       return buildLegacyInteractionPayload(functionName, parameters)
     }
   }
-  if (normalizeInteractionType(payload) || isInsightResponse(payload)) {
-    return payload
+  const genericEnvelopeType = ["object", "data", "json", "text", "tool-result", "tool_result"].includes(
+    asString(payload.type).trim().toLowerCase(),
+  )
+  if ((normalizeInteractionType(payload) && !genericEnvelopeType) || isInsightResponse(payload)) {
+    return isInsightResponse(payload) && !asString(payload.kind).trim()
+      ? { ...payload, kind: "insight_response" }
+      : payload
+  }
+
+  for (const key of ["structured_payload", "structuredPayload", "payload", "data", "result", "output", "value"]) {
+    const nested = payload[key]
+    if (nested === undefined || nested === value) {
+      continue
+    }
+    const parsedNested = parseStructuredPayloadFromValue(nested, depth + 1)
+    if (parsedNested) {
+      return parsedNested
+    }
   }
   return undefined
 }
@@ -324,17 +357,19 @@ export const extractInteractionPayloadFromParts = (parts: unknown): AgentStructu
       continue
     }
 
-    const kind = asString(record.kind).trim().toLowerCase()
-    if (kind === "data") {
-      const payload = parseStructuredPayloadFromValue(record.data)
+    const kind = partKind(record)
+    if (kind === "data" || kind === "object" || kind === "json") {
+      const payload = parseStructuredPayloadFromValue(
+        record.data ?? record.value ?? record.payload ?? record.result ?? record.output ?? record,
+      )
       if (payload) {
         return payload
       }
       continue
     }
 
-    if (kind === "tool-result") {
-      const payload = parseStructuredPayloadFromValue(record.output)
+    if (kind === "tool-result" || kind === "tool_result") {
+      const payload = parseStructuredPayloadFromValue(record.output ?? record.result ?? record.data)
       if (payload) {
         return payload
       }
@@ -342,7 +377,7 @@ export const extractInteractionPayloadFromParts = (parts: unknown): AgentStructu
     }
 
     if (kind === "text") {
-      const payload = parseInteractionPayloadFromText(asString(record.text))
+      const payload = parseInteractionPayloadFromText(asString(record.text || record.content))
       if (payload) {
         return payload
       }

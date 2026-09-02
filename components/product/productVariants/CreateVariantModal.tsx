@@ -3,7 +3,6 @@
 import { useCreateProductVariantMutation } from "@/redux/features/product/productAPISlice"
 import type { Product, ProductVariant } from "@/redux/features/product/productTypes"
 import CustomCreateCard from "@/components/common/createCard"
-import { toast } from "react-toastify"
 
 interface CreateVariantModalProps {
   productId: string
@@ -30,13 +29,9 @@ const CreateVariantModal = ({ productId, onClose, onSuccess,ProductData }: Creat
   const [createVariant, { isLoading: createLoading }] = useCreateProductVariantMutation()
    
   const handleCreate = async (data: Partial<ProductVariant>) => {
-    try {
-      const variantData = { ...data, product: productId }
-      await createVariant(variantData).unwrap()
-      onSuccess()
-    } catch {
-      toast.error("Failed to create variant.")
-    }
+    const variantData = { ...data, product: productId }
+    await createVariant(variantData).unwrap()
+    onSuccess()
   }
 
 const defaultValues: Partial<ProductVariant> = {
@@ -52,6 +47,7 @@ const defaultValues: Partial<ProductVariant> = {
 
   return (
     <CustomCreateCard
+      itemTitle="Create Product Variant"
       defaultValues={defaultValues}
       onClose={onClose}
       onSubmit={handleCreate}

@@ -40,7 +40,7 @@ const shouldKeepBlankString = (fieldName: string) => {
   const normalized = fieldName.toLowerCase();
   return ["description", "notes", "name", "title", "email", "phone", "website", "link"].some(
     (field) => normalized === field || normalized.endsWith(`_${field}`),
-  );
+  ) || normalized === "dimensions" || normalized === "dimensions_override" || normalized.endsWith("_dimensions") || normalized.endsWith("_dimensions_override") || normalized.startsWith("meta_");
 };
 
 export function normalizeFormPayload<T extends Record<FieldKey, unknown>>(

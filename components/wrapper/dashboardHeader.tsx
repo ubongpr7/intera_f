@@ -29,6 +29,9 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
   const { data: companyAgentSetup } = useGetCompanyAgentSetupQuery(undefined, {
     skip: isPublic || !accessToken,
     refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+    pollingInterval: 30000,
   });
   
   
@@ -39,8 +42,7 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
 
   const hasCompleteWorkspaceAiSetup = Boolean(
     companyAgentSetup?.configured &&
-    companyAgentSetup?.agent?.has_api_key &&
-    companyAgentSetup?.agent?.has_tavily_api_key
+    companyAgentSetup?.agent?.has_api_key
   );
 
   const shouldShowLegacyAgentWidget =
