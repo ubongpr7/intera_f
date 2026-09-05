@@ -34,7 +34,6 @@ import {
 import { useUpdateUserMutation } from "../../redux/features/users/userApiSlice";
 import { RoleAssignment } from "@/redux/features/management/managementTypes";
 import { useGetUserCompaniesQuery } from "@/redux/features/auth/authApiSlice";
-import { useSubscriptionQuota } from "@/hooks/useSubscriptionQuota";
 
 type StaffRow = UserData & {
   rowType: "member" | "invitation";
@@ -213,8 +212,6 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
 
     return [...activeRows, ...inviteRows];
   }, [activeProfileId, companyMemberships?.profiles, members, pendingInvitations]);
-  const staffQuota = useSubscriptionQuota("staff-users", tableData.length + 1);
-
   const handleUpdatePermissionSubmit = async (createdData: { permissions: string[] }) => {
     await updatePermission({ id: userId, data: createdData }).unwrap();
     await refetchPermissions();
@@ -360,10 +357,6 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
         sortableFields={["first_name", "last_name", "email", "phone", "inviteStatus"]}
         title="Staff"
         onClose={() => {
-          if (!staffQuota.canCreate) {
-            toast.error(staffQuota.message);
-            return;
-          }
           setIsInviteOpen(true);
         }}
       />
@@ -410,7 +403,7 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
                 />
                 <Button
                   type="submit"
-                  disabled={singleInviteLoading || !staffQuota.canCreate}
+                  disabled={singleInviteLoading}
                   className="rounded-2xl"
                 >
                   {singleInviteLoading ? "Sending..." : "Send Invite"}
@@ -444,7 +437,7 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
                 </div>
                 <Button
                   type="submit"
-                  disabled={bulkInviteLoading || !bulkFile || !staffQuota.canCreate}
+                  disabled={bulkInviteLoading || !bulkFile}
                   variant="secondary"
                   className="rounded-2xl"
                 >

@@ -46,7 +46,7 @@ const billingLabel: Record<SubscriptionPlan["billing_cycle"], string> = {
 
 const planHighlights: Record<string, string[]> = {
   basic: [
-    "1 staff user",
+    "Unlimited staff users",
     "1 structural stock location",
     "1 POS terminal",
     "200 products and 800 variants",
@@ -54,7 +54,7 @@ const planHighlights: Record<string, string[]> = {
     "30-day free trial",
   ],
   starter: [
-    "Up to 8 staff users",
+    "Unlimited staff users",
     "3 structural stock locations",
     "6 POS terminals",
     "500 products and 2,500 variants",
@@ -62,7 +62,7 @@ const planHighlights: Record<string, string[]> = {
     "30-day free trial",
   ],
   growth: [
-    "Up to 30 staff users",
+    "Unlimited staff users",
     "10 structural stock locations",
     "25 POS terminals",
     "5,000 products and 25,000 variants",
@@ -70,7 +70,7 @@ const planHighlights: Record<string, string[]> = {
     "30-day free trial",
   ],
   scale: [
-    "Up to 120 staff users",
+    "Unlimited staff users",
     "30 structural stock locations",
     "100 POS terminals",
     "10,000 products and 50,000 variants",
