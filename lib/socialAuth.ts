@@ -1,3 +1,5 @@
+import { getFrontendOrigin } from "@/lib/frontendOrigin";
+
 export type SocialProvider = "google" | "facebook" | "microsoft";
 export type SocialProviderSlug = "google-oauth2" | "facebook" | "microsoft-graph";
 
@@ -78,7 +80,10 @@ export const continueWithSocialAuth = async (
 
   const response = await fetch(url, {
     method: "GET",
-    headers: { Accept: "application/json" },
+    headers: {
+      Accept: "application/json",
+      ...(getFrontendOrigin() ? { "X-Intera-Frontend-Origin": getFrontendOrigin() } : {}),
+    },
     credentials: "include",
   });
   if (!response.ok) {

@@ -6,6 +6,7 @@ import { setCookie, getCookie, deleteCookie } from "cookies-next"
 import { jwtDecode } from "jwt-decode"
 import { AUTH_COOKIE_NAMES, AUTH_COOKIE_KEYS, readCookieValue } from "@/lib/authCookies"
 import { getOrCreatePosDeviceId } from "@/lib/deviceIdentity"
+import { setFrontendOriginHeader } from "@/lib/frontendOrigin"
 
 const toBooleanClaim = (value: unknown): boolean | undefined => {
   if (typeof value === "boolean") {
@@ -335,6 +336,7 @@ const createBaseQuery = (baseUrl: string, isFileUpload = false) => {
     credentials: "include",
     timeout: 600000,
     prepareHeaders: (headers) => {
+      setFrontendOriginHeader(headers)
       const token = readAuthCookie("accessToken")
      
       if (token) {
@@ -484,6 +486,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
                   baseUrl:BACKEND_HOST_URL,
                   credentials: "include",
                   prepareHeaders: (headers) => {
+              setFrontendOriginHeader(headers)
               headers.set("Content-Type", "application/json");
               headers.set("X-Requested-With", "XMLHttpRequest");
               return headers

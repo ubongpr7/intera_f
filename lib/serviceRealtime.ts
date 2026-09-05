@@ -2,6 +2,7 @@ import { getCookie } from "cookies-next"
 
 import { readCookieValue } from "@/lib/authCookies"
 import { getDecodedToken } from "@/lib/utils"
+import { getFrontendOrigin } from "@/lib/frontendOrigin"
 
 const stripTrailingSlash = (value: string) => value.replace(/\/+$/, "")
 
@@ -39,6 +40,7 @@ export const requestRealtimeWebSocketTicket = async () => {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         "X-Intera-Authorization-Context": authorizationContext,
+        "X-Intera-Frontend-Origin": getFrontendOrigin(),
       },
       credentials: "include",
     })
@@ -95,6 +97,7 @@ export const canReachNotificationService = async () => {
             method: "GET",
             signal: controller.signal,
             credentials: "include",
+            headers: { "X-Intera-Frontend-Origin": getFrontendOrigin() },
           })
           return response.ok
         } finally {

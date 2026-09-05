@@ -4,6 +4,7 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } f
 import { getCookie } from "cookies-next"
 import { readCookieValue } from "@/lib/authCookies"
 import { getOrCreatePosDeviceId } from "@/lib/deviceIdentity"
+import { getFrontendOrigin } from "@/lib/frontendOrigin"
 import { hasPermission } from "@/lib/permissionsGuard"
 import { supportsPosTables } from "@/lib/posExperience"
 import { extractErrorMessage } from "@/lib/utils"
@@ -725,6 +726,7 @@ export default function POSExecutionWorkspace() {
           method: init?.method || "GET",
           headers: {
             ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+            ...(getFrontendOrigin() ? { "X-Intera-Frontend-Origin": getFrontendOrigin() } : {}),
             ...(getOrCreatePosDeviceId() ? { "X-Device-ID": getOrCreatePosDeviceId() as string } : {}),
             ...(init?.body ? { "Content-Type": "application/json" } : {}),
           },

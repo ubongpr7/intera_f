@@ -4,6 +4,7 @@ import { getCookie } from "cookies-next";
 import { apiSlice } from "../../services/apiSlice";
 import { readCookieValue } from "@/lib/authCookies";
 import { eventReceived, type ChatMessage, type Ka2aEvent } from "./ka2aSlice";
+import { getFrontendOrigin } from "@/lib/frontendOrigin";
 
 type GatewayHealth = {
   status: string;
@@ -68,6 +69,8 @@ const buildGatewayHeaders = (contentType = true) => {
   if (accessToken) {
     headers.set("Authorization", `Bearer ${accessToken}`);
   }
+  const frontendOrigin = getFrontendOrigin();
+  if (frontendOrigin) headers.set("X-Intera-Frontend-Origin", frontendOrigin);
   if (contentType) {
     headers.set("Content-Type", "application/json");
   }

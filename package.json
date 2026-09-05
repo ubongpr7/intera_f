@@ -9,7 +9,8 @@
     "check:rtk-endpoints": "node ./scripts/check-rtk-endpoint-collisions.mjs",
     "start": "next start",
     "lint": "eslint .",
-    "test:agent-export": "node --test ./tests/agent-export.test.ts"
+    "test:agent-export": "node --test ./tests/agent-export.test.ts",
+    "test:frontend-origin": "node --test ./tests/frontend-origin.test.ts"
   },
   "dependencies": {
     "@a2a-js/sdk": "^0.2.5",
