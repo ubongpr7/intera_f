@@ -221,8 +221,11 @@ export default function SubscriptionPage() {
     isLoading: loadingEntitlements,
     isError: entitlementsError,
     refetch,
-  } = useGetCurrentEntitlementsQuery(undefined, { refetchOnMountOrArgChange: true })
-  const { data: payments = [], isLoading: loadingPayments, refetch: refetchPayments } = useGetPaymentsQuery(undefined, { refetchOnMountOrArgChange: true })
+  } = useGetCurrentEntitlementsQuery("intera-ims", { refetchOnMountOrArgChange: true })
+  const { data: payments = [], isLoading: loadingPayments, refetch: refetchPayments } = useGetPaymentsQuery(
+    { application: "intera-ims" },
+    { refetchOnMountOrArgChange: true },
+  )
   const { data: coinTransactions = [], refetch: refetchCoinTransactions } = useGetCoinTransactionsQuery(undefined, { refetchOnMountOrArgChange: true })
   const { data: companyUsers = [], isLoading: loadingCompanyUsers } = useGetCompanyUsersQuery()
   const { data: pendingInvitations = [], isLoading: loadingPendingInvitations } = useGetPendingInvitationsQuery()

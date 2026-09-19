@@ -43,7 +43,7 @@ export function SubscriptionRequiredGuard({ children }: { children: ReactNode })
   const exempt = EXEMPT_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`))
   const { data: companies } = useGetUserCompaniesQuery(undefined, { skip: exempt })
   const activeProfileId = companies?.active_profile_id ?? null
-  const { data, isLoading, isError } = useGetCurrentEntitlementsQuery(undefined, { skip: exempt || !activeProfileId })
+  const { data, isLoading, isError } = useGetCurrentEntitlementsQuery("intera-ims", { skip: exempt || !activeProfileId })
   const hasSubscription = Boolean(data?.subscription)
   const shouldBlock = !exempt && !isLoading && !isError && data && !hasSubscription
   const showError = !exempt && isError

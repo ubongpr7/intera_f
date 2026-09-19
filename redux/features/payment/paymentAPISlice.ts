@@ -256,11 +256,14 @@ getFeatures: builder.query({
       }),
     }),
 
-    getCurrentEntitlements: builder.query<EntitlementSnapshot, void>({
-      query: () => ({
-        url: "subscriptions-to-plans/entitlements/?application=intera-ims&include_usage=true",
-        service: "payment",
-      }),
+    getCurrentEntitlements: builder.query<EntitlementSnapshot, string | void>({
+      query: (application?: string) => {
+        const applicationSlug = application ?? "intera-ims"
+        return {
+          url: `subscriptions-to-plans/entitlements/?application=${encodeURIComponent(applicationSlug)}&include_usage=true`,
+          service: "payment" as const,
+        }
+      },
       keepUnusedDataFor: 60,
     }),
 
@@ -302,7 +305,7 @@ getFeatures: builder.query({
         try {
           const { data } = await queryFulfilled
           dispatch(
-            paymentApiSlice.util.updateQueryData("getCurrentEntitlements", undefined, () => data.entitlements),
+            paymentApiSlice.util.updateQueryData("getCurrentEntitlements", data.entitlements.application, () => data.entitlements),
           )
         } catch {
           // The page-level mutation handler owns user-facing error feedback.
