@@ -1,14 +1,13 @@
 "use client"
 
-import { useMemo } from "react"
 import { usePathname } from "next/navigation"
 import { ShieldAlert } from "lucide-react"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { getDecodedAuthorizationContext, getDecodedToken } from "./utils"
+import { getDecodedToken } from "./utils"
+import { store, useAppSelector } from "@/redux/store"
 
 type DecodedToken = {
-  permissions?: string[]
   is_staff?: boolean | string | number | null
   is_superuser?: boolean | string | number | null
   email?: string | null
@@ -18,11 +17,6 @@ type DecodedToken = {
   user_id?: string | number | null
   membership_role?: string | null
   role?: string | null
-}
-
-type AuthorizationContext = DecodedToken & {
-  wildcards?: string[]
-  wildcard_permissions?: Record<string, string[]>
 }
 
 type RouteGuardRule = {
@@ -61,25 +55,14 @@ export const truthyAccessClaim = (value: unknown): boolean => {
 
 export const getPermissionSnapshot = () => {
   const token = getDecodedToken() as DecodedToken | null
-  const context = getDecodedAuthorizationContext() as AuthorizationContext | null
-  const wildcardPermissions = context?.wildcard_permissions ?? {}
-  const permissions = new Set(
-    [
-      ...(Array.isArray(token?.permissions) ? token.permissions : []),
-      ...(Array.isArray(context?.permissions) ? context.permissions : []),
-      ...(context?.wildcards ?? []).flatMap((wildcard) => wildcardPermissions[wildcard] ?? []),
-    ].filter((value): value is string => typeof value === "string" && value.trim().length > 0),
-  )
-  const ownerId = normalizeId(token?.owner_id)
-  const currentUserId = normalizeId(token?.id) ?? normalizeId(token?.user_id) ?? normalizeId(token?.sub)
-  const membershipRole = `${token?.membership_role ?? token?.role ?? ""}`.trim().toLowerCase()
-  const isOwner = (ownerId !== null && currentUserId !== null && ownerId === currentUserId) || membershipRole === "owner"
-  const isStaff = truthyAccessClaim(token?.is_staff) || truthyAccessClaim(token?.is_superuser)
+  const hydrated = store.getState().permission
 
   return {
-    permissions,
-    isOwner,
-    isStaff,
+    permissions: new Set(hydrated.permissions),
+    isOwner: hydrated.isOwner,
+    isStaff: hydrated.isStaff || truthyAccessClaim(token?.is_staff) || truthyAccessClaim(token?.is_superuser),
+    status: hydrated.status,
+    profileId: hydrated.profileId,
   }
 }
 
@@ -296,13 +279,29 @@ function AccessDeniedPanel({ access }: { access: AccessResult }) {
 
 export function RouteAccessGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const access = useMemo(() => canAccessPath(pathname), [pathname])
+  const permissionState = useAppSelector((state) => state.permission)
+  const access = canAccessPath(pathname)
+
+  if (permissionState.status === "loading") {
+    return <PermissionLoadingPanel />
+  }
+  if (permissionState.status === "failed") {
+    return <PermissionErrorPanel />
+  }
 
   if (access.allowed) {
     return <>{children}</>
   }
 
   return <AccessDeniedPanel access={access} />
+}
+
+function PermissionLoadingPanel() {
+  return <div className="mx-auto flex min-h-[35vh] max-w-2xl items-center justify-center p-8 text-center"><div className="w-full space-y-4"><div className="mx-auto h-5 w-48 animate-pulse rounded-full bg-gray-200" /><div className="mx-auto h-4 w-72 animate-pulse rounded-full bg-gray-100" /><div className="mx-auto h-24 max-w-md animate-pulse rounded-2xl border border-gray-200 bg-gray-50" /></div></div>
+}
+
+function PermissionErrorPanel() {
+  return <div className="mx-auto flex min-h-[35vh] max-w-2xl flex-col items-center justify-center gap-3 p-8 text-center"><ShieldAlert className="h-10 w-10 text-amber-600" /><h1 className="text-xl font-semibold">Workspace permissions unavailable</h1><p className="text-sm text-gray-600">Refresh the page to retry loading your workspace access.</p></div>
 }
 
 type PermissionGuardProps = {
@@ -322,7 +321,10 @@ export default function PermissionGuard({
   message = "You do not have access to this resource.",
   children,
 }: PermissionGuardProps) {
+  const permissionState = useAppSelector((state) => state.permission)
   const snapshot = getPermissionSnapshot()
+  if (permissionState.status === "loading") return <PermissionLoadingPanel />
+  if (permissionState.status === "failed") return fallback !== null ? <>{fallback}</> : <PermissionErrorPanel />
   if (snapshot.isOwner) {
     return <>{children}</>
   }

@@ -10,6 +10,16 @@ export interface UserPermissionsResponse {
   permissions: PermissionDetail[];
 }
 
+export interface EffectivePermissionsResponse {
+  user_id: string | number;
+  profile_id: string | number;
+  platform: string;
+  permissions: string[];
+  is_owner?: boolean;
+  is_staff?: boolean;
+  is_superuser?: boolean;
+}
+
 export interface PermissionUpdatePayload {
   permissions: string[];
 }

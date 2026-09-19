@@ -1,7 +1,7 @@
-import { getDecodedAuthorizationContext, getDecodedToken } from "./utils";
+import { getDecodedToken } from "./utils";
+import { store } from "@/redux/store";
 
 type DecodedToken = {
-  permissions?: string[];
   owner_id?: string | number | null;
   id?: string | number | null;
   sub?: string | number | null;
@@ -9,18 +9,7 @@ type DecodedToken = {
 };
 
 export const getTokenPermissions = (): Set<string> => {
-  const token = getDecodedToken() as DecodedToken | null;
-  const context = getDecodedAuthorizationContext() as (DecodedToken & {
-    wildcards?: string[];
-    wildcard_permissions?: Record<string, string[]>;
-  }) | null;
-  const wildcardPermissions = context?.wildcard_permissions ?? {};
-  const permissions = [
-    ...(Array.isArray(token?.permissions) ? token.permissions : []),
-    ...(Array.isArray(context?.permissions) ? context.permissions : []),
-    ...(context?.wildcards ?? []).flatMap((wildcard) => wildcardPermissions[wildcard] ?? []),
-  ];
-  return new Set(permissions.filter((permission): permission is string => typeof permission === "string"));
+  return new Set(store.getState().permission.permissions);
 };
 
 const normalizeId = (value: string | number | null | undefined): string | null => {
@@ -48,7 +37,7 @@ export const isWorkspaceOwner = (): boolean => {
 };
 
 export const hasTokenPermission = (permission: string): boolean => {
-  if (isWorkspaceOwner()) {
+  if (store.getState().permission.isOwner) {
     return true;
   }
   return getTokenPermissions().has(permission);

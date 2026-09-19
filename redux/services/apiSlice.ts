@@ -7,6 +7,7 @@ import { jwtDecode } from "jwt-decode"
 import { AUTH_COOKIE_NAMES, AUTH_COOKIE_KEYS, readCookieValue } from "@/lib/authCookies"
 import { getOrCreatePosDeviceId } from "@/lib/deviceIdentity"
 import { setFrontendOriginHeader } from "@/lib/frontendOrigin"
+import { clearPermissions } from "../features/permission/permissionSlice"
 
 const toBooleanClaim = (value: unknown): boolean | undefined => {
   if (typeof value === "boolean") {
@@ -466,6 +467,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
     } else if (AUTH_LOGOUT_URLS.has(url)) {
       clearAuthSession()
       api.dispatch(logout())
+      api.dispatch(clearPermissions())
     }
   }
 
@@ -512,10 +514,12 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
             } else {
               clearAuthSession()
               api.dispatch(logout())
+              api.dispatch(clearPermissions())
             }
           } else {
             clearAuthSession()
             api.dispatch(logout())
+            api.dispatch(clearPermissions())
             if (typeof window !== "undefined") {
               if (!window.location.pathname.startsWith("/accounts/signin")) {
                 window.location.replace("/accounts/signin")

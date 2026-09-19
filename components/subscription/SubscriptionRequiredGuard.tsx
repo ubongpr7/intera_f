@@ -9,6 +9,7 @@ import { LockKeyhole } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { readCookieValue } from "@/lib/authCookies"
 import { useGetCurrentEntitlementsQuery } from "@/redux/features/payment/paymentAPISlice"
+import { useGetUserCompaniesQuery } from "@/redux/features/auth/authApiSlice"
 
 type Claims = {
   user_id?: string | number
@@ -40,7 +41,9 @@ export function SubscriptionRequiredGuard({ children }: { children: ReactNode })
   const router = useRouter()
   const owner = useMemo(() => readOwnerStatus(), [])
   const exempt = EXEMPT_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`))
-  const { data, isLoading, isError } = useGetCurrentEntitlementsQuery()
+  const { data: companies } = useGetUserCompaniesQuery(undefined, { skip: exempt })
+  const activeProfileId = companies?.active_profile_id ?? null
+  const { data, isLoading, isError } = useGetCurrentEntitlementsQuery(undefined, { skip: exempt || !activeProfileId })
   const hasSubscription = Boolean(data?.subscription)
   const shouldBlock = !exempt && !isLoading && !isError && data && !hasSubscription
   const showError = !exempt && isError
