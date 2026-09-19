@@ -367,6 +367,17 @@ export default function SubscriptionPage() {
     () => billingHistory.find((payment) => Boolean(payment.metadata?.billing_card) || Boolean(payment.customer_email) || Boolean(payment.customer_name)),
     [billingHistory],
   )
+  const latestPlanPayment = useMemo(
+    () => billingHistory.find((payment) => {
+      const status = normalizePaymentStatus(payment.status)
+      return ["completed", "processing"].includes(status) && Boolean(payment.plan_name || payment.metadata?.plan_slug)
+    }),
+    [billingHistory],
+  )
+  const latestPlanPaymentStatus = normalizePaymentStatus(latestPlanPayment?.status)
+  const pendingPlanName = latestPlanPayment?.plan_name || "Your selected plan"
+  const pendingPlanSlug = `${latestPlanPayment?.metadata?.plan_slug ?? ""}`.trim().toLowerCase()
+  const paymentAwaitingActivation = !activePlan && Boolean(latestPlanPayment)
   const clearPaymentRedirectParams = () => {
     if (typeof window === "undefined") return
     const url = new URL(window.location.href)
@@ -528,7 +539,9 @@ export default function SubscriptionPage() {
             <div>
               <CardDescription>Workspace subscription</CardDescription>
               <CardTitle className="mt-2 text-3xl">
-                {loadingEntitlements ? "Loading plan..." : activePlan?.name ?? "Choose a plan"}
+                {loadingEntitlements
+                  ? "Loading plan..."
+                  : activePlan?.name ?? (paymentAwaitingActivation ? pendingPlanName : "Choose a plan")}
               </CardTitle>
             </div>
             <CreditCard className="h-7 w-7 text-blue-600" />
@@ -574,6 +587,12 @@ export default function SubscriptionPage() {
                 <p className="mt-2 text-lg font-semibold">{billingAuthorized ? "Connected" : "Not connected"}</p>
               </div>
             </div>
+          ) : paymentAwaitingActivation ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
+              {latestPlanPaymentStatus === "processing"
+                ? `${pendingPlanName} payment is processing. You do not need to pay again.`
+                : `${pendingPlanName} payment was received. Plan activation is being finalized.`}
+            </div>
           ) : (
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
               {owner
@@ -597,9 +616,13 @@ export default function SubscriptionPage() {
             <div className="space-y-4 rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Current plan</p>
-                <p className="mt-2 text-lg font-semibold">{activePlan?.name ?? "No active plan"}</p>
+                <p className="mt-2 text-lg font-semibold">{activePlan?.name ?? (paymentAwaitingActivation ? pendingPlanName : "No plan selected")}</p>
                 <p className="mt-1 text-sm text-slate-500">
-                  {subscriptionPendingCancellation
+                  {paymentAwaitingActivation
+                    ? latestPlanPaymentStatus === "processing"
+                      ? "Renewal payment is processing."
+                      : "Payment received; activation is pending."
+                    : subscriptionPendingCancellation
                     ? `Access remains available until ${formatDate(subscriptionAccessUntil)}.`
                     : `Billing status: ${formatSubscriptionStatus(entitlements?.subscription?.status, entitlements?.subscription?.pending_cancellation)}.`}
                 </p>
@@ -743,6 +766,7 @@ export default function SubscriptionPage() {
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {plans.filter((plan) => plan.slug !== "enterprise").map((plan) => {
                 const selected = activePlan?.slug === plan.slug
+                const paymentPendingForPlan = !activePlan && pendingPlanSlug === plan.slug
                 const busy = initiatingPayment || verifyingPayment || cancellingSubscription
                 const limitIssues = getPlanLimitIssues(plan)
                 const blockedByUsage = limitIssues.length > 0
@@ -761,7 +785,7 @@ export default function SubscriptionPage() {
                         <p className="text-lg font-semibold">{plan.name}</p>
                         <p className="mt-1 text-3xl font-bold">{formatPrice(plan)}</p>
                       </div>
-                      {selected ? <CheckCircle2 className="h-5 w-5 text-emerald-600" /> : null}
+                      {selected || paymentPendingForPlan ? <CheckCircle2 className="h-5 w-5 text-emerald-600" /> : null}
                     </div>
                     <p className="mt-3 min-h-12 text-sm text-slate-600 dark:text-slate-300">{plan.description || `${plan.name} plan for Intera IMS.`}</p>
                     <p className="mt-3 text-sm font-medium">{plan.trial_days || 30}-day free trial</p>
@@ -798,10 +822,12 @@ export default function SubscriptionPage() {
                     <Button
                       className="mt-4 w-full"
                       variant={selected ? "outline" : "default"}
-                      disabled={(selected && !subscriptionPendingCancellation) || busy || blockedByUsage || blockedByLoadingUsage}
+                      disabled={(selected && !subscriptionPendingCancellation) || paymentPendingForPlan || busy || blockedByUsage || blockedByLoadingUsage}
                       onClick={() => authorizeBilling(plan.slug)}
                     >
-                      {selected
+                      {paymentPendingForPlan
+                        ? latestPlanPaymentStatus === "processing" ? "Payment processing" : "Activation pending"
+                        : selected
                         ? subscriptionPendingCancellation ? "Resume renewal" : "Current plan"
                         : blockedByLoadingUsage ? "Checking usage..."
                         : blockedByUsage ? "Usage too high" : activePlan ? "Switch to this plan" : "Choose plan"}
