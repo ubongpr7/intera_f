@@ -16,7 +16,7 @@ import { toast } from "react-toastify"
 
 interface VariantDetailsTabProps {
   variant: ProductVariant
-  onSuccess: () => void
+  onSuccess: () => Promise<void>
 }
 
 const interfaceKeys: (keyof ProductVariant)[] = [
@@ -66,7 +66,7 @@ const VariantDetailsTab = ({ variant, onSuccess }: VariantDetailsTabProps) => {
   const handleUpdate = async (data: Partial<ProductVariant>) => {
     try {
       await updateVariant({ id: variant.id, data }).unwrap()
-      onSuccess()
+      await onSuccess()
     } catch {
       toast.error("Failed to update variant.")
     }
@@ -127,7 +127,7 @@ const VariantDetailsTab = ({ variant, onSuccess }: VariantDetailsTabProps) => {
 
       await refetchMedia()
       handleCancelPendingImage()
-      onSuccess()
+      await onSuccess()
       toast.success("Variant image updated successfully.")
     } catch {
       toast.error("Failed to replace variant image.")

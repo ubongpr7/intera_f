@@ -6,6 +6,7 @@ import authReducer from "./features/authSlice";
 import ka2aReducer from "./features/ka2a/ka2aSlice";
 import { apiSlice } from "./services/apiSlice";
 import globalReducer from "./state";
+import permissionReducer from "./features/permission/permissionSlice";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 const createNoopStorage = () => ({
   getItem() {
@@ -35,6 +36,7 @@ const rootReducer = combineReducers({
   [apiSlice.reducerPath]: apiSlice.reducer,
   global: persistReducer(globalPersistConfig, globalReducer),
   ka2a: ka2aReducer,
+  permission: permissionReducer,
 });
 
 export const makeStore = () => {

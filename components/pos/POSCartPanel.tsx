@@ -2,7 +2,7 @@
 
 import { PackageCheck, ReceiptText, Rows3, ShoppingCart, UserRound } from "lucide-react"
 import { formatCurrency } from "@/lib/currency-utils"
-import type { POSOrder, POSOrderItem } from "@/redux/features/pos/posTypes"
+import type { POSDiscount, POSOrder, POSOrderItem } from "@/redux/features/pos/posTypes"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -49,6 +49,9 @@ interface POSCartPanelProps {
   onStartDraft: () => Promise<void>
   discountPercent: string
   discountAmount: string
+  discountPolicies: POSDiscount[]
+  selectedDiscountId: string
+  onDiscountPolicyChange: (value: string) => void
   onDiscountPercentChange: (value: string) => void
   onDiscountAmountChange: (value: string) => void
   onApplyDiscount: () => Promise<void>
@@ -127,6 +130,9 @@ export default function POSCartPanel({
   onStartDraft,
   discountPercent,
   discountAmount,
+  discountPolicies,
+  selectedDiscountId,
+  onDiscountPolicyChange,
   onDiscountPercentChange,
   onDiscountAmountChange,
   onApplyDiscount,
@@ -394,6 +400,21 @@ export default function POSCartPanel({
                   </div>
                 </div>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <select
+                    value={selectedDiscountId}
+                    onChange={(event) => onDiscountPolicyChange(event.target.value)}
+                    className="h-11 rounded-md border border-input bg-background px-3 text-sm shadow-sm sm:col-span-2"
+                    disabled={!!cartOperateNotice}
+                    aria-label="Discount policy"
+                  >
+                    <option value="">Manual discount</option>
+                    {discountPolicies.map((policy) => (
+                      <option key={policy.id} value={policy.id} disabled={policy.requires_approval}>
+                        {policy.name} ({policy.discount_type === "percentage" ? `${policy.value}%` : formatCurrency(currencyCode, policy.value)})
+                        {policy.requires_approval ? " - approval required" : ""}
+                      </option>
+                    ))}
+                  </select>
                   <Input
                     type="text"
                     inputMode="decimal"

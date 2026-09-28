@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useEffect, useRef, useState } from "react"
 import { ArrowRight, RefreshCw } from "lucide-react"
 import { toast } from "react-toastify"
 import { Badge } from "@/components/ui/badge"
@@ -22,11 +23,44 @@ function ImportedProductRow({
   syncing: boolean
   onSync: (importId: string, productName: string) => void
 }) {
-  const { data: preview, isFetching } = usePreviewGlobalCatalogImportSyncQuery(entry.id)
+  const rowRef = useRef<HTMLDivElement>(null)
+  const [shouldPreview, setShouldPreview] = useState(false)
+
+  useEffect(() => {
+    const row = rowRef.current
+    if (!row || shouldPreview) return
+
+    const observer = new IntersectionObserver(
+      ([observedEntry]) => {
+        if (observedEntry.isIntersecting) {
+          setShouldPreview(true)
+          observer.disconnect()
+        }
+      },
+      { rootMargin: "400px 0px" },
+    )
+
+    observer.observe(row)
+    return () => observer.disconnect()
+  }, [shouldPreview])
+
+  const { data: preview, isFetching } = usePreviewGlobalCatalogImportSyncQuery(entry.id, { skip: !shouldPreview })
   const pendingCount = preview?.missing_variant_count ?? 0
+  const sourceStatus = !shouldPreview
+    ? "Not checked"
+    : isFetching
+      ? "Checking source..."
+      : pendingCount > 0
+        ? `${pendingCount} new variant${pendingCount === 1 ? "" : "s"}`
+        : "Up to date"
+  const sourceStatusClassName = !shouldPreview
+    ? "border-slate-200 bg-slate-50 text-slate-700"
+    : pendingCount > 0
+      ? "border-amber-200 bg-amber-50 text-amber-700"
+      : "border-emerald-200 bg-emerald-50 text-emerald-700"
 
   return (
-    <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm">
+    <div ref={rowRef} className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -36,11 +70,9 @@ function ImportedProductRow({
             </Badge>
             <Badge
               variant="outline"
-              className={`rounded-full px-3 py-1 ${
-                pendingCount > 0 ? "border-amber-200 bg-amber-50 text-amber-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"
-              }`}
+              className={`rounded-full px-3 py-1 ${sourceStatusClassName}`}
             >
-              {isFetching ? "Checking source..." : pendingCount > 0 ? `${pendingCount} new variant${pendingCount === 1 ? "" : "s"}` : "Up to date"}
+              {sourceStatus}
             </Badge>
           </div>
           <p className="mt-2 text-sm text-gray-600">
@@ -76,11 +108,11 @@ function ImportedProductRow({
           <Button
             type="button"
             onClick={() => onSync(entry.id, entry.global_product_name)}
-            disabled={syncing || pendingCount === 0}
+            disabled={syncing || !shouldPreview || isFetching || pendingCount === 0}
             className="rounded-full"
           >
             <RefreshCw className="mr-2 h-4 w-4" />
-            {syncing ? "Syncing..." : pendingCount === 0 ? "No changes" : "Sync now"}
+            {syncing ? "Syncing..." : !shouldPreview ? "Not checked" : isFetching ? "Checking..." : pendingCount === 0 ? "No changes" : "Sync now"}
           </Button>
         </div>
       </div>

@@ -166,6 +166,32 @@ export interface Product extends ProfileMixin {
 
 export type ProductData = Product;
 
+export interface ProductListParams {
+  search?: string;
+  category?: string;
+  is_active?: string;
+  is_featured?: string;
+  quick_sale?: string;
+  pos_category?: string;
+  track_stock?: string;
+  allow_backorder?: string;
+  allow_discount?: string;
+  is_template?: string;
+  ordering?: string;
+  page?: number;
+  page_size?: number;
+}
+
+export interface PaginatedProductResponse {
+  count: number;
+  next?: string | null;
+  previous?: string | null;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  results: ProductData[];
+}
+
 export type ProductCategoryData = ProductCategory;
 
 export interface ProductAttributeLink {
@@ -195,6 +221,7 @@ export interface ProductVariant extends UUIDBaseModel {
     max_discount_percent: number;
   };
   variant_barcode?: string;
+  effective_barcode?: string;
   variant_sku?: string;
   pos_name?: string;
   active: boolean;

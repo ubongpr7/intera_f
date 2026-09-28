@@ -37,6 +37,15 @@ export type AuditEventListResponse = {
   results: AuditEventRecord[]
 }
 
+export type AuditFilterOptions = {
+  source_services: string[]
+  feature_areas: string[]
+  actor_roles: string[]
+  target_types: string[]
+  actions: string[]
+  severities: string[]
+}
+
 export type AuditQueryParams = {
   search?: string
   barcode?: string

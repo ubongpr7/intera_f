@@ -1,11 +1,12 @@
 'use client'
-import { useState } from 'react';
+import { useDeferredValue, useState } from 'react';
 import Link from "next/link";
 
 import { useRouter } from 'nextjs-toploader/app';
-import { Column, DataTable,ActionButton, GeneralButton } from "../common/DataTable/DataTable";
+import { usePathname, useRouter as useNavigationRouter, useSearchParams } from "next/navigation";
+import { Column, DataTable,ActionButton, GeneralButton, type DataTableQueryState } from "../common/DataTable/DataTable";
 import type { BulkTaskStatus, ProductData } from "@/redux/features/product/productTypes";
-import { useGetProductDataQuery, useCreateProductMutation,useDeleteProductMutation,useBulkDeleteProductsMutation,useRemoveTemplateModeMutation, useListBulkTasksQuery, useRetryBulkTaskMutation } from "@/redux/features/product/productAPISlice";
+import { useListProductPageQuery, useCreateProductMutation,useDeleteProductMutation,useBulkDeleteProductsMutation,useRemoveTemplateModeMutation, useListBulkTasksQuery, useRetryBulkTaskMutation } from "@/redux/features/product/productAPISlice";
 import CustomCreateCard from '../common/createCard';
 import { ProductFormKeys, defaultValues } from './selectOptions';
 import { useGetUnitsQuery } from "@/redux/features/common/typeOF";
@@ -19,6 +20,7 @@ import { getCurrencyCodeForProfile, getCurrencySymbolForProfile } from '@/lib/cu
 import { extractErrorMessage } from '@/lib/utils';
 import { confirmAction } from '../common/confirmAction';
 import { useSubscriptionQuota } from '@/hooks/useSubscriptionQuota';
+import { Pagination } from '@/components/ui/pagination';
 
   
 
@@ -80,7 +82,49 @@ const inventoryColumns: Column<ProductData>[] = [
 
 
 function ProductView() {
-  const { data, isLoading, refetch, error } = useGetProductDataQuery();
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+  const navigationRouter = useNavigationRouter()
+  const tableStateKey = "table_products"
+  const [tableQueryState, setTableQueryState] = useState<DataTableQueryState | null>(null)
+  const search = tableQueryState?.searchTerm ?? searchParams.get(`${tableStateKey}_search`) ?? ""
+  const category = tableQueryState?.filters.category ?? searchParams.get(`${tableStateKey}_filter_category`) ?? undefined
+  const isActive = tableQueryState?.filters.is_active ?? searchParams.get(`${tableStateKey}_filter_is_active`) ?? undefined
+  const isFeatured = tableQueryState?.filters.is_featured ?? searchParams.get(`${tableStateKey}_filter_is_featured`) ?? undefined
+  const quickSale = tableQueryState?.filters.quick_sale ?? searchParams.get(`${tableStateKey}_filter_quick_sale`) ?? undefined
+  const trackStock = tableQueryState?.filters.track_stock ?? searchParams.get(`${tableStateKey}_filter_track_stock`) ?? undefined
+  const allowBackorder = tableQueryState?.filters.allow_backorder ?? searchParams.get(`${tableStateKey}_filter_allow_backorder`) ?? undefined
+  const allowDiscount = tableQueryState?.filters.allow_discount ?? searchParams.get(`${tableStateKey}_filter_allow_discount`) ?? undefined
+  const isTemplate = tableQueryState?.filters.is_template ?? searchParams.get(`${tableStateKey}_filter_is_template`) ?? undefined
+  const sortField = tableQueryState?.sortConfig?.key ?? searchParams.get(`${tableStateKey}_sort`)
+  const sortDirection = tableQueryState?.sortConfig?.direction ?? searchParams.get(`${tableStateKey}_direction`)
+  const orderingFieldMap: Record<string, string> = {
+    name: "name",
+    barcode: "barcode",
+    sku: "sku",
+    base_price: "base_price",
+    cost_price: "cost_price",
+  }
+  const ordering = sortField && orderingFieldMap[sortField]
+    ? `${sortDirection === "descending" ? "-" : ""}${orderingFieldMap[sortField]}`
+    : undefined
+  const page = Number(searchParams.get(`${tableStateKey}_page`)) || 1
+  const deferredSearch = useDeferredValue(search.trim())
+  const { data: productPage, isLoading, refetch, error } = useListProductPageQuery({
+    search: deferredSearch || undefined,
+    category,
+    is_active: isActive,
+    is_featured: isFeatured,
+    quick_sale: quickSale,
+    track_stock: trackStock,
+    allow_backorder: allowBackorder,
+    allow_discount: allowDiscount,
+    is_template: isTemplate,
+    ordering,
+    page,
+    page_size: 20,
+  });
+  const data = productPage?.results ?? []
   const [createProduct, { isLoading: productCreateLoading }] = useCreateProductMutation();
   const { data: bulkTasks = [], isFetching: isFetchingBulkTasks, refetch: refetchBulkTasks } = useListBulkTasksQuery();
   const [retryBulkTask, { isLoading: isRetryingBulkTask }] = useRetryBulkTaskMutation();
@@ -88,7 +132,7 @@ function ProductView() {
   const [isCreateOpen, setIsCreateOpen] = useState(false); // Renamed for clarity
   const router = useRouter();
   const [isAIBulkCreateOpen, setIsAIBulkCreateOpen] = useState(false);
-  const productQuota = useSubscriptionQuota("products", data?.length ?? 0, 1, { requireBillingAuthorization: true });
+  const productQuota = useSubscriptionQuota("products", productPage?.count ?? 0, 1, { requireBillingAuthorization: true });
   const productCatalogLocked = !productQuota.canCreate;
 
   const goToSubscription = () => {
@@ -96,6 +140,10 @@ function ProductView() {
   }
 
   const handleCreate = async (createdData: Partial<ProductData>) => {
+    if (productQuota.isLoading) {
+      toast.info("Subscription limits are still loading. Please try again.");
+      return;
+    }
     if (!productQuota.canCreate) {
       toast.error(productQuota.message);
       goToSubscription();
@@ -170,13 +218,15 @@ function ProductView() {
         text: `${unit.name} (${unit.dimension_type})`,
       }));
     
-      const categoryOptions = categories.map((cat: any) => ({
-        value: cat.name,
-        text: cat.name,
-      }));
+      const categoryOptions = categories.flatMap((cat: any) => {
+        const name = typeof cat?.name === "string" ? cat.name.trim() : "";
+        return name ? [{ value: name, text: name }] : [];
+      });
       
-    const  selectOptions = {
-      category: categoryOptions,
+    const selectOptions = {
+      // A product category may be a free-text catalog label. Only force a
+      // select control when this workspace has managed category records.
+      ...(categoryOptions.length > 0 ? { category: categoryOptions } : {}),
       unit: unitOptions,
     }
 
@@ -365,9 +415,24 @@ const actionButtons: ActionButton<ProductData>[] = [
       />
       <DataTable<ProductData>
         columns={inventoryColumns}
-        data={data || []}
+        data={data}
         isLoading={isLoading}
+        error={error}
+        errorMessage="Unable to load products."
+        onRetry={refetch}
         actionButtons={actionButtons}
+        onRowClick={handleRowClick}
+        serverSide
+        urlStateKey="products"
+        onQueryStateChange={(nextState) => {
+          setTableQueryState(nextState)
+          if (page > 1) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete(`${tableStateKey}_page`)
+            const query = params.toString()
+            navigationRouter.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+          }
+        }}
         secondaryButton={{
           label: 'Create Bulk Product',
           onClick: () => {
@@ -383,22 +448,38 @@ const actionButtons: ActionButton<ProductData>[] = [
         searchableFields={['name', 'barcode', 'sku', 'short_description']}
         filterableFields={[
           'category',
-          'pos_category',
           'is_active',
           'is_featured',
           'quick_sale',
-          'pos_ready',
           'is_template',
           'allow_discount',
           'track_stock',
           'allow_backorder',
         ]}
-        sortableFields={['name', 'barcode', 'sku', 'base_price', 'cost_price', 'variant_count', 'total_stock', 'profit_margin']}
-        rangeFilterFields={['cost_price', 'base_price', 'tax_rate', 'max_discount_percent', 'variant_count', 'total_stock', 'profit_margin', 'low_stock_threshold']}
+        filterOptions={{
+          // Catalog category is free text when no managed category records exist.
+          // Omitting this option list lets DataTable derive choices from visible products.
+          ...(categoryOptions.length > 0
+            ? { category: categoryOptions.map(({ value, text }) => ({ value, label: text })) }
+            : {}),
+          is_active: [{ value: "true", label: "Active" }, { value: "false", label: "Inactive" }],
+          is_featured: [{ value: "true", label: "Featured" }, { value: "false", label: "Not featured" }],
+          quick_sale: [{ value: "true", label: "Quick sale" }, { value: "false", label: "Not quick sale" }],
+          is_template: [{ value: "true", label: "Template" }, { value: "false", label: "Not a template" }],
+          allow_discount: [{ value: "true", label: "Discount allowed" }, { value: "false", label: "Discount blocked" }],
+          track_stock: [{ value: "true", label: "Tracked" }, { value: "false", label: "Not tracked" }],
+          allow_backorder: [{ value: "true", label: "Backorder allowed" }, { value: "false", label: "Backorder blocked" }],
+        }}
+        sortableFields={['name', 'barcode', 'sku', 'base_price', 'cost_price']}
+        rangeFilterFields={[]}
         generalButtons={generalButtons}
         getRowId={(row) => row.id}
         title="Products"
         onClose={() => {
+          if (productQuota.isLoading) {
+            toast.info("Subscription limits are still loading. Please try again.")
+            return
+          }
           if (!productQuota.canCreate) {
             toast.error(productQuota.message)
             goToSubscription()
@@ -407,6 +488,22 @@ const actionButtons: ActionButton<ProductData>[] = [
           setIsCreateOpen(true)
         }}
       />
+      <div className="mt-4 flex flex-wrap items-center justify-end gap-3">
+        <Pagination
+          currentPage={productPage?.page ?? page}
+          totalPages={productPage?.total_pages ?? 1}
+          onPageChange={(nextPage) => {
+            const params = new URLSearchParams(searchParams.toString())
+            if (nextPage <= 1) {
+              params.delete(`${tableStateKey}_page`)
+            } else {
+              params.set(`${tableStateKey}_page`, String(nextPage))
+            }
+            const query = params.toString()
+            navigationRouter.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+          }}
+        />
+      </div>
 
       {/* Always render CustomCreateCard but control visibility */}
       {isAIBulkCreateOpen && (
@@ -433,7 +530,7 @@ const actionButtons: ActionButton<ProductData>[] = [
           keyInfo={{}}
           notEditableFields={notEditableFields}
           interfaceKeys={ProductFormKeys}
-          optionalFields={['description', 'short_description', 'cost_price', 'barcode', 'sku', 'pos_category', 'unit', 'dimensions', 'weight', 'meta_title', 'meta_description']}
+          optionalFields={['description', 'short_description', 'category', 'cost_price', 'barcode', 'sku', 'pos_category', 'unit', 'dimensions', 'weight', 'meta_title', 'meta_description']}
           itemTitle={'New Product'}
         />
       ) : null}

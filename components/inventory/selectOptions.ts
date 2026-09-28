@@ -2,7 +2,8 @@
 import { InventoryData } from "@/redux/features/inventory/inventoryTypes";
 
 export const InventoryKeyInfo = {
-  name_snapshot: "Human-readable name for the inventory item.",
+  product_variant_id: "Optional. Link an active product variant that does not already have inventory tracking. Its name, SKU, barcode, and image are copied automatically.",
+  name_snapshot: "Required only for an unlinked inventory item. When a product variant is selected, its catalog name replaces this value automatically.",
   description: "Short operational description for warehouse and purchasing teams.",
   inventory_type: "Operational stock type such as raw material, finished good, or consumable.",
   default_supplier: "Preferred supplier used when planning replenishment for this item.",
@@ -21,6 +22,7 @@ export const InventoryKeyInfo = {
 };
 
 export const InventoryInterfaceKeys: (keyof InventoryData)[] = [
+  "product_variant_id",
   "name_snapshot",
   "description",
   "default_supplier",

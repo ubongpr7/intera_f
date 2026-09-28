@@ -1,12 +1,14 @@
 "use client"
 import React from "react"
-import { useState, useEffect, useMemo } from "react"
-import { createPortal } from "react-dom"
-import { type LucideIcon, QrCode, Barcode, Filter, Search, SlidersHorizontal, X } from 'lucide-react'
+import { startTransition, useEffect, useMemo, useRef, useState } from "react"
+import { usePathname, useSearchParams } from "next/navigation"
+import { type LucideIcon, QrCode, Barcode, Search, SlidersHorizontal, X } from 'lucide-react'
 import { FieldInfo } from "../fileFieldInfor"
 import LoadingAnimation from "../LoadingAnimation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
+import { ReactSelectField, type SelectOption } from "@/components/ui/react-select-field"
 import { cn } from "@/lib/utils"
 import { formatMachineLabel } from "@/lib/displayLabels"
 
@@ -50,10 +52,36 @@ export interface GeneralButton<T> {
   tooltip?: string
 }
 
+export type DataTableFilterOption = SelectOption
+
+export type DataTableQueryState = {
+  searchTerm: string
+  filters: Record<string, string>
+  rangeFilters: Record<string, { from: string; to: string }>
+  sortConfig: { key: string; direction: "ascending" | "descending" } | null
+}
+
+type TableViewState<T> = {
+  searchTerm: string
+  filters: Record<keyof T, string>
+  rangeFilters: Record<keyof T, { from: string; to: string }>
+  sortConfig: { key: keyof T; direction: "ascending" | "descending" } | null
+}
+
+const toDataTableQueryState = <T,>(state: TableViewState<T>): DataTableQueryState => ({
+  searchTerm: state.searchTerm,
+  filters: Object.fromEntries(Object.entries(state.filters).map(([key, value]) => [String(key), value])) as Record<string, string>,
+  rangeFilters: Object.fromEntries(Object.entries(state.rangeFilters).map(([key, value]) => [String(key), value])) as Record<string, { from: string; to: string }>,
+  sortConfig: state.sortConfig ? { key: String(state.sortConfig.key), direction: state.sortConfig.direction } : null,
+})
+
 interface DataTableProps<T> {
   columns: Column<T>[]
   data: T[]
   isLoading?: boolean
+  error?: unknown
+  errorMessage?: string
+  onRetry?: () => unknown
   onRowClick?: (row: T) => void
   actionButtons?: ActionButton<T>[]
   secondaryButton?: SecondaryButton<T>
@@ -75,6 +103,12 @@ interface DataTableProps<T> {
   qrScannableField?: keyof T; // Field to extract from QR code for filtering
   barcodeScannableField?: keyof T; // Field to extract from Barcode for filtering
   onScanSuccess?: (scannedItem: T) => void; // Callback after successful scan and item retrieval
+  // Supply this when multiple tables with the same title appear on one route.
+  urlStateKey?: string
+  // Server-owned tables receive results that already match the URL filter state.
+  serverSide?: boolean
+  filterOptions?: Partial<Record<keyof T, DataTableFilterOption[]>>
+  onQueryStateChange?: (state: DataTableQueryState) => void
 }
 
 const humanizeFieldName = (value: string) =>
@@ -85,10 +119,20 @@ const humanizeFieldName = (value: string) =>
     .trim()
     .replace(/\b\w/g, (letter) => letter.toUpperCase())
 
+const getSingleSelectOption = (option: SelectOption | readonly SelectOption[] | null): SelectOption | null => {
+  if (Array.isArray(option)) {
+    return null
+  }
+  return option as SelectOption | null
+}
+
 export function DataTable<T>({
   columns,
   data,
   isLoading,
+  error,
+  errorMessage = "Unable to load records.",
+  onRetry,
   onRowClick,
   actionButtons = [],
   secondaryButton,
@@ -108,74 +152,161 @@ export function DataTable<T>({
   qrScannableField,
   barcodeScannableField,
   onScanSuccess,
+  urlStateKey,
+  serverSide = false,
+  filterOptions: suppliedFilterOptions,
+  onQueryStateChange,
   title,
   onClose,
 }: DataTableProps<T>) {
-  const filterDropdownRef = React.useRef<HTMLDivElement>(null)
-  const filterButtonRef = React.useRef<HTMLButtonElement>(null)
-  const [filterDropdownOpen, setFilterDropdownOpen] = useState(false)
-  const [filterDropdownPosition, setFilterDropdownPosition] = useState<{
-    top: number
-    left: number
-    width: number
-    maxHeight: number
-  } | null>(null)
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [scanValue, setScanValue] = useState("")
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false)
+  const selectMenuPortalTarget = typeof document === "undefined" ? undefined : document.body
 
-  const updateFilterDropdownPosition = React.useCallback(() => {
-    if (typeof window === "undefined") return
-    const button = filterButtonRef.current
-    if (!button) return
+  const tableStateKey = useMemo(() => {
+    const source = urlStateKey || title || columns.map((column) => column.header).join("-") || "records"
+    const normalized = source
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+    return `table_${normalized || "records"}`
+  }, [columns, title, urlStateKey])
 
-    const rect = button.getBoundingClientRect()
-    const viewportPadding = 16
-    const gap = 12
-    const width = Math.min(520, window.innerWidth - viewportPadding * 2)
-    const left = Math.min(
-      Math.max(viewportPadding, rect.left),
-      window.innerWidth - width - viewportPadding,
-    )
-    const belowSpace = window.innerHeight - rect.bottom - gap - viewportPadding
-    const aboveSpace = rect.top - gap - viewportPadding
-    const openUpward = belowSpace < 280 && aboveSpace > belowSpace
-    const availableHeight = openUpward ? aboveSpace : belowSpace
-    const maxHeight = Math.max(240, Math.min(560, availableHeight))
-    const top = openUpward
-      ? Math.max(viewportPadding, rect.top - gap - maxHeight)
-      : Math.min(rect.bottom + gap, window.innerHeight - viewportPadding - maxHeight)
+  const searchKey = `${tableStateKey}_search`
+  const sortKey = `${tableStateKey}_sort`
+  const directionKey = `${tableStateKey}_direction`
+  const urlState = useMemo<TableViewState<T>>(() => {
+    const requestedSortField = searchParams.get(sortKey) as keyof T | null
+    const requestedSortDirection = searchParams.get(directionKey)
 
-    setFilterDropdownPosition({ top, left, width, maxHeight })
-  }, [])
+    return {
+      searchTerm: searchParams.get(searchKey) || "",
+      filters: Object.fromEntries(
+        filterableFields.map((field) => [field, searchParams.get(`${tableStateKey}_filter_${String(field)}`) || ""]),
+      ) as Record<keyof T, string>,
+      rangeFilters: Object.fromEntries(
+        rangeFilterFields.map((field) => [
+          field,
+          {
+            from: searchParams.get(`${tableStateKey}_from_${String(field)}`) || "",
+            to: searchParams.get(`${tableStateKey}_to_${String(field)}`) || "",
+          },
+        ]),
+      ) as Record<keyof T, { from: string; to: string }>,
+      sortConfig: requestedSortField && sortableFields.includes(requestedSortField)
+        ? { key: requestedSortField, direction: requestedSortDirection === "descending" ? "descending" : "ascending" }
+        : null,
+    }
+  }, [
+    directionKey,
+    filterableFields,
+    rangeFilterFields,
+    searchKey,
+    searchParams,
+    sortableFields,
+    sortKey,
+    tableStateKey,
+  ])
+
+  const [tableViewState, setTableViewState] = useState<TableViewState<T>>(urlState)
+  const lastObservedUrlState = useRef(JSON.stringify(urlState))
+  const lastReportedQueryState = useRef("")
 
   useEffect(() => {
-    if (!filterDropdownOpen) return;
-    function handleClick(e: MouseEvent) {
-      const target = e.target as Node
-      if (filterDropdownRef.current?.contains(target) || filterButtonRef.current?.contains(target)) return
-      setFilterDropdownOpen(false)
+    const nextStateSignature = JSON.stringify(urlState)
+    if (lastObservedUrlState.current === nextStateSignature) {
+      return
     }
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setFilterDropdownOpen(false)
-    }
-    updateFilterDropdownPosition()
-    document.addEventListener("mousedown", handleClick)
-    document.addEventListener("keydown", handleKey)
-    window.addEventListener("resize", updateFilterDropdownPosition)
-    window.addEventListener("scroll", updateFilterDropdownPosition, true)
-    return () => {
-      document.removeEventListener("mousedown", handleClick)
-      document.removeEventListener("keydown", handleKey)
-      window.removeEventListener("resize", updateFilterDropdownPosition)
-      window.removeEventListener("scroll", updateFilterDropdownPosition, true)
-    }
-  }, [filterDropdownOpen, updateFilterDropdownPosition])
-  const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [searchTerm, setSearchTerm] = useState("")
-  const [scanValue, setScanValue] = useState("")
-  const [filters, setFilters] = useState<Record<keyof T, string>>({} as Record<keyof T, string>)
-  const [rangeFilters, setRangeFilters] = useState<Record<keyof T, {from: string, to: string}>>({} as Record<keyof T, {from: string, to: string}>)
-  const [sortConfig, setSortConfig] = useState<{ key: keyof T; direction: "ascending" | "descending" } | null>(null)
 
-  const filterOptions = useMemo(() => {
+    lastObservedUrlState.current = nextStateSignature
+    startTransition(() => {
+      setTableViewState(urlState)
+    })
+  }, [urlState])
+
+  useEffect(() => {
+    if (!onQueryStateChange) {
+      return
+    }
+
+    const nextQueryState = toDataTableQueryState(tableViewState)
+    const nextQueryStateSignature = JSON.stringify(nextQueryState)
+    if (lastReportedQueryState.current === nextQueryStateSignature) {
+      return
+    }
+
+    lastReportedQueryState.current = nextQueryStateSignature
+    onQueryStateChange(nextQueryState)
+  }, [onQueryStateChange, tableViewState])
+
+  useEffect(() => {
+    if (!isFilterDrawerOpen && !isFilterModalOpen) return
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsFilterDrawerOpen(false)
+        setIsFilterModalOpen(false)
+      }
+    }
+
+    document.addEventListener("keydown", closeOnEscape)
+    return () => document.removeEventListener("keydown", closeOnEscape)
+  }, [isFilterDrawerOpen, isFilterModalOpen])
+
+  const { searchTerm, filters, rangeFilters, sortConfig } = tableViewState
+
+  const updateUrlState = (
+    updates: Record<string, string | null>,
+    historyMode: "push" | "replace" = "push",
+  ) => {
+    const nextParams = new URLSearchParams(searchParams.toString())
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value) {
+        nextParams.set(key, value)
+      } else {
+        nextParams.delete(key)
+      }
+    })
+    const query = nextParams.toString()
+    const href = query ? `${pathname}?${query}` : pathname
+    if (typeof window !== "undefined" && `${window.location.pathname}${window.location.search}` !== href) {
+      if (historyMode === "replace") {
+        window.history.replaceState(window.history.state, "", href)
+      } else {
+        window.history.pushState(window.history.state, "", href)
+      }
+    }
+  }
+
+  const pageKey = `${tableStateKey}_page`
+  const setSearchTerm = (value: string) => {
+    const nextState = { ...tableViewState, searchTerm: value }
+    setTableViewState(nextState)
+    // Keep one history entry while the user types, but preserve each discrete filter change.
+    updateUrlState({ [searchKey]: value.trim() || null, [pageKey]: null }, "replace")
+  }
+  const setFilter = (field: keyof T, value: string) => {
+    const nextState = { ...tableViewState, filters: { ...tableViewState.filters, [field]: value } }
+    setTableViewState(nextState)
+    updateUrlState({ [`${tableStateKey}_filter_${String(field)}`]: value || null, [pageKey]: null })
+  }
+  const setRangeFilter = (field: keyof T, edge: "from" | "to", value: string) => {
+    const nextState = {
+      ...tableViewState,
+      rangeFilters: {
+        ...tableViewState.rangeFilters,
+        [field]: { ...tableViewState.rangeFilters[field], [edge]: value },
+      },
+    }
+    setTableViewState(nextState)
+    updateUrlState({ [`${tableStateKey}_${edge}_${String(field)}`]: value || null, [pageKey]: null })
+  }
+
+  const derivedFilterOptions = useMemo(() => {
     const options: Record<keyof T, string[]> = {} as Record<keyof T, string[]>
     filterableFields.forEach((field) => {
       const uniqueValues = [
@@ -190,6 +321,32 @@ export function DataTable<T>({
     })
     return options
   }, [data, filterableFields])
+
+  const availableFilterOptions = useMemo(() => {
+    const options = {} as Record<keyof T, DataTableFilterOption[]>
+    filterableFields.forEach((field) => {
+      if (suppliedFilterOptions?.[field]) {
+        options[field] = suppliedFilterOptions[field]!
+        return
+      }
+      options[field] = (derivedFilterOptions[field] || []).map((value) => ({ value, label: formatMachineLabel(value) }))
+    })
+    return options
+  }, [derivedFilterOptions, filterableFields, suppliedFilterOptions])
+
+  const sortOptions = useMemo<SelectOption[]>(
+    () => sortableFields.flatMap((field) => [
+      {
+        value: `${String(field)}:ascending`,
+        label: `${humanizeFieldName(String(field))}: A-Z / low-high`,
+      },
+      {
+        value: `${String(field)}:descending`,
+        label: `${humanizeFieldName(String(field))}: Z-A / high-low`,
+      },
+    ]),
+    [sortableFields],
+  )
 
   const sortedData = useMemo(() => {
     const sortableData = [...data]
@@ -207,36 +364,33 @@ export function DataTable<T>({
     return sortableData
   }, [data, sortConfig])
 
-  const filteredAndSortedData = sortedData.filter((row) => {
-    if (searchTerm === "") return true
-    return searchableFields.some((field) => {
-      const value = row[field]
-      if (typeof value === "string") {
-        return value.toLowerCase().includes(searchTerm.toLowerCase())
-      }
-      return false
-    })
-  }).filter((row) => {
-    // Handle exact filters
-    const exactMatch = Object.entries(filters).every(([field, value]) => {
-      if (value === "") return true
-      return String(row[field as keyof T] ?? "") === value
-    })
-    // Handle range filters
-    const rangeMatch = rangeFilterFields.every((field) => {
-      const filter = rangeFilters[field]
-      if (!filter || (filter.from === "" && filter.to === "")) return true
-      const rowValue = row[field]
-      const numValue = parseFloat(rowValue as any)
-      if (isNaN(numValue)) return true // ignore non-numeric
-      const from = filter.from !== "" ? parseFloat(filter.from) : undefined
-      const to = filter.to !== "" ? parseFloat(filter.to) : undefined
-      if (from !== undefined && numValue < from) return false
-      if (to !== undefined && numValue > to) return false
-      return true
-    })
-    return exactMatch && rangeMatch
-  })
+  const filteredAndSortedData = serverSide
+    ? data
+    : sortedData.filter((row) => {
+        if (searchTerm === "") return true
+        return searchableFields.some((field) => {
+          const value = row[field]
+          if (typeof value === "string") {
+            return value.toLowerCase().includes(searchTerm.toLowerCase())
+          }
+          return false
+        })
+      }).filter((row) => {
+        const exactMatch = Object.entries(filters).every(([field, value]) => {
+          if (value === "") return true
+          return String(row[field as keyof T] ?? "") === value
+        })
+        const rangeMatch = rangeFilterFields.every((field) => {
+          const filter = rangeFilters[field]
+          if (!filter || (filter.from === "" && filter.to === "")) return true
+          const numValue = parseFloat(row[field] as any)
+          if (isNaN(numValue)) return true
+          const from = filter.from !== "" ? parseFloat(filter.from) : undefined
+          const to = filter.to !== "" ? parseFloat(filter.to) : undefined
+          return !(from !== undefined && numValue < from) && !(to !== undefined && numValue > to)
+        })
+        return exactMatch && rangeMatch
+      })
 
   const activeFiltersCount = useMemo(() => {
     const exactFiltersCount = Object.values(filters).filter((value) => value !== "").length
@@ -255,14 +409,38 @@ export function DataTable<T>({
     if (sortConfig && sortConfig.key === key && sortConfig.direction === "ascending") {
       direction = "descending"
     }
-    setSortConfig({ key, direction })
+    const nextState = { ...tableViewState, sortConfig: { key, direction } }
+    setTableViewState(nextState)
+    updateUrlState({
+      [sortKey]: String(key),
+      [directionKey]: direction,
+      [pageKey]: null,
+    })
   }
 
   const clearAllFilters = () => {
-    setSearchTerm("")
-    setFilters({} as Record<keyof T, string>)
-    setRangeFilters({} as Record<keyof T, { from: string; to: string }>)
-    setFilterDropdownOpen(false)
+    const nextState = {
+      ...tableViewState,
+      searchTerm: "",
+      filters: {} as Record<keyof T, string>,
+      rangeFilters: {} as Record<keyof T, { from: string; to: string }>,
+      sortConfig: null,
+    }
+    setTableViewState(nextState)
+    const updates: Record<string, null> = {
+      [searchKey]: null,
+      [sortKey]: null,
+      [directionKey]: null,
+      [pageKey]: null,
+    }
+    filterableFields.forEach((field) => {
+      updates[`${tableStateKey}_filter_${String(field)}`] = null
+    })
+    rangeFilterFields.forEach((field) => {
+      updates[`${tableStateKey}_from_${String(field)}`] = null
+      updates[`${tableStateKey}_to_${String(field)}`] = null
+    })
+    updateUrlState(updates)
   }
 
   // Handle individual row selection
@@ -397,106 +575,6 @@ export function DataTable<T>({
 
   const hasActions = actionButtons.length > 0 && showActionsColumn
 
-  const filterDropdown =
-    filterDropdownOpen && filterDropdownPosition && typeof document !== "undefined"
-      ? createPortal(
-          <div
-            ref={filterDropdownRef}
-            className="z-[10000] overflow-hidden rounded-[24px] border border-slate-200 bg-white p-4 text-slate-950 shadow-[0_28px_70px_-20px_rgba(2,6,23,0.45)] ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-50 dark:shadow-[0_28px_70px_-20px_rgba(0,0,0,0.85)] dark:ring-white/10"
-            style={{
-              position: "fixed",
-              top: filterDropdownPosition.top,
-              left: filterDropdownPosition.left,
-              width: filterDropdownPosition.width,
-              maxHeight: filterDropdownPosition.maxHeight,
-              boxSizing: "border-box",
-            }}
-          >
-            <div
-              className="flex flex-col"
-              style={{ maxHeight: Math.max(208, filterDropdownPosition.maxHeight - 32) }}
-            >
-              <div className="mb-3 flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-300">Filter workspace</p>
-                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Narrow the current list without leaving the table.</p>
-                </div>
-                {hasActiveSearchOrFilters ? (
-                  <Button type="button" variant="ghost" size="sm" className="rounded-full px-3" onClick={clearAllFilters}>
-                    Reset
-                  </Button>
-                ) : null}
-              </div>
-
-              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
-                {filterableFields.map((field) => (
-                  <div key={field as string}>
-                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-300">
-                      {humanizeFieldName(String(field))}
-                    </label>
-                    <select
-                      value={filters[field] || ""}
-                      onChange={(e) => setFilters({ ...filters, [field]: e.target.value })}
-                      className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/15 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
-                    >
-                      <option value="">All {humanizeFieldName(String(field))}</option>
-                      {filterOptions[field]?.map((option) => (
-                        <option key={option} value={option}>
-                          {formatMachineLabel(option)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ))}
-
-                {rangeFilterFields.map((field) => (
-                  <div key={field as string}>
-                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-300">
-                      {humanizeFieldName(String(field))} Range
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input
-                        type="number"
-                        placeholder="From"
-                        value={rangeFilters[field]?.from || ""}
-                        onChange={(e) => setRangeFilters({
-                          ...rangeFilters,
-                          [field]: {
-                            ...rangeFilters[field],
-                            from: e.target.value,
-                          },
-                        })}
-                        className="rounded-2xl border-slate-200 bg-white text-sm text-slate-950 shadow-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
-                      />
-                      <Input
-                        type="number"
-                        placeholder="To"
-                        value={rangeFilters[field]?.to || ""}
-                        onChange={(e) => setRangeFilters({
-                          ...rangeFilters,
-                          [field]: {
-                            ...rangeFilters[field],
-                            to: e.target.value,
-                          },
-                        })}
-                        className="rounded-2xl border-slate-200 bg-white text-sm text-slate-950 shadow-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-4 flex shrink-0 justify-end border-t border-slate-200/80 pt-3 dark:border-slate-800">
-                <Button type="button" className="rounded-full px-4" onClick={() => setFilterDropdownOpen(false)}>
-                  Apply filters
-                </Button>
-              </div>
-            </div>
-          </div>,
-          document.body,
-        )
-      : null
-
   const handleScan = (scannedValue: string, scanType: 'qr' | 'barcode') => {
     if (scanType === 'qr' && qrScannableField) {
       setSearchTerm(scannedValue);
@@ -520,6 +598,168 @@ export function DataTable<T>({
     setScanValue("")
   };
 
+  const filterFieldCount = filterableFields.length + rangeFilterFields.length
+  const hasFilterControls = filterFieldCount > 0 || sortableFields.length > 0
+  const usesFilterDrawer = filterFieldCount > 4
+  const hasTableControls = searchableFields.length > 0 || hasFilterControls
+  const hasTableActions = Boolean(qrScannableField || barcodeScannableField || hasGeneralButtons)
+  const activeFilterControlCount = activeFiltersCount + (sortConfig ? 1 : 0)
+  const activeTableControlCount = activeFilterControlCount + (searchTerm.trim() ? 1 : 0)
+
+  const renderFilterControls = (className: string) => (
+    <div className={className}>
+      {filterableFields.map((field) => {
+        const options = availableFilterOptions[field] || []
+        const isBooleanFilter = options.length > 0 && options.every((option) => ["true", "false"].includes(String(option.value).toLowerCase()))
+        const filterValue = filters[field] || ""
+
+        if (isBooleanFilter) {
+          const isEnabled = filterValue === "true"
+          const statusLabel = filterValue === "" ? "All" : isEnabled ? "On" : "Off"
+
+          return (
+            <div key={field as string} className="space-y-2">
+              <span className="text-sm font-semibold text-foreground">Filter by {humanizeFieldName(String(field)).toLowerCase()}</span>
+              <div className="flex h-11 items-center gap-3 rounded-xl border border-border bg-card px-3">
+                <Switch
+                  checked={isEnabled}
+                  onCheckedChange={(checked) => setFilter(field, checked ? "true" : "false")}
+                  aria-label={`Filter by ${humanizeFieldName(String(field)).toLowerCase()}: ${statusLabel}`}
+                  className="focus-visible:ring-offset-[rgb(7,16,31)]"
+                />
+                <span className="min-w-8 text-sm font-medium text-foreground">{statusLabel}</span>
+                {filterValue !== "" ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="ml-auto h-8 rounded-full px-3"
+                    onClick={() => setFilter(field, "")}
+                  >
+                    Clear
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          )
+        }
+
+        return (
+          <ReactSelectField
+            key={field as string}
+            inputId={`${tableStateKey}-filter-${String(field)}`}
+            label={`Filter by ${humanizeFieldName(String(field)).toLowerCase()}`}
+            options={options}
+            value={options.find((option) => String(option.value) === filterValue) || null}
+            onChange={(option: SelectOption | readonly SelectOption[] | null) => {
+              const nextOption = getSingleSelectOption(option)
+              setFilter(field, nextOption ? String(nextOption.value) : "")
+            }}
+            placeholder={`All ${humanizeFieldName(String(field)).toLowerCase()}`}
+            isClearable
+            menuPortalTarget={selectMenuPortalTarget}
+          />
+        )
+      })}
+
+      {rangeFilterFields.map((field) => (
+        <div key={field as string} className="space-y-2">
+          <span className="text-sm font-semibold text-foreground">{humanizeFieldName(String(field))} range</span>
+          <div className="grid grid-cols-2 gap-2">
+            <Input
+              type="number"
+              placeholder="From"
+              value={rangeFilters[field]?.from || ""}
+              onChange={(event) => setRangeFilter(field, "from", event.target.value)}
+              className="h-11 rounded-xl border-border bg-card text-sm text-foreground shadow-none"
+            />
+            <Input
+              type="number"
+              placeholder="To"
+              value={rangeFilters[field]?.to || ""}
+              onChange={(event) => setRangeFilter(field, "to", event.target.value)}
+              className="h-11 rounded-xl border-border bg-card text-sm text-foreground shadow-none"
+            />
+          </div>
+        </div>
+      ))}
+
+      {sortableFields.length > 0 ? (
+        <ReactSelectField
+          inputId={`${tableStateKey}-sort`}
+          label="Sort by"
+          options={sortOptions}
+          value={sortOptions.find((option) => option.value === (sortConfig ? `${String(sortConfig.key)}:${sortConfig.direction}` : "")) || null}
+          onChange={(option: SelectOption | readonly SelectOption[] | null) => {
+            const nextOption = getSingleSelectOption(option)
+            if (!nextOption) {
+              const nextState = { ...tableViewState, sortConfig: null }
+              setTableViewState(nextState)
+              updateUrlState({ [sortKey]: null, [directionKey]: null, [pageKey]: null })
+              return
+            }
+            const [key, direction] = String(nextOption.value).split(":")
+            const nextDirection: "ascending" | "descending" = direction === "descending" ? "descending" : "ascending"
+            const nextState = {
+              ...tableViewState,
+              sortConfig: { key: key as keyof T, direction: nextDirection },
+            }
+            setTableViewState(nextState)
+            updateUrlState({ [sortKey]: key, [directionKey]: direction, [pageKey]: null })
+          }}
+          placeholder="Default order"
+          isClearable
+          menuPortalTarget={selectMenuPortalTarget}
+        />
+      ) : null}
+    </div>
+  )
+
+  const renderTableActions = () => {
+    if (!hasTableActions) return null
+
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        {(qrScannableField || barcodeScannableField) ? (
+          <div className="flex flex-wrap items-center gap-2 rounded-full border border-border bg-card px-2 py-1">
+            <Input
+              value={scanValue}
+              onChange={(event) => setScanValue(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key !== "Enter") return
+                event.preventDefault()
+                submitScanValue(barcodeScannableField ? "barcode" : "qr")
+              }}
+              placeholder="Scan or paste code"
+              className="h-9 w-44 rounded-full border-0 bg-transparent px-3 text-sm shadow-none focus-visible:ring-0"
+            />
+            {qrScannableField ? (
+              <Button type="button" size="sm" className="rounded-full px-3" onClick={() => submitScanValue("qr")}>
+                <QrCode size={14} /> QR
+              </Button>
+            ) : null}
+            {barcodeScannableField ? (
+              <Button type="button" size="sm" variant="secondary" className="rounded-full px-3" onClick={() => submitScanValue("barcode")}>
+                <Barcode size={14} /> Barcode
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
+        {hasGeneralButtons && showSelectAll !== false ? (
+          <Button type="button" variant="ghost" size="sm" className="rounded-full px-3" onClick={() => handleSelectAll(!allVisibleSelected)}>
+            {allVisibleSelected ? "Deselect all" : "Select all"}
+          </Button>
+        ) : null}
+        {hasGeneralButtons && selectedIds.length > 0 ? (
+          <Button type="button" variant="ghost" size="sm" className="rounded-full px-3" onClick={() => setSelectedIds([])}>
+            Clear selection
+          </Button>
+        ) : null}
+        {renderGeneralButtons()}
+      </div>
+    )
+  }
+
   return (
     <div className="data-table overflow-hidden rounded-[28px] border border-border bg-card text-card-foreground shadow-[0_18px_50px_-34px_rgba(15,23,42,0.28)]">
       {(title || onClose) && (
@@ -539,110 +779,161 @@ export function DataTable<T>({
           )}
         </div>
       )}
-      <div className="border-b border-border bg-muted/70 p-4">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
-            <div className="relative min-w-0 flex-1 md:max-w-sm">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search records"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-11 rounded-full border-border bg-card pl-11 pr-10 text-sm text-foreground shadow-none"
-              />
-              {searchTerm && (
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                  onClick={() => setSearchTerm("")}
-                  aria-label="Clear search"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-
-            <div className="relative">
-              <Button
-                ref={filterButtonRef}
-                type="button"
-                variant="outline"
-                className="h-11 rounded-full border-border bg-card px-4"
-                onClick={() => {
-                  updateFilterDropdownPosition()
-                  setFilterDropdownOpen((open) => !open)
-                }}
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-                Filters
-                {activeFiltersCount > 0 ? (
-                  <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[11px] font-semibold text-white">
-                    {activeFiltersCount}
-                  </span>
+      {hasTableControls || hasTableActions ? (
+        <div className="border-b border-border bg-muted/70 p-4">
+          {hasTableControls ? (
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div className="flex min-w-0 flex-1 flex-wrap items-end gap-3">
+                {searchableFields.length > 0 ? (
+                  <label className="min-w-[16rem] flex-1 space-y-2 sm:max-w-md">
+                    <span className="text-sm font-semibold text-foreground">Search {title ? title.toLowerCase() : "records"}</span>
+                    <span className="relative block">
+                      <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        type="text"
+                        placeholder={`Search ${title ? title.toLowerCase() : "records"}`}
+                        value={searchTerm}
+                        onChange={(event) => setSearchTerm(event.target.value)}
+                        className="h-11 rounded-xl border-border bg-card pl-11 pr-10 text-sm text-foreground shadow-none"
+                      />
+                      {searchTerm ? (
+                        <button
+                          type="button"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                          onClick={() => setSearchTerm("")}
+                          aria-label="Clear search"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                    </span>
+                  </label>
                 ) : null}
-              </Button>
 
-              {filterDropdown}
-            </div>
-
-            {hasActiveSearchOrFilters ? (
-              <Button type="button" variant="ghost" className="h-11 rounded-full px-4 md:self-stretch" onClick={clearAllFilters}>
-                Clear search & filters
-              </Button>
-            ) : null}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            {(qrScannableField || barcodeScannableField) && (
-              <div className="flex flex-wrap items-center gap-2 rounded-full border border-border bg-card px-2 py-1">
-                <Input
-                  value={scanValue}
-                  onChange={(event) => setScanValue(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key !== "Enter") return
-                    event.preventDefault()
-                    submitScanValue(barcodeScannableField ? "barcode" : "qr")
-                  }}
-                  placeholder="Scan or paste code"
-                  className="h-9 w-44 rounded-full border-0 bg-transparent px-3 text-sm shadow-none focus-visible:ring-0"
-                />
-                {qrScannableField ? (
-                  <Button type="button" size="sm" className="rounded-full px-3" onClick={() => submitScanValue("qr")}>
-                    <QrCode size={14} /> QR
-                  </Button>
-                ) : null}
-                {barcodeScannableField ? (
-                  <Button type="button" size="sm" variant="secondary" className="rounded-full px-3" onClick={() => submitScanValue("barcode")}>
-                    <Barcode size={14} /> Barcode
+                {hasFilterControls ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-11 rounded-full border-border bg-card px-4 shadow-sm"
+                    aria-expanded={usesFilterDrawer ? isFilterDrawerOpen : isFilterModalOpen}
+                    aria-controls={usesFilterDrawer ? `${tableStateKey}-filters-drawer` : `${tableStateKey}-filters-modal`}
+                    onClick={() => {
+                      if (usesFilterDrawer) {
+                        setIsFilterDrawerOpen(true)
+                        return
+                      }
+                      setIsFilterModalOpen(true)
+                    }}
+                  >
+                    <SlidersHorizontal className="h-4 w-4" />
+                    Open filters
+                    {activeFilterControlCount > 0 ? (
+                      <span className="rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground">
+                        {activeFilterControlCount} active
+                      </span>
+                    ) : null}
                   </Button>
                 ) : null}
               </div>
-            )}
-            {hasGeneralButtons && showSelectAll !== false && (
-              <>
-                <Button type="button" variant="ghost" size="sm" className="rounded-full px-3" onClick={() => handleSelectAll(!allVisibleSelected)}>
-                  {allVisibleSelected ? "Deselect all" : "Select all"}
+
+              {activeTableControlCount > 0 ? (
+                <Button type="button" variant="ghost" className="h-11 rounded-full px-4" onClick={clearAllFilters}>
+                  Clear controls
                 </Button>
-                {selectedIds.length > 0 ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="rounded-full px-3"
-                    onClick={() => {
-                      setSelectedIds([])
-                    }}
-                  >
-                    Clear selection
-                  </Button>
-                ) : null}
-              </>
-            )}
-            {renderGeneralButtons()}
-          </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {hasTableActions ? (
+            <div className={cn(hasTableControls && "mt-4 border-t border-border pt-4")}>
+              {renderTableActions()}
+            </div>
+          ) : null}
         </div>
-      </div>
+      ) : null}
+
+      {hasFilterControls && !usesFilterDrawer && isFilterModalOpen ? (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="presentation">
+          <button
+            type="button"
+            className="absolute inset-0 cursor-default bg-foreground/35 backdrop-blur-[2px]"
+            onClick={() => setIsFilterModalOpen(false)}
+            aria-label="Close filters"
+          />
+          <section
+            id={`${tableStateKey}-filters-modal`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`${tableStateKey}-filters-modal-title`}
+            className="relative flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-slate-400/30 bg-[rgba(7,16,31,0.96)] text-slate-100 shadow-[0_28px_90px_rgba(0,0,0,0.58)]"
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-slate-400/30 bg-[rgba(7,16,31,0.98)] p-5">
+              <div>
+                <h2 id={`${tableStateKey}-filters-modal-title`} className="text-lg font-semibold text-foreground">Filters</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Changes update the table immediately.</p>
+              </div>
+              <Button type="button" variant="ghost" size="icon" className="rounded-full" onClick={() => setIsFilterModalOpen(false)} aria-label="Close filters">
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              {renderFilterControls("grid gap-5 sm:grid-cols-2")}
+            </div>
+            <div className="flex items-center justify-between gap-3 border-t border-slate-400/30 bg-[rgba(7,16,31,0.98)] p-5">
+              {activeFilterControlCount > 0 ? (
+                <Button type="button" variant="ghost" className="rounded-full px-4" onClick={clearAllFilters}>
+                  Clear controls
+                </Button>
+              ) : <span />}
+              <Button type="button" className="rounded-full px-5" onClick={() => setIsFilterModalOpen(false)}>
+                Done
+              </Button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {hasFilterControls && usesFilterDrawer && isFilterDrawerOpen ? (
+        <div className="fixed inset-0 z-[100] flex justify-end" role="presentation">
+          <button
+            type="button"
+            className="absolute inset-0 cursor-default bg-foreground/25 backdrop-blur-[1px]"
+            onClick={() => setIsFilterDrawerOpen(false)}
+            aria-label="Close filters"
+          />
+          <aside
+            id={`${tableStateKey}-filters-drawer`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`${tableStateKey}-filters-title`}
+            className="relative flex h-full w-full max-w-xl flex-col border-l border-slate-400/30 bg-[rgba(7,16,31,0.90)] text-slate-100 shadow-[-24px_0_60px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-slate-400/30 bg-[rgba(7,16,31,0.95)] p-5">
+              <div>
+                <h2 id={`${tableStateKey}-filters-title`} className="text-lg font-semibold text-foreground">Filters</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Changes update the table immediately.</p>
+              </div>
+              <Button type="button" variant="ghost" size="icon" className="rounded-full" onClick={() => setIsFilterDrawerOpen(false)} aria-label="Close filters">
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              {renderFilterControls("grid gap-5 sm:grid-cols-2")}
+            </div>
+            <div className="flex items-center justify-between gap-3 border-t border-slate-400/30 bg-[rgba(7,16,31,0.95)] p-5">
+              {activeFilterControlCount > 0 ? (
+                <Button type="button" variant="ghost" className="rounded-full px-4" onClick={clearAllFilters}>
+                  Clear controls
+                </Button>
+              ) : <span />}
+              <Button type="button" className="rounded-full px-5" onClick={() => setIsFilterDrawerOpen(false)}>
+                Done
+              </Button>
+            </div>
+          </aside>
+        </div>
+      ) : null}
 
       {/* Render secondary button outside the table */}
       {secondaryButton && !secondaryButton.hidden && (
@@ -748,7 +1039,18 @@ export function DataTable<T>({
             ))}
           </tbody>
         </table>
-        {!isLoading && filteredAndSortedData.length === 0 && (
+        {!isLoading && Boolean(error) && filteredAndSortedData.length === 0 && (
+          <div className="flex flex-col items-center justify-center gap-3 px-4 py-12 text-center">
+            <p className="text-base font-semibold text-destructive">{errorMessage}</p>
+            <p className="max-w-md text-sm text-muted-foreground">Try again. If this continues, check your connection or contact support.</p>
+            {onRetry ? (
+              <Button type="button" variant="outline" className="rounded-full px-4" onClick={() => void onRetry()}>
+                Retry
+              </Button>
+            ) : null}
+          </div>
+        )}
+        {!isLoading && !Boolean(error) && filteredAndSortedData.length === 0 && (
           <div className="flex flex-col items-center justify-center gap-3 px-4 py-12 text-center">
             <p className="text-base font-semibold text-foreground">
               {hasActiveSearchOrFilters ? "No records match the current view." : "No records found."}

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { getAuditWebSocketBaseUrl, getRealtimeAccessToken, getActiveWorkspaceId } from "@/lib/serviceRealtime"
+import { getAuditWebSocketBaseUrl, getRealtimeAccessToken, getActiveWorkspaceId, requestRealtimeWebSocketTicket } from "@/lib/serviceRealtime"
 import { useGetRealtimeDashboardSnapshotQuery } from "@/redux/features/audit/auditApiSlice"
 import type { DashboardRealtimeEnvelope, DashboardWorkspaceSnapshot } from "@/redux/features/audit/auditRealtimeDashboardTypes"
 
@@ -27,9 +27,11 @@ export function useAuditRealtimeDashboard() {
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null
     let disposed = false
 
-    const connect = () => {
+    const connect = async () => {
+      const ticket = await requestRealtimeWebSocketTicket()
+      if (!ticket || disposed) return
       socket = new WebSocket(
-        `${getAuditWebSocketBaseUrl()}/api/v1/realtime/ws/workspaces/${encodeURIComponent(workspaceId)}/dashboard?token=${encodeURIComponent(accessToken)}`,
+        `${getAuditWebSocketBaseUrl()}/api/v1/realtime/ws/workspaces/${encodeURIComponent(workspaceId)}/dashboard?ws_ticket=${encodeURIComponent(ticket)}`,
       )
 
       socket.onopen = () => setSocketState("connected")

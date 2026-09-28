@@ -44,9 +44,9 @@ export default function POSRemittancesPage() {
 
           <div className="pos-remittance-actions flex flex-wrap gap-3">
             <Button asChild variant="outline" className="pos-remittance-action">
-              <Link href="/pos">
+              <Link href="/dashboard">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to cashier POS
+                Back to dashboard
               </Link>
             </Button>
             <Button asChild variant="outline" className="pos-remittance-action">

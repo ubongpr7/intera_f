@@ -3,6 +3,7 @@ import { getCookie } from "cookies-next"
 
 import { apiSlice } from "@/redux/services/apiSlice"
 import { readCookieValue } from "@/lib/authCookies"
+import { getFrontendOrigin } from "@/lib/frontendOrigin"
 import type {
   AgentConversation,
   AgentConversationDetail,
@@ -34,12 +35,21 @@ export const getAgentGatewayWebSocketBaseUrl = () => {
 export const getGatewayAccessToken = () =>
   readCookieValue("accessToken", (name) => getCookie(name))
 
+export const getGatewayAuthorizationContext = () =>
+  readCookieValue("authorizationContext", (name) => getCookie(name))
+
 const buildGatewayHeaders = (contentType = true) => {
   const headers = new Headers()
   const accessToken = getGatewayAccessToken()
+  const authorizationContext = readCookieValue("authorizationContext", (name) => getCookie(name))
   if (accessToken) {
     headers.set("Authorization", `Bearer ${accessToken}`)
   }
+  if (authorizationContext) {
+    headers.set("X-Intera-Authorization-Context", authorizationContext)
+  }
+  const frontendOrigin = getFrontendOrigin()
+  if (frontendOrigin) headers.set("X-Intera-Frontend-Origin", frontendOrigin)
   if (contentType) {
     headers.set("Content-Type", "application/json")
   }

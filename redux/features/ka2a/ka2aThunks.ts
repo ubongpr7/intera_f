@@ -372,6 +372,11 @@ const answerFromInsightPayload = (text: string, payload: AgentStructuredPayload)
   const currencyCode = asString(payload.currency_code) || "NGN";
   const comparisonRows = findComparisonRows(payload);
 
+  if (/\b(right|correct|is that|are those|are these)\b/.test(question) && /\b(sales?|report|reports|summary|summaries|result|results|figures)\b/.test(question)) {
+    const summary = asString(payload.summary);
+    return summary ? `Yes. Those are the sales results${suffix}. ${summary}` : `Yes. Those are the sales results${suffix}.`;
+  }
+
   if (comparisonRows.length >= 2) {
     const revenueRanked = [...comparisonRows].sort((a, b) => comparisonRevenue(b) - comparisonRevenue(a));
     const unitsRanked = [...comparisonRows].sort((a, b) => comparisonUnits(b) - comparisonUnits(a));
@@ -492,6 +497,27 @@ const answerFromInsightPayload = (text: string, payload: AgentStructuredPayload)
       if (timelineEvents.length) {
         return `From the staff audit activity${suffix}, no high-severity staff activity risk is visible in the recent audit events shown.`;
       }
+    }
+  }
+
+  if (/\b(group|grouped|break\s*down|breakdown|split)\b/.test(question) && /\b(location|locations|branch|branches|store|stores|outlet|outlets|warehouse|warehouses)\b/.test(question)) {
+    const widget = findWidgetByTitle(payload, "location");
+    const rows = [
+      ...asArray(widget?.rows),
+      ...asArray(widget?.data),
+    ].map(asRecord).filter(Boolean) as Record<string, unknown>[];
+    if (rows.length) {
+      const ranked = [...rows].sort(
+        (left, right) => asNumber(right.sales ?? right.value ?? right.total_sales ?? right.revenue ?? right.amount ?? right.total_revenue) -
+          asNumber(left.sales ?? left.value ?? left.total_sales ?? left.revenue ?? left.amount ?? left.total_revenue),
+      );
+      return `The existing sales report is already grouped by location${suffix}:\n${ranked
+        .map((row) => {
+          const orders = asNumber(row.orders ?? row.count ?? row.order_count ?? row.orderCount ?? row.transaction_count);
+          const orderSuffix = orders ? ` across ${formatNumber(orders)} orders` : "";
+          return `- ${asString(row.location) || asString(row.label) || "Location"}: ${formatMoney(row.sales ?? row.value ?? row.total_sales ?? row.revenue ?? row.amount ?? row.total_revenue, currencyCode)}${orderSuffix}`;
+        })
+        .join("\n")}`;
     }
   }
 
@@ -635,7 +661,9 @@ export const sendStreamMessage =
       return;
     }
 
-    const canAnswerFromHistory = !session.awaitingInput && !session.resumeTaskId && !session.isStreaming;
+    // A completed widget can answer a safe analytical follow-up even if a
+    // specialist left an unnecessary input-required task behind.
+    const canAnswerFromHistory = !session.isStreaming;
     const historyAnswer = canAnswerFromHistory ? answerFromHistory(session.messages, text) : undefined;
     if (historyAnswer) {
       dispatch(

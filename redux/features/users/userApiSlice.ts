@@ -21,6 +21,7 @@ import type {
   MfaToggleResponse,
   MfaVerifyResponse,
   StaffAssignment,
+  ReferralDashboard,
   UserData,
   UserQuotaMetadata,
   UserSummary,
@@ -112,6 +113,13 @@ export const userApiSlice = apiSlice.injectEndpoints({
     getQuotaMetadata: builder.query<UserQuotaMetadata, void>({
       query: () => ({
         url: `/${accountsApi}/users/quota-meta-data/`,
+        service,
+      }),
+    }),
+
+    getReferralDashboard: builder.query<ReferralDashboard, void>({
+      query: () => ({
+        url: `/${accountsApi}/users/referrals/`,
         service,
       }),
     }),
@@ -333,6 +341,7 @@ export const {
   useSearchUsersQuery,
   useLazySearchUsersQuery,
   useGetQuotaMetadataQuery,
+  useGetReferralDashboardQuery,
   useSendVerificationCodeMutation,
   useMfaSetupMutation,
   useMfaVerifyMutation,

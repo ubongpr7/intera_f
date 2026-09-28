@@ -2,6 +2,7 @@ import { getCookie } from "cookies-next"
 
 import { readCookieValue } from "@/lib/authCookies"
 import { getDecodedToken } from "@/lib/utils"
+import { getFrontendOrigin } from "@/lib/frontendOrigin"
 
 const stripTrailingSlash = (value: string) => value.replace(/\/+$/, "")
 
@@ -22,6 +23,39 @@ const resolvePublicUrl = (value: string, fallback: string) => {
 
 export const getRealtimeAccessToken = () =>
   readCookieValue("accessToken", (name) => getCookie(name))
+
+export const getRealtimeAuthorizationContext = () =>
+  readCookieValue("authorizationContext", (name) => getCookie(name))
+
+let websocketTicketPromise: Promise<string | null> | null = null
+
+export const requestRealtimeWebSocketTicket = async () => {
+  const accessToken = getRealtimeAccessToken()
+  const authorizationContext = getRealtimeAuthorizationContext()
+  if (!accessToken || !authorizationContext) return null
+  if (!websocketTicketPromise) {
+    const backend = resolvePublicUrl(process.env.NEXT_PUBLIC_BACKEND_HOST_URL || "", "")
+    websocketTicketPromise = fetch(`${backend}/accounts/websocket-ticket/`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "X-Intera-Authorization-Context": authorizationContext,
+        "X-Intera-Frontend-Origin": getFrontendOrigin(),
+      },
+      credentials: "include",
+    })
+      .then(async (response) => {
+        if (!response.ok) return null
+        const payload = (await response.json()) as { ticket?: string }
+        return payload.ticket || null
+      })
+      .catch(() => null)
+      .finally(() => {
+        websocketTicketPromise = null
+      })
+  }
+  return websocketTicketPromise
+}
 
 export const getActiveWorkspaceId = () => {
   const cookieWorkspaceId = readCookieValue("profileId", (name) => getCookie(name))
@@ -63,6 +97,7 @@ export const canReachNotificationService = async () => {
             method: "GET",
             signal: controller.signal,
             credentials: "include",
+            headers: { "X-Intera-Frontend-Origin": getFrontendOrigin() },
           })
           return response.ok
         } finally {

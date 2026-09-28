@@ -1,5 +1,3 @@
-import type { Address } from "../common/commonTypes";
-
 export interface CompanyDataInterface {
   id: number | string;
   name: string;
@@ -23,14 +21,17 @@ export interface CompanyDataInterface {
   attachments?: Array<Record<string, unknown>>;
 }
 
-export interface CompanyAddressInterface extends Address {
+export interface CompanyAddressInterface {
   id: number | string;
   company: number | string;
+  address_id?: string | null;
   title?: string | null;
+  address: string;
   link?: string | null;
   primary?: boolean;
   shipping_notes?: string | null;
   internal_shipping_notes?: string | null;
+  full_address?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -47,8 +48,22 @@ export interface ContactPersonInterface {
 }
 
 export interface CompanyListParams {
+  page?: number;
+  page_size?: number;
   is_supplier?: boolean;
   is_customer?: boolean;
   is_manufacturer?: boolean;
+  currency?: string;
   search?: string;
+  ordering?: string;
+}
+
+export interface PaginatedCompanyResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  results: CompanyDataInterface[];
 }

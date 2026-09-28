@@ -159,6 +159,20 @@ function buildVisiblePageNumbers(currentPage: number, totalPages: number) {
   return Array.from({ length: end - normalizedStart + 1 }, (_, index) => normalizedStart + index)
 }
 
+function getImportedVariantCount(product: GlobalCatalogProduct) {
+  return Number(product.imported_variant_count ?? 0)
+}
+
+function isFullyImportedGlobalProduct(product: GlobalCatalogProduct) {
+  if (!product.imported) {
+    return false
+  }
+  if (!product.variant_count) {
+    return true
+  }
+  return getImportedVariantCount(product) >= product.variant_count
+}
+
 type BrowserBarcodeDetector = {
   detect: (source: ImageBitmap) => Promise<Array<{ rawValue?: string }>>
 }
@@ -208,6 +222,10 @@ function ProductLibraryCard({
   onPreview: (productId: string) => void
   onToggleSelect: (productId: string) => void
 }) {
+  const importedVariantCount = getImportedVariantCount(product)
+  const hasImportedVariants = importedVariantCount > 0
+  const isFullyImported = isFullyImportedGlobalProduct(product)
+
   return (
     <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:border-gray-300">
       <div className="flex items-start gap-4">
@@ -235,13 +253,17 @@ function ProductLibraryCard({
               </p>
             </div>
             {canImport ? (
-              product.imported ? (
+              isFullyImported ? (
                 <Badge className="rounded-full border-green-200 bg-green-50 px-3 py-1 text-green-700 hover:bg-green-50">
                   Imported
                 </Badge>
+              ) : hasImportedVariants ? (
+                <Badge className="rounded-full border-amber-200 bg-amber-50 px-3 py-1 text-amber-700 hover:bg-amber-50">
+                  Partially imported ({importedVariantCount}/{product.variant_count})
+                </Badge>
               ) : (
                 <Badge variant="outline" className="rounded-full px-3 py-1 text-gray-600">
-                  Ready to import
+                  Not imported (0/{product.variant_count})
                 </Badge>
               )
             ) : (
@@ -265,7 +287,7 @@ function ProductLibraryCard({
               <Eye className="mr-2 h-4 w-4" />
               Preview
             </Button>
-            {canImport && product.imported && product.workspace_product_id ? (
+            {canImport && isFullyImported && product.workspace_product_id ? (
               <Button asChild variant="outline" className="rounded-full">
                 <Link href={`/product/${product.workspace_product_id}`}>
                   Open imported product
@@ -275,7 +297,7 @@ function ProductLibraryCard({
             ) : canImport ? (
               <Button type="button" onClick={() => void onImport([product.id])} disabled={importing} className="rounded-full">
                 <PackagePlus className="mr-2 h-4 w-4" />
-                {importing ? "Importing..." : "Import to workspace"}
+                {importing ? "Importing..." : hasImportedVariants ? "Import remaining variants" : "Import to workspace"}
               </Button>
             ) : null}
           </div>
@@ -477,7 +499,14 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
   const [createImport, { isLoading: importing }] = useCreateGlobalCatalogImportMutation()
   const [resolveBarcodes, { isLoading: resolvingBarcodes }] = useResolveGlobalCatalogBarcodesMutation()
 
-  const visibleProducts = useMemo(() => catalogPage?.results ?? [], [catalogPage])
+  const visibleProducts = useMemo(() => {
+    const results = catalogPage?.results ?? []
+    return results.filter((product) => !isFullyImportedGlobalProduct(product))
+  }, [catalogPage])
+  const hiddenFullyImportedProducts = useMemo(() => {
+    const results = catalogPage?.results ?? []
+    return results.filter((product) => isFullyImportedGlobalProduct(product))
+  }, [catalogPage])
   const brandOptions = useMemo<SelectOption[]>(
     () => (catalogStats?.filters?.brands ?? catalogPage?.filters?.brands ?? []).map((option) => ({ value: option, label: option })),
     [catalogPage?.filters?.brands, catalogStats?.filters?.brands],
@@ -498,7 +527,7 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
   const pageNumbers = useMemo(() => buildVisiblePageNumbers(currentPage, totalPages), [currentPage, totalPages])
   const hasNextPage = Boolean(catalogPage?.next)
   const hasPreviousPage = Boolean(catalogPage?.previous)
-  const selectableIds = useMemo(() => visibleProducts.filter((product) => !product.imported).map((product) => product.id), [visibleProducts])
+  const selectableIds = useMemo(() => visibleProducts.map((product) => product.id), [visibleProducts])
   const selectedCount = selectedProductIds.length
   const parsedBarcodes = useMemo(() => parseBarcodeText(barcodeText), [barcodeText])
   const workspaceProductCount = workspaceProducts.length
@@ -566,7 +595,13 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
       }).unwrap()
       setBarcodeResolution(response)
       setSelectedBarcodeProductIds(
-        Array.from(new Set(response.matches.filter((match) => !match.global_product.imported).map((match) => match.global_product_id))),
+        Array.from(
+          new Set(
+            response.matches
+              .filter((match) => !isFullyImportedGlobalProduct(match.global_product))
+              .map((match) => match.global_product_id),
+          ),
+        ),
       )
       toast.success(barcodeResolutionSummary(response))
     } catch (error: any) {
@@ -929,6 +964,11 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
                   {importedProducts.toLocaleString()} imported
                 </span>
               ) : null}
+              {hiddenFullyImportedProducts.length > 0 ? (
+                <span className="rounded-full bg-white px-3 py-1 text-xs text-gray-600">
+                  {hiddenFullyImportedProducts.length} fully imported hidden
+                </span>
+              ) : null}
               {canImport ? <span className="rounded-full bg-white px-3 py-1 text-xs text-gray-600">{selectedCount} selected across pages</span> : null}
               {isFetching && !isLoading ? <span className="rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-700">Refreshing...</span> : null}
             </div>
@@ -963,6 +1003,13 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
           {isLoading ? (
             <div className="rounded-3xl border border-gray-200 bg-gray-50 p-6 text-sm text-gray-600">
               Loading curated product families...
+            </div>
+          ) : visibleProducts.length === 0 && hiddenFullyImportedProducts.length > 0 ? (
+            <div className="rounded-3xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center">
+              <p className="text-base font-semibold text-gray-900">Everything on this page is already imported.</p>
+              <p className="mt-2 text-sm text-gray-600">
+                Partially imported families stay visible here. Fully imported ones are hidden from the import browser.
+              </p>
             </div>
           ) : visibleProducts.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center">

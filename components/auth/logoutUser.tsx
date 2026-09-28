@@ -3,10 +3,13 @@ import { useLogoutMutation } from '../../redux/features/auth/authApiSlice';
 import { useRouter } from 'nextjs-toploader/app';
 import { toast } from 'react-toastify';
 import { AUTH_COOKIE_KEYS, getCookieCandidates } from '@/lib/authCookies';
+import { useAppDispatch } from '@/redux/store';
+import { clearPermissions } from '@/redux/features/permission/permissionSlice';
 
 function LogoutButton() {
   const [logoutMutation, { isLoading }] = useLogoutMutation();
   const router = useRouter();
+  const dispatch = useAppDispatch();
 
   const handleLogout = async () => {
     try {
@@ -16,6 +19,7 @@ function LogoutButton() {
           deleteCookie(name);
         }
       }
+      dispatch(clearPermissions());
       router.push('/');
       toast.success('Logged out successfully');
     } catch (error) {

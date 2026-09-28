@@ -11,7 +11,7 @@ import { useCompanyProfile } from "@/hooks/useCompanyProfile"
 import { supportsPosTables } from "@/lib/posExperience"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { TabsContent, TabsList, TabsTrigger, UrlTabs } from "@/components/ui/tabs"
 import { useGetCurrentConfigurationQuery } from "@/redux/features/pos/posAPISlice"
 
 export default function POSSettingsPage() {
@@ -52,9 +52,9 @@ export default function POSSettingsPage() {
           </div>
           <CardTitle className="text-3xl font-semibold tracking-tight text-gray-900">POS settings and controls</CardTitle>
           <CardDescription className="max-w-4xl text-sm leading-6 text-gray-600">
-            This page is for administrators and supervisors. Cashiers should work from{" "}
-            <span className="font-semibold">/pos</span>, while configuration, terminals, customers, and discount policy
-            live here. Cash remittance now has its own admin workspace.
+            This page is for administrators and supervisors. Cashier checkout runs in the dedicated POS application,
+            while configuration, terminals, customers, and discount policy live here. Cash remittance now has its own
+            admin workspace.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4 p-6 pt-0">
@@ -99,9 +99,9 @@ export default function POSSettingsPage() {
 
           <div className="pos-settings-actions flex flex-wrap gap-3">
             <Button asChild variant="outline" className="pos-settings-secondary-action">
-              <Link href="/pos">
+              <Link href="/dashboard">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to cashier POS
+                Back to dashboard
               </Link>
             </Button>
             <Button asChild className="pos-settings-primary-action">
@@ -114,7 +114,7 @@ export default function POSSettingsPage() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="policy" className="pos-settings-tabs space-y-4">
+      <UrlTabs defaultValue="policy" tabValues={["policy", "terminals", "customers", "discounts"]} className="pos-settings-tabs space-y-4">
         <TabsList className="pos-settings-tab-list h-auto flex-wrap justify-start gap-2 rounded-[24px] bg-slate-100 p-1">
           <TabsTrigger
             value="policy"
@@ -173,7 +173,7 @@ export default function POSSettingsPage() {
         <TabsContent value="discounts" className="mt-0 space-y-4">
           <Discounts />
         </TabsContent>
-      </Tabs>
+      </UrlTabs>
     </div>
   )
 }

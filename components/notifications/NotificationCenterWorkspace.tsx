@@ -13,6 +13,7 @@ import {
   canReachNotificationService,
   getNotificationWebSocketBaseUrl,
   getRealtimeAccessToken,
+  requestRealtimeWebSocketTicket,
 } from "@/lib/serviceRealtime"
 import {
   useGetNotificationUnreadCountQuery,
@@ -105,9 +106,11 @@ export default function NotificationCenterWorkspace() {
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null
     let disposed = false
 
-    const connect = () => {
+    const connect = async () => {
+      const ticket = await requestRealtimeWebSocketTicket()
+      if (!ticket || disposed) return
       socket = new WebSocket(
-        `${getNotificationWebSocketBaseUrl()}/ws/notifications?token=${encodeURIComponent(accessToken)}`,
+        `${getNotificationWebSocketBaseUrl()}/ws/notifications?ws_ticket=${encodeURIComponent(ticket)}`,
       )
 
       socket.onopen = () => {

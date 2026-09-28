@@ -19,6 +19,7 @@ export interface CompanyProfile {
   email?: string;
   currency?: string;
   headquarters_address?: Address;
+  headquarters_address_id?: string | null;
   is_verified: boolean;
   verification_date?: string;
   created_at: string;
@@ -214,6 +215,7 @@ export interface CompanyFormData {
   email?: string;
   currency?: string;
   headquarters_address?: Address;
+  headquarters_address_id?: string | null;
 }
 
 export interface AgentModelVersionOption {

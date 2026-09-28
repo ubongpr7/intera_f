@@ -22,12 +22,9 @@ export type ChatCsvRow = {
   structured_summary: string
 }
 
-const asRecord = (value: unknown): Record<string, unknown> | undefined => {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return undefined
-  }
-  return value as Record<string, unknown>
-}
+const isRecord = (value: unknown): value is Record<string, unknown> => Boolean(value) && typeof value === "object" && !Array.isArray(value)
+
+const asRecord = (value: unknown): Record<string, unknown> | undefined => (isRecord(value) ? value : undefined)
 
 const asArray = (value: unknown): unknown[] => (Array.isArray(value) ? value : [])
 
@@ -218,7 +215,10 @@ const userFacingColumnsFromRows = (rows: ExportRow[]) =>
   Array.from(new Set(rows.flatMap((row) => Object.keys(row)).filter((key) => !USER_HIDDEN_TABLE_COLUMNS.has(key))))
 
 const removeInternalRowFields = (row: ExportRow): ExportRow =>
-  Object.fromEntries(Object.entries(row).filter(([key]) => key !== "row_type")) as ExportRow
+  Object.fromEntries(Object.entries(row).filter(([key]) => !USER_HIDDEN_TABLE_COLUMNS.has(key))) as ExportRow
+
+const sectionStackSections = (widget: Record<string, unknown>) =>
+  asArray(widget.sections).map((item) => asRecord(item)).filter(Boolean) as Array<Record<string, unknown>>
 
 const widgetRows = (widget: Record<string, unknown>): ExportRow[] => {
   const type = asString(widget.type) || "widget"
@@ -384,6 +384,60 @@ const widgetRows = (widget: Record<string, unknown>): ExportRow[] => {
       }))
   }
 
+  if (type === "section_stack") {
+    return sectionStackSections(widget).flatMap((section, sectionIndex) => {
+      const sectionTitle = asString(section.title) || `Section ${sectionIndex + 1}`
+      const sectionBase = {
+        widget_type: type,
+        widget_title: title,
+        widget_subtitle: subtitle,
+        section_title: sectionTitle,
+      }
+      const summary = asString(section.summary).trim()
+      const warnings = asArray(section.warnings)
+        .map((item) => asString(item).trim())
+        .filter(Boolean)
+      const summaryRow: ExportRow[] = summary
+        ? [
+            {
+              ...sectionBase,
+              row_type: "section_summary",
+              row_index: 1,
+              summary,
+              status: asString(section.status_label) || null,
+            },
+          ]
+        : []
+      const warningRows = warnings.map((warning, warningIndex) => ({
+        ...sectionBase,
+        row_type: "section_warning",
+        row_index: warningIndex + 1,
+        warning,
+      }))
+      const nestedRows = asArray(section.widgets)
+        .map((item) => asRecord(item))
+        .filter(Boolean)
+        .flatMap((nestedWidget) =>
+          widgetRows(nestedWidget as Record<string, unknown>).map((row) => ({
+            ...row,
+            section_title: sectionTitle,
+          })),
+        )
+      const rawText = asString(section.raw_text).trim()
+      const rawTextRows: ExportRow[] = rawText
+        ? [
+            {
+              ...sectionBase,
+              row_type: "section_text",
+              row_index: 1,
+              text: rawText,
+            },
+          ]
+        : []
+      return [...summaryRow, ...warningRows, ...nestedRows, ...rawTextRows]
+    })
+  }
+
   if (type === "entity_preview") {
     const entity = asRecord(widget.entity) ?? {}
     return [
@@ -456,8 +510,7 @@ export const buildInsightCsvRows = (payload: ExportStructuredPayload): ExportRow
   appendRows(
     rows,
     asArray(payload.insights)
-      .map((item) => asRecord(item))
-      .filter(Boolean)
+      .filter(isRecord)
       .map((item, index) => ({
         row_type: "insight",
         row_index: index + 1,
@@ -467,15 +520,13 @@ export const buildInsightCsvRows = (payload: ExportStructuredPayload): ExportRow
   )
 
   asArray(payload.widgets)
-    .map((widget) => asRecord(widget))
-    .filter(Boolean)
+    .filter(isRecord)
     .forEach((widget) => appendRows(rows, widgetRows(widget)))
 
   appendRows(
     rows,
     asArray(payload.suggested_actions)
-      .map((item) => asRecord(item))
-      .filter(Boolean)
+      .filter(isRecord)
       .map((item, index) => ({
         row_type: "suggested_action",
         row_index: index + 1,
@@ -570,7 +621,7 @@ const renderTable = (columns: string[], rows: ExportRow[]) => `
 `
 
 const renderRankedListHtml = (widget: Record<string, unknown>) => {
-  const items = asArray(widget.items).map((item) => asRecord(item)).filter(Boolean)
+  const items = asArray(widget.items).filter(isRecord)
   if (!items.length) {
     return `<p class="muted">No ranked items were found.</p>`
   }
@@ -631,11 +682,62 @@ const renderProductCardRowsHtml = (rows: ExportRow[]) => {
   `
 }
 
-const renderInsightWidgetHtml = (widget: Record<string, unknown>) => {
-  const rows = widgetRows(widget)
+const renderInsightWidgetHtml = (widget: Record<string, unknown>): string => {
   const type = asString(widget.type) || "widget"
   const title = asString(widget.title) || type.replace(/_/g, " ")
   const subtitle = asString(widget.subtitle)
+  if (type === "section_stack") {
+    return `
+      <section class="card section-stack">
+        <div class="section-head">
+          <div>
+            <h3>${escapeHtml(title)}</h3>
+            ${subtitle ? `<p class="muted">${escapeHtml(subtitle)}</p>` : ""}
+          </div>
+          <span class="type-pill">Business review</span>
+        </div>
+        <div class="domain-stack">
+          ${sectionStackSections(widget)
+            .map((section, sectionIndex) => {
+              const sectionTitle = asString(section.title) || `Section ${sectionIndex + 1}`
+              const summary = asString(section.summary).trim()
+              const warnings = asArray(section.warnings)
+                .map((item) => asString(item).trim())
+                .filter(Boolean)
+              const nestedWidgets = asArray(section.widgets)
+                .map((item) => asRecord(item))
+                .filter(Boolean) as Array<Record<string, unknown>>
+              return `
+                <section class="domain-card">
+                  <div class="section-head">
+                    <div>
+                      <h4>${escapeHtml(sectionTitle)}</h4>
+                      ${summary ? `<p class="muted">${escapeHtml(summary)}</p>` : ""}
+                    </div>
+                    ${asString(section.status_label) ? `<span class="type-pill">${escapeHtml(asString(section.status_label))}</span>` : ""}
+                  </div>
+                  ${
+                    warnings.length
+                      ? `<div class="badge-row">${warnings.map((warning) => `<span class="warning-badge">${escapeHtml(warning)}</span>`).join("")}</div>`
+                      : ""
+                  }
+                  ${
+                    nestedWidgets.length
+                      ? `<div class="nested-widgets">${nestedWidgets.map((nestedWidget) => renderInsightWidgetHtml(nestedWidget)).join("")}</div>`
+                      : asString(section.raw_text)
+                        ? `<p class="domain-text">${escapeHtml(asString(section.raw_text))}</p>`
+                        : `<p class="muted">No detailed widgets were returned for this domain.</p>`
+                  }
+                </section>
+              `
+            })
+            .join("")}
+        </div>
+      </section>
+    `
+  }
+
+  const rows = widgetRows(widget)
   const columns = userFacingColumnsFromRows(rows)
   const body =
     type === "ranked_list"
@@ -664,9 +766,9 @@ export const buildInsightReportBodyHtml = (payload: ExportStructuredPayload): st
 
   const summary = asString(payload.summary).trim()
   const explanation = asString(payload.explanation).trim()
-  const insights = asArray(payload.insights).map((item) => asRecord(item)).filter(Boolean)
-  const widgets = asArray(payload.widgets).map((item) => asRecord(item)).filter(Boolean)
-  const actions = asArray(payload.suggested_actions).map((item) => asRecord(item)).filter(Boolean)
+  const insights = asArray(payload.insights).filter(isRecord)
+  const widgets = asArray(payload.widgets).filter(isRecord)
+  const actions = asArray(payload.suggested_actions).filter(isRecord)
 
   return `
     ${
@@ -1116,6 +1218,17 @@ const createReactPdfBlob = async (
       borderWidth: 1,
       borderColor: "#e5edf7",
     },
+    domainStack: {
+      marginTop: 4,
+    },
+    domainCard: {
+      padding: 10,
+      marginTop: 8,
+      borderRadius: 8,
+      backgroundColor: "#f8fafc",
+      borderWidth: 1,
+      borderColor: "#e5edf7",
+    },
     cardTitle: {
       fontSize: 13,
       fontWeight: 700,
@@ -1266,6 +1379,23 @@ const createReactPdfBlob = async (
     rankedValue: {
       width: 90,
       textAlign: "right",
+    },
+    chartPageBody: {
+      flexGrow: 1,
+      alignItems: "center",
+      paddingTop: 8,
+    },
+    chartPageTitle: {
+      fontSize: 15,
+      fontWeight: 700,
+      marginBottom: 4,
+      textAlign: "center",
+    },
+    chartPageSubtitle: {
+      fontSize: 9,
+      color: "#64748b",
+      marginBottom: 10,
+      textAlign: "center",
     },
   })
 
@@ -1423,15 +1553,9 @@ const createReactPdfBlob = async (
       h(
         View,
         {
-          style: [
-            styles.chartLegend,
-            useIndexedLabels
-              ? {
-                  flexDirection: "column",
-                  gap: 5,
-                }
-              : null,
-          ],
+          style: useIndexedLabels
+            ? [styles.chartLegend, { flexDirection: "column", gap: 5 }]
+            : [styles.chartLegend],
         },
         ...data.slice(0, 8).map((item, index) =>
           h(
@@ -1630,6 +1754,57 @@ const createReactPdfBlob = async (
     return null
   }
 
+  const isPdfChartWidget = (widget: Record<string, unknown>) =>
+    ["bar_chart", "histogram", "line_chart", "donut_chart"].includes(asString(widget.type))
+
+  const containsPdfChart = (widget: Record<string, unknown>): boolean => {
+    if (isPdfChartWidget(widget)) {
+      return true
+    }
+    if (asString(widget.type) !== "section_stack") {
+      return false
+    }
+    return sectionStackSections(widget).some((section) =>
+      asArray(section.widgets)
+        .map((item) => asRecord(item))
+        .filter(Boolean)
+        .some((nestedWidget) => containsPdfChart(nestedWidget as Record<string, unknown>)),
+    )
+  }
+
+  type PdfChartEntry = {
+    widget: Record<string, unknown>
+    title: string
+    subtitle: string
+    sectionTitle?: string
+  }
+
+  const collectPdfCharts = (widgets: unknown[], sectionTitle?: string): PdfChartEntry[] => {
+    const charts: PdfChartEntry[] = []
+    widgets.forEach((item) => {
+      const widget = asRecord(item)
+      if (!widget) {
+        return
+      }
+      if (isPdfChartWidget(widget)) {
+        charts.push({
+          widget,
+          title: asString(widget.title) || "Chart",
+          subtitle: asString(widget.subtitle),
+          sectionTitle,
+        })
+        return
+      }
+      if (asString(widget.type) !== "section_stack") {
+        return
+      }
+      sectionStackSections(widget).forEach((section) => {
+        charts.push(...collectPdfCharts(asArray(section.widgets), asString(section.title) || sectionTitle))
+      })
+    })
+    return charts
+  }
+
   const productInitials = (value: unknown) =>
     pdfText(value)
       .split(/[^A-Za-z0-9]+/)
@@ -1653,7 +1828,7 @@ const createReactPdfBlob = async (
   }
 
   const renderPdfComparisonProductCards = (widget: Record<string, unknown>) => {
-    const rows = asArray(widget.rows).map((item) => asRecord(item)).filter(Boolean).slice(0, 12)
+    const rows = asArray(widget.rows).filter(isRecord).slice(0, 12)
     const imageRows = rows.filter((item) => {
       const imageUrl = resolveExportImageUrl(asString(item?.image_url || item?.display_image || item?.product_variant_image_url))
       return Boolean(imageUrl)
@@ -1691,7 +1866,7 @@ const createReactPdfBlob = async (
   }
 
   const renderPdfRankedList = (widget: Record<string, unknown>) => {
-    const items = asArray(widget.items).map((item) => asRecord(item)).filter(Boolean).slice(0, 25)
+    const items = asArray(widget.items).filter(isRecord).slice(0, 25)
     if (!items.length) return null
     return h(
       View,
@@ -1740,11 +1915,106 @@ const createReactPdfBlob = async (
       ),
     )
 
-  const renderInsightPayload = (payload: ExportStructuredPayload) => {
+  const renderPdfWidget = (
+    widget: Record<string, unknown>,
+    index: number,
+    keyPrefix = "widget",
+    options: { renderCharts?: boolean } = {},
+  ): ReturnType<typeof h> | null => {
+    const type = asString(widget.type)
+    const title = asString(widget.title) || asString(widget.type) || `Widget ${index + 1}`
+    const renderCharts = options.renderCharts ?? true
+    if (isPdfChartWidget(widget) && !renderCharts) {
+      return null
+    }
+    if (type === "section_stack") {
+      return h(
+        View,
+        { key: `${keyPrefix}-${index}`, style: styles.card },
+        h(Text, { style: styles.cardTitle }, title),
+        asString(widget.subtitle) ? h(Text, { style: styles.subtitle }, asString(widget.subtitle)) : null,
+        h(
+          View,
+          { style: styles.domainStack },
+          ...sectionStackSections(widget).map((section, sectionIndex) => {
+            const sectionTitle = asString(section.title) || `Section ${sectionIndex + 1}`
+            const summary = asString(section.summary).trim()
+            const warnings = asArray(section.warnings)
+              .map((item) => asString(item).trim())
+              .filter(Boolean)
+            const nestedWidgets = asArray(section.widgets)
+              .map((item) => asRecord(item))
+              .filter(Boolean) as Array<Record<string, unknown>>
+            const sectionHasChart = nestedWidgets.some((nestedWidget) => containsPdfChart(nestedWidget))
+            const renderedNestedWidgets = nestedWidgets
+              .map((nestedWidget, nestedIndex) =>
+                renderPdfWidget(
+                  nestedWidget,
+                  nestedIndex,
+                  `${keyPrefix}-${index}-section-${sectionIndex}`,
+                  options,
+                ),
+              )
+              .filter(Boolean)
+            const nestedContent: Array<ReturnType<typeof h> | string | null> = renderedNestedWidgets.length
+              ? renderedNestedWidgets
+              : [
+                  asString(section.raw_text)
+                    ? h(Text, { style: styles.paragraph }, exportText(section.raw_text))
+                    : sectionHasChart && !renderCharts
+                      ? h(Text, { style: styles.paragraph }, "Charts are shown on separate landscape pages.")
+                      : h(Text, { style: styles.paragraph }, "No detailed widgets were returned for this domain."),
+                ]
+            return h(
+              View,
+              { key: `${keyPrefix}-${index}-section-${sectionIndex}`, style: styles.domainCard },
+              h(Text, { style: styles.cardTitle }, sectionTitle),
+              asString(section.status_label) ? h(Text, { style: styles.subtitle }, asString(section.status_label)) : null,
+              summary ? h(Text, { style: styles.paragraph }, exportText(summary)) : null,
+              warnings.length
+                ? h(
+                    View,
+                    { style: styles.badgeRow },
+                    ...warnings.map((warning, warningIndex) =>
+                      h(Text, { key: `warning-${warningIndex}`, style: styles.badge }, warning),
+                    ),
+                  )
+                : null,
+              ...nestedContent,
+              sectionHasChart && renderedNestedWidgets.length && !renderCharts
+                ? h(Text, { style: styles.paragraph }, "Charts are shown on separate landscape pages.")
+                : null,
+            )
+          }),
+        ),
+      )
+    }
+
+    const visual =
+      type === "ranked_list"
+        ? renderPdfRankedList(widget)
+        : type === "comparison_table"
+          ? renderPdfComparisonProductCards(widget)
+          : renderPdfChart(widget)
+    const rows = widgetRows(widget)
+    const columns = userFacingColumnsFromRows(rows).slice(0, 8)
+    return h(
+      View,
+      { key: `${keyPrefix}-${index}`, style: styles.card },
+      h(Text, { style: styles.cardTitle }, title),
+      asString(widget.subtitle) ? h(Text, { style: styles.subtitle }, asString(widget.subtitle)) : null,
+      visual ?? (rows.length ? renderTable(columns, rows) : h(Text, { style: styles.paragraph }, "No rows in this widget.")),
+    )
+  }
+
+  const renderInsightPayload = (
+    payload: ExportStructuredPayload,
+    options: { renderCharts?: boolean } = {},
+  ) => {
     const summary = asString(payload.summary).trim()
     const explanation = asString(payload.explanation).trim()
-    const insights = asArray(payload.insights).map((item) => asRecord(item)).filter(Boolean)
-    const widgets = asArray(payload.widgets).map((item) => asRecord(item)).filter(Boolean)
+    const insights = asArray(payload.insights).filter(isRecord)
+    const widgets = asArray(payload.widgets).filter(isRecord)
 
     return [
       summary || explanation || insights.length
@@ -1763,31 +2033,13 @@ const createReactPdfBlob = async (
             ),
           )
         : null,
-      ...widgets.map((widget, index) => {
-        if (!widget) return null
-        const type = asString(widget.type)
-        const visual =
-          type === "ranked_list"
-            ? renderPdfRankedList(widget)
-            : type === "comparison_table"
-              ? renderPdfComparisonProductCards(widget)
-              : renderPdfChart(widget)
-        const rows = widgetRows(widget)
-        const columns = userFacingColumnsFromRows(rows).slice(0, 8)
-        return h(
-          View,
-          { key: `widget-${index}`, style: styles.card },
-          h(Text, { style: styles.cardTitle }, asString(widget.title) || asString(widget.type) || `Widget ${index + 1}`),
-          asString(widget.subtitle) ? h(Text, { style: styles.subtitle }, asString(widget.subtitle)) : null,
-          visual ?? (rows.length ? renderTable(columns, rows) : h(Text, { style: styles.paragraph }, "No rows in this widget.")),
-        )
-      }),
+      ...widgets.map((widget, index) => renderPdfWidget(widget, index, "widget", options)),
     ].filter(Boolean)
   }
 
   const content =
     mode === "insight"
-      ? renderInsightPayload(hydratedBody as ExportStructuredPayload)
+      ? renderInsightPayload(hydratedBody as ExportStructuredPayload, { renderCharts: false })
       : (hydratedBody as ExportChatMessage[]).flatMap((message, index) =>
           h(
             View,
@@ -1797,27 +2049,56 @@ const createReactPdfBlob = async (
             },
             h(Text, { style: styles.meta }, `${message.role === "user" ? "You" : "Intera AI"}${message.timestamp ? ` · ${message.timestamp}` : ""}`),
             message.role === "assistant" && isInsightPayload(message.structuredPayload)
-              ? renderInsightPayload(message.structuredPayload)
+              ? renderInsightPayload(message.structuredPayload, { renderCharts: false })
               : h(Text, { style: styles.paragraph }, exportText(message.content || "")),
           ),
         )
+
+  const chartEntries =
+    mode === "insight"
+      ? collectPdfCharts(asArray((hydratedBody as ExportStructuredPayload).widgets))
+      : (hydratedBody as ExportChatMessage[]).flatMap((message) =>
+          isInsightPayload(message.structuredPayload)
+            ? collectPdfCharts(asArray(message.structuredPayload.widgets))
+            : [],
+        )
+
+  const reportHeader = () =>
+    h(
+      View,
+      { style: styles.header },
+      h(Text, { style: styles.eyebrow }, "Intera AI"),
+      h(Text, { style: styles.title }, exportText(title)),
+      h(Text, { style: styles.generated }, `Generated ${new Date().toLocaleString()}`),
+      reportTimeframe ? h(Text, { style: styles.generated }, `Period ${reportTimeframe}`) : null,
+    )
+
+  const chartPages = chartEntries.map((entry, index) =>
+    h(
+      Page,
+      { key: `chart-page-${index}`, size: "A4", orientation: "landscape", style: styles.page },
+      reportHeader(),
+      h(
+        View,
+        { style: styles.chartPageBody },
+        entry.sectionTitle ? h(Text, { style: styles.subtitle }, entry.sectionTitle) : null,
+        h(Text, { style: styles.chartPageTitle }, exportText(entry.title)),
+        entry.subtitle ? h(Text, { style: styles.chartPageSubtitle }, exportText(entry.subtitle)) : null,
+        renderPdfChart(entry.widget),
+      ),
+    ),
+  )
 
   const document = h(
     Document,
     null,
     h(
       Page,
-      { size: "A4", style: styles.page, wrap: true },
-      h(
-        View,
-        { style: styles.header },
-        h(Text, { style: styles.eyebrow }, "Intera AI"),
-        h(Text, { style: styles.title }, exportText(title)),
-        h(Text, { style: styles.generated }, `Generated ${new Date().toLocaleString()}`),
-        reportTimeframe ? h(Text, { style: styles.generated }, `Period ${reportTimeframe}`) : null,
-      ),
+      { key: "portrait-page", size: "A4", style: styles.page, wrap: true },
+      reportHeader(),
       ...(Array.isArray(content) ? content : [content]),
     ),
+    ...chartPages,
   )
 
   return pdf(document).toBlob()
@@ -1889,6 +2170,15 @@ const reportStyles = `
   .mini-card { background: var(--surface-soft); border-radius: 18px; padding: 16px; border: 1px solid #e5edf7; }
   .mini-card p { margin: 8px 0 0; color: var(--muted); line-height: 1.6; }
   .section-head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 16px; }
+  .domain-stack { display: grid; gap: 16px; }
+  .domain-card { background: var(--surface-soft); border: 1px solid #e5edf7; border-radius: 20px; padding: 16px; }
+  .domain-card .section-head { margin-bottom: 10px; }
+  .domain-card h4 { font-size: 18px; }
+  .nested-widgets { display: grid; gap: 12px; margin-top: 14px; }
+  .nested-widgets .card { padding: 16px; border-radius: 18px; }
+  .badge-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .warning-badge { display: inline-flex; border-radius: 999px; padding: 5px 9px; background: #fff7ed; color: #9a3412; font-size: 12px; font-weight: 600; }
+  .domain-text { margin: 14px 0 0; padding: 12px; border-radius: 14px; background: #fff; color: #334155; white-space: pre-wrap; line-height: 1.6; }
   .type-pill, .chip { display: inline-flex; align-items: center; border-radius: 999px; padding: 6px 10px; font-size: 12px; font-weight: 600; }
   .type-pill { background: #e2e8f0; color: #334155; }
   .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }

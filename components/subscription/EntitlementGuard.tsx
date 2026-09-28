@@ -11,7 +11,7 @@ type Props = {
 }
 
 export function EntitlementGuard({ feature, children, fallback }: Props) {
-  const { data, isLoading } = useGetCurrentEntitlementsQuery()
+  const { data, isLoading } = useGetCurrentEntitlementsQuery("intera-ims")
   if (isLoading) return null
   if (data?.features[feature]) return <>{children}</>
   return fallback ?? (

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { DataTable, type Column } from "@/components/common/DataTable/DataTable"
+import { DataTable, type Column, type DataTableFilterOption, type DataTableQueryState } from "@/components/common/DataTable/DataTable"
 import CustomCreateCard from "@/components/common/createCard"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,6 +11,7 @@ import { Plus } from "lucide-react"
 import { toast } from "react-toastify"
 import { POSConfiguration } from "@/redux/features/product/productTypes"
 import type { ActionButton } from "@/components/common/DataTable/DataTable"
+import { Pagination } from "@/components/ui/pagination"
 
 type SelectOptions<T extends { id: string }> = Partial<Record<keyof T, Array<{ value: string; text: string }>>>
 
@@ -28,12 +29,28 @@ type POSResourceManagerProps<T extends { id: string }> = {
   itemTitle?: string
   selectOptions?: SelectOptions<T>
   optionalFields?: (keyof T)[]
+  createDefaultValues?: Partial<T>
   hiddenFields?: Partial<Record<keyof T, unknown>>
   notEditableFields?: (keyof T)[]
   readOnlyFields?: (keyof T)[]
   emptyState?: string
   confirmDeleteMessage?: (row: T) => string
   actionButtons?: ActionButton<T>[]
+  error?: unknown
+  onRetry?: () => unknown
+  serverSide?: boolean
+  urlStateKey?: string
+  searchableFields?: (keyof T)[]
+  filterableFields?: (keyof T)[]
+  sortableFields?: (keyof T)[]
+  filterOptions?: Partial<Record<keyof T, DataTableFilterOption[]>>
+  onQueryStateChange?: (state: DataTableQueryState) => void
+  pagination?: {
+    count: number
+    page: number
+    totalPages: number
+    onPageChange: (page: number) => void
+  }
 }
 
 export default function POSResourceManager<T extends { id: string }>({
@@ -50,12 +67,23 @@ export default function POSResourceManager<T extends { id: string }>({
   itemTitle = "Record",
   selectOptions,
   optionalFields,
+  createDefaultValues,
   hiddenFields,
   notEditableFields,
   readOnlyFields,
   emptyState = "No records have been created yet.",
   confirmDeleteMessage,
   actionButtons = [],
+  error,
+  onRetry,
+  serverSide = false,
+  urlStateKey,
+  searchableFields = [],
+  filterableFields = [],
+  sortableFields = [],
+  filterOptions,
+  onQueryStateChange,
+  pagination,
 }: POSResourceManagerProps<T>) {
   const [isEditorOpen, setEditorOpen] = useState(false)
   const [editingRow, setEditingRow] = useState<T | null>(null)
@@ -67,6 +95,7 @@ export default function POSResourceManager<T extends { id: string }>({
     auto_print_receipt: false,
     allow_split_payment: false,
     is_active: true,
+    ...createDefaultValues,
   } as Partial<POSConfiguration>
 
 
@@ -143,30 +172,52 @@ export default function POSResourceManager<T extends { id: string }>({
         </div>
       </CardHeader>
       <CardContent className="p-5">
-        {data.length === 0 && !isLoading ? (
+        {data.length === 0 && !isLoading && !error ? (
           <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-6 text-sm text-gray-600">{emptyState}</div>
         ) : (
-          <DataTable
-            columns={columns}
-            data={data}
-            isLoading={isLoading}
-            actionButtons={[
-              {
-                label: "Edit",
-                onClick: (row) => {
-                  setEditingRow(row)
-                  setEditorOpen(true)
+          <>
+            <DataTable
+              columns={columns}
+              data={data}
+              isLoading={isLoading}
+              error={error}
+              errorMessage={`Unable to load ${title.toLowerCase()}.`}
+              onRetry={onRetry}
+              serverSide={serverSide}
+              urlStateKey={urlStateKey}
+              searchableFields={searchableFields}
+              filterableFields={filterableFields}
+              sortableFields={sortableFields}
+              filterOptions={filterOptions}
+              onQueryStateChange={onQueryStateChange}
+              actionButtons={[
+                {
+                  label: "Edit",
+                  onClick: (row) => {
+                    setEditingRow(row)
+                    setEditorOpen(true)
+                  },
                 },
-              },
-              {
-                label: "Delete",
-                variant: "danger",
-                onClick: (row) => void handleDelete(row),
-              },
-              ...actionButtons,
-            ]}
-            showActionsColumn
-          />
+                {
+                  label: "Delete",
+                  variant: "danger",
+                  onClick: (row) => void handleDelete(row),
+                },
+                ...actionButtons,
+              ]}
+              showActionsColumn
+            />
+            {pagination ? (
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-500">
+                <span>{pagination.count} record{pagination.count === 1 ? "" : "s"}</span>
+                <Pagination
+                  currentPage={pagination.page}
+                  totalPages={pagination.totalPages}
+                  onPageChange={pagination.onPageChange}
+                />
+              </div>
+            ) : null}
+          </>
         )}
       </CardContent>
 

@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
+import { getCookie } from "cookies-next"
 import { toast } from "react-toastify"
 import { Trash2 } from "lucide-react"
 import {
@@ -16,6 +17,8 @@ import { Column, DataTable } from "../common/DataTable/DataTable"
 import { PricingStrategy, Product } from "@/redux/features/product/productTypes"
 import CustomCreateCard from "../common/createCard"
 import LoadingAnimation from "../common/LoadingAnimation"
+import { readCookieValue } from "@/lib/authCookies"
+import { formatCurrencyCompact } from "@/lib/currency-utils"
 import { extractErrorMessage } from "@/lib/utils"
 
 interface ProductPricingStrategiesProps {
@@ -23,7 +26,7 @@ interface ProductPricingStrategiesProps {
   product:Partial<Product>
 }
 
-const pricingStrategyColumns: Column<PricingStrategy>[] = [
+const buildPricingStrategyColumns = (currencyCode: string): Column<PricingStrategy>[] => [
   {
     header: 'Name',
     accessor: 'name',
@@ -59,13 +62,13 @@ const pricingStrategyColumns: Column<PricingStrategy>[] = [
   {
     header: 'Min Price',
     accessor: 'min_price',
-    render: (value) => (value ? `$${Number(value).toFixed(2)}` : 'N/A'),
+    render: (value) => (value ? formatCurrencyCompact(currencyCode, Number(value)) : 'N/A'),
     info: 'Minimum price floor',
   },
   {
     header: 'Max Price',
     accessor: 'max_price',
-    render: (value) => (value ? `$${Number(value).toFixed(2)}` : 'N/A'),
+    render: (value) => (value ? formatCurrencyCompact(currencyCode, Number(value)) : 'N/A'),
     info: 'Maximum price ceiling',
   },
   {
@@ -116,6 +119,7 @@ const interfaceKeys: (keyof PricingStrategy)[] = [
 export default function ProductPricingStrategies({ productId,product }: ProductPricingStrategiesProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [editingStrategy, setEditingStrategy] = useState<PricingStrategy | null>(null)
+  const currencyCode = readCookieValue("currency", getCookie) || "NGN"
 
   const { 
     data: pricingStrategies, 
@@ -220,7 +224,7 @@ export default function ProductPricingStrategies({ productId,product }: ProductP
       
       
       <DataTable<PricingStrategy>
-        columns={pricingStrategyColumns}
+        columns={buildPricingStrategyColumns(currencyCode)}
         data={pricingStrategies || []}
         isLoading={isLoading}
         onRowClick={handleRowClick}

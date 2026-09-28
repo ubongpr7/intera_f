@@ -28,6 +28,8 @@ import type {
   ProductDashboardStats,
   ProductInventorySummary,
   ProductPosProductsResponse,
+  PaginatedProductResponse,
+  ProductListParams,
   ProductPriceTrends,
   ProductStockAlerts,
   ProductVariant,
@@ -116,6 +118,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
         url: `/${product_api}/products/${id}/minimal_product/`,
         service: service,
       }),
+      providesTags: (_result, _error, id) => [{ type: "Product", id }],
     }),
   
     getProductData: builder.query<Product[], void>({
@@ -124,6 +127,16 @@ export const productApiSlice = apiSlice.injectEndpoints({
         method: "GET",
         service: service,
       }),
+    }),
+
+    listProductPage: builder.query<PaginatedProductResponse, ProductListParams>({
+      query: (params) => ({
+        url: `/${product_api}/products/`,
+        method: "GET",
+        params: normalizeQueryParams(params),
+        service,
+      }),
+      providesTags: ["Product"],
     }),
 
     getGlobalCatalogProducts: builder.query<
@@ -442,6 +455,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
         body: variantData,
         service: service,
       }),
+      invalidatesTags: (_result, _error, variantData) => [{ type: "Product", id: variantData.product }],
     }),
 
     updateProductVariant: builder.mutation<ProductVariant, { id: string; data: Partial<ProductVariant> }>({
@@ -606,6 +620,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
         body: data,
         service: service,
       }),
+      invalidatesTags: (_result, _error, { productId }) => [{ type: "Product", id: productId }],
     }),
     updateProductAttributeLink: builder.mutation<ProductAttributeLink, { productId: string; id: string; data: Partial<ProductAttributeLink> }>({
       query: ({ productId, id, data }) => ({
@@ -614,6 +629,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
         body: { id, ...data },
         service: service,
       }),
+      invalidatesTags: (_result, _error, { productId }) => [{ type: "Product", id: productId }],
     }),
     deleteProductAttributeLink: builder.mutation<void, { productId: string; id: string }>({
       query: ({ productId, id }) => ({
@@ -621,6 +637,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
         method: 'DELETE',
         service: service,
       }),
+      invalidatesTags: (_result, _error, { productId }) => [{ type: "Product", id: productId }],
     }),
     
     // Product Attributes
@@ -1116,6 +1133,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
 export const {
   // Product Management
   useCreateProductMutation,
+  useListProductPageQuery,
   useUpdateProductMutation,
   useRemoveTemplateModeMutation,
   useDeleteProductMutation,

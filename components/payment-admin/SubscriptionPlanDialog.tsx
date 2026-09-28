@@ -30,7 +30,7 @@ const formSchema = z.object({
   price: z.number().min(0, "Price must be positive"),
   billing_cycle: z.enum(["MONTHLY", "QUARTERLY", "YEARLY", "ONE_TIME"]),
   trial_days: z.number().min(0).optional(),
-  is_active: z.boolean().default(true),
+  is_active: z.boolean(),
 })
 
 const billingCycleOptions = [

@@ -6,22 +6,37 @@ import { useAppSelector } from "../../redux/store";
 import { usePathname } from 'next/navigation';
 import { ToastContainer } from "react-toastify";
 import { useGetLoggedInUserQuery } from '../../redux/features/users/userApiSlice';
+import { useGetUserCompaniesQuery } from '../../redux/features/auth/authApiSlice';
+import { useGetCompanyAgentSetupQuery } from '../../redux/features/management/companyProfileApiSlice';
 import { publicRoutes } from '../../redux/features/users/useAuth';
 
 import { getCookie } from 'cookies-next';
 import A2AChat from '../agents/ai-chat-widget';
 import { readCookieValue } from '@/lib/authCookies';
+import PermissionHydrator from '@/components/auth/PermissionHydrator';
 
 const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
 
   const SidebarCollapsed = useAppSelector((state) => state.global.isSidebarCollapsed);
+  useAppSelector((state) => state.permission.status);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const pathname = usePathname();
   const isPublic = publicRoutes.includes(pathname);
+  const accessToken = readCookieValue("accessToken", getCookie);
 
   const { data: user } = useGetLoggedInUserQuery(undefined, {
     skip: isPublic,
     refetchOnMountOrArgChange: true,
+  });
+  const { data: companyMemberships } = useGetUserCompaniesQuery(undefined, { skip: isPublic || !accessToken });
+  const activeProfileId = companyMemberships?.active_profile_id ?? null;
+
+  const { data: companyAgentSetup } = useGetCompanyAgentSetupQuery(undefined, {
+    skip: isPublic || !accessToken || !activeProfileId,
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+    pollingInterval: 30000,
   });
   
   
@@ -30,7 +45,15 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
     return path.startsWith('/accounts') || path === '/';
   };
 
-  const shouldShowLegacyAgentWidget = pathname !== "/agent" && Boolean(readCookieValue("accessToken", getCookie));
+  const hasCompleteWorkspaceAiSetup = Boolean(
+    companyAgentSetup?.configured &&
+    companyAgentSetup?.agent?.has_api_key
+  );
+
+  const shouldShowLegacyAgentWidget =
+    pathname !== "/agent" &&
+    Boolean(accessToken) &&
+    hasCompleteWorkspaceAiSetup;
 
   useEffect(() => {
     if (!mobileSidebarOpen) return;
@@ -43,6 +66,7 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
   
   return (
     <div className={`dashboard-shell ${SidebarCollapsed ? "sidebar-is-collapsed" : "sidebar-is-expanded"} flex w-full min-h-screen bg-gray-50 text-gray-900`}>
+    <PermissionHydrator disabled={isPublic} />
     
     <ToastContainer position="top-right" autoClose={3000} />
     

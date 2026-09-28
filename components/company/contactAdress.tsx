@@ -11,6 +11,7 @@ import { toast } from 'react-toastify';
 import { Edit, Trash2 } from 'lucide-react';
 import { extractErrorMessage } from '@/lib/utils';
 import { confirmAction } from '../common/confirmAction';
+import { useCreateSharedAddressMutation, useRetireSharedAddressMutation, useUpdateSharedAddressMutation } from '@/redux/features/locations/locationsApiSlice';
 
 const inventoryColumns: Column<CompanyAddressDataInterface>[] = [
   {
@@ -19,16 +20,10 @@ const inventoryColumns: Column<CompanyAddressDataInterface>[] = [
     className: 'font-medium',
   },
   {
-    header: 'Postal Code',
-    accessor: 'postal_code',
-    render: (value) => value || 'N/A',
-    className: 'font-medium',
-  },
-  {
     header: 'Address',
-    accessor: 'full_address',
+    accessor: 'address',
     render: (value) => value || 'N/A',
-    info: 'Category to which the inventory belong',
+    info: 'Company delivery or operating address',
   },
 ];
 
@@ -41,23 +36,52 @@ function CompanyAddressView({company_id}:CompanyProps) {
   const [createAddress, { isLoading: createLoading }] = useCreateCompanyAddressMutation();
   const [updateAddress, { isLoading: updateLoading }] = useUpdateCompanyAddressMutation();
   const [deleteAddress, { isLoading: deleteLoading }] = useDeleteCompanyAddressMutation();
+  const [createSharedAddress] = useCreateSharedAddressMutation();
+  const [updateSharedAddress] = useUpdateSharedAddressMutation();
+  const [retireSharedAddress] = useRetireSharedAddressMutation();
   const [isCreateOpen, setIsCreateOpen] = useState(false); 
   const [editingAddress, setEditingAddress] = useState<CompanyAddressDataInterface | null>(null);
   const router = useRouter();
   
   const handleCreate = async (createdData: Partial<CompanyAddressDataInterface>) => {
-    await createAddress(createdData).unwrap();
-    setIsCreateOpen(false); 
-    await refetch();
-    toast.success("Address created successfully!");
+    try {
+      const localAddress = await createAddress(createdData).unwrap();
+      const sharedAddress = await createSharedAddress({
+        label: createdData.title || "company",
+        address_line_1: createdData.address || "",
+        is_primary: Boolean(createdData.primary),
+        external_reference: `inventory:company:${company_id}:address:${localAddress.id}`,
+      }).unwrap();
+      await updateAddress({ id: localAddress.id, data: { address_id: sharedAddress.id } }).unwrap();
+      setIsCreateOpen(false);
+      await refetch();
+      toast.success("Address created successfully!");
+    } catch (error) {
+      toast.error(extractErrorMessage(error, ["detail", "address"]) || "Failed to create address.");
+    }
   };
 
   const handleUpdate = async (updatedData: Partial<CompanyAddressDataInterface>) => {
     if (!editingAddress) return;
-    await updateAddress({ id: editingAddress.id, data: updatedData }).unwrap();
-    setEditingAddress(null);
-    await refetch();
-    toast.success("Address updated successfully!");
+    try {
+      const sharedData = {
+        label: updatedData.title || editingAddress.title || "company",
+        address_line_1: updatedData.address || editingAddress.address,
+        is_primary: Boolean(updatedData.primary ?? editingAddress.primary),
+      };
+      const sharedAddress = editingAddress.address_id
+        ? await updateSharedAddress({ id: editingAddress.address_id, data: sharedData }).unwrap()
+        : await createSharedAddress({
+            ...sharedData,
+            external_reference: `inventory:company:${company_id}:address:${editingAddress.id}`,
+          }).unwrap();
+      await updateAddress({ id: editingAddress.id, data: { ...updatedData, address_id: sharedAddress.id } }).unwrap();
+      setEditingAddress(null);
+      await refetch();
+      toast.success("Address updated successfully!");
+    } catch (error) {
+      toast.error(extractErrorMessage(error, ["detail", "address"]) || "Failed to update address.");
+    }
   };
 
   const handleDelete = async (id: string | number) => {
@@ -70,6 +94,10 @@ function CompanyAddressView({company_id}:CompanyProps) {
     if (!confirmed) return;
 
     try {
+      const address = data?.find((item) => item.id === id);
+      if (address?.address_id) {
+        await retireSharedAddress(address.address_id).unwrap();
+      }
       await deleteAddress(id).unwrap();
       await refetch();
       toast.success("Address deleted successfully!");
@@ -94,9 +122,7 @@ function CompanyAddressView({company_id}:CompanyProps) {
 
   const AdrssDefaultValues: Partial<CompanyAddressDataInterface> = {
     primary: false,
-    country: 165,
-    street_number:1,
-    apt_number:1
+    address: '',
   };
 
   if (error) {
@@ -121,9 +147,9 @@ function CompanyAddressView({company_id}:CompanyProps) {
         data={data || []}
         isLoading={isLoading}
         actionButtons={actionButtons}
-        searchableFields={['title', 'postal_code', 'full_address']}
-        filterableFields={['title', 'postal_code']}
-        sortableFields={['title', 'postal_code', 'full_address']}
+        searchableFields={['title', 'address']}
+        filterableFields={['title']}
+        sortableFields={['title', 'address']}
         title="Company Address"
         onClose={() => setIsCreateOpen(true)}
       />
@@ -141,7 +167,7 @@ function CompanyAddressView({company_id}:CompanyProps) {
           keyInfo={CompanyAddressKeyInfo}
           notEditableFields={notEditableCompanyFields}
           interfaceKeys={CompanyAddressInterfaceKeys}
-          optionalFields={['primary','city','link', 'subregion','shipping_notes']}
+          optionalFields={['primary', 'link', 'shipping_notes', 'internal_shipping_notes']}
           hiddenFields={{
           company:company_id
           }}

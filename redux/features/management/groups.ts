@@ -1,5 +1,5 @@
 import { apiSlice } from '../../services/apiSlice';
-import type { GroupData, RoleData } from './managementTypes';
+import type { GroupData, PaginatedManagementResponse, RoleData } from './managementTypes';
 const management_api=`management`
 const service='users'
 export const groupsAPISlice = apiSlice.injectEndpoints({
@@ -32,6 +32,13 @@ export const groupsAPISlice = apiSlice.injectEndpoints({
       query: () =>({
         url: `/${management_api}/groups/`,
         service:service
+      }),
+    }),
+    getGroupsPage: builder.query<PaginatedManagementResponse<GroupData>, { page: number; page_size: number; search?: string; ordering?: string }>({
+      query: (params) => ({
+        url: `/${management_api}/groups/`,
+        params,
+        service,
       }),
     }),
     createRole: builder.mutation({
@@ -73,6 +80,13 @@ export const groupsAPISlice = apiSlice.injectEndpoints({
       
       }),
     }),
+    getRolesPage: builder.query<PaginatedManagementResponse<RoleData>, { page: number; page_size: number; search?: string; ordering?: string }>({
+      query: (params) => ({
+        url: `/${management_api}/roles/`,
+        params,
+        service,
+      }),
+    }),
   
   }),
 
@@ -82,9 +96,11 @@ export const {
     useCreateGroupMutation,
   useUpdateGroupMutation,
   useGetGroupsQuery,
+  useGetGroupsPageQuery,
   useCreateRoleMutation,
   useUpdateRoleMutation,
   useGetRolesQuery,
+  useGetRolesPageQuery,
   useGetGroupQuery,
   useGetRoleQuery,
   useDeactivateRoleMutation

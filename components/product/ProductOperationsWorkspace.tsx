@@ -145,13 +145,13 @@ export default function ProductOperationsWorkspace({ productId }: ProductOperati
           <div className="min-w-0 overflow-hidden">
             <ProductVariantManager
               productId={productId}
-              ProductData={minimalProduct || product || {}}
+              ProductData={product || minimalProduct || {}}
             />
           </div>
           <div className="min-w-0 overflow-hidden">
             <ProductAttributeLinks
               productId={productId}
-              product={minimalProduct || product || {}}
+              product={product || minimalProduct || {}}
             />
           </div>
         </div>
@@ -192,10 +192,10 @@ export default function ProductOperationsWorkspace({ productId }: ProductOperati
         <div className="space-y-6">
           <div className="space-y-6">
             <div className="min-w-0 overflow-hidden">
-              <ProductPricingStrategies productId={productId} product={minimalProduct || product || {}} />
+              <ProductPricingStrategies productId={productId} product={product || minimalProduct || {}} />
             </div>
             <div className="min-w-0 overflow-hidden">
-              <ProductPricing productId={productId} product={minimalProduct || product || {}} />
+              <ProductPricing productId={productId} product={product || minimalProduct || {}} />
             </div>
           </div>
           <ProductPriceGovernanceCard productId={productId} productName={product?.name} />
@@ -216,7 +216,7 @@ export default function ProductOperationsWorkspace({ productId }: ProductOperati
         ]}
       >
         <div className="space-y-6">
-          <ProductPOS productId={productId} product={minimalProduct || product || {}} />
+          <ProductPOS productId={productId} product={product || minimalProduct || {}} />
           <ProductAnalytics productId={productId} />
         </div>
       </OperationalStepSection>

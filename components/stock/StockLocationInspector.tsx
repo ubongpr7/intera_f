@@ -50,6 +50,27 @@ const resolveTopInventoryTypes = (summary: Record<string, unknown> | undefined) 
     }))
 }
 
+const resolveStructuralLocationName = (location: StockLocation, allLocations: StockLocation[]) => {
+  if (location.structural_location_name) {
+    return location.structural_location_name
+  }
+
+  const locationsById = new Map(allLocations.map((entry) => [String(entry.id), entry]))
+  const visited = new Set<string>()
+  let current: StockLocation | undefined = location
+
+  while (current && !current.structural) {
+    const parentId = current.parent == null ? "" : String(current.parent)
+    if (!parentId || visited.has(parentId)) {
+      return ""
+    }
+    visited.add(parentId)
+    current = locationsById.get(parentId)
+  }
+
+  return current?.structural ? current.name : ""
+}
+
 const getErrorMessage = (error: unknown) => {
   if (error && typeof error === "object" && "data" in error) {
     const data = (error as { data?: Record<string, unknown> }).data
@@ -104,12 +125,6 @@ export default function StockLocationInspector({
         id: locationId,
         data: {
           to_location_id: targetLocationId,
-          structural_location_id:
-            location?.structural_location_id
-              ? String(location.structural_location_id)
-              : location?.structural
-                ? String(location.id)
-                : undefined,
           inventory_item_id: inventoryItemId,
           quantity,
           serial_number: serialNumber || undefined,
@@ -277,6 +292,9 @@ export default function StockLocationInspector({
                       {transferTargets.map((locationOption) => (
                         <SelectItem key={String(locationOption.id)} value={String(locationOption.id)}>
                           {locationOption.name}
+                          {resolveStructuralLocationName(locationOption, allLocations)
+                            ? ` (${resolveStructuralLocationName(locationOption, allLocations)})`
+                            : ""}
                         </SelectItem>
                       ))}
                     </SelectContent>

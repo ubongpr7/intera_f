@@ -6,6 +6,7 @@ import type {
   CompanyDataInterface,
   CompanyListParams,
   ContactPersonInterface,
+  PaginatedCompanyResponse,
 } from "./companyTypes";
 
 const companyApi = "company_api";
@@ -16,6 +17,13 @@ type EntityId = string | number;
 export const companyApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     listCompanies: builder.query<CompanyDataInterface[], CompanyListParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${companyApi}/companies/`, params),
+        service,
+      }),
+    }),
+
+    listCompanyPage: builder.query<PaginatedCompanyResponse, CompanyListParams>({
       query: (params) => ({
         url: buildQuery(`/${companyApi}/companies/`, params),
         service,
@@ -170,6 +178,7 @@ export const companyApiSlice = apiSlice.injectEndpoints({
 
 export const {
   useListCompaniesQuery,
+  useListCompanyPageQuery,
   useCreateCompanyMutation,
   useUpdateCompanyMutation,
   useGetCompanyQuery,

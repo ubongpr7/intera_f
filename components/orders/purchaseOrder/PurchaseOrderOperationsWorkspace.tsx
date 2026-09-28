@@ -80,6 +80,21 @@ type LineItemForm = {
   manufactured_date: string
 }
 
+const getPdfDownloadErrorMessage = async (error: unknown): Promise<string> => {
+  const responseData = (error as { data?: unknown } | undefined)?.data
+
+  if (responseData instanceof Blob) {
+    try {
+      const payload = JSON.parse(await responseData.text()) as Record<string, unknown>
+      return extractErrorMessage({ data: payload }, ["error", "detail"])
+    } catch {
+      // The endpoint can return a non-JSON proxy error; retain the standard fallback.
+    }
+  }
+
+  return extractErrorMessage(error, ["error", "detail"])
+}
+
 type ReceiveEntry = {
   quantity_received: string
   location_id: string
@@ -245,6 +260,8 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
   const [returnReason, setReturnReason] = useState("")
 
   const { data: order, isLoading, refetch } = useGetPurchaseOrderQuery(purchaseOrderId)
+  const canEditHeader = order?.status === PurchaseOrderStatus.pending
+  const canEditLineItems = order?.status === PurchaseOrderStatus.pending
   const { data: suppliers = [] } = useGetSupplersQuery()
   const { data: users = [] } = useGetCompanyUsersQuery()
   const inventoryQuery = useMemo(
@@ -290,6 +307,15 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
       })),
     [lineItems],
   )
+  const receivableLineItems = useMemo(
+    () =>
+      editableLineItems.filter(
+        (lineItem) => Math.max(asNumber(lineItem.quantity) - asNumber(lineItem.quantity_received), 0) > 0,
+      ),
+    [editableLineItems],
+  )
+  const canReceiveItems =
+    [PurchaseOrderStatus.issued, PurchaseOrderStatus.received].includes(order?.status as never) && receivableLineItems.length > 0
   const supplierOptions = useMemo<SelectOption[]>(
     () =>
       suppliers.map((supplier) => ({
@@ -511,18 +537,24 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
   }
 
   const handleReceiveItems = async () => {
-    if (!order) {
+    if (!order || !canReceiveItems) {
+      toast.error("This purchase order has no remaining items available to receive.")
       return
     }
 
-    for (const lineItem of lineItems) {
+    for (const lineItem of receivableLineItems) {
       if (lineItem.id === undefined) {
         continue
       }
       const entry = receiveEntries[String(lineItem.id)] || buildReceiveEntry(lineItem)
       const quantity = Number(entry?.quantity_received || "0")
+      const remaining = Math.max(asNumber(lineItem.quantity) - asNumber(lineItem.quantity_received), 0)
       if (quantity <= 0) {
         continue
+      }
+      if (quantity > remaining) {
+        toast.error(`${lineItem.displayName} can only receive its remaining quantity of ${remaining}.`)
+        return
       }
       const dateValidationError = validateInventoryDates({
         manufacturedDate: entry.manufactured_date,
@@ -534,7 +566,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
       }
     }
 
-    const received_items = lineItems.flatMap((lineItem) => {
+    const received_items = receivableLineItems.flatMap((lineItem) => {
         if (lineItem.id === undefined) {
           return []
         }
@@ -590,7 +622,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
       window.URL.revokeObjectURL(downloadUrl)
       toast.success("Purchase order PDF downloaded")
     } catch (error) {
-      toast.error(extractErrorMessage(error, ["error", "detail"]))
+      toast.error(await getPdfDownloadErrorMessage(error))
     }
   }
 
@@ -759,7 +791,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
         helper="This information should be stable before the order is approved or issued."
         status={order.supplier ? "complete" : "in_progress"}
         facts={[
-          { label: "Supplier", value: order.supplier_name || "Not assigned" },
+          { label: "Supplier", value: order.supplier_name || order.supplier_details?.name || "Not assigned" },
           { label: "Responsible", value: order.responsible_details?.first_name || "Unassigned" },
           { label: "Currency", value: activeCurrency },
         ]}
@@ -771,13 +803,14 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
               inputId="po-supplier"
               options={supplierOptions}
               value={supplierOptions.find((option) => option.value === headerForm.supplier) || null}
-              onChange={(option) => {
+              onChange={(option: SelectOption | readonly SelectOption[] | null) => {
                 const nextOption = getSingleOption(option)
                 setHeaderFormDraft((current) => ({ ...current, supplier: nextOption ? String(nextOption.value) : "" }))
               }}
               placeholder="Select supplier"
               isSearchable
               isClearable
+              isDisabled={!canEditHeader}
               menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
             />
           </div>
@@ -787,13 +820,14 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
               inputId="po-responsible"
               options={userOptions}
               value={userOptions.find((option) => option.value === headerForm.responsible) || null}
-              onChange={(option) => {
+              onChange={(option: SelectOption | readonly SelectOption[] | null) => {
                 const nextOption = getSingleOption(option)
                 setHeaderFormDraft((current) => ({ ...current, responsible: nextOption ? String(nextOption.value) : "" }))
               }}
               placeholder="Select responsible owner"
               isSearchable
               isClearable
+              isDisabled={!canEditHeader}
               menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
             />
           </div>
@@ -803,12 +837,13 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
               inputId="po-currency"
               options={currencyOptions}
               value={currencyOptions.find((option) => option.value === headerForm.order_currency) || null}
-              onChange={(option) => {
+              onChange={(option: SelectOption | readonly SelectOption[] | null) => {
                 const nextOption = getSingleOption(option)
                 setHeaderFormDraft((current) => ({ ...current, order_currency: nextOption ? String(nextOption.value) : "" }))
               }}
               placeholder="Select currency"
               isSearchable
+              isDisabled={!canEditHeader}
               menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
             />
           </div>
@@ -819,6 +854,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
               value={headerForm.description}
               onChange={(event) => setHeaderFormDraft((current) => ({ ...current, description: event.target.value }))}
               placeholder="What is the order for?"
+              disabled={!canEditHeader}
             />
           </div>
           <div className="space-y-2">
@@ -828,6 +864,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
               type="date"
               value={headerForm.delivery_date}
               onChange={(event) => setHeaderFormDraft((current) => ({ ...current, delivery_date: event.target.value }))}
+              disabled={!canEditHeader}
             />
           </div>
           <div className="space-y-2 xl:col-span-3">
@@ -837,6 +874,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
               value={headerForm.link}
               onChange={(event) => setHeaderFormDraft((current) => ({ ...current, link: event.target.value }))}
               placeholder="Optional supplier portal or quote link"
+              disabled={!canEditHeader}
             />
           </div>
           <div className="space-y-2 xl:col-span-3">
@@ -847,11 +885,12 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
               onChange={(event) => setHeaderFormDraft((current) => ({ ...current, notes: event.target.value }))}
               rows={4}
               placeholder="Capture receiving instructions, price notes, or approval context"
+              disabled={!canEditHeader}
             />
           </div>
         </div>
         <div className="mt-6">
-          <Button onClick={handleSaveHeader} disabled={savingHeader}>
+          <Button onClick={handleSaveHeader} disabled={savingHeader || !canEditHeader}>
             {savingHeader ? "Saving..." : "Save purchase order header"}
           </Button>
         </div>
@@ -870,17 +909,19 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
           { label: "Average unit price", value: formatCurrencyCompact(activeCurrency, asNumber(order.order_analytics?.average_unit_price)) },
         ]}
       >
-        <div className="flex flex-wrap items-center justify-between gap-4 rounded-[28px] border border-gray-200 bg-gradient-to-r from-slate-50 via-white to-emerald-50 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-[28px] border border-gray-200 bg-gradient-to-r from-gray-50 via-white to-blue-50 p-5">
           <div className="space-y-2">
             <div className="text-sm font-semibold text-gray-900">Line item editor</div>
             <p className="max-w-2xl text-sm leading-6 text-gray-600">
               Add or refine one line at a time in a focused side panel. Inventory images and reorder quantities stay visible while you work.
             </p>
           </div>
-          <Button onClick={openCreateLineItemSheet} className="rounded-2xl bg-gray-900 text-white hover:bg-gray-800">
-            <PackagePlus className="mr-2 h-4 w-4" />
-            Add line item
-          </Button>
+          {canEditLineItems && (
+            <Button onClick={openCreateLineItemSheet} className="rounded-2xl bg-gray-900 text-white hover:bg-gray-800">
+              <PackagePlus className="mr-2 h-4 w-4" />
+              Add line item
+            </Button>
+          )}
         </div>
 
         <div className="mt-6 overflow-hidden rounded-2xl border border-gray-200">
@@ -925,19 +966,23 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
                     <TableCell>{formatCurrencyCompact(activeCurrency, asNumber(lineItem.total_price))}</TableCell>
                     <TableCell>{lineItem.batch_number || "Generated on receive"}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handleEditLineItem(lineItem)}>
-                          Edit
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteLineItem(String(lineItem.id))}
-                          disabled={deletingLineItem}
-                        >
-                          Remove
-                        </Button>
-                      </div>
+                      {canEditLineItems ? (
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="sm" onClick={() => handleEditLineItem(lineItem)}>
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteLineItem(String(lineItem.id))}
+                            disabled={deletingLineItem}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-500">Locked after approval</span>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
@@ -963,7 +1008,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
                     inputId="line-inventory-item"
                     options={inventoryOptions}
                     value={inventoryOptions.find((option) => option.value === lineItemForm.inventory_item) || null}
-                    onChange={(option) => {
+                    onChange={(option: SelectOption | readonly SelectOption[] | null) => {
                       const nextOption = getSingleOption(option)
                       handleInventoryItemSelection(nextOption ? String(nextOption.value) : "")
                     }}
@@ -1105,7 +1150,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
           { label: "Receiving locations", value: locations.length },
         ]}
       >
-        <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+        <div className={canReceiveItems ? "grid gap-6 xl:grid-cols-[0.9fr_1.1fr]" : "max-w-2xl"}>
           <Card className="border-gray-200 shadow-none">
             <CardHeader className="text-left text-inherit">
               <CardTitle className="text-lg">Lifecycle actions</CardTitle>
@@ -1136,7 +1181,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
                 <Button
                   variant="outline"
                   onClick={() => runWorkflowAction(() => completePurchaseOrder(order.id).unwrap(), "Purchase order completed")}
-                  disabled={order.status !== PurchaseOrderStatus.received || completingOrder}
+                  disabled={order.status !== PurchaseOrderStatus.received || remainingQuantity > 0 || completingOrder}
                 >
                   <ClipboardCheck className="mr-2 h-4 w-4" />
                   Complete
@@ -1180,7 +1225,8 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
             </CardContent>
           </Card>
 
-          <Card className="border-gray-200 shadow-none">
+          {canReceiveItems ? (
+            <Card className="border-gray-200 shadow-none">
             <CardHeader className="text-left text-inherit">
               <CardTitle className="text-lg">Receive items into stock</CardTitle>
               <CardDescription>
@@ -1194,12 +1240,12 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
                   Receiving locations are limited to the selected structural scope.
                 </div>
               ) : null}
-              {editableLineItems.length === 0 ? (
+              {receivableLineItems.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-gray-200 p-4 text-sm text-gray-500">
-                  Add line items before attempting to receive goods.
+                  No purchase-order line items remain to be received.
                 </div>
               ) : (
-                editableLineItems.map((lineItem) => {
+                receivableLineItems.map((lineItem) => {
                   const entry = receiveEntries[String(lineItem.id)] || buildReceiveEntry(lineItem)
                   const lineRemaining = Math.max(asNumber(lineItem.quantity) - asNumber(lineItem.quantity_received), 0)
 
@@ -1226,6 +1272,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
                             type="number"
                             min="0"
                             step="0.01"
+                            max={String(lineRemaining)}
                             value={entry.quantity_received}
                             onChange={(event) => setReceiveField(String(lineItem.id), "quantity_received", event.target.value)}
                           />
@@ -1235,7 +1282,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
                           <ReactSelectField
                             options={locationOptions}
                             value={locationOptions.find((option) => option.value === entry.location_id) || null}
-                            onChange={(option) => {
+                            onChange={(option: SelectOption | readonly SelectOption[] | null) => {
                               const nextOption = getSingleOption(option)
                               setReceiveField(String(lineItem.id), "location_id", nextOption ? String(nextOption.value) : "")
                             }}
@@ -1287,7 +1334,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
               <div className="flex flex-wrap gap-3">
                 <Button
                   onClick={handleReceiveItems}
-                  disabled={![PurchaseOrderStatus.issued, PurchaseOrderStatus.received].includes(order.status as never) || receivingItems}
+                  disabled={!canReceiveItems || receivingItems}
                 >
                   <PackagePlus className="mr-2 h-4 w-4" />
                   Receive selected items
@@ -1296,17 +1343,18 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
                   variant="outline"
                   onClick={() =>
                     setReceiveEntries(
-                      Object.fromEntries(lineItems.map((lineItem) => [String(lineItem.id), buildReceiveEntry(lineItem)])),
+                      Object.fromEntries(receivableLineItems.map((lineItem) => [String(lineItem.id), buildReceiveEntry(lineItem)])),
                     )
                   }
-                  disabled={receivingItems}
+                  disabled={receivingItems || receivableLineItems.length === 0}
                 >
                   <Undo2 className="mr-2 h-4 w-4" />
                   Reset receiving form
                 </Button>
               </div>
             </CardContent>
-          </Card>
+            </Card>
+          ) : null}
         </div>
       </OperationalStepSection>
 

@@ -5,10 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "yarn check:rtk-endpoints && next build",
+    "typecheck": "tsc --noEmit --pretty false --incremental false",
     "check:rtk-endpoints": "node ./scripts/check-rtk-endpoint-collisions.mjs",
     "start": "next start",
     "lint": "eslint .",
-    "test:agent-export": "node --test ./tests/agent-export.test.ts"
+    "test:agent-export": "node --test ./tests/agent-export.test.ts",
+    "test:frontend-origin": "node --test ./tests/frontend-origin.test.ts"
   },
   "dependencies": {
     "@a2a-js/sdk": "^0.2.5",
@@ -35,6 +37,7 @@
     "@langchain/openai": "^0.6.2",
     "@livekit/components-react": "^2.9.14",
     "@livekit/components-styles": "^1.1.6",
+    "@livekit/protocol": "1.39.3",
     "@mastra/client-js": "^0.10.20",
     "@mastra/core": "^0.0.0-ai-v5-20250801192614",
     "@mastra/libsql": "^0.13.1",

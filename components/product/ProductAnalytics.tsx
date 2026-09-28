@@ -98,12 +98,42 @@ export default function ProductAnalytics({ productId }: ProductAnalyticsProps) {
     { name: 'Out of Stock', value: safeAnalytics.stock_stats.out_of_stock_variants, color: '#EF4444' }
   ];
 
+  const handleExportReport = () => {
+    const rows = [
+      ['Metric', 'Value'],
+      ['Total variants', safeAnalytics.variant_stats.total_variants],
+      ['Active variants', safeAnalytics.variant_stats.active_variants],
+      ['Inactive variants', safeAnalytics.variant_stats.inactive_variants],
+      ['Total stock', safeAnalytics.stock_stats.total_stock],
+      ['Tracked variants', trackedVariants],
+      ['Low-stock variants', safeAnalytics.stock_stats.low_stock_variants],
+      ['Out-of-stock variants', safeAnalytics.stock_stats.out_of_stock_variants],
+      ['Minimum price', safeAnalytics.price_stats.min_price],
+      ['Average price', safeAnalytics.price_stats.avg_price],
+      ['Maximum price', safeAnalytics.price_stats.max_price],
+      ['Profit margin', safeAnalytics.profit_margin],
+      ['Price changes (30d)', safeAnalytics.recent_price_changes],
+      ['POS ready', safeAnalytics.pos_ready ? 'Yes' : 'No'],
+    ];
+    const csv = rows.map((row) => row.join(',')).join('\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `product-analytics-${productId}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-900">Product Analytics</h2>
         <div className="flex space-x-2">
-          <button className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 transition-colors">
+          <button
+            type="button"
+            onClick={handleExportReport}
+            className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 transition-colors"
+          >
             Export Report
           </button>
         </div>

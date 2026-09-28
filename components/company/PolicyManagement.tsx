@@ -1,8 +1,7 @@
 "use client"
 
-import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { TabsContent, TabsList, TabsTrigger, UrlTabs } from "@/components/ui/tabs"
 import { RecallPolicyManagement } from "./RecallPolicyManagement"
 import { ReorderStrategyManagement } from "./ReorderStrategyManagement"
 import { InventoryPolicyManagement } from "./InventoryPolicyManagement"
@@ -12,8 +11,6 @@ interface PolicyManagementProps {
 }
 
 export function PolicyManagement({profileId}:PolicyManagementProps) {
-  const [activeTab, setActiveTab] = useState("recall")
-
   return (
     <div className="space-y-6">
       <Card>
@@ -21,7 +18,7 @@ export function PolicyManagement({profileId}:PolicyManagementProps) {
           <CardTitle>Policy Management</CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <UrlTabs defaultValue="recall" tabValues={["recall", "reorder", "inventory"]} tabParam="policy_tab" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="recall">Recall Policies</TabsTrigger>
               <TabsTrigger value="reorder">Reorder Strategies</TabsTrigger>
@@ -39,7 +36,7 @@ export function PolicyManagement({profileId}:PolicyManagementProps) {
             <TabsContent value="inventory" className="mt-6">
               <InventoryPolicyManagement profileId={profileId}  />
             </TabsContent>
-          </Tabs>
+          </UrlTabs>
         </CardContent>
       </Card>
     </div>

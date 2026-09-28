@@ -13,7 +13,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, Search } from "lucide-react"
 import { useState } from "react"
 
 interface DataTableProps<TData, TValue> {
@@ -64,13 +64,16 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <Input
-          placeholder={`Search ${searchKey}...`}
-          value={globalFilter ?? ""}
-          onChange={(event) => setGlobalFilter(String(event.target.value))}
-          className="max-w-sm"
-        />
+      <div className="rounded-xl border border-border bg-muted/60 p-3">
+        <div className="relative max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder={`Search ${searchKey}...`}
+            value={globalFilter ?? ""}
+            onChange={(event) => setGlobalFilter(String(event.target.value))}
+            className="h-11 border-border bg-background pl-10"
+          />
+        </div>
       </div>
 
       <div className="rounded-md border">

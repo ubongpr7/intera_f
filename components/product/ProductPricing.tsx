@@ -205,7 +205,7 @@ const defaultValues: Partial<PricingRule> = {
 
   const handleToggleActive = async (ruleId: string, isActive: boolean) => {
     try {
-      await toggleActive({ id: ruleId, is_active: !isActive }).unwrap()
+      await toggleActive(ruleId).unwrap()
       refetch()
     } catch {
       toast.error("Failed to update pricing rule status.")

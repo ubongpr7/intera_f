@@ -6,6 +6,8 @@ import { setCookie, getCookie, deleteCookie } from "cookies-next"
 import { jwtDecode } from "jwt-decode"
 import { AUTH_COOKIE_NAMES, AUTH_COOKIE_KEYS, readCookieValue } from "@/lib/authCookies"
 import { getOrCreatePosDeviceId } from "@/lib/deviceIdentity"
+import { setFrontendOriginHeader } from "@/lib/frontendOrigin"
+import { clearPermissions } from "../features/permission/permissionSlice"
 
 const toBooleanClaim = (value: unknown): boolean | undefined => {
   if (typeof value === "boolean") {
@@ -74,8 +76,12 @@ const NOTIFICATION_BACKEND_URL = resolveBaseUrl(
   process.env.NEXT_PUBLIC_NOTIFICATION_BACKEND_URL ?? "http://localhost:8092",
   process.env.NOTIFICATION_INTERNAL_URL ?? "http://localhost:8092",
 )
+const SUBSCRIPTIONS_BACKEND_URL = resolveBaseUrl(
+  process.env.NEXT_PUBLIC_SUBSCRIPTIONS_BACKEND_URL ?? "http://localhost:8550",
+  process.env.SUBSCRIPTIONS_INTERNAL_URL ?? "http://subscriptions:8550",
+)
 
-export type serviceType = "users" | "inventory"| "common"|"product"|'pos'| "agent"|'payment' | "audit" | "notification"
+export type serviceType = "users" | "inventory"| "common"|"product"|'pos'| "agent"|'payment' | "audit" | "notification" | "subscriptions"
 const accessAge = 60*60*24
 const refreshAge = 60*60*24
 export const serviceMap: Record<serviceType, string> = {
@@ -88,6 +94,7 @@ export const serviceMap: Record<serviceType, string> = {
   payment: PAYMENT_BACKEND_URL,
   audit: AUDIT_BACKEND_URL,
   notification: NOTIFICATION_BACKEND_URL,
+  subscriptions: SUBSCRIPTIONS_BACKEND_URL,
 }
 
 const mutex = new Mutex()
@@ -110,6 +117,7 @@ interface ProfileContext {
 interface AuthResponsePayload {
   access?: string
   refresh?: string
+  authorization_context?: string
   id?: string | number
   username?: string
   is_staff?: boolean
@@ -233,6 +241,9 @@ export const persistAuthSession = (response: AuthResponsePayload) => {
   if (response.refresh) {
     setAuthCookie("refreshToken", response.refresh, refreshAge)
   }
+  if (response.authorization_context) {
+    setAuthCookie("authorizationContext", response.authorization_context, accessAge)
+  }
   if (response.id !== undefined && response.id !== null) {
     setAuthCookie("userID", `${response.id}`, refreshAge)
   }
@@ -326,10 +337,16 @@ const createBaseQuery = (baseUrl: string, isFileUpload = false) => {
     credentials: "include",
     timeout: 600000,
     prepareHeaders: (headers) => {
+      setFrontendOriginHeader(headers)
       const token = readAuthCookie("accessToken")
      
       if (token) {
         headers.set("Authorization", `Bearer ${token}`)
+      }
+
+      const authorizationContext = readAuthCookie("authorizationContext")
+      if (authorizationContext) {
+        headers.set("X-Intera-Authorization-Context", authorizationContext)
       }
 
       const posDeviceId = getOrCreatePosDeviceId()
@@ -358,6 +375,7 @@ const baseQueries = {
   payment: createBaseQuery(serviceMap.payment),
   audit: createBaseQuery(serviceMap.audit),
   notification: createBaseQuery(serviceMap.notification),
+  subscriptions: createBaseQuery(serviceMap.subscriptions),
 }
 
 const fileUploadQueries = {
@@ -370,6 +388,7 @@ const fileUploadQueries = {
   payment: createBaseQuery(serviceMap.payment, true),
   audit: createBaseQuery(serviceMap.audit, true),
   notification: createBaseQuery(serviceMap.notification, true),
+  subscriptions: createBaseQuery(serviceMap.subscriptions, true),
 
 }
 
@@ -448,6 +467,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
     } else if (AUTH_LOGOUT_URLS.has(url)) {
       clearAuthSession()
       api.dispatch(logout())
+      api.dispatch(clearPermissions())
     }
   }
 
@@ -468,6 +488,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
                   baseUrl:BACKEND_HOST_URL,
                   credentials: "include",
                   prepareHeaders: (headers) => {
+              setFrontendOriginHeader(headers)
               headers.set("Content-Type", "application/json");
               headers.set("X-Requested-With", "XMLHttpRequest");
               return headers
@@ -493,10 +514,12 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
             } else {
               clearAuthSession()
               api.dispatch(logout())
+              api.dispatch(clearPermissions())
             }
           } else {
             clearAuthSession()
             api.dispatch(logout())
+            api.dispatch(clearPermissions())
             if (typeof window !== "undefined") {
               if (!window.location.pathname.startsWith("/accounts/signin")) {
                 window.location.replace("/accounts/signin")

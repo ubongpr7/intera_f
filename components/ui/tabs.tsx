@@ -3,9 +3,28 @@
 import * as React from "react"
 import * as TabsPrimitive from "@radix-ui/react-tabs"
 
+import { useUrlTabState } from "@/hooks/useUrlTabState"
 import { cn } from "@/lib/utils"
 
 const Tabs = TabsPrimitive.Root
+
+type UrlTabsProps = Omit<React.ComponentPropsWithoutRef<typeof TabsPrimitive.Root>, "defaultValue" | "onValueChange" | "value"> & {
+  defaultValue: string
+  tabValues: readonly string[]
+  tabParam?: string
+  onValueChange?: (value: string) => void
+}
+
+const UrlTabs = ({ defaultValue, tabValues, tabParam, onValueChange, ...props }: UrlTabsProps) => {
+  const { activeValue, setActiveValue } = useUrlTabState({
+    defaultValue,
+    values: tabValues,
+    param: tabParam,
+    onValueChange,
+  })
+
+  return <TabsPrimitive.Root {...props} value={activeValue} onValueChange={setActiveValue} />
+}
 
 const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
@@ -52,4 +71,4 @@ const TabsContent = React.forwardRef<
 ))
 TabsContent.displayName = TabsPrimitive.Content.displayName
 
-export { Tabs, TabsList, TabsTrigger, TabsContent }
+export { Tabs, UrlTabs, TabsList, TabsTrigger, TabsContent }

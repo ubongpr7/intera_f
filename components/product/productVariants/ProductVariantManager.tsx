@@ -236,8 +236,8 @@ const ProductVariantManager = ({ productId, ProductData }: ProductVariantManager
         <VariantDetailsModal
           variantId={selectedVariantId}
           onClose={handleCloseVariantDetails}
-          onSuccess={() => {
-            void refetchVariants()
+          onSuccess={async () => {
+            await refetchVariants()
           }}
         />
       )}

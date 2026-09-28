@@ -402,7 +402,46 @@ export interface PurchaseOrderAnalyticsResponse {
 }
 
 export interface PurchaseOrderDashboardSummary {
-  [key: string]: unknown;
+  total_orders: number;
+  active_orders: number;
+  pending_approval: number;
+  issued_orders: number;
+  received_orders: number;
+  partially_received_orders: number;
+  awaiting_receipt_orders: number;
+  ready_to_close_orders: number;
+  overdue_orders: number;
+  orders_this_week: number;
+  orders_this_month: number;
+  total_value_this_month: string | number;
+}
+
+export interface GoodsReceiptSummaryResponse {
+  total_receipts: number;
+  total_quantity: string | number;
+  supplier_count: number;
+  purchase_order_count: number;
+  location_count: number;
+  inventory_item_count: number;
+}
+
+export interface SalesOrderShipmentSummaryResponse {
+  total_shipments: number;
+  total_quantity: string | number;
+  tracked_shipment_count: number;
+  customer_count: number;
+  order_count: number;
+  location_count: number;
+  inventory_item_count: number;
+}
+
+export interface SalesOrderSummaryResponse {
+  total_orders: number;
+  active_orders: number;
+  pending_orders: number;
+  in_progress_orders: number;
+  shipped_orders: number;
+  ready_to_close_orders: number;
 }
 
 export interface GoodsReceiptListParams {
@@ -417,6 +456,8 @@ export interface GoodsReceiptListParams {
   date_to?: string;
   search?: string;
   ordering?: string;
+  page?: number;
+  page_size?: number;
 }
 
 export interface SalesOrderShipmentListParams {
@@ -431,6 +472,8 @@ export interface SalesOrderShipmentListParams {
   date_to?: string;
   search?: string;
   ordering?: string;
+  page?: number;
+  page_size?: number;
 }
 
 export interface OrderListParams {
@@ -445,8 +488,28 @@ export interface OrderListParams {
   issue_date?: string;
   shipment_date?: string;
   delivery_date?: string;
+  delivery_date_from?: string;
+  delivery_date_to?: string;
   date_from?: string;
   date_to?: string;
   search?: string;
   ordering?: string;
+  page?: number;
+  page_size?: number;
 }
+
+export interface PaginatedResponse<T> {
+  count: number;
+  next?: string | null;
+  previous?: string | null;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  results: T[];
+}
+
+export type PurchaseOrderListResponse = PaginatedResponse<PurchaseOrderInterface>;
+export type GoodsReceiptListResponse = PaginatedResponse<GoodsReceiptInterface>;
+export type SalesOrderShipmentListResponse = PaginatedResponse<SalesOrderShipmentInterface>;
+export type SalesOrderListResponse = PaginatedResponse<SalesOrderInterface>;
+export type ReturnOrderListResponse = PaginatedResponse<ReturnOrderInterface>;

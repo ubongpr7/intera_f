@@ -1,5 +1,6 @@
 import React, { useDeferredValue, useMemo, useState } from "react";
 import { ReactSelectField, type SelectOption } from "@/components/ui/react-select-field";
+import { Button } from "@/components/ui/button";
 import LoadingAnimation from "../common/LoadingAnimation";
 
 interface Permission {
@@ -15,6 +16,7 @@ interface GroupPermissionFormProps {
   permissionsData: { permissions: Permission[] } | undefined;
   permissionLoading: boolean;
   onSubmit: (data: { permissions: string[] }) => Promise<void>;
+  readOnly?: boolean;
 }
 
 const titleCase = (value: string) =>
@@ -50,9 +52,10 @@ type PermissionEditorProps = {
   permissions: Permission[];
   permissionLoading: boolean;
   onSubmit: (data: { permissions: string[] }) => Promise<void>;
+  readOnly?: boolean;
 };
 
-const PermissionEditor = ({ permissions, permissionLoading, onSubmit }: PermissionEditorProps) => {
+const PermissionEditor = ({ permissions, permissionLoading, onSubmit, readOnly = false }: PermissionEditorProps) => {
   const [selectedPermissions, setSelectedPermissions] = useState<Set<string>>(
     () => new Set(permissions.filter((permission) => permission.has_permission).map((permission) => permission.codename)),
   );
@@ -167,6 +170,12 @@ const PermissionEditor = ({ permissions, permissionLoading, onSubmit }: Permissi
 
   return (
     <div className="space-y-5">
+      {readOnly ? (
+        <div className="rounded-[28px] border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
+          <p className="font-semibold">System-managed permissions</p>
+          <p className="mt-1 text-amber-100/80">This definition is view-only. Only Intera staff can change its permissions.</p>
+        </div>
+      ) : null}
       <div className="rounded-[28px] border border-slate-800 bg-slate-950/80 p-4 shadow-[0_20px_55px_rgba(2,6,23,0.35)]">
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div className="space-y-2">
@@ -254,11 +263,12 @@ const PermissionEditor = ({ permissions, permissionLoading, onSubmit }: Permissi
                 className="rounded-[30px] border border-slate-800 bg-slate-950/70 p-4 shadow-[0_16px_48px_rgba(2,6,23,0.28)]"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
-                  <label className="flex cursor-pointer items-start gap-3">
+                  <label className={`flex items-start gap-3 ${readOnly ? "cursor-not-allowed" : "cursor-pointer"}`}>
                     <input
                       type="checkbox"
                       checked={isChecked}
                       onChange={() => handleCategoryChange(group.category, group.visiblePermissions)}
+                      disabled={readOnly}
                       ref={(element) => {
                         if (element) {
                           element.indeterminate = isPartiallyChecked;
@@ -287,12 +297,13 @@ const PermissionEditor = ({ permissions, permissionLoading, onSubmit }: Permissi
                   {group.visiblePermissions.map((permission) => (
                     <label
                       key={permission.codename}
-                      className="flex cursor-pointer items-start gap-3 rounded-[22px] border border-slate-800 bg-slate-900/80 px-4 py-3 transition hover:border-slate-700 hover:bg-slate-900"
+                      className={`flex items-start gap-3 rounded-[22px] border border-slate-800 bg-slate-900/80 px-4 py-3 transition ${readOnly ? "cursor-not-allowed opacity-80" : "cursor-pointer hover:border-slate-700 hover:bg-slate-900"}`}
                     >
                       <input
                         type="checkbox"
                         checked={selectedPermissions.has(permission.codename)}
                         onChange={() => handlePermissionChange(permission.codename)}
+                        disabled={readOnly}
                         className="mt-1 h-4 w-4 rounded border-slate-600 bg-slate-950 text-blue-500 focus:ring-blue-500"
                       />
                       <span className="min-w-0">
@@ -323,14 +334,11 @@ const PermissionEditor = ({ permissions, permissionLoading, onSubmit }: Permissi
         <p className="text-sm text-slate-300">
           {selectedVisiblePermissionCount} of {visiblePermissionCount} visible permissions currently enabled.
         </p>
-        <button
-          type="button"
-          onClick={handleSubmit}
-          className="rounded-full bg-blue-500 px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
-          disabled={permissionLoading}
-        >
-          {permissionLoading ? <LoadingAnimation text="Updating..." ringColor="#3b82f6" /> : "Save Changes"}
-        </button>
+        {!readOnly ? (
+          <Button type="button" onClick={handleSubmit} size="lg" disabled={permissionLoading}>
+            {permissionLoading ? <LoadingAnimation text="Updating..." ringColor="#98fcc2" /> : "Save Changes"}
+          </Button>
+        ) : null}
       </div>
     </div>
   );
@@ -341,6 +349,7 @@ const CustumPermissionForm: React.FC<GroupPermissionFormProps> = ({
   permissionsData,
   permissionLoading,
   onSubmit,
+  readOnly = false,
 }) => {
   const permissions = useMemo(() => permissionsData?.permissions ?? [], [permissionsData]);
   const permissionSyncKey = useMemo(
@@ -362,6 +371,7 @@ const CustumPermissionForm: React.FC<GroupPermissionFormProps> = ({
       permissions={permissions}
       permissionLoading={permissionLoading}
       onSubmit={onSubmit}
+      readOnly={readOnly}
     />
   );
 };

@@ -22,12 +22,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { TabsContent, TabsList, TabsTrigger, UrlTabs } from "@/components/ui/tabs"
 import { extractGoodsReceiptEntries, extractPosSaleEntries, getAuditEventImageUrl, getAuditEventProductContext } from "@/lib/auditEventHelpers"
 import { getAuditReviewModel } from "@/lib/auditReviewModel"
-import { getActiveWorkspaceId, getAuditWebSocketBaseUrl, getRealtimeAccessToken } from "@/lib/serviceRealtime"
+import { getActiveWorkspaceId, getAuditWebSocketBaseUrl, getRealtimeAccessToken, requestRealtimeWebSocketTicket } from "@/lib/serviceRealtime"
 import { cn } from "@/lib/utils"
-import { useListAuditEventsQuery } from "@/redux/features/audit/auditApiSlice"
+import { useGetAuditFilterOptionsQuery, useListAuditEventsQuery } from "@/redux/features/audit/auditApiSlice"
 import type { AuditEventRecord } from "@/redux/features/audit/auditTypes"
 
 const formatDateTime = (value?: string | null) => {
@@ -183,6 +183,13 @@ const matchesFacetFilters = (
   return true
 }
 
+const getOccurredFrom = (range: string) => {
+  const daysByRange: Record<string, number> = { today: 1, "7d": 7, "30d": 30 }
+  const days = daysByRange[range]
+  if (!days) return undefined
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
+}
+
 const connectionBadge = (state: "connecting" | "connected" | "disconnected") => {
   if (state === "connected") {
       return {
@@ -276,18 +283,24 @@ export default function AuditTrailWorkspace() {
   const [serviceFilter, setServiceFilter] = useState("all")
   const [featureFilter, setFeatureFilter] = useState("all")
   const [dateRangeFilter, setDateRangeFilter] = useState("all")
+  const [page, setPage] = useState(1)
+  const pageSize = 50
   const [realtimeEvents, setRealtimeEvents] = useState<AuditEventRecord[]>([])
   const [socketState, setSocketState] = useState<"connecting" | "connected" | "disconnected">("disconnected")
   const [selectedEventId, setSelectedEventId] = useState("")
 
   const queryArgs = useMemo(
     () => ({
-      limit: 80,
-      offset: 0,
+      limit: pageSize,
+      offset: (page - 1) * pageSize,
       search: submittedSearch || undefined,
       barcode: submittedBarcode || undefined,
+      severity: severityFilter === "all" ? undefined : severityFilter,
+      source_service: serviceFilter === "all" ? undefined : serviceFilter,
+      feature_area: featureFilter === "all" ? undefined : featureFilter,
+      occurred_from: getOccurredFrom(dateRangeFilter),
     }),
-    [submittedBarcode, submittedSearch],
+    [dateRangeFilter, featureFilter, page, serviceFilter, severityFilter, submittedBarcode, submittedSearch],
   )
 
   const { data, isLoading, isFetching, refetch } = useListAuditEventsQuery(queryArgs, {
@@ -295,6 +308,7 @@ export default function AuditTrailWorkspace() {
   })
   const workspaceId = getActiveWorkspaceId()
   const accessToken = getRealtimeAccessToken()
+  const { data: filterOptions } = useGetAuditFilterOptionsQuery(workspaceId ? { workspace_id: workspaceId } : undefined)
 
   useEffect(() => {
     if (!workspaceId || !accessToken) {
@@ -305,9 +319,11 @@ export default function AuditTrailWorkspace() {
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null
     let disposed = false
 
-    const connect = () => {
+    const connect = async () => {
+      const ticket = await requestRealtimeWebSocketTicket()
+      if (!ticket || disposed) return
       socket = new WebSocket(
-        `${getAuditWebSocketBaseUrl()}/api/v1/audits/ws/workspaces/${encodeURIComponent(workspaceId)}/audits?token=${encodeURIComponent(accessToken)}`,
+        `${getAuditWebSocketBaseUrl()}/api/v1/audits/ws/workspaces/${encodeURIComponent(workspaceId)}/audits?ws_ticket=${encodeURIComponent(ticket)}`,
       )
 
       socket.onopen = () => {
@@ -318,7 +334,11 @@ export default function AuditTrailWorkspace() {
         try {
           const envelope = JSON.parse(message.data) as AuditRealtimeEnvelope
           const incomingEvent = envelope.event
-          if (!incomingEvent || !matchesTextFilters(incomingEvent, submittedSearch, submittedBarcode)) {
+          if (
+            !incomingEvent ||
+            !matchesTextFilters(incomingEvent, submittedSearch, submittedBarcode) ||
+            !matchesFacetFilters(incomingEvent, severityFilter, serviceFilter, featureFilter, dateRangeFilter)
+          ) {
             return
           }
           const eventWithLiveMetadata = withRealtimeMetadata(incomingEvent)
@@ -356,7 +376,7 @@ export default function AuditTrailWorkspace() {
       }
       socket?.close()
     }
-  }, [accessToken, submittedBarcode, submittedSearch, workspaceId])
+  }, [accessToken, dateRangeFilter, featureFilter, serviceFilter, severityFilter, submittedBarcode, submittedSearch, workspaceId])
 
   const mergedEvents = useMemo(() => {
     const merged = new Map<string, AuditEventRecord>()
@@ -373,22 +393,16 @@ export default function AuditTrailWorkspace() {
     )
   }, [data?.results, realtimeEvents])
 
-  const serviceOptions = useMemo(
-    () => Array.from(new Set(mergedEvents.map((event) => event.source_service).filter(Boolean))).sort(),
-    [mergedEvents],
-  )
-  const featureOptions = useMemo(
-    () => Array.from(new Set(mergedEvents.map((event) => event.feature_area).filter(Boolean))).sort(),
-    [mergedEvents],
-  )
+  const serviceOptions = filterOptions?.source_services ?? []
+  const featureOptions = filterOptions?.feature_areas ?? []
 
   const events = useMemo(
     () =>
       mergedEvents
         .filter((event) => matchesTextFilters(event, submittedSearch, submittedBarcode))
         .filter((event) => matchesFacetFilters(event, severityFilter, serviceFilter, featureFilter, dateRangeFilter))
-        .slice(0, 80),
-    [dateRangeFilter, featureFilter, mergedEvents, serviceFilter, severityFilter, submittedBarcode, submittedSearch],
+        .slice(0, pageSize),
+    [dateRangeFilter, featureFilter, mergedEvents, pageSize, serviceFilter, severityFilter, submittedBarcode, submittedSearch],
   )
 
   const selectedEvent = useMemo(
@@ -399,14 +413,7 @@ export default function AuditTrailWorkspace() {
   const serverMatchCount = data?.count ?? 0
   const liveRealtimeCount = events.filter((event) => Boolean(event.metadata_json?.realtime)).length
   const criticalCount = events.filter((event) => ["critical", "high", "warning"].includes((event.severity || "").toLowerCase())).length
-  const hasActiveClientFilters =
-    severityFilter !== "all" ||
-    serviceFilter !== "all" ||
-    featureFilter !== "all" ||
-    dateRangeFilter !== "all" ||
-    Boolean(submittedSearch) ||
-    Boolean(submittedBarcode)
-  const hiddenByClientFilters = Math.max(serverMatchCount - events.length, 0)
+  const totalPages = Math.max(1, Math.ceil(serverMatchCount / pageSize))
   const connection = connectionBadge(socketState)
   const ConnectionIcon = connection.icon
   const changeRows = selectedEvent ? getChangeRows(selectedEvent) : []
@@ -477,6 +484,7 @@ export default function AuditTrailWorkspace() {
   const applyFilters = () => {
     setSubmittedSearch(searchInput.trim())
     setSubmittedBarcode(barcodeInput.trim())
+    setPage(1)
   }
 
   const clearFilters = () => {
@@ -488,6 +496,7 @@ export default function AuditTrailWorkspace() {
     setServiceFilter("all")
     setFeatureFilter("all")
     setDateRangeFilter("all")
+    setPage(1)
   }
 
   const exportVisibleEvents = () => {
@@ -562,12 +571,12 @@ export default function AuditTrailWorkspace() {
             <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
               <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">Server matches</div>
               <div className="mt-2 text-3xl font-semibold text-gray-900">{serverMatchCount}</div>
-              <div className="mt-2 text-xs text-gray-600">Records returned by the API before client-side narrowing.</div>
+              <div className="mt-2 text-xs text-gray-600">Records matching the submitted server-side filters.</div>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
               <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">Visible now</div>
               <div className="mt-2 text-3xl font-semibold text-gray-900">{events.length}</div>
-              <div className="mt-2 text-xs text-gray-600">What the current filters are actually showing.</div>
+              <div className="mt-2 text-xs text-gray-600">Records visible on the current page, including live arrivals.</div>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
               <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">Needs attention</div>
@@ -580,30 +589,6 @@ export default function AuditTrailWorkspace() {
               <div className="mt-2 text-xs text-gray-600">Entries injected by the realtime audit stream.</div>
             </div>
           </div>
-
-          {hiddenByClientFilters > 0 && hasActiveClientFilters ? (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3">
-              <div className="text-sm text-blue-800">
-                {hiddenByClientFilters} audit record{hiddenByClientFilters === 1 ? "" : "s"} are currently hidden by client filters.
-              </div>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSeverityFilter("all")
-                  setServiceFilter("all")
-                  setFeatureFilter("all")
-                  setDateRangeFilter("all")
-                  setSearchInput("")
-                  setBarcodeInput("")
-                  setSubmittedSearch("")
-                  setSubmittedBarcode("")
-                }}
-                className="border-blue-200 bg-white text-blue-700 hover:bg-blue-100 hover:text-blue-800"
-              >
-                Show everything
-              </Button>
-            </div>
-          ) : null}
 
           <div className="grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.95fr)_170px_170px_170px_170px_auto]">
             <Input
@@ -628,7 +613,7 @@ export default function AuditTrailWorkspace() {
                 }
               }}
             />
-            <Select value={severityFilter} onValueChange={setSeverityFilter}>
+            <Select value={severityFilter} onValueChange={(value) => { setSeverityFilter(value); setPage(1) }}>
               <SelectTrigger className="border-gray-200 bg-white text-gray-900">
                 <SelectValue placeholder="Severity" />
               </SelectTrigger>
@@ -640,7 +625,7 @@ export default function AuditTrailWorkspace() {
                 <SelectItem value="critical">Critical</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={serviceFilter} onValueChange={setServiceFilter}>
+            <Select value={serviceFilter} onValueChange={(value) => { setServiceFilter(value); setPage(1) }}>
               <SelectTrigger className="border-gray-200 bg-white text-gray-900">
                 <SelectValue placeholder="Service" />
               </SelectTrigger>
@@ -653,7 +638,7 @@ export default function AuditTrailWorkspace() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={featureFilter} onValueChange={setFeatureFilter}>
+            <Select value={featureFilter} onValueChange={(value) => { setFeatureFilter(value); setPage(1) }}>
               <SelectTrigger className="border-gray-200 bg-white text-gray-900">
                 <SelectValue placeholder="Feature area" />
               </SelectTrigger>
@@ -666,7 +651,7 @@ export default function AuditTrailWorkspace() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={dateRangeFilter} onValueChange={setDateRangeFilter}>
+            <Select value={dateRangeFilter} onValueChange={(value) => { setDateRangeFilter(value); setPage(1) }}>
               <SelectTrigger className="border-gray-200 bg-white text-gray-900">
                 <SelectValue placeholder="Date range" />
               </SelectTrigger>
@@ -719,8 +704,17 @@ export default function AuditTrailWorkspace() {
             {dateRangeFilter !== "all" ? <Badge variant="outline" className="border-gray-200 bg-white text-gray-700">range: {dateRangeFilter}</Badge> : null}
             <Button variant="outline" onClick={exportVisibleEvents} disabled={!events.length} className="border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900">
               <Download className="mr-2 h-4 w-4" />
-              Export visible
+              Export current page
             </Button>
+            <div className="ml-auto flex items-center gap-2 text-sm text-gray-600">
+              <span>Page {page} of {totalPages}</span>
+              <Button variant="outline" size="sm" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page === 1}>
+                Previous
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setPage((current) => Math.min(totalPages, current + 1))} disabled={page >= totalPages}>
+                Next
+              </Button>
+            </div>
           </div>
 
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
@@ -1012,7 +1006,7 @@ export default function AuditTrailWorkspace() {
                       <div className="mt-2 text-sm leading-6 text-gray-700">{selectedEventReviewModel?.summary || eventNarrative}</div>
                     </div>
 
-                    <Tabs defaultValue="review" className="w-full">
+                    <UrlTabs defaultValue="review" tabValues={["review", "changes", "trace"]} tabParam="audit_tab" className="w-full">
                       <TabsList className="grid h-auto w-full grid-cols-3 gap-2 rounded-2xl border border-gray-200 bg-gray-100 p-2">
                         <TabsTrigger value="review" className="rounded-xl border border-transparent bg-transparent text-gray-600 data-[state=active]:border-blue-200 data-[state=active]:bg-white data-[state=active]:text-blue-700">
                           Review
@@ -1316,7 +1310,7 @@ export default function AuditTrailWorkspace() {
                           </pre>
                         </details>
                       </TabsContent>
-                    </Tabs>
+                    </UrlTabs>
                   </CardContent>
                 </ScrollArea>
               </>

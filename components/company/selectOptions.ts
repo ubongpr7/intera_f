@@ -35,17 +35,10 @@ export const CompanyKeyInfo = {
   ];
   
   
-  export const CompanyAddressInterfaceKeys: (keyof CompanyAddressDataInterface)[] = [
+export const CompanyAddressInterfaceKeys: (keyof CompanyAddressDataInterface)[] = [
     'title',
+    'address',
     'primary',
-    'country',
-    'region',
-    `subregion`,
-    'city',
-    'apt_number',
-    'street_number',
-    'street',
-    'postal_code',
     'shipping_notes',
     'internal_shipping_notes',
     'link',
@@ -67,9 +60,8 @@ export const defaultValues: Partial<CompanyDataInterface> = {
   
 export const CompanyAddressKeyInfo = {
   title: 'Human-readable name for the address location',
+  address: 'Full street address for this company location',
   primary: 'Mark as primary company address',
-  postal_code: 'Postal/ZIP code and city',
-  country: 'Country code (2-letter ISO)',
   shipping_notes: 'Special instructions for couriers',
   internal_shipping_notes: 'Internal notes about shipping to this address',
   link: 'External link with map or additional info'
@@ -77,12 +69,7 @@ export const CompanyAddressKeyInfo = {
 
 export const defaultAddressValues: Partial<CompanyAddressInterface> = {
   primary: false,
-  street: '',
-  postal_code: '',
-  country: null,
-  region: null,
-  subregion: null,
-  city: null,
+  address: '',
   shipping_notes: '',
   internal_shipping_notes: ''
 };

@@ -6,6 +6,7 @@ import type {
   UserGroupsResponse,
   UserGroupUpdatePayload,
   UserPermissionsResponse,
+  EffectivePermissionsResponse,
 } from "./permissionTypes";
 
 const permissionApi = "permission_api";
@@ -13,6 +14,12 @@ const service = "users";
 
 export const permisionsAPISlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
+    getEffectivePermissions: builder.query<EffectivePermissionsResponse, string>({
+      query: (profileId) => ({
+        url: `/${permissionApi}/me/effective-permissions/?platform=intera_ims&profile_id=${encodeURIComponent(profileId)}`,
+        service,
+      }),
+    }),
     listRoleAssignments: builder.query<RoleAssignmentRecord[], void>({
       query: () => ({
         url: `/${permissionApi}/role-assignments/`,
@@ -127,6 +134,7 @@ export const {
   useDeleteRoleAssignmentMutation,
   useUpdateUserPermissionMutation,
   useGetUserPermissionQuery,
+  useGetEffectivePermissionsQuery,
   useUpdateGroupPermissionMutation,
   useGetGroupPermissionQuery,
   useUpdateRolePermissionMutation,

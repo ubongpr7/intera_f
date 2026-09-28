@@ -1,8 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { useDeferredValue, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useDeferredValue, useEffect, useMemo, useState } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   ArrowRight,
   ClipboardCheck,
@@ -26,6 +26,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
+import { Pagination } from "@/components/ui/pagination"
 import { CURRENCY_CODES } from "@/lib/currencyCode"
 import { formatCurrencyCompact } from "@/lib/currency-utils"
 import { buildStructuralLocationScopeParams } from "@/lib/structuralLocationScope"
@@ -74,6 +75,17 @@ type PurchaseOrderFormState = {
   delivery_date: string
 }
 
+type PurchaseOrderListState = {
+  searchQuery: string
+  statusFilter: string
+  supplierFilter: string
+  deliveryDateFrom: string
+  deliveryDateTo: string
+  ordering: string
+  page: number
+  pageSize: number
+}
+
 const formatStatus = (value: string) =>
   value
     .split("_")
@@ -92,6 +104,26 @@ const buildInitialForm = (currency: string): PurchaseOrderFormState => ({
   delivery_date: "",
 })
 
+const parsePurchaseOrderListState = (params: URLSearchParams): PurchaseOrderListState => {
+  const status = params.get("purchase_orders_status")
+  const ordering = params.get("purchase_orders_ordering")
+  const requestedPage = Number(params.get("purchase_orders_page"))
+  const requestedPageSize = Number(params.get("purchase_orders_page_size"))
+  const allowedStatuses = Object.values(PurchaseOrderStatus)
+  const allowedOrderings = ["-created_at", "created_at", "delivery_date", "-delivery_date", "reference"]
+
+  return {
+    searchQuery: params.get("purchase_orders_search") || "",
+    statusFilter: status && allowedStatuses.includes(status as (typeof allowedStatuses)[number]) ? status : "all",
+    supplierFilter: params.get("purchase_orders_supplier") || "all",
+    deliveryDateFrom: params.get("purchase_orders_delivery_date_from") || "",
+    deliveryDateTo: params.get("purchase_orders_delivery_date_to") || "",
+    ordering: ordering && allowedOrderings.includes(ordering) ? ordering : "-created_at",
+    page: Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1,
+    pageSize: [10, 20, 50, 100].includes(requestedPageSize) ? requestedPageSize : 10,
+  }
+}
+
 const quickSummary = (summary?: PurchaseOrderDashboardSummary, analytics?: PurchaseOrderAnalyticsResponse) => ({
   totalOrders: asNumber(summary?.total_orders as string | number | undefined) || analytics?.total_purchase_orders || 0,
   pendingApproval: asNumber(summary?.pending_approval as string | number | undefined) || analytics?.pending_orders || 0,
@@ -106,8 +138,86 @@ export default function PurchaseOrderSetupWorkspace() {
   const defaultCurrency = profile?.currency || "NGN"
   const [formState, setFormState] = useState<PurchaseOrderFormState>(() => buildInitialForm(defaultCurrency))
   const [selectedStructuralLocationIds, setSelectedStructuralLocationIds] = useStructuralLocationScope()
-  const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [searchQuery, setSearchQuery] = useState("")
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const listStateKey = "purchase_orders"
+  const urlListState = useMemo(() => parsePurchaseOrderListState(searchParams), [searchParams])
+  const [listState, setListState] = useState<PurchaseOrderListState>(urlListState)
+  const {
+    searchQuery,
+    statusFilter,
+    supplierFilter,
+    deliveryDateFrom,
+    deliveryDateTo,
+    ordering,
+    page,
+    pageSize,
+  } = listState
+
+  useEffect(() => {
+    setListState(urlListState)
+  }, [urlListState])
+
+  useEffect(() => {
+    const syncFromBrowserHistory = () => {
+      setListState(parsePurchaseOrderListState(new URLSearchParams(window.location.search)))
+    }
+    window.addEventListener("popstate", syncFromBrowserHistory)
+    return () => window.removeEventListener("popstate", syncFromBrowserHistory)
+  }, [])
+  const hasActiveListFilters = Boolean(
+    searchQuery ||
+      statusFilter !== "all" ||
+      supplierFilter !== "all" ||
+      deliveryDateFrom ||
+      deliveryDateTo ||
+      ordering !== "-created_at" ||
+      page > 1 ||
+      pageSize !== 10,
+  )
+
+  const updateListState = (updates: Record<string, string | null>, historyMode: "push" | "replace" = "push") => {
+    const currentQuery = typeof window === "undefined" ? searchParams.toString() : window.location.search
+    const nextParams = new URLSearchParams(currentQuery)
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value) {
+        nextParams.set(key, value)
+      } else {
+        nextParams.delete(key)
+      }
+    })
+    const query = nextParams.toString()
+    const href = query ? `${pathname}?${query}` : pathname
+    setListState(parsePurchaseOrderListState(nextParams))
+    if (typeof window !== "undefined" && `${window.location.pathname}${window.location.search}` !== href) {
+      if (historyMode === "replace") {
+        window.history.replaceState(window.history.state, "", href)
+      } else {
+        window.history.pushState(window.history.state, "", href)
+      }
+    }
+  }
+
+  const updateListFilter = (key: string, value: string | null) => {
+    updateListState({
+      [`${listStateKey}_${key}`]: value,
+      [`${listStateKey}_page`]: null,
+    }, key === "search" ? "replace" : "push")
+  }
+
+  const clearListFilters = () => {
+    updateListState({
+      [`${listStateKey}_search`]: null,
+      [`${listStateKey}_status`]: null,
+      [`${listStateKey}_supplier`]: null,
+      [`${listStateKey}_delivery_date_from`]: null,
+      [`${listStateKey}_delivery_date_to`]: null,
+      [`${listStateKey}_ordering`]: null,
+      [`${listStateKey}_page`]: null,
+      [`${listStateKey}_page_size`]: null,
+    })
+  }
+
   const deferredSearchQuery = useDeferredValue(searchQuery.trim())
   const structuralScopeParams = useMemo(
     () => buildStructuralLocationScopeParams(selectedStructuralLocationIds),
@@ -119,28 +229,34 @@ export default function PurchaseOrderSetupWorkspace() {
   const { data: summary } = useGetPurchaseOrderDashboardSummaryQuery(structuralScopeParams)
   const { data: analytics } = useGetPurchaseOrderAnalyticsQuery(structuralScopeParams)
   const {
-    data: purchaseOrders = [],
+    data: purchaseOrderPage,
     isLoading: loadingOrders,
     refetch: refetchOrders,
   } = useListPurchaseOrdersQuery(
-    structuralScopeParams
-      ? {
-          ...structuralScopeParams,
-          search: deferredSearchQuery || undefined,
-          status: statusFilter === "all" ? undefined : statusFilter,
-        }
-      : {
-          search: deferredSearchQuery || undefined,
-          status: statusFilter === "all" ? undefined : statusFilter,
-        },
+    {
+      ...structuralScopeParams,
+      search: deferredSearchQuery || undefined,
+      status: statusFilter === "all" ? undefined : statusFilter,
+      supplier: supplierFilter === "all" ? undefined : supplierFilter,
+      delivery_date_from: deliveryDateFrom || undefined,
+      delivery_date_to: deliveryDateTo || undefined,
+      ordering,
+      page,
+      page_size: pageSize,
+    },
   )
   const [createPurchaseOrder, { isLoading: creatingOrder }] = useCreatePurchaseOrderMutation()
 
   const quickMetrics = quickSummary(summary, analytics)
-  const issuedCount = analytics?.issued_orders ?? purchaseOrders.filter((order) => order.status === PurchaseOrderStatus.issued).length
-  const receivedCount = analytics?.received_orders ?? purchaseOrders.filter((order) => order.status === PurchaseOrderStatus.received).length
-  const completedCount =
-    analytics?.completed_orders ?? purchaseOrders.filter((order) => order.status === PurchaseOrderStatus.completed).length
+  const purchaseOrders = useMemo(() => purchaseOrderPage?.results ?? [], [purchaseOrderPage])
+  const totalPurchaseOrders = purchaseOrderPage?.count ?? purchaseOrders.length
+  const currentPage = purchaseOrderPage?.page ?? page
+  const totalPages = purchaseOrderPage?.total_pages ?? Math.max(1, Math.ceil(totalPurchaseOrders / pageSize))
+  const pageStart = totalPurchaseOrders === 0 ? 0 : (currentPage - 1) * pageSize + 1
+  const pageEnd = totalPurchaseOrders === 0 ? 0 : Math.min(currentPage * pageSize, totalPurchaseOrders)
+  const issuedCount = analytics?.issued_orders ?? 0
+  const receivedCount = analytics?.received_orders ?? 0
+  const completedCount = analytics?.completed_orders ?? 0
   const workflowReadyCount = (analytics?.approved_orders ?? 0) + issuedCount + receivedCount + completedCount
   const hasOrders = quickMetrics.totalOrders > 0
   const createStepReady = hasOrders
@@ -149,7 +265,6 @@ export default function PurchaseOrderSetupWorkspace() {
 
   const nextStepId = !createStepReady ? "create-orders" : !issueStepReady ? "active-orders" : !receiveStepReady ? "attention" : null
 
-  const recentOrders = useMemo(() => purchaseOrders.slice(0, 8), [purchaseOrders])
   const attentionStatuses = useMemo(() => new Set(Object.values(PurchaseOrderStatus)), [])
   const attentionOrders = useMemo(
     () => purchaseOrders.filter((order) => attentionStatuses.has(String(order.status) as (typeof PurchaseOrderStatus)[keyof typeof PurchaseOrderStatus])),
@@ -458,24 +573,24 @@ export default function PurchaseOrderSetupWorkspace() {
           helper="The detail workbench is where you will maintain the header, add line items, and run workflow actions."
           status={issueStepReady ? "complete" : "in_progress"}
           facts={[
-            { label: "Active orders", value: attentionOrders.length },
+            { label: "Active orders", value: analytics?.total_purchase_orders ?? totalPurchaseOrders },
             { label: "Approved or beyond", value: workflowReadyCount },
-            { label: "Search results", value: loadingOrders ? "..." : purchaseOrders.length },
+            { label: "Search results", value: loadingOrders ? "..." : totalPurchaseOrders },
           ]}
         >
-          <div className="grid gap-4 md:grid-cols-[1fr_220px]">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div className="space-y-2">
               <Label htmlFor="po-search">Search purchase orders</Label>
               <Input
                 id="po-search"
                 value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
+                onChange={(event) => updateListFilter("search", event.target.value.trim() || null)}
                 placeholder="Search by reference, description, or supplier"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="po-status">Filter by status</Label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={statusFilter} onValueChange={(value) => updateListFilter("status", value === "all" ? null : value)}>
                 <SelectTrigger id="po-status">
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
@@ -489,7 +604,55 @@ export default function PurchaseOrderSetupWorkspace() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="po-supplier">Supplier</Label>
+              <Select value={supplierFilter} onValueChange={(value) => updateListFilter("supplier", value === "all" ? null : value)}>
+                <SelectTrigger id="po-supplier">
+                  <SelectValue placeholder="All suppliers" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All suppliers</SelectItem>
+                  {suppliers.map((supplier) => (
+                    <SelectItem key={supplier.id} value={String(supplier.id)}>
+                      {supplier.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="po-ordering">Sort by</Label>
+              <Select value={ordering} onValueChange={(value) => updateListFilter("ordering", value === "-created_at" ? null : value)}>
+                <SelectTrigger id="po-ordering">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="-created_at">Newest created</SelectItem>
+                  <SelectItem value="created_at">Oldest created</SelectItem>
+                  <SelectItem value="delivery_date">Delivery date: earliest</SelectItem>
+                  <SelectItem value="-delivery_date">Delivery date: latest</SelectItem>
+                  <SelectItem value="reference">Reference: A–Z</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="po-delivery-date-from">Delivery date from</Label>
+              <Input id="po-delivery-date-from" type="date" value={deliveryDateFrom} onChange={(event) => updateListFilter("delivery_date_from", event.target.value || null)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="po-delivery-date-to">Delivery date to</Label>
+              <Input id="po-delivery-date-to" type="date" value={deliveryDateTo} onChange={(event) => updateListFilter("delivery_date_to", event.target.value || null)} />
+            </div>
+          </div>
+          {hasActiveListFilters ? (
+            <div className="mt-4 flex justify-end">
+              <Button type="button" variant="outline" onClick={clearListFilters}>
+                Clear filters
+              </Button>
+            </div>
+          ) : null}
 
           <div className="mt-6 overflow-hidden rounded-2xl border border-gray-200">
             <Table>
@@ -510,14 +673,14 @@ export default function PurchaseOrderSetupWorkspace() {
                       Loading purchase orders...
                     </TableCell>
                   </TableRow>
-                ) : recentOrders.length === 0 ? (
+                ) : purchaseOrders.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="py-10 text-center text-sm text-gray-500">
                       No purchase orders match the current filter.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  recentOrders.map((order) => (
+                  purchaseOrders.map((order) => (
                     <TableRow key={order.id}>
                       <TableCell className="font-medium text-gray-900">{order.reference || `Order ${order.id}`}</TableCell>
                       <TableCell>{order.supplier_name || order.supplier_details?.name || "Unassigned supplier"}</TableCell>
@@ -538,6 +701,43 @@ export default function PurchaseOrderSetupWorkspace() {
                 )}
               </TableBody>
             </Table>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+              <span>
+                Showing <span className="font-semibold text-gray-950">{pageStart}</span> to{" "}
+                <span className="font-semibold text-gray-950">{pageEnd}</span> of{" "}
+                <span className="font-semibold text-gray-950">{totalPurchaseOrders}</span> orders
+              </span>
+              <div className="flex items-center gap-2">
+                <span>Rows per page</span>
+                <Select
+                  value={String(pageSize)}
+                  onValueChange={(value) => {
+                    updateListState({
+                      [`${listStateKey}_page_size`]: value === "10" ? null : value,
+                      [`${listStateKey}_page`]: null,
+                    })
+                  }}
+                >
+                  <SelectTrigger className="h-9 w-24">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[10, 20, 50, 100].map((size) => (
+                      <SelectItem key={size} value={String(size)}>
+                        {size}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={(nextPage) => updateListState({ [`${listStateKey}_page`]: nextPage <= 1 ? null : String(nextPage) })}
+            />
           </div>
         </OperationalStepSection>
 

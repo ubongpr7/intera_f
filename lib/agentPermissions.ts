@@ -1,7 +1,7 @@
 import { getDecodedToken } from "./utils";
+import { store } from "@/redux/store";
 
 type DecodedToken = {
-  permissions?: string[];
   owner_id?: string | number | null;
   id?: string | number | null;
   sub?: string | number | null;
@@ -9,12 +9,7 @@ type DecodedToken = {
 };
 
 export const getTokenPermissions = (): Set<string> => {
-  const token = getDecodedToken() as DecodedToken | null;
-  const permissions = token?.permissions;
-  if (!Array.isArray(permissions)) {
-    return new Set();
-  }
-  return new Set(permissions);
+  return new Set(store.getState().permission.permissions);
 };
 
 const normalizeId = (value: string | number | null | undefined): string | null => {
@@ -42,7 +37,7 @@ export const isWorkspaceOwner = (): boolean => {
 };
 
 export const hasTokenPermission = (permission: string): boolean => {
-  if (isWorkspaceOwner()) {
+  if (store.getState().permission.isOwner) {
     return true;
   }
   return getTokenPermissions().has(permission);

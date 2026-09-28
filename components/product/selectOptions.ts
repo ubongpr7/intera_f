@@ -28,7 +28,6 @@ export const ProductFormKeys: (keyof Product)[] = [
 
 export const defaultValues: Partial<Product> = {
   base_price: 0,
-  cost_price: 0,
   tax_rate: 0,
   allow_discount: true,
   tax_inclusive: false,

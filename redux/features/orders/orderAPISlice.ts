@@ -3,31 +3,80 @@ import { buildQuery } from "../common/queryParams";
 import type { StructuralLocationScopeParams } from "@/lib/structuralLocationScope";
 import type {
   GoodsReceiptInterface,
+  GoodsReceiptListResponse,
   GoodsReceiptListParams,
+  GoodsReceiptSummaryResponse,
   OrderListParams,
+  PaginatedResponse,
   PurchaseOrderAnalyticsResponse,
   PurchaseOrderDashboardSummary,
   PurchaseOrderInterface,
+  PurchaseOrderListResponse,
   PurchaseOrderLineItem,
   PurchaseOrderReceiveItemsPayload,
   PurchaseOrderReturnPayload,
   PurchaseOrderWorkflowPayload,
   ReturnOrderInterface,
+  ReturnOrderListResponse,
   ReturnOrderProcessPayload,
   SalesOrderInterface,
+  SalesOrderListResponse,
   SalesOrderLineItem,
+  SalesOrderSummaryResponse,
   SalesOrderReleasePayload,
   SalesOrderReservePayload,
   SalesOrderShipPayload,
   SalesOrderShipmentInterface,
+  SalesOrderShipmentListResponse,
   SalesOrderShipmentListParams,
+  SalesOrderShipmentSummaryResponse,
 } from "./orderTypes";
 
 const orderApi = "order_api";
 const service = "inventory";
 
 type EntityId = string | number;
-type OrderScopeParams = StructuralLocationScopeParams & Pick<OrderListParams, "stock_location">
+type OrderScopeParams = StructuralLocationScopeParams & Partial<OrderListParams>
+
+const toPaginatedResponse = (response: PurchaseOrderInterface[] | PurchaseOrderListResponse): PurchaseOrderListResponse => {
+  if (Array.isArray(response)) {
+    return {
+      count: response.length,
+      next: null,
+      previous: null,
+      page: 1,
+      page_size: response.length || 0,
+      total_pages: 1,
+      results: response,
+    }
+  }
+
+  return response
+}
+
+const toGenericPaginatedResponse = <T>(response: T[] | Partial<PaginatedResponse<T>>): PaginatedResponse<T> => {
+  if (Array.isArray(response)) {
+    return {
+      count: response.length,
+      next: null,
+      previous: null,
+      page: 1,
+      page_size: response.length || 0,
+      total_pages: 1,
+      results: response,
+    }
+  }
+
+  return {
+    count: response.count ?? response.results?.length ?? 0,
+    next: response.next ?? null,
+    previous: response.previous ?? null,
+    page: response.page ?? 1,
+    page_size: response.page_size ?? response.results?.length ?? 0,
+    total_pages: response.total_pages ?? 1,
+    results: response.results ?? [],
+  }
+}
 
 export const orderApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -38,6 +87,22 @@ export const orderApiSlice = apiSlice.injectEndpoints({
       }),
       transformResponse: (response: GoodsReceiptInterface[] | { results?: GoodsReceiptInterface[] }) =>
         unwrapListResponse<GoodsReceiptInterface>(response),
+    }),
+
+    listGoodsReceiptsPage: builder.query<GoodsReceiptListResponse, GoodsReceiptListParams>({
+      query: (params) => ({
+        url: buildQuery(`/${orderApi}/goods-receipts/`, params),
+        service,
+      }),
+      transformResponse: (response: GoodsReceiptInterface[] | GoodsReceiptListResponse) =>
+        toGenericPaginatedResponse<GoodsReceiptInterface>(response),
+    }),
+
+    getGoodsReceiptSummary: builder.query<GoodsReceiptSummaryResponse, GoodsReceiptListParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${orderApi}/goods-receipts/summary/`, params),
+        service,
+      }),
     }),
 
     getGoodsReceipt: builder.query<GoodsReceiptInterface, EntityId>({
@@ -56,7 +121,23 @@ export const orderApiSlice = apiSlice.injectEndpoints({
         unwrapListResponse<SalesOrderShipmentInterface>(response),
     }),
 
-    listPurchaseOrders: builder.query<PurchaseOrderInterface[], OrderListParams | string | void>({
+    listSalesOrderShipmentsPage: builder.query<SalesOrderShipmentListResponse, SalesOrderShipmentListParams>({
+      query: (params) => ({
+        url: buildQuery(`/${orderApi}/sales-order-shipments/`, params),
+        service,
+      }),
+      transformResponse: (response: SalesOrderShipmentInterface[] | SalesOrderShipmentListResponse) =>
+        toGenericPaginatedResponse<SalesOrderShipmentInterface>(response),
+    }),
+
+    getSalesOrderShipmentSummary: builder.query<SalesOrderShipmentSummaryResponse, SalesOrderShipmentListParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${orderApi}/sales-order-shipments/summary/`, params),
+        service,
+      }),
+    }),
+
+    listPurchaseOrders: builder.query<PurchaseOrderListResponse, OrderListParams | string | void>({
       query: (params) => ({
         url:
           typeof params === "string"
@@ -64,8 +145,8 @@ export const orderApiSlice = apiSlice.injectEndpoints({
             : buildQuery(`/${orderApi}/purchase-orders/`, params),
         service,
       }),
-      transformResponse: (response: PurchaseOrderInterface[] | { results?: PurchaseOrderInterface[] }) =>
-        unwrapListResponse<PurchaseOrderInterface>(response),
+      transformResponse: (response: PurchaseOrderInterface[] | PurchaseOrderListResponse) =>
+        toPaginatedResponse(response as PurchaseOrderInterface[] | PurchaseOrderListResponse),
     }),
 
     createPurchaseOrder: builder.mutation<PurchaseOrderInterface, Partial<PurchaseOrderInterface>>({
@@ -253,6 +334,25 @@ export const orderApiSlice = apiSlice.injectEndpoints({
         unwrapListResponse<SalesOrderInterface>(response),
     }),
 
+    listSalesOrdersPage: builder.query<SalesOrderListResponse, OrderListParams | string>({
+      query: (params) => ({
+        url:
+          typeof params === "string"
+            ? buildQuery(`/${orderApi}/sales-orders/`, { search: params })
+            : buildQuery(`/${orderApi}/sales-orders/`, params),
+        service,
+      }),
+      transformResponse: (response: SalesOrderInterface[] | SalesOrderListResponse) =>
+        toGenericPaginatedResponse<SalesOrderInterface>(response),
+    }),
+
+    getSalesOrderSummary: builder.query<SalesOrderSummaryResponse, OrderListParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${orderApi}/sales-orders/summary/`, params),
+        service,
+      }),
+    }),
+
     createSalesOrder: builder.mutation<SalesOrderInterface, Partial<SalesOrderInterface>>({
       query: (data) => ({
         url: `/${orderApi}/sales-orders/`,
@@ -381,6 +481,18 @@ export const orderApiSlice = apiSlice.injectEndpoints({
         unwrapListResponse<ReturnOrderInterface>(response),
     }),
 
+    listReturnOrdersPage: builder.query<ReturnOrderListResponse, OrderListParams | string>({
+      query: (params) => ({
+        url:
+          typeof params === "string"
+            ? buildQuery(`/${orderApi}/return-orders/`, { search: params })
+            : buildQuery(`/${orderApi}/return-orders/`, params),
+        service,
+      }),
+      transformResponse: (response: ReturnOrderInterface[] | ReturnOrderListResponse) =>
+        toGenericPaginatedResponse<ReturnOrderInterface>(response),
+    }),
+
     getReturnOrder: builder.query<ReturnOrderInterface, EntityId>({
       query: (id) => ({
         url: `/${orderApi}/return-orders/${id}/`,
@@ -424,8 +536,12 @@ export const purchaseOderManagementApiSlice = orderApiSlice;
 
 export const {
   useListGoodsReceiptsQuery,
+  useListGoodsReceiptsPageQuery,
+  useGetGoodsReceiptSummaryQuery,
   useGetGoodsReceiptQuery,
   useListSalesOrderShipmentsQuery,
+  useListSalesOrderShipmentsPageQuery,
+  useGetSalesOrderShipmentSummaryQuery,
   useListPurchaseOrdersQuery,
   useCreatePurchaseOrderMutation,
   useGetPurchaseOrderQuery,
@@ -448,6 +564,8 @@ export const {
   useBulkDownloadPurchaseOrderPdfMutation,
   useResendPurchaseOrderEmailMutation,
   useListSalesOrdersQuery,
+  useListSalesOrdersPageQuery,
+  useGetSalesOrderSummaryQuery,
   useCreateSalesOrderMutation,
   useGetSalesOrderQuery,
   useUpdateSalesOrderMutation,
@@ -462,6 +580,7 @@ export const {
   useCompleteSalesOrderMutation,
   useCancelSalesOrderMutation,
   useListReturnOrdersQuery,
+  useListReturnOrdersPageQuery,
   useGetReturnOrderQuery,
   useDispatchReturnOrderMutation,
   useCompleteReturnOrderMutation,

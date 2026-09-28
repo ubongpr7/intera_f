@@ -20,6 +20,40 @@ export interface UserData {
   date_joined?: Date | string;
   last_login?: Date | string | null;
   roles?: RoleAssignment[];
+  referral_code?: string;
+}
+
+export interface ReferralUser {
+  id: number | string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  joined_at?: string | null;
+}
+
+export interface ReferralPayout {
+  id: number | string;
+  payment_reference: string;
+  payment_amount: string;
+  commission_amount: string;
+  currency: string;
+  status: string;
+  plan_slug?: string;
+  created_at?: string;
+}
+
+export interface ReferralDashboard {
+  referral_code: string;
+  referral_url: string;
+  commission_rate: string | number;
+  referred_count: number;
+  referred_users: ReferralUser[];
+  earnings: {
+    total: string;
+    pending: string;
+    paid: string;
+  };
+  payouts: ReferralPayout[];
 }
 
 export interface UserSummary {

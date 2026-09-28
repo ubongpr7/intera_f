@@ -177,10 +177,10 @@ export default function RealtimeDashboardPage() {
                 <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Live POS state</div>
                 <div className="mt-2 text-lg font-semibold text-gray-900">{currentSession ? "Active cashier session" : "No active cashier session"}</div>
                 <p className="mt-2 text-sm text-gray-600">
-                  {currentSession ? `Started ${formatDateTime(currentSession.opening_time)}` : "Open the POS floor when selling begins."}
+                  {currentSession ? `Started ${formatDateTime(currentSession.opening_time)}` : "No active cashier session in the dedicated POS application."}
                 </p>
                 <Button asChild className="mt-4 w-full">
-                  <Link href="/pos">Open POS floor</Link>
+                  <Link href="/pos/settings">Open POS settings</Link>
                 </Button>
               </div>
             </div>

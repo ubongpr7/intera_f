@@ -1,11 +1,12 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import Image from 'next/image';
 import { useRouter } from 'nextjs-toploader/app';
-import { ActionButton, Column, DataTable } from "../common/DataTable/DataTable";
+import { usePathname, useSearchParams } from 'next/navigation';
+import { ActionButton, Column, DataTable, type DataTableQueryState } from "../common/DataTable/DataTable";
 import { InventoryData, inventoryTypes } from "@/redux/features/inventory/inventoryTypes";
-import { useGetInventoryDataQuery, useCreateInventoryMutation, useDeleteInventoryMutation } from "../../redux/features/inventory/inventoryAPiSlice";
+import { useListInventoryPageQuery, useCreateInventoryMutation, useDeleteInventoryMutation, useGetAvailableCatalogVariantsQuery } from "../../redux/features/inventory/inventoryAPiSlice";
 import CustomCreateCard from '../common/createCard';
 import { InventoryInterfaceKeys,defaultValues } from './selectOptions';
 import { InventoryKeyInfo } from './selectOptions';
@@ -21,6 +22,7 @@ import StructuralLocationScopeSelect from '@/components/stock/StructuralLocation
 import { useGetSupplersQuery } from '@/redux/features/company/companyAPISlice';
 import { extractErrorMessage } from '@/lib/utils';
 import { confirmAction } from '../common/confirmAction';
+import { Pagination } from '@/components/ui/pagination';
 
 const renderInventoryThumbnail = (imageUrl: string | null | undefined, name: string) => (
   <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-white">
@@ -115,12 +117,85 @@ function InventoryView({
   const [internalSelectedLocationIds, setInternalSelectedLocationIds] = useStructuralLocationScope();
   const isLocationScopeControlled = controlledSelectedLocationIds !== undefined || onSelectedLocationIdsChange !== undefined;
   const selectedLocationIds = controlledSelectedLocationIds ?? internalSelectedLocationIds;
-  const handleSelectedLocationIdsChange = onSelectedLocationIdsChange ?? setInternalSelectedLocationIds;
   const inventoryQuery = useMemo(
     () => buildStructuralLocationScopeParams(selectedLocationIds),
     [selectedLocationIds],
   );
-  const { data, isLoading, refetch, error } = useGetInventoryDataQuery(inventoryQuery);
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+  const tableStateKey = "table_inventory_items"
+  const [tableQueryState, setTableQueryState] = useState<DataTableQueryState | null>(null)
+  const lastTableQuerySignature = useRef<string | null>(null)
+  const search = tableQueryState?.searchTerm ?? searchParams.get(`${tableStateKey}_search`) ?? ""
+  const inventoryType = tableQueryState?.filters.inventory_type ?? searchParams.get(`${tableStateKey}_filter_inventory_type`) ?? undefined
+  const status = tableQueryState?.filters.status ?? searchParams.get(`${tableStateKey}_filter_status`) ?? undefined
+  const stockStatus = tableQueryState?.filters.stock_status ?? searchParams.get(`${tableStateKey}_filter_stock_status`) ?? undefined
+  const sortField = tableQueryState?.sortConfig?.key ?? searchParams.get(`${tableStateKey}_sort`)
+  const sortDirection = tableQueryState?.sortConfig?.direction ?? searchParams.get(`${tableStateKey}_direction`)
+  const orderingFieldMap: Record<string, string> = {
+    name: "name_snapshot",
+    minimum_stock_level: "minimum_stock_level",
+    reorder_point: "reorder_point",
+  }
+  const ordering = sortField && orderingFieldMap[sortField]
+    ? `${sortDirection === "descending" ? "-" : ""}${orderingFieldMap[sortField]}`
+    : undefined
+  const requestedPage = Number(searchParams.get(`${tableStateKey}_page`)) || 1
+  const [currentPage, setCurrentPage] = useState(requestedPage)
+
+  useEffect(() => {
+    setCurrentPage(requestedPage)
+  }, [requestedPage])
+
+  useEffect(() => {
+    const syncPageFromBrowserHistory = () => {
+      const nextPage = Number(new URLSearchParams(window.location.search).get(`${tableStateKey}_page`)) || 1
+      setCurrentPage(nextPage)
+    }
+
+    window.addEventListener("popstate", syncPageFromBrowserHistory)
+    return () => window.removeEventListener("popstate", syncPageFromBrowserHistory)
+  }, [tableStateKey])
+
+  const handleTableQueryStateChange = (nextQueryState: DataTableQueryState) => {
+    const nextSignature = JSON.stringify(nextQueryState)
+    if (lastTableQuerySignature.current !== null && lastTableQuerySignature.current !== nextSignature) {
+      setCurrentPage(1)
+    }
+    lastTableQuerySignature.current = nextSignature
+    setTableQueryState(nextQueryState)
+  }
+
+  const updateUrl = (params: URLSearchParams) => {
+    const query = params.toString()
+    const href = query ? `${pathname}?${query}` : pathname
+
+    if (typeof window !== "undefined" && `${window.location.pathname}${window.location.search}` !== href) {
+      window.history.pushState(window.history.state, "", href)
+    }
+  }
+  const handleSelectedLocationIdsChange = (value: string[]) => {
+    (onSelectedLocationIdsChange ?? setInternalSelectedLocationIds)(value)
+    setCurrentPage(1)
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete(`${tableStateKey}_page`)
+    updateUrl(params)
+  }
+  const pageSize = 20
+  const { data: inventoryPage, isLoading, refetch, error } = useListInventoryPageQuery({
+    ...inventoryQuery,
+    search: search.trim() || undefined,
+    inventory_type: inventoryType,
+    status,
+    stock_status: stockStatus as "low_stock" | "out_of_stock" | "needs_reorder" | undefined,
+    ordering,
+    page: currentPage,
+    page_size: pageSize,
+  });
+  const data = inventoryPage?.results ?? []
+  const totalPages = inventoryPage?.total_pages ?? 1
+  const { data: availableCatalogVariants = [] } = useGetAvailableCatalogVariantsQuery()
+
     const [createInventory, { isLoading: inventoryCreateLoading }] = useCreateInventoryMutation();
     const [deleteInventory] = useDeleteInventoryMutation();
     const [isCreateOpen, setIsCreateOpen] = useState(false); // Renamed for clarity
@@ -158,6 +233,10 @@ function InventoryView({
         value: String(supplier.id),
         text: supplier.name,
       }));
+      const variantOptions = availableCatalogVariants.map((variant) => ({
+        value: variant.id,
+        text: `${variant.product_name} - ${variant.display_name}${variant.sku ? ` (${variant.sku})` : ""}`,
+      }));
     
 
     const  selectOptions = {
@@ -166,6 +245,7 @@ function InventoryView({
             default_supplier:supplierOptions,
             default_uom_code:unitOptions,
             stock_uom_code:unitOptions,
+            product_variant_id: variantOptions,
             status: [
               { value: 'draft', text: 'Draft' },
               { value: 'active', text: 'Active' },
@@ -198,14 +278,6 @@ function InventoryView({
       toast.error(extractErrorMessage(error, ["detail"]) || "Failed to delete inventory item.");
     }
   };
-
-  if (error) {
-    return (
-      <div className="p-4 text-red-500">
-        Unable to load inventory items: {extractErrorMessage(error, ["detail", "error"])}
-      </div>
-    );
-  }
 
   const notEditableFields: (keyof InventoryData)[] = [
     'id',
@@ -253,27 +325,59 @@ function InventoryView({
       
       <DataTable<InventoryData>
         columns={inventoryColumns}
-        data={data || []}
+        data={data}
         isLoading={isLoading}
+        error={error}
+        errorMessage="Unable to load inventory items."
+        onRetry={refetch}
         onRowClick={handleRowClick}
         actionButtons={actionButtons}
-        searchableFields={['name', 'sku_snapshot', 'barcode_snapshot', 'location_name', 'default_supplier_name']}
+        serverSide
+        urlStateKey="inventory_items"
+        onQueryStateChange={handleTableQueryStateChange}
+        startNumberFrom={(currentPage - 1) * pageSize + 1}
+        searchableFields={['name']}
         filterableFields={[
           'inventory_type',
-          'stock_status',
           'status',
-          'location_name',
-          'default_supplier_name',
-          'track_stock',
-          'track_lot',
-          'track_serial',
-          'track_expiry',
+          'stock_status',
         ]}
-        sortableFields={['name', 'sku_snapshot', 'inventory_type', 'current_stock_level', 'quantity_available', 'total_stock_value']}
-        rangeFilterFields={['current_stock_level', 'quantity_available', 'quantity_reserved', 'total_stock_value', 'minimum_stock_level', 'reorder_point']}
+        filterOptions={{
+          inventory_type: typeOptions.map(({ value, text }) => ({ value, label: text })),
+          status: [
+            { value: 'draft', label: 'Draft' },
+            { value: 'active', label: 'Active' },
+            { value: 'archived', label: 'Archived' },
+            { value: 'discontinued', label: 'Discontinued' },
+          ],
+          stock_status: [
+            { value: 'low_stock', label: 'Low stock' },
+            { value: 'out_of_stock', label: 'Out of stock' },
+            { value: 'needs_reorder', label: 'Needs reorder' },
+          ],
+        }}
+        sortableFields={['name', 'minimum_stock_level', 'reorder_point']}
+        rangeFilterFields={[]}
          title="Inventory Items"
         onClose={() =>setIsCreateOpen(true)} 
       />
+      <div className="mt-4 flex flex-wrap items-center justify-end gap-3">
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={(nextPage) => {
+            const boundedPage = Math.max(1, Math.min(nextPage, totalPages))
+            setCurrentPage(boundedPage)
+            const params = new URLSearchParams(searchParams.toString())
+            if (boundedPage <= 1) {
+              params.delete(`${tableStateKey}_page`)
+            } else {
+              params.set(`${tableStateKey}_page`, String(boundedPage))
+            }
+            updateUrl(params)
+          }}
+        />
+      </div>
 
       {isCreateOpen ? (
         <CustomCreateCard
@@ -287,7 +391,12 @@ function InventoryView({
           keyInfo={InventoryKeyInfo}
           notEditableFields={notEditableFields}
           interfaceKeys={InventoryInterfaceKeys}
-          optionalFields={['description','default_supplier','stock_uom_code']}
+          optionalFields={['product_variant_id','name_snapshot','description','default_supplier','stock_uom_code']}
+          onFieldValueChange={(fieldName, value, setFieldValue) => {
+            if (fieldName !== 'product_variant_id') return
+            const variant = availableCatalogVariants.find((item) => item.id === value)
+            setFieldValue('name_snapshot', variant?.display_name ?? '')
+          }}
           itemTitle={'Create Inventory Item'}
         />
       ) : null}

@@ -46,6 +46,7 @@ interface CustomCreateCardProps<T> {
   datetimeFields?: (keyof T)[];
   hiddenFields?: Partial<Record<keyof T, any>>;
   readOnlyFields?: (keyof T)[]; 
+  onFieldValueChange?: (fieldName: keyof T, value: unknown, setFieldValue: (field: Path<Partial<T>>, value: unknown) => void) => void;
   itemTitle?: string;
 }
 
@@ -63,6 +64,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
   datetimeFields = [],
   hiddenFields = {},
   readOnlyFields = [],
+  onFieldValueChange,
   itemTitle = "Item",
 }: CustomCreateCardProps<T>) {
   const getSingleSelectOption = (option: SelectOption | readonly SelectOption[] | null): SelectOption | null => {
@@ -175,6 +177,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
     str = str
       .replace("default_uom_code", "default UOM")
       .replace("stock_uom_code", "stock UOM")
+      .replace("product_variant_id", "product variant")
       .replace("inventory_item", "inventory item");
     if (str.toLocaleLowerCase().includes('weight')){
       str = str+ ' (kg)'
@@ -421,11 +424,13 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                         name={key as Path<Partial<T>>}
                         control={control}
                         rules={{
-                          required: isOptional ? false : "This field is required",
+                          // `false` and `0` are valid form values; React Hook Form's
+                          // required rule would otherwise reject unchecked toggles.
+                          required: isOptional || inputType === "checkbox" ? false : "This field is required",
                           validate: (value) => {
                             if (percentageFieldsDict[keyStr as keyof typeof percentageFieldsDict]) {
-                              if (Number(value) < 1 || Number(value) > 100) {
-                                return `${percentageFieldsDict[keyStr as keyof typeof percentageFieldsDict]} must be between 1% and 100%`;
+                              if (Number(value) < 0 || Number(value) > 100) {
+                                return `${percentageFieldsDict[keyStr as keyof typeof percentageFieldsDict]} must be between 0% and 100%`;
                               }
                             }
 
@@ -468,7 +473,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                               <div className="relative">
                                 <Input
                                   type="number"
-                                  min={1}
+                                  min={0}
                                   max={100}
                                   step={0.1}
                                   value={field.value?.toString() ?? ""}
@@ -505,11 +510,13 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                                 value={options.find((option) => option.value === field.value?.toString()) || null}
                                 onChange={(option) => {
                                   const nextOption = getSingleSelectOption(option);
-                                  if (nextOption) {
-                                    field.onChange(nextOption.value);
-                                  } else {
-                                    field.onChange("");
-                                  }
+                                  const nextValue = nextOption?.value ?? "";
+                                  field.onChange(nextValue);
+                                  onFieldValueChange?.(
+                                    key,
+                                    nextValue,
+                                    (fieldName, fieldValue) => setValue(fieldName, fieldValue as never),
+                                  );
                                 }}
                                 onBlur={field.onBlur}
                                 isDisabled={isDisabled}

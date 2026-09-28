@@ -21,7 +21,8 @@ export type AuthCookieKey =
   | "mfaSetupRequired"
   | "mfaNextPath"
   | "isStaff"
-  | "isSuperuser";
+  | "isSuperuser"
+  | "authorizationContext";
 
 const rawPrefix = (process.env.NEXT_PUBLIC_AUTH_COOKIE_PREFIX || "interaims").trim();
 const normalizedPrefix = rawPrefix.endsWith("_") ? rawPrefix : `${rawPrefix}_`;
@@ -53,6 +54,7 @@ export const AUTH_COOKIE_NAMES: Record<AuthCookieKey, string> = {
   mfaNextPath: withPrefix("mfaNextPath"),
   isStaff: withPrefix("isStaff"),
   isSuperuser: withPrefix("isSuperuser"),
+  authorizationContext: withPrefix("authorizationContext"),
 };
 
 const LEGACY_COOKIE_NAMES: Record<AuthCookieKey, string> = {
@@ -79,6 +81,7 @@ const LEGACY_COOKIE_NAMES: Record<AuthCookieKey, string> = {
   mfaNextPath: "mfaNextPath",
   isStaff: "isStaff",
   isSuperuser: "isSuperuser",
+  authorizationContext: "authorizationContext",
 };
 
 export const AUTH_COOKIE_KEYS: AuthCookieKey[] = Object.keys(AUTH_COOKIE_NAMES) as AuthCookieKey[];

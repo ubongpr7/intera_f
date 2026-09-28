@@ -15,6 +15,10 @@ import {
   Download,
   RotateCcw,
   AudioLines,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
   AlertTriangle,
   BadgeCheck,
   CalendarDays,
@@ -96,6 +100,7 @@ import {
   detectInsightResponse,
   detectInteractionRequest,
   detectInteractionResponseSummary,
+  isTransportDebugText,
   type AgentWorkflowSummary,
 } from "@/lib/agent-structured-output"
 import { useState, useRef, useEffect, useMemo } from "react"
@@ -274,6 +279,32 @@ const humanizeTechnicalMessage = (content: string) => {
     return ""
   }
 
+  if (
+    /(?:agent|specialist)\s+(?:has )?accepted (?:the )?(?:delegated )?task\.?$/i.test(trimmed)
+    || /(?:agent|specialist)\s+is (?:working on it now|processing (?:the )?delegated task)\.?$/i.test(trimmed)
+    || /^(?:working|processing|submitted|accepted|pending)\.?$/i.test(trimmed)
+  ) {
+    return ""
+  }
+
+  const withoutInternalHeading = trimmed
+    .split("\n")
+    .filter((line) => !/^\s*(?:data|text|raw|structured)\s+parts?\s*:?[\s]*$/i.test(line))
+    .join("\n")
+    .trim()
+    .replace(
+    /^(?:the\s+)?(?:[a-z][a-z0-9_-]*\s+){1,4}agent\s*:\s*/i,
+    "",
+    )
+  const delegationMatch = withoutInternalHeading.match(
+    /^delegating this request to (?:the )?(.+?)(?:\s+specialist(?:\s+agent)?)?\.?$/i,
+  )
+  if (delegationMatch) {
+    const rawLabel = delegationMatch[1].replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim().toLowerCase()
+    const specialistLabel = rawLabel.includes("product catalog") ? "product catalog" : rawLabel || "right"
+    return `I'm handing this to the ${specialistLabel} specialist.`
+  }
+
   if (/Timed out waiting for delegated response from ['"]?[^'"]+['"]? after [\d.]+s\./i.test(trimmed)) {
     return "A specialist did not respond in time. Retry, simplify the request, or continue with a more specific instruction."
   }
@@ -282,7 +313,15 @@ const humanizeTechnicalMessage = (content: string) => {
     return "No specialist agents are currently available for this request."
   }
 
-  return content
+  return withoutInternalHeading
+}
+
+const assistantMessageSignature = (message?: ChatMessage | null) => {
+  if (!message) {
+    return ""
+  }
+  const payload = message.structuredPayload
+  return `${message.content?.trim() || ""}::${payload ? JSON.stringify(payload) : ""}`
 }
 
 const workflowToneStyles: Record<
@@ -630,10 +669,12 @@ export default function AgentChat({
     active: boolean
     lastStatusText: string
     lastAssistantMessageId: string
+    lastAssistantMessageSignature: string
   }>({
     active: false,
     lastStatusText: "",
     lastAssistantMessageId: "",
+    lastAssistantMessageSignature: "",
   })
 
   useEffect(() => {
@@ -655,6 +696,7 @@ export default function AgentChat({
         active: false,
         lastStatusText: "",
         lastAssistantMessageId: "",
+        lastAssistantMessageSignature: "",
       }
       return
     }
@@ -667,11 +709,17 @@ export default function AgentChat({
     const normalizedStatus = humanizeTechnicalMessage(statusText?.trim() || "")
     if (normalizedStatus && normalizedStatus !== bridge.lastStatusText) {
       voiceChat.appendLocalConversationEntry("assistant", normalizedStatus)
+      void voiceChat.speakChatUpdate(normalizedStatus)
       bridge.lastStatusText = normalizedStatus
     }
 
     const latestAssistantMessage = [...messages].reverse().find((message) => message.role === "assistant")
-    if (latestAssistantMessage && latestAssistantMessage.id !== bridge.lastAssistantMessageId) {
+    const latestAssistantMessageSignature = assistantMessageSignature(latestAssistantMessage)
+    if (
+      latestAssistantMessage
+      && (latestAssistantMessage.id !== bridge.lastAssistantMessageId
+      || latestAssistantMessageSignature !== bridge.lastAssistantMessageSignature)
+    ) {
       const interactionData = detectInteractionRequest(
         latestAssistantMessage.content,
         latestAssistantMessage.structuredPayload,
@@ -684,20 +732,24 @@ export default function AgentChat({
           || interactionData.type.replace(/_/g, " ")
         if (prompt) {
           voiceChat.appendLocalConversationEntry("assistant", prompt)
+          void voiceChat.speakChatUpdate(prompt)
         }
       } else {
         const summarized = humanizeTechnicalMessage(latestAssistantMessage.content)
         if (summarized) {
           voiceChat.appendLocalConversationEntry("assistant", summarized)
+          void voiceChat.speakChatUpdate(summarized)
         }
       }
       bridge.lastAssistantMessageId = latestAssistantMessage.id
+      bridge.lastAssistantMessageSignature = latestAssistantMessageSignature
     }
 
     if (!isBusy && pendingCount === 0 && !awaitingInput) {
       bridge.active = false
       bridge.lastStatusText = ""
       bridge.lastAssistantMessageId = latestAssistantMessage?.id || bridge.lastAssistantMessageId
+      bridge.lastAssistantMessageSignature = latestAssistantMessageSignature || bridge.lastAssistantMessageSignature
     }
   }, [awaitingInput, isBusy, isCallModeActive, messages, pendingCount, statusText, voiceChat])
 
@@ -707,10 +759,14 @@ export default function AgentChat({
   }
 
   const activateVoiceWidgetBridge = () => {
+    const latestAssistantMessage = [...messages].reverse().find((message) => message.role === "assistant")
+    const latestAssistantMessageId = latestAssistantMessage?.id || ""
+    const latestAssistantMessageSignature = assistantMessageSignature(latestAssistantMessage)
     widgetBridgeRef.current = {
       active: true,
       lastStatusText: "",
-      lastAssistantMessageId: "",
+      lastAssistantMessageId: latestAssistantMessageId,
+      lastAssistantMessageSignature: latestAssistantMessageSignature,
     }
   }
 
@@ -812,6 +868,70 @@ export default function AgentChat({
   const resolveInsightPayload = (message: ChatMessage) =>
     detectInsightResponse(message.content, message.structuredPayload)?.data as ExportStructuredPayload | undefined
 
+  const resolveCompositeInsightPayload = (message: ChatMessage) => {
+    const ownPayload = resolveInsightPayload(message)
+    if (!ownPayload || !message.taskId) {
+      return ownPayload
+    }
+
+    const related = messages.filter(
+      (candidate) =>
+        candidate.role === "assistant" &&
+        candidate.taskId === message.taskId &&
+        Boolean(detectInsightResponse(candidate.content, candidate.structuredPayload)),
+    )
+    const specialistMessages = related.filter((candidate) => candidate.messageKind === "specialist")
+    if (!specialistMessages.length) {
+      return ownPayload
+    }
+
+    const summaryMessage = related.find((candidate) => candidate.messageKind === "summary") || message
+    const summaryPayload = resolveInsightPayload(summaryMessage) || ownPayload
+    const summarySectionStack = Array.isArray(summaryPayload.widgets)
+      ? summaryPayload.widgets.find((widget) => asString(asRecord(widget)?.type) === "section_stack")
+      : undefined
+    const expectedSectionCount = summarySectionStack && Array.isArray(asRecord(summarySectionStack)?.sections)
+      ? (asRecord(summarySectionStack)?.sections as unknown[]).length
+      : 0
+    // If only some specialist payloads streamed, keep the host's complete
+    // section stack instead of exporting or rendering a partial report.
+    if (expectedSectionCount > specialistMessages.length) {
+      return ownPayload
+    }
+    const summaryWidgets = Array.isArray(summaryPayload.widgets)
+      ? summaryPayload.widgets.filter((widget) => asString(asRecord(widget)?.type) !== "section_stack")
+      : []
+    const domainSections = specialistMessages.flatMap((candidate, index) => {
+      const payload = resolveInsightPayload(candidate)
+      if (!payload) {
+        return []
+      }
+      const widgets = Array.isArray(payload.widgets) ? payload.widgets.filter((widget) => asRecord(widget)) : []
+      return [
+        {
+          id: `${candidate.sourceAgent || "specialist"}-${index}`,
+          title: asString(payload.title) || humanizeAgentDisplayName(candidate.sourceAgent || "specialist"),
+          summary: asString(payload.summary) || asString(payload.explanation),
+          widgets,
+          raw_text: candidate.content,
+        },
+      ]
+    })
+
+    return {
+      ...summaryPayload,
+      widgets: [
+        ...summaryWidgets,
+        {
+          type: "section_stack",
+          title: "Specialist findings",
+          subtitle: "Each completed domain is shown separately, followed by the overall summary.",
+          sections: domainSections,
+        },
+      ],
+    }
+  }
+
   const openInsightExportChooser = (payload?: ExportStructuredPayload) => {
     if (!payload) {
       toast.error("This response does not include structured insight data.")
@@ -866,7 +986,7 @@ export default function AgentChat({
   }
 
   const handleExportInsightCsv = (message: ChatMessage) => {
-    handleExportInsightCsvPayload(resolveInsightPayload(message))
+    handleExportInsightCsvPayload(resolveCompositeInsightPayload(message))
   }
 
   const handleExportInsightJsonPayload = (payload?: ExportStructuredPayload) => {
@@ -936,7 +1056,7 @@ export default function AgentChat({
   }
 
   const handleExportInsightPdf = async (message: ChatMessage) => {
-    await handleExportInsightPdfPayload(resolveInsightPayload(message))
+    await handleExportInsightPdfPayload(resolveCompositeInsightPayload(message))
   }
 
   const handleExportChatPdf = async () => {
@@ -1262,6 +1382,14 @@ export default function AgentChat({
     onActivity?.()
   }
 
+  const handleStartNewChat = async () => {
+    if (isCallModeActive || voiceChat.isConnected || voiceChat.isConnecting) {
+      await stopCallMode()
+    }
+    onClearConversation?.()
+    onActivity?.()
+  }
+
   const voicePanel = isCallModeActive ? (
     <aside className="sticky top-0 flex h-full min-h-0 max-h-full min-w-[280px] max-w-md shrink-0 self-start flex-col overflow-hidden rounded-2xl border border-blue-200 bg-blue-50 shadow-sm">
       <div className="flex items-start justify-between gap-3 border-b border-blue-200 px-4 py-4">
@@ -1288,18 +1416,54 @@ export default function AgentChat({
                     : "Speak naturally. Incomplete requests stay here until the missing detail is clarified."}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            void toggleCallMode()
-          }}
-          disabled={isCallTransitioning}
-          className="rounded-full border border-gray-200 bg-white p-2 text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
-          aria-label="End voice call"
-          title="End voice call"
-        >
-          <PhoneOff className="h-5 w-5" strokeWidth={2.2} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              void voiceChat.toggleMicMuted()
+            }}
+            className={`rounded-full border p-2 transition ${
+              voiceChat.isMicMuted
+                ? "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                : "border-gray-200 bg-white text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+            }`}
+            aria-label={voiceChat.isMicMuted ? "Unmute microphone" : "Mute microphone"}
+            aria-pressed={voiceChat.isMicMuted}
+            title={voiceChat.isMicMuted ? "Unmute microphone" : "Mute microphone"}
+          >
+            {voiceChat.isMicMuted ? <MicOff className="h-5 w-5" strokeWidth={2.2} /> : <Mic className="h-5 w-5" strokeWidth={2.2} />}
+          </button>
+          <button
+            type="button"
+            onClick={voiceChat.toggleSpeakerMuted}
+            className={`rounded-full border p-2 transition ${
+              voiceChat.isSpeakerMuted
+                ? "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                : "border-gray-200 bg-white text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+            }`}
+            aria-label={voiceChat.isSpeakerMuted ? "Unmute assistant audio" : "Mute assistant audio"}
+            aria-pressed={voiceChat.isSpeakerMuted}
+            title={voiceChat.isSpeakerMuted ? "Unmute assistant audio" : "Mute assistant audio"}
+          >
+            {voiceChat.isSpeakerMuted ? (
+              <VolumeX className="h-5 w-5" strokeWidth={2.2} />
+            ) : (
+              <Volume2 className="h-5 w-5" strokeWidth={2.2} />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              void toggleCallMode()
+            }}
+            disabled={isCallTransitioning}
+            className="rounded-full border border-gray-200 bg-white p-2 text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
+            aria-label="End voice call"
+            title="End voice call"
+          >
+            <PhoneOff className="h-5 w-5" strokeWidth={2.2} />
+          </button>
+        </div>
       </div>
       <div className="flex min-h-0 flex-1 overflow-hidden px-4 py-4">
         <div
@@ -1379,8 +1543,7 @@ export default function AgentChat({
               <button
                 type="button"
                 onClick={() => {
-                  onClearConversation?.()
-                  onActivity?.()
+                  void handleStartNewChat()
                 }}
                 disabled={!onClearConversation}
                 className="p-1 rounded-full hover:bg-white/20 transition-colors shrink-0 disabled:opacity-50"
@@ -1461,8 +1624,53 @@ export default function AgentChat({
               </div>
             ) : (
               messages.map((m) => {
-            const insightData =
+            // Older sessions may already contain the leaked serialized part.
+            // It is transport noise and must never be rendered as a chat reply.
+            if (m.role === "assistant" && isTransportDebugText(m.content)) {
+              return null
+            }
+
+            const rawInsightData =
               m.role === "assistant" ? detectInsightResponse(m.content, m.structuredPayload) : null
+            const streamedSpecialistCount =
+              m.role === "assistant" && Boolean(m.taskId)
+                ? messages.filter(
+                (candidate) =>
+                  candidate.role === "assistant" &&
+                  candidate.taskId === m.taskId &&
+                  candidate.messageKind === "specialist" &&
+                  Boolean(detectInsightResponse(candidate.content, candidate.structuredPayload)),
+                  ).length
+                : 0
+            const summarySectionCount =
+              rawInsightData && Array.isArray(rawInsightData.data.widgets)
+                ? rawInsightData.data.widgets.reduce((count, widget) => {
+                    const record = asRecord(widget)
+                    return asString(record?.type) === "section_stack" && Array.isArray(record?.sections)
+                      ? count + record.sections.length
+                      : count
+                  }, 0)
+                : 0
+            const canHideSectionStack =
+              m.messageKind === "summary" &&
+              streamedSpecialistCount > 0 &&
+              (summarySectionCount === 0 || streamedSpecialistCount >= summarySectionCount)
+            const insightData =
+              rawInsightData && canHideSectionStack
+                ? {
+                    ...rawInsightData,
+                    data: {
+                      ...rawInsightData.data,
+                      // Specialist cards have already streamed above; the final
+                      // message is intentionally an overall summary only.
+                      widgets: Array.isArray(rawInsightData.data.widgets)
+                        ? rawInsightData.data.widgets.filter(
+                            (widget) => asString(asRecord(widget)?.type) !== "section_stack",
+                          )
+                        : [],
+                    },
+                  }
+                : rawInsightData
             const interactionData =
               m.role === "assistant" ? detectInteractionRequest(m.content, m.structuredPayload) : null
             const isInteractionDisabled = respondedInteractions.has(m.id)
@@ -1473,9 +1681,20 @@ export default function AgentChat({
                   <ChatAvatar role="assistant" userInitials={userIdentity.initials} />
                   <div className="max-w-[95%] rounded-3xl rounded-bl-none border border-gray-200 bg-white px-4 py-4 shadow-lg">
                     <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
-                        {formatMessageTimestamp(m.timestamp)}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {m.messageKind === "specialist" && m.sourceAgent ? (
+                          <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-700">
+                            {humanizeAgentDisplayName(m.sourceAgent)}
+                          </span>
+                        ) : m.messageKind === "summary" ? (
+                          <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-700">
+                            Overall summary
+                          </span>
+                        ) : null}
+                        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
+                          {formatMessageTimestamp(m.timestamp)}
+                        </span>
+                      </div>
                       <div className="flex flex-wrap justify-end gap-2">
                       <button
                         type="button"
@@ -1483,7 +1702,7 @@ export default function AgentChat({
                         onClick={(event) => {
                           event.preventDefault()
                           event.stopPropagation()
-                          openInsightExportChooser(insightData.data as ExportStructuredPayload)
+                          openInsightExportChooser(resolveCompositeInsightPayload(m))
                           onActivity?.()
                         }}
                         className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
@@ -1509,7 +1728,7 @@ export default function AgentChat({
                         onClick={(event) => {
                           event.preventDefault()
                           event.stopPropagation()
-                          openInsightExportChooser(insightData.data as ExportStructuredPayload)
+                          openInsightExportChooser(resolveCompositeInsightPayload(m))
                           onActivity?.()
                         }}
                         className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
