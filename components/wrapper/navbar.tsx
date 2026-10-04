@@ -454,7 +454,7 @@ const Navbar = ({
           className="flex min-w-0 items-center rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
         >
           <Image
-            src={isDarkMode ? '/assets/intera/intera-mark-light.png' : '/assets/intera/intera-mark-dark.png'}
+            src={isDarkMode ? '/assets/intera/intera-mark-dark.png' : '/assets/intera/intera-mark-light.png'}
             alt="Intera IMS"
             width={42}
             height={42}
@@ -462,7 +462,7 @@ const Navbar = ({
             className="h-10 w-10 object-contain md:hidden"
           />
           <Image
-            src={isDarkMode ? '/assets/intera/intera-wordmark-light.png' : '/assets/intera/intera-wordmark-dark.png'}
+            src={isDarkMode ? '/assets/intera/intera-wordmark-dark.png' : '/assets/intera/intera-wordmark-light.png'}
             alt="Intera IMS"
             width={240}
             height={72}
@@ -506,6 +506,7 @@ const Navbar = ({
                   <div className="max-h-[18rem] overflow-y-auto">
                     {companyMemberships.profiles.map((profile) => {
                       const isSelected = profile.company_code === selectedCompanyCode
+                      const workspaceLogo = buildUserImageUrl(profile.logo)
                       return (
                         <button
                           key={`${profile.id}`}
@@ -514,9 +515,18 @@ const Navbar = ({
                           onClick={() => void handleSwitchCompany(profile.company_code)}
                           className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold transition-colors disabled:cursor-default ${isSelected ? 'bg-blue-50 text-blue-700' : 'text-gray-900 hover:bg-gray-100'}`}
                         >
-                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-sm font-bold text-white">
-                            {buildWorkspaceInitials(profile.name, profile.company_code)}
-                          </span>
+                          <Avatar className="h-10 w-10 shrink-0 rounded-xl">
+                            {workspaceLogo ? (
+                              <AvatarImage
+                                src={workspaceLogo}
+                                alt=""
+                                className="object-cover"
+                              />
+                            ) : null}
+                            <AvatarFallback className="rounded-xl bg-blue-600 text-sm font-bold text-white">
+                              {buildWorkspaceInitials(profile.name, profile.company_code)}
+                            </AvatarFallback>
+                          </Avatar>
                           <span className="min-w-0 flex-1">
                             <span className="block truncate">{profile.name}</span>
                             <span className="mt-0.5 block truncate text-xs font-medium text-gray-500">{profile.company_code}{profile.support_access ? ' • support access' : ''}</span>

@@ -365,7 +365,7 @@ export default function AuditRealtimeCommandCenter({
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
           <div className="grid min-w-0 gap-6">
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid gap-6 lg:grid-cols-1">
               <SeriesPanel
                 title="Hourly sales"
                 description="Paid POS order value aggregated from the audit projection."
@@ -380,7 +380,7 @@ export default function AuditRealtimeCommandCenter({
               />
             </div>
 
-            <div className="grid min-w-0 gap-6 xl:grid-cols-3">
+            <div className="grid min-w-0 gap-6 xl:grid-cols-1">
               <LeaderboardPanel
                 title="Top sold products"
                 rows={leaderboards.top_products_24h ?? []}
