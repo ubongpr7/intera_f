@@ -2,13 +2,16 @@
 
 import React, { useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   ArrowRight,
+  Check,
   CirclePlus,
   Bell,
   Bot,
   CheckCheck,
   CreditCard,
+  ChevronDown,
   KeyRound,
   Lock,
   LogOut,
@@ -62,6 +65,7 @@ import { UserData } from '@/redux/features/users/userTypes'
 interface NavbarProps {
   user?: UserData
   onOpenMobileSidebar: () => void
+  onToggleDesktopSidebar: () => void
   sidebarCollapsed: boolean
 }
 
@@ -92,9 +96,20 @@ const readUserCookie = (
   key: 'userFirstName' | 'userLastName' | 'userEmail' | 'userPicture'
 ) => readCookieValue(key, (name) => getCookie(name))
 
+const buildWorkspaceInitials = (name?: string | null, code?: string | null) => {
+  const source = (name || code || 'Workspace').trim()
+  return source
+    .split(/[\s-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word.charAt(0).toUpperCase())
+    .join('')
+}
+
 const Navbar = ({
   user,
   onOpenMobileSidebar,
+  onToggleDesktopSidebar,
   sidebarCollapsed
 }: NavbarProps) => {
   const dispatch = useAppDispatch()
@@ -104,8 +119,10 @@ const Navbar = ({
   const settingsMenuRef = useRef<HTMLDivElement>(null)
   const userMenuRef = useRef<HTMLDivElement>(null)
   const notificationMenuRef = useRef<HTMLDivElement>(null)
+  const workspaceMenuRef = useRef<HTMLDivElement>(null)
   const [settingsMenuOpen, setSettingsMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false)
   const [notificationMenuOpen, setNotificationMenuOpen] = useState(false)
   const [liveNotifications, setLiveNotifications] = useState<
     NotificationRecord[]
@@ -159,6 +176,12 @@ const Navbar = ({
         !notificationMenuRef.current.contains(event.target as Node)
       ) {
         setNotificationMenuOpen(false)
+      }
+      if (
+        workspaceMenuRef.current &&
+        !workspaceMenuRef.current.contains(event.target as Node)
+      ) {
+        setWorkspaceMenuOpen(false)
       }
     }
 
@@ -366,6 +389,13 @@ const Navbar = ({
     activeProfile?.company_code ||
     readCookieValue('companyCode', (name) => getCookie(name)) ||
     'Workspace'
+  const activeWorkspaceLogo = buildUserImageUrl(
+    activeProfile?.logo || readCookieValue('companyLogo', (name) => getCookie(name))
+  )
+  const activeWorkspaceInitials = buildWorkspaceInitials(
+    activeWorkspaceName,
+    activeWorkspaceCode
+  )
   const userDisplayName =
     [fallbackUser.first_name, fallbackUser.last_name]
       .filter(Boolean)
@@ -398,48 +428,112 @@ const Navbar = ({
 
   return (
     <div
-      className={`dashboard-topbar fixed top-3 z-30 flex items-center justify-between rounded-2xl bg-gray-50/95 px-4 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-gray-50/80 ${
+      className={`dashboard-topbar fixed top-0 z-30 flex items-center justify-between rounded-b-2xl rounded-t-none bg-gray-50/95 px-4 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-gray-50/80 ${
         sidebarCollapsed ? 'md:left-16 md:right-5' : 'md:left-64 md:right-5'
       } left-3 right-3 md:px-3 md:py-2.5`}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 items-center gap-3">
         <button
           type="button"
-          onClick={onOpenMobileSidebar}
-          aria-label="Open navigation menu"
-          title="Open navigation menu"
-          className="dashboard-mobile-menu inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 md:hidden"
+          onClick={() => {
+            if (window.matchMedia('(min-width: 768px)').matches) {
+              onToggleDesktopSidebar()
+            } else {
+              onOpenMobileSidebar()
+            }
+          }}
+          aria-label="Toggle navigation menu"
+          title="Toggle navigation menu"
+          className="dashboard-mobile-menu inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
           <Menu className="h-5 w-5" />
         </button>
+        <Link
+          href="/dashboard"
+          aria-label="Intera IMS dashboard"
+          className="flex min-w-0 items-center rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+        >
+          <Image
+            src={isDarkMode ? '/assets/intera/intera-mark-light.png' : '/assets/intera/intera-mark-dark.png'}
+            alt="Intera IMS"
+            width={42}
+            height={42}
+            priority
+            className="h-10 w-10 object-contain md:hidden"
+          />
+          <Image
+            src={isDarkMode ? '/assets/intera/intera-wordmark-light.png' : '/assets/intera/intera-wordmark-dark.png'}
+            alt="Intera IMS"
+            width={240}
+            height={72}
+            priority
+            className="hidden h-10 w-auto max-w-[220px] object-contain object-left md:block"
+          />
+        </Link>
       </div>
 
       <div className="flex min-w-0 flex-1 items-center justify-end gap-3">
         <div className="flex min-w-0 flex-1 items-center gap-3 overflow-visible">
           {companyMemberships?.profiles?.length ? (
-            <div className="flex min-w-0 items-center gap-2">
-              <select
-                value={selectedCompanyCode}
-                onChange={(e) => handleSwitchCompany(e.target.value)}
+            <div className="relative ml-auto shrink-0" ref={workspaceMenuRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setWorkspaceMenuOpen((current) => !current)
+                  setNotificationMenuOpen(false)
+                  setUserMenuOpen(false)
+                  setSettingsMenuOpen(false)
+                }}
                 disabled={isSwitchingCompany}
-                className="dashboard-workspace-switcher min-w-0 max-w-[10rem] rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 md:max-w-[12rem] lg:max-w-[14rem] xl:max-w-[18rem]"
+                aria-label="Switch workspace"
+                aria-expanded={workspaceMenuOpen}
+                className="dashboard-header-icon-button inline-flex h-10 min-w-12 items-center justify-center gap-1.5 rounded-xl p-2 disabled:cursor-wait disabled:opacity-60"
               >
-                {companyMemberships.profiles.map((profile) => (
-                  <option key={`${profile.id}`} value={profile.company_code}>
-                    {profile.name} ({profile.company_code})
-                    {profile.support_access ? ' • support' : ''}
-                  </option>
-                ))}
-              </select>
-              <Link
-                href="/profile/create?mode=new"
-                className="dashboard-new-workspace inline-flex h-10 items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition-colors md:px-2.5"
-                aria-label="Create a new workspace"
-                title="Create a new workspace"
-              >
-                <CirclePlus className="h-4 w-4" />
-                <span className="hidden 2xl:inline">New workspace</span>
-              </Link>
+                <Avatar className="h-7 w-7 rounded-lg">
+                  {activeWorkspaceLogo ? <AvatarImage src={activeWorkspaceLogo} alt="" className="object-cover" /> : null}
+                  <AvatarFallback className="rounded-lg bg-blue-600 text-xs font-bold text-white">
+                    {activeWorkspaceInitials}
+                  </AvatarFallback>
+                </Avatar>
+                <ChevronDown className="h-3.5 w-3.5 text-gray-500" aria-hidden="true" />
+              </button>
+              {workspaceMenuOpen ? (
+                <div className="dashboard-header-menu absolute right-0 z-50 mt-3 w-80 overflow-hidden rounded-2xl border border-gray-200 bg-white p-2 shadow-2xl">
+                  <div className="px-3 pb-2 pt-1">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">Switch workspace</p>
+                    <p className="mt-1 text-xs leading-5 text-gray-500">Choose the workspace you want to operate in.</p>
+                  </div>
+                  <div className="max-h-[18rem] overflow-y-auto">
+                    {companyMemberships.profiles.map((profile) => {
+                      const isSelected = profile.company_code === selectedCompanyCode
+                      return (
+                        <button
+                          key={`${profile.id}`}
+                          type="button"
+                          disabled={isSwitchingCompany || isSelected}
+                          onClick={() => void handleSwitchCompany(profile.company_code)}
+                          className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold transition-colors disabled:cursor-default ${isSelected ? 'bg-blue-50 text-blue-700' : 'text-gray-900 hover:bg-gray-100'}`}
+                        >
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-sm font-bold text-white">
+                            {buildWorkspaceInitials(profile.name, profile.company_code)}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate">{profile.name}</span>
+                            <span className="mt-0.5 block truncate text-xs font-medium text-gray-500">{profile.company_code}{profile.support_access ? ' • support access' : ''}</span>
+                          </span>
+                          {isSelected ? <Check className="h-4 w-4 shrink-0" /> : null}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <div className="mt-2 border-t border-gray-100 pt-2">
+                    <Link href="/profile/create?mode=new" onClick={() => setWorkspaceMenuOpen(false)} className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700">
+                      <CirclePlus className="h-4 w-4" />
+                      Create Another Workspace
+                    </Link>
+                  </div>
+                </div>
+              ) : null}
             </div>
           ) : null}
 

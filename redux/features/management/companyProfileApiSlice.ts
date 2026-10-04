@@ -37,6 +37,11 @@ const buildCompanyProfileFormData = (data: Partial<CompanyFormData>) => {
   const formData = new FormData();
   Object.entries(data).forEach(([key, rawValue]) => {
     if (rawValue === undefined || rawValue === null || rawValue === "") return;
+    // The API returns logo URLs for existing images; only uploads belong in this field.
+    if (key === "logo") {
+      if (rawValue instanceof File) formData.append(key, rawValue);
+      return;
+    }
     if (key === "headquarters_address" && typeof rawValue === "object") {
       formData.append(key, JSON.stringify(rawValue));
       return;

@@ -2,7 +2,8 @@
 import { useEffect, useState } from 'react';
 import Navbar from './navbar'
 import SideBar from './sideBar'
-import { useAppSelector } from "../../redux/store";
+import { useAppDispatch, useAppSelector } from "../../redux/store";
+import { setIsSidebarCollapsed } from "../../redux/state";
 import { usePathname } from 'next/navigation';
 import { ToastContainer } from "react-toastify";
 import { useGetLoggedInUserQuery } from '../../redux/features/users/userApiSlice';
@@ -18,6 +19,7 @@ import PermissionHydrator from '@/components/auth/PermissionHydrator';
 const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
 
   const SidebarCollapsed = useAppSelector((state) => state.global.isSidebarCollapsed);
+  const dispatch = useAppDispatch();
   useAppSelector((state) => state.permission.status);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const pathname = usePathname();
@@ -101,6 +103,7 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
       <Navbar
         user={user}
         onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+        onToggleDesktopSidebar={() => dispatch(setIsSidebarCollapsed(!SidebarCollapsed))}
         sidebarCollapsed={SidebarCollapsed}
       />
     )}
