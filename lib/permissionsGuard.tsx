@@ -78,6 +78,12 @@ export const hasAnyPermission = (requiredPermissions: string[]) => {
 
 const ROUTE_GUARDS: RouteGuardRule[] = [
   {
+    pattern: /^\/manufacturing(?:\/|$)/,
+    anyPermissions: ["read_inventory", "manage_inventory_settings"],
+    message: "You need inventory permission to access manufacturing workflows.",
+    resource: "Manufacturing workspace",
+  },
+  {
     pattern: /^\/product\/global-catalog-admin(?:\/|$)/,
     staffOnly: true,
     ownerBypass: false,

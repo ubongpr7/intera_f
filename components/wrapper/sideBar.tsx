@@ -13,10 +13,12 @@ import {
   Users,
   Settings,
   Package,
+  Factory,
   Gift,
   Bell,
   FileSearch,
   ReceiptText,
+  Calculator,
   CreditCard,
   ShoppingCart,
   Truck,
@@ -152,6 +154,7 @@ const SideBar = ({ user, mobileOpen, onMobileClose }:SideBarDataProps) => {
             <div className={`dashboard-nav-divider ${navigationCollapsed ? "mx-1" : "mx-3"}`} />
             <div className={`dashboard-nav-group-label ${navigationCollapsed ? "hidden" : ""}`}>Operations</div>
             <SidebarLink href="/inventory" icon={Package} label="Inventory" isCollapsed={navigationCollapsed} />
+            <SidebarLink href="/manufacturing" icon={Factory} label="Manufacturing" isCollapsed={navigationCollapsed} />
             <SidebarLink
               href="/pos/settings"
               icon={CreditCard}
@@ -176,6 +179,7 @@ const SideBar = ({ user, mobileOpen, onMobileClose }:SideBarDataProps) => {
             <SidebarLink href="/order/purchase" icon={ShoppingCart} label="Purchase Orders" isCollapsed={navigationCollapsed} />
             <SidebarLink href="/order/sales" icon={ReceiptText} label="Sales Orders" isCollapsed={navigationCollapsed} />
             <SidebarLink href="/order/returns" icon={Undo2} label="Returns" isCollapsed={navigationCollapsed} />
+            <SidebarLink href="/accounting" icon={Calculator} label="Accounting" isCollapsed={navigationCollapsed} />
             <SidebarLink
               href="/product"
               icon={Gift}

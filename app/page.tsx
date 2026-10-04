@@ -9,6 +9,10 @@ import {
   Bot,
   Boxes,
   Building2,
+  Factory,
+  GitBranch,
+  Layers3,
+  Landmark,
   // CheckCircle2,
   ChevronDown,
   ClipboardList,
@@ -105,6 +109,12 @@ const coreHighlights = [
       "Use configurable workspace agents and offline operational intelligence to ask your inventory questions in natural language and surface risk faster.",
     icon: Bot,
   },
+  {
+    title: "From raw materials to margin",
+    description:
+      "Connect purchasing, production, stock movements, sales, returns, and financial outcomes in one traceable operational record.",
+    icon: Factory,
+  },
 ];
 
 const capabilityGrid = [
@@ -112,6 +122,16 @@ const capabilityGrid = [
     title: "Inventory Control",
     description: "Track products, balances, reorder rules, adjustments, reservations, and movement history across structural locations.",
     icon: ClipboardList,
+  },
+  {
+    title: "Unit-aware Inventory",
+    description: "Buy by carton, receive by case, sell by pack or piece, and keep stock, pricing, and cost calculations aligned through explicit UOM conversions.",
+    icon: Layers3,
+  },
+  {
+    title: "Manufacturing & Recipes",
+    description: "Define recipes, issue raw materials, record finished goods, capture by-products and waste, and preserve the relationship between every input and output.",
+    icon: Factory,
   },
   {
     title: "Purchasing & Replenishment",
@@ -137,6 +157,21 @@ const capabilityGrid = [
     title: "Business Intelligence",
     description: "Review inventory, purchasing, POS, and realtime operational analytics, then query years of history in natural language and get answers in seconds.",
     icon: BarChart3,
+  },
+  {
+    title: "Profitability & Costing",
+    description: "Compare revenue with shipment-level COGS, review gross margin by item and period, and support actual, FIFO, weighted-average, and standard costing decisions.",
+    icon: Landmark,
+  },
+  {
+    title: "Returns & Accounting",
+    description: "Receive customer returns back into stock, reverse revenue and COGS safely, and keep balanced journal entries for operational and financial review.",
+    icon: GitBranch,
+  },
+  {
+    title: "Valuation & Traceability",
+    description: "Capture repeat-safe inventory valuation snapshots by item, location, date, and costing method while tracing lots, movements, production, and sales.",
+    icon: ShieldCheck,
   },
   {
     title: "Conversational Intelligence",
@@ -205,6 +240,21 @@ const faqItems = [
     question: "Does stock update after sales and receiving?",
     answer:
       "Yes. Paid POS activity and goods receiving feed inventory and audit workflows. Realtime views surface participating sales, receiving, and operational events as they arrive.",
+  },
+  {
+    question: "Can Intera track manufacturing and finished goods?",
+    answer:
+      "Yes. You can connect recipes to raw materials, issue components into production, record finished goods, by-products, and waste, then trace the resulting stock into sales, returns, cost, and profitability reporting.",
+  },
+  {
+    question: "Can I sell the same item in different units?",
+    answer:
+      "Yes. Define stock and selling units with conversion factors, then receive, purchase, sell, ship, and return quantities without losing the underlying stock-unit and cost relationship.",
+  },
+  {
+    question: "How does Intera calculate profitability?",
+    answer:
+      "Shipped lines preserve their revenue and inventory cost snapshots. Intera uses those values for COGS, gross margin, customer-return reversals, journal entries, and period-end valuation views.",
   },
   {
     question: "Who can view sensitive audit activity?",
@@ -962,6 +1012,44 @@ export default function HomePage() {
             ))}
           </div>
         </section>
+
+        <section id="traceability" className="landing-section border-y border-gray-200 bg-gray-50">
+          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+            <div className="grid gap-10 lg:grid-cols-[.85fr_1.15fr] lg:items-end">
+              <div className="max-w-2xl">
+                <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">Operational traceability</p>
+                <h2 className="mt-3 text-3xl font-semibold text-gray-900 sm:text-4xl">
+                  Follow the whole chain, not just the stock count.
+                </h2>
+                <p className="mt-4 text-lg text-gray-600">
+                  Intera connects what a business buys, transforms, stores, sells, returns, and earns so operators can explain the number behind every decision.
+                </p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-3">
+                {[
+                  { step: "01", title: "Source", description: "Purchase and receive ingredients, components, merchandise, and packaging with unit and lot context.", icon: Building2 },
+                  { step: "02", title: "Transform", description: "Issue components into recipes or production orders and record finished goods, by-products, and waste.", icon: Factory },
+                  { step: "03", title: "Measure", description: "Sell, return, value, and review margin with the cost and movement history preserved through the workflow.", icon: BarChart3 },
+                ].map(({ step, title, description, icon: IconComponent }, index) => (
+                  <motion.div
+                    key={step}
+                    {...revealCard(index)}
+                    whileHover={liftOnHover}
+                    className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-colors hover:border-blue-300"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <IconComponent className="h-5 w-5 text-blue-700" />
+                      <span className="text-xs font-bold tracking-[0.16em] text-gray-400">{step}</span>
+                    </div>
+                    <h3 className="mt-5 text-lg font-semibold text-gray-900">{title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-gray-600">{description}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* 
         <section className="border-y border-gray-200 bg-gray-50">
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
