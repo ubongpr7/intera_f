@@ -1406,7 +1406,7 @@ export default function AgentChat({
           </div>
           <p className="mt-2 text-sm leading-6 text-gray-600">
             {voiceChat.isConnecting
-              ? "Connecting to LiveKit..."
+              ? "Connecting to Agent..."
               : voiceChat.isSpeaking
                 ? "Assistant is speaking."
                 : voiceChat.isListening

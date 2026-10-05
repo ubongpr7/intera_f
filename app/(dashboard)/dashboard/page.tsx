@@ -357,7 +357,7 @@ export default function DashboardPage() {
                   Operations home
                 </div>
                 <h1 className="mt-3 text-3xl font-semibold tracking-tight text-gray-900">
-                  {activeMembership?.name ? `${activeMembership.name} workspace` : "Inventory operations"}
+                  {activeMembership?.name ? `${activeMembership.name} ` : "Inventory operations"}
                 </h1>
                 <p className="mt-2 text-sm leading-6 text-gray-600">
                   Use this as the command surface for the rebuilt application: onboarding readiness, inventory attention, product launch, POS activity,
