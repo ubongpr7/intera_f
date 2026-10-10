@@ -11,11 +11,9 @@ import {
   Layout,
   Home,
   Users,
-  Settings,
   Package,
   Factory,
   Gift,
-  Bell,
   FileSearch,
   ReceiptText,
   Calculator,
@@ -29,7 +27,6 @@ import {
   UserRound,
   Building2,
   X,
-  ShieldAlert,
 } from 'lucide-react';
 import { UserData } from "@/redux/features/users/userTypes";
 import { useEffect, useRef, useState } from 'react';
@@ -72,7 +69,6 @@ const SideBar = ({ user, mobileOpen, onMobileClose }:SideBarDataProps) => {
         : `${(process.env.NEXT_PUBLIC_BACKEND_HOST_URL ?? '').replace(/\/+$/, '')}${rawCompanyLogo.startsWith('/') ? rawCompanyLogo : `/${rawCompanyLogo}`}`)
       : null
     const canViewAuditTrail = canAccessPath("/audit").allowed
-    const canViewAdminHub = canAccessPath("/admin").allowed
   return (
     <TooltipProvider delayDuration={250}>
     <aside ref={sidebarRef} className={sideBarClasses} aria-label="Primary navigation"> 
@@ -126,60 +122,10 @@ const SideBar = ({ user, mobileOpen, onMobileClose }:SideBarDataProps) => {
             >
             <SidebarLink href="/dashboard" icon={Home} label="Dashboard" isCollapsed={navigationCollapsed} />
             <SidebarLink href="/realtime-dashboard" icon={Layout} label="Realtime Dashboard" isCollapsed={navigationCollapsed} />
-            <SidebarLink href="/notifications" icon={Bell} label="Notifications" isCollapsed={navigationCollapsed} />
-            {canViewAuditTrail ? (
-              <SidebarLink href="/audit" icon={FileSearch} label="Audit trail" isCollapsed={navigationCollapsed} />
-            ) : null}
-            {canViewAdminHub ? (
-              <div className="space-y-1 pt-3">
-                <div className={`px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400 ${navigationCollapsed ? "hidden" : ""}`}>
-                  Admin
-                </div>
-                <SidebarLink
-                  href="/admin"
-                  icon={ShieldAlert}
-                  label="Admin hub"
-                  isCollapsed={navigationCollapsed}
-                  subLinks={[
-                    { href: "/admin", label: "Admin dashboard" },
-                    { href: "/payment-admin", label: "Billing & subscriptions" },
-                    { href: "/product/global-catalog-admin", label: "Global catalog admin" },
-                    { href: "/audit", label: "Audit trail" },
-                    { href: "/realtime-dashboard", label: "Realtime operations" },
-                    { href: "/notifications", label: "Notifications" },
-                  ]}
-                />
-              </div>
-            ) : null}
             <div className={`dashboard-nav-divider ${navigationCollapsed ? "mx-1" : "mx-3"}`} />
             <div className={`dashboard-nav-group-label ${navigationCollapsed ? "hidden" : ""}`}>Operations</div>
             <SidebarLink href="/inventory" icon={Package} label="Inventory" isCollapsed={navigationCollapsed} />
             <SidebarLink href="/manufacturing" icon={Factory} label="Manufacturing" isCollapsed={navigationCollapsed} />
-            <SidebarLink
-              href="/pos/settings"
-              icon={CreditCard}
-              label="POS Settings"
-              isCollapsed={navigationCollapsed}
-              subLinks={[
-                { href: "/pos/settings", label: "POS Settings" },
-                { href: "/pos/remittances", label: "Remittances" },
-              ]}
-            />
-            <SidebarLink
-              href="/profile/staff"
-              icon={Users}
-              label="Staff"
-              isCollapsed={navigationCollapsed}
-              subLinks={[
-                { href: "/profile/staff", label: "Staff and roles" },
-                { href: "/profile/support-access", label: "Support access" },
-              ]}
-            />
-            <SidebarLink href="/companies" icon={Truck} label="Partners" isCollapsed={navigationCollapsed} />
-            <SidebarLink href="/order/purchase" icon={ShoppingCart} label="Purchase Orders" isCollapsed={navigationCollapsed} />
-            <SidebarLink href="/order/sales" icon={ReceiptText} label="Sales Orders" isCollapsed={navigationCollapsed} />
-            <SidebarLink href="/order/returns" icon={Undo2} label="Returns" isCollapsed={navigationCollapsed} />
-            <SidebarLink href="/accounting" icon={Calculator} label="Accounting" isCollapsed={navigationCollapsed} />
             <SidebarLink
               href="/product"
               icon={Gift}
@@ -191,9 +137,34 @@ const SideBar = ({ user, mobileOpen, onMobileClose }:SideBarDataProps) => {
                 { href: "/product/imports/imported", label: "Imported products" },
               ]}
             />
-            <div className={`dashboard-nav-divider ${navigationCollapsed ? "mx-1" : "mx-3"}`} />
-            <div className={`dashboard-nav-group-label ${navigationCollapsed ? "hidden" : ""}`}>Workspace</div>
-            <SidebarLink href="/settings" icon={Settings} label="Workspace settings" isCollapsed={navigationCollapsed} />
+            <SidebarLink href="/order/purchase" icon={ShoppingCart} label="Purchase Orders" isCollapsed={navigationCollapsed} />
+            <SidebarLink href="/order/sales" icon={ReceiptText} label="Sales Orders" isCollapsed={navigationCollapsed} />
+            <SidebarLink href="/order/returns" icon={Undo2} label="Returns" isCollapsed={navigationCollapsed} />
+            <SidebarLink href="/accounting" icon={Calculator} label="Accounting" isCollapsed={navigationCollapsed} />
+            <SidebarLink
+              href="/pos/settings"
+              icon={CreditCard}
+              label="POS Settings"
+              isCollapsed={navigationCollapsed}
+              subLinks={[
+                { href: "/pos/settings", label: "POS Settings" },
+                { href: "/pos/remittances", label: "Remittances" },
+              ]}
+            />
+            <SidebarLink href="/companies" icon={Truck} label="Partners" isCollapsed={navigationCollapsed} />
+            <SidebarLink
+              href="/profile/staff"
+              icon={Users}
+              label="Staff"
+              isCollapsed={navigationCollapsed}
+              subLinks={[
+                { href: "/profile/staff", label: "Staff and roles" },
+                { href: "/profile/support-access", label: "Support access" },
+              ]}
+            />
+            {canViewAuditTrail ? (
+              <SidebarLink href="/audit" icon={FileSearch} label="Audit trail" isCollapsed={navigationCollapsed} />
+            ) : null}
             </nav>
             <div className={`dashboard-sidebar-profile ${navigationCollapsed ? "p-2" : "p-3"}`}>
               <button
