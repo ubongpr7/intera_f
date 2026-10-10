@@ -80,6 +80,7 @@ export function useAuditRealtimeDashboard() {
   return {
     workspaceId,
     snapshot,
+    snapshotVersion: snapshot?.generated_at ?? null,
     socketState: effectiveSocketState,
     isLoading,
     isFetching,

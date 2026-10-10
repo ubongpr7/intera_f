@@ -526,12 +526,12 @@ export default function AuditRealtimeCommandCenter({
               <ScrollArea className="mt-5 h-[32rem] pr-3">
                 <div className="space-y-3">
                   {feed.length ? (
-                    feed.map((entry) => {
+                    feed.map((entry, index) => {
                       const accent = feedAccent(entry.stream_kind)
                       const Icon = accent.icon
                       const imageUrl = resolveAuditAssetUrl(entry.image_url)
                       return (
-                        <div key={`${entry.audit_id}-${entry.stream_kind}-${entry.occurred_at}`} className="rounded-2xl border border-gray-200 bg-gray-50 p-4 transition hover:border-blue-200 hover:bg-white">
+                        <div key={`${entry.audit_id}-${entry.stream_kind}-${entry.occurred_at}-${index}`} className="rounded-2xl border border-gray-200 bg-gray-50 p-4 transition hover:border-blue-200 hover:bg-white">
                           <div className="flex items-start gap-3">
                             <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-white", accent.iconWrapClassName)}>
                               {imageUrl ? (

@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   Activity,
   Boxes,
@@ -15,6 +15,7 @@ import StatTile from "@/components/dashboard/StatTile"
 import AuditRealtimeCommandCenter from "@/components/realtime-dashboard/AuditRealtimeCommandCenter"
 import LiveProductActivity from "@/components/realtime-dashboard/LiveProductActivity"
 import LiveReceivingActivity from "@/components/realtime-dashboard/LiveReceivingActivity"
+import RealtimeComparisonChart from "@/components/realtime-dashboard/RealtimeComparisonChart"
 import { useAuditRealtimeDashboard } from "@/components/realtime-dashboard/useAuditRealtimeDashboard"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -25,7 +26,7 @@ import { useGetInventoryAnalyticsQuery } from "@/redux/features/inventory/invent
 import { useGetPurchaseOrderAnalyticsQuery } from "@/redux/features/orders/orderAPISlice"
 import { useGetCurrentSessionQuery, useGetDailySalesQuery, useGetHeldOrdersQuery, useGetSessionCloseoutSummaryQuery } from "@/redux/features/pos/posAPISlice"
 import type { POSDailySalesPaymentMethodBreakdown } from "@/redux/features/pos/posTypes"
-import { useGetDashboardStatsQuery } from "@/redux/features/product/productAPISlice"
+import { useGetDashboardStatsQuery, useGetProductDataQuery } from "@/redux/features/product/productAPISlice"
 import { useGetLowStockItemsQuery, useGetStockAnalyticsQuery } from "@/redux/features/stock/stockAPISlice"
 import { formatCurrencyCompact } from "@/lib/currency-utils"
 import { hasPermission } from "@/lib/permissionsGuard"
@@ -101,34 +102,81 @@ export default function RealtimeDashboardPage() {
   const canReadProductDashboard = canReadInventory || canViewInventoryReports
   const canViewAuditTrail = hasPermission("view_audit_trail")
 
-  const { data: productStats } = useGetDashboardStatsQuery(undefined, {
+  const { data: productStats, refetch: refetchProductStats } = useGetDashboardStatsQuery(undefined, {
     skip: !canReadProductDashboard,
   })
-  const { data: inventoryAnalytics } = useGetInventoryAnalyticsQuery(structuralScopeParams, {
+  const { data: catalogProducts = [] } = useGetProductDataQuery(undefined, {
+    skip: !canReadProductDashboard,
+  })
+  const { data: inventoryAnalytics, refetch: refetchInventoryAnalytics } = useGetInventoryAnalyticsQuery(structuralScopeParams, {
     skip: !canReadInventory && !canViewInventoryReports,
   })
-  const { data: stockAnalytics } = useGetStockAnalyticsQuery(structuralScopeParams, {
+  const { data: stockAnalytics, refetch: refetchStockAnalytics } = useGetStockAnalyticsQuery(structuralScopeParams, {
     skip: !canReadInventory && !canViewInventoryReports,
   })
-  const { data: lowStockItems = [] } = useGetLowStockItemsQuery(structuralScopeParams, {
+  const { data: lowStockItems = [], refetch: refetchLowStockItems } = useGetLowStockItemsQuery(structuralScopeParams, {
     skip: !canReadInventory && !canViewInventoryReports,
   })
-  const { data: currentSession } = useGetCurrentSessionQuery(undefined, {
+  const { data: currentSession, refetch: refetchCurrentSession } = useGetCurrentSessionQuery(undefined, {
     skip: !canReadPos,
   })
-  const { data: heldOrders = [] } = useGetHeldOrdersQuery(structuralScopeParams, {
+  const { data: heldOrders = [], refetch: refetchHeldOrders } = useGetHeldOrdersQuery(structuralScopeParams, {
     skip: !canReadPos,
   })
-  const { data: dailyPosSales } = useGetDailySalesQuery(structuralScopeParams, {
+  const { data: dailyPosSales, refetch: refetchDailyPosSales } = useGetDailySalesQuery(structuralScopeParams, {
     skip: !canReadPos || !canViewPosReports,
   })
-  const { data: sessionCloseout } = useGetSessionCloseoutSummaryQuery(
+  const { data: sessionCloseout, refetch: refetchSessionCloseout } = useGetSessionCloseoutSummaryQuery(
     { sessionId: currentSession?.id || "" },
     { skip: !canReadPos || !currentSession?.id },
   )
-  const { data: purchaseAnalytics } = useGetPurchaseOrderAnalyticsQuery(structuralScopeParams, {
+  const { data: purchaseAnalytics, refetch: refetchPurchaseAnalytics } = useGetPurchaseOrderAnalyticsQuery(structuralScopeParams, {
     skip: !canReadPurchaseOrders,
   })
+
+  useEffect(() => {
+    if (realtimeDashboard.socketState !== "connected" || !realtimeDashboard.snapshotVersion) {
+      return
+    }
+
+    const refreshTimer = window.setTimeout(() => {
+      // The audit stream is the cross-service change signal. Domain services
+      // remain authoritative for their detailed REST responses, so refresh
+      // those responses whenever the audit projection publishes a new snapshot.
+      void Promise.allSettled([
+        canReadProductDashboard ? refetchProductStats() : Promise.resolve(),
+        canReadInventory || canViewInventoryReports ? refetchInventoryAnalytics() : Promise.resolve(),
+        canReadInventory || canViewInventoryReports ? refetchStockAnalytics() : Promise.resolve(),
+        canReadInventory || canViewInventoryReports ? refetchLowStockItems() : Promise.resolve(),
+        canReadPos ? refetchCurrentSession() : Promise.resolve(),
+        canReadPos ? refetchHeldOrders() : Promise.resolve(),
+        canReadPos && canViewPosReports ? refetchDailyPosSales() : Promise.resolve(),
+        canReadPos && currentSession?.id ? refetchSessionCloseout() : Promise.resolve(),
+        canReadPurchaseOrders ? refetchPurchaseAnalytics() : Promise.resolve(),
+      ])
+    }, 250)
+
+    return () => window.clearTimeout(refreshTimer)
+  }, [
+    canReadInventory,
+    canReadProductDashboard,
+    canReadPos,
+    canReadPurchaseOrders,
+    canViewInventoryReports,
+    canViewPosReports,
+    currentSession?.id,
+    realtimeDashboard.snapshotVersion,
+    realtimeDashboard.socketState,
+    refetchCurrentSession,
+    refetchDailyPosSales,
+    refetchHeldOrders,
+    refetchInventoryAnalytics,
+    refetchLowStockItems,
+    refetchProductStats,
+    refetchPurchaseAnalytics,
+    refetchSessionCloseout,
+    refetchStockAnalytics,
+  ])
 
   const currencyCode = activeMembership?.currency || "NGN"
   const inventoryItemCount = inventoryAnalytics?.total_inventory_items ?? inventoryAnalytics?.total_inventories ?? 0
@@ -256,9 +304,19 @@ export default function RealtimeDashboardPage() {
       </Card>
 
       {canViewAuditTrail ? (
+        <RealtimeComparisonChart
+          snapshot={realtimeDashboard.snapshot}
+          socketState={realtimeDashboard.socketState}
+          isLoading={realtimeDashboard.isLoading}
+          catalogProducts={catalogProducts.map((product) => ({ id: product.id, name: product.name, image_url: product.display_image }))}
+          currencyCode={currencyCode}
+        />
+      ) : null}
+
+      {canViewAuditTrail ? (
         <div className="realtime-live-stream space-y-6">
-          <AuditRealtimeCommandCenter currencyCode={currencyCode} {...realtimeDashboard} />
           <LiveProductActivity snapshot={realtimeDashboard.snapshot} socketState={realtimeDashboard.socketState} isLoading={realtimeDashboard.isLoading} />
+          <AuditRealtimeCommandCenter currencyCode={currencyCode} {...realtimeDashboard} />
           <LiveReceivingActivity snapshot={realtimeDashboard.snapshot} socketState={realtimeDashboard.socketState} isLoading={realtimeDashboard.isLoading} />
         </div>
       ) : (

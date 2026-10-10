@@ -166,8 +166,8 @@ export default function LiveReceivingActivity({
             </div>
             <ScrollArea className="mt-5 h-[420px] pr-4">
               <div className="space-y-3">
-                {receiptFeed.map((receipt) => (
-                  <div key={`${receipt.audit_id}-${receipt.reference_number}-${receipt.title}-${receipt.occurred_at}`} className="rounded-2xl border border-gray-200 bg-gray-50 p-4 transition hover:border-emerald-200 hover:bg-white">
+                {receiptFeed.map((receipt, index) => (
+                  <div key={`${receipt.audit_id}-${receipt.reference_number}-${receipt.title}-${receipt.occurred_at}-${index}`} className="rounded-2xl border border-gray-200 bg-gray-50 p-4 transition hover:border-emerald-200 hover:bg-white">
                     <div className="flex items-start gap-4">
                       <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-white">
                         {receipt.image_url ? (
