@@ -5,6 +5,7 @@ import type {
   CustomerReturn,
   JournalEntry,
   SalesMarginResponse,
+  ProductionProfitabilityResponse,
   ValuationSnapshot,
 } from "./accountingTypes"
 
@@ -17,6 +18,9 @@ export const accountingApiSlice = apiSlice.injectEndpoints({
         url: buildQuery("/order_api/sales-orders/margin/", params),
         service: inventoryService,
       }),
+    }),
+    getProductionProfitability: builder.query<ProductionProfitabilityResponse, Record<string, string | number | undefined> | void>({
+      query: (params) => ({ url: buildQuery("/manufacturing_api/reports/production-profitability/", params), service: inventoryService }),
     }),
     listCustomerReturns: builder.query<CustomerReturn[], void>({
       query: () => ({ url: "/order_api/customer-returns/", service: inventoryService }),
@@ -44,6 +48,7 @@ export const accountingApiSlice = apiSlice.injectEndpoints({
 
 export const {
   useGetSalesMarginQuery,
+  useGetProductionProfitabilityQuery,
   useListCustomerReturnsQuery,
   useCreateCustomerReturnMutation,
   useCompleteCustomerReturnMutation,

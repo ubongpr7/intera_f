@@ -86,4 +86,53 @@ export type CostingPeriod = {
   closed_at?: string | null
 }
 
+export type WorkCenter = {
+  id: Id
+  code: string
+  name: string
+  active: boolean
+  hourly_labor_rate: string | number
+  hourly_overhead_rate: string | number
+  capacity_minutes_per_day: number
+}
+
+export type WorkCenterBlock = {
+  id: Id
+  work_center: Id
+  starts_at: string
+  ends_at: string
+  reason: string
+  active: boolean
+  created_at?: string
+}
+
+export type WorkCenterCapacity = {
+  work_center: Id
+  date_from: string
+  date_to: string
+  days: number
+  capacity_minutes: number
+  blocked_minutes: number
+  available_minutes: number
+  planned_minutes: number
+  utilization_percent: number
+}
+
+export type Nonconformance = {
+  id: Id
+  number: string
+  production_order: Id
+  inspection?: Id | null
+  status: string
+  severity: string
+  category: string
+  description: string
+  root_cause: string
+  containment_action: string
+  corrective_action: string
+  owner_user_id?: Id | null
+  due_date?: string | null
+  closed_at?: string | null
+}
+
 export type ListResponse<T> = T[] | { results?: T[] }

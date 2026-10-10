@@ -84,3 +84,27 @@ export interface CreateCustomerReturnPayload {
   notes?: string
   return_items: Array<{ shipment_line_id: EntityId; quantity: string | number; reason?: string }>
 }
+
+export interface ProductionProfitabilityRow {
+  production_order_id: EntityId
+  order_number: string
+  finished_good_id: EntityId
+  finished_good_name?: string
+  status: string
+  costing_method: string
+  material_cost: string | number
+  additional_cost: string | number
+  waste_cost: string | number
+  total_cost: string | number
+  output_quantity: string | number
+  unit_cost: string | number
+  variance: string | number
+  allocation_valid: boolean
+  unallocated_cost: string | number
+}
+
+export interface ProductionProfitabilityResponse {
+  count: number
+  totals: Record<string, string | number>
+  orders: ProductionProfitabilityRow[]
+}

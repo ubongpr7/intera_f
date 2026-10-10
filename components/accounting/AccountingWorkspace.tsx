@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Calculator, CheckCircle2, FileText, RotateCcw, Scale } from "lucide-react"
+import { Calculator, FileText, Factory, RotateCcw, Scale } from "lucide-react"
 import { toast } from "react-toastify"
 import { hasPermission } from "@/lib/permissionsGuard"
 import { Button } from "@/components/ui/button"
@@ -14,6 +14,7 @@ import {
   useCompleteCustomerReturnMutation,
   useCreateCustomerReturnMutation,
   useGetSalesMarginQuery,
+  useGetProductionProfitabilityQuery,
   useListCustomerReturnsQuery,
   useListJournalEntriesQuery,
   useListValuationSnapshotsQuery,
@@ -22,6 +23,7 @@ import type { MarginRow } from "@/redux/features/accounting/accountingTypes"
 
 const money = (value: string | number | null | undefined, currency = "NGN") =>
   new Intl.NumberFormat("en-NG", { style: "currency", currency, maximumFractionDigits: 2 }).format(Number(value || 0))
+const label = (value: string) => value.replaceAll("_", " ").replace(/\b\w/g, (char) => char.toUpperCase())
 
 const errorMessage = (error: unknown) => {
   if (typeof error === "object" && error && "data" in error) {
@@ -39,8 +41,11 @@ export default function AccountingWorkspace() {
   const [returnLocationId, setReturnLocationId] = useState("")
   const [selectedReturnId, setSelectedReturnId] = useState<string | number | null>(null)
   const [snapshotDate, setSnapshotDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [profitabilityDateFrom, setProfitabilityDateFrom] = useState("")
+  const [profitabilityDateTo, setProfitabilityDateTo] = useState("")
 
   const margin = useGetSalesMarginQuery(undefined, { skip: !canReadInventory })
+  const productionProfitability = useGetProductionProfitabilityQuery({ date_from: profitabilityDateFrom || undefined, date_to: profitabilityDateTo || undefined }, { skip: !canReadInventory })
   const returns = useListCustomerReturnsQuery(undefined, { skip: !canReadInventory })
   const journals = useListJournalEntriesQuery(undefined, { skip: !canReadInventory })
   const valuations = useListValuationSnapshotsQuery(undefined, { skip: !canReadInventory })
@@ -123,13 +128,14 @@ export default function AccountingWorkspace() {
 
       <Tabs defaultValue="margin" className="space-y-4">
         <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 border border-gray-200 bg-white p-2">
-          <TabsTrigger value="margin"><Scale className="mr-2 h-4 w-4" />Margin</TabsTrigger>
+          <TabsTrigger value="margin"><Scale className="mr-2 h-4 w-4" />Margin</TabsTrigger><TabsTrigger value="production-profitability"><Factory className="mr-2 h-4 w-4" />Production profitability</TabsTrigger>
           <TabsTrigger value="returns"><RotateCcw className="mr-2 h-4 w-4" />Customer returns</TabsTrigger>
           <TabsTrigger value="journals"><FileText className="mr-2 h-4 w-4" />Journals</TabsTrigger>
           <TabsTrigger value="valuation"><Calculator className="mr-2 h-4 w-4" />Valuation</TabsTrigger>
         </TabsList>
 
         <TabsContent value="margin"><Card><CardHeader><CardTitle>Gross margin by item</CardTitle><CardDescription>Margin is based on immutable shipped-line revenue and stock-unit COGS snapshots.</CardDescription></CardHeader><CardContent><Rows loading={margin.isLoading} error={margin.error} rows={margin.data?.products || []} /></CardContent></Card></TabsContent>
+        <TabsContent value="production-profitability"><Card><CardHeader><CardTitle>Manufacturing profitability</CardTitle><CardDescription>Production cost by order, including materials, labor/overhead, waste, output unit cost, and allocation variance.</CardDescription></CardHeader><CardContent>{productionProfitability.isLoading ? <p className="text-sm text-gray-500">Loading production profitability...</p> : productionProfitability.isError ? <p className="text-sm text-red-600">Unable to load production profitability.</p> : <div className="space-y-3"><div className="flex flex-wrap items-end gap-3"><Field label="From" value={profitabilityDateFrom} onChange={setProfitabilityDateFrom} type="date" /><Field label="To" value={profitabilityDateTo} onChange={setProfitabilityDateTo} type="date" /></div><div className="grid gap-3 sm:grid-cols-4">{["material_cost", "additional_cost", "waste_cost", "total_cost"].map((key) => <Metric key={key} label={label(key)} value={money(productionProfitability.data?.totals?.[key])} />)}</div>{(productionProfitability.data?.orders || []).map((row) => <div key={String(row.production_order_id)} className="grid gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 sm:grid-cols-5"><div><p className="font-semibold text-gray-900">{row.order_number}</p><p className="text-sm text-gray-500">{row.finished_good_name || "Finished good"} · {label(row.status)}</p></div><div><span className="text-xs text-gray-500">Total cost</span><p>{money(row.total_cost)}</p></div><div><span className="text-xs text-gray-500">Unit cost</span><p>{money(row.unit_cost)}</p></div><div><span className="text-xs text-gray-500">Waste</span><p>{money(row.waste_cost)}</p></div><div><span className="text-xs text-gray-500">Allocation</span><p className={row.allocation_valid ? "text-emerald-700" : "text-red-600"}>{row.allocation_valid ? "Valid" : `Unallocated ${money(row.unallocated_cost)}`}</p></div></div>)}{!productionProfitability.data?.orders?.length ? <p className="text-sm text-gray-500">No production orders are available for profitability reporting.</p> : null}</div>}</CardContent></Card></TabsContent>
 
         <TabsContent value="returns" className="space-y-4">
           {canManageInventory ? <Card><CardHeader><CardTitle>Record customer return</CardTitle><CardDescription>Enter a shipped-line ID and quantity. Stock is restored only when the return is received.</CardDescription></CardHeader><CardContent className="grid gap-4 md:grid-cols-3"><Field label="Shipment line ID" value={returnLineId} onChange={setReturnLineId} /><Field label="Quantity returned" value={returnQuantity} onChange={setReturnQuantity} /><div className="flex items-end"><Button onClick={submitReturn} disabled={createReturnState.isLoading}>{createReturnState.isLoading ? "Recording..." : "Record return"}</Button></div></CardContent></Card> : null}

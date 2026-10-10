@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useMemo } from "react"
-import { Activity, Bell, Boxes, CreditCard, FileSearch, PackageSearch, ShieldCheck, Users } from "lucide-react"
+import { Activity, Bell, Boxes, CreditCard, FileSearch, Link2, PackageSearch, ShieldCheck, Users } from "lucide-react"
 
 import StatTile from "@/components/dashboard/StatTile"
 import { Button } from "@/components/ui/button"
@@ -18,6 +18,12 @@ const adminLinks = [
     title: "Billing and subscriptions",
     description: "Manage plans, payments, providers, and webhook activity.",
     icon: CreditCard,
+  },
+  {
+    href: "/admin/affiliates",
+    title: "Affiliate partners",
+    description: "Create unique partner links and manage custom commission agreements.",
+    icon: Link2,
   },
   {
     href: "/product/global-catalog-admin",
