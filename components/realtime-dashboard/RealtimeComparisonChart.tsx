@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Activity, BarChart3, CalendarRange, Check, ChevronDown, MapPin, PackageSearch, Radio, Search, TrendingDown, TrendingUp } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,6 +10,7 @@ import type { DashboardFeedEntry, DashboardWorkspaceSnapshot } from "@/redux/fea
 import type { DashboardSocketState } from "./useAuditRealtimeDashboard"
 
 type ComparisonMode = "products" | "locations"
+type ComparisonMetric = "units" | "revenue"
 type StudioView = "overview" | "revenue" | "compare"
 const SERIES_COLORS = ["#2563eb", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444"]
 
@@ -17,6 +18,9 @@ type ComparisonCatalogItem = { id: string; name: string; image_url?: string }
 
 const getSeriesLabel = (entry: DashboardFeedEntry, mode: ComparisonMode) =>
   mode === "products" ? entry.title || entry.target_label || "Unknown product" : entry.location_label || "Unknown location"
+
+const getMetricValue = (entry: DashboardFeedEntry, metric: ComparisonMetric) =>
+  metric === "revenue" ? Number(entry.amount || 0) : Number(entry.quantity || 0)
 
 const formatBucket = (value: Date) =>
   value.toLocaleTimeString([], {
@@ -43,11 +47,13 @@ export default function RealtimeComparisonChart({
   currencyCode?: string
 }) {
   const [mode, setMode] = useState<ComparisonMode>("products")
+  const [comparisonMetric, setComparisonMetric] = useState<ComparisonMetric>("units")
   const [studioView, setStudioView] = useState<StudioView>("overview")
   const [fromDate, setFromDate] = useState<string>()
   const [toDate, setToDate] = useState<string>()
   const [selectorOpen, setSelectorOpen] = useState(false)
   const [selectorSearch, setSelectorSearch] = useState("")
+  const selectorRef = useRef<HTMLDivElement>(null)
   const [renderedAt] = useState(() => new Date())
   const allSales = useMemo(
     () => (snapshot?.feed ?? []).filter((entry): entry is DashboardFeedEntry => entry.stream_kind === "sale"),
@@ -95,16 +101,29 @@ export default function RealtimeComparisonChart({
     for (const sale of sales) {
       const label = getSeriesLabel(sale, mode)
       const current = totals.get(label) ?? { total: 0, imageUrl: sale.image_url }
-      totals.set(label, { total: current.total + Number(sale.quantity || 0), imageUrl: current.imageUrl || sale.image_url })
+      totals.set(label, { total: current.total + getMetricValue(sale, comparisonMetric), imageUrl: current.imageUrl || sale.image_url })
     }
     return [...totals.entries()]
       .sort((left, right) => right[1].total - left[1].total)
       .map(([label, value]) => ({ label, total: value.total, imageUrl: value.imageUrl }))
-  }, [catalogProducts, mode, sales])
+  }, [catalogProducts, comparisonMetric, mode, sales])
 
   const [selected, setSelected] = useState<string[]>([])
   const selectedSeries = options.filter((option) => selected.includes(option.label))
   const visibleOptions = options.filter((option) => option.label.toLowerCase().includes(selectorSearch.trim().toLowerCase()))
+
+  useEffect(() => {
+    if (!selectorOpen) return
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (selectorRef.current && !selectorRef.current.contains(event.target as Node)) {
+        setSelectorOpen(false)
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown)
+    return () => document.removeEventListener("pointerdown", handlePointerDown)
+  }, [selectorOpen])
 
   const chart = useMemo(() => {
     if (!sales.length || !selectedSeries.length) return null
@@ -123,12 +142,12 @@ export default function RealtimeComparisonChart({
             const bucketIndex = Math.min(11, Math.max(0, Math.floor(ratio * 12)))
             return bucketIndex === buckets.indexOf(bucket)
           })
-          .reduce((total, sale) => total + Number(sale.quantity || 0), 0),
+            .reduce((total, sale) => total + getMetricValue(sale, comparisonMetric), 0),
       )
       return { ...series, values }
     })
     return { buckets, lines, max: Math.max(...lines.flatMap((line) => line.values), 1) }
-  }, [effectiveFromDate, effectiveToDate, mode, sales, selectedSeries])
+  }, [comparisonMetric, effectiveFromDate, effectiveToDate, mode, sales, selectedSeries])
 
   const toggleSeries = (label: string) => {
     setSelected((current) => {
@@ -223,6 +242,18 @@ export default function RealtimeComparisonChart({
               </button>
             ))}
           </div>
+          <div className="inline-flex rounded-2xl border border-gray-200 bg-gray-50 p-1" aria-label="Comparison metric">
+            {(["units", "revenue"] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setComparisonMetric(value)}
+                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${comparisonMetric === value ? "bg-emerald-600 text-white shadow-sm" : "text-gray-600 hover:bg-white hover:text-gray-900"}`}
+              >
+                {value === "units" ? "Units sold" : "Revenue"}
+              </button>
+            ))}
+          </div>
           <div className="flex flex-wrap items-end gap-3">
             <div className="w-44">
               <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-500">From</div>
@@ -249,12 +280,12 @@ export default function RealtimeComparisonChart({
             </div>
             <div className="inline-flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">
               <CalendarRange className="h-4 w-4" />
-              Compare units sold · any number of series
+              Compare {comparisonMetric === "units" ? "units sold" : "revenue"} · any number of series
             </div>
           </div>
         </div>
 
-        <div className="relative">
+        <div ref={selectorRef} className="relative">
           <button
             type="button"
             onClick={() => setSelectorOpen((open) => !open)}
@@ -293,7 +324,7 @@ export default function RealtimeComparisonChart({
                         ) : <PackageSearch className="m-2 h-5 w-5 text-gray-400" />}
                       </div>
                       <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-700">{option.label}</span>
-                      <span className="text-xs text-gray-400">{option.total.toLocaleString()} sold</span>
+                      <span className="text-xs text-gray-400">{comparisonMetric === "units" ? `${option.total.toLocaleString()} units` : formatCurrencyCompact(currencyCode, option.total)}</span>
                       {active ? <Check className="h-4 w-4 text-blue-600" /> : <span className="h-4 w-4 rounded-full border border-gray-300" style={{ borderColor: SERIES_COLORS[index % SERIES_COLORS.length] }} />}
                     </button>
                   )
@@ -317,13 +348,19 @@ export default function RealtimeComparisonChart({
           {chart ? (
             <div className="overflow-x-auto">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-gray-600">
-                <span><strong className="text-gray-900">{mode === "products" ? "Product" : "Location"} comparison:</strong> units sold in each time bucket</span>
+                <span><strong className="text-gray-900">{mode === "products" ? "Product" : "Location"} comparison:</strong> {comparisonMetric === "units" ? "units sold" : "paid revenue"} in each time bucket</span>
                 <span>{selectedSeries.length} series selected · {sales.length} live sale event{sales.length === 1 ? "" : "s"}</span>
               </div>
-              <svg viewBox="0 0 900 300" className="min-w-[680px] w-full" role="img" aria-label={`${mode} sales comparison chart`}>
+              <div className="mb-3 grid gap-2 sm:grid-cols-3">
+                <div className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600"><span className="font-semibold text-gray-900">Vertical scale</span><br />0 to {comparisonMetric === "units" ? `${Math.round(chart.max).toLocaleString()} units` : formatCurrencyCompact(currencyCode, chart.max)}</div>
+                <div className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600"><span className="font-semibold text-gray-900">Each point</span><br />{comparisonMetric === "units" ? "Units sold in that time bucket" : "Paid revenue in that time bucket"}</div>
+                <div className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600"><span className="font-semibold text-gray-900">Time buckets</span><br />12 evenly spaced points across your selected range</div>
+              </div>
+              <svg viewBox="0 0 900 300" className="min-w-[680px] w-full" role="img" aria-label={`${mode} ${comparisonMetric} comparison chart`}>
                 {[0, 1, 2, 3].map((step) => {
                   const y = 32 + step * 62
-                  return <line key={step} x1="42" x2="880" y1={y} y2={y} stroke="#dbe3ef" strokeDasharray="4 8" />
+                  const axisValue = chart.max - (chart.max / 4) * step
+                  return <g key={step}><line x1="42" x2="880" y1={y} y2={y} stroke="#dbe3ef" strokeDasharray="4 8" /><text x="36" y={y + 4} textAnchor="end" fontSize="11" fill="#64748b">{comparisonMetric === "units" ? Math.round(axisValue).toLocaleString() : formatCurrencyCompact(currencyCode, axisValue)}</text></g>
                 })}
                 {chart.lines.map((line, lineIndex) => {
                   const points = line.values
@@ -340,7 +377,9 @@ export default function RealtimeComparisonChart({
                       {line.values.map((value, index) => {
                         const x = 42 + (index / Math.max(chart.buckets.length - 1, 1)) * 838
                         const y = 274 - (value / chart.max) * 224
-                        return <circle key={`${line.label}-${index}`} cx={x} cy={y} r="5" fill="white" stroke={color} strokeWidth="3" />
+                        const bucket = chart.buckets[index]
+                        const label = comparisonMetric === "units" ? `${value.toLocaleString()} units` : formatCurrencyCompact(currencyCode, value)
+                        return <circle key={`${line.label}-${index}`} cx={x} cy={y} r="6" fill="white" stroke={color} strokeWidth="3" className="cursor-crosshair"><title>{`${line.label} · ${bucket.toLocaleString()} · ${label}`}</title></circle>
                       })}
                     </g>
                   )
@@ -351,6 +390,14 @@ export default function RealtimeComparisonChart({
                   return <text key={bucket.toISOString()} x={x} y="296" textAnchor="middle" fontSize="11" fill="#64748b">{formatBucket(bucket)}</text>
                 })}
               </svg>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {chart.lines.map((line, index) => {
+                  const total = line.values.reduce((sum, value) => sum + value, 0)
+                  const peak = Math.max(...line.values, 0)
+                  const color = SERIES_COLORS[index % SERIES_COLORS.length]
+                  return <div key={`${line.label}-summary`} className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600"><div className="flex items-center gap-2 font-semibold text-gray-900"><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />{line.label}</div><div className="mt-1">Total: <strong>{comparisonMetric === "units" ? `${total.toLocaleString()} units` : formatCurrencyCompact(currencyCode, total)}</strong> · Peak bucket: <strong>{comparisonMetric === "units" ? `${peak.toLocaleString()} units` : formatCurrencyCompact(currencyCode, peak)}</strong></div></div>
+                })}
+              </div>
             </div>
           ) : (
             <div className="flex min-h-64 items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-white px-5 text-center text-sm text-gray-500">
