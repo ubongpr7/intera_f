@@ -6,12 +6,14 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { formatCurrencyCompact } from "@/lib/currency-utils"
+import { hasPermission } from "@/lib/permissionsGuard"
+import { useGetSalesMarginQuery } from "@/redux/features/accounting/accountingApiSlice"
 import type { DashboardFeedEntry, DashboardWorkspaceSnapshot } from "@/redux/features/audit/auditRealtimeDashboardTypes"
 import type { DashboardSocketState } from "./useAuditRealtimeDashboard"
 
 type ComparisonMode = "products" | "locations"
 type ComparisonMetric = "units" | "revenue"
-type StudioView = "overview" | "revenue" | "compare"
+type StudioView = "overview" | "revenue" | "profitability" | "compare"
 const SERIES_COLORS = ["#2563eb", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444"]
 
 type ComparisonCatalogItem = { id: string; name: string; image_url?: string }
@@ -55,6 +57,10 @@ export default function RealtimeComparisonChart({
   const [selectorSearch, setSelectorSearch] = useState("")
   const selectorRef = useRef<HTMLDivElement>(null)
   const [renderedAt] = useState(() => new Date())
+  const canReadProfitability = hasPermission("read_inventory")
+  const profitability = useGetSalesMarginQuery(undefined, {
+    skip: studioView !== "profitability" || !canReadProfitability,
+  })
   const allSales = useMemo(
     () => (snapshot?.feed ?? []).filter((entry): entry is DashboardFeedEntry => entry.stream_kind === "sale"),
     [snapshot?.feed],
@@ -92,6 +98,17 @@ export default function RealtimeComparisonChart({
   const trendDirection = overviewPoints.length > 1
     ? Number(overviewPoints[overviewPoints.length - 1].value) >= Number(overviewPoints[0].value) ? "up" : "down"
     : "flat"
+  const profitabilityTotals = useMemo(
+    () => (profitability.data?.products ?? []).reduce(
+      (totals, row) => ({
+        revenue: totals.revenue + Number(row.revenue || 0),
+        cogs: totals.cogs + Number(row.cogs || 0),
+        grossMargin: totals.grossMargin + Number(row.gross_margin || 0),
+      }),
+      { revenue: 0, cogs: 0, grossMargin: 0 },
+    ),
+    [profitability.data],
+  )
 
   const options = useMemo(() => {
     const totals = new Map<string, { total: number; imageUrl?: string }>()
@@ -178,7 +195,7 @@ export default function RealtimeComparisonChart({
       </CardHeader>
       <CardContent className="space-y-5 p-5">
         <div className="inline-flex rounded-2xl border border-gray-200 bg-gray-50 p-1">
-          {(["overview", "revenue", "compare"] as const).map((value) => (
+          {(["overview", "revenue", "profitability", "compare"] as const).map((value) => (
             <button
               key={value}
               type="button"
@@ -186,7 +203,7 @@ export default function RealtimeComparisonChart({
               className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${studioView === value ? "bg-blue-600 text-white shadow-sm" : "text-gray-600 hover:bg-white hover:text-gray-900"}`}
             >
               {value === "compare" ? <Activity className="mr-2 inline h-4 w-4" /> : <BarChart3 className="mr-2 inline h-4 w-4" />}
-              {value === "overview" ? "At a glance" : value === "revenue" ? "Revenue detail" : "Compare"}
+              {value === "overview" ? "At a glance" : value === "revenue" ? "Revenue detail" : value === "profitability" ? "Profitability" : "Compare"}
             </button>
           ))}
         </div>
@@ -221,6 +238,21 @@ export default function RealtimeComparisonChart({
               <div className="mt-5 grid grid-cols-2 gap-3 text-sm"><div className="rounded-2xl border border-emerald-200 bg-white p-3"><div className="text-xs text-gray-500">Paid revenue</div><div className="mt-1 text-xl font-semibold text-gray-900">{formatCurrencyCompact(currencyCode, overviewTotal)}</div></div><div className="rounded-2xl border border-emerald-200 bg-white p-3"><div className="text-xs text-gray-500">Average order</div><div className="mt-1 text-xl font-semibold text-gray-900">{formatCurrencyCompact(currencyCode, averageOrderValue)}</div></div></div>
             </div>
             <div className="rounded-3xl border border-gray-200 bg-gray-50 p-5"><div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">Revenue trend</div><div className="mt-1 text-sm text-gray-600">Paid-order value by audit time bucket.</div>{overviewPoints.length ? <div className="mt-5 flex h-44 items-end gap-2">{overviewPoints.map((point) => { const value = Number(point.value) || 0; return <div key={point.bucket} className="group flex min-w-0 flex-1 flex-col items-center gap-2"><div className="relative flex h-32 w-full items-end"><div className="w-full rounded-t-xl bg-gradient-to-t from-emerald-600 to-teal-400 transition-all group-hover:from-emerald-700" style={{ height: `${Math.max((value / overviewMax) * 100, value > 0 ? 8 : 0)}%` }} /></div><span className="text-[10px] text-gray-500">{new Date(point.bucket).toLocaleTimeString([], { hour: "numeric" })}</span></div> })}</div> : <div className="mt-5 flex h-44 items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-white text-sm text-gray-500">Waiting for revenue activity.</div>}</div>
+          </div>
+        ) : null}
+
+        {studioView === "profitability" ? (
+          <div className="space-y-5">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4"><div className="text-xs font-semibold uppercase tracking-wide text-blue-700">Shipped revenue</div><div className="mt-2 text-2xl font-semibold text-gray-900">{formatCurrencyCompact(currencyCode, profitabilityTotals.revenue)}</div></div>
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4"><div className="text-xs font-semibold uppercase tracking-wide text-amber-700">COGS</div><div className="mt-2 text-2xl font-semibold text-gray-900">{formatCurrencyCompact(currencyCode, profitabilityTotals.cogs)}</div></div>
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4"><div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Gross margin</div><div className="mt-2 text-2xl font-semibold text-gray-900">{formatCurrencyCompact(currencyCode, profitabilityTotals.grossMargin)}</div></div>
+            </div>
+            <div className="rounded-3xl border border-gray-200 bg-gray-50 p-5">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">Gross margin by product</div>
+              <div className="mt-1 text-sm text-gray-600">Authoritative shipped-line revenue minus captured COGS. This is not a POS estimate.</div>
+              {profitability.isLoading ? <div className="mt-5 text-sm text-gray-500">Loading shipped margin data...</div> : profitability.isError ? <div className="mt-5 text-sm text-red-600">Unable to load profitability data. Check the workspace accounting permission and retry.</div> : profitability.data?.products?.length ? <div className="mt-5 space-y-3">{profitability.data.products.slice(0, 10).map((row) => { const revenue = Number(row.revenue || 0); const margin = Number(row.gross_margin || 0); const width = revenue > 0 ? Math.max(0, Math.min(100, (margin / revenue) * 100)) : 0; return <div key={String(row.inventory_item_id ?? row.inventory_item_name)} className="rounded-2xl border border-gray-200 bg-white p-4"><div className="flex flex-wrap items-center justify-between gap-2"><span className="font-semibold text-gray-900">{row.inventory_item_name || "Inventory item"}</span><span className="text-sm font-semibold text-emerald-700">{formatCurrencyCompact(currencyCode, margin)} margin</span></div><div className="mt-3 h-2 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600" style={{ width: `${width}%` }} /></div><div className="mt-2 flex justify-between text-xs text-gray-500"><span>Revenue {formatCurrencyCompact(currencyCode, revenue)}</span><span>COGS {formatCurrencyCompact(currencyCode, Number(row.cogs || 0))}</span></div></div> })}</div> : <div className="mt-5 rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center text-sm text-gray-500">No shipped-line profitability data is available for this workspace yet.</div>}
+            </div>
           </div>
         ) : null}
 
