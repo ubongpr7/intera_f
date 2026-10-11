@@ -1,19 +1,18 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Activity, BarChart3, CalendarRange, Check, ChevronDown, MapPin, PackageSearch, Radio, Search, TrendingDown, TrendingUp } from "lucide-react"
+import { Activity, BarChart3, CalendarRange, Check, ChevronDown, MapPin, PackageSearch, Radio, RefreshCw, Search, TrendingDown, TrendingUp } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { formatCurrencyCompact } from "@/lib/currency-utils"
-import { hasPermission } from "@/lib/permissionsGuard"
-import { useGetSalesMarginQuery } from "@/redux/features/accounting/accountingApiSlice"
+import { useGetSalesTrendQuery } from "@/redux/features/dashboard/dashboardApiSlice"
 import type { DashboardFeedEntry, DashboardWorkspaceSnapshot } from "@/redux/features/audit/auditRealtimeDashboardTypes"
 import type { DashboardSocketState } from "./useAuditRealtimeDashboard"
 
 type ComparisonMode = "products" | "locations"
 type ComparisonMetric = "units" | "revenue"
-type StudioView = "overview" | "revenue" | "profitability" | "compare"
+type StudioView = "overview" | "revenue" | "compare"
 const SERIES_COLORS = ["#2563eb", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444"]
 
 type ComparisonCatalogItem = { id: string; name: string; image_url?: string }
@@ -24,11 +23,15 @@ const getSeriesLabel = (entry: DashboardFeedEntry, mode: ComparisonMode) =>
 const getMetricValue = (entry: DashboardFeedEntry, metric: ComparisonMetric) =>
   metric === "revenue" ? Number(entry.amount || 0) : Number(entry.quantity || 0)
 
-const formatBucket = (value: Date) =>
-  value.toLocaleTimeString([], {
-    hour: "numeric",
-    minute: "2-digit",
-  })
+const formatBucket = (value: Date, durationMs: number) => {
+  const multiDay = durationMs >= 36 * 60 * 60 * 1000
+  return value.toLocaleString([], multiDay
+    ? { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }
+    : { hour: "numeric", minute: "2-digit" })
+}
+
+const formatRange = (from: Date, to: Date) =>
+  `${from.toLocaleString([], { dateStyle: "medium", timeStyle: "short" })} – ${to.toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}`
 
 const formatDateTimeLocal = (value: Date) => {
   const pad = (part: number) => String(part).padStart(2, "0")
@@ -57,10 +60,6 @@ export default function RealtimeComparisonChart({
   const [selectorSearch, setSelectorSearch] = useState("")
   const selectorRef = useRef<HTMLDivElement>(null)
   const [renderedAt] = useState(() => new Date())
-  const canReadProfitability = hasPermission("read_inventory")
-  const profitability = useGetSalesMarginQuery(undefined, {
-    skip: studioView !== "profitability" || !canReadProfitability,
-  })
   const allSales = useMemo(
     () => (snapshot?.feed ?? []).filter((entry): entry is DashboardFeedEntry => entry.stream_kind === "sale"),
     [snapshot?.feed],
@@ -72,8 +71,42 @@ export default function RealtimeComparisonChart({
   const defaultFromDate = useMemo(() => new Date(latestSalesDate.getTime() - 24 * 60 * 60 * 1000), [latestSalesDate])
   const effectiveFromDate = useMemo(() => (fromDate ? new Date(fromDate) : defaultFromDate), [defaultFromDate, fromDate])
   const effectiveToDate = useMemo(() => (toDate ? new Date(toDate) : latestSalesDate), [latestSalesDate, toDate])
+  const {
+    data: trendData,
+    isFetching: isTrendFetching,
+    refetch: refreshTrend,
+  } = useGetSalesTrendQuery({
+    from: effectiveFromDate.toISOString(),
+    to: effectiveToDate.toISOString(),
+  })
+  const historicalSales = useMemo<DashboardFeedEntry[]>(
+    () => (trendData?.sales ?? []).map((sale) => ({
+      audit_id: sale.id,
+      occurred_at: sale.occurred_at,
+      event_name: "pos.order.paid",
+      summary: `${sale.product_name} sold on ${sale.order_number}`,
+      severity: "info",
+      source_service: "pos_backend_service",
+      feature_area: "point_of_sale",
+      target_label: sale.product_name,
+      reference_number: sale.order_number,
+      stream_kind: "sale",
+      title: sale.product_name,
+      subtitle: [sale.variant_name, sale.terminal_name].filter(Boolean).join(" • "),
+      actor_name: "",
+      location_label: sale.location_label,
+      terminal_name: sale.terminal_name,
+      quantity: sale.quantity,
+      amount: sale.revenue,
+      unit_label: "sold",
+      sku: sale.sku,
+      barcode: sale.barcode,
+    })),
+    [trendData?.sales],
+  )
   const sales = useMemo(
     () => {
+      if (trendData) return historicalSales
       if (!allSales.length) return allSales
       const from = effectiveFromDate.getTime()
       const to = effectiveToDate.getTime()
@@ -82,7 +115,7 @@ export default function RealtimeComparisonChart({
         return timestamp >= from && timestamp <= to
       })
     },
-    [allSales, effectiveFromDate, effectiveToDate],
+    [allSales, effectiveFromDate, effectiveToDate, historicalSales, trendData],
   )
   const overviewPoints = snapshot?.charts.sales_amount_by_hour ?? []
   const overviewMax = Math.max(...overviewPoints.map((point) => Number(point.value) || 0), 1)
@@ -98,18 +131,6 @@ export default function RealtimeComparisonChart({
   const trendDirection = overviewPoints.length > 1
     ? Number(overviewPoints[overviewPoints.length - 1].value) >= Number(overviewPoints[0].value) ? "up" : "down"
     : "flat"
-  const profitabilityTotals = useMemo(
-    () => (profitability.data?.products ?? []).reduce(
-      (totals, row) => ({
-        revenue: totals.revenue + Number(row.revenue || 0),
-        cogs: totals.cogs + Number(row.cogs || 0),
-        grossMargin: totals.grossMargin + Number(row.gross_margin || 0),
-      }),
-      { revenue: 0, cogs: 0, grossMargin: 0 },
-    ),
-    [profitability.data],
-  )
-
   const options = useMemo(() => {
     const totals = new Map<string, { total: number; imageUrl?: string }>()
     if (mode === "products") {
@@ -117,15 +138,24 @@ export default function RealtimeComparisonChart({
     }
     for (const sale of sales) {
       const label = getSeriesLabel(sale, mode)
-      const current = totals.get(label) ?? { total: 0, imageUrl: sale.image_url }
-      totals.set(label, { total: current.total + getMetricValue(sale, comparisonMetric), imageUrl: current.imageUrl || sale.image_url })
+      const current = totals.get(label) ?? { total: 0 }
+      totals.set(label, {
+        total: current.total + getMetricValue(sale, comparisonMetric),
+        // A location is not a product. Never attach a sale-line image to a
+        // location selector; it makes the comparison look product-scoped.
+        imageUrl: mode === "products" ? current.imageUrl || sale.image_url : undefined,
+      })
     }
     return [...totals.entries()]
       .sort((left, right) => right[1].total - left[1].total)
       .map(([label, value]) => ({ label, total: value.total, imageUrl: value.imageUrl }))
   }, [catalogProducts, comparisonMetric, mode, sales])
 
-  const [selected, setSelected] = useState<string[]>([])
+  const [selectedByMode, setSelectedByMode] = useState<Record<ComparisonMode, string[]>>({
+    products: [],
+    locations: [],
+  })
+  const selected = selectedByMode[mode]
   const selectedSeries = options.filter((option) => selected.includes(option.label))
   const visibleOptions = options.filter((option) => option.label.toLowerCase().includes(selectorSearch.trim().toLowerCase()))
 
@@ -165,11 +195,15 @@ export default function RealtimeComparisonChart({
     })
     return { buckets, lines, max: Math.max(...lines.flatMap((line) => line.values), 1) }
   }, [comparisonMetric, effectiveFromDate, effectiveToDate, mode, sales, selectedSeries])
+  const selectedRangeDurationMs = Math.max(effectiveToDate.getTime() - effectiveFromDate.getTime(), 12 * 60 * 1000)
 
   const toggleSeries = (label: string) => {
-    setSelected((current) => {
-      if (current.includes(label)) return current.filter((item) => item !== label)
-      return [...current, label]
+    setSelectedByMode((current) => {
+      const selectedForMode = current[mode]
+      if (selectedForMode.includes(label)) {
+        return { ...current, [mode]: selectedForMode.filter((item) => item !== label) }
+      }
+      return { ...current, [mode]: [...selectedForMode, label] }
     })
   }
 
@@ -195,7 +229,7 @@ export default function RealtimeComparisonChart({
       </CardHeader>
       <CardContent className="space-y-5 p-5">
         <div className="inline-flex rounded-2xl border border-gray-200 bg-gray-50 p-1">
-          {(["overview", "revenue", "profitability", "compare"] as const).map((value) => (
+          {(["overview", "revenue", "compare"] as const).map((value) => (
             <button
               key={value}
               type="button"
@@ -203,7 +237,7 @@ export default function RealtimeComparisonChart({
               className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${studioView === value ? "bg-blue-600 text-white shadow-sm" : "text-gray-600 hover:bg-white hover:text-gray-900"}`}
             >
               {value === "compare" ? <Activity className="mr-2 inline h-4 w-4" /> : <BarChart3 className="mr-2 inline h-4 w-4" />}
-              {value === "overview" ? "At a glance" : value === "revenue" ? "Revenue detail" : value === "profitability" ? "Profitability" : "Compare"}
+              {value === "overview" ? "At a glance" : value === "revenue" ? "Revenue detail" : "Compare"}
             </button>
           ))}
         </div>
@@ -241,21 +275,6 @@ export default function RealtimeComparisonChart({
           </div>
         ) : null}
 
-        {studioView === "profitability" ? (
-          <div className="space-y-5">
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4"><div className="text-xs font-semibold uppercase tracking-wide text-blue-700">Shipped revenue</div><div className="mt-2 text-2xl font-semibold text-gray-900">{formatCurrencyCompact(currencyCode, profitabilityTotals.revenue)}</div></div>
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4"><div className="text-xs font-semibold uppercase tracking-wide text-amber-700">COGS</div><div className="mt-2 text-2xl font-semibold text-gray-900">{formatCurrencyCompact(currencyCode, profitabilityTotals.cogs)}</div></div>
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4"><div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Gross margin</div><div className="mt-2 text-2xl font-semibold text-gray-900">{formatCurrencyCompact(currencyCode, profitabilityTotals.grossMargin)}</div></div>
-            </div>
-            <div className="rounded-3xl border border-gray-200 bg-gray-50 p-5">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">Gross margin by product</div>
-              <div className="mt-1 text-sm text-gray-600">Authoritative shipped-line revenue minus captured COGS. This is not a POS estimate.</div>
-              {profitability.isLoading ? <div className="mt-5 text-sm text-gray-500">Loading shipped margin data...</div> : profitability.isError ? <div className="mt-5 text-sm text-red-600">Unable to load profitability data. Check the workspace accounting permission and retry.</div> : profitability.data?.products?.length ? <div className="mt-5 space-y-3">{profitability.data.products.slice(0, 10).map((row) => { const revenue = Number(row.revenue || 0); const margin = Number(row.gross_margin || 0); const width = revenue > 0 ? Math.max(0, Math.min(100, (margin / revenue) * 100)) : 0; return <div key={String(row.inventory_item_id ?? row.inventory_item_name)} className="rounded-2xl border border-gray-200 bg-white p-4"><div className="flex flex-wrap items-center justify-between gap-2"><span className="font-semibold text-gray-900">{row.inventory_item_name || "Inventory item"}</span><span className="text-sm font-semibold text-emerald-700">{formatCurrencyCompact(currencyCode, margin)} margin</span></div><div className="mt-3 h-2 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600" style={{ width: `${width}%` }} /></div><div className="mt-2 flex justify-between text-xs text-gray-500"><span>Revenue {formatCurrencyCompact(currencyCode, revenue)}</span><span>COGS {formatCurrencyCompact(currencyCode, Number(row.cogs || 0))}</span></div></div> })}</div> : <div className="mt-5 rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center text-sm text-gray-500">No shipped-line profitability data is available for this workspace yet.</div>}
-            </div>
-          </div>
-        ) : null}
-
         {studioView === "compare" ? <>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="inline-flex rounded-2xl border border-gray-200 bg-gray-50 p-1">
@@ -265,7 +284,6 @@ export default function RealtimeComparisonChart({
                 type="button"
                 onClick={() => {
                   setMode(value)
-                  setSelected([])
                 }}
                 className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${mode === value ? "bg-blue-600 text-white shadow-sm" : "text-gray-600 hover:bg-white hover:text-gray-900"}`}
               >
@@ -314,6 +332,15 @@ export default function RealtimeComparisonChart({
               <CalendarRange className="h-4 w-4" />
               Compare {comparisonMetric === "units" ? "units sold" : "revenue"} · any number of series
             </div>
+            <button
+              type="button"
+              onClick={() => void refreshTrend()}
+              disabled={isTrendFetching}
+              className="inline-flex h-9 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-700 shadow-sm transition hover:border-blue-300 hover:text-blue-700 disabled:cursor-wait disabled:opacity-60"
+            >
+              <RefreshCw className={isTrendFetching ? "h-3.5 w-3.5 animate-spin" : "h-3.5 w-3.5"} />
+              Refresh range
+            </button>
           </div>
         </div>
 
@@ -381,7 +408,10 @@ export default function RealtimeComparisonChart({
             <div className="overflow-x-auto">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-gray-600">
                 <span><strong className="text-gray-900">{mode === "products" ? "Product" : "Location"} comparison:</strong> {comparisonMetric === "units" ? "units sold" : "paid revenue"} in each time bucket</span>
-                <span>{selectedSeries.length} series selected · {sales.length} live sale event{sales.length === 1 ? "" : "s"}</span>
+                <span>{selectedSeries.length} series selected · {sales.length} paid sale line{sales.length === 1 ? "" : "s"} in selected range</span>
+              </div>
+              <div className="mb-3 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-800">
+                <span className="font-semibold">Active range:</span> {formatRange(effectiveFromDate, effectiveToDate)}
               </div>
               <div className="mb-3 grid gap-2 sm:grid-cols-3">
                 <div className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600"><span className="font-semibold text-gray-900">Vertical scale</span><br />0 to {comparisonMetric === "units" ? `${Math.round(chart.max).toLocaleString()} units` : formatCurrencyCompact(currencyCode, chart.max)}</div>
@@ -419,7 +449,7 @@ export default function RealtimeComparisonChart({
                 {chart.buckets.map((bucket, index) => {
                   if (index % 2 !== 0 && index !== chart.buckets.length - 1) return null
                   const x = 42 + (index / Math.max(chart.buckets.length - 1, 1)) * 838
-                  return <text key={bucket.toISOString()} x={x} y="296" textAnchor="middle" fontSize="11" fill="#64748b">{formatBucket(bucket)}</text>
+                  return <text key={bucket.toISOString()} x={x} y="296" textAnchor="middle" fontSize="11" fill="#64748b">{formatBucket(bucket, selectedRangeDurationMs)}</text>
                 })}
               </svg>
               <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
