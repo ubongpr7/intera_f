@@ -44,6 +44,7 @@ import {
   useDeletePurchaseOrderLineItemMutation,
 } from "@/redux/features/orders/orderAPISlice"
 import { useListInventoryItemsQuery, useListStockLocationsQuery } from "@/redux/features/stock/stockAPISlice"
+import { useGetAvailableCatalogVariantsQuery } from "@/redux/features/inventory/inventoryAPiSlice"
 import { useGetCompanyUsersQuery } from "@/redux/features/users/userApiSlice"
 
 const statusStyles: Record<string, string> = {
@@ -71,6 +72,7 @@ type PurchaseOrderHeaderForm = {
 
 type LineItemForm = {
   inventory_item: string
+  product_variant_id: string
   quantity: string
   unit_price: string
   discount_rate: string
@@ -111,6 +113,9 @@ type ReturnEntry = {
 
 type InventorySelectOption = SelectOption & {
   sku?: string
+  barcode?: string
+  productVariantId?: string
+  isCatalogVariant?: boolean
   imageUrl?: string
   reorderQuantity?: string | number
 }
@@ -223,6 +228,7 @@ const buildHeaderForm = (order?: PurchaseOrderInterface | null): PurchaseOrderHe
 
 const emptyLineItemForm: LineItemForm = {
   inventory_item: "",
+  product_variant_id: "",
   quantity: "1",
   unit_price: "0",
   discount_rate: "0",
@@ -269,6 +275,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
     [selectedStructuralLocationIds],
   )
   const { data: inventoryItems = [] } = useListInventoryItemsQuery(inventoryQuery)
+  const { data: availableCatalogVariants = [] } = useGetAvailableCatalogVariantsQuery()
   const { data: locations = [] } = useListStockLocationsQuery()
   const selectedSingleStructuralLocationId = useMemo(
     () => getSingleStructuralLocationId(selectedStructuralLocationIds),
@@ -337,15 +344,27 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
     [],
   )
   const inventoryOptions = useMemo<InventorySelectOption[]>(
-    () =>
-      inventoryItems.map((inventoryItem) => ({
+    () => [
+      ...inventoryItems.map((inventoryItem) => ({
         value: String(inventoryItem.id),
         label: inventoryItem.name || inventoryItem.inventory_name || String(inventoryItem.id),
-        sku: inventoryItem.sku || inventoryItem.barcode_snapshot || "",
+        sku: inventoryItem.sku || "",
+        barcode: inventoryItem.barcode_snapshot || "",
         imageUrl: inventoryItem.product_variant_image_url || inventoryItem.display_image || "",
         reorderQuantity: inventoryItem.reorder_quantity || 0,
       })),
-    [inventoryItems],
+      ...availableCatalogVariants.map((variant) => ({
+        value: `catalog:${variant.id}`,
+        label: `${variant.product_name} - ${variant.display_name}`,
+        sku: variant.sku || "",
+        barcode: variant.barcode || "",
+        imageUrl: variant.image_url || "",
+        productVariantId: variant.id,
+        isCatalogVariant: true,
+        reorderQuantity: 0,
+      })),
+    ],
+    [availableCatalogVariants, inventoryItems],
   )
   const locationOptions = useMemo<SelectOption[]>(
     () =>
@@ -380,12 +399,19 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
     setIsLineItemSheetOpen(true)
   }
 
-  const handleInventoryItemSelection = (value: string) => {
+  const selectedInventoryOption = useMemo(
+    () => inventoryOptions.find((option) => option.value === (lineItemForm.inventory_item || `catalog:${lineItemForm.product_variant_id}`)) || null,
+    [inventoryOptions, lineItemForm.inventory_item, lineItemForm.product_variant_id],
+  )
+
+  const handleInventoryItemSelection = (option: InventorySelectOption | null) => {
+    const value = option?.value ? String(option.value) : ""
     const nextItem = inventoryItems.find((item) => String(item.id) === value)
     const reorderQuantity = Math.max(asNumber(nextItem?.reorder_quantity), 0)
     setLineItemForm((current) => ({
       ...current,
-      inventory_item: value,
+      inventory_item: option?.isCatalogVariant ? "" : value,
+      product_variant_id: option?.isCatalogVariant ? option.productVariantId || "" : "",
       quantity: reorderQuantity > 0 ? String(reorderQuantity) : current.quantity || "1",
     }))
   }
@@ -441,17 +467,8 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
       return
     }
 
-    if (!lineItemForm.inventory_item) {
-      toast.error("Select an inventory item before saving.")
-      return
-    }
-
-    const dateValidationError = validateInventoryDates({
-      manufacturedDate: lineItemForm.manufactured_date,
-      expiryDate: lineItemForm.expiry_date,
-    })
-    if (dateValidationError) {
-      toast.error(dateValidationError)
+    if (!lineItemForm.inventory_item && !lineItemForm.product_variant_id) {
+      toast.error("Select an inventory item or an untracked product variant before saving.")
       return
     }
 
@@ -462,14 +479,13 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
     }
 
     const payload = {
-      inventory_item: lineItemForm.inventory_item,
+      inventory_item: lineItemForm.inventory_item || undefined,
+      product_variant_id: lineItemForm.product_variant_id || undefined,
       quantity: requestedQuantity,
       unit_price: Number(lineItemForm.unit_price || "0"),
       discount_rate: Number(lineItemForm.discount_rate || "0"),
       tax_rate: Number(lineItemForm.tax_rate || "0"),
       description: lineItemForm.description || undefined,
-      expiry_date: lineItemForm.expiry_date || undefined,
-      manufactured_date: lineItemForm.manufactured_date || undefined,
     }
 
     try {
@@ -498,6 +514,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
     setEditingLineItemId(String(lineItem.id))
     setLineItemForm({
       inventory_item: lineItem.inventory_item ? String(lineItem.inventory_item) : "",
+      product_variant_id: lineItem.product_variant_id ? String(lineItem.product_variant_id) : "",
       quantity: String(lineItem.quantity ?? "1"),
       unit_price: String(lineItem.unit_price ?? "0"),
       discount_rate: String(lineItem.discount_rate ?? "0"),
@@ -1007,29 +1024,69 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
                   <ReactSelectField
                     inputId="line-inventory-item"
                     options={inventoryOptions}
-                    value={inventoryOptions.find((option) => option.value === lineItemForm.inventory_item) || null}
+                    value={selectedInventoryOption}
                     onChange={(option: SelectOption | readonly SelectOption[] | null) => {
                       const nextOption = getSingleOption(option)
-                      handleInventoryItemSelection(nextOption ? String(nextOption.value) : "")
+                      handleInventoryItemSelection(nextOption as InventorySelectOption | null)
                     }}
                     placeholder="Select inventory item"
                     isSearchable
+                    filterOption={(option, rawInput) => {
+                      const query = rawInput.trim().toLocaleLowerCase()
+                      if (!query) return true
+                      const data = option.data as InventorySelectOption
+                      const candidate = [
+                        option.label,
+                        option.value,
+                        data.sku,
+                        data.barcode,
+                      ]
+                        .filter(Boolean)
+                        .join(" ")
+                        .toLocaleLowerCase()
+                      return candidate.includes(query)
+                    }}
                     formatOptionLabel={renderInventoryOption}
                     menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
+                    styles={{
+                      menu: (provided) => ({
+                        ...provided,
+                        backgroundColor: "#111d33",
+                        borderColor: "#334766",
+                      }),
+                      menuList: (provided) => ({
+                        ...provided,
+                        backgroundColor: "#111d33",
+                        padding: 6,
+                      }),
+                      option: (provided, state) => ({
+                        ...provided,
+                        backgroundColor: state.isSelected
+                          ? "#2563eb"
+                          : state.isFocused
+                            ? "#243b67"
+                            : "#111d33",
+                        color: "#f8fafc",
+                        cursor: "pointer",
+                        ":active": {
+                          ...provided[":active"],
+                          backgroundColor: "#2563eb",
+                        },
+                      }),
+                    }}
                   />
                 </div>
 
-                {selectedInventoryItem ? (
+                {selectedInventoryOption ? (
                   <div className="rounded-[24px] border border-gray-200 bg-gray-50 p-4">
                     <div className="flex items-center gap-3">
-                      {inventoryImage(selectedInventoryItem.product_variant_image_url || selectedInventoryItem.display_image || null, selectedInventoryItem.name)}
+                      {inventoryImage(selectedInventoryOption.imageUrl || null, selectedInventoryOption.label)}
                       <div className="min-w-0">
                         <div className="truncate text-sm font-semibold text-gray-900">
-                          {selectedInventoryItem.name || selectedInventoryItem.inventory_name}
+                          {selectedInventoryOption.label}
                         </div>
                         <div className="truncate text-xs text-gray-500">
-                          {selectedInventoryItem.sku || selectedInventoryItem.barcode_snapshot || "No SKU"} • Reorder qty{" "}
-                          {selectedInventoryMinimumQuantity > 0 ? selectedInventoryMinimumQuantity : "Not set"}
+                          {selectedInventoryOption.sku || selectedInventoryOption.barcode || "No SKU/barcode"} • {selectedInventoryOption.isCatalogVariant ? "Will be tracked on save" : `Reorder qty ${selectedInventoryMinimumQuantity > 0 ? selectedInventoryMinimumQuantity : "Not set"}`}
                         </div>
                       </div>
                     </div>
@@ -1085,25 +1142,8 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
                       onChange={(event) => setLineItemForm((current) => ({ ...current, discount_rate: event.target.value }))}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="line-manufactured-date">Manufactured date</Label>
-                    <Input
-                      id="line-manufactured-date"
-                      type="date"
-                      max={todayIso()}
-                      value={lineItemForm.manufactured_date}
-                      onChange={(event) => setLineItemForm((current) => ({ ...current, manufactured_date: event.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="line-expiry-date">Expiry date</Label>
-                    <Input
-                      id="line-expiry-date"
-                      type="date"
-                      min={tomorrowIso()}
-                      value={lineItemForm.expiry_date}
-                      onChange={(event) => setLineItemForm((current) => ({ ...current, expiry_date: event.target.value }))}
-                    />
+                  <div className="rounded-xl border border-blue-200/60 bg-blue-50/60 p-4 text-sm text-blue-900 md:col-span-2">
+                    Manufacture and expiry dates are captured when the goods are received, because they belong to the physical batch that arrived.
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="line-description">Line description</Label>

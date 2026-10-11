@@ -399,6 +399,17 @@ const isFileUpload = (args: string | FetchArgs): boolean => {
   return args.meta?.isFileUpload === true
 }
 
+const isMutationMethod = (method: unknown) =>
+  !["GET", "HEAD", "OPTIONS"].includes(String(method || "GET").toUpperCase())
+
+const createIdempotencyKey = () => {
+  if (typeof globalThis.crypto?.randomUUID === "function") {
+    return globalThis.crypto.randomUUID()
+  }
+
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`
+}
+
 // Determine the service based on the URL or explicit service parameter
 const getServiceForEndpoint = (args: string | FetchArgs): serviceType => {
   if (typeof args === "string") {
@@ -447,8 +458,14 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
   const appropriateBaseQuery = isUpload ? fileUploadQueries[service] : baseQueries[service]
 
   // Prepare the final args
+  const requestHeaders = new Headers(argsObj.headers as HeadersInit | undefined)
+  if (isMutationMethod(argsObj.method) && !requestHeaders.has("Idempotency-Key")) {
+    requestHeaders.set("Idempotency-Key", createIdempotencyKey())
+  }
+
   const enhancedArgs = {
     ...argsObj,
+    headers: requestHeaders,
     mode: "cors" as RequestMode,
   }
 

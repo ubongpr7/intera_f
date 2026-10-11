@@ -389,7 +389,7 @@ export default function DashboardPage() {
               <StatTile
                 label="Products"
                 value={productStats?.total_products ?? 0}
-                description={`${productStats?.quick_sale_products ?? 0} POS-ready products`}
+                description={`${productStats?.quick_sale_products ?? 0} quick-sale shortcuts`}
                 icon={PackageOpen}
                 tone="amber"
               />

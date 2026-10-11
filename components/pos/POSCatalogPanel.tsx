@@ -335,17 +335,20 @@ export default function POSCatalogPanel({
   canAddToOrder,
   pendingAddVariantIds,
 }: POSCatalogPanelProps) {
-  const [browseMode, setBrowseMode] = useState<BrowseMode>("quick_sale")
+  const [browseMode, setBrowseMode] = useState<BrowseMode>("all")
   const [selectedProduct, setSelectedProduct] = useState<ProductCatalogItem | null>(null)
   const showSearchResults = deferredCatalogQuery.length >= 2
 
   const productGroups = useMemo(() => {
-    const filtered = products.filter((product) => productStock(product) > 0)
+    const filtered = products.filter((product) => {
+      if (productStock(product) > 0) return true
+      return productVariantCandidates(product, productVariants).some((variant) => variantStock(variant) > 0)
+    })
     return {
       quickSale: filtered.filter((product) => product.quick_sale),
       all: filtered,
     }
-  }, [products])
+  }, [products, productVariants])
 
   const activeProducts = showSearchResults
     ? productGroups.all

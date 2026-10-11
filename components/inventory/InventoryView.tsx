@@ -63,6 +63,12 @@ const inventoryColumns: Column<InventoryData>[] = [
     className: 'font-medium',
   },
   {
+    header: 'Barcode',
+    accessor: 'barcode_snapshot',
+    render: (value) => value || 'Not set',
+    className: 'font-medium',
+  },
+  {
     header: 'On Hand',
     accessor: 'current_stock_level',
     className: 'font-medium',

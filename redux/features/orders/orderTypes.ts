@@ -79,6 +79,7 @@ export interface PurchaseOrderLineItem {
   id?: EntityId;
   purchase_order?: EntityId;
   inventory_item?: EntityId | null;
+  product_variant_id?: EntityId | null;
   inventory_item_name?: string;
   inventory_item_image_url?: string | null;
   inventory_item_details?: InventoryItemReference | null;
