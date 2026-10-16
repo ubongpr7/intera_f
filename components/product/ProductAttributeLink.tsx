@@ -192,6 +192,7 @@ const interfaceKeys: (keyof ProductAttributeLink)[] = [
         searchableFields={['attribute_name', 'attribute_type']}
         filterableFields={['attribute_type', 'required', 'is_visible_in_pos']}
         sortableFields={['attribute_name', 'attribute_type', 'order', 'default_modifier']}
+        numericFields={['order', 'default_modifier']}
         rangeFilterFields={['order', 'default_modifier']}
         title={`Linked attributes for ${product?.name || 'Product'}`}
         onClose={() => setIsCreateOpen(true)}

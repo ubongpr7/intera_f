@@ -56,6 +56,7 @@ export default function Tables() {
       filterableFields={["is_active"]}
       filterOptions={{ is_active: [{ value: "true", label: "Active" }, { value: "false", label: "Inactive" }] }}
       sortableFields={["number", "name", "capacity", "created_at"]}
+      numericFields={["number", "capacity"]}
       onQueryStateChange={setQueryState}
       pagination={{
         count: tablePage?.count ?? 0,

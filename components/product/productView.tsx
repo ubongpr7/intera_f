@@ -80,6 +80,45 @@ const inventoryColumns: Column<ProductData>[] = [
  
 ];
 
+const renderProductCard = (row: ProductData, rowIndex: number) => (
+  <article
+    key={row.id || rowIndex}
+    className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg"
+  >
+    <div className="relative flex h-48 items-center justify-center bg-muted/50 p-4">
+      {row.display_image ? (
+        <TableImageHover
+          src={row.display_image}
+          alt={row.name}
+          productName={row.name}
+          className="h-40 w-40 rounded-2xl object-contain"
+        />
+      ) : (
+        <div className="flex h-28 w-28 items-center justify-center rounded-2xl border border-border bg-card text-xs font-semibold uppercase tracking-wide text-muted-foreground">Product</div>
+      )}
+    </div>
+    <div className="space-y-3 p-4">
+      <div className="min-w-0">
+        <h3 className="truncate font-semibold text-foreground" title={row.name}>{row.name}</h3>
+        <p className="truncate text-xs text-muted-foreground">{row.category || "Uncategorized"}</p>
+      </div>
+      <div className="grid grid-cols-2 gap-2 text-sm">
+        <div className="rounded-xl bg-muted/60 p-2"><p className="text-[10px] uppercase text-muted-foreground">Variants</p><p className="font-semibold text-foreground">{row.variant_count ?? 0}</p></div>
+        <div className="rounded-xl bg-muted/60 p-2"><p className="text-[10px] uppercase text-muted-foreground">Stock</p><p className="font-semibold text-foreground">{row.total_stock ?? 0}</p></div>
+      </div>
+      <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+        <span className="truncate" title={row.barcode || "Barcode not set"}>
+          Barcode: {row.barcode || "Not set"}
+        </span>
+        <span className="shrink-0 font-semibold text-foreground">{row.base_price ?? 0}</span>
+      </div>
+      <p className="truncate text-xs text-muted-foreground" title={row.sku || "SKU not set"}>
+        SKU: {row.sku || "Not set"}
+      </p>
+    </div>
+  </article>
+)
+
 
 function ProductView() {
   const searchParams = useSearchParams()
@@ -96,6 +135,7 @@ function ProductView() {
   const allowBackorder = tableQueryState?.filters.allow_backorder ?? searchParams.get(`${tableStateKey}_filter_allow_backorder`) ?? undefined
   const allowDiscount = tableQueryState?.filters.allow_discount ?? searchParams.get(`${tableStateKey}_filter_allow_discount`) ?? undefined
   const isTemplate = tableQueryState?.filters.is_template ?? searchParams.get(`${tableStateKey}_filter_is_template`) ?? undefined
+  const stockStatus = tableQueryState?.filters.stock_status ?? searchParams.get(`${tableStateKey}_filter_stock_status`) ?? undefined
   const sortField = tableQueryState?.sortConfig?.key ?? searchParams.get(`${tableStateKey}_sort`)
   const sortDirection = tableQueryState?.sortConfig?.direction ?? searchParams.get(`${tableStateKey}_direction`)
   const orderingFieldMap: Record<string, string> = {
@@ -120,6 +160,7 @@ function ProductView() {
     allow_backorder: allowBackorder,
     allow_discount: allowDiscount,
     is_template: isTemplate,
+    stock_status: stockStatus as "in_stock" | "out_of_stock" | undefined,
     ordering,
     page,
     page_size: 20,
@@ -446,6 +487,7 @@ const actionButtons: ActionButton<ProductData>[] = [
 
         }}
         searchableFields={['name', 'barcode', 'sku', 'short_description']}
+        barcodeScannableField="barcode"
         filterableFields={[
           'category',
           'is_active',
@@ -455,6 +497,7 @@ const actionButtons: ActionButton<ProductData>[] = [
           'allow_discount',
           'track_stock',
           'allow_backorder',
+          'stock_status',
         ]}
         filterOptions={{
           // Catalog category is free text when no managed category records exist.
@@ -469,9 +512,13 @@ const actionButtons: ActionButton<ProductData>[] = [
           allow_discount: [{ value: "true", label: "Discount allowed" }, { value: "false", label: "Discount blocked" }],
           track_stock: [{ value: "true", label: "Tracked" }, { value: "false", label: "Not tracked" }],
           allow_backorder: [{ value: "true", label: "Backorder allowed" }, { value: "false", label: "Backorder blocked" }],
+          stock_status: [{ value: "in_stock", label: "In stock" }, { value: "out_of_stock", label: "Out of stock" }],
         }}
         sortableFields={['name', 'barcode', 'sku', 'base_price', 'cost_price']}
+        numericFields={['base_price', 'cost_price']}
         rangeFilterFields={[]}
+        cardRenderer={renderProductCard}
+        defaultViewMode="cards"
         generalButtons={generalButtons}
         getRowId={(row) => row.id}
         title="Products"

@@ -21,6 +21,7 @@ import {
 } from "@/redux/features/stock/stockAPISlice"
 import type { StockLocation } from "@/redux/features/stock/stockTypes"
 import { formatMachineLabel } from "@/lib/displayLabels"
+import WarehouseConfigurationPanel from "@/components/stock/WarehouseConfigurationPanel"
 
 type StockLocationInspectorProps = {
   locationId: string
@@ -240,6 +241,8 @@ export default function StockLocationInspector({
               </div>
             </div>
           </div>
+
+          {location?.structural ? <WarehouseConfigurationPanel locationId={locationId} operationalLocations={allLocations.filter((entry) => !entry.structural)} /> : null}
 
           <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="rounded-2xl border border-gray-200 bg-white p-4">

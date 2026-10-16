@@ -46,6 +46,7 @@ import {
 import { useListInventoryItemsQuery, useListStockLocationsQuery } from "@/redux/features/stock/stockAPISlice"
 import { useGetAvailableCatalogVariantsQuery } from "@/redux/features/inventory/inventoryAPiSlice"
 import { useGetCompanyUsersQuery } from "@/redux/features/users/userApiSlice"
+import { BarcodeScanner } from "@/components/common/BarcodeScanner"
 
 const statusStyles: Record<string, string> = {
   pending: "border-amber-200 bg-amber-50 text-amber-800",
@@ -1021,6 +1022,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
               <div className="flex-1 space-y-6 px-6 py-5">
                 <div className="space-y-2">
                   <Label htmlFor="line-inventory-item">Inventory item</Label>
+                  <div className="flex items-start gap-2">
                   <ReactSelectField
                     inputId="line-inventory-item"
                     options={inventoryOptions}
@@ -1075,6 +1077,20 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
                       }),
                     }}
                   />
+                  <BarcodeScanner
+                    label="Scan"
+                    disabled={!canEditLineItems}
+                    onDetected={(barcode) => {
+                      const match = inventoryOptions.find((option) => option.barcode?.trim() === barcode.trim())
+                      if (!match) {
+                        toast.error("No inventory item or catalog variant matches that barcode.")
+                        return
+                      }
+                      handleInventoryItemSelection(match)
+                    }}
+                    className="mt-1 shrink-0"
+                  />
+                  </div>
                 </div>
 
                 {selectedInventoryOption ? (

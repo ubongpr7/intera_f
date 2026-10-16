@@ -55,6 +55,7 @@ import {
   useListReservationsPageQuery,
   useListStockBalancesPageQuery,
   useListStockLotsPageQuery,
+  useSetStockLotStatusMutation,
   useListStockMovementsPageQuery,
   useListStockSerialsPageQuery,
   useReleaseReservationMutation,
@@ -779,6 +780,16 @@ export default function InventoryOperationalInsights({
 
   const { data: balancesPage, isLoading: loadingBalances, isError: balancesFailed, refetch: refetchBalances } = useListStockBalancesPageQuery(balanceQuery)
   const { data: lotsPage, isLoading: loadingLots, isError: lotsFailed, refetch: refetchLots } = useListStockLotsPageQuery(lotQuery)
+  const [setStockLotStatus, { isLoading: updatingLotStatus }] = useSetStockLotStatusMutation()
+  const handleLotStatusChange = async (lotId: string, nextStatus: string) => {
+    try {
+      await setStockLotStatus({ id: lotId, status: nextStatus }).unwrap()
+      toast.success("Lot status updated.")
+      await refetchLots()
+    } catch {
+      toast.error("Unable to update lot status.")
+    }
+  }
   const { data: serialsPage, isLoading: loadingSerials, isError: serialsFailed, refetch: refetchSerials } = useListStockSerialsPageQuery(serialQuery)
   const { data: receiptMovementsPage, isLoading: loadingInboundMovements, isError: inboundMovementsFailed, refetch: refetchInboundMovements } = useListStockMovementsPageQuery(inboundMovementQuery)
   const { data: issueMovementsPage, isLoading: loadingOutboundMovements, isError: outboundMovementsFailed, refetch: refetchOutboundMovements } = useListStockMovementsPageQuery(outboundMovementQuery)
@@ -3154,9 +3165,12 @@ export default function InventoryOperationalInsights({
                         <TableCell className="font-medium text-gray-900">{row.inventory_item_name || "Unknown item"}</TableCell>
                         <TableCell>{row.lot_number}</TableCell>
                         <TableCell>
-                          <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${getStatusTone(row.status)}`}>
-                            {row.status || "unknown"}
-                          </span>
+                          <select className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${getStatusTone(row.status)}`} value={row.status || "open"} disabled={updatingLotStatus} onChange={(event) => void handleLotStatusChange(row.id, event.target.value)}>
+                            <option value="open">open</option>
+                            <option value="quarantined">quarantined</option>
+                            <option value="depleted">depleted</option>
+                            <option value="closed">closed</option>
+                          </select>
                         </TableCell>
                         <TableCell>{row.expiry_date ? formatDate(row.expiry_date) : "No expiry"}</TableCell>
                         <TableCell className="text-right">{formatQuantity(row.remaining_quantity)}</TableCell>

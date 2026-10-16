@@ -71,6 +71,7 @@ export default function Discounts() {
         is_active: [{ value: "true", label: "Active" }, { value: "false", label: "Inactive" }],
       }}
       sortableFields={["name", "value", "created_at"]}
+      numericFields={["value"]}
       onQueryStateChange={setQueryState}
       pagination={{
         count: discountPage?.count ?? 0,

@@ -6,6 +6,7 @@ import { AlertCircle, ArrowRight, Barcode, Boxes, CheckCircle2, ChevronLeft, Che
 import { toast } from "react-toastify"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { BarcodeScanner } from "@/components/common/BarcodeScanner"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
@@ -770,6 +771,15 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
                 >
                   {extractingImageBarcodes ? "Extracting..." : "Extract from image"}
                 </Button>
+                <BarcodeScanner
+                  onDetected={(value) => {
+                    setBarcodeText((current) => `${current.trim()}${current.trim() ? "\n" : ""}${value}`)
+                    setBarcodeResolution(null)
+                    setSelectedBarcodeProductIds([])
+                  }}
+                  label="Scan with camera"
+                  className="rounded-full"
+                />
                 <Button
                   type="button"
                   variant="outline"

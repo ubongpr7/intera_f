@@ -8,6 +8,9 @@ import type {
   AvailableCatalogVariant,
   InventoryAnalytics,
   InventoryData,
+  InventoryItemUnit,
+  InventoryItemUnitListParams,
+  InventoryReorderPolicy,
   InventoryListParams,
   PaginatedInventoryResponse,
   InventorySetupSummary,
@@ -78,6 +81,57 @@ export const inventoryApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
+    listInventoryItemUnits: builder.query<InventoryItemUnit[], InventoryItemUnitListParams | void>({
+      query: (params) => ({
+        url: buildQuery(`/${inventoryApi}/units/`, params),
+        service,
+      }),
+      transformResponse: (response: InventoryItemUnit[] | { results?: InventoryItemUnit[] }) =>
+        unwrapListResponse<InventoryItemUnit>(response),
+    }),
+
+    createInventoryItemUnit: builder.mutation<InventoryItemUnit, Partial<InventoryItemUnit>>({
+      query: (data) => ({
+        url: `/${inventoryApi}/units/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+
+    updateInventoryItemUnit: builder.mutation<InventoryItemUnit, { id: EntityId; data: Partial<InventoryItemUnit> }>({
+      query: ({ id, data }) => ({
+        url: `/${inventoryApi}/units/${id}/`,
+        method: "PATCH",
+        body: data,
+        service,
+      }),
+    }),
+
+    deleteInventoryItemUnit: builder.mutation<void, EntityId>({
+      query: (id) => ({
+        url: `/${inventoryApi}/units/${id}/`,
+        method: "DELETE",
+        service,
+      }),
+    }),
+
+    getInventoryReorderPolicy: builder.query<InventoryReorderPolicy, { id: EntityId; structural_location_id: EntityId }>({
+      query: ({ id, structural_location_id }) => ({
+        url: buildQuery(`/${inventoryApi}/items/${id}/reorder-policy/`, { structural_location_id }),
+        service,
+      }),
+    }),
+
+    updateInventoryReorderPolicy: builder.mutation<Partial<InventoryReorderPolicy>, { id: EntityId; data: Record<string, unknown> }>({
+      query: ({ id, data }) => ({
+        url: `/${inventoryApi}/items/${id}/reorder-policy/`,
+        method: "PATCH",
+        body: data,
+        service,
+      }),
+    }),
+
     getLowStockInventories: builder.query<InventorySummary[], InventoryScopeParams | void>({
       query: (params) => ({
         url: buildQuery(`/${inventoryApi}/items/low_stock/`, params),
@@ -141,6 +195,12 @@ export const {
   useGetInventoryQuery,
   useUpdateInventoryMutation,
   useDeleteInventoryMutation,
+  useListInventoryItemUnitsQuery,
+  useCreateInventoryItemUnitMutation,
+  useUpdateInventoryItemUnitMutation,
+  useDeleteInventoryItemUnitMutation,
+  useGetInventoryReorderPolicyQuery,
+  useUpdateInventoryReorderPolicyMutation,
   useGetLowStockInventoriesQuery,
   useGetInventoriesNeedingReorderQuery,
   useGetInventorySetupSummaryQuery,

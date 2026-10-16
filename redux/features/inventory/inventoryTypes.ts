@@ -28,6 +28,40 @@ export interface InventoryStockAnalytics {
   last_movement_at?: string | null;
 }
 
+export interface InventoryItemUnit {
+  id: string;
+  inventory_item: string;
+  code: string;
+  label: string;
+  conversion_to_stock: string | number;
+  is_purchase_unit: boolean;
+  is_sale_unit: boolean;
+  allows_partial: boolean;
+  decimal_places: number;
+  selling_price?: string | number | null;
+  metadata?: Record<string, unknown>;
+}
+
+export interface InventoryItemUnitListParams {
+  inventory_item?: string;
+  code?: string;
+  is_purchase_unit?: boolean;
+  is_sale_unit?: boolean;
+  search?: string;
+}
+
+export interface InventoryReorderPolicy {
+  inventory_item_id: string;
+  structural_location_id: string;
+  structural_location_name: string;
+  automate_reorder: boolean | null;
+  reorder_point: string | number | null;
+  reorder_quantity: string | number | null;
+  effective_automate_reorder: boolean;
+  effective_reorder_point: string | number;
+  effective_reorder_quantity: string | number;
+}
+
 export interface InventoryData {
   id: string;
   name: string;
@@ -51,6 +85,9 @@ export interface InventoryData {
   minimum_stock_level?: string | number;
   reorder_point?: string | number;
   reorder_quantity?: string | number;
+  automate_reorder?: boolean;
+  purchaseable?: boolean;
+  salable?: boolean;
   calculated_safety_stock?: string | number;
   safety_stock_level?: string | number;
   default_supplier?: string | null;
@@ -65,6 +102,7 @@ export interface InventoryData {
   track_serial?: boolean;
   track_expiry?: boolean;
   allow_negative_stock?: boolean;
+  units?: InventoryItemUnit[];
   product_template_id?: string | null;
   product_variant_id?: string | null;
   display_image?: string | null;
@@ -160,7 +198,7 @@ export interface OrderAnalytics {
 export interface InventoryListParams {
   status?: string;
   inventory_type?: string;
-  stock_status?: "low_stock" | "out_of_stock" | "needs_reorder";
+  stock_status?: "in_stock" | "low_stock" | "out_of_stock" | "needs_reorder";
   structural_location_id?: string;
   structural_location_ids?: string[];
   scope?: "all" | "all_locations";

@@ -8,6 +8,7 @@ import InventoryDetail from "@/components/inventory/Detail"
 import InventoryAdjustStockCard from "@/components/inventory/InventoryAdjustStockCard"
 import InventoryReservationsCard from "@/components/inventory/InventoryReservationsCard"
 import InventoryStockSummaryCard from "@/components/inventory/InventoryStockSummaryCard"
+import InventoryWarehouseSettingsCard from "@/components/inventory/InventoryWarehouseSettingsCard"
 import OperationalStepSection from "@/components/setup/OperationalStepSection"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { readCookieValue } from "@/lib/authCookies"
@@ -138,6 +139,8 @@ export default function InventoryOperationsWorkspace({ inventoryId }: InventoryO
       </Card>
 
       <InventoryStockSummaryCard summary={summary} isLoading={loadingSummary} currencyCode={currencyCode} />
+
+      {inventory ? <InventoryWarehouseSettingsCard inventory={inventory} /> : null}
 
       <OperationalStepSection
         id="inventory-record"

@@ -271,6 +271,7 @@ const defaultValues: Partial<PricingRule> = {
         searchableFields={['name', 'description', 'category']}
         filterableFields={['rule_type', 'discount_type', 'category', 'is_active', 'is_active_now', 'is_default_rule']}
         sortableFields={['name', 'rule_type', 'discount_type', 'value', 'priority', 'usage_count', 'usage_percentage']}
+        numericFields={['value', 'priority', 'usage_count', 'usage_percentage']}
         rangeFilterFields={['value', 'priority', 'min_quantity', 'max_quantity', 'min_amount', 'usage_limit', 'usage_count', 'usage_percentage']}
         actionButtons={actionButtons}
          title={`Pricing Rules for ${product?.name || 'Product'}`}

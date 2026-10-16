@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import {
   Activity,
   Boxes,
@@ -16,6 +16,7 @@ import AuditRealtimeCommandCenter from "@/components/realtime-dashboard/AuditRea
 import LiveProductActivity from "@/components/realtime-dashboard/LiveProductActivity"
 import LiveReceivingActivity from "@/components/realtime-dashboard/LiveReceivingActivity"
 import RealtimeComparisonChart from "@/components/realtime-dashboard/RealtimeComparisonChart"
+import RestRefreshControl from "@/components/realtime-dashboard/RestRefreshControl"
 import { useAuditRealtimeDashboard } from "@/components/realtime-dashboard/useAuditRealtimeDashboard"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -195,6 +196,28 @@ export default function RealtimeDashboardPage() {
         total: row.total,
       }))
 
+  const refreshInventoryRest = useCallback(
+    () => Promise.allSettled([refetchInventoryAnalytics(), refetchStockAnalytics(), refetchLowStockItems()]),
+    [refetchInventoryAnalytics, refetchLowStockItems, refetchStockAnalytics],
+  )
+  const refreshPosRest = useCallback(
+    () => Promise.allSettled([
+      refetchCurrentSession(),
+      refetchHeldOrders(),
+      refetchDailyPosSales(),
+      ...(currentSession?.id ? [refetchSessionCloseout()] : []),
+    ]),
+    [currentSession?.id, refetchCurrentSession, refetchDailyPosSales, refetchHeldOrders, refetchSessionCloseout],
+  )
+  const refreshPurchaseRest = useCallback(
+    () => refetchPurchaseAnalytics(),
+    [refetchPurchaseAnalytics],
+  )
+  const refreshCatalogRest = useCallback(
+    () => Promise.allSettled([refetchProductStats(), refetchInventoryAnalytics(), refetchStockAnalytics()]),
+    [refetchInventoryAnalytics, refetchProductStats, refetchStockAnalytics],
+  )
+
   return (
     <div className="realtime-dashboard mx-auto w-full max-w-[1600px] space-y-6 px-4 py-6 lg:px-8">
       <StructuralLocationScopeSelect
@@ -331,10 +354,15 @@ export default function RealtimeDashboardPage() {
         {canReadInventory || canViewInventoryReports ? (
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="border-b border-gray-100 p-5 text-left text-inherit">
-            <CardTitle className="text-xl tracking-tight">Inventory item watchlist</CardTitle>
-            <CardDescription className="text-sm leading-6 text-gray-600">
-              Immediate stock pressure that may affect sales, fulfillment, or purchasing today.
-            </CardDescription>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <CardTitle className="text-xl tracking-tight">Inventory item watchlist</CardTitle>
+                <CardDescription className="text-sm leading-6 text-gray-600">
+                  Immediate stock pressure that may affect sales, fulfillment, or purchasing today.
+                </CardDescription>
+              </div>
+              <RestRefreshControl onRefresh={refreshInventoryRest} label="Refresh inventory REST data" />
+            </div>
           </CardHeader>
           <CardContent className="space-y-4 p-5">
             {lowStockItems.slice(0, 8).map((item) => (
@@ -373,10 +401,15 @@ export default function RealtimeDashboardPage() {
 
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="border-b border-gray-100 p-5 text-left text-inherit">
-            <CardTitle className="text-xl tracking-tight">Cashier and revenue pulse</CardTitle>
-            <CardDescription className="text-sm leading-6 text-gray-600">
-              Checkout activity and payment flow from the current operating day.
-            </CardDescription>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <CardTitle className="text-xl tracking-tight">Cashier and revenue pulse</CardTitle>
+                <CardDescription className="text-sm leading-6 text-gray-600">
+                  Checkout activity and payment flow from the current operating day.
+                </CardDescription>
+              </div>
+              {canReadPos ? <RestRefreshControl onRefresh={refreshPosRest} label="Refresh POS REST data" /> : null}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4 p-5">
             {canReadPos ? (
@@ -467,10 +500,15 @@ export default function RealtimeDashboardPage() {
         {canReadPurchaseOrders ? (
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="border-b border-gray-100 p-5 text-left text-inherit">
-            <CardTitle className="text-xl tracking-tight">Purchasing pressure</CardTitle>
-            <CardDescription className="text-sm leading-6 text-gray-600">
-              Current purchase-order load and throughput markers.
-            </CardDescription>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <CardTitle className="text-xl tracking-tight">Purchasing pressure</CardTitle>
+                <CardDescription className="text-sm leading-6 text-gray-600">
+                  Current purchase-order load and throughput markers.
+                </CardDescription>
+              </div>
+              <RestRefreshControl onRefresh={refreshPurchaseRest} label="Refresh purchasing REST data" />
+            </div>
           </CardHeader>
           <CardContent className="space-y-4 p-5">
             <div className="grid gap-3 sm:grid-cols-2">
@@ -518,10 +556,15 @@ export default function RealtimeDashboardPage() {
         {canReadInventory || canViewInventoryReports || canReadProductDashboard ? (
         <Card className="border-gray-200 shadow-sm">
           <CardHeader className="border-b border-gray-100 p-5 text-left text-inherit">
-            <CardTitle className="text-xl tracking-tight">Catalog and warehouse pulse</CardTitle>
-            <CardDescription className="text-sm leading-6 text-gray-600">
-              High-level product and stock markers to decide whether action belongs in product or inventory next.
-            </CardDescription>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <CardTitle className="text-xl tracking-tight">Catalog and warehouse pulse</CardTitle>
+                <CardDescription className="text-sm leading-6 text-gray-600">
+                  High-level product and stock markers to decide whether action belongs in product or inventory next.
+                </CardDescription>
+              </div>
+              <RestRefreshControl onRefresh={refreshCatalogRest} label="Refresh catalog and warehouse REST data" />
+            </div>
           </CardHeader>
           <CardContent className="grid gap-4 p-5 md:grid-cols-2">
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">

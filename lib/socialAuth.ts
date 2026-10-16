@@ -27,6 +27,16 @@ const parseRedirectMap = () => {
 const getRedirectUri = (provider: SocialProvider) => {
   const redirectMap = parseRedirectMap();
   const envValue = redirectMap[provider];
+
+  // Local Next.js runs on port 3005 while the deployed frontend uses the dev
+  // hostname. Select the callback that matches the active browser origin.
+  if (provider === "google" && typeof window !== "undefined") {
+    const origin = window.location.origin;
+    if (origin === "http://localhost:3005" || origin === "http://127.0.0.1:3005") {
+      return `${origin}/accounts/login/oauth2/code/google-oauth2`;
+    }
+  }
+
   if (envValue) return envValue;
 
   if (provider === "google") {

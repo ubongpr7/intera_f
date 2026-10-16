@@ -232,6 +232,7 @@ export default function ProductPricingStrategies({ productId,product }: ProductP
         searchableFields={['name']}
         filterableFields={['strategy', 'is_active']}
         sortableFields={['name', 'strategy', 'margin_percentage', 'market_multiplier', 'min_price', 'max_price', 'calculated_price_example']}
+        numericFields={['margin_percentage', 'market_multiplier', 'min_price', 'max_price', 'calculated_price_example']}
         rangeFilterFields={['margin_percentage', 'market_multiplier', 'min_price', 'max_price', 'demand_factor', 'seasonal_factor', 'calculated_price_example']}
         title={`Pricing Strategies for ${product?.name || 'Product'}`}
         onClose={() => setIsCreateOpen(true)}

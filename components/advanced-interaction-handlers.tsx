@@ -30,6 +30,16 @@ interface AdvancedInteractionProps {
   disabled?: boolean
 }
 
+const collectHierarchicalNodeIds = (node: any): string[] => {
+  if (!node || !node.id) {
+    return []
+  }
+  const childIds = Array.isArray(node.children)
+    ? node.children.flatMap((child: any) => collectHierarchicalNodeIds(child))
+    : []
+  return [node.id, ...childIds]
+}
+
 export function SearchableSelectionHandler({ data, onResponse, disabled = false }: AdvancedInteractionProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedItems, setSelectedItems] = useState<string[]>([])
@@ -202,17 +212,7 @@ export function HierarchicalSelectionHandler({ data, onResponse, disabled = fals
   const [hasSubmitted, setHasSubmitted] = useState(false)
   const isLocked = disabled || hasSubmitted
 
-  const collectNodeIds = (node: any): string[] => {
-    if (!node || !node.id) {
-      return []
-    }
-    const childIds = Array.isArray(node.children)
-      ? node.children.flatMap((child: any) => collectNodeIds(child))
-      : []
-    return [node.id, ...childIds]
-  }
-
-  const selectableNodeIds = useMemo(() => collectNodeIds(data.tree_data), [data.tree_data])
+  const selectableNodeIds = useMemo(() => collectHierarchicalNodeIds(data.tree_data), [data.tree_data])
   const allowSelectAll = Boolean(data.multiple) && selectableNodeIds.length > 1
   const hasSelectedAll = selectableNodeIds.length > 0 && selectableNodeIds.every((id) => selectedItems.includes(id))
 

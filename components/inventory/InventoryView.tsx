@@ -41,6 +41,45 @@ const renderInventoryThumbnail = (imageUrl: string | null | undefined, name: str
   </div>
 )
 
+const renderInventoryCard = (row: InventoryData, rowIndex: number) => (
+  <article
+    key={row.id || rowIndex}
+    className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg"
+  >
+    <div className="relative flex h-44 items-center justify-center bg-muted/50 p-4">
+      {row.display_image || row.product_variant_image_url ? (
+        <TableImageHover
+          src={row.display_image || row.product_variant_image_url || ""}
+          alt={row.name}
+          productName={row.name}
+          className="h-36 w-36 rounded-2xl object-contain"
+        />
+      ) : (
+        <div className="flex h-24 w-24 items-center justify-center rounded-2xl border border-border bg-card text-xs font-semibold uppercase tracking-wide text-muted-foreground">Inv</div>
+      )}
+    </div>
+    <div className="space-y-3 p-4">
+      <div className="min-w-0">
+        <h3 className="truncate font-semibold text-foreground" title={row.name}>{row.name}</h3>
+        <p className="truncate text-xs text-muted-foreground">{formatMachineLabel(row.inventory_type, "Inventory item")}</p>
+      </div>
+      <div className="grid grid-cols-2 gap-2 text-sm">
+        <div className="rounded-xl bg-muted/60 p-2"><p className="text-[10px] uppercase text-muted-foreground">On hand</p><p className="font-semibold text-foreground">{row.current_stock_level ?? 0}</p></div>
+        <div className="rounded-xl bg-muted/60 p-2"><p className="text-[10px] uppercase text-muted-foreground">Available</p><p className="font-semibold text-foreground">{row.quantity_available ?? 0}</p></div>
+      </div>
+      <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+        <span className="truncate" title={row.barcode_snapshot || "Barcode not set"}>
+          Barcode: {row.barcode_snapshot || "Not set"}
+        </span>
+        <span className="shrink-0 font-semibold text-foreground">{formatCurrencyCompact("NGN", row.total_stock_value ?? 0)}</span>
+      </div>
+      <p className="truncate text-xs text-muted-foreground" title={row.location_name || "Location not set"}>
+        Location: {row.location_name || "Unassigned"}
+      </p>
+    </div>
+  </article>
+)
+
 const inventoryColumns: Column<InventoryData>[] = [
   {
     header: 'Name',
@@ -147,6 +186,8 @@ function InventoryView({
     name: "name_snapshot",
     minimum_stock_level: "minimum_stock_level",
     reorder_point: "reorder_point",
+    current_stock_level: "current_stock_level",
+    quantity_available: "quantity_available",
   }
   const ordering = sortField && orderingFieldMap[sortField]
     ? `${sortDirection === "descending" ? "-" : ""}${orderingFieldMap[sortField]}`
@@ -198,7 +239,7 @@ function InventoryView({
     search: search.trim() || undefined,
     inventory_type: inventoryType,
     status,
-    stock_status: stockStatus as "low_stock" | "out_of_stock" | "needs_reorder" | undefined,
+    stock_status: stockStatus as "in_stock" | "low_stock" | "out_of_stock" | "needs_reorder" | undefined,
     ordering,
     page: currentPage,
     page_size: pageSize,
@@ -347,7 +388,9 @@ function InventoryView({
         urlStateKey="inventory_items"
         onQueryStateChange={handleTableQueryStateChange}
         startNumberFrom={(currentPage - 1) * pageSize + 1}
-        searchableFields={['name']}
+        getRowId={(row) => row.id}
+        searchableFields={['name', 'barcode_snapshot', 'sku_snapshot']}
+        barcodeScannableField="barcode_snapshot"
         filterableFields={[
           'inventory_type',
           'status',
@@ -362,13 +405,17 @@ function InventoryView({
             { value: 'discontinued', label: 'Discontinued' },
           ],
           stock_status: [
+            { value: 'in_stock', label: 'In stock' },
             { value: 'low_stock', label: 'Low stock' },
             { value: 'out_of_stock', label: 'Out of stock' },
             { value: 'needs_reorder', label: 'Needs reorder' },
           ],
         }}
-        sortableFields={['name', 'minimum_stock_level', 'reorder_point']}
+        sortableFields={['name', 'minimum_stock_level', 'reorder_point', 'current_stock_level']}
+        numericFields={['minimum_stock_level', 'reorder_point', 'current_stock_level']}
         rangeFilterFields={[]}
+        cardRenderer={renderInventoryCard}
+        defaultViewMode="cards"
          title="Inventory Items"
         onClose={() =>setIsCreateOpen(true)} 
       />

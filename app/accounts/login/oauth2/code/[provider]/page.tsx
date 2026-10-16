@@ -25,6 +25,7 @@ export default function SocialAuthCallbackPage() {
   const providerSlug = socialProviderFromSlug(providerParam);
   const code = searchParams.get("code") ?? "";
   const state = searchParams.get("state") ?? "";
+  const oauthError = searchParams.get("error") ?? "";
   const errorDescription = searchParams.get("error_description") ?? "";
 
   const redirectUri = useMemo(() => {
@@ -58,6 +59,21 @@ export default function SocialAuthCallbackPage() {
     );
   }
 
+  if (oauthError || errorDescription) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+        <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg space-y-2">
+          <h1 className="text-xl font-semibold text-gray-900">
+            {oauthError === "access_denied" ? "Sign-in cancelled" : "Google sign-in failed"}
+          </h1>
+          <p className="text-sm text-gray-600">
+            {decodeValue(errorDescription || oauthError || "Please restart social sign-in.")}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (!code || !state) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
@@ -75,17 +91,6 @@ export default function SocialAuthCallbackPage() {
         <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg space-y-2">
           <h1 className="text-xl font-semibold text-gray-900">Configuration error</h1>
           <p className="text-sm text-gray-600">Missing redirect URI for this provider.</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (errorDescription) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-        <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg space-y-2">
-          <h1 className="text-xl font-semibold text-gray-900">Sign-in cancelled</h1>
-          <p className="text-sm text-gray-600">{decodeValue(errorDescription)}</p>
         </div>
       </div>
     );

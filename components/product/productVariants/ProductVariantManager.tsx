@@ -80,6 +80,48 @@ const variantColumns: Column<ProductVariant>[] = [
   },
 ]
 
+const renderVariantCard = (row: ProductVariant, rowIndex: number) => (
+  <article
+    key={row.id || rowIndex}
+    className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg"
+  >
+    <div className="relative flex h-44 items-center justify-center bg-muted/50 p-4">
+      {row.main_image ? (
+        <TableImageHover
+          src={row.main_image}
+          alt={row.pos_display_name || row.display_name || "Product variant"}
+          productName={row.pos_display_name || row.display_name}
+          className="h-36 w-36 rounded-2xl object-contain"
+        />
+      ) : (
+        <div className="flex h-24 w-24 items-center justify-center rounded-2xl border border-border bg-card text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Variant
+        </div>
+      )}
+    </div>
+    <div className="space-y-3 p-4">
+      <div className="min-w-0">
+        <h3 className="truncate font-semibold text-foreground" title={row.pos_display_name || row.display_name}>
+          {row.pos_display_name || row.display_name}
+        </h3>
+        <p className="truncate text-xs text-muted-foreground">{row.active ? "Active" : "Inactive"}</p>
+      </div>
+      <div className="space-y-1 text-xs text-muted-foreground">
+        <p className="truncate" title={row.variant_barcode || "Barcode not set"}>
+          Barcode: {row.variant_barcode || "Not set"}
+        </p>
+        <p className="truncate" title={row.variant_sku || "SKU not set"}>
+          SKU: {row.variant_sku || "Not set"}
+        </p>
+      </div>
+      <div className="flex items-center justify-between gap-3 text-sm">
+        <span>Price</span>
+        <span className="font-semibold text-foreground">{getCurrencySymbolForProfile()} {Number(row.selling_price ?? 0).toFixed(2)}</span>
+      </div>
+    </div>
+  </article>
+)
+
 const ProductVariantManager = ({ productId, ProductData }: ProductVariantManagerProps) => {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
@@ -206,9 +248,13 @@ const ProductVariantManager = ({ productId, ProductData }: ProductVariantManager
         isLoading={isVariantsFetching}
         onRowClick={handleRowClick}
         searchableFields={["pos_display_name", "display_name", "variant_sku", "variant_barcode"]}
+        barcodeScannableField="variant_barcode"
         filterableFields={["active", "pos_visible", "is_featured"]}
         sortableFields={["pos_display_name", "variant_sku", "selling_price", "variant_number", "price_override", "cost_override"]}
+        numericFields={["selling_price", "variant_number", "price_override", "cost_override"]}
         rangeFilterFields={["selling_price", "pos_price", "variant_number", "price_override", "cost_override", "low_stock_threshold_override"]}
+        cardRenderer={renderVariantCard}
+        defaultViewMode="cards"
         actionButtons={actionButtons}
         title="Product Variants" onClose={() => {
           if (!variantQuota.canCreate) {
