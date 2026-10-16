@@ -22,7 +22,7 @@ export default function NativeSocialAuthCallbackPage() {
   }, [provider, searchParams]);
 
   useEffect(() => {
-    if (callbackUrl) window.location.replace(callbackUrl);
+    if (callbackUrl) window.location.assign(callbackUrl);
   }, [callbackUrl]);
 
   return (
@@ -32,6 +32,14 @@ export default function NativeSocialAuthCallbackPage() {
         <p className="mt-2 text-sm text-gray-600">
           Complete the sign-in in the Intera IMS application.
         </p>
+        {callbackUrl ? (
+          <a
+            href={callbackUrl}
+            className="mt-6 inline-flex items-center justify-center rounded-md bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700"
+          >
+            Open Intera IMS
+          </a>
+        ) : null}
       </section>
     </main>
   );
