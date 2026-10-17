@@ -70,6 +70,42 @@ body {
   overflow-x: hidden;
 }
 
+/* Native OAuth callback pages must not inherit the application's light/dark
+   utility overrides. They are a handoff surface with a fixed dark canvas. */
+.native-oauth-handoff {
+  color: #f7faff !important;
+  background: #07101f;
+}
+
+.native-oauth-handoff h1,
+.native-oauth-handoff h2,
+.native-oauth-handoff p,
+.native-oauth-handoff span,
+.native-oauth-handoff a {
+  color: inherit !important;
+}
+
+.native-oauth-handoff .text-\[\#adbbd1\] {
+  color: #adbbd1 !important;
+}
+
+.native-oauth-handoff .text-\[\#71829d\] {
+  color: #9cadc5 !important;
+}
+
+.native-oauth-handoff .text-\[\#98fcc2\] {
+  color: #98fcc2 !important;
+}
+
+.native-oauth-handoff .text-\[\#8db4ff\] {
+  color: #8db4ff !important;
+}
+
+.native-oauth-handoff .native-oauth-logo {
+  display: block;
+  max-width: 100%;
+}
+
 [id] {
   scroll-margin-top: 6.5rem;
 }

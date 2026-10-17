@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useParams, useSearchParams } from "next/navigation";
 import { ArrowRight, CheckCircle2, LockKeyhole, LoaderCircle, ShieldCheck } from "lucide-react";
@@ -22,6 +22,25 @@ export default function NativeSocialAuthCallbackPage() {
     }
     return target.toString();
   }, [provider, searchParams]);
+  const [handoffStarted, setHandoffStarted] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const closeHandoffPage = () => {
+    window.close();
+    // Browsers only permit close() for script-opened windows. This fallback
+    // lets the app handoff finish without trapping the user on a stale page.
+    if (!window.closed) {
+      window.open("", "_self");
+      window.close();
+    }
+  };
+
+  const openNativeApp = useCallback(() => {
+    if (!callbackUrl) return;
+    setHandoffStarted(true);
+    window.location.href = callbackUrl;
+    closeTimer.current = setTimeout(closeHandoffPage, 1200);
+  }, [callbackUrl]);
 
   useEffect(() => {
     if (!callbackUrl) return;
@@ -29,14 +48,18 @@ export default function NativeSocialAuthCallbackPage() {
     // Use a top-level navigation so the browser offers the registered native
     // handler instead of treating the callback as an ordinary web page.
     window.location.href = callbackUrl;
+    closeTimer.current = setTimeout(() => {
+      setHandoffStarted(true);
+      closeHandoffPage();
+    }, 1200);
+
+    return () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    };
   }, [callbackUrl]);
 
-  const openNativeApp = () => {
-    if (callbackUrl) window.location.href = callbackUrl;
-  };
-
   return (
-    <main className="auth-page min-h-screen overflow-hidden text-white">
+    <main className="native-oauth-handoff min-h-screen overflow-hidden">
       <div className="relative min-h-screen bg-[#07101f]">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -left-24 -top-24 h-96 w-96 rounded-full bg-[#3978ed]/20 blur-3xl" />
@@ -47,12 +70,12 @@ export default function NativeSocialAuthCallbackPage() {
         <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 py-6 sm:px-10 sm:py-8">
           <header className="flex items-center justify-between">
             <Image
-              src="/assets/img/logos/verticals/no-bg/INTERA-PRIMARY-LOGO-VERTICAL-WHITE-4.png"
+              src="/assets/intera/intera-wordmark-dark.png"
               alt="Intera IMS"
-              width={360}
-              height={108}
+              width={3651}
+              height={591}
               priority
-              className="h-20 w-auto max-w-[15rem] object-contain object-left sm:h-24"
+              className="native-oauth-logo h-auto w-[15rem] object-contain object-left sm:w-[19rem]"
             />
             <span className="inline-flex items-center gap-2 rounded-full border border-[#98fcc2]/20 bg-[#98fcc2]/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#98fcc2]">
               <ShieldCheck className="h-3.5 w-3.5" />
@@ -94,13 +117,16 @@ export default function NativeSocialAuthCallbackPage() {
                 </div>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#98fcc2]">Almost there</p>
-                  <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em]">Returning to Intera IMS</h2>
+                  <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em]">{handoffStarted ? "Opening Intera IMS" : "Returning to Intera IMS"}</h2>
                   <p className="mt-3 text-sm leading-7 text-[#adbbd1]">
-                    Complete the sign-in in the Intera IMS application. This page can stay open while the app resumes.
+                    {handoffStarted
+                      ? "The secure session has been sent to the Intera IMS application. You can close this tab if it remains open."
+                      : "Complete the sign-in in the Intera IMS application."
+                    }
                   </p>
                 </div>
               </div>
-              {callbackUrl ? (
+              {callbackUrl && !handoffStarted ? (
                 <a
                   href={callbackUrl}
                   onClick={(event) => {
@@ -114,7 +140,7 @@ export default function NativeSocialAuthCallbackPage() {
                 </a>
               ) : null}
               <p className="mt-5 text-center text-xs leading-5 text-[#71829d]">
-                If the app does not open automatically, use the button above.
+                {handoffStarted ? "If this tab remains open, your browser blocked automatic closing." : "If the app does not open automatically, use the button above."}
               </p>
             </section>
           </div>
