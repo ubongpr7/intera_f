@@ -4,6 +4,7 @@ import { setAuth, logout } from "../features/authSlice"
 import { Mutex } from "async-mutex"
 import { setCookie, getCookie, deleteCookie } from "cookies-next"
 import { jwtDecode } from "jwt-decode"
+import { isSsoMfaBypassProvider } from "@/lib/authProvider"
 import { AUTH_COOKIE_NAMES, AUTH_COOKIE_KEYS, readCookieValue } from "@/lib/authCookies"
 import { getOrCreatePosDeviceId } from "@/lib/deviceIdentity"
 import { setFrontendOriginHeader } from "@/lib/frontendOrigin"
@@ -271,10 +272,13 @@ export const persistAuthSession = (response: AuthResponsePayload) => {
   } else {
     deleteAuthCookie("model_name")
   }
-  if (response.provider) {
-    setAuthCookie("provider", response.provider, accessAge)
-  } else {
-    deleteAuthCookie("provider")
+  const hasProviderField = Object.prototype.hasOwnProperty.call(response, "provider")
+  if (hasProviderField) {
+    if (response.provider) {
+      setAuthCookie("provider", response.provider, accessAge)
+    } else {
+      deleteAuthCookie("provider")
+    }
   }
   if (response.agent_name) {
     setAuthCookie("agent_name", response.agent_name, accessAge)
@@ -282,7 +286,11 @@ export const persistAuthSession = (response: AuthResponsePayload) => {
     deleteAuthCookie("agent_name")
   }
 
-  if (tokenClaims?.mfa_verified === true) {
+  const authProvider = hasProviderField ? response.provider : readAuthCookie("provider")
+  if (isSsoMfaBypassProvider(authProvider)) {
+    setAuthCookie("mfaVerified", "true", refreshAge)
+    setAuthCookie("mfaSetupRequired", "false", refreshAge)
+  } else if (tokenClaims?.mfa_verified === true) {
     setAuthCookie("mfaVerified", "true", refreshAge)
     setAuthCookie("mfaSetupRequired", "false", refreshAge)
   } else if (

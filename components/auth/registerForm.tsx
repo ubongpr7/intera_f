@@ -126,6 +126,17 @@ export default function RegisterForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <button
+        type="button"
+        onClick={() => void handleGoogleAuth()}
+        disabled={isLoading || isSocialLoading}
+        className="auth-secondary-button auth-google-button"
+      >
+        {isSocialLoading ? <><Loader2 className="h-4 w-4 animate-spin" /> Redirecting...</> : <><GoogleIcon /> Continue with Google</>}
+      </button>
+
+      <div className="auth-form-divider" aria-hidden="true"><span>or create an account with email</span></div>
+
       {/* Name Field */}
       <div>
         <label htmlFor="register-first-name" className="auth-label cursor-pointer">
@@ -313,14 +324,6 @@ export default function RegisterForm() {
         className="auth-button"
       >
         {isLoading ? <><Loader2 className="h-4 w-4 animate-spin" /> Creating account...</> : 'Create account'}
-      </button>
-      <button
-        type="button"
-        onClick={() => void handleGoogleAuth()}
-        disabled={isLoading || isSocialLoading || !hasAcceptedPolicies}
-        className="auth-secondary-button"
-      >
-        {isSocialLoading ? <><Loader2 className="h-4 w-4 animate-spin" /> Redirecting...</> : <><GoogleIcon /> Continue with Google</>}
       </button>
       <div className="flex justify-center gap-1 text-sm">
       <p className="text-slate-600 dark:text-slate-300">Already have an account?</p>

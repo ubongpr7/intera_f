@@ -41,7 +41,7 @@ export default function SocialAuthCallbackPage() {
     socialAuthenticate({ provider: providerSlug, code, state, redirectUri })
       .unwrap()
       .then(async (authResponse) => {
-        const mfaRoute = initializeMfaChallenge("/dashboard", authResponse?.access);
+        const mfaRoute = initializeMfaChallenge("/dashboard", authResponse?.access, providerSlug);
         router.replace(mfaRoute);
       })
       .catch(() => {

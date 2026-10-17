@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { getCookieCandidates, type AuthCookieKey } from "./lib/authCookies"
+import { isSsoMfaBypassProvider } from "./lib/authProvider"
 
 export function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname
@@ -63,8 +64,12 @@ export function proxy(request: NextRequest) {
   const mfaVerifiedCookie = readCookie("mfaVerified")
   const mfaVerified = mfaVerifiedCookie === "true"
   const mfaSetupRequired = readCookie("mfaSetupRequired") === "true"
+  const authProvider = readCookie("provider")
   const mfaTargetPath = mfaSetupRequired ? "/accounts/mfa/setup" : "/accounts/mfa/verify"
-  const shouldEnforceMfa = hasAuthCookie && mfaVerifiedCookie === "false"
+  const shouldEnforceMfa =
+    hasAuthCookie &&
+    mfaVerifiedCookie === "false" &&
+    !isSsoMfaBypassProvider(authProvider)
 
   if (!hasAuthCookie) {
     if (isMfaPath) {
