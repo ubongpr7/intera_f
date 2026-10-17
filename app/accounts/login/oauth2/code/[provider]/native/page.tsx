@@ -123,7 +123,7 @@ export default function NativeSocialAuthCallbackPage() {
                 </a>
               ) : null}
               <p className="mt-5 text-center text-xs leading-5 text-[#71829d]">
-                {handoffStarted ? "This browser tab can remain open." : "If the app does not open automatically, use the button above."}
+                {handoffStarted ? "" : "If the app does not open automatically, use the button above."}
               </p>
             </section>
           </div>
