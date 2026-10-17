@@ -6,7 +6,7 @@ import type { UserData } from './userTypes';
 export const publicRoutes = ['/accounts/signin','/','','/accounts/signin/verify', '/accounts','/accounts/verify', '/accounts/forgot-password'];
 
 export const isPublicAuthRoute = (pathname: string) =>
-  publicRoutes.includes(pathname) || pathname.startsWith('/accounts/login/oauth2/code/');
+  publicRoutes.includes(pathname) || /^\/accounts\/login\/oauth2\/code\/[^/]+\/native\/?$/.test(pathname);
 
 export const useAuth = () => {
   const router = useRouter();
