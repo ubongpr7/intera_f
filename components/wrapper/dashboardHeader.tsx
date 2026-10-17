@@ -9,7 +9,7 @@ import { ToastContainer } from "react-toastify";
 import { useGetLoggedInUserQuery } from '../../redux/features/users/userApiSlice';
 import { useGetUserCompaniesQuery } from '../../redux/features/auth/authApiSlice';
 import { useGetCompanyAgentSetupQuery } from '../../redux/features/management/companyProfileApiSlice';
-import { publicRoutes } from '../../redux/features/users/useAuth';
+import { isPublicAuthRoute } from '../../redux/features/users/useAuth';
 
 import { getCookie } from 'cookies-next';
 import A2AChat from '../agents/ai-chat-widget';
@@ -28,7 +28,7 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
   }));
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const pathname = usePathname();
-  const isPublic = publicRoutes.includes(pathname);
+  const isPublic = isPublicAuthRoute(pathname);
   const accessToken = readCookieValue("accessToken", getCookie);
 
   const { data: user } = useGetLoggedInUserQuery(undefined, {

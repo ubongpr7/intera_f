@@ -5,10 +5,13 @@ import type { UserData } from './userTypes';
 
 export const publicRoutes = ['/accounts/signin','/','','/accounts/signin/verify', '/accounts','/accounts/verify', '/accounts/forgot-password'];
 
+export const isPublicAuthRoute = (pathname: string) =>
+  publicRoutes.includes(pathname) || pathname.startsWith('/accounts/login/oauth2/code/');
+
 export const useAuth = () => {
   const router = useRouter();
   const pathname = usePathname();
-  const isPublic = publicRoutes.includes(pathname);
+  const isPublic = isPublicAuthRoute(pathname);
 
   const { data: user, isLoading, isSuccess } = useGetLoggedInUserQuery(undefined, {
     skip: isPublic,
