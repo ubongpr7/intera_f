@@ -3,10 +3,14 @@
 import { useEffect, useState } from "react";
 import { useMfaSetupMutation } from "@/redux/features/users/userApiSlice";
 import { useRouter } from "next/navigation";
-import { setCookie } from "cookies-next";
+import { deleteCookie, setCookie } from "cookies-next";
 import Image from "next/image";
 import { useCallback } from "react";
-import { AUTH_COOKIE_NAMES } from "@/lib/authCookies";
+import { toast } from "react-toastify";
+import { useAppDispatch } from "@/redux/store";
+import { clearPermissions } from "@/redux/features/permission/permissionSlice";
+import { AUTH_COOKIE_KEYS, AUTH_COOKIE_NAMES, getCookieCandidates } from "@/lib/authCookies";
+import { clearMfaCookies } from "@/lib/mfaFlow";
 
 interface MfaSetupData {
   mfa_secret: string;
@@ -16,6 +20,7 @@ interface MfaSetupData {
 
 export default function MfaSetupCard() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const [setupMfa, { isLoading }] = useMfaSetupMutation();
   const [setupData, setSetupData] = useState<MfaSetupData | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>("");
@@ -43,6 +48,18 @@ export default function MfaSetupCard() {
     }, 0);
     return () => window.clearTimeout(timeoutId);
   }, [loadSetup]);
+
+  const handleLogout = () => {
+    for (const key of AUTH_COOKIE_KEYS) {
+      for (const name of getCookieCandidates(key)) {
+        deleteCookie(name);
+      }
+    }
+    clearMfaCookies();
+    dispatch(clearPermissions());
+    router.replace("/accounts/signin");
+    toast.success("Logged out successfully");
+  };
 
   return (
     <div className="auth-card w-full max-w-md space-y-6 p-6 sm:p-8">
@@ -98,6 +115,13 @@ export default function MfaSetupCard() {
           disabled={isLoading}
         >
           Regenerate QR Code
+        </button>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="auth-secondary-button border-red-200 text-red-700 hover:border-red-300 hover:bg-red-50 dark:border-red-400/30 dark:text-red-200 dark:hover:bg-red-500/10"
+        >
+          Log out
         </button>
       </div>
     </div>

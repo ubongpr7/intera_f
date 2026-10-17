@@ -20,7 +20,12 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
 
   const SidebarCollapsed = useAppSelector((state) => state.global.isSidebarCollapsed);
   const dispatch = useAppDispatch();
-  useAppSelector((state) => state.permission.status);
+  const permissionState = useAppSelector((state) => ({
+    status: state.permission.status,
+    profileId: state.permission.profileId,
+    isOwner: state.permission.isOwner,
+    permissions: state.permission.permissions,
+  }));
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const pathname = usePathname();
   const isPublic = publicRoutes.includes(pathname);
@@ -32,9 +37,20 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
   });
   const { data: companyMemberships } = useGetUserCompaniesQuery(undefined, { skip: isPublic || !accessToken });
   const activeProfileId = companyMemberships?.active_profile_id ?? null;
+  const permissionReady =
+    permissionState.status === "succeeded" &&
+    permissionState.profileId === `${activeProfileId ?? ""}`;
+  const canReadAgent =
+    permissionState.isOwner || permissionState.permissions.includes("read_agent");
+  const shouldFetchAgentSetup =
+    !isPublic &&
+    Boolean(accessToken) &&
+    Boolean(activeProfileId) &&
+    permissionReady &&
+    canReadAgent;
 
   const { data: companyAgentSetup } = useGetCompanyAgentSetupQuery(undefined, {
-    skip: isPublic || !accessToken || !activeProfileId,
+    skip: !shouldFetchAgentSetup,
     refetchOnMountOrArgChange: true,
     refetchOnFocus: true,
     refetchOnReconnect: true,
