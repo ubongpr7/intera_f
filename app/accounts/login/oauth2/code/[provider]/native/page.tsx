@@ -22,8 +22,16 @@ export default function NativeSocialAuthCallbackPage() {
   }, [provider, searchParams]);
 
   useEffect(() => {
-    if (callbackUrl) window.location.assign(callbackUrl);
+    if (!callbackUrl) return;
+
+    // Use a top-level navigation so the browser offers the registered native
+    // handler instead of treating the callback as an ordinary web page.
+    window.location.href = callbackUrl;
   }, [callbackUrl]);
+
+  const openNativeApp = () => {
+    if (callbackUrl) window.location.href = callbackUrl;
+  };
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
@@ -35,6 +43,10 @@ export default function NativeSocialAuthCallbackPage() {
         {callbackUrl ? (
           <a
             href={callbackUrl}
+            onClick={(event) => {
+              event.preventDefault();
+              openNativeApp();
+            }}
             className="mt-6 inline-flex items-center justify-center rounded-md bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700"
           >
             Open Intera IMS
