@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useParams, useSearchParams } from "next/navigation";
 import { ArrowRight, CheckCircle2, LockKeyhole, LoaderCircle, ShieldCheck } from "lucide-react";
@@ -23,23 +23,11 @@ export default function NativeSocialAuthCallbackPage() {
     return target.toString();
   }, [provider, searchParams]);
   const [handoffStarted, setHandoffStarted] = useState(false);
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const closeHandoffPage = () => {
-    window.close();
-    // Browsers only permit close() for script-opened windows. This fallback
-    // lets the app handoff finish without trapping the user on a stale page.
-    if (!window.closed) {
-      window.open("", "_self");
-      window.close();
-    }
-  };
 
   const openNativeApp = useCallback(() => {
     if (!callbackUrl) return;
     setHandoffStarted(true);
     window.location.href = callbackUrl;
-    closeTimer.current = setTimeout(closeHandoffPage, 1200);
   }, [callbackUrl]);
 
   useEffect(() => {
@@ -48,14 +36,9 @@ export default function NativeSocialAuthCallbackPage() {
     // Use a top-level navigation so the browser offers the registered native
     // handler instead of treating the callback as an ordinary web page.
     window.location.href = callbackUrl;
-    closeTimer.current = setTimeout(() => {
-      setHandoffStarted(true);
-      closeHandoffPage();
-    }, 1200);
-
-    return () => {
-      if (closeTimer.current) clearTimeout(closeTimer.current);
-    };
+    // The callback has been dispatched to the native app. Keep this tab open,
+    // but show the completed handoff instead of implying that it is still loading.
+    setTimeout(() => setHandoffStarted(true), 0);
   }, [callbackUrl]);
 
   return (
@@ -116,11 +99,11 @@ export default function NativeSocialAuthCallbackPage() {
                   <LoaderCircle className="h-6 w-6 animate-spin" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#98fcc2]">Almost there</p>
-                  <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em]">{handoffStarted ? "Opening Intera IMS" : "Returning to Intera IMS"}</h2>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#98fcc2]">{handoffStarted ? "Connected" : "Almost there"}</p>
+                  <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em]">{handoffStarted ? "Connected to Intera IMS" : "Returning to Intera IMS"}</h2>
                   <p className="mt-3 text-sm leading-7 text-[#adbbd1]">
                     {handoffStarted
-                      ? "The secure session has been sent to the Intera IMS application. You can close this tab if it remains open."
+                      ? "Your secure session has been sent to the Intera IMS application. You can continue there."
                       : "Complete the sign-in in the Intera IMS application."
                     }
                   </p>
@@ -140,7 +123,7 @@ export default function NativeSocialAuthCallbackPage() {
                 </a>
               ) : null}
               <p className="mt-5 text-center text-xs leading-5 text-[#71829d]">
-                {handoffStarted ? "If this tab remains open, your browser blocked automatic closing." : "If the app does not open automatically, use the button above."}
+                {handoffStarted ? "This browser tab can remain open." : "If the app does not open automatically, use the button above."}
               </p>
             </section>
           </div>
