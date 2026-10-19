@@ -19,7 +19,10 @@ import {
   Clock3,
   Menu,
   LogIn,
+  Mic,
   Moon,
+  PhoneCall,
+  PhoneOff,
   Radio,
   ScanBarcode,
   Send,
@@ -27,6 +30,7 @@ import {
   Sparkles,
   Sun,
   Users2,
+  Volume2,
   WifiOff,
   X,
 } from "lucide-react";
@@ -826,6 +830,11 @@ export default function HomePage() {
   const [activeDemoIndex, setActiveDemoIndex] = useState(() => Math.floor(Math.random() * demoConversations.length));
   const [visibleMessageCount, setVisibleMessageCount] = useState(0);
   const [typedDemoText, setTypedDemoText] = useState("");
+  const [isDemoCallActive, setIsDemoCallActive] = useState(false);
+  const [isDemoCallConnecting, setIsDemoCallConnecting] = useState(false);
+  const [isDemoMicMuted, setIsDemoMicMuted] = useState(false);
+  const [isDemoSpeakerMuted, setIsDemoSpeakerMuted] = useState(false);
+  const [demoCallSeconds, setDemoCallSeconds] = useState(0);
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
   /* Pricing is intentionally hidden until after registration.
   const { data: pricingPlans, isLoading, isError } = useGetSubscriptionPlansQuery({
@@ -899,6 +908,33 @@ export default function HomePage() {
 
   const nextDemoMessage = demoConversations[activeDemoIndex].messages[visibleMessageCount];
   const isAssistantThinking = Boolean(nextDemoMessage?.role === "assistant" && !typedDemoText);
+
+  useEffect(() => {
+    if (!isDemoCallActive) {
+      return undefined;
+    }
+    const timerId = window.setInterval(() => {
+      setDemoCallSeconds((seconds) => seconds + 1);
+    }, 1000);
+    return () => window.clearInterval(timerId);
+  }, [isDemoCallActive]);
+
+  const toggleDemoCall = () => {
+    if (isDemoCallActive || isDemoCallConnecting) {
+      setIsDemoCallActive(false);
+      setIsDemoCallConnecting(false);
+      setDemoCallSeconds(0);
+      return;
+    }
+    setIsDemoCallConnecting(true);
+    window.setTimeout(() => {
+      setIsDemoCallConnecting(false);
+      setIsDemoCallActive(true);
+      setDemoCallSeconds(0);
+    }, 700);
+  };
+
+  const demoCallTime = `${Math.floor(demoCallSeconds / 60).toString().padStart(2, "0")}:${(demoCallSeconds % 60).toString().padStart(2, "0")}`;
 
   return (
     <div className="landing-page min-h-screen bg-white text-gray-900">
@@ -1221,21 +1257,57 @@ export default function HomePage() {
                   </AnimatePresence>
                 </div>
                 <div className="border-t border-gray-200 bg-white p-3">
-                  <div className="flex items-center gap-2">
-                    <div className="flex min-h-10 flex-1 items-center rounded-2xl border border-gray-300 bg-gray-100 px-4 py-2 text-sm text-gray-700">
-                      {typedDemoText ? (
-                        <span>
-                          {typedDemoText}
-                          <span className="ml-0.5 inline-block h-4 w-[2px] translate-y-0.5 animate-pulse bg-blue-600" />
-                        </span>
-                      ) : (
-                        <span className="text-gray-500">Type your operational question...</span>
-                      )}
+                  {isDemoCallActive || isDemoCallConnecting ? (
+                    <div className="rounded-2xl border border-blue-200 bg-blue-50 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${isDemoCallConnecting ? "animate-pulse bg-amber-500" : "bg-emerald-500"}`} />
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-gray-900">
+                              {isDemoCallConnecting ? "Connecting to Intera voice agent..." : "Intera voice call connected"}
+                            </p>
+                            <p className="text-xs text-gray-600">{isDemoCallConnecting ? "Requesting microphone access" : `Live demo preview • ${demoCallTime}`}</p>
+                          </div>
+                        </div>
+                        <button type="button" onClick={toggleDemoCall} className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700">
+                          <PhoneOff className="h-3.5 w-3.5" />
+                          End
+                        </button>
+                      </div>
+                      {!isDemoCallConnecting ? (
+                        <>
+                          <div className="mt-3 rounded-xl border border-blue-100 bg-white px-3 py-2 text-xs leading-5 text-gray-700">
+                            <span className="font-semibold text-blue-700">Voice transcript:</span> “I’m ready to help with your inventory, sales, or purchasing question.”
+                          </div>
+                          <div className="mt-3 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <button type="button" onClick={() => setIsDemoMicMuted((muted) => !muted)} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 hover:border-blue-300" aria-label={isDemoMicMuted ? "Unmute microphone" : "Mute microphone"} title={isDemoMicMuted ? "Unmute microphone" : "Mute microphone"}>
+                                <Mic className={`h-4 w-4 ${isDemoMicMuted ? "text-red-600" : "text-blue-600"}`} />
+                              </button>
+                              <button type="button" onClick={() => setIsDemoSpeakerMuted((muted) => !muted)} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 hover:border-blue-300" aria-label={isDemoSpeakerMuted ? "Unmute speaker" : "Mute speaker"} title={isDemoSpeakerMuted ? "Unmute speaker" : "Mute speaker"}>
+                                <Volume2 className={`h-4 w-4 ${isDemoSpeakerMuted ? "text-red-600" : "text-blue-600"}`} />
+                              </button>
+                            </div>
+                            <Link href="/accounts" className="text-xs font-semibold text-blue-700 hover:text-blue-900">Get the real experience <ArrowRight className="ml-1 inline h-3.5 w-3.5" /></Link>
+                          </div>
+                        </>
+                      ) : null}
                     </div>
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm">
-                      <Send className="h-4 w-4" />
-                    </span>
-                  </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <div className="flex min-h-10 flex-1 items-center rounded-2xl border border-gray-300 bg-gray-100 px-4 py-2 text-sm text-gray-700">
+                        {typedDemoText ? (
+                          <span>{typedDemoText}<span className="ml-0.5 inline-block h-4 w-[2px] translate-y-0.5 animate-pulse bg-blue-600" /></span>
+                        ) : (
+                          <span className="text-gray-500">Type your operational question...</span>
+                        )}
+                      </div>
+                      <button type="button" onClick={toggleDemoCall} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-blue-700 shadow-sm hover:border-blue-300 hover:bg-blue-100" aria-label="Call agent" title="Call agent">
+                        <PhoneCall className="h-4 w-4" />
+                      </button>
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm"><Send className="h-4 w-4" /></span>
+                    </div>
+                  )}
                 </div>
               </motion.div>
 

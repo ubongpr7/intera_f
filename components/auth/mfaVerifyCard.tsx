@@ -7,19 +7,24 @@ import {
   useMfaEmailVerifyMutation,
   useMfaVerifyMutation,
 } from "@/redux/features/users/userApiSlice";
-import { markMfaVerified } from "@/lib/mfaFlow";
+import { useLogoutMutation } from "@/redux/features/auth/authApiSlice";
+import { clearMfaCookies, markMfaVerified } from "@/lib/mfaFlow";
 import { deleteCookie, getCookie } from "cookies-next";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { Loader2, MailCheck, ShieldCheck, Smartphone } from "lucide-react";
-import { getCookieCandidates, readCookieValue } from "@/lib/authCookies";
+import { AUTH_COOKIE_KEYS, getCookieCandidates, readCookieValue } from "@/lib/authCookies";
 import { persistAuthSession } from "@/redux/services/apiSlice";
 import type { MfaVerifyResponse } from "@/redux/features/users/userTypes";
+import { useAppDispatch } from "@/redux/store";
+import { logout as clearAuthState } from "@/redux/features/authSlice";
+import { clearPermissions } from "@/redux/features/permission/permissionSlice";
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
 export default function MfaVerifyCard() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
   const autoVerificationRef = useRef("");
   const [method, setMethod] = useState<"app" | "email">("app");
@@ -30,8 +35,27 @@ export default function MfaVerifyCard() {
   const [verifyMfa, { isLoading }] = useMfaVerifyMutation();
   const [requestEmailCode, { isLoading: isSendingEmailCode }] = useMfaEmailRequestMutation();
   const [verifyEmailCode, { isLoading: isVerifyingEmailCode }] = useMfaEmailVerifyMutation();
+  const [logoutMutation] = useLogoutMutation();
   const codeDigits = Array.from({ length: 6 }, (_, index) => code[index] ?? "");
   const isLoadingAny = isLoading || isSendingEmailCode || isVerifyingEmailCode;
+
+  const handleUseAnotherAccount = async () => {
+    try {
+      await logoutMutation().unwrap();
+    } catch {
+      // Local cleanup must still complete if the pending session is expired or offline.
+    }
+    for (const key of AUTH_COOKIE_KEYS) {
+      for (const name of getCookieCandidates(key)) {
+        deleteCookie(name);
+      }
+    }
+    clearMfaCookies();
+    dispatch(clearAuthState());
+    dispatch(clearPermissions());
+    toast.success("You can now sign in with another account.");
+    router.replace("/accounts/signin");
+  };
 
   useEffect(() => {
     if (cooldown <= 0) {
@@ -309,6 +333,13 @@ export default function MfaVerifyCard() {
             Reset MFA
           </Link>
         </p>
+        <button
+          type="button"
+          onClick={() => void handleUseAnotherAccount()}
+          className="auth-action-link mt-4 block w-full text-center text-sm font-semibold text-blue-700 underline underline-offset-4 transition hover:text-blue-800 dark:text-[#98fcc2] dark:hover:text-white"
+        >
+          Use another account
+        </button>
       </div>
     </div>
   );
