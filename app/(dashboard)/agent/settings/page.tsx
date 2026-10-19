@@ -550,12 +550,15 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!activeProfileId || !canManageAgentSettings || !loadingSetup) {
-      setSetupLoadTimedOut(false)
       return
     }
 
+    const resetId = window.setTimeout(() => setSetupLoadTimedOut(false), 0)
     const timeoutId = window.setTimeout(() => setSetupLoadTimedOut(true), 20_000)
-    return () => window.clearTimeout(timeoutId)
+    return () => {
+      window.clearTimeout(resetId)
+      window.clearTimeout(timeoutId)
+    }
   }, [activeProfileId, canManageAgentSettings, loadingSetup])
 
   const baseForm = useMemo(() => {
