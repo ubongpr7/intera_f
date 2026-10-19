@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 
 import {
+  detectInsightResponse,
   isTransportDebugText,
   parseInteractionPayloadFromText,
 } from "../lib/agent-structured-output.ts"
@@ -46,4 +47,24 @@ test("supplier procurement serialization is converted into typed widgets", () =>
 test("transport part representations are never treated as user-facing content", () => {
   assert.equal(isTransportDebugText("[TextPart(kind='text', text='internal') ]"), true)
   assert.equal(isTransportDebugText("A normal assistant answer"), false)
+})
+
+test("insight JSON is recovered when an adapter prepends a status line", () => {
+  const payload = parseInteractionPayloadFromText(
+    `The procurement specialist completed the review. {"kind":"insight_response","summary":"Satnam is the leading delayed supplier.","widgets":[{"type":"ranked_list","title":"Delayed suppliers","items":[{"label":"Satnam","value":4}]}]}`,
+  )
+
+  assert.equal(payload?.kind, "insight_response")
+  assert.equal(payload?.summary, "Satnam is the leading delayed supplier.")
+  assert.equal((payload?.widgets as Array<Record<string, unknown>>)[0]?.type, "ranked_list")
+})
+
+test("text insight wins when the attached payload is only a transport wrapper", () => {
+  const detected = detectInsightResponse(
+    '{"kind":"insight_response","summary":"Typed result","widgets":[{"type":"metric_grid","data":[]}]}',
+    { type: "text", text: "The specialist result is attached below." },
+  )
+
+  assert.equal(detected?.data.summary, "Typed result")
+  assert.equal((detected?.data.widgets as Array<Record<string, unknown>>)[0]?.type, "metric_grid")
 })

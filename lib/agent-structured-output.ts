@@ -602,16 +602,56 @@ export const parseInteractionPayloadFromText = (content: string): AgentStructure
     raw = raw.replace(/^```[a-zA-Z]*\s*/, "").replace(/\s*```$/, "").trim()
   }
 
-  if (!(raw.startsWith("{") || raw.startsWith("["))) {
-    return undefined
+  const candidates = [raw]
+  // A2A adapters sometimes prepend a short status line before serializing the
+  // structured result. Extract balanced JSON rather than sending the whole
+  // transport message to the code-block renderer.
+  if (!raw.startsWith("{") && !raw.startsWith("[")) {
+    let start = -1
+    let depth = 0
+    let quote: '"' | null = null
+    let escaped = false
+    for (let index = 0; index < raw.length; index += 1) {
+      const char = raw[index]
+      if (quote) {
+        if (escaped) {
+          escaped = false
+        } else if (char === "\\") {
+          escaped = true
+        } else if (char === quote) {
+          quote = null
+        }
+        continue
+      }
+      if (char === '"') {
+        quote = char
+        continue
+      }
+      if (char === "{" || char === "[") {
+        if (start === -1) start = index
+        depth += 1
+      } else if (char === "}" || char === "]") {
+        if (start === -1) continue
+        depth -= 1
+        if (depth === 0) {
+          candidates.push(raw.slice(start, index + 1))
+          break
+        }
+      }
+    }
   }
 
-  try {
-    const parsed = JSON.parse(raw)
-    return parseStructuredPayloadFromValue(parsed)
-  } catch {
-    return undefined
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate)
+      const payload = parseStructuredPayloadFromValue(parsed)
+      if (payload) return payload
+    } catch {
+      // Try the next candidate. This is a display-boundary parser, not a
+      // validation error that should interrupt the conversation.
+    }
   }
+  return undefined
 }
 
 export const extractInteractionPayloadFromParts = (parts: unknown): AgentStructuredPayload | undefined => {
@@ -696,7 +736,9 @@ export const detectInteractionRequest = (
   content: string,
   structuredPayload?: AgentStructuredPayload,
 ): DetectedInteractionRequest | null => {
-  const payload = structuredPayload || parseInteractionPayloadFromText(content)
+  const payload = structuredPayload && (normalizeInteractionType(structuredPayload) || isInsightResponse(structuredPayload))
+    ? structuredPayload
+    : parseInteractionPayloadFromText(content)
   if (!payload) {
     return null
   }
@@ -716,7 +758,9 @@ export const detectInsightResponse = (
   content: string,
   structuredPayload?: AgentStructuredPayload,
 ): DetectedInsightResponse | null => {
-  const payload = structuredPayload || parseInteractionPayloadFromText(content)
+  const payload = structuredPayload && isInsightResponse(structuredPayload)
+    ? structuredPayload
+    : parseInteractionPayloadFromText(content)
   if (!payload || !isInsightResponse(payload)) {
     return null
   }
