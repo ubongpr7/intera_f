@@ -819,7 +819,7 @@ export default function AgentChat({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!input.trim()) return
+    if (!input.trim() || isResettingChat || isStartingNewChat) return
 
     const submittedText = input.trim()
     acknowledgeVoiceLinkedSubmission(submittedText, submittedText)
