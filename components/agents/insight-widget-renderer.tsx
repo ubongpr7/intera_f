@@ -134,6 +134,7 @@ const IDENTIFIER_HINT_PATTERN = /\b(barcode|sku|upc|ean|gtin|id|code)\b/i
 type ScalarFormatHint = "currency" | "currency_compact" | "number"
 
 const EXPLICIT_CURRENCY_HINTS = new Set(["currency", "money", "monetary"])
+const EXPLICIT_NUMBER_HINTS = new Set(["number", "count", "integer", "quantity"])
 const MONEY_HINT_PATTERN =
   /\b(revenue|sales|price|cost|basket|stock value|order value|payment|subtotal|inflow|outflow|profit|margin|gmv|value)\b/i
 const NUMBER_HINT_PATTERN =
@@ -167,7 +168,7 @@ const resolveScalarFormat = ({
   if (normalizedExplicitFormat === "currency_compact") {
     return "currency_compact"
   }
-  if (normalizedExplicitFormat === "number" || normalizedExplicitFormat === "count" || normalizedExplicitFormat === "integer") {
+  if (EXPLICIT_NUMBER_HINTS.has(normalizedExplicitFormat)) {
     return "number"
   }
 
@@ -288,6 +289,9 @@ type DisplayValueContext = {
 }
 
 const displayValue = (value: unknown, context: DisplayValueContext = {}): string => {
+  if (value === null || value === undefined || value === "") {
+    return ""
+  }
   if (typeof value === "boolean") {
     return value ? "Yes" : "No"
   }
@@ -350,7 +354,7 @@ function WidgetCard({
   children: ReactNode
 }) {
   return (
-    <section className="rounded-[24px] border border-gray-200 bg-white p-4 text-gray-700 shadow-[0_18px_44px_-34px_rgba(15,23,42,0.28)]">
+    <section className="rounded-[24px] border border-gray-200 bg-white p-4 text-gray-700 shadow-[0_18px_44px_-34px_rgba(15,23,42,0.28)] dark:border-gray-800 dark:bg-gray-950/70 dark:text-gray-700">
       {title ? <h4 className="text-sm font-semibold text-gray-900">{title}</h4> : null}
       {subtitle ? <p className="mt-1 text-xs leading-5 text-gray-500">{subtitle}</p> : null}
       <div className={title || subtitle ? "mt-4" : ""}>{children}</div>
@@ -460,11 +464,11 @@ function renderWidget(
       <WidgetCard key={`${type}-${index}`} title={title} subtitle={subtitle}>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {items.map((item, itemIndex) => (
-            <div key={`${title}-${itemIndex}`} className="rounded-[20px] bg-gray-50 px-4 py-3">
+            <div key={`${title}-${itemIndex}`} className="rounded-[20px] border border-gray-200 bg-gray-50 px-4 py-3 dark:border-blue-500/30 dark:bg-blue-950/30">
               <p className="text-xs font-medium uppercase tracking-[0.14em] text-gray-500">{asString(item.label) || `Metric ${itemIndex + 1}`}</p>
               <p className="mt-2 text-2xl font-semibold text-gray-900">
                 {formatMetricValue(item.value, asString(item.unit) || undefined, {
-                  explicitFormat: item.format ?? item.type ?? item.value_format ?? widget.value_format,
+                  explicitFormat: item.format ?? item.type ?? item.value_format ?? item.value_kind ?? widget.value_format ?? widget.value_kind,
                   title,
                   label: item.label,
                   key: item.key,
@@ -665,7 +669,7 @@ function renderWidget(
             <p className="text-xs font-medium uppercase tracking-[0.14em] text-gray-500">{asString(metric.label) || "Metric"}</p>
             <p className="mt-2 text-2xl font-semibold text-gray-900">
               {formatMetricValue(metric.value, asString(metric.unit) || undefined, {
-                explicitFormat: metric.format ?? metric.type ?? metric.value_format ?? widget.value_format,
+                explicitFormat: metric.format ?? metric.type ?? metric.value_format ?? metric.value_kind ?? widget.value_format ?? widget.value_kind,
                 title,
                 label: metric.label,
                 key: widget.y_key,
@@ -711,7 +715,8 @@ function renderWidget(
         <div className="space-y-2">
           {items.map((item, itemIndex) => {
             const barcodeValue = asString(item.barcode || asRecord(item.meta)?.barcode)
-            const hideValue = Boolean(item.hide_value)
+            const hideValue = Boolean(item.hide_value) || (item.value === undefined && item.count === undefined)
+            const detailText = asString(item.detail) || (item.meta ? displayValue(item.meta, { title }) : "")
             return (
             <div key={`${title}-${itemIndex}`} className="flex items-start justify-between gap-3 rounded-[20px] bg-gray-50 px-4 py-3">
               <div className="flex min-w-0 gap-3">
@@ -725,7 +730,7 @@ function renderWidget(
                 />
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-gray-900">{asString(item.label) || asString(item.title) || "Item"}</p>
-                  {asString(item.detail) ? <p className="mt-1 text-xs text-gray-500">{asString(item.detail)}</p> : null}
+                  {detailText ? <p className="mt-1 whitespace-pre-line text-xs text-gray-500">{detailText}</p> : null}
                   {barcodeValue ? (
                     <div className="mt-2">
                       <span className="inline-flex rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-gray-600">
@@ -739,7 +744,7 @@ function renderWidget(
                 <div className="shrink-0 text-right">
                   <p className="text-sm font-semibold text-gray-900">
                     {formatScalarValue(item.value ?? item.count, {
-                      explicitFormat: item.format ?? item.type ?? item.value_format ?? widget.value_format,
+                      explicitFormat: item.format ?? item.type ?? item.value_format ?? item.value_kind ?? widget.value_format ?? widget.value_kind,
                       title,
                       label: item.label,
                       key: item.key ?? "value",
@@ -811,14 +816,16 @@ function renderWidget(
     const normalizedColumns = columns.map((column, columnIndex) => {
       const record = asRecord(column)
       if (record) {
+        const key = asString(record.key) || `col_${columnIndex}`
         return {
-          key: asString(record.key) || `col_${columnIndex}`,
-          label: asString(record.label) || humanizeKey(record.key),
+          key,
+          label: asString(record.label) || (isImageKey(key) ? "Image" : humanizeKey(key)),
           format: record.format ?? record.type ?? record.value_format,
           currencyCode: record.currency_code ?? record.currency,
         }
       }
-      return { key: String(column), label: humanizeKey(column), format: undefined, currencyCode: undefined }
+      const key = String(column)
+      return { key, label: isImageKey(key) ? "Image" : humanizeKey(column), format: undefined, currencyCode: undefined }
     }).filter((column) => !(hasBarcodeColumn && column.key.toLowerCase() === "sku"))
     return (
       <WidgetCard key={`${type}-${index}`} title={title} subtitle={subtitle}>
@@ -846,6 +853,8 @@ function renderWidget(
                           alt={asString(row.name) || asString(row.label) || "Product"}
                           className="h-12 w-12 rounded-xl object-cover"
                         />
+                      ) : isImageKey(column.key) ? (
+                        <span className="text-gray-500">No image</span>
                       ) : (
                         <span className="whitespace-pre-line">
                           {displayValue(row[column.key], {
@@ -926,7 +935,10 @@ function renderWidget(
   }
 
   if (type === "text_block") {
-    const text = asString(widget.content) || asString(widget.text) || displayValue(widget.value, { title, key: "value" })
+    const rawText = asString(widget.content) || asString(widget.text) || displayValue(widget.value, { title, key: "value" })
+    // Never expose a specialist transport payload when a legacy mixed response
+    // includes it after the human-readable text.
+    const text = rawText.split("insight_response:", 1)[0].trim()
     return (
       <WidgetCard key={`${type}-${index}`} title={title} subtitle={subtitle}>
         <div className="rounded-[20px] bg-gray-50 px-4 py-3">
