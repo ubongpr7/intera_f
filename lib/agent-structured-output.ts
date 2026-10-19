@@ -736,8 +736,9 @@ export const detectInteractionRequest = (
   content: string,
   structuredPayload?: AgentStructuredPayload,
 ): DetectedInteractionRequest | null => {
-  const payload = structuredPayload && (normalizeInteractionType(structuredPayload) || isInsightResponse(structuredPayload))
-    ? structuredPayload
+  const attachedPayload = structuredPayload ? parseStructuredPayloadFromValue(structuredPayload) : undefined
+  const payload = attachedPayload && (normalizeInteractionType(attachedPayload) || isInsightResponse(attachedPayload))
+    ? attachedPayload
     : parseInteractionPayloadFromText(content)
   if (!payload) {
     return null
@@ -758,8 +759,9 @@ export const detectInsightResponse = (
   content: string,
   structuredPayload?: AgentStructuredPayload,
 ): DetectedInsightResponse | null => {
-  const payload = structuredPayload && isInsightResponse(structuredPayload)
-    ? structuredPayload
+  const attachedPayload = structuredPayload ? parseStructuredPayloadFromValue(structuredPayload) : undefined
+  const payload = attachedPayload && isInsightResponse(attachedPayload)
+    ? attachedPayload
     : parseInteractionPayloadFromText(content)
   if (!payload || !isInsightResponse(payload)) {
     return null

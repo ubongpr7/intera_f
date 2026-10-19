@@ -68,3 +68,17 @@ test("text insight wins when the attached payload is only a transport wrapper", 
   assert.equal(detected?.data.summary, "Typed result")
   assert.equal((detected?.data.widgets as Array<Record<string, unknown>>)[0]?.type, "metric_grid")
 })
+
+test("data envelopes are unwrapped before insight rendering", () => {
+  const detected = detectInsightResponse("Typed summary", {
+    type: "data",
+    data: {
+      kind: "insight_response",
+      summary: "Unwrapped result",
+      widgets: [{ type: "risk_panel", title: "Risk", items: [] }],
+    },
+  })
+
+  assert.equal(detected?.data.summary, "Unwrapped result")
+  assert.equal((detected?.data.widgets as Array<Record<string, unknown>>)[0]?.type, "risk_panel")
+})

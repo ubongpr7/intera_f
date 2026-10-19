@@ -62,6 +62,7 @@ import {
 } from "@/lib/agent-export"
 import { readCookieValue } from "@/lib/authCookies"
 import { DEFAULT_BRAND_AVATAR_SRC, resolveBrandAssetUrl } from "@/lib/brandAssets"
+import { useAppSelector } from "@/redux/store"
 import {
   MultipleChoiceHandler,
   FileUploadHandler,
@@ -509,7 +510,9 @@ export default function AgentChat({
   )
   const profileId = useMemo(() => readCookieValue("profileId", (name) => getCookie(name)) || "", [])
   const accessToken = useMemo(() => readCookieValue("accessToken", (name) => getCookie(name)) || "", [])
-  const voiceAccessAllowed = hasTokenPermission("oral_conversation_with_ai")
+  const permissionStatus = useAppSelector((state) => state.permission.status)
+  const voiceAccessAllowed =
+    permissionStatus === "succeeded" && hasTokenPermission("oral_conversation_with_ai")
 
   const voiceChat = useVoiceChat({
     onTranscript: (text: string) => {
@@ -1967,9 +1970,19 @@ export default function AgentChat({
                 )}
               </button>
             )}
-            {voiceChat.isSupported && !voiceAccessAllowed && (
+            {voiceChat.isSupported && permissionStatus === "loading" && (
               <div className="rounded-full border border-gray-200 bg-gray-100 px-3 py-2 text-xs text-gray-500">
-                Voice conversation is disabled for this account.
+                Checking voice access...
+              </div>
+            )}
+            {voiceChat.isSupported && permissionStatus === "failed" && (
+              <div className="rounded-full border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                Voice access could not be checked. Refresh and try again.
+              </div>
+            )}
+            {voiceChat.isSupported && permissionStatus === "succeeded" && !voiceAccessAllowed && (
+              <div className="rounded-full border border-gray-200 bg-gray-100 px-3 py-2 text-xs text-gray-500">
+                Voice conversation is not enabled for this account.
               </div>
             )}
           </div>
