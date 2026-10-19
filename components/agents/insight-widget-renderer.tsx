@@ -41,6 +41,17 @@ const asArray = (value: unknown): unknown[] => (Array.isArray(value) ? value : [
 
 const asString = (value: unknown): string => (typeof value === "string" ? value : "")
 
+const formatTimelineTimestamp = (value: unknown): string => {
+  const raw = asString(value).trim()
+  if (!raw) return "Time not provided"
+  const date = new Date(raw)
+  if (Number.isNaN(date.getTime())) return raw
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date)
+}
+
 const escapeSvgText = (value: string) =>
   value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
 
@@ -906,12 +917,14 @@ function renderWidget(
               <div className="rounded-[20px] bg-gray-50 px-4 py-3">
                 <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
                   <Clock3 className="h-3.5 w-3.5" />
-                  <span>{asString(event.timestamp) || asString(event.occurred_at)}</span>
+                  <span title={asString(event.timestamp) || asString(event.occurred_at)}>
+                    {formatTimelineTimestamp(asString(event.timestamp) || asString(event.occurred_at))}
+                  </span>
                   {asString(event.severity) ? <span className="rounded-full bg-white px-2 py-0.5 font-medium text-gray-700">{asString(event.severity)}</span> : null}
                 </div>
                 <p className="mt-2 text-sm font-semibold text-gray-900">{asString(event.title) || asString(event.event_name) || "Event"}</p>
-                {asString(event.detail) || asString(event.summary) ? (
-                  <p className="mt-1 text-xs leading-5 text-gray-600">{asString(event.detail) || asString(event.summary)}</p>
+                {asString(event.detail) || asString(event.description) || asString(event.summary) ? (
+                  <p className="mt-1 text-xs leading-5 text-gray-600">{asString(event.detail) || asString(event.description) || asString(event.summary)}</p>
                 ) : null}
               </div>
             </div>
