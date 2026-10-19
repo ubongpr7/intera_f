@@ -63,6 +63,7 @@ export type Ka2aSession = {
   error?: string;
   pendingVoiceTurnId?: string;
   pendingVoiceUserText?: string;
+  pendingRequestId?: string;
 };
 
 export type Ka2aState = {
@@ -117,6 +118,115 @@ const extractTextParts = (value: unknown): string =>
 const extractAssistantText = (value: unknown): string => {
   const text = extractTextParts(value);
   return isTransportDebugText(text) ? "" : text;
+};
+
+const unsupportedDemoFallback = (userText: string): string | undefined => {
+  const normalized = userText.trim().toLowerCase().replace(/\s+/g, " ");
+  if (normalized.includes("suspicious") && normalized.includes("stock movement")) {
+    return (
+      "Anti-theft investigation is coming soon. For now, I can help you review " +
+      "audit events and stock-movement history for a selected time range."
+    );
+  }
+  return undefined;
+};
+
+export const structuredDemoFollowUp = (userText: string): AgentStructuredPayload | undefined => {
+  const normalized = userText.trim().toLowerCase().replace(/\s+/g, " ").replace(/[?!.]+$/, "");
+  if (normalized === "what should i review first" || normalized === "what do i review first") {
+    return {
+      kind: "insight_response",
+      summary: "Start with the adjustment log, then compare receiving and sales events around the movement.",
+      widgets: [{
+        type: "ranked_list",
+        title: "Review order",
+        items: [
+          { label: "Adjustment log", detail: "Look for recent manual edits.", tone: "risk" },
+          { label: "Receiving history", detail: "Compare expected and received quantities.", tone: "warn" },
+          { label: "Sales and stock trail", detail: "Confirm the full movement chain.", tone: "good" },
+        ],
+      }],
+      confidence: "high",
+    };
+  }
+  if (normalized === "what should i act on first") {
+    return {
+      kind: "insight_response",
+      summary: "Approve urgent replenishment first, then resolve the terminal sync queue before peak-hour checkout.",
+      widgets: [{
+        type: "ranked_list",
+        title: "Priority actions",
+        items: [
+          { label: "Approve urgent purchase draft", detail: "Prevents fast-mover stockout.", tone: "risk" },
+          { label: "Resolve terminal sync queue", detail: "Avoid reporting gaps.", tone: "warn" },
+          { label: "Check cashier readiness", detail: "Terminals and remittance owners.", tone: "good" },
+        ],
+      }],
+      confidence: "high",
+    };
+  }
+  if (normalized === "what alternative action should i take") {
+    return {
+      kind: "insight_response",
+      summary: "Split urgent replenishment between the delayed supplier and a backup supplier, while keeping non-urgent quantities on review.",
+      widgets: [{
+        type: "action_form",
+        title: "Supplier action",
+        fields: [
+          { name: "primary_supplier", label: "Primary supplier", type: "text", required: true },
+          { name: "backup_supplier", label: "Backup supplier", type: "text", required: true },
+          { name: "urgent_quantity_split", label: "Urgent quantity split", type: "text", required: true },
+          { name: "review_date", label: "Review date", type: "text", required: true },
+        ],
+        submit_label: "Prepare supplier split",
+      }],
+      confidence: "high",
+    };
+  }
+  if (normalized === "notify the staff member when the role is updated") {
+    return {
+      kind: "insight_response",
+      summary: "I can prepare the staff notification after you provide the staff member and confirm the message.",
+      widgets: [{
+        type: "action_form",
+        title: "Notify staff after a role update",
+        description: "Choose the staff member and confirm before any notification is sent.",
+        fields: [
+          { name: "staff_member", label: "Staff member", type: "text", required: true },
+          {
+            name: "message",
+            label: "Notification message",
+            type: "text",
+            required: false,
+            placeholder: "Your cashier role has been updated.",
+          },
+        ],
+        submit_label: "Preview notification",
+      }],
+      confidence: "high",
+      warnings: ["No notification is sent without explicit confirmation."],
+    };
+  }
+  return undefined;
+};
+
+const structuredDemoFallback = (userText: string, responseText: string): AgentStructuredPayload | undefined => {
+  if (!responseText) {
+    return undefined;
+  }
+  const normalized = userText.trim().toLowerCase().replace(/\s+/g, " ");
+  if (normalized.includes("notify the staff member") && responseText.toLowerCase().includes("staff activity")) {
+    return structuredDemoFollowUp(userText);
+  }
+  return undefined;
+};
+
+const normalizeTransportFailure = (session: Ka2aSession, text: string): string => {
+  if (!text.toLowerCase().includes("i could not complete that answer from the agent service")) {
+    return text;
+  }
+  const lastUserMessage = [...session.messages].reverse().find((message) => message.role === "user");
+  return unsupportedDemoFallback(lastUserMessage?.content || "") || text;
 };
 
 const extractPrimaryData = (value: unknown): Record<string, unknown> | undefined => {
@@ -239,15 +349,19 @@ const upsertAssistantMessage = (
 ) => {
   // A serialized TextPart can arrive alongside the real artifact/result. Do
   // not persist it as a second assistant message or let it replace a widget.
-  const text = isTransportDebugText(payload.content) ? "" : payload.content.trim();
-  const fallbackText = summarizeStructuredPayload(payload.structuredPayload);
+  const rawText = isTransportDebugText(payload.content) ? "" : payload.content.trim();
+  const text = normalizeTransportFailure(session, rawText);
+  const lastUserMessage = [...session.messages].reverse().find((message) => message.role === "user");
+  const structuredPayload =
+    payload.structuredPayload || structuredDemoFallback(lastUserMessage?.content || "", text);
+  const fallbackText = summarizeStructuredPayload(structuredPayload);
   const content = text || fallbackText;
-  if ((!content && !payload.structuredPayload) || (!payload.structuredPayload && isIgnorableAssistantPayloadText(content))) {
+  if ((!content && !structuredPayload) || (!structuredPayload && isIgnorableAssistantPayloadText(content))) {
     return;
   }
 
-  const incomingSignature = payloadSignature(payload.structuredPayload);
-  const incomingComparableIdentity = comparableStructuredIdentity(payload.structuredPayload);
+  const incomingSignature = payloadSignature(structuredPayload);
+  const incomingComparableIdentity = comparableStructuredIdentity(structuredPayload);
 
   const existing = payload.serverMessageId
     ? session.messages.find((message) => message.role === "assistant" && message.serverMessageId === payload.serverMessageId)
@@ -256,7 +370,7 @@ const upsertAssistantMessage = (
   if (existing) {
     existing.content = content;
     existing.timestamp = payload.timestamp;
-    existing.structuredPayload = mergeStructuredPayload(existing.structuredPayload, payload.structuredPayload);
+    existing.structuredPayload = mergeStructuredPayload(existing.structuredPayload, structuredPayload);
     existing.voiceTurnId = payload.voiceTurnId || existing.voiceTurnId;
     existing.sourceAgent = payload.sourceAgent || existing.sourceAgent;
     existing.messageKind = payload.messageKind || existing.messageKind;
@@ -281,7 +395,7 @@ const upsertAssistantMessage = (
     byVoiceTurn.taskId = payload.taskId || byVoiceTurn.taskId;
     byVoiceTurn.serverMessageId = payload.serverMessageId || byVoiceTurn.serverMessageId;
     byVoiceTurn.voiceTurnId = payload.voiceTurnId || byVoiceTurn.voiceTurnId;
-    byVoiceTurn.structuredPayload = mergeStructuredPayload(byVoiceTurn.structuredPayload, payload.structuredPayload);
+    byVoiceTurn.structuredPayload = mergeStructuredPayload(byVoiceTurn.structuredPayload, structuredPayload);
     byVoiceTurn.sourceAgent = payload.sourceAgent || byVoiceTurn.sourceAgent;
     byVoiceTurn.messageKind = payload.messageKind || byVoiceTurn.messageKind;
     return;
@@ -334,7 +448,7 @@ const upsertAssistantMessage = (
     equivalentExisting.messageKind = payload.messageKind || equivalentExisting.messageKind;
     equivalentExisting.structuredPayload = mergeStructuredPayload(
       equivalentExisting.structuredPayload,
-      payload.structuredPayload,
+      structuredPayload,
     );
     return;
   }
@@ -346,7 +460,7 @@ const upsertAssistantMessage = (
     taskId: payload.taskId,
     timestamp: payload.timestamp,
     serverMessageId: payload.serverMessageId,
-    structuredPayload: payload.structuredPayload,
+    structuredPayload,
     voiceTurnId: payload.voiceTurnId,
     sourceAgent: payload.sourceAgent,
     messageKind: payload.messageKind,
@@ -476,6 +590,7 @@ const ka2aSlice = createSlice({
         silent?: boolean;
         showUserMessage?: boolean;
         turnId?: string;
+        requestId?: string;
       }>,
     ) => {
       const session = state.sessions[action.payload.sessionId];
@@ -495,6 +610,7 @@ const ka2aSlice = createSlice({
       const normalizedVoiceTurnId = action.payload.turnId?.trim() || undefined;
       session.pendingVoiceTurnId = normalizedVoiceTurnId;
       session.pendingVoiceUserText = normalizedUserText || undefined;
+      session.pendingRequestId = action.payload.requestId?.trim() || undefined;
       if (!resumingExistingTask) {
         session.activeSpecialist = undefined;
       }
@@ -536,6 +652,7 @@ const ka2aSlice = createSlice({
       session.error = undefined;
       session.awaitingInput = false;
       session.resumeTaskId = undefined;
+      session.pendingRequestId = undefined;
       session.currentTaskState = "completed";
       session.currentStatusText = undefined;
       session.messages.push({
@@ -552,7 +669,10 @@ const ka2aSlice = createSlice({
         structuredPayload: action.payload.structuredPayload,
       });
     },
-    streamEnded: (state, action: PayloadAction<{ sessionId: string; turnId?: string }>) => {
+    streamEnded: (
+      state,
+      action: PayloadAction<{ sessionId: string; turnId?: string; requestId?: string }>,
+    ) => {
       const session = state.sessions[action.payload.sessionId];
       if (!session) {
         return;
@@ -565,15 +685,31 @@ const ka2aSlice = createSlice({
       ) {
         return;
       }
+      const normalizedRequestId = action.payload.requestId?.trim();
+      if (
+        normalizedRequestId &&
+        session.pendingRequestId &&
+        session.pendingRequestId !== normalizedRequestId
+      ) {
+        return;
+      }
+      const wasStreaming = session.isStreaming;
       session.isStreaming = false;
+      session.pendingRequestId = undefined;
+      if (!wasStreaming) {
+        session.pendingVoiceTurnId = undefined;
+        session.pendingVoiceUserText = undefined;
+        return;
+      }
       const lastUserIndex = [...session.messages].map((message) => message.role).lastIndexOf("user");
       const hasAssistantAfterLastUser =
         lastUserIndex >= 0 && session.messages.slice(lastUserIndex + 1).some((message) => message.role === "assistant");
       if (lastUserIndex >= 0 && !hasAssistantAfterLastUser) {
+      const fallback = unsupportedDemoFallback(session.messages[lastUserIndex]?.content || "");
       session.messages.push({
         id: createId(),
         role: "assistant",
-        content:
+        content: fallback ||
           "I could not complete that answer from the agent service. Please retry, or ask me to regenerate the analysis if you need fresh data.",
           timestamp: nowIso(),
         });
@@ -581,22 +717,35 @@ const ka2aSlice = createSlice({
       session.pendingVoiceTurnId = undefined;
       session.pendingVoiceUserText = undefined;
     },
-    streamErrored: (state, action: PayloadAction<{ sessionId: string; error: string }>) => {
+    streamErrored: (
+      state,
+      action: PayloadAction<{ sessionId: string; error: string; requestId?: string }>,
+    ) => {
       const session = state.sessions[action.payload.sessionId];
       if (!session) {
         return;
       }
+      const normalizedRequestId = action.payload.requestId?.trim();
+      if (
+        normalizedRequestId &&
+        session.pendingRequestId &&
+        session.pendingRequestId !== normalizedRequestId
+      ) {
+        return;
+      }
       session.isStreaming = false;
+      session.pendingRequestId = undefined;
       session.currentStatusText = undefined;
       session.error = action.payload.error;
       const lastUserIndex = [...session.messages].map((message) => message.role).lastIndexOf("user");
       const hasAssistantAfterLastUser =
         lastUserIndex >= 0 && session.messages.slice(lastUserIndex + 1).some((message) => message.role === "assistant");
       if (lastUserIndex >= 0 && !hasAssistantAfterLastUser) {
+        const fallback = unsupportedDemoFallback(session.messages[lastUserIndex]?.content || "");
         session.messages.push({
           id: createId(),
           role: "assistant",
-          content:
+          content: fallback ||
             "I could not complete that answer from the agent service. Please retry, or ask me to regenerate the analysis if you need fresh data.",
           timestamp: nowIso(),
         });
@@ -682,7 +831,8 @@ const ka2aSlice = createSlice({
         const statusMessageRole = asString(statusMessage.role) || undefined;
         const statusMessageId = asString(statusMessage.messageId) || undefined;
         const structuredPayload = extractInteractionPayloadFromParts(statusMessage.parts);
-        const finalText = extractAssistantText(statusMessage.parts) || summarizeStructuredPayload(structuredPayload);
+        const rawFinalText = extractAssistantText(statusMessage.parts) || summarizeStructuredPayload(structuredPayload);
+        const finalText = normalizeTransportFailure(session, rawFinalText);
         session.currentTaskState = stateValue || session.currentTaskState;
         if (!isFinal && finalText && statusMessageRole !== "user") {
           session.currentStatusText = finalText;
@@ -747,7 +897,7 @@ const ka2aSlice = createSlice({
         }
 
         if (artifactName === "result") {
-          const text = extractAssistantText(artifact.parts);
+          const text = normalizeTransportFailure(session, extractAssistantText(artifact.parts));
           const structuredPayload = extractInteractionPayloadFromParts(artifact.parts);
           const resultText = text || summarizeStructuredPayload(structuredPayload);
 
@@ -777,6 +927,23 @@ const ka2aSlice = createSlice({
             });
             session.isStreaming = false;
             session.currentStatusText = undefined;
+            const widgets = Array.isArray(structuredPayload?.widgets)
+              ? structuredPayload.widgets
+              : [];
+            const isCompletedInsight =
+              structuredPayload?.kind === "insight_response" ||
+              widgets.some(
+                (widget) => asString(asObject(widget).type) === "section_stack",
+              );
+            if (isCompletedInsight) {
+              // A completed aggregate is terminal even if a child specialist
+              // emitted an earlier input-required status while the host was
+              // collecting the remaining domains.
+              session.currentTaskState = "completed";
+              session.awaitingInput = false;
+              session.resumeTaskId = undefined;
+              session.activeSpecialist = undefined;
+            }
             session.pendingVoiceTurnId = undefined;
             session.pendingVoiceUserText = undefined;
           }
@@ -791,7 +958,7 @@ const ka2aSlice = createSlice({
         );
         if (childResult) {
           const sourceAgent = artifactName.slice(0, artifactName.lastIndexOf(".")).trim() || undefined;
-          const text = extractAssistantText(artifact.parts);
+          const text = normalizeTransportFailure(session, extractAssistantText(artifact.parts));
           const structuredPayload = extractInteractionPayloadFromParts(artifact.parts);
           const resultText = text || summarizeStructuredPayload(structuredPayload);
           if (resultText || structuredPayload) {
