@@ -22,6 +22,7 @@ import {
   YAxis,
 } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
+import { ReactSelectField, type SelectOption } from "@/components/ui/react-select-field"
 import { formatCurrency, formatCurrencyCompact, getCurrencyCodeForProfile } from "@/lib/currency-utils"
 
 type InsightRendererProps = {
@@ -136,7 +137,7 @@ type ScalarFormatHint = "currency" | "currency_compact" | "number"
 const EXPLICIT_CURRENCY_HINTS = new Set(["currency", "money", "monetary"])
 const EXPLICIT_NUMBER_HINTS = new Set(["number", "count", "integer", "quantity"])
 const MONEY_HINT_PATTERN =
-  /\b(revenue|sales|price|cost|basket|stock value|order value|payment|subtotal|inflow|outflow|profit|margin|gmv|value)\b/i
+  /\b(revenue|sales|price|cost|basket|stock value|order value|payment|subtotal|inflow|outflow|profit|gmv)\b/i
 const NUMBER_HINT_PATTERN =
   /\b(count|quantity|qty|unit|units|item|items|location|locations|event|events|alert|alerts|days|rate|ratio|score|status|statuses|tracked|ranked|remaining|action|actions|offset|offsets|frequency|frequencies|occurrence|occurrences|staff)\b/i
 
@@ -404,19 +405,33 @@ function InsightActionForm({
               {label}
             </span>
             {type === "select" ? (
-              <select
-                required={required}
-                value={values[name] ?? ""}
-                onChange={(event) => setValues((current) => ({ ...current, [name]: event.target.value }))}
-                className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 outline-none ring-0 transition focus:border-blue-400"
+              <div
+                onMouseDown={(event) => event.stopPropagation()}
+                onClick={(event) => event.stopPropagation()}
               >
-                <option value="">{asString(field.placeholder) || `Select ${label}`}</option>
-                {options.map((option) => (
-                  <option key={asString(option.value)} value={asString(option.value)}>
-                    {asString(option.label) || asString(option.value)}
-                  </option>
-                ))}
-              </select>
+                <ReactSelectField
+                  inputId={`agent-action-${name}`}
+                  options={options.map((option) => ({
+                    value: asString(option.value),
+                    label: asString(option.label) || asString(option.value),
+                  }))}
+                  value={
+                    options
+                      .map((option) => ({
+                        value: asString(option.value),
+                        label: asString(option.label) || asString(option.value),
+                      }))
+                      .find((option) => option.value === (values[name] ?? "")) as SelectOption | undefined
+                  }
+                  placeholder={asString(field.placeholder) || `Select ${label}`}
+                  isClearable={!required}
+                  onChange={(next) => {
+                    const selected = next as SelectOption | null
+                    setValues((current) => ({ ...current, [name]: selected?.value ? String(selected.value) : "" }))
+                  }}
+                />
+                {required && !values[name] ? <input tabIndex={-1} required aria-hidden className="sr-only" value="" readOnly /> : null}
+              </div>
             ) : type === "textarea" ? (
               <textarea
                 required={required}

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   Bot,
   Building2,
@@ -529,6 +529,7 @@ export default function SettingsPage() {
   })
   const [setupSheetOpen, setSetupSheetOpen] = useState(false)
   const [form, setForm] = useState<AgentSetupFormState>(EMPTY_FORM)
+  const [setupLoadTimedOut, setSetupLoadTimedOut] = useState(false)
   const canManageAgentSettings = useMemo(() => hasTokenPermission("manage_agent_settings"), [])
   const ownerOverride = useMemo(() => isWorkspaceOwner(), [])
 
@@ -546,6 +547,16 @@ export default function SettingsPage() {
   })
   const [saveCompanyAgentSetup, { isLoading: savingSetup }] = useSaveCompanyAgentSetupMutation()
   const [refreshSession] = useRefreshMutation()
+
+  useEffect(() => {
+    if (!activeProfileId || !canManageAgentSettings || !loadingSetup) {
+      setSetupLoadTimedOut(false)
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => setSetupLoadTimedOut(true), 20_000)
+    return () => window.clearTimeout(timeoutId)
+  }, [activeProfileId, canManageAgentSettings, loadingSetup])
 
   const baseForm = useMemo(() => {
     const agent = setupResponse?.agent
@@ -615,10 +626,40 @@ export default function SettingsPage() {
     }
   }
 
-  if (loadingCompanies || (activeProfileId && canManageAgentSettings && loadingSetup)) {
+  if (loadingCompanies || (activeProfileId && canManageAgentSettings && loadingSetup && !setupLoadTimedOut)) {
     return (
       <div className="p-2">
         <AgentSetupLoading />
+      </div>
+    )
+  }
+
+  if (activeProfileId && canManageAgentSettings && loadingSetup && setupLoadTimedOut) {
+    return (
+      <div className="p-6">
+        <Card className="border-amber-200 bg-amber-50 shadow-sm">
+          <CardHeader className="p-6 text-left">
+            <CardTitle className="text-lg font-semibold text-amber-950">Workspace AI setup is still loading</CardTitle>
+            <CardDescription className="text-sm leading-6 text-amber-900">
+              The setup service has not returned yet. Nothing was changed. Retry the setup request or continue once the
+              service is available.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-3 p-6 pt-0">
+            <Button
+              type="button"
+              onClick={() => {
+                setSetupLoadTimedOut(false)
+                void refetch()
+              }}
+            >
+              Retry setup
+            </Button>
+            <Button type="button" variant="outline" onClick={() => router.refresh()}>
+              Refresh page
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     )
   }

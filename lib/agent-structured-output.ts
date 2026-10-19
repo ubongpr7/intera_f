@@ -50,6 +50,8 @@ const asObject = (value: unknown): Record<string, unknown> | undefined => {
   return value as Record<string, unknown>
 }
 
+const asRecord = asObject
+
 const asString = (value: unknown): string => (typeof value === "string" ? value : "")
 
 const asArray = (value: unknown): unknown[] => (Array.isArray(value) ? value : [])
@@ -79,6 +81,61 @@ const normalizeInteractionType = (payload: AgentStructuredPayload): string | und
 const isInsightResponse = (payload: AgentStructuredPayload): boolean =>
   (asString(payload.kind).trim() === "insight_response" || asString(payload.type).trim() === "insight_response") &&
   Array.isArray(payload.widgets)
+
+const normalizeInsightWidget = (widgetValue: unknown): AgentStructuredPayload | undefined => {
+  const widget = asObject(widgetValue)
+  if (!widget) {
+    return undefined
+  }
+  const type = asString(widget.type).trim().toLowerCase()
+  if (type === "comparison") {
+    const rows = asArray(widget.ranked_suppliers ?? widget.items)
+      .map((item) => asRecord(item))
+      .filter(Boolean) as Array<Record<string, unknown>>
+    return {
+      ...widget,
+      type: "comparison_table",
+      columns: rows.length
+        ? Object.keys(rows[0]).map((key) => ({ key, label: key.replace(/_/g, " ") }))
+        : ["supplier", "delayed_po_count"],
+      rows,
+    }
+  }
+  if (type === "timeline") {
+    const events = asArray(widget.events ?? widget.items)
+      .map((item) => asRecord(item))
+      .filter(Boolean)
+      .map((item) => ({
+        title: asString(item?.title || item?.po_reference || item?.reference || item?.event_name) || "Event",
+        detail: asString(item?.detail || item?.notes || item?.summary),
+        timestamp: asString(item?.timestamp || item?.expected_delivery_date),
+      }))
+    return { ...widget, type: "timeline", events }
+  }
+  if (type === "risk") {
+    return {
+      ...widget,
+      type: "risk_panel",
+      severity: asString(widget.severity || widget.rating || "warning").toLowerCase(),
+      items: [{
+        label: asString(widget.rating || "Operational risk"),
+        detail: asString(widget.explanation || widget.detail),
+      }],
+    }
+  }
+  return widget
+}
+
+const normalizeInsightPayload = (payload: AgentStructuredPayload): AgentStructuredPayload | undefined => {
+  if (!Array.isArray(payload.widgets)) {
+    return undefined
+  }
+  return {
+    ...payload,
+    kind: "insight_response",
+    widgets: payload.widgets.map(normalizeInsightWidget).filter(Boolean),
+  }
+}
 
 const slugifyChoiceValue = (value: string) =>
   value
@@ -271,6 +328,204 @@ const parseLegacyToolCodePayload = (toolCode: string): AgentStructuredPayload | 
   return buildLegacyInteractionPayload(functionName, parsedArgs)
 }
 
+const unquoteSerializedValue = (value: string): string =>
+  value.trim().replace(/^['"]|['"]$/g, "").replace(/\\(['"])/g, "$1")
+
+const parseSerializedInsightWidgetResponse = (content: string): AgentStructuredPayload | undefined => {
+  const raw = content.trim()
+  if (!/^insight_response\s*:/im.test(raw) || !/^\s*-?\s*widgets\s*:/im.test(raw)) {
+    return undefined
+  }
+
+  const lineValue = (pattern: RegExp): string => unquoteSerializedValue(raw.match(pattern)?.[1] || "")
+  const summary = lineValue(/^\s*-\s*summary:\s*(.+)$/im)
+  const widgets: AgentStructuredPayload[] = []
+
+  // Newer specialists serialize the insight envelope as YAML-like text with
+  // `widgets:` (without the legacy list marker). Convert its common typed
+  // sections before the raw text can reach the conversation renderer.
+  const scalar = (value: string): unknown => {
+    const normalized = unquoteSerializedValue(value)
+    if (normalized === "null") return null
+    if (/^-?\d+(\.\d+)?$/.test(normalized)) return Number(normalized)
+    return normalized
+  }
+  const genericBlocks = [...raw.matchAll(/^\s*-\s*type:\s*([^\n]+)\n([\s\S]*?)(?=^\s*-\s*type:|\s*$)/gim)]
+  for (const match of genericBlocks) {
+    const type = unquoteSerializedValue(match[1]).toLowerCase()
+    const block = match[2]
+    const title = type.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase())
+    const dataLines = [...block.matchAll(/^\s{6,}([a-z_]+):\s*(.+)$/gim)]
+    if (type === "pipeline_counts") {
+      widgets.push({
+        type: "metric_grid",
+        title: "Purchase order pipeline",
+        data: dataLines.map((item) => ({ label: item[1].replace(/_/g, " "), value: scalar(item[2]), value_kind: "count" })),
+      })
+      continue
+    }
+    const itemBlocks = [...block.matchAll(/^\s*-\s+([a-z_]+):\s*(.+?)(?=\n\s*-\s+[a-z_]+:|$)/gim)]
+    if (["recent_purchase_orders", "receiving_exceptions"].includes(type)) {
+      const rows: Record<string, unknown>[] = []
+      for (let index = 0; index < itemBlocks.length; index += 1) {
+        const first = itemBlocks[index]
+        const row: Record<string, unknown> = { [first[1]]: scalar(first[2]) }
+        const remainder = block.slice(first.index! + first[0].length, itemBlocks[index + 1]?.index ?? block.length)
+        for (const field of remainder.matchAll(/^\s+([a-z_]+):\s*(.+)$/gim)) row[field[1]] = scalar(field[2])
+        rows.push(row)
+      }
+      if (rows.length) {
+        widgets.push({ type: "comparison_table", title, columns: Object.keys(rows[0]).map((key) => ({ key, label: key.replace(/_/g, " ") })), rows })
+      }
+      continue
+    }
+    if (type === "risks_and_next_actions") {
+      const risks = [...block.matchAll(/^\s*-\s*risk:\s*(.+?)(?=\n\s+[a-z_]+:|$)[\s\S]*?(?=^\s*-\s*risk:|$)/gim)]
+      widgets.push({
+        type: "text_list",
+        title: "Risks and next actions",
+        items: risks.map((risk) => ({ detail: unquoteSerializedValue(risk[1]) })),
+      })
+    }
+  }
+
+  const comparisonMatch = raw.match(
+    /-\s*comparison:\s*\n\s*-\s*title:\s*(.+?)\n\s*-\s*items:\s*([\s\S]*?)(?=\n\s*-\s*(?:timeline|risk|progress):|\n\s*(?:Evidence|Next steps)|$)/im,
+  )
+  if (comparisonMatch) {
+    const itemLines = comparisonMatch[2]
+      .split(/\n\s*-\s+/)
+      .map((item) => item.trim())
+      .filter(Boolean)
+    const rows = itemLines.map((item) => {
+      const supplier = unquoteSerializedValue(item.match(/supplier:\s*([^,]+?)(?=,\s*exceptions:|$)/i)?.[1] || "")
+      const exceptions = Number(item.match(/exceptions:\s*(\d+)/i)?.[1] || 0)
+      const share = unquoteSerializedValue(item.match(/share:\s*([^,]+)$/i)?.[1] || "")
+      const others = unquoteSerializedValue(item.match(/others:\s*(\d+)/i)?.[1] || "")
+      return supplier
+        ? { supplier, exceptions, ...(share ? { share } : {}) }
+        : { supplier: "Others", exceptions: Number(others || exceptions) }
+    })
+    widgets.push({
+      type: "comparison_table",
+      title: unquoteSerializedValue(comparisonMatch[1]),
+      columns: [
+        { key: "supplier", label: "Supplier" },
+        { key: "exceptions", label: "Open exceptions", format: "number" },
+        { key: "share", label: "Share" },
+      ],
+      rows,
+    })
+  }
+
+  const timelineMatch = raw.match(
+    /-\s*timeline:\s*\n\s*-\s*title:\s*(.+?)\n\s*-\s*items:\s*([\s\S]*?)(?=\n\s*-\s*source:|\n\s*-\s*(?:risk|progress):|\n\s*(?:Evidence|Next steps)|$)/im,
+  )
+  if (timelineMatch) {
+    const events = timelineMatch[2]
+      .split(/\n\s*-\s+/)
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .map((item) => ({
+        title: unquoteSerializedValue(item.match(/reference:\s*([^,]+?)(?=,\s*note:|$)/i)?.[1] || "Event"),
+        detail: unquoteSerializedValue(item.match(/note:\s*(.+)$/i)?.[1] || ""),
+      }))
+    const source = lineValue(/\n\s*-\s*source:\s*(.+)$/im)
+    widgets.push({ type: "timeline", title: unquoteSerializedValue(timelineMatch[1]), events, ...(source ? { subtitle: source } : {}) })
+  }
+
+  const riskMatch = raw.match(
+    /-\s*risk:\s*\n\s*-\s*title:\s*(.+?)\n\s*-\s*level:\s*(.+?)\n\s*-\s*explanation:\s*(.+?)(?=\n\s*-\s*(?:progress):|\n\s*(?:Evidence|Next steps)|$)/im,
+  )
+  if (riskMatch) {
+    widgets.push({
+      type: "risk_panel",
+      title: unquoteSerializedValue(riskMatch[1]),
+      severity: unquoteSerializedValue(riskMatch[2]).toLowerCase().includes("high") ? "high" : "warning",
+      items: [{ label: unquoteSerializedValue(riskMatch[2]), detail: unquoteSerializedValue(riskMatch[3]) }],
+    })
+  }
+
+  const progressMatch = raw.match(
+    /-\s*progress:\s*\n\s*-\s*title:\s*(.+?)\n\s*-\s*note:\s*(.+?)(?=\n\s*(?:Evidence|Next steps)|$)/im,
+  )
+  if (progressMatch) {
+    widgets.push({
+      type: "progress_tracker",
+      title: unquoteSerializedValue(progressMatch[1]),
+      steps: [{ label: unquoteSerializedValue(progressMatch[2]), detail: "Completed", status: "completed" }],
+    })
+  }
+
+  const topOffendersMatch = raw.match(
+    /-\s*top_offenders[^:]*:\s*([\s\S]*?)(?=\n\s*-\s*(?:frequency_insight|risk|recommended_next_steps):|\n\s*(?:Evidence|Next steps)|$)/im,
+  )
+  if (topOffendersMatch) {
+    const rows = topOffendersMatch[1]
+      .split(/\n\s*-\s+/)
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .map((item) => {
+        const [supplierPart, detailPart = ""] = item.split(/\s+—\s+/, 2)
+        const openLines = Number(detailPart.match(/(\d+)\s+open lines?/i)?.[1] || 1)
+        const remainingQuantity = detailPart.match(/remaining_quantity\s+(?:~)?([\d,]+)/i)?.[1]?.replace(/,/g, "")
+        return {
+          supplier: unquoteSerializedValue(supplierPart),
+          open_lines: openLines,
+          ...(remainingQuantity ? { remaining_quantity: Number(remainingQuantity) } : {}),
+          detail: detailPart,
+        }
+      })
+    if (rows.length) {
+      widgets.push({
+        type: "comparison_table",
+        title: "Top suppliers by operational impact",
+        columns: [
+          { key: "supplier", label: "Supplier" },
+          { key: "open_lines", label: "Open lines", format: "number" },
+          { key: "remaining_quantity", label: "Remaining quantity", format: "number" },
+          { key: "detail", label: "Details" },
+        ],
+        rows,
+      })
+    }
+  }
+
+  const frequencyInsight = lineValue(/\n\s*-\s*frequency_insight:\s*(.+?)(?=\n\s*-\s*(?:risk|recommended_next_steps):|\n\s*(?:Evidence|Next steps)|$)/im)
+  if (frequencyInsight) {
+    widgets.push({ type: "text_block", title: "Frequency insight", content: frequencyInsight })
+  }
+
+  const riskInsight = lineValue(/\n\s*-\s*risk:\s*(.+?)(?=\n\s*-\s*(?:recommended_next_steps):|\n\s*(?:Evidence|Next steps)|$)/im)
+  if (riskInsight && !widgets.some((widget) => widget.type === "risk_panel")) {
+    widgets.push({
+      type: "risk_panel",
+      title: "Operational risk",
+      severity: "warning",
+      items: [{ label: "Review required", detail: riskInsight }],
+    })
+  }
+
+  const nextStepsMatch = raw.match(
+    /-\s*recommended_next_steps:\s*([\s\S]*?)(?=\n\s*(?:Evidence|Next steps)|$)/im,
+  )
+  if (nextStepsMatch) {
+    const items = nextStepsMatch[1]
+      .split(/\n\s*(?=\d+\))/)
+      .map((item) => item.replace(/^\d+\)\s*/, "").trim())
+      .filter(Boolean)
+    if (items.length) {
+      widgets.push({
+        type: "text_list",
+        title: "Recommended next steps",
+        items: items.map((detail) => ({ detail })),
+      })
+    }
+  }
+
+  return widgets.length ? { kind: "insight_response", summary, widgets } : undefined
+}
+
 export const parseStructuredPayloadFromValue = (value: unknown, depth = 0): AgentStructuredPayload | undefined => {
   if (depth > 4) {
     return undefined
@@ -278,6 +533,10 @@ export const parseStructuredPayloadFromValue = (value: unknown, depth = 0): Agen
   const payload = asObject(value)
   if (!payload) {
     return undefined
+  }
+  const normalizedInsight = normalizeInsightPayload(payload)
+  if (normalizedInsight) {
+    return normalizedInsight
   }
   const legacyToolCode = asString(payload.tool_code).trim()
   if (legacyToolCode) {
@@ -321,13 +580,18 @@ export const parseInteractionPayloadFromValue = (value: unknown): AgentStructure
   if (!payload) {
     return undefined
   }
-  return normalizeInteractionType(payload) ? payload : undefined
+  return normalizeInteractionType(payload) || isInsightResponse(payload) ? payload : undefined
 }
 
 export const parseInteractionPayloadFromText = (content: string): AgentStructuredPayload | undefined => {
   let raw = (content || "").trim()
   if (!raw) {
     return undefined
+  }
+
+  const serializedInsight = parseSerializedInsightWidgetResponse(raw)
+  if (serializedInsight) {
+    return serializedInsight
   }
 
   const jsonCodeBlockRegex = /```json\s*([\s\S]*?)\s*```/i

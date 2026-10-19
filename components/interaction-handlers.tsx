@@ -26,6 +26,7 @@ import {
   Edit,
 } from "lucide-react"
 import { Checkbox } from "./ui/checkbox"
+import { ReactSelectField, type SelectOption } from "./ui/react-select-field"
 import classNames from "classnames"
 
 interface InteractionHandlerProps {
@@ -677,21 +678,27 @@ export function DynamicFormHandler({ data, onResponse, compact = false, disabled
         )
 
       case "select":
+        const selectOptions: SelectOption[] = (field.options ?? []).map((option: any) => ({
+          value: option.value,
+          label: option.label,
+        }))
+        const selectedOption = selectOptions.find((option) => String(option.value) === String(fieldValue)) ?? null
         return (
-          <select
-            value={fieldValue}
-            onChange={(e) => updateField(field.name, e.target.value)}
-            className={`w-full p-2 border border-gray-700 rounded-md ${compact ? "h-8 text-sm p-1" : ""}`}
-            required={field.required}
-            disabled={disabled}
-          >
-            <option value="">Select...</option>
-            {field.options?.map((option: any, optIndex: number) => (
-              <option key={optIndex} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          <ReactSelectField
+            inputId={`${field.name}-${index}`}
+            options={selectOptions}
+            value={selectedOption}
+            onChange={(option) => {
+              const nextOption = Array.isArray(option) ? option[0] : option
+              updateField(field.name, nextOption?.value ?? "")
+            }}
+            placeholder={`Select ${field.label}`}
+            isDisabled={disabled}
+            isClearable={!field.required}
+            menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
+            menuPosition="fixed"
+            className={compact ? "text-sm" : undefined}
+          />
         )
 
       case "boolean":
