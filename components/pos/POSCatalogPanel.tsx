@@ -18,6 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatCurrency } from "@/lib/currency-utils"
 import type { Product, ProductVariant } from "@/redux/features/product/productTypes"
 import { toast } from "react-toastify"
+import { BarcodeScanner } from "@/components/common/BarcodeScanner"
 
 type ProductCatalogItem = Product & {
   quick_sale_label?: string
@@ -335,17 +336,20 @@ export default function POSCatalogPanel({
   canAddToOrder,
   pendingAddVariantIds,
 }: POSCatalogPanelProps) {
-  const [browseMode, setBrowseMode] = useState<BrowseMode>("quick_sale")
+  const [browseMode, setBrowseMode] = useState<BrowseMode>("all")
   const [selectedProduct, setSelectedProduct] = useState<ProductCatalogItem | null>(null)
   const showSearchResults = deferredCatalogQuery.length >= 2
 
   const productGroups = useMemo(() => {
-    const filtered = products.filter((product) => productStock(product) > 0)
+    const filtered = products.filter((product) => {
+      if (productStock(product) > 0) return true
+      return productVariantCandidates(product, productVariants).some((variant) => variantStock(variant) > 0)
+    })
     return {
       quickSale: filtered.filter((product) => product.quick_sale),
       all: filtered,
     }
-  }, [products])
+  }, [products, productVariants])
 
   const activeProducts = showSearchResults
     ? productGroups.all
@@ -406,9 +410,16 @@ export default function POSCatalogPanel({
             <Input
               value={catalogQuery}
               onChange={(event) => onCatalogQueryChange(event.target.value)}
-              className="pl-10"
+              className="pl-10 pr-24"
               placeholder="Search by product name, SKU, or barcode"
             />
+            <div className="absolute right-2 top-1/2 -translate-y-1/2">
+              <BarcodeScanner
+                onDetected={onCatalogQueryChange}
+                label="Scan"
+                className="border-gray-200 bg-white px-3 text-gray-700 hover:bg-gray-100"
+              />
+            </div>
           </div>
         </CardHeader>
 

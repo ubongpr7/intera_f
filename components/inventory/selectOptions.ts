@@ -19,6 +19,9 @@ export const InventoryKeyInfo = {
   track_serial: "Enable serial tracking for individual units.",
   track_expiry: "Enable expiry-date tracking for lots.",
   allow_negative_stock: "Allow transactions that temporarily push stock below zero.",
+  automate_reorder: "Allow the scheduled replenishment worker to create an approval-gated purchase order.",
+  purchaseable: "Allow this item to be selected on purchase orders.",
+  salable: "Allow this item to be selected for sale.",
 };
 
 export const InventoryInterfaceKeys: (keyof InventoryData)[] = [
@@ -39,6 +42,9 @@ export const InventoryInterfaceKeys: (keyof InventoryData)[] = [
   "track_serial",
   "track_expiry",
   "allow_negative_stock",
+  "automate_reorder",
+  "purchaseable",
+  "salable",
 ];
 
 export const defaultValues: Partial<InventoryData> = {
@@ -49,6 +55,9 @@ export const defaultValues: Partial<InventoryData> = {
   track_serial: false,
   track_expiry: false,
   allow_negative_stock: false,
+  automate_reorder: false,
+  purchaseable: true,
+  salable: true,
   minimum_stock_level: 0,
   reorder_point: 0,
   reorder_quantity: 0,

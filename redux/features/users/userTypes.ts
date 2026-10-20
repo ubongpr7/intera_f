@@ -56,6 +56,17 @@ export interface ReferralDashboard {
   payouts: ReferralPayout[];
 }
 
+export interface AffiliatePartner {
+  id: number | string;
+  name: string;
+  code: string;
+  commission_rate: string | number;
+  is_active: boolean;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface UserSummary {
   id: number;
   email: string;

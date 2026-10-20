@@ -38,6 +38,74 @@ export interface StockLocation extends StockLocationSummary {
   code?: string;
 }
 
+export interface WarehouseConfiguration {
+  id: string;
+  location: string;
+  location_name?: string;
+  receiving_strategy: string;
+  picking_strategy: string;
+  putaway_strategy: string;
+  capacity: string | number;
+  cycle_count_frequency_days: number;
+  operating_hours: Record<string, unknown>;
+  holidays: string[];
+  default_transfer_mode: string;
+}
+
+export interface WarehouseReport {
+  location: { id: string; name: string; code?: string }
+  stock_summary: Record<string, unknown>
+  configuration?: WarehouseConfiguration | null
+  zones: WarehouseZone[]
+  cycle_count_schedules: CycleCountSchedule[]
+  capacity: string | number
+}
+
+export interface WarehouseZone {
+  id: string;
+  location: string;
+  location_name?: string;
+  name: string;
+  code: string;
+  kind: string;
+  capacity: string | number;
+  active: boolean;
+}
+
+export interface CycleCountSchedule {
+  id: string;
+  location: string;
+  location_name?: string;
+  inventory_item?: string | null;
+  inventory_item_name?: string | null;
+  frequency_days: number;
+  next_count_at?: string | null;
+  last_count_at?: string | null;
+  variance_tolerance: string | number;
+  active: boolean;
+}
+
+export interface StockCountLine {
+  id: string;
+  inventory_item: string;
+  inventory_item_name?: string;
+  expected_quantity: string | number;
+  counted_quantity?: string | number | null;
+  variance?: string | number | null;
+  notes?: string;
+}
+
+export interface StockCountSession {
+  id: string;
+  location: string;
+  location_name?: string;
+  status: "open" | "submitted" | "approved" | "cancelled";
+  started_at?: string;
+  submitted_at?: string | null;
+  approved_at?: string | null;
+  lines: StockCountLine[];
+}
+
 export interface StockMovement {
   id: string;
   inventory_item?: string;

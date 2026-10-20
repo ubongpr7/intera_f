@@ -212,8 +212,8 @@ export default function LiveProductActivity({
 
             <ScrollArea className="mt-5 h-[31rem] pr-3">
               <div className="space-y-3">
-                {salesFeed.slice(0, 18).map((sale) => (
-                  <div key={`${sale.audit_id}-${sale.reference_number}-${sale.title}-${sale.occurred_at}`} className="rounded-2xl border border-gray-200 bg-gray-50 p-4 transition hover:border-blue-200 hover:bg-white">
+                {salesFeed.slice(0, 18).map((sale, index) => (
+                  <div key={`${sale.audit_id}-${sale.reference_number}-${sale.title}-${sale.occurred_at}-${index}`} className="rounded-2xl border border-gray-200 bg-gray-50 p-4 transition hover:border-blue-200 hover:bg-white">
                     <div className="flex items-start gap-4">
                       <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-white">
                         {sale.image_url ? (

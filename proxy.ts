@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { getCookieCandidates, type AuthCookieKey } from "./lib/authCookies"
+import { isSsoMfaBypassProvider } from "./lib/authProvider"
 
 export function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname
@@ -11,6 +12,11 @@ export function proxy(request: NextRequest) {
     path === "/site.webmanifest" ||
     /\.[a-z0-9]+$/i.test(path)
   const isMfaPath = path.startsWith("/accounts/mfa")
+  // OAuth callbacks must reach their callback pages even when the browser
+  // already has an authenticated web session. Native callbacks need to hand
+  // the authorization code to the Kotlin deep link instead of going to the
+  // dashboard or an MFA page.
+  const isNativeOAuthCallbackPath = /^\/accounts\/login\/oauth2\/code\/[^/]+\/native\/?$/.test(path)
   const isInvitationPath =
     path === "/accounts/invitations" ||
     path.startsWith("/accounts/invitations/") ||
@@ -53,8 +59,12 @@ export function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
-  if (waitlistMode && path !== "/" && !isPublicAsset && !isLegalPath && !isContactPath) {
+  if (waitlistMode && !isNativeOAuthCallbackPath && path !== "/" && !isPublicAsset && !isLegalPath && !isContactPath) {
     return NextResponse.redirect(new URL("/", request.url))
+  }
+
+  if (isNativeOAuthCallbackPath) {
+    return NextResponse.next()
   }
 
   const refreshToken = readCookie("refreshToken")
@@ -63,8 +73,12 @@ export function proxy(request: NextRequest) {
   const mfaVerifiedCookie = readCookie("mfaVerified")
   const mfaVerified = mfaVerifiedCookie === "true"
   const mfaSetupRequired = readCookie("mfaSetupRequired") === "true"
+  const authProvider = readCookie("provider")
   const mfaTargetPath = mfaSetupRequired ? "/accounts/mfa/setup" : "/accounts/mfa/verify"
-  const shouldEnforceMfa = hasAuthCookie && mfaVerifiedCookie === "false"
+  const shouldEnforceMfa =
+    hasAuthCookie &&
+    mfaVerifiedCookie === "false" &&
+    !isSsoMfaBypassProvider(authProvider)
 
   if (!hasAuthCookie) {
     if (isMfaPath) {

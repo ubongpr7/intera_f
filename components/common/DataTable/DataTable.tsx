@@ -2,7 +2,7 @@
 import React from "react"
 import { startTransition, useEffect, useMemo, useRef, useState } from "react"
 import { usePathname, useSearchParams } from "next/navigation"
-import { type LucideIcon, QrCode, Barcode, Search, SlidersHorizontal, X } from 'lucide-react'
+import { type LucideIcon, QrCode, Barcode, Search, SlidersHorizontal, X, Grid2X2, List, Table2 } from 'lucide-react'
 import { FieldInfo } from "../fileFieldInfor"
 import LoadingAnimation from "../LoadingAnimation"
 import { Input } from "@/components/ui/input"
@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch"
 import { ReactSelectField, type SelectOption } from "@/components/ui/react-select-field"
 import { cn } from "@/lib/utils"
 import { formatMachineLabel } from "@/lib/displayLabels"
+import { BarcodeScanner } from "@/components/common/BarcodeScanner"
 
 export interface Column<T> {
   header: string
@@ -61,6 +62,8 @@ export type DataTableQueryState = {
   sortConfig: { key: string; direction: "ascending" | "descending" } | null
 }
 
+export type DataTableViewMode = "table" | "list" | "cards"
+
 type TableViewState<T> = {
   searchTerm: string
   filters: Record<keyof T, string>
@@ -100,6 +103,7 @@ interface DataTableProps<T> {
   filterableFields?: (keyof T)[]
   rangeFilterFields?: (keyof T)[]
   sortableFields?: (keyof T)[]
+  numericFields?: (keyof T)[]
   qrScannableField?: keyof T; // Field to extract from QR code for filtering
   barcodeScannableField?: keyof T; // Field to extract from Barcode for filtering
   onScanSuccess?: (scannedItem: T) => void; // Callback after successful scan and item retrieval
@@ -109,6 +113,8 @@ interface DataTableProps<T> {
   serverSide?: boolean
   filterOptions?: Partial<Record<keyof T, DataTableFilterOption[]>>
   onQueryStateChange?: (state: DataTableQueryState) => void
+  cardRenderer?: (row: T, index: number) => React.ReactNode
+  defaultViewMode?: DataTableViewMode
 }
 
 const humanizeFieldName = (value: string) =>
@@ -149,6 +155,7 @@ export function DataTable<T>({
   filterableFields = [],
   rangeFilterFields = [],
   sortableFields = [],
+  numericFields = [],
   qrScannableField,
   barcodeScannableField,
   onScanSuccess,
@@ -156,6 +163,8 @@ export function DataTable<T>({
   serverSide = false,
   filterOptions: suppliedFilterOptions,
   onQueryStateChange,
+  cardRenderer,
+  defaultViewMode = cardRenderer ? "cards" : "table",
   title,
   onClose,
 }: DataTableProps<T>) {
@@ -177,6 +186,7 @@ export function DataTable<T>({
   }, [columns, title, urlStateKey])
 
   const searchKey = `${tableStateKey}_search`
+  const viewKey = `${tableStateKey}_view`
   const sortKey = `${tableStateKey}_sort`
   const directionKey = `${tableStateKey}_direction`
   const urlState = useMemo<TableViewState<T>>(() => {
@@ -213,6 +223,10 @@ export function DataTable<T>({
   ])
 
   const [tableViewState, setTableViewState] = useState<TableViewState<T>>(urlState)
+  const requestedViewMode = searchParams.get(viewKey)
+  const [viewMode, setViewMode] = useState<DataTableViewMode>(
+    requestedViewMode === "cards" || requestedViewMode === "list" ? requestedViewMode : defaultViewMode,
+  )
   const lastObservedUrlState = useRef(JSON.stringify(urlState))
   const lastReportedQueryState = useRef("")
 
@@ -227,6 +241,11 @@ export function DataTable<T>({
       setTableViewState(urlState)
     })
   }, [urlState])
+
+  useEffect(() => {
+    const nextViewMode = searchParams.get(viewKey)
+    setViewMode(nextViewMode === "cards" || nextViewMode === "list" ? nextViewMode : defaultViewMode)
+  }, [defaultViewMode, searchParams, viewKey])
 
   useEffect(() => {
     if (!onQueryStateChange) {
@@ -338,31 +357,33 @@ export function DataTable<T>({
     () => sortableFields.flatMap((field) => [
       {
         value: `${String(field)}:ascending`,
-        label: `${humanizeFieldName(String(field))}: A-Z / low-high`,
+        label: `${humanizeFieldName(String(field))}: ${numericFields.includes(field) ? "low-high" : "A-Z"}`,
       },
       {
         value: `${String(field)}:descending`,
-        label: `${humanizeFieldName(String(field))}: Z-A / high-low`,
+        label: `${humanizeFieldName(String(field))}: ${numericFields.includes(field) ? "high-low" : "Z-A"}`,
       },
     ]),
-    [sortableFields],
+    [numericFields, sortableFields],
   )
 
   const sortedData = useMemo(() => {
     const sortableData = [...data]
     if (sortConfig !== null) {
       sortableData.sort((a, b) => {
-        if (a[sortConfig.key] < b[sortConfig.key]) {
+        const left = numericFields.includes(sortConfig.key) ? Number(a[sortConfig.key] ?? 0) : a[sortConfig.key]
+        const right = numericFields.includes(sortConfig.key) ? Number(b[sortConfig.key] ?? 0) : b[sortConfig.key]
+        if (left < right) {
           return sortConfig.direction === "ascending" ? -1 : 1
         }
-        if (a[sortConfig.key] > b[sortConfig.key]) {
+        if (left > right) {
           return sortConfig.direction === "ascending" ? 1 : -1
         }
         return 0
       })
     }
     return sortableData
-  }, [data, sortConfig])
+  }, [data, numericFields, sortConfig])
 
   const filteredAndSortedData = serverSide
     ? data
@@ -715,6 +736,95 @@ export function DataTable<T>({
     </div>
   )
 
+  const renderDefaultListItem = (row: T, rowIndex: number) => {
+    const primaryColumn = columns[0]
+    const primaryValue = typeof primaryColumn?.accessor === "function"
+      ? primaryColumn.accessor(row)
+      : primaryColumn ? row[primaryColumn.accessor as keyof T] : ""
+    return (
+      <button
+        key={getRowId?.(row) || rowIndex}
+        type="button"
+        onClick={() => onRowClick?.(row)}
+        className={cn(
+          "flex w-full items-center gap-4 border-b border-border px-4 py-4 text-left last:border-b-0",
+          onRowClick && "cursor-pointer transition-colors hover:bg-muted/60",
+        )}
+      >
+        <span className="w-10 shrink-0 text-xs font-semibold text-muted-foreground">{startNumberFrom + rowIndex}</span>
+        <span className="min-w-0 flex-1 truncate font-medium text-foreground">{primaryColumn?.render ? primaryColumn.render(primaryValue, row) : String(primaryValue ?? "")}</span>
+        <span className="hidden max-w-[40%] truncate text-sm text-muted-foreground sm:block">
+          {columns.slice(1, 3).map((column) => {
+            const value = typeof column.accessor === "function" ? column.accessor(row) : row[column.accessor as keyof T]
+            return `${column.header}: ${String(value ?? "Not set")}`
+          }).join(" · ")}
+        </span>
+        {hasActions ? <span onClick={(event) => event.stopPropagation()}>{renderActionButtons(row)}</span> : null}
+      </button>
+    )
+  }
+
+  const renderDefaultCard = (row: T, rowIndex: number) => (
+    <article
+      key={getRowId?.(row) || rowIndex}
+      onClick={() => onRowClick?.(row)}
+      className={cn(
+        "rounded-2xl border border-border bg-card p-4 shadow-sm transition-shadow",
+        onRowClick && "cursor-pointer hover:shadow-md",
+      )}
+    >
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-base font-semibold text-foreground">{String(row[columns[0]?.accessor as keyof T] ?? `Record ${rowIndex + 1}`)}</p>
+          <p className="text-xs text-muted-foreground">#{startNumberFrom + rowIndex}</p>
+        </div>
+        {hasActions ? <span onClick={(event) => event.stopPropagation()}>{renderActionButtons(row)}</span> : null}
+      </div>
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
+        {columns.slice(1).map((column) => {
+          const value = typeof column.accessor === "function" ? column.accessor(row) : row[column.accessor as keyof T]
+          return (
+            <div key={column.header} className="min-w-0">
+              <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{column.header}</dt>
+              <dd className="truncate text-sm text-foreground">{column.render ? column.render(value, row) : String(value ?? "Not set")}</dd>
+            </div>
+          )
+        })}
+      </dl>
+    </article>
+  )
+
+  const renderViewModeControls = () => {
+    const options: Array<{ value: DataTableViewMode; label: string; icon: LucideIcon }> = [
+      { value: "table", label: "Table", icon: Table2 },
+      { value: "list", label: "List", icon: List },
+      { value: "cards", label: "Cards", icon: Grid2X2 },
+    ]
+    return (
+      <div className="flex items-center gap-1 rounded-full border border-border bg-card p-1" role="group" aria-label={`${title || "Records"} display mode`}>
+        {options.map(({ value, label, icon: Icon }) => (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={viewMode === value}
+            title={`Show as ${label.toLowerCase()}`}
+            onClick={() => {
+              setViewMode(value)
+              updateUrlState({ [viewKey]: value }, "push")
+            }}
+            className={cn(
+              "inline-flex h-9 items-center gap-2 rounded-full px-3 text-xs font-semibold transition-colors",
+              viewMode === value ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+          >
+            <Icon className="h-4 w-4" />
+            <span className="hidden sm:inline">{label}</span>
+          </button>
+        ))}
+      </div>
+    )
+  }
+
   const renderTableActions = () => {
     if (!hasTableActions) return null
 
@@ -742,6 +852,12 @@ export function DataTable<T>({
               <Button type="button" size="sm" variant="secondary" className="rounded-full px-3" onClick={() => submitScanValue("barcode")}>
                 <Barcode size={14} /> Barcode
               </Button>
+            ) : null}
+            {barcodeScannableField ? (
+              <BarcodeScanner
+                onDetected={(value) => handleScan(value, "barcode")}
+                label="Camera"
+              />
             ) : null}
           </div>
         ) : null}
@@ -837,11 +953,14 @@ export function DataTable<T>({
                 ) : null}
               </div>
 
-              {activeTableControlCount > 0 ? (
-                <Button type="button" variant="ghost" className="h-11 rounded-full px-4" onClick={clearAllFilters}>
-                  Clear controls
-                </Button>
-              ) : null}
+              <div className="flex items-center gap-2">
+                {activeTableControlCount > 0 ? (
+                  <Button type="button" variant="ghost" className="h-11 rounded-full px-4" onClick={clearAllFilters}>
+                    Clear controls
+                  </Button>
+                ) : null}
+                {renderViewModeControls()}
+              </div>
             </div>
           ) : null}
 
@@ -955,6 +1074,22 @@ export function DataTable<T>({
         </div>
       )}
 
+      {!hasTableControls && !hasTableActions ? (
+        <div className="flex justify-end border-b border-border bg-muted/70 p-4">{renderViewModeControls()}</div>
+      ) : null}
+
+      {viewMode === "cards" ? (
+        <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
+          {filteredAndSortedData.map((row, rowIndex) => cardRenderer ? (
+            <div key={getRowId?.(row) || rowIndex} onClick={() => onRowClick?.(row)} className={onRowClick ? "cursor-pointer" : undefined}>
+              {cardRenderer(row, rowIndex)}
+              {hasActions ? <div onClick={(event) => event.stopPropagation()} className="mt-2 flex justify-end">{renderActionButtons(row)}</div> : null}
+            </div>
+          ) : renderDefaultCard(row, rowIndex))}
+        </div>
+      ) : viewMode === "list" ? (
+        <div className="overflow-hidden">{filteredAndSortedData.map(renderDefaultListItem)}</div>
+      ) : (
       <div className="overflow-x-auto overflow-y-visible">
         <table className="min-w-full table-auto border-separate border-spacing-0">
           <thead className="sticky top-0 bg-muted/90 backdrop-blur">
@@ -1073,6 +1208,7 @@ export function DataTable<T>({
           </div>
         )}
       </div>
+      )}
     </div>
   )
 }

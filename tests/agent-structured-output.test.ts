@@ -1,0 +1,84 @@
+import assert from "node:assert/strict"
+import test from "node:test"
+
+import {
+  detectInsightResponse,
+  isTransportDebugText,
+  parseInteractionPayloadFromText,
+} from "../lib/agent-structured-output.ts"
+
+test("supplier procurement serialization is converted into typed widgets", () => {
+  const payload = parseInteractionPayloadFromText(`insight_response:
+- summary: Satnam Investment Nigeria Ltd is delaying replenishment most often.
+- widgets:
+  - comparison:
+    - title: "Top suppliers by open receiving exceptions"
+    - items:
+      - supplier: "Satnam Investment Nigeria Ltd", exceptions: 14, share: "28%"
+      - supplier: "StyleRack Apparel Wholesale Ltd", exceptions: 12, share: "24%"
+  - timeline:
+    - title: "Recent Satnam exceptions"
+    - items:
+      - reference: "PO-101", note: "open line(s) remaining"
+  - risk:
+    - title: "Operational risk"
+    - level: "Medium"
+    - explanation: "Review the supplier ETA."
+`)
+
+  assert.ok(payload)
+  assert.equal(payload.kind, "insight_response")
+  assert.equal(payload.summary, "Satnam Investment Nigeria Ltd is delaying replenishment most often.")
+  const widgets = payload.widgets as Array<{
+    type?: unknown
+    rows?: Array<Record<string, unknown>>
+    events?: Array<Record<string, unknown>>
+    items?: Array<Record<string, unknown>>
+  }> | undefined
+  assert.deepEqual(
+    widgets?.map((widget) => widget.type),
+    ["comparison_table", "timeline", "risk_panel"],
+  )
+  assert.equal(widgets?.[0]?.rows?.[0]?.supplier, "Satnam Investment Nigeria Ltd")
+  assert.equal(widgets?.[1]?.events?.[0]?.title, "PO-101")
+  assert.equal(widgets?.[2]?.items?.[0]?.detail, "Review the supplier ETA.")
+})
+
+test("transport part representations are never treated as user-facing content", () => {
+  assert.equal(isTransportDebugText("[TextPart(kind='text', text='internal') ]"), true)
+  assert.equal(isTransportDebugText("A normal assistant answer"), false)
+})
+
+test("insight JSON is recovered when an adapter prepends a status line", () => {
+  const payload = parseInteractionPayloadFromText(
+    `The procurement specialist completed the review. {"kind":"insight_response","summary":"Satnam is the leading delayed supplier.","widgets":[{"type":"ranked_list","title":"Delayed suppliers","items":[{"label":"Satnam","value":4}]}]}`,
+  )
+
+  assert.equal(payload?.kind, "insight_response")
+  assert.equal(payload?.summary, "Satnam is the leading delayed supplier.")
+  assert.equal((payload?.widgets as Array<Record<string, unknown>>)[0]?.type, "ranked_list")
+})
+
+test("text insight wins when the attached payload is only a transport wrapper", () => {
+  const detected = detectInsightResponse(
+    '{"kind":"insight_response","summary":"Typed result","widgets":[{"type":"metric_grid","data":[]}]}',
+    { type: "text", text: "The specialist result is attached below." },
+  )
+
+  assert.equal(detected?.data.summary, "Typed result")
+  assert.equal((detected?.data.widgets as Array<Record<string, unknown>>)[0]?.type, "metric_grid")
+})
+
+test("data envelopes are unwrapped before insight rendering", () => {
+  const detected = detectInsightResponse("Typed summary", {
+    type: "data",
+    data: {
+      kind: "insight_response",
+      summary: "Unwrapped result",
+      widgets: [{ type: "risk_panel", title: "Risk", items: [] }],
+    },
+  })
+
+  assert.equal(detected?.data.summary, "Unwrapped result")
+  assert.equal((detected?.data.widgets as Array<Record<string, unknown>>)[0]?.type, "risk_panel")
+})

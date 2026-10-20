@@ -272,6 +272,7 @@ function StockLocations({refetchData, setRefetchData}:RefetchDataProp) {
         'external',
         'structural',
         'physical_address'
+        ,'description'
       ];
       
  return (
@@ -341,11 +342,11 @@ function StockLocations({refetchData, setRefetchData}:RefetchDataProp) {
             onSubmit={editingStockLocation ? handleUpdate : handleCreate}
             isLoading={creatingLocation || updatingLocation || creatingSharedAddress || updatingSharedAddress || retiringSharedAddress}
             selectOptions={selectionOpions}
-            keyInfo={{'physical_address':`Optional, takes parent's address by default`}}
+            keyInfo={{'physical_address':`Optional, takes parent's address by default`, 'description': 'Optional warehouse, store, or bin description.'}}
             notEditableFields={[]}
             interfaceKeys={interfaceKeys}
             dateFields={[]}
-            optionalFields={['parent','external','structural','physical_address']}
+            optionalFields={['parent','external','structural','physical_address','description']}
             readOnlyFields={[]}
             itemTitle={editingStockLocation ? 'Update Location' : 'Create Location'}
           />

@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
       }),
     ],
   })
-  token.roomConfig = roomConfig
+  token.roomConfig = roomConfig as NonNullable<typeof token.roomConfig>
 
   token.addGrant({
     roomJoin: true,

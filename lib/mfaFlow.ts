@@ -1,6 +1,7 @@
 import { deleteCookie, setCookie } from "cookies-next";
 import { jwtDecode } from "jwt-decode";
 import { AUTH_COOKIE_NAMES, getCookieCandidates } from "./authCookies";
+import { isSsoMfaBypassProvider } from "./authProvider";
 
 interface MfaTokenClaims {
   mfa_enabled?: boolean;
@@ -12,9 +13,16 @@ const MFA_COOKIE_AGE = 60 * 60 * 24;
 export const initializeMfaChallenge = (
   nextPath: string,
   accessToken?: string,
-): "/accounts/mfa/setup" | "/accounts/mfa/verify" => {
-  setCookie(AUTH_COOKIE_NAMES.mfaVerified, "false", { maxAge: MFA_COOKIE_AGE, path: "/" });
+  provider?: string | null,
+): "/accounts/mfa/setup" | "/accounts/mfa/verify" | typeof nextPath => {
   setCookie(AUTH_COOKIE_NAMES.mfaNextPath, nextPath, { maxAge: MFA_COOKIE_AGE, path: "/" });
+
+  if (isSsoMfaBypassProvider(provider)) {
+    markMfaVerified();
+    return nextPath;
+  }
+
+  setCookie(AUTH_COOKIE_NAMES.mfaVerified, "false", { maxAge: MFA_COOKIE_AGE, path: "/" });
 
   if (accessToken) {
     try {

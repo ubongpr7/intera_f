@@ -2,13 +2,14 @@
 import { useEffect, useState } from 'react';
 import Navbar from './navbar'
 import SideBar from './sideBar'
-import { useAppSelector } from "../../redux/store";
+import { useAppDispatch, useAppSelector } from "../../redux/store";
+import { setIsSidebarCollapsed } from "../../redux/state";
 import { usePathname } from 'next/navigation';
 import { ToastContainer } from "react-toastify";
 import { useGetLoggedInUserQuery } from '../../redux/features/users/userApiSlice';
 import { useGetUserCompaniesQuery } from '../../redux/features/auth/authApiSlice';
 import { useGetCompanyAgentSetupQuery } from '../../redux/features/management/companyProfileApiSlice';
-import { publicRoutes } from '../../redux/features/users/useAuth';
+import { isPublicAuthRoute } from '../../redux/features/users/useAuth';
 
 import { getCookie } from 'cookies-next';
 import A2AChat from '../agents/ai-chat-widget';
@@ -18,10 +19,16 @@ import PermissionHydrator from '@/components/auth/PermissionHydrator';
 const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
 
   const SidebarCollapsed = useAppSelector((state) => state.global.isSidebarCollapsed);
-  useAppSelector((state) => state.permission.status);
+  const dispatch = useAppDispatch();
+  const permissionState = useAppSelector((state) => ({
+    status: state.permission.status,
+    profileId: state.permission.profileId,
+    isOwner: state.permission.isOwner,
+    permissions: state.permission.permissions,
+  }));
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const pathname = usePathname();
-  const isPublic = publicRoutes.includes(pathname);
+  const isPublic = isPublicAuthRoute(pathname);
   const accessToken = readCookieValue("accessToken", getCookie);
 
   const { data: user } = useGetLoggedInUserQuery(undefined, {
@@ -30,9 +37,20 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
   });
   const { data: companyMemberships } = useGetUserCompaniesQuery(undefined, { skip: isPublic || !accessToken });
   const activeProfileId = companyMemberships?.active_profile_id ?? null;
+  const permissionReady =
+    permissionState.status === "succeeded" &&
+    permissionState.profileId === `${activeProfileId ?? ""}`;
+  const canReadAgent =
+    permissionState.isOwner || permissionState.permissions.includes("read_agent");
+  const shouldFetchAgentSetup =
+    !isPublic &&
+    Boolean(accessToken) &&
+    Boolean(activeProfileId) &&
+    permissionReady &&
+    canReadAgent;
 
   const { data: companyAgentSetup } = useGetCompanyAgentSetupQuery(undefined, {
-    skip: isPublic || !accessToken || !activeProfileId,
+    skip: !shouldFetchAgentSetup,
     refetchOnMountOrArgChange: true,
     refetchOnFocus: true,
     refetchOnReconnect: true,
@@ -101,6 +119,7 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
       <Navbar
         user={user}
         onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+        onToggleDesktopSidebar={() => dispatch(setIsSidebarCollapsed(!SidebarCollapsed))}
         sidebarCollapsed={SidebarCollapsed}
       />
     )}

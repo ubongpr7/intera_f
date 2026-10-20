@@ -9,7 +9,6 @@ import { humanizeAgentDisplayName } from "@/lib/agent-display"
 import { deriveWorkflowSummary } from "@/lib/agent-structured-output"
 import { downloadJsonFile } from "@/lib/agent-export"
 import {
-  clearSession,
   createSessionWithConfig,
   eventReceived,
   streamEnded,
@@ -18,7 +17,7 @@ import {
   type ChatMessage,
   type Ka2aEvent,
 } from "@/redux/features/ka2a/ka2aSlice"
-import { sendStreamMessage } from "@/redux/features/ka2a/ka2aThunks"
+import { cancelStream, sendStreamMessage } from "@/redux/features/ka2a/ka2aThunks"
 import { useAppDispatch, useAppSelector } from "@/redux/store"
 
 const createLocalId = () => {
@@ -140,6 +139,10 @@ export default function AIChatWidget() {
         '[data-radix-menu-content]',
         '[data-radix-popper-content-wrapper]',
         '[role="menu"]',
+        '.react-select-field',
+        '.react-select__menu-portal',
+        '.react-select__menu',
+        '.react-select__option',
         '[data-ai-chat-export-menu]',
         '[data-ai-chat-export-panel]',
       ].join(", ")
@@ -259,7 +262,7 @@ export default function AIChatWidget() {
 
   const handleClearConversation = () => {
     if (!sessionId) return
-    dispatch(clearSession({ sessionId }))
+    dispatch(cancelStream(sessionId))
     syncedVoiceTurnTextsRef.current.clear()
     markActivity()
     toast.info("Started a new AI chat.")

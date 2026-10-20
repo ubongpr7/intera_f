@@ -13,6 +13,7 @@ import {
   XCircle,
 } from "lucide-react"
 import { toast } from "react-toastify"
+import { BarcodeScanner } from "@/components/common/BarcodeScanner"
 import OperationalStepSection from "@/components/setup/OperationalStepSection"
 import StructuralLocationScopeSelect from "@/components/stock/StructuralLocationScopeSelect"
 import { Badge } from "@/components/ui/badge"
@@ -828,6 +829,7 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div className="space-y-2 xl:col-span-2">
             <Label htmlFor="sales-inventory-item">Inventory item</Label>
+            <div className="flex items-start gap-2">
             <Select
               value={lineItemForm.inventory_item}
               onValueChange={(value) => setLineItemForm((current) => ({ ...current, inventory_item: value }))}
@@ -844,6 +846,20 @@ export default function SalesOrderOperationsWorkspace({ salesOrderId }: SalesOrd
                 ))}
               </SelectContent>
             </Select>
+            <BarcodeScanner
+              label="Scan"
+              disabled={!canEditLineItems}
+              onDetected={(barcode) => {
+                const match = inventoryItems.find((item) => String(item.barcode_snapshot || "").trim() === barcode.trim())
+                if (!match) {
+                  toast.error("No inventory item matches that barcode.")
+                  return
+                }
+                setLineItemForm((current) => ({ ...current, inventory_item: String(match.id) }))
+              }}
+              className="mt-1 shrink-0"
+            />
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="sales-line-quantity">Quantity</Label>

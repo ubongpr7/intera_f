@@ -9,13 +9,20 @@ import {
   Bot,
   Boxes,
   Building2,
+  Factory,
+  GitBranch,
+  Layers3,
+  Landmark,
   // CheckCircle2,
   ChevronDown,
   ClipboardList,
   Clock3,
   Menu,
   LogIn,
+  Mic,
   Moon,
+  PhoneCall,
+  PhoneOff,
   Radio,
   ScanBarcode,
   Send,
@@ -23,6 +30,7 @@ import {
   Sparkles,
   Sun,
   Users2,
+  Volume2,
   WifiOff,
   X,
 } from "lucide-react";
@@ -105,6 +113,12 @@ const coreHighlights = [
       "Use configurable workspace agents and offline operational intelligence to ask your inventory questions in natural language and surface risk faster.",
     icon: Bot,
   },
+  {
+    title: "From raw materials to margin",
+    description:
+      "Connect purchasing, production, stock movements, sales, returns, and financial outcomes in one traceable operational record.",
+    icon: Factory,
+  },
 ];
 
 const capabilityGrid = [
@@ -112,6 +126,16 @@ const capabilityGrid = [
     title: "Inventory Control",
     description: "Track products, balances, reorder rules, adjustments, reservations, and movement history across structural locations.",
     icon: ClipboardList,
+  },
+  {
+    title: "Unit-aware Inventory",
+    description: "Buy by carton, receive by case, sell by pack or piece, and keep stock, pricing, and cost calculations aligned through explicit UOM conversions.",
+    icon: Layers3,
+  },
+  {
+    title: "Manufacturing & Recipes",
+    description: "Define recipes, issue raw materials, record finished goods, capture by-products and waste, and preserve the relationship between every input and output.",
+    icon: Factory,
   },
   {
     title: "Purchasing & Replenishment",
@@ -137,6 +161,21 @@ const capabilityGrid = [
     title: "Business Intelligence",
     description: "Review inventory, purchasing, POS, and realtime operational analytics, then query years of history in natural language and get answers in seconds.",
     icon: BarChart3,
+  },
+  {
+    title: "Profitability & Costing",
+    description: "Compare revenue with shipment-level COGS, review gross margin by item and period, and support actual, FIFO, weighted-average, and standard costing decisions.",
+    icon: Landmark,
+  },
+  {
+    title: "Returns & Accounting",
+    description: "Receive customer returns back into stock, reverse revenue and COGS safely, and keep balanced journal entries for operational and financial review.",
+    icon: GitBranch,
+  },
+  {
+    title: "Valuation & Traceability",
+    description: "Capture repeat-safe inventory valuation snapshots by item, location, date, and costing method while tracing lots, movements, production, and sales.",
+    icon: ShieldCheck,
   },
   {
     title: "Conversational Intelligence",
@@ -205,6 +244,21 @@ const faqItems = [
     question: "Does stock update after sales and receiving?",
     answer:
       "Yes. Paid POS activity and goods receiving feed inventory and audit workflows. Realtime views surface participating sales, receiving, and operational events as they arrive.",
+  },
+  {
+    question: "Can Intera track manufacturing and finished goods?",
+    answer:
+      "Yes. You can connect recipes to raw materials, issue components into production, record finished goods, by-products, and waste, then trace the resulting stock into sales, returns, cost, and profitability reporting.",
+  },
+  {
+    question: "Can I sell the same item in different units?",
+    answer:
+      "Yes. Define stock and selling units with conversion factors, then receive, purchase, sell, ship, and return quantities without losing the underlying stock-unit and cost relationship.",
+  },
+  {
+    question: "How does Intera calculate profitability?",
+    answer:
+      "Shipped lines preserve their revenue and inventory cost snapshots. Intera uses those values for COGS, gross margin, customer-return reversals, journal entries, and period-end valuation views.",
   },
   {
     question: "Who can view sensitive audit activity?",
@@ -776,6 +830,11 @@ export default function HomePage() {
   const [activeDemoIndex, setActiveDemoIndex] = useState(() => Math.floor(Math.random() * demoConversations.length));
   const [visibleMessageCount, setVisibleMessageCount] = useState(0);
   const [typedDemoText, setTypedDemoText] = useState("");
+  const [isDemoCallActive, setIsDemoCallActive] = useState(false);
+  const [isDemoCallConnecting, setIsDemoCallConnecting] = useState(false);
+  const [isDemoMicMuted, setIsDemoMicMuted] = useState(false);
+  const [isDemoSpeakerMuted, setIsDemoSpeakerMuted] = useState(false);
+  const [demoCallSeconds, setDemoCallSeconds] = useState(0);
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
   /* Pricing is intentionally hidden until after registration.
   const { data: pricingPlans, isLoading, isError } = useGetSubscriptionPlansQuery({
@@ -849,6 +908,33 @@ export default function HomePage() {
 
   const nextDemoMessage = demoConversations[activeDemoIndex].messages[visibleMessageCount];
   const isAssistantThinking = Boolean(nextDemoMessage?.role === "assistant" && !typedDemoText);
+
+  useEffect(() => {
+    if (!isDemoCallActive) {
+      return undefined;
+    }
+    const timerId = window.setInterval(() => {
+      setDemoCallSeconds((seconds) => seconds + 1);
+    }, 1000);
+    return () => window.clearInterval(timerId);
+  }, [isDemoCallActive]);
+
+  const toggleDemoCall = () => {
+    if (isDemoCallActive || isDemoCallConnecting) {
+      setIsDemoCallActive(false);
+      setIsDemoCallConnecting(false);
+      setDemoCallSeconds(0);
+      return;
+    }
+    setIsDemoCallConnecting(true);
+    window.setTimeout(() => {
+      setIsDemoCallConnecting(false);
+      setIsDemoCallActive(true);
+      setDemoCallSeconds(0);
+    }, 700);
+  };
+
+  const demoCallTime = `${Math.floor(demoCallSeconds / 60).toString().padStart(2, "0")}:${(demoCallSeconds % 60).toString().padStart(2, "0")}`;
 
   return (
     <div className="landing-page min-h-screen bg-white text-gray-900">
@@ -962,6 +1048,44 @@ export default function HomePage() {
             ))}
           </div>
         </section>
+
+        <section id="traceability" className="landing-section border-y border-gray-200 bg-gray-50">
+          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+            <div className="grid gap-10 lg:grid-cols-[.85fr_1.15fr] lg:items-end">
+              <div className="max-w-2xl">
+                <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">Operational traceability</p>
+                <h2 className="mt-3 text-3xl font-semibold text-gray-900 sm:text-4xl">
+                  Follow the whole chain, not just the stock count.
+                </h2>
+                <p className="mt-4 text-lg text-gray-600">
+                  Intera connects what a business buys, transforms, stores, sells, returns, and earns so operators can explain the number behind every decision.
+                </p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-3">
+                {[
+                  { step: "01", title: "Source", description: "Purchase and receive ingredients, components, merchandise, and packaging with unit and lot context.", icon: Building2 },
+                  { step: "02", title: "Transform", description: "Issue components into recipes or production orders and record finished goods, by-products, and waste.", icon: Factory },
+                  { step: "03", title: "Measure", description: "Sell, return, value, and review margin with the cost and movement history preserved through the workflow.", icon: BarChart3 },
+                ].map(({ step, title, description, icon: IconComponent }, index) => (
+                  <motion.div
+                    key={step}
+                    {...revealCard(index)}
+                    whileHover={liftOnHover}
+                    className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-colors hover:border-blue-300"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <IconComponent className="h-5 w-5 text-blue-700" />
+                      <span className="text-xs font-bold tracking-[0.16em] text-gray-400">{step}</span>
+                    </div>
+                    <h3 className="mt-5 text-lg font-semibold text-gray-900">{title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-gray-600">{description}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* 
         <section className="border-y border-gray-200 bg-gray-50">
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
@@ -1133,21 +1257,57 @@ export default function HomePage() {
                   </AnimatePresence>
                 </div>
                 <div className="border-t border-gray-200 bg-white p-3">
-                  <div className="flex items-center gap-2">
-                    <div className="flex min-h-10 flex-1 items-center rounded-2xl border border-gray-300 bg-gray-100 px-4 py-2 text-sm text-gray-700">
-                      {typedDemoText ? (
-                        <span>
-                          {typedDemoText}
-                          <span className="ml-0.5 inline-block h-4 w-[2px] translate-y-0.5 animate-pulse bg-blue-600" />
-                        </span>
-                      ) : (
-                        <span className="text-gray-500">Type your operational question...</span>
-                      )}
+                  {isDemoCallActive || isDemoCallConnecting ? (
+                    <div className="rounded-2xl border border-blue-200 bg-blue-50 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${isDemoCallConnecting ? "animate-pulse bg-amber-500" : "bg-emerald-500"}`} />
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-gray-900">
+                              {isDemoCallConnecting ? "Connecting to Intera voice agent..." : "Intera voice call connected"}
+                            </p>
+                            <p className="text-xs text-gray-600">{isDemoCallConnecting ? "Requesting microphone access" : `Live demo preview • ${demoCallTime}`}</p>
+                          </div>
+                        </div>
+                        <button type="button" onClick={toggleDemoCall} className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700">
+                          <PhoneOff className="h-3.5 w-3.5" />
+                          End
+                        </button>
+                      </div>
+                      {!isDemoCallConnecting ? (
+                        <>
+                          <div className="mt-3 rounded-xl border border-blue-100 bg-white px-3 py-2 text-xs leading-5 text-gray-700">
+                            <span className="font-semibold text-blue-700">Voice transcript:</span> “I’m ready to help with your inventory, sales, or purchasing question.”
+                          </div>
+                          <div className="mt-3 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <button type="button" onClick={() => setIsDemoMicMuted((muted) => !muted)} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 hover:border-blue-300" aria-label={isDemoMicMuted ? "Unmute microphone" : "Mute microphone"} title={isDemoMicMuted ? "Unmute microphone" : "Mute microphone"}>
+                                <Mic className={`h-4 w-4 ${isDemoMicMuted ? "text-red-600" : "text-blue-600"}`} />
+                              </button>
+                              <button type="button" onClick={() => setIsDemoSpeakerMuted((muted) => !muted)} className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 hover:border-blue-300" aria-label={isDemoSpeakerMuted ? "Unmute speaker" : "Mute speaker"} title={isDemoSpeakerMuted ? "Unmute speaker" : "Mute speaker"}>
+                                <Volume2 className={`h-4 w-4 ${isDemoSpeakerMuted ? "text-red-600" : "text-blue-600"}`} />
+                              </button>
+                            </div>
+                            <Link href="/accounts" className="text-xs font-semibold text-blue-700 hover:text-blue-900">Get the real experience <ArrowRight className="ml-1 inline h-3.5 w-3.5" /></Link>
+                          </div>
+                        </>
+                      ) : null}
                     </div>
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm">
-                      <Send className="h-4 w-4" />
-                    </span>
-                  </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <div className="flex min-h-10 flex-1 items-center rounded-2xl border border-gray-300 bg-gray-100 px-4 py-2 text-sm text-gray-700">
+                        {typedDemoText ? (
+                          <span>{typedDemoText}<span className="ml-0.5 inline-block h-4 w-[2px] translate-y-0.5 animate-pulse bg-blue-600" /></span>
+                        ) : (
+                          <span className="text-gray-500">Type your operational question...</span>
+                        )}
+                      </div>
+                      <button type="button" onClick={toggleDemoCall} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-blue-700 shadow-sm hover:border-blue-300 hover:bg-blue-100" aria-label="Call agent" title="Call agent">
+                        <PhoneCall className="h-4 w-4" />
+                      </button>
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm"><Send className="h-4 w-4" /></span>
+                    </div>
+                  )}
                 </div>
               </motion.div>
 

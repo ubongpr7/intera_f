@@ -29,6 +29,7 @@ export type DashboardFeedEntry = {
   location_label: string
   terminal_name: string
   quantity: number
+  amount: number
   unit_label: string
   sku: string
   barcode: string

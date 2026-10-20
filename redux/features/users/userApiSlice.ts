@@ -22,6 +22,7 @@ import type {
   MfaVerifyResponse,
   StaffAssignment,
   ReferralDashboard,
+  AffiliatePartner,
   UserData,
   UserQuotaMetadata,
   UserSummary,
@@ -120,6 +121,31 @@ export const userApiSlice = apiSlice.injectEndpoints({
     getReferralDashboard: builder.query<ReferralDashboard, void>({
       query: () => ({
         url: `/${accountsApi}/users/referrals/`,
+        service,
+      }),
+    }),
+
+    listAffiliatePartners: builder.query<AffiliatePartner[], void>({
+      query: () => ({
+        url: `/${accountsApi}/affiliate-partners/`,
+        service,
+      }),
+    }),
+
+    createAffiliatePartner: builder.mutation<AffiliatePartner, Pick<AffiliatePartner, "name" | "code" | "commission_rate" | "is_active" | "notes">>({
+      query: (body) => ({
+        url: `/${accountsApi}/affiliate-partners/`,
+        method: "POST",
+        body,
+        service,
+      }),
+    }),
+
+    updateAffiliatePartner: builder.mutation<AffiliatePartner, { id: string | number } & Partial<Omit<AffiliatePartner, "id" | "created_at" | "updated_at">>>({
+      query: ({ id, ...body }) => ({
+        url: `/${accountsApi}/affiliate-partners/${id}/`,
+        method: "PATCH",
+        body,
         service,
       }),
     }),
@@ -342,6 +368,9 @@ export const {
   useLazySearchUsersQuery,
   useGetQuotaMetadataQuery,
   useGetReferralDashboardQuery,
+  useListAffiliatePartnersQuery,
+  useCreateAffiliatePartnerMutation,
+  useUpdateAffiliatePartnerMutation,
   useSendVerificationCodeMutation,
   useMfaSetupMutation,
   useMfaVerifyMutation,

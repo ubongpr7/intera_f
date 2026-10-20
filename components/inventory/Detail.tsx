@@ -98,6 +98,9 @@ const  selectOptions = {
         'track_serial',
         'track_expiry',
         'allow_negative_stock',
+        'automate_reorder',
+        'purchaseable',
+        'salable',
         'created_at',
         'updated_at',
       ]}

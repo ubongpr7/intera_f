@@ -7,6 +7,32 @@ type DashboardStructuralScopeParams = StructuralLocationScopeParams & {
   stock_status?: string;
 };
 
+export type POSSalesTrendQuery = {
+  from: string;
+  to: string;
+};
+
+export type POSSalesTrendRow = {
+  id: string;
+  order_number: string;
+  occurred_at: string;
+  product_name: string;
+  variant_name: string;
+  quantity: number;
+  revenue: number;
+  sku: string;
+  barcode: string;
+  location_label: string;
+  terminal_name: string;
+};
+
+export type POSSalesTrendResponse = {
+  from: string;
+  to: string;
+  count: number;
+  sales: POSSalesTrendRow[];
+};
+
 export const dashboardApiSlice = apiSlice.injectEndpoints({
   endpoints: builder => ({
     getRealtimeDashboardStats: builder.query({
@@ -38,6 +64,13 @@ export const dashboardApiSlice = apiSlice.injectEndpoints({
             url: typeof params === "string" ? buildQuery(`/pos_api/analytics/daily-sales/`, { date: params }) : buildQuery(`/pos_api/analytics/daily-sales/`, params),
             service: "pos" ,
           }),
+    }),
+    getSalesTrend: builder.query<POSSalesTrendResponse, POSSalesTrendQuery>({
+      query: (params) => ({
+        url: `/pos_api/analytics/sales-trend/`,
+        params,
+        service: "pos",
+      }),
     }),
     getDashboardProductData: builder.query({
         query: () => ({
@@ -133,6 +166,7 @@ export const {
     useGetDashboardStockAlertsQuery,
     useGetDashboardRecentOrdersQuery,
     useGetDashboardRecentSalesQuery,
+    useGetSalesTrendQuery,
     useGetDashboardProductDataQuery,
     useGetDashboardTopSellingProductsQuery,
     useGetDashboardRecentPriceChangesQuery,

@@ -1,7 +1,6 @@
 'use client'
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import Image from 'next/image';
 import { useRouter } from 'nextjs-toploader/app';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { ActionButton, Column, DataTable, type DataTableQueryState } from "../common/DataTable/DataTable";
@@ -23,17 +22,62 @@ import { useGetSupplersQuery } from '@/redux/features/company/companyAPISlice';
 import { extractErrorMessage } from '@/lib/utils';
 import { confirmAction } from '../common/confirmAction';
 import { Pagination } from '@/components/ui/pagination';
+import { TableImageHover } from '../common/table-image-render';
 
 const renderInventoryThumbnail = (imageUrl: string | null | undefined, name: string) => (
-  <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-white">
+  <div className="h-11 w-11 shrink-0">
     {imageUrl ? (
-      <Image src={imageUrl} alt={name} fill className="object-cover" sizes="44px" />
+      <TableImageHover
+        src={imageUrl}
+        alt={name}
+        productName={name}
+        className="h-11 w-11 rounded-xl object-cover"
+      />
     ) : (
-      <div className="flex h-full w-full items-center justify-center bg-gray-100 text-[10px] font-semibold uppercase tracking-wide text-gray-500">
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 bg-gray-100 text-[10px] font-semibold uppercase tracking-wide text-gray-500">
         Inv
       </div>
     )}
   </div>
+)
+
+const renderInventoryCard = (row: InventoryData, rowIndex: number) => (
+  <article
+    key={row.id || rowIndex}
+    className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg"
+  >
+    <div className="relative flex h-44 items-center justify-center bg-muted/50 p-4">
+      {row.display_image || row.product_variant_image_url ? (
+        <TableImageHover
+          src={row.display_image || row.product_variant_image_url || ""}
+          alt={row.name}
+          productName={row.name}
+          className="h-36 w-36 rounded-2xl object-contain"
+        />
+      ) : (
+        <div className="flex h-24 w-24 items-center justify-center rounded-2xl border border-border bg-card text-xs font-semibold uppercase tracking-wide text-muted-foreground">Inv</div>
+      )}
+    </div>
+    <div className="space-y-3 p-4">
+      <div className="min-w-0">
+        <h3 className="truncate font-semibold text-foreground" title={row.name}>{row.name}</h3>
+        <p className="truncate text-xs text-muted-foreground">{formatMachineLabel(row.inventory_type, "Inventory item")}</p>
+      </div>
+      <div className="grid grid-cols-2 gap-2 text-sm">
+        <div className="rounded-xl bg-muted/60 p-2"><p className="text-[10px] uppercase text-muted-foreground">On hand</p><p className="font-semibold text-foreground">{row.current_stock_level ?? 0}</p></div>
+        <div className="rounded-xl bg-muted/60 p-2"><p className="text-[10px] uppercase text-muted-foreground">Available</p><p className="font-semibold text-foreground">{row.quantity_available ?? 0}</p></div>
+      </div>
+      <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+        <span className="truncate" title={row.barcode_snapshot || "Barcode not set"}>
+          Barcode: {row.barcode_snapshot || "Not set"}
+        </span>
+        <span className="shrink-0 font-semibold text-foreground">{formatCurrencyCompact("NGN", row.total_stock_value ?? 0)}</span>
+      </div>
+      <p className="truncate text-xs text-muted-foreground" title={row.location_name || "Location not set"}>
+        Location: {row.location_name || "Unassigned"}
+      </p>
+    </div>
+  </article>
 )
 
 const inventoryColumns: Column<InventoryData>[] = [
@@ -41,10 +85,10 @@ const inventoryColumns: Column<InventoryData>[] = [
     header: 'Name',
     accessor: 'name',
     render: (value, row) => (
-      <div className="flex items-center gap-3">
+      <div className="flex w-[min(42vw,520px)] max-w-[520px] min-w-[220px] items-center gap-3">
         {renderInventoryThumbnail(row.display_image || row.product_variant_image_url, row.name)}
-        <div className="min-w-0">
-          <div className="truncate font-medium text-gray-900">{value}</div>
+        <div className="min-w-0 flex-1">
+          <div className="truncate font-medium text-gray-900" title={String(value ?? '')}>{value}</div>
           <div className="truncate text-xs text-gray-500">{formatMachineLabel(row.inventory_type, 'Inventory item')}</div>
         </div>
       </div>
@@ -54,6 +98,12 @@ const inventoryColumns: Column<InventoryData>[] = [
   {
     header: 'SKU',
     accessor: 'sku_snapshot',
+    render: (value) => value || 'Not set',
+    className: 'font-medium',
+  },
+  {
+    header: 'Barcode',
+    accessor: 'barcode_snapshot',
     render: (value) => value || 'Not set',
     className: 'font-medium',
   },
@@ -136,6 +186,8 @@ function InventoryView({
     name: "name_snapshot",
     minimum_stock_level: "minimum_stock_level",
     reorder_point: "reorder_point",
+    current_stock_level: "current_stock_level",
+    quantity_available: "quantity_available",
   }
   const ordering = sortField && orderingFieldMap[sortField]
     ? `${sortDirection === "descending" ? "-" : ""}${orderingFieldMap[sortField]}`
@@ -187,7 +239,7 @@ function InventoryView({
     search: search.trim() || undefined,
     inventory_type: inventoryType,
     status,
-    stock_status: stockStatus as "low_stock" | "out_of_stock" | "needs_reorder" | undefined,
+    stock_status: stockStatus as "in_stock" | "low_stock" | "out_of_stock" | "needs_reorder" | undefined,
     ordering,
     page: currentPage,
     page_size: pageSize,
@@ -336,7 +388,9 @@ function InventoryView({
         urlStateKey="inventory_items"
         onQueryStateChange={handleTableQueryStateChange}
         startNumberFrom={(currentPage - 1) * pageSize + 1}
-        searchableFields={['name']}
+        getRowId={(row) => row.id}
+        searchableFields={['name', 'barcode_snapshot', 'sku_snapshot']}
+        barcodeScannableField="barcode_snapshot"
         filterableFields={[
           'inventory_type',
           'status',
@@ -351,13 +405,17 @@ function InventoryView({
             { value: 'discontinued', label: 'Discontinued' },
           ],
           stock_status: [
+            { value: 'in_stock', label: 'In stock' },
             { value: 'low_stock', label: 'Low stock' },
             { value: 'out_of_stock', label: 'Out of stock' },
             { value: 'needs_reorder', label: 'Needs reorder' },
           ],
         }}
-        sortableFields={['name', 'minimum_stock_level', 'reorder_point']}
+        sortableFields={['name', 'minimum_stock_level', 'reorder_point', 'current_stock_level']}
+        numericFields={['minimum_stock_level', 'reorder_point', 'current_stock_level']}
         rangeFilterFields={[]}
+        cardRenderer={renderInventoryCard}
+        defaultViewMode="cards"
          title="Inventory Items"
         onClose={() =>setIsCreateOpen(true)} 
       />

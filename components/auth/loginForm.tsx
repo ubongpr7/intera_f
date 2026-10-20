@@ -94,6 +94,17 @@ export default function LoginForm() {
         Sign in with your email and password to access your workspace.
       </div>
 
+      <button
+        type="button"
+        onClick={() => void handleGoogleAuth()}
+        disabled={isLoading || isSocialLoading}
+        className="auth-secondary-button auth-google-button"
+      >
+        {isSocialLoading ? <><Loader2 className="h-4 w-4 animate-spin" /> Redirecting...</> : <><GoogleIcon /> Continue with Google</>}
+      </button>
+
+      <div className="auth-form-divider" aria-hidden="true"><span>or continue with email</span></div>
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label htmlFor="login-email" className="auth-label cursor-pointer">Email address</label>
@@ -162,14 +173,6 @@ export default function LoginForm() {
           {isLoading ? <><Loader2 className="h-4 w-4 animate-spin" /> Signing in...</> : 'Sign in'}
         </button>
 
-        <button
-          type="button"
-          onClick={() => void handleGoogleAuth()}
-          disabled={isLoading || isSocialLoading}
-          className="auth-secondary-button"
-        >
-          {isSocialLoading ? <><Loader2 className="h-4 w-4 animate-spin" /> Redirecting...</> : <><GoogleIcon /> Continue with Google</>}
-        </button>
       </form>
 
       <div className="flex justify-center gap-1">

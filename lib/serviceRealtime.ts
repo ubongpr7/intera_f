@@ -3,6 +3,7 @@ import { getCookie } from "cookies-next"
 import { readCookieValue } from "@/lib/authCookies"
 import { getDecodedToken } from "@/lib/utils"
 import { getFrontendOrigin } from "@/lib/frontendOrigin"
+import { persistAuthSession } from "@/redux/services/apiSlice"
 
 const stripTrailingSlash = (value: string) => value.replace(/\/+$/, "")
 
@@ -27,28 +28,83 @@ export const getRealtimeAccessToken = () =>
 export const getRealtimeAuthorizationContext = () =>
   readCookieValue("authorizationContext", (name) => getCookie(name))
 
+const getRealtimeRefreshToken = () =>
+  readCookieValue("refreshToken", (name) => getCookie(name))
+
 let websocketTicketPromise: Promise<string | null> | null = null
 
-export const requestRealtimeWebSocketTicket = async () => {
-  const accessToken = getRealtimeAccessToken()
-  const authorizationContext = getRealtimeAuthorizationContext()
-  if (!accessToken || !authorizationContext) return null
-  if (!websocketTicketPromise) {
-    const backend = resolvePublicUrl(process.env.NEXT_PUBLIC_BACKEND_HOST_URL || "", "")
-    websocketTicketPromise = fetch(`${backend}/accounts/websocket-ticket/`, {
+const refreshRealtimeSession = async (backend: string) => {
+  const refreshToken = getRealtimeRefreshToken()
+  if (!refreshToken) return false
+
+  try {
+    const response = await fetch(`${backend}/auth/refresh/`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "X-Intera-Authorization-Context": authorizationContext,
+        "Content-Type": "application/json",
         "X-Intera-Frontend-Origin": getFrontendOrigin(),
+        "X-Requested-With": "XMLHttpRequest",
       },
+      body: JSON.stringify({ refresh: refreshToken }),
       credentials: "include",
     })
-      .then(async (response) => {
-        if (!response.ok) return null
-        const payload = (await response.json()) as { ticket?: string }
-        return payload.ticket || null
-      })
+    if (!response.ok) return false
+
+    const payload = await response.json()
+    if (!payload.access || !payload.authorization_context) return false
+    persistAuthSession(payload)
+    return true
+  } catch {
+    return false
+  }
+}
+
+const requestWebSocketTicket = async (
+  backend: string,
+  accessToken: string,
+  authorizationContext: string,
+) => {
+  const response = await fetch(`${backend}/accounts/websocket-ticket/`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "X-Intera-Authorization-Context": authorizationContext,
+      "X-Intera-Frontend-Origin": getFrontendOrigin(),
+    },
+    credentials: "include",
+  })
+
+  if (!response.ok) return null
+  const payload = (await response.json()) as { ticket?: string }
+  return payload.ticket || null
+}
+
+export const requestRealtimeWebSocketTicket = async () => {
+  if (!websocketTicketPromise) {
+    websocketTicketPromise = (async () => {
+      const backend = resolvePublicUrl(process.env.NEXT_PUBLIC_BACKEND_HOST_URL || "", "")
+      let accessToken = getRealtimeAccessToken()
+      let authorizationContext = getRealtimeAuthorizationContext()
+      if (!accessToken) return null
+
+      if (!authorizationContext) {
+        if (!(await refreshRealtimeSession(backend))) return null
+        accessToken = getRealtimeAccessToken()
+        authorizationContext = getRealtimeAuthorizationContext()
+      }
+      if (!accessToken || !authorizationContext) return null
+
+      const ticket = await requestWebSocketTicket(backend, accessToken, authorizationContext)
+      if (ticket) return ticket
+
+      // Contexts are bound to the access-token jti. Refresh once when a rotated
+      // access token is paired with an older context cookie.
+      if (!(await refreshRealtimeSession(backend))) return null
+      accessToken = getRealtimeAccessToken()
+      authorizationContext = getRealtimeAuthorizationContext()
+      if (!accessToken || !authorizationContext) return null
+      return requestWebSocketTicket(backend, accessToken, authorizationContext)
+    })()
       .catch(() => null)
       .finally(() => {
         websocketTicketPromise = null

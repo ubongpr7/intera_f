@@ -31,6 +31,11 @@ import type {
   StockTransferPayload,
   StockTransferResponse,
   StockReservationSummaryResponse,
+  WarehouseConfiguration,
+  WarehouseReport,
+  WarehouseZone,
+  CycleCountSchedule,
+  StockCountSession,
 } from "./stockTypes";
 
 const stockApi = "stock_api";
@@ -99,6 +104,50 @@ export const stockApiSlice = apiSlice.injectEndpoints({
         method: "DELETE",
         service,
       }),
+    }),
+
+    getWarehouseConfiguration: builder.query<WarehouseConfiguration, EntityId>({
+      query: (locationId) => ({ url: `/${stockApi}/warehouse-configurations/?location=${locationId}`, service }),
+      transformResponse: (response: WarehouseConfiguration[] | { results?: WarehouseConfiguration[] }) => unwrapListResponse<WarehouseConfiguration>(response)[0],
+    }),
+    createWarehouseConfiguration: builder.mutation<WarehouseConfiguration, Partial<WarehouseConfiguration>>({
+      query: (data) => ({ url: `/${stockApi}/warehouse-configurations/`, method: "POST", body: data, service }),
+    }),
+    updateWarehouseConfiguration: builder.mutation<WarehouseConfiguration, { id: EntityId; data: Partial<WarehouseConfiguration> }>({
+      query: ({ id, data }) => ({ url: `/${stockApi}/warehouse-configurations/${id}/`, method: "PATCH", body: data, service }),
+    }),
+    getWarehouseReport: builder.query<WarehouseReport, EntityId>({
+      query: (locationId) => ({ url: `/${stockApi}/locations/${locationId}/warehouse-report/`, service }),
+    }),
+    listWarehouseZones: builder.query<WarehouseZone[], EntityId>({
+      query: (locationId) => ({ url: `/${stockApi}/warehouse-zones/?location=${locationId}`, service }),
+      transformResponse: (response: WarehouseZone[] | { results?: WarehouseZone[] }) => unwrapListResponse<WarehouseZone>(response),
+    }),
+    createWarehouseZone: builder.mutation<WarehouseZone, Partial<WarehouseZone>>({
+      query: (data) => ({ url: `/${stockApi}/warehouse-zones/`, method: "POST", body: data, service }),
+    }),
+    listCycleCountSchedules: builder.query<CycleCountSchedule[], EntityId | void>({
+      query: (locationId) => ({ url: buildQuery(`/${stockApi}/cycle-count-schedules/`, locationId ? { location: locationId } : undefined), service }),
+      transformResponse: (response: CycleCountSchedule[] | { results?: CycleCountSchedule[] }) => unwrapListResponse<CycleCountSchedule>(response),
+    }),
+    createCycleCountSchedule: builder.mutation<CycleCountSchedule, Partial<CycleCountSchedule>>({
+      query: (data) => ({ url: `/${stockApi}/cycle-count-schedules/`, method: "POST", body: data, service }),
+    }),
+    listStockCountSessions: builder.query<StockCountSession[], EntityId | void>({
+      query: (locationId) => ({ url: buildQuery(`/${stockApi}/stock-count-sessions/`, locationId ? { location: locationId } : undefined), service }),
+      transformResponse: (response: StockCountSession[] | { results?: StockCountSession[] }) => unwrapListResponse<StockCountSession>(response),
+    }),
+    createStockCountSession: builder.mutation<StockCountSession, { location: EntityId; notes?: string }>({
+      query: (data) => ({ url: `/${stockApi}/stock-count-sessions/`, method: "POST", body: data, service }),
+    }),
+    recordStockCountLines: builder.mutation<StockCountSession, { id: EntityId; lines: Array<{ id: EntityId; counted_quantity: string | number; notes?: string }> }>({
+      query: ({ id, lines }) => ({ url: `/${stockApi}/stock-count-sessions/${id}/record_counts/`, method: "POST", body: { lines }, service }),
+    }),
+    submitStockCount: builder.mutation<StockCountSession, EntityId>({
+      query: (id) => ({ url: `/${stockApi}/stock-count-sessions/${id}/submit/`, method: "POST", body: {}, service }),
+    }),
+    approveStockCount: builder.mutation<StockCountSession, { id: EntityId; stock_location_id: EntityId }>({
+      query: ({ id, stock_location_id }) => ({ url: `/${stockApi}/stock-count-sessions/${id}/approve/`, method: "POST", body: { stock_location_id }, service }),
     }),
 
     getLocationInventoryItems: builder.query<InventoryItem[], { id: EntityId; status?: string } | EntityId>({
@@ -258,6 +307,10 @@ export const stockApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
+    setStockLotStatus: builder.mutation<StockLot, { id: EntityId; status: string }>({
+      query: ({ id, status }) => ({ url: `/${stockApi}/lots/${id}/set_status/`, method: "POST", body: { status }, service }),
+    }),
+
     listStockSerials: builder.query<StockSerial[], StockSerialListParams | void>({
       query: (params) => ({
         url: buildQuery(`/${stockApi}/serials/`, params),
@@ -373,6 +426,19 @@ export const {
   useGetStockLocationQuery,
   useUpdateStockLocationMutation,
   useDeleteStockLocationMutation,
+  useGetWarehouseConfigurationQuery,
+  useGetWarehouseReportQuery,
+  useCreateWarehouseConfigurationMutation,
+  useUpdateWarehouseConfigurationMutation,
+  useListWarehouseZonesQuery,
+  useCreateWarehouseZoneMutation,
+  useListCycleCountSchedulesQuery,
+  useCreateCycleCountScheduleMutation,
+  useListStockCountSessionsQuery,
+  useCreateStockCountSessionMutation,
+  useRecordStockCountLinesMutation,
+  useSubmitStockCountMutation,
+  useApproveStockCountMutation,
   useGetLocationInventoryItemsQuery,
   useTransferLocationStockMutation,
   useListInventoryItemsQuery,
@@ -391,6 +457,7 @@ export const {
   useListStockBalancesPageQuery,
   useListStockLotsQuery,
   useListStockLotsPageQuery,
+  useSetStockLotStatusMutation,
   useListStockSerialsQuery,
   useListStockSerialsPageQuery,
   useListStockMovementsQuery,

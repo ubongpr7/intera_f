@@ -1,8 +1,17 @@
 import type { AppDispatch, RootState } from "@/redux/store";
-import { historyAnswerReturned, streamEnded, streamErrored, streamStarted } from "./ka2aSlice";
+import { clearSession, historyAnswerReturned, streamEnded, streamErrored, streamStarted, structuredDemoFollowUp } from "./ka2aSlice";
 import { ka2aApiSlice } from "./ka2aApiSlice";
 import type { StreamHistoryItem } from "./ka2aApiSlice";
 import type { AgentStructuredPayload } from "@/lib/agent-structured-output";
+
+type AbortableRequest = { abort?: () => void };
+
+const activeStreamRequests = new Map<string, AbortableRequest>();
+
+const createRequestId = (): string => {
+  const cryptoAny = globalThis.crypto as { randomUUID?: () => string } | undefined;
+  return cryptoAny?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
 
 const parseErrorText = (value: string): string => {
   const text = value.trim();
@@ -617,6 +626,50 @@ const answerFromHistory = (
   if (isConversationalStatusCheck(text)) {
     return undefined;
   }
+
+  // This demo follow-up is an action request, not a staff-activity question.
+  // Do not let the generic staff-history formatter reinterpret it as a ranking
+  // request; preserve the role-review notification form instead.
+  if (normalized === "notify the staff member when the role is updated") {
+    const roleReview = [...messages]
+      .reverse()
+      .map((message) => message.structuredPayload)
+      .find(
+        (payload) =>
+          payload?.kind === "insight_response" &&
+          asArray(payload.widgets).some((widget) =>
+            asString(asRecord(widget)?.title).toLowerCase().includes("notify staff"),
+          ),
+      );
+    const notificationWidget = roleReview
+      ? asArray(roleReview.widgets)
+          .map(asRecord)
+          .find((widget): widget is Record<string, unknown> =>
+            asString(widget?.title).toLowerCase().includes("notify staff"),
+          )
+      : undefined;
+    if (notificationWidget) {
+      const structuredPayload: AgentStructuredPayload = {
+        ...roleReview,
+        summary: "I can prepare the staff notification after you provide the staff member and confirm the message.",
+        widgets: [notificationWidget],
+        warnings: ["No notification is sent without explicit confirmation."],
+      };
+      return {
+        assistantText: asString(structuredPayload.summary),
+        structuredPayload,
+      };
+    }
+  }
+
+  const demoFollowUp = structuredDemoFollowUp(text);
+  if (demoFollowUp) {
+    return {
+      assistantText: asString(demoFollowUp.summary),
+      structuredPayload: demoFollowUp,
+    };
+  }
+
   const scopedInsightRequest = isNewScopedInsightRequest(text);
   for (let i = messages.length - 1; i >= 0; i -= 1) {
     const message = messages[i];
@@ -678,8 +731,9 @@ export const sendStreamMessage =
     }
 
     const history = buildStreamHistory(session.messages, text, session.historyLength);
+    const requestId = createRequestId();
 
-    dispatch(streamStarted({ sessionId, userText: text }));
+    dispatch(streamStarted({ sessionId, userText: text, requestId }));
 
     try {
       const request = session.resumeTaskId
@@ -703,15 +757,25 @@ export const sendStreamMessage =
               history,
             }),
           );
+      activeStreamRequests.set(sessionId, request as unknown as AbortableRequest);
       try {
         await request.unwrap();
       } finally {
+        if (activeStreamRequests.get(sessionId) === request) {
+          activeStreamRequests.delete(sessionId);
+        }
         request.reset();
       }
     } catch (error: unknown) {
-      dispatch(streamErrored({ sessionId, error: errorMessage(error) }));
+      dispatch(streamErrored({ sessionId, error: errorMessage(error), requestId }));
       return;
     }
 
-    dispatch(streamEnded({ sessionId }));
+    dispatch(streamEnded({ sessionId, requestId }));
   };
+
+export const cancelStream = (sessionId: string) => (dispatch: AppDispatch) => {
+  activeStreamRequests.get(sessionId)?.abort?.();
+  activeStreamRequests.delete(sessionId);
+  dispatch(clearSession({ sessionId }));
+};

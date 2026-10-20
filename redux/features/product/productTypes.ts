@@ -140,6 +140,7 @@ export interface Product extends ProfileMixin {
   display_image?: string;
   variant_count?: number;
   total_stock?: number;
+  stock_status?: "in_stock" | "out_of_stock" | "unknown";
   profit_margin?: number;
   pos_ready?: boolean;
   quick_sale_variants?: Array<{
@@ -177,6 +178,7 @@ export interface ProductListParams {
   allow_backorder?: string;
   allow_discount?: string;
   is_template?: string;
+  stock_status?: "in_stock" | "out_of_stock";
   ordering?: string;
   page?: number;
   page_size?: number;

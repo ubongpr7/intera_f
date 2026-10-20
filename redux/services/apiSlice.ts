@@ -4,6 +4,7 @@ import { setAuth, logout } from "../features/authSlice"
 import { Mutex } from "async-mutex"
 import { setCookie, getCookie, deleteCookie } from "cookies-next"
 import { jwtDecode } from "jwt-decode"
+import { isSsoMfaBypassProvider } from "@/lib/authProvider"
 import { AUTH_COOKIE_NAMES, AUTH_COOKIE_KEYS, readCookieValue } from "@/lib/authCookies"
 import { getOrCreatePosDeviceId } from "@/lib/deviceIdentity"
 import { setFrontendOriginHeader } from "@/lib/frontendOrigin"
@@ -271,10 +272,13 @@ export const persistAuthSession = (response: AuthResponsePayload) => {
   } else {
     deleteAuthCookie("model_name")
   }
-  if (response.provider) {
-    setAuthCookie("provider", response.provider, accessAge)
-  } else {
-    deleteAuthCookie("provider")
+  const hasProviderField = Object.prototype.hasOwnProperty.call(response, "provider")
+  if (hasProviderField) {
+    if (response.provider) {
+      setAuthCookie("provider", response.provider, accessAge)
+    } else {
+      deleteAuthCookie("provider")
+    }
   }
   if (response.agent_name) {
     setAuthCookie("agent_name", response.agent_name, accessAge)
@@ -282,7 +286,11 @@ export const persistAuthSession = (response: AuthResponsePayload) => {
     deleteAuthCookie("agent_name")
   }
 
-  if (tokenClaims?.mfa_verified === true) {
+  const authProvider = hasProviderField ? response.provider : readAuthCookie("provider")
+  if (isSsoMfaBypassProvider(authProvider)) {
+    setAuthCookie("mfaVerified", "true", refreshAge)
+    setAuthCookie("mfaSetupRequired", "false", refreshAge)
+  } else if (tokenClaims?.mfa_verified === true) {
     setAuthCookie("mfaVerified", "true", refreshAge)
     setAuthCookie("mfaSetupRequired", "false", refreshAge)
   } else if (
@@ -399,6 +407,17 @@ const isFileUpload = (args: string | FetchArgs): boolean => {
   return args.meta?.isFileUpload === true
 }
 
+const isMutationMethod = (method: unknown) =>
+  !["GET", "HEAD", "OPTIONS"].includes(String(method || "GET").toUpperCase())
+
+const createIdempotencyKey = () => {
+  if (typeof globalThis.crypto?.randomUUID === "function") {
+    return globalThis.crypto.randomUUID()
+  }
+
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`
+}
+
 // Determine the service based on the URL or explicit service parameter
 const getServiceForEndpoint = (args: string | FetchArgs): serviceType => {
   if (typeof args === "string") {
@@ -447,8 +466,14 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
   const appropriateBaseQuery = isUpload ? fileUploadQueries[service] : baseQueries[service]
 
   // Prepare the final args
+  const requestHeaders = new Headers(argsObj.headers as HeadersInit | undefined)
+  if (isMutationMethod(argsObj.method) && !requestHeaders.has("Idempotency-Key")) {
+    requestHeaders.set("Idempotency-Key", createIdempotencyKey())
+  }
+
   const enhancedArgs = {
     ...argsObj,
+    headers: requestHeaders,
     mode: "cors" as RequestMode,
   }
 
@@ -545,7 +570,7 @@ export const apiSlice = createApi({
   refetchOnFocus: true,
   refetchOnReconnect: true,
   refetchOnMountOrArgChange: true,
-  tagTypes: ["User", "Inventory", "Category", "Agent", "AgentConversation", "GlobalCatalog", "Product"], // Add tag types for caching
+  tagTypes: ["User", "Inventory", "Category", "Agent", "AgentConversation", "GlobalCatalog", "Product", "Manufacturing"], // Add tag types for caching
   endpoints: (builder) => ({}),
 })
 

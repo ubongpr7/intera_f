@@ -43,6 +43,7 @@ type POSResourceManagerProps<T extends { id: string }> = {
   searchableFields?: (keyof T)[]
   filterableFields?: (keyof T)[]
   sortableFields?: (keyof T)[]
+  numericFields?: (keyof T)[]
   filterOptions?: Partial<Record<keyof T, DataTableFilterOption[]>>
   onQueryStateChange?: (state: DataTableQueryState) => void
   pagination?: {
@@ -81,6 +82,7 @@ export default function POSResourceManager<T extends { id: string }>({
   searchableFields = [],
   filterableFields = [],
   sortableFields = [],
+  numericFields = [],
   filterOptions,
   onQueryStateChange,
   pagination,
@@ -188,6 +190,7 @@ export default function POSResourceManager<T extends { id: string }>({
               searchableFields={searchableFields}
               filterableFields={filterableFields}
               sortableFields={sortableFields}
+              numericFields={numericFields}
               filterOptions={filterOptions}
               onQueryStateChange={onQueryStateChange}
               actionButtons={[

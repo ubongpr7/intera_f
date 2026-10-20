@@ -62,6 +62,7 @@ import {
 } from "@/lib/agent-export"
 import { readCookieValue } from "@/lib/authCookies"
 import { DEFAULT_BRAND_AVATAR_SRC, resolveBrandAssetUrl } from "@/lib/brandAssets"
+import { useAppSelector } from "@/redux/store"
 import {
   MultipleChoiceHandler,
   FileUploadHandler,
@@ -127,6 +128,7 @@ interface AgentChatProps {
   workflowSummary?: AgentWorkflowSummary | null
   onDownloadConversation?: () => void
   onClearConversation?: () => void
+  isResettingChat?: boolean
   onSyncedVoiceTurnStart?: (text: string, turnId: string) => void
   onSyncedVoiceA2aEvent?: (event: Ka2aEvent, turnId?: string) => void
   onSyncedVoiceAssistantResult?: (text: string, turnId?: string) => void
@@ -442,6 +444,7 @@ export default function AgentChat({
   workflowSummary = null,
   onDownloadConversation,
   onClearConversation,
+  isResettingChat = false,
   onSyncedVoiceTurnStart,
   onSyncedVoiceA2aEvent,
   onSyncedVoiceAssistantResult,
@@ -456,6 +459,7 @@ export default function AgentChat({
   const [isAtBottom, setIsAtBottom] = useState(true)
   const [unreadCount, setUnreadCount] = useState(0)
   const [exportDownload, setExportDownload] = useState<ExportDownloadState | null>(null)
+  const [isStartingNewChat, setIsStartingNewChat] = useState(false)
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
@@ -506,7 +510,9 @@ export default function AgentChat({
   )
   const profileId = useMemo(() => readCookieValue("profileId", (name) => getCookie(name)) || "", [])
   const accessToken = useMemo(() => readCookieValue("accessToken", (name) => getCookie(name)) || "", [])
-  const voiceAccessAllowed = hasTokenPermission("oral_conversation_with_ai")
+  const permissionStatus = useAppSelector((state) => state.permission.status)
+  const voiceAccessAllowed =
+    permissionStatus === "succeeded" && hasTokenPermission("oral_conversation_with_ai")
 
   const voiceChat = useVoiceChat({
     onTranscript: (text: string) => {
@@ -816,7 +822,7 @@ export default function AgentChat({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!input.trim()) return
+    if (!input.trim() || isResettingChat || isStartingNewChat) return
 
     const submittedText = input.trim()
     acknowledgeVoiceLinkedSubmission(submittedText, submittedText)
@@ -1383,11 +1389,14 @@ export default function AgentChat({
   }
 
   const handleStartNewChat = async () => {
+    setIsStartingNewChat(true)
     if (isCallModeActive || voiceChat.isConnected || voiceChat.isConnecting) {
       await stopCallMode()
     }
     onClearConversation?.()
     onActivity?.()
+    await yieldToBrowser()
+    setIsStartingNewChat(false)
   }
 
   const voicePanel = isCallModeActive ? (
@@ -1406,7 +1415,7 @@ export default function AgentChat({
           </div>
           <p className="mt-2 text-sm leading-6 text-gray-600">
             {voiceChat.isConnecting
-              ? "Connecting to LiveKit..."
+              ? "Connecting to Agent..."
               : voiceChat.isSpeaking
                 ? "Assistant is speaking."
                 : voiceChat.isListening
@@ -1545,7 +1554,7 @@ export default function AgentChat({
                 onClick={() => {
                   void handleStartNewChat()
                 }}
-                disabled={!onClearConversation}
+                disabled={!onClearConversation || isStartingNewChat}
                 className="p-1 rounded-full hover:bg-white/20 transition-colors shrink-0 disabled:opacity-50"
                 aria-label="Start new chat"
                 title="New chat"
@@ -1623,7 +1632,7 @@ export default function AgentChat({
                 ) : null}
               </div>
             ) : (
-              messages.map((m) => {
+              messages.map((m, messageIndex) => {
             // Older sessions may already contain the leaked serialized part.
             // It is transport noise and must never be rendered as a chat reply.
             if (m.role === "assistant" && isTransportDebugText(m.content)) {
@@ -1632,6 +1641,20 @@ export default function AgentChat({
 
             const rawInsightData =
               m.role === "assistant" ? detectInsightResponse(m.content, m.structuredPayload) : null
+            const duplicateInsightInTask = Boolean(
+              rawInsightData &&
+              m.taskId &&
+              messages.slice(0, messageIndex).some((candidate) => {
+                if (candidate.role !== "assistant" || candidate.taskId !== m.taskId) {
+                  return false
+                }
+                const candidateInsight = detectInsightResponse(candidate.content, candidate.structuredPayload)
+                return Boolean(candidateInsight && JSON.stringify(candidateInsight.data) === JSON.stringify(rawInsightData.data))
+              }),
+            )
+            if (duplicateInsightInTask) {
+              return null
+            }
             const streamedSpecialistCount =
               m.role === "assistant" && Boolean(m.taskId)
                 ? messages.filter(
@@ -1721,24 +1744,6 @@ export default function AgentChat({
                         onActivity?.()
                       }}
                     />
-                    <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-gray-100 pt-3">
-                      <button
-                        type="button"
-                        onMouseDown={(event) => event.stopPropagation()}
-                        onClick={(event) => {
-                          event.preventDefault()
-                          event.stopPropagation()
-                          openInsightExportChooser(resolveCompositeInsightPayload(m))
-                          onActivity?.()
-                        }}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
-                        aria-label="Download insight"
-                        title="Download"
-                      >
-                        <Download className="h-3.5 w-3.5" strokeWidth={2.2} />
-                        Download
-                      </button>
-                    </div>
                   </div>
                 </div>
               )
@@ -1919,6 +1924,7 @@ export default function AgentChat({
             <textarea
               ref={textareaRef}
               value={input}
+              disabled={isResettingChat || isStartingNewChat}
               onChange={(e) => {
                 setInput(e.target.value)
                 onActivity?.()
@@ -1964,9 +1970,19 @@ export default function AgentChat({
                 )}
               </button>
             )}
-            {voiceChat.isSupported && !voiceAccessAllowed && (
+            {voiceChat.isSupported && permissionStatus === "loading" && (
               <div className="rounded-full border border-gray-200 bg-gray-100 px-3 py-2 text-xs text-gray-500">
-                Voice conversation is disabled for this account.
+                Checking voice access...
+              </div>
+            )}
+            {voiceChat.isSupported && permissionStatus === "failed" && (
+              <div className="rounded-full border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                Voice access could not be checked. Refresh and try again.
+              </div>
+            )}
+            {voiceChat.isSupported && permissionStatus === "succeeded" && !voiceAccessAllowed && (
+              <div className="rounded-full border border-gray-200 bg-gray-100 px-3 py-2 text-xs text-gray-500">
+                Voice conversation is not enabled for this account.
               </div>
             )}
           </div>
@@ -1974,7 +1990,7 @@ export default function AgentChat({
           <button
             type="submit"
             className="bg-blue-600 text-gray-50 p-3 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50"
-            disabled={!input.trim()}
+            disabled={!input.trim() || isResettingChat || isStartingNewChat}
             aria-label="Send message"
             title={sendLabel}
             onClick={onActivity}
