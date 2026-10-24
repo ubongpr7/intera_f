@@ -236,6 +236,13 @@ export default function SubscriptionPage() {
     { application__slug: "intera-ims" },
     { refetchOnMountOrArgChange: true },
   )
+  const orderedPlans = useMemo(
+    () => plans
+      .filter((plan) => plan.slug !== "enterprise")
+      .slice()
+      .sort((left, right) => Number(left.price) - Number(right.price)),
+    [plans],
+  )
   const [initiatePayment, { isLoading: initiatingPayment }] = useInitiatePaymentMutation()
   const [verifyPayment, { isLoading: verifyingPayment }] = useVerifyPaymentMutation()
   const [cancelSubscription, { isLoading: cancellingSubscription }] = useCancelSubscriptionMutation()
@@ -764,7 +771,7 @@ export default function SubscriptionPage() {
               <PlanCardsSkeleton />
             ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {plans.filter((plan) => plan.slug !== "enterprise").map((plan) => {
+              {orderedPlans.map((plan) => {
                 const selected = activePlan?.slug === plan.slug
                 const paymentPendingForPlan = !activePlan && pendingPlanSlug === plan.slug
                 const busy = initiatingPayment || verifyingPayment || cancellingSubscription
