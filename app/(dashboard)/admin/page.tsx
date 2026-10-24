@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useMemo } from "react"
-import { Activity, Bell, Boxes, CreditCard, FileSearch, Link2, PackageSearch, ShieldCheck, Users } from "lucide-react"
+import { Boxes, CreditCard, FileSearch, Link2, PackageSearch, Settings, ShieldCheck, Users } from "lucide-react"
 
 import StatTile from "@/components/dashboard/StatTile"
 import { Button } from "@/components/ui/button"
@@ -10,7 +10,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { useGetPaymentAnalyticsQuery, useGetSubscriptionAnalyticsQuery } from "@/redux/features/payment/paymentAPISlice"
 import { useGetGlobalCatalogAdminStatsQuery } from "@/redux/features/product/productAPISlice"
-import { useGetDashboardLowStockItemsQuery, useGetRealtimeDashboardStatsQuery } from "@/redux/features/dashboard/dashboardApiSlice"
 
 const adminLinks = [
   {
@@ -38,22 +37,16 @@ const adminLinks = [
     icon: FileSearch,
   },
   {
-    href: "/profile/staff",
-    title: "Staff and roles",
-    description: "Review staff access, memberships, and role assignments.",
+    href: "/admin/invitations",
+    title: "Staff invitations",
+    description: "Invite and revoke platform staff without attaching a workspace.",
     icon: Users,
   },
   {
-    href: "/realtime-dashboard",
-    title: "Realtime operations",
-    description: "Monitor live sales, inventory pressure, and operational movement.",
-    icon: Activity,
-  },
-  {
-    href: "/notifications",
-    title: "Notifications",
-    description: "Track notification delivery and user-facing alerts.",
-    icon: Bell,
+    href: "/admin/settings",
+    title: "Admin settings",
+    description: "Configure platform-level access and governance controls.",
+    icon: Settings,
   },
 ]
 
@@ -64,8 +57,6 @@ export default function AdminPage() {
   const { data: paymentAnalytics } = useGetPaymentAnalyticsQuery({ period })
   const { data: subscriptionAnalytics } = useGetSubscriptionAnalyticsQuery({ period })
   const { data: catalogStats } = useGetGlobalCatalogAdminStatsQuery()
-  const { data: realtimeStats } = useGetRealtimeDashboardStatsQuery("")
-  const { data: lowStockItems = [] } = useGetDashboardLowStockItemsQuery({ stock_status: "low_stock" })
 
   const statusBreakdown = useMemo(
     () => subscriptionAnalytics?.status_breakdown ?? {},
@@ -93,13 +84,6 @@ export default function AdminPage() {
       description: `${formatNumber(catalogStats?.total_variants ?? 0)} curated global variants`,
       tone: "amber" as const,
       icon: PackageSearch,
-    },
-    {
-      label: "Low stock alerts",
-      value: formatNumber(lowStockItems.length),
-      description: "Items that need operational attention",
-      tone: "default" as const,
-      icon: Boxes,
     },
   ]
 
@@ -146,8 +130,8 @@ export default function AdminPage() {
                 <span className="text-sm font-semibold text-slate-950">{formatNumber(subscriptionAnalytics?.subscription_change ?? 0)}%</span>
               </div>
               <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3">
-                <span className="text-sm text-slate-600">Realtime products</span>
-                <span className="text-sm font-semibold text-slate-950">{formatNumber(realtimeStats?.total_products ?? 0)}</span>
+                <span className="text-sm text-slate-600">Catalog variants</span>
+                <span className="text-sm font-semibold text-slate-950">{formatNumber(catalogStats?.total_variants ?? 0)}</span>
               </div>
             </CardContent>
           </Card>

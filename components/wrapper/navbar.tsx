@@ -25,6 +25,7 @@ import {
   Share2,
   Sun,
   UserRound,
+  Users,
   Wallet
 } from 'lucide-react'
 import { deleteCookie, getCookie } from 'cookies-next'
@@ -129,8 +130,14 @@ const Navbar = ({
   >([])
   const [notificationServiceReady, setNotificationServiceReady] =
     useState(false)
+  const [isAdminHost, setIsAdminHost] = useState(false)
 
-  const { data: companyMemberships } = useGetUserCompaniesQuery()
+  React.useEffect(() => {
+    const hostname = window.location.hostname.toLowerCase()
+    setIsAdminHost(hostname === 'admin.dev.interaims.com' || hostname === 'admin.interaims.com')
+  }, [])
+
+  const { data: companyMemberships } = useGetUserCompaniesQuery(undefined, { skip: isAdminHost })
   const { data: unreadResponse, refetch: refetchUnreadCount } =
     useGetNotificationUnreadCountQuery(undefined, {
       pollingInterval: 60000,
@@ -410,7 +417,11 @@ const Navbar = ({
     last_name: fallbackUser.last_name,
     email: fallbackUser.email
   } as UserData)
-  const settingsLinks = [
+  const settingsLinks = (isAdminHost ? [
+    { href: '/admin/settings', label: 'Admin settings', icon: SettingsIcon },
+    { href: '/admin/invitations', label: 'Staff invitations', icon: Users },
+    { href: '/audit', label: 'Audit trail', icon: ShieldCheck },
+  ] : [
     { href: '/settings', label: 'Workspace settings', icon: SettingsIcon },
     { href: '/subscription', label: 'Institution billing', icon: CreditCard },
     { href: '/agent/settings', label: 'Agent settings', icon: Bot },
@@ -421,7 +432,7 @@ const Navbar = ({
     },
     { href: '/pos/settings', label: 'POS settings', icon: MonitorSpeaker },
     { href: '/pos/remittances', label: 'POS remittances', icon: Wallet }
-  ].map((item) => ({
+  ]).map((item) => ({
     ...item,
     access: canAccessPath(item.href)
   }))
@@ -450,7 +461,7 @@ const Navbar = ({
         </button>
         <Link
           href="/dashboard"
-          aria-label="Intera IMS dashboard"
+          aria-label={isAdminHost ? 'Intera IMS Admin Portal' : 'Intera IMS dashboard'}
           className="flex min-w-0 items-center rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
         >
           <Image
@@ -469,12 +480,13 @@ const Navbar = ({
             priority
             className="hidden h-10 w-auto max-w-[220px] object-contain object-left md:block"
           />
+          {isAdminHost ? <span className="hidden text-sm font-bold tracking-tight text-gray-900 lg:inline">Intera IMS Admin Portal</span> : null}
         </Link>
       </div>
 
       <div className="flex min-w-0 flex-1 items-center justify-end gap-3">
         <div className="flex min-w-0 flex-1 items-center gap-3 overflow-visible">
-          {companyMemberships?.profiles?.length ? (
+          {!isAdminHost && companyMemberships?.profiles?.length ? (
             <div className="relative ml-auto shrink-0" ref={workspaceMenuRef}>
               <button
                 type="button"
@@ -734,12 +746,14 @@ const Navbar = ({
                   <div className="mt-1 text-xs text-gray-500">
                     {fallbackUser.email || 'Personal account'}
                   </div>
-                  <div className="mt-2 text-[11px] font-medium uppercase tracking-wide text-gray-500">
-                    {activeWorkspaceName}
-                  </div>
-                  <div className="mt-1 text-[11px] text-gray-400">
-                    {activeWorkspaceCode}
-                  </div>
+                  {isAdminHost ? (
+                    <div className="mt-2 text-[11px] font-medium uppercase tracking-wide text-emerald-700">Platform staff</div>
+                  ) : (
+                    <>
+                      <div className="mt-2 text-[11px] font-medium uppercase tracking-wide text-gray-500">{activeWorkspaceName}</div>
+                      <div className="mt-1 text-[11px] text-gray-400">{activeWorkspaceCode}</div>
+                    </>
+                  )}
                   {activeProfile?.support_access ? (
                     <div className="mt-2 inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
                       Support access

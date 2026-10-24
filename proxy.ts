@@ -11,9 +11,25 @@ export function proxy(request: NextRequest) {
     ? "https://admin.dev.interaims.com"
     : "https://admin.interaims.com"
 
-  if (isAdminHost && path === "/") {
+  if (isAdminHost && (path === "/" || path === "/dashboard" || path === "/admin-portal")) {
     const adminUrl = request.nextUrl.clone()
-    adminUrl.pathname = "/admin-portal"
+    adminUrl.pathname = "/admin"
+    return NextResponse.rewrite(adminUrl)
+  }
+
+  if (isAdminHost && path === "/admin-portal/catalog") {
+    const adminUrl = request.nextUrl.clone()
+    adminUrl.pathname = "/product/global-catalog-admin"
+    return NextResponse.rewrite(adminUrl)
+  }
+  if (isAdminHost && path === "/admin-portal/affiliates") {
+    const adminUrl = request.nextUrl.clone()
+    adminUrl.pathname = "/admin/affiliates"
+    return NextResponse.rewrite(adminUrl)
+  }
+  if (isAdminHost && path === "/admin-portal/invitations") {
+    const adminUrl = request.nextUrl.clone()
+    adminUrl.pathname = "/admin/invitations"
     return NextResponse.rewrite(adminUrl)
   }
 

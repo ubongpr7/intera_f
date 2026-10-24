@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Navbar from './navbar'
 import SideBar from './sideBar'
+import AdminSidebar from './adminSidebar'
 import { useAppDispatch, useAppSelector } from "../../redux/store";
 import { setIsSidebarCollapsed } from "../../redux/state";
 import { usePathname } from 'next/navigation';
@@ -27,15 +28,21 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
     permissions: state.permission.permissions,
   }));
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [isAdminHost, setIsAdminHost] = useState(false);
   const pathname = usePathname();
   const isPublic = isPublicAuthRoute(pathname);
   const accessToken = readCookieValue("accessToken", getCookie);
+
+  useEffect(() => {
+    const hostname = window.location.hostname.toLowerCase();
+    setIsAdminHost(hostname === 'admin.dev.interaims.com' || hostname === 'admin.interaims.com');
+  }, []);
 
   const { data: user } = useGetLoggedInUserQuery(undefined, {
     skip: isPublic,
     refetchOnMountOrArgChange: true,
   });
-  const { data: companyMemberships } = useGetUserCompaniesQuery(undefined, { skip: isPublic || !accessToken });
+  const { data: companyMemberships } = useGetUserCompaniesQuery(undefined, { skip: isPublic || isAdminHost || !accessToken });
   const activeProfileId = companyMemberships?.active_profile_id ?? null;
   const permissionReady =
     permissionState.status === "succeeded" &&
@@ -44,6 +51,7 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
     permissionState.isOwner || permissionState.permissions.includes("read_agent");
   const shouldFetchAgentSetup =
     !isPublic &&
+    !isAdminHost &&
     Boolean(accessToken) &&
     Boolean(activeProfileId) &&
     permissionReady &&
@@ -84,17 +92,25 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
   
   return (
     <div className={`dashboard-shell ${SidebarCollapsed ? "sidebar-is-collapsed" : "sidebar-is-expanded"} flex w-full min-h-screen bg-gray-50 text-gray-900`}>
-    <PermissionHydrator disabled={isPublic} />
+    <PermissionHydrator disabled={isPublic || isAdminHost} />
     
     <ToastContainer position="top-right" autoClose={3000} />
     
     {!shouldHideDashboardUI(pathname) ? (
       <>
-        <SideBar
-          user={user}
-          mobileOpen={mobileSidebarOpen}
-          onMobileClose={() => setMobileSidebarOpen(false)}
-        />
+        {isAdminHost ? (
+          <AdminSidebar
+            user={user}
+            mobileOpen={mobileSidebarOpen}
+            onMobileClose={() => setMobileSidebarOpen(false)}
+          />
+        ) : (
+          <SideBar
+            user={user}
+            mobileOpen={mobileSidebarOpen}
+            onMobileClose={() => setMobileSidebarOpen(false)}
+          />
+        )}
         {mobileSidebarOpen ? (
           <button
             type="button"
