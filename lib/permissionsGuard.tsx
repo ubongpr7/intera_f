@@ -287,8 +287,12 @@ export function RouteAccessGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const permissionState = useAppSelector((state) => state.permission)
   const access = canAccessPath(pathname)
+  const hasRouteGuard = ROUTE_GUARDS.some((rule) => rule.pattern.test(pathname))
 
-  if (permissionState.status === "loading") {
+  // Permission hydration starts after the first client render. Treat the
+  // initial idle state as unresolved for guarded routes; an empty permission
+  // set is not evidence of denial until the lookup has finished.
+  if (hasRouteGuard && (permissionState.status === "idle" || permissionState.status === "loading")) {
     return <PermissionLoadingPanel />
   }
   if (permissionState.status === "failed") {
@@ -329,7 +333,7 @@ export default function PermissionGuard({
 }: PermissionGuardProps) {
   const permissionState = useAppSelector((state) => state.permission)
   const snapshot = getPermissionSnapshot()
-  if (permissionState.status === "loading") return <PermissionLoadingPanel />
+  if (permissionState.status === "idle" || permissionState.status === "loading") return <PermissionLoadingPanel />
   if (permissionState.status === "failed") return fallback !== null ? <>{fallback}</> : <PermissionErrorPanel />
   if (snapshot.isOwner) {
     return <>{children}</>

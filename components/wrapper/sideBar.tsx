@@ -29,13 +29,17 @@ import {
   X,
 } from 'lucide-react';
 import { UserData } from "@/redux/features/users/userTypes";
+import type { CompanyProfileContext } from "@/redux/features/auth/authTypes";
+import { selectWorkspaceLogo } from "@/lib/workspaceBranding";
 import { useEffect, useRef, useState } from 'react';
 interface SideBarDataProps{
   user?:UserData
+  workspace?: CompanyProfileContext
   mobileOpen: boolean
   onMobileClose: () => void
 }
-const SideBar = ({ user, mobileOpen, onMobileClose }:SideBarDataProps) => {
+const SideBar = ({ user, workspace, mobileOpen, onMobileClose }:SideBarDataProps) => {
+  const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
   const SidebarCollapsed = useAppSelector((state) => state.global.isSidebarCollapsed);
     const navigationCollapsed = SidebarCollapsed && !mobileOpen;
     const dispatch = useAppDispatch();
@@ -61,12 +65,13 @@ const SideBar = ({ user, mobileOpen, onMobileClose }:SideBarDataProps) => {
     } ${SidebarCollapsed ? "md:w-16" : "md:w-64"}
     min-h-screen border-r border-gray-200 shadow-xl md:shadow-sm
     `
-    const companyName = readCookieValue("companyName", getCookie) || readCookieValue("companyCode", getCookie) || 'Intera'
+    const companyName = workspace?.name || readCookieValue("companyName", getCookie) || readCookieValue("companyCode", getCookie) || 'Intera'
     const rawCompanyLogo = readCookieValue("companyLogo", getCookie)
-    const companyLogo = rawCompanyLogo
-      ? (/^https?:\/\//i.test(rawCompanyLogo)
-        ? rawCompanyLogo
-        : `${(process.env.NEXT_PUBLIC_BACKEND_HOST_URL ?? '').replace(/\/+$/, '')}${rawCompanyLogo.startsWith('/') ? rawCompanyLogo : `/${rawCompanyLogo}`}`)
+    const companyLogoValue = selectWorkspaceLogo(workspace, isDarkMode) || rawCompanyLogo
+    const companyLogo = companyLogoValue
+      ? (/^https?:\/\//i.test(companyLogoValue)
+        ? companyLogoValue
+        : `${(process.env.NEXT_PUBLIC_BACKEND_HOST_URL ?? '').replace(/\/+$/, '')}${companyLogoValue.startsWith('/') ? companyLogoValue : `/${companyLogoValue}`}`)
       : null
     const canViewAuditTrail = canAccessPath("/audit").allowed
   return (

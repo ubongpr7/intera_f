@@ -118,6 +118,9 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
         ) : (
           <SideBar
             user={user}
+            workspace={companyMemberships?.profiles?.find(
+              (profile) => `${profile.id}` === `${companyMemberships.active_profile_id}`
+            )}
             mobileOpen={mobileSidebarOpen}
             onMobileClose={() => setMobileSidebarOpen(false)}
           />
