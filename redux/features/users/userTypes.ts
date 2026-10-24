@@ -74,6 +74,12 @@ export interface UserSummary {
   last_name: string;
   get_full_name?: string;
   role?: string | null;
+  is_staff?: boolean;
+  is_superuser?: boolean;
+  is_verified?: boolean;
+  mfa_enabled?: boolean;
+  date_joined?: Date | string;
+  last_login?: Date | string | null;
   referral_code?: string;
   referral_commission_rate?: string | number;
 }
