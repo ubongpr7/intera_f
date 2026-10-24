@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { readCookieValue } from "@/lib/authCookies"
 import { useGetCurrentEntitlementsQuery } from "@/redux/features/payment/paymentAPISlice"
 import { useGetUserCompaniesQuery } from "@/redux/features/auth/authApiSlice"
+import { useAdminHost } from "@/lib/adminHost"
 
 type Claims = {
   user_id?: string | number
@@ -39,14 +40,18 @@ const readOwnerStatus = () => {
 export function SubscriptionRequiredGuard({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
+  const { isAdminHost, isReady: isAdminHostReady } = useAdminHost()
   const owner = useMemo(() => readOwnerStatus(), [])
   const exempt = EXEMPT_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`))
-  const { data: companies } = useGetUserCompaniesQuery(undefined, { skip: exempt })
+  const adminBypass = isAdminHostReady && isAdminHost
+  const { data: companies } = useGetUserCompaniesQuery(undefined, { skip: exempt || adminBypass || !isAdminHostReady })
   const activeProfileId = companies?.active_profile_id ?? null
-  const { data, isLoading, isError } = useGetCurrentEntitlementsQuery("intera-ims", { skip: exempt || !activeProfileId })
+  const { data, isLoading, isError } = useGetCurrentEntitlementsQuery("intera-ims", {
+    skip: exempt || adminBypass || !isAdminHostReady || !activeProfileId,
+  })
   const hasSubscription = Boolean(data?.subscription)
-  const shouldBlock = !exempt && !isLoading && !isError && data && !hasSubscription
-  const showError = !exempt && isError
+  const shouldBlock = !exempt && !adminBypass && isAdminHostReady && !isLoading && !isError && data && !hasSubscription
+  const showError = !exempt && !adminBypass && isAdminHostReady && isError
 
   useEffect(() => {
     if (shouldBlock && owner) {
@@ -54,7 +59,7 @@ export function SubscriptionRequiredGuard({ children }: { children: ReactNode })
     }
   }, [owner, router, shouldBlock])
 
-  if (exempt) {
+  if (exempt || adminBypass || !isAdminHostReady) {
     return <>{children}</>
   }
 

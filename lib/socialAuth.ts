@@ -87,6 +87,7 @@ export const continueWithSocialAuth = async (
 
   const providerSlug = providerSlugMap[provider];
   const query = new URLSearchParams({ redirect_uri: redirectUri });
+  query.set('intent', options?.signup ? 'signup' : 'login');
   if (options?.signup) {
     query.set('signup', '1');
     query.set('terms_accepted', String(options.termsAccepted === true));

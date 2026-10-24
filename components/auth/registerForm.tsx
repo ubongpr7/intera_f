@@ -3,7 +3,7 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { useRegisterMutation } from '../../redux/features/auth/authApiSlice';
 // import { useRouter } from "next/navigation";
 import { toast } from "react-toastify"
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from "next/link";
 import { ErrorResponse, RegisterResponse } from '../types/authResponse';
 import { RegisterFormInputs } from '../types/authForms';
@@ -59,6 +59,7 @@ export default function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextUrl = searchParams.get('next')?.trim();
+  const socialSignupRequired = searchParams.get('social') === 'signup_required';
   const lockedEmail = searchParams.get("email")?.trim() || "";
   const referralCodeFromUrl = (searchParams.get("ref") || searchParams.get("referral_code") || "").trim().toUpperCase();
   const isEmailLocked = searchParams.get("locked") === "1" && Boolean(lockedEmail);
@@ -69,6 +70,12 @@ export default function RegisterForm() {
   const [legalAccepted, setLegalAccepted] = useState({ terms: false, privacy: false });
   const { hasConsented } = useCookieConsent();
   const hasAcceptedPolicies = legalAccepted.terms && legalAccepted.privacy;
+
+  useEffect(() => {
+    if (socialSignupRequired) {
+      toast.info('No Intera IMS account was found. Create your account first, then use Google to sign in.');
+    }
+  }, [socialSignupRequired]);
   const { 
     register, 
     handleSubmit, 

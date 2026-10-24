@@ -47,6 +47,12 @@ export default function SocialAuthCallbackPage() {
       });
   }, [providerSlug, code, state, redirectUri, socialAuthenticate, router]);
 
+  useEffect(() => {
+    if ((error as any)?.data?.code === "social_login_requires_signup") {
+      router.replace("/accounts?social=signup_required");
+    }
+  }, [error, router]);
+
   if (!providerSlug) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">

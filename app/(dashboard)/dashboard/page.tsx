@@ -150,15 +150,15 @@ const NoProfileState = ({
             <Building2 className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-2xl font-semibold text-gray-900">Create your first company profile</h2>
+            <h2 className="text-2xl font-semibold text-gray-900">Create your first workspace</h2>
             <p className="mt-2 text-sm text-gray-600">
-              You’re signed in, but no company workspace is attached yet. Create a profile to start managing inventory.
+              You’re signed in, but no workspace is attached yet. Create your workspace to start managing inventory.
             </p>
             <div className="mt-6">
               <Button asChild>
                 <Link href="/profile/create">
                   <PlusCircle className="mr-2 h-4 w-4" />
-                  Create company profile
+                  Create workspace
                 </Link>
               </Button>
             </div>
@@ -220,7 +220,7 @@ const NoProfileState = ({
         <Button asChild variant="outline">
           <Link href="/profile/create">
             <PlusCircle className="mr-2 h-4 w-4" />
-            Create another company profile
+            Create another workspace
           </Link>
         </Button>
       </div>
@@ -320,14 +320,14 @@ function WorkspaceDashboardPage() {
       <div className="mx-auto mt-10 w-full max-w-3xl rounded-2xl border border-red-200 bg-red-50 p-8">
         <h2 className="text-xl font-semibold text-red-800">Unable to load company workspaces</h2>
         <p className="mt-2 text-sm text-red-700">
-          We could not fetch your company context. Try again, then create or select a company profile.
+          We could not fetch your workspace context. Try again, then create or select a workspace.
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
           <Button onClick={() => void refetch()} variant="outline">
             Retry
           </Button>
           <Button asChild>
-            <Link href="/profile/create">Create company profile</Link>
+            <Link href="/profile/create">Create workspace</Link>
           </Button>
         </div>
       </div>
