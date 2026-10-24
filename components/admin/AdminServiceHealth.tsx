@@ -2,25 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { CheckCircle2, CircleAlert, Loader2, RefreshCw } from "lucide-react"
-import { serviceMap, type serviceType } from "@/redux/services/apiSlice"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 type HealthState = "checking" | "healthy" | "unhealthy"
 type ServiceHealth = { name: string; state: HealthState; latencyMs?: number; detail?: string }
 
-const services: Array<{ key: serviceType; name: string }> = [
-  { key: "users", name: "Users" },
-  { key: "product", name: "Product" },
-  { key: "inventory", name: "Inventory" },
-  { key: "pos", name: "POS" },
-  { key: "payment", name: "Payment" },
-  { key: "subscriptions", name: "Subscriptions" },
-  { key: "notification", name: "Notifications" },
-  { key: "audit", name: "Audit" },
-]
+const services = ["Users", "Product", "Inventory", "POS", "Payment", "Subscriptions", "Notifications", "Audit"]
 
-const initialHealth = (): ServiceHealth[] => services.map(({ name }) => ({ name, state: "checking" }))
+const initialHealth = (): ServiceHealth[] => services.map((name) => ({ name, state: "checking" }))
 
 export default function AdminServiceHealth() {
   const [health, setHealth] = useState<ServiceHealth[]>(initialHealth)
@@ -29,23 +19,14 @@ export default function AdminServiceHealth() {
   const checkHealth = useCallback(async () => {
     setIsRefreshing(true)
     setHealth(initialHealth())
-    const results = await Promise.all(services.map(async ({ key, name }) => {
-      const baseUrl = serviceMap[key]?.replace(/\/+$/, "")
-      const started = performance.now()
-      if (!baseUrl) return { name, state: "unhealthy" as const, detail: "Service URL is not configured" }
-      const controller = new AbortController()
-      const timeout = window.setTimeout(() => controller.abort(), 5000)
-      try {
-        const response = await fetch(`${baseUrl}/health`, { signal: controller.signal, cache: "no-store" })
-        if (!response.ok) return { name, state: "unhealthy" as const, latencyMs: Math.round(performance.now() - started), detail: `HTTP ${response.status}` }
-        return { name, state: "healthy" as const, latencyMs: Math.round(performance.now() - started), detail: "Healthy" }
-      } catch (error) {
-        return { name, state: "unhealthy" as const, latencyMs: Math.round(performance.now() - started), detail: error instanceof DOMException && error.name === "AbortError" ? "Timed out" : "Unavailable" }
-      } finally {
-        window.clearTimeout(timeout)
-      }
-    }))
-    setHealth(results)
+    try {
+      const response = await fetch("/api/admin/health", { cache: "no-store" })
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      const payload = await response.json() as { services?: ServiceHealth[] }
+      setHealth(payload.services ?? initialHealth())
+    } catch {
+      setHealth(services.map((name) => ({ name, state: "unhealthy" as const, detail: "Health proxy unavailable" })))
+    }
     setIsRefreshing(false)
   }, [])
 
