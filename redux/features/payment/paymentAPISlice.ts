@@ -195,7 +195,7 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
     // Webhooks
     getWebhookLogs: builder.query({
       query: (params = {}) => ({
-        url: `webhook-logs/?${new URLSearchParams(params).toString()}`,
+        url: `webhook-events/?${new URLSearchParams(params).toString()}`,
         service: "payment",
       }),
     }),

@@ -164,6 +164,8 @@ export interface SubscriptionPlanRecord {
   features: SubscriptionPlanFeature[];
   is_active: boolean;
   trial_days: number;
+  trial_authorization_amount?: string | null;
+  trial_token_amount?: number | null;
   display_order?: number;
   is_featured?: boolean;
   intera_coins_reward: any;

@@ -709,7 +709,7 @@ export default function SubscriptionPage() {
               <CalendarClock className="h-5 w-5 text-blue-600" />
               Set up subscription billing
             </CardTitle>
-            <CardDescription>Select the plan that matches the current workspace size. Card details are handled by secure billing; Intera stores provider references, not raw card data. A small setup charge may appear during billing authorization; monthly plan billing starts after the trial.</CardDescription>
+            <CardDescription>Select the plan that matches the current workspace size. Card details are handled by secure billing; Intera stores provider references, not raw card data. The ₦1,000 trial-entry payment buys 10,000 Intera tokens, and monthly plan billing starts after the seven-day trial.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {loadingEntitlements ? (
@@ -750,7 +750,7 @@ export default function SubscriptionPage() {
                     <div className="flex items-start gap-2">
                       <AlertTriangle className="mt-0.5 h-4 w-4" />
                       <span>
-                        No card is connected yet. Connect a card so the first month remains free and monthly billing can continue afterward. Any setup authorization is not the monthly plan charge.
+                        No card is connected yet. Connect a card to start the seven-day trial. Paystack will process ₦1,000 for 10,000 Intera tokens; the selected plan's monthly billing starts after the trial unless cancelled.
                       </span>
                     </div>
                     <Button size="sm" onClick={() => authorizeBilling(activePlan.slug)} disabled={initiatingPayment || verifyingPayment}>
@@ -788,7 +788,7 @@ export default function SubscriptionPage() {
                       {selected || paymentPendingForPlan ? <CheckCircle2 className="h-5 w-5 text-emerald-600" /> : null}
                     </div>
                     <p className="mt-3 min-h-12 text-sm text-slate-600 dark:text-slate-300">{plan.description || `${plan.name} plan for Intera IMS.`}</p>
-                    <p className="mt-3 text-sm font-medium">{plan.trial_days || 30}-day free trial</p>
+                    <p className="mt-3 text-sm font-medium">{plan.trial_days}-day free trial · ₦{Number(plan.trial_authorization_amount ?? 1000).toLocaleString()} for {Number(plan.trial_token_amount ?? 10000).toLocaleString()} Intera tokens</p>
                     <ul className="mt-4 space-y-2 text-sm">
                       {(plan.features ?? []).map((feature) => (
                         <li key={feature.slug} className="flex items-start gap-2 text-slate-700 dark:text-slate-200">
