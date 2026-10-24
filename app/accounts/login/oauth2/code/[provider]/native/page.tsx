@@ -12,17 +12,50 @@ export default function NativeSocialAuthCallbackPage() {
   const params = useParams<{ provider: string }>();
   const searchParams = useSearchParams();
   const provider = socialProviderFromSlug(`${params?.provider ?? ""}`);
+  const [ticket, setTicket] = useState("");
+  const [preflightError, setPreflightError] = useState("");
+  const [preflightLoading, setPreflightLoading] = useState(false);
   const callbackUrl = useMemo(() => {
-    if (provider !== "google-oauth2") return "";
+    if (provider !== "google-oauth2" || !ticket) return "";
 
     const target = new URL(APP_CALLBACK);
-    for (const key of ["code", "state", "error", "error_description"]) {
-      const value = searchParams.get(key);
-      if (value) target.searchParams.set(key, value);
-    }
+    target.searchParams.set("ticket", ticket);
+    const state = searchParams.get("state");
+    if (state) target.searchParams.set("state", state);
     return target.toString();
-  }, [provider, searchParams]);
+  }, [provider, searchParams, ticket]);
   const [handoffStarted, setHandoffStarted] = useState(false);
+
+  useEffect(() => {
+    const code = searchParams.get("code");
+    const state = searchParams.get("state");
+    if (provider !== "google-oauth2" || !code || !state || searchParams.get("error")) return;
+    let cancelled = false;
+    setPreflightLoading(true);
+    const usersApi = process.env.NEXT_PUBLIC_BACKEND_HOST_URL || "https://users.api.interaims.com";
+    fetch(`${usersApi}/auth/o/google-oauth2/native/` +
+      `?state=${encodeURIComponent(state)}&code=${encodeURIComponent(code)}&redirect_uri=${encodeURIComponent(window.location.origin + window.location.pathname)}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: "{}",
+      })
+      .then(async (response) => {
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(payload.detail || payload.non_field_errors?.[0] || "Google sign-in could not be completed.");
+        }
+        if (!payload.ticket) throw new Error("Google sign-in could not be completed securely.");
+        if (!cancelled) setTicket(payload.ticket);
+      })
+      .catch((error) => {
+        if (!cancelled) setPreflightError(error instanceof Error ? error.message : "Google sign-in could not be completed.");
+      })
+      .finally(() => {
+        if (!cancelled) setPreflightLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [provider, searchParams]);
 
   const openNativeApp = useCallback(() => {
     if (!callbackUrl) return;
@@ -99,17 +132,24 @@ export default function NativeSocialAuthCallbackPage() {
                   <LoaderCircle className="h-6 w-6 animate-spin" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#98fcc2]">{handoffStarted ? "Connected" : "Almost there"}</p>
-                  <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em]">{handoffStarted ? "Connected to Intera IMS" : "Returning to Intera IMS"}</h2>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#98fcc2]">{preflightError ? "Account setup required" : handoffStarted ? "Connected" : "Almost there"}</p>
+                  <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em]">{preflightError ? "Create your account first" : handoffStarted ? "Connected to Intera IMS" : "Returning to Intera IMS"}</h2>
                   <p className="mt-3 text-sm leading-7 text-[#adbbd1]">
-                    {handoffStarted
+                    {preflightError
+                      ? preflightError
+                      : handoffStarted
                       ? "Your secure session has been sent to the Intera IMS application. You can continue there."
-                      : "Complete the sign-in in the Intera IMS application."
+                      : preflightLoading ? "Verifying your Intera IMS account before opening the application." : "Complete the sign-in in the Intera IMS application."
                     }
                   </p>
                 </div>
               </div>
-              {callbackUrl && !handoffStarted ? (
+              {preflightError ? (
+                <a href="/accounts?social=signup_required" className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#3978ed] px-5 py-4 text-sm font-semibold text-white shadow-lg shadow-[#3978ed]/20 transition hover:bg-[#4b87f4]">
+                  Create an Intera IMS account
+                  <ArrowRight className="h-4 w-4" />
+                </a>
+              ) : callbackUrl && !handoffStarted ? (
                 <a
                   href={callbackUrl}
                   onClick={(event) => {
