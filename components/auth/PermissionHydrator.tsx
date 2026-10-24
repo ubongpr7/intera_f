@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 import { getCookie } from "cookies-next"
-import { useAppDispatch } from "@/redux/store"
+import { useAppDispatch, useAppSelector } from "@/redux/store"
 import { useGetUserCompaniesQuery } from "@/redux/features/auth/authApiSlice"
 import { useGetEffectivePermissionsQuery } from "@/redux/features/permission/permit"
 import { clearPermissions, permissionFailed, permissionHydrated, permissionLoading } from "@/redux/features/permission/permissionSlice"
@@ -23,6 +23,7 @@ const normalizedId = (value: string | number | null | undefined) => {
 
 export default function PermissionHydrator({ disabled = false }: { disabled?: boolean }) {
   const dispatch = useAppDispatch()
+  const permissionState = useAppSelector((state) => state.permission)
   const accessToken = readCookieValue("accessToken", getCookie)
   const {
     data: companies,
@@ -47,7 +48,9 @@ export default function PermissionHydrator({ disabled = false }: { disabled?: bo
       dispatch(clearPermissions())
       return
     }
-    if (companiesUninitialized || companiesLoading || companiesFetching) {
+    // A background refetch must not blank the application while the last
+    // resolved workspace context is still usable.
+    if (companiesUninitialized || (companiesLoading && !companies)) {
       dispatch(permissionLoading(profileId || "pending"))
       return
     }
@@ -62,8 +65,10 @@ export default function PermissionHydrator({ disabled = false }: { disabled?: bo
       dispatch(permissionHydrated({ profileId: "", permissions: [] }))
       return
     }
-    dispatch(permissionLoading(profileId))
-  }, [accessToken, companiesError, companiesFetching, companiesLoading, companiesUninitialized, disabled, dispatch, profileId])
+    if (permissionState.status !== "succeeded" || permissionState.profileId !== profileId) {
+      dispatch(permissionLoading(profileId))
+    }
+  }, [accessToken, companies, companiesError, companiesFetching, companiesLoading, companiesUninitialized, disabled, dispatch, permissionState.profileId, permissionState.status, profileId])
 
   useEffect(() => {
     if (!profileId || permissionQuery.isUninitialized || permissionQuery.isLoading) return
