@@ -2361,7 +2361,7 @@ html.light .legal-section-body a {
 }
 
 .dark .PhoneInputCountrySelectArrow {
-  @apply text-gray-400;
+  color: #9ca3af;
 }
 
 /* Shared opaque select surfaces — prevents form controls from showing content underneath. */
