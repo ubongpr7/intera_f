@@ -18,6 +18,8 @@ frontend:
             "LIVEKIT_API_KEY",
             "LIVEKIT_API_SECRET",
             "NEXT_PUBLIC_LIVEKIT_URL",
+            "CONTAINER_HEALTH_URL",
+            "CONTAINER_HEALTH_TOKEN",
           ];
           const optionalRuntimeKeys = ["WAITLIST_DATABASE_URL"];
           const missingKeys = requiredKeys.filter((key) => !process.env[key]?.trim());
