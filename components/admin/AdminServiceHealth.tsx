@@ -59,10 +59,10 @@ export default function AdminServiceHealth() {
       </CardHeader>
       <CardContent className="grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-4">
         {health.map((item) => (
-          <div key={item.name} className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-3 py-3">
+          <div key={item.name} className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-3 py-3 dark:border-slate-700 dark:bg-slate-950">
             <div className="flex min-w-0 items-center gap-2">
               {item.state === "checking" ? <Loader2 className="h-4 w-4 shrink-0 animate-spin text-gray-400" /> : item.state === "healthy" ? <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" /> : <CircleAlert className="h-4 w-4 shrink-0 text-red-600" />}
-              <div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-950">{item.name}</p><p className="text-xs text-gray-500">{item.detail || "Checking..."}</p></div>
+              <div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-950 dark:text-white">{item.name}</p><p className="text-xs text-gray-500 dark:text-slate-300">{item.detail || "Checking..."}</p></div>
             </div>
             {item.latencyMs !== undefined ? <span className="ml-2 shrink-0 text-xs font-medium text-gray-500">{item.latencyMs}ms</span> : null}
           </div>

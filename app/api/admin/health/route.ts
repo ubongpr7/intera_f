@@ -11,6 +11,17 @@ const serviceUrls = {
   audit: process.env.AUDIT_INTERNAL_URL || process.env.NEXT_PUBLIC_AUDIT_BACKEND_URL,
 } as const
 
+const healthPaths: Record<keyof typeof serviceUrls, string> = {
+  users: "/healthz/",
+  product: "/healthz/",
+  inventory: "/healthz/",
+  pos: "/healthz/",
+  payment: "/healthz/",
+  subscriptions: "/healthz/",
+  notification: "/health",
+  audit: "/health",
+}
+
 const serviceNames: Record<keyof typeof serviceUrls, string> = {
   users: "Users",
   product: "Product",
@@ -33,7 +44,7 @@ export async function GET() {
       const controller = new AbortController()
       const timeout = setTimeout(() => controller.abort(), 5000)
       try {
-        const response = await fetch(`${baseUrl.replace(/\/+$/, "")}/health`, {
+        const response = await fetch(`${baseUrl.replace(/\/+$/, "")}${healthPaths[key as keyof typeof serviceUrls]}`, {
           cache: "no-store",
           signal: controller.signal,
         })
