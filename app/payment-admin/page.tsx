@@ -82,7 +82,7 @@ export default function PaymentAdminPage() {
   )
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] space-y-6 px-4 py-6 lg:px-8">
+    <div className="payment-admin-surface mx-auto w-full max-w-[1600px] space-y-6 px-4 py-6 lg:px-8">
       <div className="overflow-hidden rounded-[2rem] border border-gray-200 bg-white shadow-sm">
         <div className="h-1 w-full bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-500" />
         <div className="grid gap-6 p-6 lg:grid-cols-[1.4fr_0.9fr] lg:p-8">

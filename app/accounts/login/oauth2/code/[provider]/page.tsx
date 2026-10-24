@@ -103,7 +103,9 @@ export default function SocialAuthCallbackPage() {
     (error as any)?.data?.non_field_errors?.[0] ||
     "Unable to complete social sign-in.";
 
-  const signupRequired = (error as any)?.data?.code === "social_login_requires_signup";
+  const signupRequired =
+    (error as any)?.data?.code === "social_login_requires_signup" ||
+    /no intera ims account exists|create an account first/i.test(String(mutationError));
 
   return (
     <AuthSplitShell
