@@ -7,6 +7,19 @@ import { useGetUserCompaniesQuery } from "@/redux/features/auth/authApiSlice"
 import { useGetEffectivePermissionsQuery } from "@/redux/features/permission/permit"
 import { clearPermissions, permissionFailed, permissionHydrated, permissionLoading } from "@/redux/features/permission/permissionSlice"
 import { readCookieValue } from "@/lib/authCookies"
+import { getDecodedToken } from "@/lib/utils"
+
+type UserClaims = {
+  id?: string | number | null
+  user_id?: string | number | null
+  sub?: string | number | null
+}
+
+const normalizedId = (value: string | number | null | undefined) => {
+  if (value === null || value === undefined) return null
+  const result = `${value}`.trim()
+  return result.length ? result : null
+}
 
 export default function PermissionHydrator({ disabled = false }: { disabled?: boolean }) {
   const dispatch = useAppDispatch()
@@ -19,6 +32,14 @@ export default function PermissionHydrator({ disabled = false }: { disabled?: bo
     isUninitialized: companiesUninitialized,
   } = useGetUserCompaniesQuery(undefined, { skip: disabled || !accessToken })
   const profileId = companies?.active_profile_id ? `${companies.active_profile_id}` : ""
+  const activeProfile = companies?.profiles?.find((profile) => `${profile.id}` === profileId)
+  const claims = getDecodedToken() as UserClaims | null
+  const currentUserId = normalizedId(claims?.id) ?? normalizedId(claims?.user_id) ?? normalizedId(claims?.sub)
+  const membershipOwnerId = normalizedId(activeProfile?.owner_id)
+  const membershipRole = `${activeProfile?.role ?? ""}`.trim().toLowerCase()
+  const isMembershipOwner = membershipRole === "owner" || (
+    membershipOwnerId !== null && currentUserId !== null && membershipOwnerId === currentUserId
+  )
   const permissionQuery = useGetEffectivePermissionsQuery(profileId, { skip: disabled || !accessToken || !profileId })
 
   useEffect(() => {
@@ -53,10 +74,10 @@ export default function PermissionHydrator({ disabled = false }: { disabled?: bo
     dispatch(permissionHydrated({
       profileId,
       permissions: permissionQuery.data.permissions,
-      isOwner: permissionQuery.data.is_owner,
+      isOwner: Boolean(permissionQuery.data.is_owner || isMembershipOwner),
       isStaff: permissionQuery.data.is_staff || permissionQuery.data.is_superuser,
     }))
-  }, [dispatch, permissionQuery.data, permissionQuery.isError, permissionQuery.isLoading, permissionQuery.isUninitialized, profileId])
+  }, [dispatch, isMembershipOwner, permissionQuery.data, permissionQuery.isError, permissionQuery.isLoading, permissionQuery.isUninitialized, profileId])
 
   return null
 }
