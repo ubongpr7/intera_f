@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useEffect, useRef } from 'react'
-import { ChevronLeft, ChevronRight, FileSearch, Gift, LayoutDashboard, Link2, Settings, ShieldCheck, Users, X } from 'lucide-react'
+import { Activity, ChevronLeft, ChevronRight, FileSearch, Gift, LayoutDashboard, Link2, Settings, ShieldCheck, Users, X } from 'lucide-react'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { SidebarLink } from './SideBarLinks'
 import { useAppDispatch, useAppSelector } from '../../redux/store'
@@ -62,6 +62,7 @@ export default function AdminSidebar({ user, mobileOpen, onMobileClose }: AdminS
           <SidebarLink href="/admin/invitations" icon={Users} label="Staff Invitations" isCollapsed={navigationCollapsed} />
           <SidebarLink href="/payment-admin" icon={ShieldCheck} label="Billing & Plans" isCollapsed={navigationCollapsed} />
           <SidebarLink href="/audit" icon={FileSearch} label="Audit Trail" isCollapsed={navigationCollapsed} />
+          <SidebarLink href="/admin/service-health" icon={Activity} label="Service Health" isCollapsed={navigationCollapsed} />
           <SidebarLink href="/admin/settings" icon={Settings} label="Admin Settings" isCollapsed={navigationCollapsed} />
         </nav>
 

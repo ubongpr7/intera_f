@@ -11,7 +11,6 @@ import { Badge } from "@/components/ui/badge"
 import { useGetPaymentAnalyticsQuery, useGetSubscriptionAnalyticsQuery, useGetWebhookLogsQuery } from "@/redux/features/payment/paymentAPISlice"
 import { useGetGlobalCatalogAdminStatsQuery, useGetGlobalProductCapturesQuery } from "@/redux/features/product/productAPISlice"
 import { useGetAdminSummaryQuery, useListReferralPayoutsQuery } from "@/redux/features/users/userApiSlice"
-import AdminServiceHealth from "@/components/admin/AdminServiceHealth"
 
 const adminLinks = [
   {
@@ -219,8 +218,6 @@ export default function AdminPage() {
         ))}
         <StatTile label="Needs review" value={formatNumber(reviewCaptures)} description={`${formatNumber(pendingCaptures)} captures still processing`} icon={AlertTriangle} tone="default" />
       </div>
-
-      <AdminServiceHealth />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatTile label="Users" value={formatNumber(adminSummary?.users.total ?? 0)} description={`${formatNumber(adminSummary?.users.active ?? 0)} active accounts`} icon={Users} tone="blue" />
