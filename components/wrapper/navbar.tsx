@@ -488,9 +488,9 @@ const Navbar = ({
       </div>
 
       <div className="flex min-w-0 flex-1 items-center justify-end gap-3">
-        <div className="flex min-w-0 flex-1 items-center gap-3 overflow-visible">
+        <div className="flex min-w-0 items-center gap-3 overflow-visible">
           {!isAdminHost && companyMemberships?.profiles?.length ? (
-            <div className="relative ml-auto shrink-0" ref={workspaceMenuRef}>
+            <div className="relative shrink-0" ref={workspaceMenuRef}>
               <button
                 type="button"
                 onClick={() => {
@@ -562,7 +562,7 @@ const Navbar = ({
             </div>
           ) : null}
 
-          <div className="relative ml-auto shrink-0" ref={notificationMenuRef}>
+          <div className="relative shrink-0" ref={notificationMenuRef}>
             <button
               type="button"
               onClick={() => {
