@@ -72,6 +72,7 @@ interface NavbarProps {
 
 const buildUserImageUrl = (value?: string | null) => {
   if (!value) return undefined
+  if (value === '/media/default.png' || value.endsWith('/media/default.png')) return undefined
   const base = (process.env.NEXT_PUBLIC_BACKEND_HOST_URL ?? '').replace(
     /\/+$/,
     ''

@@ -275,6 +275,7 @@ const buildEventNarrative = (event: AuditEventRecord) => {
 }
 
 export default function AuditTrailWorkspace() {
+  const [isAdminHost, setIsAdminHost] = useState(false)
   const [searchInput, setSearchInput] = useState("")
   const [barcodeInput, setBarcodeInput] = useState("")
   const [submittedSearch, setSubmittedSearch] = useState("")
@@ -288,6 +289,11 @@ export default function AuditTrailWorkspace() {
   const [realtimeEvents, setRealtimeEvents] = useState<AuditEventRecord[]>([])
   const [socketState, setSocketState] = useState<"connecting" | "connected" | "disconnected">("disconnected")
   const [selectedEventId, setSelectedEventId] = useState("")
+
+  useEffect(() => {
+    const hostname = window.location.hostname.toLowerCase()
+    setIsAdminHost(hostname === "admin.dev.interaims.com" || hostname === "admin.interaims.com")
+  }, [])
 
   const queryArgs = useMemo(
     () => ({
@@ -308,10 +314,10 @@ export default function AuditTrailWorkspace() {
   })
   const workspaceId = getActiveWorkspaceId()
   const accessToken = getRealtimeAccessToken()
-  const { data: filterOptions } = useGetAuditFilterOptionsQuery(workspaceId ? { workspace_id: workspaceId } : undefined)
+  const { data: filterOptions } = useGetAuditFilterOptionsQuery(isAdminHost ? undefined : workspaceId ? { workspace_id: workspaceId } : undefined)
 
   useEffect(() => {
-    if (!workspaceId || !accessToken) {
+    if (isAdminHost || !workspaceId || !accessToken) {
       return
     }
 
@@ -376,7 +382,7 @@ export default function AuditTrailWorkspace() {
       }
       socket?.close()
     }
-  }, [accessToken, dateRangeFilter, featureFilter, serviceFilter, severityFilter, submittedBarcode, submittedSearch, workspaceId])
+  }, [accessToken, dateRangeFilter, featureFilter, isAdminHost, serviceFilter, severityFilter, submittedBarcode, submittedSearch, workspaceId])
 
   const mergedEvents = useMemo(() => {
     const merged = new Map<string, AuditEventRecord>()
@@ -557,7 +563,7 @@ export default function AuditTrailWorkspace() {
         <CardHeader className="gap-4 border-b border-gray-100 bg-gray-100/50 p-6 text-left">
           <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-700">
             <Shield className="h-3.5 w-3.5" />
-            Workspace Audit
+            {isAdminHost ? "Platform Audit" : "Workspace Audit"}
           </div>
           <div className="space-y-2">
             <CardTitle className="text-3xl font-semibold tracking-tight text-gray-900">Audit command center</CardTitle>
@@ -762,7 +768,11 @@ export default function AuditTrailWorkspace() {
                 <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">Review mode</div>
                 <div className="mt-2 text-lg font-semibold text-gray-900">{submittedBarcode ? "Record trace" : "Global audit scan"}</div>
                 <div className="mt-1 text-xs text-gray-600">
-                  {submittedBarcode ? "Pinned to one barcode for item-level investigation." : "Cross-service workspace history with scoped filters."}
+                  {submittedBarcode
+                    ? "Pinned to one barcode for item-level investigation."
+                    : isAdminHost
+                      ? "Cross-workspace activity history with platform-wide filters."
+                      : "Cross-service workspace history with scoped filters."}
                 </div>
               </div>
             </div>
