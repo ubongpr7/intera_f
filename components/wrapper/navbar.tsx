@@ -454,7 +454,7 @@ const Navbar = ({
           className="flex min-w-0 items-center rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
         >
           <Image
-            src={isDarkMode ? '/assets/intera/intera-mark-dark.png' : '/assets/intera/intera-mark-light.png'}
+            src={isDarkMode ? '/assets/intera/intera-mark-light.png' : '/assets/intera/intera-mark-dark.png'}
             alt="Intera IMS"
             width={42}
             height={42}
