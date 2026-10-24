@@ -162,8 +162,8 @@ export default function AdminPage() {
               Admin command center
             </Badge>
             <div className="max-w-3xl space-y-3">
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-950 lg:text-4xl">Oversee billing, catalog, audit, and live operations from one place.</h1>
-              <p className="max-w-2xl text-sm leading-6 text-slate-600 lg:text-base">
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-950 dark:text-white lg:text-4xl">Oversee billing, catalog, audit, and live operations from one place.</h1>
+              <p className="max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300 lg:text-base">
                 This hub is reserved for `is_staff` and `is_superuser` users. It exposes the parts of the platform that need governance,
                 monitoring, and intervention without mixing them into normal workspace flows.
               </p>
@@ -172,15 +172,15 @@ export default function AdminPage() {
               <Button asChild className="bg-blue-600 text-white hover:bg-blue-700">
                 <Link href="/payment-admin">Open billing console</Link>
               </Button>
-              <Button asChild variant="outline" className="border-gray-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">
+              <Button asChild variant="outline" className="border-gray-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                 <Link href="/product/global-catalog-admin">Open global catalog</Link>
               </Button>
-              <select value={period} onChange={(event) => setPeriod(event.target.value)} className="h-10 rounded-md border border-gray-200 bg-white px-3 text-sm font-medium text-slate-700" aria-label="Insight period">
+              <select value={period} onChange={(event) => setPeriod(event.target.value)} className="h-10 rounded-md border border-gray-200 bg-white px-3 text-sm font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" aria-label="Insight period">
                 <option value="7d">Last 7 days</option>
                 <option value="30d">Last 30 days</option>
                 <option value="90d">Last 90 days</option>
               </select>
-              <Button type="button" variant="outline" onClick={() => void refreshDashboard()} disabled={isRefreshing || isFetching} className="gap-2 border-gray-200 bg-white text-slate-700">
+              <Button type="button" variant="outline" onClick={() => void refreshDashboard()} disabled={isRefreshing || isFetching} className="gap-2 border-gray-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                 <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
                 Refresh insights
               </Button>
@@ -189,23 +189,23 @@ export default function AdminPage() {
 
           <Card className="border-gray-200 bg-gray-50 shadow-none">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-slate-950">Operational snapshot</CardTitle>
-              <CardDescription className="text-slate-600">
+              <CardTitle className="text-lg text-slate-950 dark:text-white">Operational snapshot</CardTitle>
+              <CardDescription className="text-slate-600 dark:text-slate-300">
                 A quick read on billing, subscriptions, and catalog pressure.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3">
-                <span className="text-sm text-slate-600">Payment conversion</span>
-                <span className="text-sm font-semibold text-slate-950">{formatNumber(paymentAnalytics?.conversion_rate ?? 0)}%</span>
+                <span className="text-sm text-slate-600 dark:text-slate-300">Payment conversion</span>
+                <span className="text-sm font-semibold text-slate-950 dark:text-white">{formatNumber(paymentAnalytics?.conversion_rate ?? 0)}%</span>
               </div>
               <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3">
-                <span className="text-sm text-slate-600">Subscription change</span>
-                <span className="text-sm font-semibold text-slate-950">{formatNumber(subscriptionAnalytics?.subscription_change ?? 0)}%</span>
+                <span className="text-sm text-slate-600 dark:text-slate-300">Subscription change</span>
+                <span className="text-sm font-semibold text-slate-950 dark:text-white">{formatNumber(subscriptionAnalytics?.subscription_change ?? 0)}%</span>
               </div>
               <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3">
-                <span className="text-sm text-slate-600">Catalog variants</span>
-                <span className="text-sm font-semibold text-slate-950">{formatNumber(catalogStats?.total_variants ?? 0)}</span>
+                <span className="text-sm text-slate-600 dark:text-slate-300">Catalog variants</span>
+                <span className="text-sm font-semibold text-slate-950 dark:text-white">{formatNumber(catalogStats?.total_variants ?? 0)}</span>
               </div>
               <p className="pt-1 text-xs text-slate-500">Data period: {period}. Refreshes query-backed metrics only.</p>
             </CardContent>
@@ -256,8 +256,8 @@ export default function AdminPage() {
                       <Icon className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="font-semibold text-slate-950">{link.title}</h3>
-                      <p className="mt-1 text-sm leading-6 text-slate-600">{link.description}</p>
+                      <h3 className="font-semibold text-slate-950 dark:text-white">{link.title}</h3>
+                      <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">{link.description}</p>
                     </div>
                   </div>
                 </Link>

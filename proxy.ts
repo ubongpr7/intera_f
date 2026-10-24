@@ -90,7 +90,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
-  if (waitlistMode && !isNativeOAuthCallbackPath && path !== "/" && !isPublicAsset && !isLegalPath && !isContactPath) {
+  if (waitlistMode && !isAdminHost && !isNativeOAuthCallbackPath && path !== "/" && !isPublicAsset && !isLegalPath && !isContactPath) {
     return NextResponse.redirect(new URL("/", request.url))
   }
 
