@@ -59,7 +59,7 @@ export default function AuthSplitShell({
               <Image src={logoSrc} alt="Intera" width={480} height={144} priority className="h-44 w-auto max-w-[20rem] object-contain object-left" />
             </Link>
 
-            <div className="mt-16 max-w-xl pb-8">
+            <div className={`${layout === "reversed" ? "mt-16" : "mt-auto"} max-w-xl pb-8`}>
               <span className="inline-flex items-center gap-2 rounded-full border border-[#3c83f7]/20 bg-[#3c83f7]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-[#3c83f7] dark:border-[#98fcc2]/20 dark:bg-[#98fcc2]/10 dark:text-[#98fcc2]">
                 <Sparkles className="h-3.5 w-3.5" />
                 {eyebrow}
