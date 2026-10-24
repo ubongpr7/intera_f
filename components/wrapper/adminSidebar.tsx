@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useEffect, useRef } from 'react'
-import { Activity, ChevronLeft, ChevronRight, FileSearch, Gift, LayoutDashboard, Link2, Settings, ShieldCheck, Users, X } from 'lucide-react'
+import { Activity, ChevronLeft, ChevronRight, FileSearch, Gift, LayoutDashboard, Link2, Settings, ShieldCheck, UserRound, Users, X } from 'lucide-react'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { SidebarLink } from './SideBarLinks'
 import { useAppDispatch, useAppSelector } from '../../redux/store'
@@ -59,6 +59,7 @@ export default function AdminSidebar({ user, mobileOpen, onMobileClose }: AdminS
           <div className={`px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 ${navigationCollapsed ? 'hidden' : ''}`}>Administration</div>
           <SidebarLink href="/product/global-catalog-admin" icon={Gift} label="Global Products" isCollapsed={navigationCollapsed} />
           <SidebarLink href="/admin/affiliates" icon={Link2} label="Affiliates" isCollapsed={navigationCollapsed} />
+          <SidebarLink href="/admin/users" icon={UserRound} label="Platform Users" isCollapsed={navigationCollapsed} />
           <SidebarLink href="/admin/invitations" icon={Users} label="Staff Invitations" isCollapsed={navigationCollapsed} />
           <SidebarLink href="/payment-admin" icon={ShieldCheck} label="Billing & Plans" isCollapsed={navigationCollapsed} />
           <SidebarLink href="/audit" icon={FileSearch} label="Audit Trail" isCollapsed={navigationCollapsed} />

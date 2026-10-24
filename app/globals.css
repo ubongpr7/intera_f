@@ -2687,26 +2687,36 @@ html.light .auth-mfa-otp-input:focus {
 
 .dark .admin-portal-surface .text-slate-950,
 .dark .admin-portal-surface .text-slate-900,
+.dark .admin-portal-surface .text-slate-800,
 .dark .admin-portal-surface .text-gray-950,
+.dark .admin-portal-surface .text-gray-900,
+.dark .admin-portal-surface .text-gray-800,
 .dark .payment-admin-surface .text-slate-950,
 .dark .payment-admin-surface .text-slate-900,
-.dark .payment-admin-surface .text-gray-950 {
-  color: #f4f8ff !important;
+.dark .payment-admin-surface .text-slate-800,
+.dark .payment-admin-surface .text-gray-950,
+.dark .payment-admin-surface .text-gray-900,
+.dark .payment-admin-surface .text-gray-800 {
+  color: var(--dash-ink) !important;
 }
 
 .dark .admin-portal-surface .text-slate-700,
 .dark .admin-portal-surface .text-slate-600,
 .dark .admin-portal-surface .text-slate-500,
+.dark .admin-portal-surface .text-slate-400,
 .dark .admin-portal-surface .text-gray-700,
 .dark .admin-portal-surface .text-gray-600,
 .dark .admin-portal-surface .text-gray-500,
+.dark .admin-portal-surface .text-gray-400,
 .dark .payment-admin-surface .text-slate-700,
 .dark .payment-admin-surface .text-slate-600,
 .dark .payment-admin-surface .text-slate-500,
+.dark .payment-admin-surface .text-slate-400,
 .dark .payment-admin-surface .text-gray-700,
 .dark .payment-admin-surface .text-gray-600,
-.dark .payment-admin-surface .text-gray-500 {
-  color: #a9b8cf !important;
+.dark .payment-admin-surface .text-gray-500,
+.dark .payment-admin-surface .text-gray-400 {
+  color: var(--dash-muted) !important;
 }
 
 .dark .admin-portal-surface .bg-white,
