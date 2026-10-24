@@ -1,5 +1,5 @@
 import { usePathname } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, LucideIcon, Lock } from  "lucide-react";
 import Link from "next/link";
 import { canAccessPath, getPermissionRequirementLabel } from "@/lib/permissionsGuard";
@@ -27,7 +27,12 @@ interface SidebarLinkProps {
   }: SidebarLinkProps) => {
     const pathname = usePathname();
     const hasSubLinks = subLinks.length > 0;
-    const access = canAccessPath(href);
+    const [isAdminHost, setIsAdminHost] = useState(false)
+    useEffect(() => {
+      const hostname = window.location.hostname.toLowerCase()
+      setIsAdminHost(hostname === "admin.dev.interaims.com" || hostname === "admin.interaims.com")
+    }, [])
+    const access = isAdminHost ? { ...canAccessPath(href), allowed: true } : canAccessPath(href);
     const accessLabel = getPermissionRequirementLabel(access);
     const isActive =
       pathname === href ||
@@ -107,7 +112,7 @@ interface SidebarLinkProps {
           <div className="dashboard-subnav ml-6 space-y-1 border-l border-gray-200 pl-3">
             {subLinks.map((subLink) => {
               const subActive = pathname === subLink.href || pathname.startsWith(`${subLink.href}/`);
-              const subAccess = canAccessPath(subLink.href);
+              const subAccess = isAdminHost ? { ...canAccessPath(subLink.href), allowed: true } : canAccessPath(subLink.href);
               const subAccessLabel = getPermissionRequirementLabel(subAccess);
               return (
                 <Link key={subLink.href} href={subLink.href}>

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { getCookie } from "cookies-next"
 import {
   Boxes,
@@ -44,6 +44,7 @@ import { useGetDashboardStatsQuery } from "@/redux/features/product/productAPISl
 import { useGetLowStockItemsQuery } from "@/redux/features/stock/stockAPISlice"
 import { readCookieValue } from "@/lib/authCookies"
 import { formatCurrencyCompact } from "@/lib/currency-utils"
+import AdminPage from "@/app/(dashboard)/admin/page"
 
 const formatDateTime = (value?: string | null) => {
   if (!value) {
@@ -227,7 +228,7 @@ const NoProfileState = ({
   )
 }
 
-export default function DashboardPage() {
+function WorkspaceDashboardPage() {
   const router = useRouter()
   const [switchingProfileId, setSwitchingProfileId] = useState<string | null>(null)
   const [selectedStructuralLocationIds, setSelectedStructuralLocationIds] = useStructuralLocationScope()
@@ -715,4 +716,19 @@ export default function DashboardPage() {
       </div>
     </div>
   )
+}
+
+export default function DashboardPage() {
+  const [isAdminHost, setIsAdminHost] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const hostname = window.location.hostname.toLowerCase()
+    setIsAdminHost(hostname === "admin.dev.interaims.com" || hostname === "admin.interaims.com")
+  }, [])
+
+  if (isAdminHost === null) {
+    return <DashboardLoadingState />
+  }
+
+  return isAdminHost ? <AdminPage /> : <WorkspaceDashboardPage />
 }

@@ -481,7 +481,6 @@ const Navbar = ({
             priority
             className="hidden h-10 w-auto max-w-[220px] object-contain object-left md:block"
           />
-          {isAdminHost ? <span className="hidden text-sm font-bold tracking-tight text-gray-900 lg:inline">Intera IMS Admin Portal</span> : null}
         </Link>
       </div>
 
