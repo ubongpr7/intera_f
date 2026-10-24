@@ -58,6 +58,7 @@ import {
   getPermissionRequirementLabel
 } from '@/lib/permissionsGuard'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { selectWorkspaceLogo } from '@/lib/workspaceBranding'
 import { resetToSystemTheme, setIsDarkMode } from '@/redux/state'
 import { useAppDispatch, useAppSelector } from '../../redux/store'
 import { toast } from 'react-toastify'
@@ -400,7 +401,7 @@ const Navbar = ({
     readCookieValue('companyCode', (name) => getCookie(name)) ||
     'Workspace'
   const activeWorkspaceLogo = buildUserImageUrl(
-    activeProfile?.logo || readCookieValue('companyLogo', (name) => getCookie(name))
+    selectWorkspaceLogo(activeProfile, isDarkMode) || readCookieValue('companyLogo', (name) => getCookie(name))
   )
   const activeWorkspaceInitials = buildWorkspaceInitials(
     activeWorkspaceName,
@@ -520,7 +521,7 @@ const Navbar = ({
                   <div className="max-h-[18rem] overflow-y-auto">
                     {companyMemberships.profiles.map((profile) => {
                       const isSelected = profile.company_code === selectedCompanyCode
-                      const workspaceLogo = buildUserImageUrl(profile.logo)
+                      const workspaceLogo = buildUserImageUrl(selectWorkspaceLogo(profile, isDarkMode))
                       return (
                         <button
                           key={`${profile.id}`}

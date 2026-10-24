@@ -32,6 +32,9 @@ export interface LoginResponse {
       id?: string | number;
       name?: string;
       company_code?: string;
+      logo?: string | null;
+      logo_light?: string | null;
+      logo_dark?: string | null;
       role?: string | null;
       owner_id?: string | null;
       membership_id?: string | null;
@@ -46,6 +49,9 @@ export interface LoginResponse {
       id?: string | number;
       name?: string;
       company_code?: string;
+      logo?: string | null;
+      logo_light?: string | null;
+      logo_dark?: string | null;
       role?: string | null;
       owner_id?: string | null;
       membership_id?: string | null;

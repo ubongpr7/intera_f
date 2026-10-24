@@ -37,8 +37,8 @@ const buildCompanyProfileFormData = (data: Partial<CompanyFormData>) => {
   const formData = new FormData();
   Object.entries(data).forEach(([key, rawValue]) => {
     if (rawValue === undefined || rawValue === null || rawValue === "") return;
-    // The API returns logo URLs for existing images; only uploads belong in this field.
-    if (key === "logo") {
+    // The API returns logo URLs for existing images; only new uploads belong in these fields.
+    if (key === "logo" || key === "logo_light" || key === "logo_dark") {
       if (rawValue instanceof File) formData.append(key, rawValue);
       return;
     }
@@ -63,6 +63,8 @@ const persistActiveCompanyBrandingIfNeeded = (profile?: CompanyProfile | null) =
     name: profile.name,
     company_code: "",
     logo: profile.logo ?? null,
+    logo_light: profile.logo_light ?? null,
+    logo_dark: profile.logo_dark ?? null,
     currency: profile.currency ?? null,
   });
 };
