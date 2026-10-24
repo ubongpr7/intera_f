@@ -23,6 +23,7 @@ import type {
   StaffAssignment,
   ReferralDashboard,
   AffiliatePartner,
+  ReferralPayoutAdmin,
   UserData,
   UserQuotaMetadata,
   UserSummary,
@@ -44,6 +45,8 @@ export const userApiSlice = apiSlice.injectEndpoints({
         url: `/${accountsApi}/users/`,
         service,
       }),
+      transformResponse: (response: UserSummary[] | { results?: UserSummary[] }) =>
+        Array.isArray(response) ? response : response.results ?? [],
     }),
 
     getUser: builder.query<UserSummary, string | number>({
@@ -146,6 +149,25 @@ export const userApiSlice = apiSlice.injectEndpoints({
         url: `/${accountsApi}/affiliate-partners/${id}/`,
         method: "PATCH",
         body,
+        service,
+      }),
+    }),
+
+    listReferralPayouts: builder.query<ReferralPayoutAdmin[], void>({
+      query: () => ({
+        url: `/${accountsApi}/referral-payouts/`,
+        params: { page_size: 100 },
+        service,
+      }),
+      transformResponse: (response: ReferralPayoutAdmin[] | { results?: ReferralPayoutAdmin[] }) =>
+        Array.isArray(response) ? response : response.results ?? [],
+    }),
+
+    updateReferralPayout: builder.mutation<ReferralPayoutAdmin, { id: string | number; status: string }>({
+      query: ({ id, status }) => ({
+        url: `/${accountsApi}/referral-payouts/${id}/`,
+        method: "PATCH",
+        body: { status },
         service,
       }),
     }),
@@ -371,6 +393,8 @@ export const {
   useListAffiliatePartnersQuery,
   useCreateAffiliatePartnerMutation,
   useUpdateAffiliatePartnerMutation,
+  useListReferralPayoutsQuery,
+  useUpdateReferralPayoutMutation,
   useSendVerificationCodeMutation,
   useMfaSetupMutation,
   useMfaVerifyMutation,

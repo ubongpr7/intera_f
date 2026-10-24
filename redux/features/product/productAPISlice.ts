@@ -11,6 +11,8 @@ import type {
   GlobalCatalogAdminListResponse,
   GlobalCatalogAdminProduct,
   GlobalCatalogAdminStats,
+  GlobalProductCaptureListResponse,
+  GlobalProductCapture,
   GlobalCatalogProduct,
   GlobalCatalogProductListResponse,
   GlobalCatalogStats,
@@ -246,6 +248,40 @@ export const productApiSlice = apiSlice.injectEndpoints({
         service: service,
       }),
       providesTags: ["GlobalCatalog"],
+    }),
+
+    getGlobalProductCaptures: builder.query<GlobalProductCaptureListResponse, { status?: string; search?: string; page?: number; page_size?: number } | void>({
+      query: (params = {}) => ({
+        url: `/${product_api}/global-catalog/captures/`,
+        method: "GET",
+        params: normalizeQueryParams(params),
+        service: service,
+      }),
+      providesTags: ["GlobalCatalog"],
+    }),
+
+    annotateGlobalProductCapture: builder.mutation<GlobalProductCapture, { id: string; status: "pending" | "processing" | "review" | "rejected"; ai_metadata: Record<string, unknown> }>({
+      query: ({ id, ...body }) => ({
+        url: `/${product_api}/global-catalog/captures/${id}/annotate/`,
+        method: "POST",
+        body,
+        service: service,
+      }),
+      invalidatesTags: ["GlobalCatalog"],
+    }),
+
+    promoteGlobalProductCapture: builder.mutation<{
+      capture: GlobalProductCapture;
+      product: GlobalCatalogAdminProduct;
+      variant: GlobalCatalogVariant;
+    }, { id: string; product: Partial<GlobalCatalogAdminProduct>; variant: Partial<GlobalCatalogVariant> }>({
+      query: ({ id, product, variant }) => ({
+        url: `/${product_api}/global-catalog/captures/${id}/promote/`,
+        method: "POST",
+        body: { product, variant },
+        service: service,
+      }),
+      invalidatesTags: ["GlobalCatalog"],
     }),
 
     createGlobalCatalogAdminProduct: builder.mutation<GlobalCatalogAdminProduct, Partial<GlobalCatalogAdminProduct>>({
@@ -1152,6 +1188,9 @@ export const {
   usePreviewGlobalCatalogImportSyncQuery,
   useGetGlobalCatalogAdminProductsQuery,
   useGetGlobalCatalogAdminStatsQuery,
+  useGetGlobalProductCapturesQuery,
+  useAnnotateGlobalProductCaptureMutation,
+  usePromoteGlobalProductCaptureMutation,
   useCreateGlobalCatalogAdminProductMutation,
   useUpdateGlobalCatalogAdminProductMutation,
   usePublishGlobalCatalogAdminProductMutation,
