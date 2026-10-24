@@ -2677,6 +2677,57 @@ html.light .auth-mfa-otp-input:focus {
   max-width: 100%;
 }
 
+/* Admin and payment surfaces contain legacy slate utilities that are not
+   remapped by the dark tw-colors theme. Keep their hierarchy readable on the
+   dark command-center canvas, including nested payment tabs and dialogs. */
+.dark .admin-portal-surface,
+.dark .payment-admin-surface {
+  color: var(--dash-ink);
+}
+
+.dark .admin-portal-surface .text-slate-950,
+.dark .admin-portal-surface .text-slate-900,
+.dark .admin-portal-surface .text-gray-950,
+.dark .payment-admin-surface .text-slate-950,
+.dark .payment-admin-surface .text-slate-900,
+.dark .payment-admin-surface .text-gray-950 {
+  color: #f4f8ff !important;
+}
+
+.dark .admin-portal-surface .text-slate-700,
+.dark .admin-portal-surface .text-slate-600,
+.dark .admin-portal-surface .text-slate-500,
+.dark .admin-portal-surface .text-gray-700,
+.dark .admin-portal-surface .text-gray-600,
+.dark .admin-portal-surface .text-gray-500,
+.dark .payment-admin-surface .text-slate-700,
+.dark .payment-admin-surface .text-slate-600,
+.dark .payment-admin-surface .text-slate-500,
+.dark .payment-admin-surface .text-gray-700,
+.dark .payment-admin-surface .text-gray-600,
+.dark .payment-admin-surface .text-gray-500 {
+  color: #a9b8cf !important;
+}
+
+.dark .admin-portal-surface .bg-white,
+.dark .payment-admin-surface .bg-white {
+  background-color: var(--dash-surface) !important;
+}
+
+.dark .admin-portal-surface .bg-gray-50,
+.dark .admin-portal-surface .bg-gray-50\/70,
+.dark .payment-admin-surface .bg-gray-50,
+.dark .payment-admin-surface .bg-gray-50\/70 {
+  background-color: var(--dash-surface-muted) !important;
+}
+
+.dark .admin-portal-surface .border-gray-100,
+.dark .admin-portal-surface .border-gray-200,
+.dark .payment-admin-surface .border-gray-100,
+.dark .payment-admin-surface .border-gray-200 {
+  border-color: var(--dash-line) !important;
+}
+
 .dashboard-shell {
   width: 100%;
   overflow-x: hidden;
