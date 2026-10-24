@@ -52,7 +52,8 @@ const INDUSTRY_OPTIONS: SelectOption[] = [
 ]
 
 export function CompanyBasicInfoForm({ profile, onSuccess, submitLabel = "Save Changes" }: CompanyBasicInfoFormProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const lightLogoInputRef = useRef<HTMLInputElement>(null)
+  const darkLogoInputRef = useRef<HTMLInputElement>(null)
   const getSingleOption = (option: SelectOption | readonly SelectOption[] | null): SelectOption | null => {
     if (Array.isArray(option)) {
       return null;
@@ -84,15 +85,24 @@ export function CompanyBasicInfoForm({ profile, onSuccess, submitLabel = "Save C
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const [showSuccessMessage, setShowSuccessMessage] = useState(false)
-  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [lightLogoFile, setLightLogoFile] = useState<File | null>(null)
+  const [darkLogoFile, setDarkLogoFile] = useState<File | null>(null)
 
-  const logoPreviewUrl = useMemo(() => {
-    if (logoFile) return URL.createObjectURL(logoFile)
-    if (!profile?.logo) return null
-    if (/^https?:\/\//i.test(profile.logo)) return profile.logo
+  const resolveLogoUrl = (value?: string | null) => {
+    if (!value) return null
+    if (/^https?:\/\//i.test(value)) return value
     const base = (process.env.NEXT_PUBLIC_BACKEND_HOST_URL ?? "").replace(/\/+$/, "")
-    return `${base}${profile.logo.startsWith("/") ? profile.logo : `/${profile.logo}`}`
-  }, [logoFile, profile?.logo])
+    return `${base}${value.startsWith("/") ? value : `/${value}`}`
+  }
+
+  const lightLogoPreviewUrl = useMemo(
+    () => lightLogoFile ? URL.createObjectURL(lightLogoFile) : resolveLogoUrl(profile?.logo_light || profile?.logo_dark || profile?.logo),
+    [lightLogoFile, profile?.logo_light, profile?.logo_dark, profile?.logo],
+  )
+  const darkLogoPreviewUrl = useMemo(
+    () => darkLogoFile ? URL.createObjectURL(darkLogoFile) : resolveLogoUrl(profile?.logo_dark || profile?.logo_light || profile?.logo),
+    [darkLogoFile, profile?.logo_dark, profile?.logo_light, profile?.logo],
+  )
 
   useEffect(() => {
     if (profile) {
@@ -100,6 +110,8 @@ export function CompanyBasicInfoForm({ profile, onSuccess, submitLabel = "Save C
       setFormData({
         name: profile.name || "",
         logo: profile.logo || null,
+        logo_light: profile.logo_light || null,
+        logo_dark: profile.logo_dark || null,
         industry: profile.industry || "",
         currency:profile?.currency,
         description: profile.description || "",
@@ -115,6 +127,8 @@ export function CompanyBasicInfoForm({ profile, onSuccess, submitLabel = "Save C
     setFormData({
       name: "",
       logo: null,
+      logo_light: null,
+      logo_dark: null,
       industry: "",
       currency: "",
       description: "",
@@ -129,11 +143,10 @@ export function CompanyBasicInfoForm({ profile, onSuccess, submitLabel = "Save C
 
   useEffect(() => {
     return () => {
-      if (logoFile && logoPreviewUrl?.startsWith("blob:")) {
-        URL.revokeObjectURL(logoPreviewUrl)
-      }
+      if (lightLogoFile && lightLogoPreviewUrl?.startsWith("blob:")) URL.revokeObjectURL(lightLogoPreviewUrl)
+      if (darkLogoFile && darkLogoPreviewUrl?.startsWith("blob:")) URL.revokeObjectURL(darkLogoPreviewUrl)
     }
-  }, [logoFile, logoPreviewUrl])
+  }, [lightLogoFile, darkLogoFile, lightLogoPreviewUrl, darkLogoPreviewUrl])
 
   const updateFormData = (data: Partial<CompanyFormData>) => {
     setFormData((prev) => ({ ...prev, ...data }))
@@ -230,53 +243,35 @@ export function CompanyBasicInfoForm({ profile, onSuccess, submitLabel = "Save C
         <div className="space-y-2 md:col-span-3">
           <Label className="flex items-center gap-2">
             <ImageIcon className="h-4 w-4" />
-            Company Logo
+            Workspace Logos
           </Label>
-          <div className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-white">
-                {logoPreviewUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={logoPreviewUrl} alt={formData.name || "Company logo"} className="h-full w-full object-cover" />
-                ) : (
-                  <span className="text-xl font-bold text-gray-700">{(formData.name || "C").trim().charAt(0).toUpperCase()}</span>
-                )}
+          <p className="text-sm text-gray-500">Upload separate logos for light and dark surfaces. If you provide only one, it will be used in both themes.</p>
+          <div className="grid gap-4 md:grid-cols-2">
+            {([
+              { mode: "light" as const, label: "Light mode logo", file: lightLogoFile, preview: lightLogoPreviewUrl, inputRef: lightLogoInputRef, existing: profile?.logo_light || profile?.logo_dark || profile?.logo },
+              { mode: "dark" as const, label: "Dark mode logo", file: darkLogoFile, preview: darkLogoPreviewUrl, inputRef: darkLogoInputRef, existing: profile?.logo_dark || profile?.logo_light || profile?.logo },
+            ]).map((item) => (
+              <div key={item.mode} className="flex items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-white">
+                    {item.preview ? <img src={item.preview} alt={formData.name || item.label} className="h-full w-full object-contain" /> : <span className="text-xl font-bold text-gray-700">{(formData.name || "W").trim().charAt(0).toUpperCase()}</span>}
+                  </div>
+                  <div><p className="text-sm font-medium text-gray-900">{item.label}</p><p className="text-xs text-gray-500">Optional; falls back automatically.</p></div>
+                </div>
+                <div className="flex shrink-0 flex-col gap-1">
+                  <input ref={item.inputRef} type="file" accept="image/*" className="hidden" onChange={(event) => {
+                    const nextFile = event.target.files?.[0] ?? null
+                    if (item.mode === "light") { setLightLogoFile(nextFile); updateFormData({ logo_light: nextFile }) }
+                    else { setDarkLogoFile(nextFile); updateFormData({ logo_dark: nextFile }) }
+                  }} />
+                  <Button type="button" variant="outline" size="sm" onClick={() => item.inputRef.current?.click()}><Upload className="mr-2 h-4 w-4" />{item.file ? "Change" : "Upload"}</Button>
+                  {(item.file || item.existing) ? <Button type="button" variant="ghost" size="sm" onClick={() => {
+                    if (item.mode === "light") { setLightLogoFile(null); updateFormData({ logo_light: null }); if (lightLogoInputRef.current) lightLogoInputRef.current.value = "" }
+                    else { setDarkLogoFile(null); updateFormData({ logo_dark: null }); if (darkLogoInputRef.current) darkLogoInputRef.current.value = "" }
+                  }}>Remove</Button> : null}
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">Brand logo</p>
-                <p className="text-sm text-gray-500">This logo will appear in the sidebar and workspace branding areas.</p>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(event) => {
-                  const nextFile = event.target.files?.[0] ?? null
-                  setLogoFile(nextFile)
-                  updateFormData({ logo: nextFile })
-                }}
-              />
-              <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
-                <Upload className="mr-2 h-4 w-4" />
-                {logoFile ? "Change logo" : "Upload logo"}
-              </Button>
-              {(logoFile || profile?.logo) ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => {
-                    setLogoFile(null)
-                    updateFormData({ logo: null })
-                    if (fileInputRef.current) fileInputRef.current.value = ""
-                  }}
-                >
-                  Remove logo
-                </Button>
-              ) : null}
-            </div>
+            ))}
           </div>
         </div>
         <div className="space-y-2">

@@ -4,6 +4,8 @@ export interface CompanyProfile {
   id: string;
   name: string;
   logo?: string | null;
+  logo_light?: string | null;
+  logo_dark?: string | null;
   industry?: string;
   description?: string;
   founded_date?: string;
@@ -200,6 +202,8 @@ export interface PopulateDefaultStaffAccessResponse {
 export interface CompanyFormData {
   name: string;
   logo?: File | string | null;
+  logo_light?: File | string | null;
+  logo_dark?: File | string | null;
   industry?: string;
   description?: string;
   founded_date?: string;

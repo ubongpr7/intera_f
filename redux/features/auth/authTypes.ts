@@ -18,6 +18,8 @@ export interface CompanyProfileContext {
   name: string;
   company_code: string;
   logo?: string | null;
+  logo_light?: string | null;
+  logo_dark?: string | null;
   industry?: string | null;
   owner_id?: string | null;
   currency?: string | null;

@@ -112,6 +112,8 @@ interface ProfileContext {
   company_code?: string | null
   name?: string | null
   logo?: string | null
+  logo_light?: string | null
+  logo_dark?: string | null
   currency?: string | null
 }
 
