@@ -286,6 +286,9 @@ export interface GlobalCatalogVariant {
   barcode?: string | null;
   sku?: string | null;
   attributes_snapshot: Record<string, unknown>;
+  uom_code?: string;
+  pack_quantity?: number;
+  labeling_metadata?: Record<string, unknown>;
   price_override?: number | null;
   image_url_override?: string;
   display_image?: string | null;
@@ -349,6 +352,12 @@ export interface GlobalCatalogAdminProduct {
   category_name?: string;
   base_price: number;
   unit?: string;
+  base_uom_code?: string;
+  purchase_uom_code?: string;
+  sales_uom_code?: string;
+  uom_conversion_factor?: number;
+  labeling_status?: "draft" | "ai_proposed" | "verified";
+  regulatory_metadata?: Record<string, unknown>;
   track_stock: boolean;
   allow_backorder: boolean;
   low_stock_threshold: number;
@@ -360,6 +369,31 @@ export interface GlobalCatalogAdminProduct {
   variants?: GlobalCatalogVariant[];
   created_at: string;
   updated_at: string;
+}
+
+export interface GlobalProductCapture {
+  id: string;
+  barcode: string;
+  name_hint?: string;
+  original_image?: string;
+  image_url?: string | null;
+  image_content_type?: string;
+  captured_at?: string | null;
+  device_id?: string;
+  batch_id?: string;
+  client_capture_id: string;
+  notes?: string;
+  status: "pending" | "processing" | "review" | "accepted" | "rejected";
+  ai_metadata?: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GlobalProductCaptureListResponse {
+  count: number;
+  next?: string | null;
+  previous?: string | null;
+  results: GlobalProductCapture[];
 }
 
 export interface GlobalCatalogAdminListResponse {

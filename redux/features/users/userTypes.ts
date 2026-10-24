@@ -74,6 +74,26 @@ export interface UserSummary {
   last_name: string;
   get_full_name?: string;
   role?: string | null;
+  referral_code?: string;
+  referral_commission_rate?: string | number;
+}
+
+export interface ReferralPayoutAdmin {
+  id: number | string;
+  referrer_user?: number | string | null;
+  referrer_email?: string;
+  affiliate_partner?: number | string | null;
+  affiliate_name?: string | null;
+  referred_user: number | string;
+  referred_email?: string;
+  commission_rate: string | number;
+  payment_amount: string;
+  payout_amount: string;
+  currency: string;
+  payment_reference: string;
+  plan_slug?: string;
+  status: "pending" | "paid" | "cancelled" | string;
+  created_at?: string;
 }
 
 export interface ActivityLogInterface {

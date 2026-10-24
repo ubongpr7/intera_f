@@ -5,6 +5,21 @@ import { isSsoMfaBypassProvider } from "./lib/authProvider"
 
 export function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname
+  const hostname = request.nextUrl.hostname.toLowerCase()
+  const isAdminHost = hostname === "admin.dev.interaims.com" || hostname === "admin.interaims.com"
+  const adminSiteUrl = hostname === "admin.dev.interaims.com"
+    ? "https://admin.dev.interaims.com"
+    : "https://admin.interaims.com"
+
+  if (isAdminHost && path === "/") {
+    const adminUrl = request.nextUrl.clone()
+    adminUrl.pathname = "/admin-portal"
+    return NextResponse.rewrite(adminUrl)
+  }
+
+  if (!isAdminHost && (path === "/admin-portal" || path.startsWith("/admin-portal/") || path === "/admin" || path.startsWith("/admin/") || path === "/payment-admin" || path.startsWith("/payment-admin/") || path === "/product/global-catalog-admin" || path.startsWith("/product/global-catalog-admin/"))) {
+    return NextResponse.redirect(new URL("/", adminSiteUrl))
+  }
   const waitlistMode = process.env.NEXT_PUBLIC_WAITLIST_MODE?.trim().toLowerCase() === "true"
   const isPublicAsset =
     path.startsWith("/assets/") ||

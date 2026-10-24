@@ -32,7 +32,13 @@ const getRedirectUri = (provider: SocialProvider) => {
   // hostname. Select the callback that matches the active browser origin.
   if (provider === "google" && typeof window !== "undefined") {
     const origin = window.location.origin;
-    if (origin === "http://localhost:3005" || origin === "http://127.0.0.1:3005") {
+    const hostname = window.location.hostname.toLowerCase();
+    if (
+      origin === "http://localhost:3005" ||
+      origin === "http://127.0.0.1:3005" ||
+      hostname === "admin.dev.interaims.com" ||
+      hostname === "admin.interaims.com"
+    ) {
       return `${origin}/accounts/login/oauth2/code/google-oauth2`;
     }
   }

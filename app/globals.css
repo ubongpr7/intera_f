@@ -3060,6 +3060,56 @@ html.light body {
   }
 }
 
+/* Keep staff catalog tools readable when the application is in dark mode. */
+.dark .staff-catalog-page .bg-white {
+  background-color: #152238 !important;
+}
+
+.dark .staff-catalog-page .bg-gray-50,
+.dark .staff-catalog-page .bg-gray-100 {
+  background-color: #1b2b43 !important;
+}
+
+.dark .staff-catalog-page .text-gray-950,
+.dark .staff-catalog-page .text-gray-900,
+.dark .staff-catalog-page .text-gray-800 {
+  color: #f3f7ff !important;
+}
+
+.dark .staff-catalog-page .text-gray-700,
+.dark .staff-catalog-page .text-gray-600 {
+  color: #c6d3e8 !important;
+}
+
+.dark .staff-catalog-page .text-gray-500,
+.dark .staff-catalog-page .text-gray-400 {
+  color: #9fb0c9 !important;
+}
+
+.dark .staff-catalog-page .border-gray-100,
+.dark .staff-catalog-page .border-gray-200,
+.dark .staff-catalog-page .border-gray-300 {
+  border-color: #304664 !important;
+}
+
+.dark .staff-catalog-page input,
+.dark .staff-catalog-page textarea,
+.dark .staff-catalog-page select {
+  color: #f3f7ff !important;
+  background-color: #152238 !important;
+  border-color: #385477 !important;
+}
+
+.dark .staff-catalog-page input::placeholder,
+.dark .staff-catalog-page textarea::placeholder {
+  color: #8fa3c0 !important;
+}
+
+.dark .staff-catalog-page option {
+  color: #f3f7ff;
+  background-color: #152238;
+}
+
 /* User settings: personal account controls with a calmer, clearer hierarchy. */
 .user-settings-workspace {
   --user-settings-surface: #111d32;

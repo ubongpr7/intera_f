@@ -47,6 +47,10 @@ type ProductFormState = {
   description: string
   base_price: string
   unit: string
+  base_uom_code: string
+  purchase_uom_code: string
+  sales_uom_code: string
+  uom_conversion_factor: string
 }
 
 type VariantFormState = {
@@ -57,6 +61,8 @@ type VariantFormState = {
   attributes_snapshot: string
   price_override: string
   image_url_override: string
+  uom_code: string
+  pack_quantity: string
   is_active: boolean
 }
 
@@ -68,6 +74,10 @@ const initialProductForm: ProductFormState = {
   description: "",
   base_price: "0",
   unit: "",
+  base_uom_code: "unit",
+  purchase_uom_code: "unit",
+  sales_uom_code: "unit",
+  uom_conversion_factor: "1",
 }
 
 const initialVariantForm: VariantFormState = {
@@ -78,6 +88,8 @@ const initialVariantForm: VariantFormState = {
   attributes_snapshot: '{"Size":"","Type":""}',
   price_override: "",
   image_url_override: "",
+  uom_code: "unit",
+  pack_quantity: "1",
   is_active: true,
 }
 
@@ -252,6 +264,10 @@ function buildProductForm(product?: GlobalCatalogAdminProduct | null): ProductFo
     description: product.description || "",
     base_price: String(product.base_price ?? 0),
     unit: product.unit || "",
+    base_uom_code: product.base_uom_code || product.unit || "unit",
+    purchase_uom_code: product.purchase_uom_code || product.unit || "unit",
+    sales_uom_code: product.sales_uom_code || product.unit || "unit",
+    uom_conversion_factor: String(product.uom_conversion_factor ?? 1),
   }
 }
 
@@ -267,6 +283,8 @@ function buildVariantForm(variant?: GlobalCatalogVariant | null): VariantFormSta
     attributes_snapshot: JSON.stringify(variant.attributes_snapshot || {}, null, 2),
     price_override: variant.price_override != null ? String(variant.price_override) : "",
     image_url_override: variant.image_url_override || "",
+    uom_code: variant.uom_code || "unit",
+    pack_quantity: String(variant.pack_quantity ?? 1),
     is_active: variant.is_active,
   }
 }
@@ -306,6 +324,7 @@ function ProductDialog({
       const payload = {
         ...form,
         base_price: Number(form.base_price || 0),
+        uom_conversion_factor: Number(form.uom_conversion_factor || 1),
         track_stock: true,
         allow_backorder: false,
         low_stock_threshold: 10,
@@ -388,6 +407,28 @@ function ProductDialog({
             <label className="text-sm font-medium text-gray-700">Base price</label>
             <Input value={form.base_price} onChange={(e) => setForm((current) => ({ ...current, base_price: e.target.value }))} placeholder="0.00" type="number" />
           </div>
+          {(["base_uom_code", "purchase_uom_code", "sales_uom_code"] as const).map((key) => (
+            <ReactSelectField
+              key={key}
+              label={key.replaceAll("_", " ")}
+              value={resolveSelectValue(form[key], unitOptions)}
+              options={unitOptions}
+              onChange={(option) => {
+                const selected = Array.isArray(option) ? null : (option as SelectOption | null)
+                setForm((current) => ({ ...current, [key]: selected ? String(selected.value) : "" }))
+              }}
+              placeholder="Select or type a UOM"
+              isClearable
+              isSearchable
+              creatable
+              formatCreateLabel={(inputValue: string) => `Use "${inputValue}"`}
+              menuPortalTarget={selectMenuPortalTarget}
+            />
+          ))}
+          <div className="grid gap-2">
+            <label className="text-sm font-medium text-gray-700">UOM conversion factor</label>
+            <Input value={form.uom_conversion_factor} onChange={(e) => setForm((current) => ({ ...current, uom_conversion_factor: e.target.value }))} placeholder="1" type="number" min="0.000001" step="0.000001" />
+          </div>
           <div className="grid gap-2">
             <label className="text-sm font-medium text-gray-700">Short description</label>
             <Input value={form.short_description} onChange={(e) => setForm((current) => ({ ...current, short_description: e.target.value }))} placeholder="Short description" />
@@ -441,6 +482,8 @@ function VariantDialog({
         sku: form.sku || undefined,
         attributes_snapshot: JSON.parse(form.attributes_snapshot || "{}"),
         price_override: form.price_override ? Number(form.price_override) : undefined,
+        uom_code: form.uom_code,
+        pack_quantity: Number(form.pack_quantity || 1),
         image_url_override: form.image_url_override || undefined,
         is_active: form.is_active,
       }
@@ -477,6 +520,8 @@ function VariantDialog({
           <Input value={form.barcode} onChange={(e) => setForm((current) => ({ ...current, barcode: e.target.value }))} placeholder="Barcode" />
           <Input value={form.sku} onChange={(e) => setForm((current) => ({ ...current, sku: e.target.value }))} placeholder="SKU" />
           <Input value={form.price_override} onChange={(e) => setForm((current) => ({ ...current, price_override: e.target.value }))} placeholder="Price override" type="number" />
+          <Input value={form.uom_code} onChange={(e) => setForm((current) => ({ ...current, uom_code: e.target.value }))} placeholder="Variant UOM code" />
+          <Input value={form.pack_quantity} onChange={(e) => setForm((current) => ({ ...current, pack_quantity: e.target.value }))} placeholder="Pack quantity" type="number" min="0.000001" step="0.000001" />
           <Input
             value={form.image_url_override}
             onChange={(e) => setForm((current) => ({ ...current, image_url_override: e.target.value }))}
