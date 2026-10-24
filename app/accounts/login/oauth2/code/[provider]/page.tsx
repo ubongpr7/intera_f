@@ -32,6 +32,7 @@ export default function SocialAuthCallbackPage() {
     if (!providerSlug) return "";
     return socialRedirectForProviderSlug(providerSlug);
   }, [providerSlug]);
+  const isAdminHost = typeof window !== "undefined" && window.location.hostname.toLowerCase().startsWith("admin.");
 
   useEffect(() => {
     if (didSubmitRef.current) return;
@@ -41,7 +42,7 @@ export default function SocialAuthCallbackPage() {
     socialAuthenticate({ provider: providerSlug, code, state, redirectUri })
       .unwrap()
       .then(async (authResponse) => {
-        const mfaRoute = initializeMfaChallenge("/dashboard", authResponse?.access, providerSlug);
+        const mfaRoute = initializeMfaChallenge(isAdminHost ? "/admin-portal" : "/dashboard", authResponse?.access, providerSlug);
         router.replace(mfaRoute);
       })
       .catch(() => {

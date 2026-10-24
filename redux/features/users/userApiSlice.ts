@@ -30,6 +30,7 @@ import type {
   VerificationRequestPayload,
   VerificationResponse,
 } from "./userTypes";
+import type { AdminContext, PlatformStaffInvitation } from "./adminTypes";
 
 const accountsApi = "accounts";
 const managementApi = "management";
@@ -86,6 +87,25 @@ export const userApiSlice = apiSlice.injectEndpoints({
           // Ignore cookie persistence failures.
         }
       },
+    }),
+
+    getAdminContext: builder.query<AdminContext, void>({
+      query: () => ({
+        url: `/${accountsApi}/users/admin-me/`,
+        service,
+      }),
+    }),
+
+    listPlatformStaffInvitations: builder.query<PlatformStaffInvitation[], void>({
+      query: () => ({ url: `/${accountsApi}/platform-staff-invitations/`, service }),
+    }),
+
+    createPlatformStaffInvitation: builder.mutation<PlatformStaffInvitation, { email: string }>({
+      query: (body) => ({ url: `/${accountsApi}/platform-staff-invitations/`, method: "POST", body, service }),
+    }),
+
+    revokePlatformStaffInvitation: builder.mutation<PlatformStaffInvitation, string>({
+      query: (id) => ({ url: `/${accountsApi}/platform-staff-invitations/${id}/revoke/`, method: "POST", service }),
     }),
 
     updateLoggedInUser: builder.mutation<UserData, FormData | Partial<UserData>>({
@@ -385,6 +405,10 @@ export const {
   useUpdateUserMutation,
   useDeleteUserMutation,
   useGetLoggedInUserQuery,
+  useGetAdminContextQuery,
+  useListPlatformStaffInvitationsQuery,
+  useCreatePlatformStaffInvitationMutation,
+  useRevokePlatformStaffInvitationMutation,
   useUpdateLoggedInUserMutation,
   useSearchUsersQuery,
   useLazySearchUsersQuery,
