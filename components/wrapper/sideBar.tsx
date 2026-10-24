@@ -174,7 +174,7 @@ const SideBar = ({ user, mobileOpen, onMobileClose }:SideBarDataProps) => {
                 aria-expanded={profileMenuOpen}
                 aria-label="Open account menu"
               >
-                {user?.picture || user?.profile_image ? (
+                {user?.picture && !user.picture.endsWith('/media/default.png') || user?.profile_image && !user.profile_image.endsWith('/media/default.png') ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={user.picture || user.profile_image || ""} alt="" className="h-9 w-9 rounded-xl object-cover" />
                 ) : (

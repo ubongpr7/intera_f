@@ -7,6 +7,23 @@ export interface AdminContext {
   is_superuser: boolean
 }
 
+export interface AdminSummary {
+  generated_at: string
+  users: {
+    total: number
+    active: number
+    staff: number
+    superusers: number
+  }
+  workspaces: {
+    total: number
+    verified: number
+  }
+  memberships: {
+    active: number
+  }
+}
+
 export interface PlatformStaffInvitation {
   id: string
   email: string

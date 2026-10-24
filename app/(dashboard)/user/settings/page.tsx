@@ -63,6 +63,7 @@ const backendHost = (process.env.NEXT_PUBLIC_BACKEND_HOST_URL ?? "").replace(
 
 const buildMediaUrl = (value?: string | null) => {
   if (!value) return null
+  if (value === '/media/default.png' || value.endsWith('/media/default.png')) return null
   if (/^https?:\/\//i.test(value)) return value
   return `${backendHost}${value.startsWith("/") ? value : `/${value}`}`
 }

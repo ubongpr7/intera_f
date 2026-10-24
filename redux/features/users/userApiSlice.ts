@@ -30,7 +30,7 @@ import type {
   VerificationRequestPayload,
   VerificationResponse,
 } from "./userTypes";
-import type { AdminContext, PlatformStaffInvitation } from "./adminTypes";
+import type { AdminContext, AdminSummary, PlatformStaffInvitation } from "./adminTypes";
 
 const accountsApi = "accounts";
 const managementApi = "management";
@@ -92,6 +92,13 @@ export const userApiSlice = apiSlice.injectEndpoints({
     getAdminContext: builder.query<AdminContext, void>({
       query: () => ({
         url: `/${accountsApi}/users/admin-me/`,
+        service,
+      }),
+    }),
+
+    getAdminSummary: builder.query<AdminSummary, void>({
+      query: () => ({
+        url: `/${accountsApi}/users/admin-summary/`,
         service,
       }),
     }),
@@ -406,6 +413,7 @@ export const {
   useDeleteUserMutation,
   useGetLoggedInUserQuery,
   useGetAdminContextQuery,
+  useGetAdminSummaryQuery,
   useListPlatformStaffInvitationsQuery,
   useCreatePlatformStaffInvitationMutation,
   useRevokePlatformStaffInvitationMutation,

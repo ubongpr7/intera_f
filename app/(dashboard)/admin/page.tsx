@@ -1,16 +1,17 @@
 "use client"
 
 import Link from "next/link"
-import { useMemo } from "react"
-import { Activity, Bell, Boxes, CreditCard, FileSearch, Link2, PackageSearch, ShieldCheck, Users } from "lucide-react"
+import { useMemo, useState } from "react"
+import { AlertTriangle, Boxes, CheckCircle2, CreditCard, FileSearch, Link2, PackageSearch, RefreshCw, Settings, ShieldCheck, Users, Webhook } from "lucide-react"
 
 import StatTile from "@/components/dashboard/StatTile"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { useGetPaymentAnalyticsQuery, useGetSubscriptionAnalyticsQuery } from "@/redux/features/payment/paymentAPISlice"
-import { useGetGlobalCatalogAdminStatsQuery } from "@/redux/features/product/productAPISlice"
-import { useGetDashboardLowStockItemsQuery, useGetRealtimeDashboardStatsQuery } from "@/redux/features/dashboard/dashboardApiSlice"
+import { useGetPaymentAnalyticsQuery, useGetSubscriptionAnalyticsQuery, useGetWebhookLogsQuery } from "@/redux/features/payment/paymentAPISlice"
+import { useGetGlobalCatalogAdminStatsQuery, useGetGlobalProductCapturesQuery } from "@/redux/features/product/productAPISlice"
+import { useGetAdminSummaryQuery, useListReferralPayoutsQuery } from "@/redux/features/users/userApiSlice"
+import AdminServiceHealth from "@/components/admin/AdminServiceHealth"
 
 const adminLinks = [
   {
@@ -38,34 +39,89 @@ const adminLinks = [
     icon: FileSearch,
   },
   {
-    href: "/profile/staff",
-    title: "Staff and roles",
-    description: "Review staff access, memberships, and role assignments.",
+    href: "/admin/invitations",
+    title: "Staff invitations",
+    description: "Invite and revoke platform staff without attaching a workspace.",
     icon: Users,
   },
   {
-    href: "/realtime-dashboard",
-    title: "Realtime operations",
-    description: "Monitor live sales, inventory pressure, and operational movement.",
-    icon: Activity,
-  },
-  {
-    href: "/notifications",
-    title: "Notifications",
-    description: "Track notification delivery and user-facing alerts.",
-    icon: Bell,
+    href: "/admin/settings",
+    title: "Admin settings",
+    description: "Configure platform-level access and governance controls.",
+    icon: Settings,
   },
 ]
 
 const formatNumber = (value: number) => new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(value)
 
+const insightTone = {
+  green: "border-emerald-200 bg-emerald-50 text-emerald-950",
+  amber: "border-amber-200 bg-amber-50 text-amber-950",
+  red: "border-red-200 bg-red-50 text-red-950",
+  blue: "border-blue-200 bg-blue-50 text-blue-950",
+} as const
+
+function InsightCard({
+  icon: Icon,
+  title,
+  value,
+  detail,
+  tone,
+  href,
+}: {
+  icon: typeof AlertTriangle
+  title: string
+  value: number
+  detail: string
+  tone: keyof typeof insightTone
+  href: string
+}) {
+  return (
+    <Link href={href} className={`rounded-2xl border p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${insightTone[tone]}`}>
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs font-semibold uppercase tracking-wide opacity-70">{title}</p>
+        <Icon className="h-5 w-5 opacity-70" />
+      </div>
+      <div className="mt-3 text-3xl font-semibold">{formatNumber(value)}</div>
+      <p className="mt-2 text-sm opacity-80">{detail}</p>
+    </Link>
+  )
+}
+
 export default function AdminPage() {
-  const period = "30d"
-  const { data: paymentAnalytics } = useGetPaymentAnalyticsQuery({ period })
-  const { data: subscriptionAnalytics } = useGetSubscriptionAnalyticsQuery({ period })
-  const { data: catalogStats } = useGetGlobalCatalogAdminStatsQuery()
-  const { data: realtimeStats } = useGetRealtimeDashboardStatsQuery("")
-  const { data: lowStockItems = [] } = useGetDashboardLowStockItemsQuery({ stock_status: "low_stock" })
+  const [period, setPeriod] = useState("30d")
+  const { data: paymentAnalytics, isFetching: paymentFetching, refetch: refetchPayments } = useGetPaymentAnalyticsQuery({ period })
+  const { data: subscriptionAnalytics, isFetching: subscriptionFetching, refetch: refetchSubscriptions } = useGetSubscriptionAnalyticsQuery({ period })
+  const { data: catalogStats, isFetching: catalogFetching, refetch: refetchCatalog } = useGetGlobalCatalogAdminStatsQuery()
+  const { data: pendingCaptureResponse, isFetching: pendingCaptureFetching, refetch: refetchPendingCaptures } = useGetGlobalProductCapturesQuery({ status: "pending", page_size: 1 })
+  const { data: processingCaptureResponse, isFetching: processingCaptureFetching, refetch: refetchProcessingCaptures } = useGetGlobalProductCapturesQuery({ status: "processing", page_size: 1 })
+  const { data: reviewCaptureResponse, isFetching: reviewCaptureFetching, refetch: refetchReviewCaptures } = useGetGlobalProductCapturesQuery({ status: "review", page_size: 1 })
+  const { data: rejectedCaptureResponse, isFetching: rejectedCaptureFetching, refetch: refetchRejectedCaptures } = useGetGlobalProductCapturesQuery({ status: "rejected", page_size: 1 })
+  const { data: payoutResponse, isFetching: payoutFetching, refetch: refetchPayouts } = useListReferralPayoutsQuery()
+  const { data: adminSummary, isFetching: summaryFetching, refetch: refetchSummary } = useGetAdminSummaryQuery()
+  const { data: webhookResponse, isFetching: webhookFetching, refetch: refetchWebhooks } = useGetWebhookLogsQuery({ limit: 100, ordering: "-created_at" })
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  const pendingCaptures = (pendingCaptureResponse?.count ?? 0) + (processingCaptureResponse?.count ?? 0)
+  const reviewCaptures = reviewCaptureResponse?.count ?? 0
+  const rejectedCaptures = rejectedCaptureResponse?.count ?? 0
+  const payouts = Array.isArray(payoutResponse) ? payoutResponse : []
+  const pendingPayouts = payouts.filter((item) => item.status === "pending")
+  const webhookLogs = Array.isArray(webhookResponse) ? webhookResponse : (webhookResponse?.results ?? [])
+  const failedWebhooks = webhookLogs.filter((item: any) => {
+    const value = String(item.status ?? item.event_status ?? item.state ?? "").toLowerCase()
+    return value.includes("fail") || value.includes("error")
+  }).length
+  const isFetching = summaryFetching || paymentFetching || subscriptionFetching || catalogFetching || pendingCaptureFetching || processingCaptureFetching || reviewCaptureFetching || rejectedCaptureFetching || payoutFetching || webhookFetching
+
+  const refreshDashboard = async () => {
+    setIsRefreshing(true)
+    try {
+      await Promise.all([refetchSummary(), refetchPayments(), refetchSubscriptions(), refetchCatalog(), refetchPendingCaptures(), refetchProcessingCaptures(), refetchReviewCaptures(), refetchRejectedCaptures(), refetchPayouts(), refetchWebhooks()])
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
 
   const statusBreakdown = useMemo(
     () => subscriptionAnalytics?.status_breakdown ?? {},
@@ -94,13 +150,6 @@ export default function AdminPage() {
       tone: "amber" as const,
       icon: PackageSearch,
     },
-    {
-      label: "Low stock alerts",
-      value: formatNumber(lowStockItems.length),
-      description: "Items that need operational attention",
-      tone: "default" as const,
-      icon: Boxes,
-    },
   ]
 
   return (
@@ -119,12 +168,21 @@ export default function AdminPage() {
                 monitoring, and intervention without mixing them into normal workspace flows.
               </p>
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <Button asChild className="bg-blue-600 text-white hover:bg-blue-700">
                 <Link href="/payment-admin">Open billing console</Link>
               </Button>
               <Button asChild variant="outline" className="border-gray-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">
                 <Link href="/product/global-catalog-admin">Open global catalog</Link>
+              </Button>
+              <select value={period} onChange={(event) => setPeriod(event.target.value)} className="h-10 rounded-md border border-gray-200 bg-white px-3 text-sm font-medium text-slate-700" aria-label="Insight period">
+                <option value="7d">Last 7 days</option>
+                <option value="30d">Last 30 days</option>
+                <option value="90d">Last 90 days</option>
+              </select>
+              <Button type="button" variant="outline" onClick={() => void refreshDashboard()} disabled={isRefreshing || isFetching} className="gap-2 border-gray-200 bg-white text-slate-700">
+                <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                Refresh insights
               </Button>
             </div>
           </div>
@@ -142,13 +200,14 @@ export default function AdminPage() {
                 <span className="text-sm font-semibold text-slate-950">{formatNumber(paymentAnalytics?.conversion_rate ?? 0)}%</span>
               </div>
               <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3">
-                <span className="text-sm text-slate-600">Subscription churn proxy</span>
+                <span className="text-sm text-slate-600">Subscription change</span>
                 <span className="text-sm font-semibold text-slate-950">{formatNumber(subscriptionAnalytics?.subscription_change ?? 0)}%</span>
               </div>
               <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3">
-                <span className="text-sm text-slate-600">Realtime products</span>
-                <span className="text-sm font-semibold text-slate-950">{formatNumber(realtimeStats?.total_products ?? 0)}</span>
+                <span className="text-sm text-slate-600">Catalog variants</span>
+                <span className="text-sm font-semibold text-slate-950">{formatNumber(catalogStats?.total_variants ?? 0)}</span>
               </div>
+              <p className="pt-1 text-xs text-slate-500">Data period: {period}. Refreshes query-backed metrics only.</p>
             </CardContent>
           </Card>
         </div>
@@ -158,6 +217,23 @@ export default function AdminPage() {
         {topLineStats.map((stat) => (
           <StatTile key={stat.label} label={stat.label} value={stat.value} description={stat.description} icon={stat.icon} tone={stat.tone} />
         ))}
+        <StatTile label="Needs review" value={formatNumber(reviewCaptures)} description={`${formatNumber(pendingCaptures)} captures still processing`} icon={AlertTriangle} tone="default" />
+      </div>
+
+      <AdminServiceHealth />
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatTile label="Users" value={formatNumber(adminSummary?.users.total ?? 0)} description={`${formatNumber(adminSummary?.users.active ?? 0)} active accounts`} icon={Users} tone="blue" />
+        <StatTile label="Workspaces" value={formatNumber(adminSummary?.workspaces.total ?? 0)} description={`${formatNumber(adminSummary?.workspaces.verified ?? 0)} verified workspaces`} icon={Boxes} tone="blue" />
+        <StatTile label="Platform staff" value={formatNumber(adminSummary?.users.staff ?? 0)} description={`${formatNumber(adminSummary?.users.superusers ?? 0)} superusers`} icon={ShieldCheck} tone="amber" />
+        <StatTile label="Active memberships" value={formatNumber(adminSummary?.memberships.active ?? 0)} description="Active user-to-workspace memberships" icon={Users} tone="default" />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <InsightCard icon={AlertTriangle} title="Catalog capture queue" value={reviewCaptures} detail={`${pendingCaptures} pending or processing · ${rejectedCaptures} rejected`} tone={reviewCaptures ? "amber" : "green"} href="/product/global-catalog-admin" />
+        <InsightCard icon={CreditCard} title="Pending affiliate payouts" value={pendingPayouts.length} detail="Manual review and release required" tone={pendingPayouts.length ? "amber" : "green"} href="/admin/affiliates" />
+        <InsightCard icon={Webhook} title="Webhook failures" value={failedWebhooks} detail={`${webhookLogs.length} recent webhook records inspected`} tone={failedWebhooks ? "red" : "green"} href="/payment-admin" />
+        <InsightCard icon={CheckCircle2} title="Catalog publication" value={catalogStats?.published_products ?? 0} detail={`${catalogStats?.draft_products ?? 0} drafts · ${catalogStats?.archived_products ?? 0} archived`} tone="blue" href="/product/global-catalog-admin" />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
@@ -209,7 +285,7 @@ export default function AdminPage() {
               </div>
             )}
             <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
-              Use this hub to investigate admin-level issues first, then drill into the dedicated workspaces for billing, catalog, audit, and live monitoring.
+              These insights are sourced from the payment, subscription, catalog, capture, referral, and webhook APIs. They are not workspace inventory estimates.
             </div>
           </CardContent>
         </Card>

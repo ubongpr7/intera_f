@@ -2,7 +2,7 @@
 
 import type React from "react"
 import DashboardHeader from "@/components/wrapper/dashboardHeader"
-import { RouteAccessGuard } from "@/lib/permissionsGuard"
+import AdminPortalGuard from "@/components/admin/AdminPortalGuard"
 
 export default function PaymentLayout({
   children,
@@ -11,9 +11,7 @@ export default function PaymentLayout({
 }) {
   return (
     <DashboardHeader>
-      <RouteAccessGuard>
-        {children}
-      </RouteAccessGuard>
+      <AdminPortalGuard>{children}</AdminPortalGuard>
     </DashboardHeader>
   )
 }
