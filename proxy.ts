@@ -5,9 +5,17 @@ import { isSsoMfaBypassProvider } from "./lib/authProvider"
 
 export function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname
-  const hostname = request.nextUrl.hostname.toLowerCase()
-  const isAdminHost = hostname === "admin.dev.interaims.com" || hostname === "admin.interaims.com"
-  const adminSiteUrl = hostname === "admin.dev.interaims.com"
+  // Amplify/CloudFront can pass the internal origin host into Next while the
+  // browser is using the public custom domain. Prefer the forwarded public
+  // host so admin routes are not mistaken for public-site routes.
+  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim()
+  const hostname = (forwardedHost || request.headers.get("host") || request.nextUrl.hostname)
+    .split(":")[0]
+    .toLowerCase()
+  const isAdminDevHost = hostname === "admin.dev.interaims.com" || hostname === "www.admin.dev.interaims.com"
+  const isAdminProdHost = hostname === "admin.interaims.com" || hostname === "www.admin.interaims.com"
+  const isAdminHost = isAdminDevHost || isAdminProdHost
+  const adminSiteUrl = isAdminDevHost
     ? "https://admin.dev.interaims.com"
     : "https://admin.interaims.com"
 
