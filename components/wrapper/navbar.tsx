@@ -62,12 +62,15 @@ import { resetToSystemTheme, setIsDarkMode } from '@/redux/state'
 import { useAppDispatch, useAppSelector } from '../../redux/store'
 import { toast } from 'react-toastify'
 import { UserData } from '@/redux/features/users/userTypes'
+import { useAdminHost } from '@/lib/adminHost'
 
 interface NavbarProps {
   user?: UserData
   onOpenMobileSidebar: () => void
   onToggleDesktopSidebar: () => void
   sidebarCollapsed: boolean
+  showWorkspaceNavigation: boolean
+  hasWorkspaceProfile: boolean
 }
 
 const buildUserImageUrl = (value?: string | null) => {
@@ -112,7 +115,9 @@ const Navbar = ({
   user,
   onOpenMobileSidebar,
   onToggleDesktopSidebar,
-  sidebarCollapsed
+  sidebarCollapsed,
+  showWorkspaceNavigation,
+  hasWorkspaceProfile,
 }: NavbarProps) => {
   const dispatch = useAppDispatch()
   const router = useRouter()
@@ -131,14 +136,11 @@ const Navbar = ({
   >([])
   const [notificationServiceReady, setNotificationServiceReady] =
     useState(false)
-  const [isAdminHost, setIsAdminHost] = useState(false)
+  const { isAdminHost, isReady: isAdminHostReady } = useAdminHost()
 
-  React.useEffect(() => {
-    const hostname = window.location.hostname.toLowerCase()
-    setIsAdminHost(hostname === 'admin.dev.interaims.com' || hostname === 'admin.interaims.com')
-  }, [])
-
-  const { data: companyMemberships } = useGetUserCompaniesQuery(undefined, { skip: isAdminHost })
+  const { data: companyMemberships } = useGetUserCompaniesQuery(undefined, {
+    skip: !isAdminHostReady || isAdminHost,
+  })
   const { data: unreadResponse, refetch: refetchUnreadCount } =
     useGetNotificationUnreadCountQuery(undefined, {
       pollingInterval: 60000,
@@ -418,11 +420,11 @@ const Navbar = ({
     last_name: fallbackUser.last_name,
     email: fallbackUser.email
   } as UserData)
-  const settingsLinks = (isAdminHost ? [
+  const settingsLinks = (!isAdminHostReady ? [] : isAdminHost ? [
     { href: '/admin/settings', label: 'Admin settings', icon: SettingsIcon },
     { href: '/admin/invitations', label: 'Staff invitations', icon: Users },
     { href: '/audit', label: 'Audit trail', icon: ShieldCheck },
-  ] : [
+  ] : hasWorkspaceProfile ? [
     { href: '/settings', label: 'Workspace settings', icon: SettingsIcon },
     { href: '/subscription', label: 'Institution billing', icon: CreditCard },
     { href: '/agent/settings', label: 'Agent settings', icon: Bot },
@@ -433,7 +435,7 @@ const Navbar = ({
     },
     { href: '/pos/settings', label: 'POS settings', icon: MonitorSpeaker },
     { href: '/pos/remittances', label: 'POS remittances', icon: Wallet }
-  ]).map((item) => ({
+  ] : []).map((item) => ({
     ...item,
     access: canAccessPath(item.href)
   }))
@@ -441,7 +443,7 @@ const Navbar = ({
   return (
     <div
       className={`dashboard-topbar fixed top-0 z-30 flex items-center justify-between rounded-b-2xl rounded-t-none bg-gray-50/95 px-4 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-gray-50/80 ${
-        sidebarCollapsed ? 'md:left-16 md:right-5' : 'md:left-64 md:right-5'
+        !showWorkspaceNavigation ? 'md:left-3 md:right-3' : sidebarCollapsed ? 'md:left-16 md:right-5' : 'md:left-64 md:right-5'
       } left-3 right-3 md:px-3 md:py-2.5`}
     >
       <div className="flex min-w-0 items-center gap-3">
@@ -839,7 +841,7 @@ const Navbar = ({
           </div>
         </div>
 
-        <div className="relative shrink-0" ref={settingsMenuRef}>
+        {settingsLinks.length > 0 ? <div className="relative shrink-0" ref={settingsMenuRef}>
           <button
             type="button"
             onClick={() => setSettingsMenuOpen((current) => !current)}
@@ -878,7 +880,7 @@ const Navbar = ({
               })}
             </div>
           ) : null}
-        </div>
+        </div> : null}
       </div>
     </div>
   )

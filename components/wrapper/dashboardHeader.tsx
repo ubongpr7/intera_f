@@ -16,6 +16,7 @@ import { getCookie } from 'cookies-next';
 import A2AChat from '../agents/ai-chat-widget';
 import { readCookieValue } from '@/lib/authCookies';
 import PermissionHydrator from '@/components/auth/PermissionHydrator';
+import { useAdminHost } from '@/lib/adminHost';
 
 const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
 
@@ -28,21 +29,30 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
     permissions: state.permission.permissions,
   }));
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [isAdminHost, setIsAdminHost] = useState(false);
+  const { isAdminHost, isReady: isAdminHostReady } = useAdminHost();
   const pathname = usePathname();
   const isPublic = isPublicAuthRoute(pathname);
   const accessToken = readCookieValue("accessToken", getCookie);
 
-  useEffect(() => {
-    const hostname = window.location.hostname.toLowerCase();
-    setIsAdminHost(hostname === 'admin.dev.interaims.com' || hostname === 'admin.interaims.com');
-  }, []);
-
   const { data: user } = useGetLoggedInUserQuery(undefined, {
-    skip: isPublic,
+    skip: isPublic || !isAdminHostReady,
     refetchOnMountOrArgChange: true,
   });
-  const { data: companyMemberships } = useGetUserCompaniesQuery(undefined, { skip: isPublic || isAdminHost || !accessToken });
+  const {
+    data: companyMemberships,
+    isLoading: companyMembershipsLoading,
+    isFetching: companyMembershipsFetching,
+    isError: companyMembershipsError,
+  } = useGetUserCompaniesQuery(undefined, {
+    skip: isPublic || !isAdminHostReady || isAdminHost || !accessToken,
+  });
+  const hasWorkspaceProfile = isAdminHost || Boolean(companyMemberships?.profiles?.length);
+  const workspaceContextResolved =
+    isAdminHost ||
+    companyMembershipsError ||
+    (Boolean(companyMemberships) && !companyMembershipsLoading && !companyMembershipsFetching);
+  const showWorkspaceNavigation =
+    isAdminHost || (workspaceContextResolved && hasWorkspaceProfile);
   const activeProfileId = companyMemberships?.active_profile_id ?? null;
   const permissionReady =
     permissionState.status === "succeeded" &&
@@ -50,6 +60,7 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
   const canReadAgent =
     permissionState.isOwner || permissionState.permissions.includes("read_agent");
   const shouldFetchAgentSetup =
+    isAdminHostReady &&
     !isPublic &&
     !isAdminHost &&
     Boolean(accessToken) &&
@@ -92,11 +103,11 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
   
   return (
     <div className={`dashboard-shell ${SidebarCollapsed ? "sidebar-is-collapsed" : "sidebar-is-expanded"} flex w-full min-h-screen bg-gray-50 text-gray-900`}>
-    <PermissionHydrator disabled={isPublic || isAdminHost} />
+    <PermissionHydrator disabled={isPublic || !isAdminHostReady || isAdminHost} />
     
     <ToastContainer position="top-right" autoClose={3000} />
     
-    {!shouldHideDashboardUI(pathname) ? (
+    {isAdminHostReady && showWorkspaceNavigation && !shouldHideDashboardUI(pathname) ? (
       <>
         {isAdminHost ? (
           <AdminSidebar
@@ -123,7 +134,7 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
     ) : null}
     <main
       className={`dashboard-main flex min-h-screen min-w-0 w-full flex-1 flex-col overflow-x-hidden bg-gray-50 px-3 pb-6 pt-24 transition-[margin,width] duration-300 ${
-        shouldHideDashboardUI(pathname)
+        shouldHideDashboardUI(pathname) || !showWorkspaceNavigation
           ? ""
           : SidebarCollapsed
             ? "md:ml-16 md:w-[calc(100%-4rem)] md:flex-none md:px-4"
@@ -131,12 +142,14 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
       }`}
     >
     
-    {!shouldHideDashboardUI(pathname) && (
+    {isAdminHostReady && !shouldHideDashboardUI(pathname) && (
       <Navbar
         user={user}
         onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
         onToggleDesktopSidebar={() => dispatch(setIsSidebarCollapsed(!SidebarCollapsed))}
         sidebarCollapsed={SidebarCollapsed}
+        showWorkspaceNavigation={showWorkspaceNavigation}
+        hasWorkspaceProfile={hasWorkspaceProfile}
       />
     )}
     
