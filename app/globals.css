@@ -6149,8 +6149,13 @@ html.light .agent-settings-page .bg-white {
 }
 
 .dashboard-account-trigger [data-slot="avatar-fallback"] {
-  background: var(--dash-ink);
-  color: var(--dash-surface);
+  background: var(--dash-brand);
+  color: #ffffff;
+}
+
+.dark .dashboard-account-trigger [data-slot="avatar-fallback"] {
+  background: #70a7ff;
+  color: #09111f;
 }
 
 .dashboard-header-menu {
