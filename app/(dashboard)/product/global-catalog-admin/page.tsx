@@ -3,7 +3,7 @@ import GlobalCatalogCaptureQueue from "@/components/product/GlobalCatalogCapture
 
 export default function GlobalCatalogAdminPage() {
   return (
-    <div className="staff-catalog-page min-w-0 space-y-6 overflow-x-hidden">
+    <div className="admin-portal-surface staff-catalog-page min-w-0 space-y-6 overflow-x-hidden">
       <GlobalCatalogCaptureQueue />
       <GlobalCatalogAdminWorkspace />
     </div>

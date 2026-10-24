@@ -158,7 +158,7 @@ export default function AffiliatePartnersPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1500px] space-y-6 px-4 py-6 lg:px-8">
+    <div className="admin-portal-surface mx-auto w-full max-w-[1500px] space-y-6 px-4 py-6 lg:px-8">
       <Card className="border-gray-200 shadow-sm">
         <CardHeader>
           <div className="flex items-start gap-3">
