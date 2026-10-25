@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { TabsContent, TabsList, TabsTrigger, UrlTabs } from "@/components/ui/tabs"
 import {
   useCaptureValuationMutation,
   useCompleteCustomerReturnMutation,
@@ -126,12 +126,18 @@ export default function AccountingWorkspace() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="margin" className="space-y-4">
-        <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 border border-gray-200 bg-white p-2">
-          <TabsTrigger value="margin"><Scale className="mr-2 h-4 w-4" />Margin</TabsTrigger><TabsTrigger value="production-profitability"><Factory className="mr-2 h-4 w-4" />Production profitability</TabsTrigger>
-          <TabsTrigger value="returns"><RotateCcw className="mr-2 h-4 w-4" />Customer returns</TabsTrigger>
-          <TabsTrigger value="journals"><FileText className="mr-2 h-4 w-4" />Journals</TabsTrigger>
-          <TabsTrigger value="valuation"><Calculator className="mr-2 h-4 w-4" />Valuation</TabsTrigger>
+      <UrlTabs
+        defaultValue="margin"
+        tabValues={["margin", "production-profitability", "returns", "journals", "valuation"]}
+        tabParam="accounting_tab"
+        className="space-y-4"
+      >
+        <TabsList className="grid h-auto w-full grid-cols-2 gap-2 rounded-2xl border border-gray-200 bg-gray-100 p-2 md:grid-cols-3 xl:grid-cols-5">
+          <TabsTrigger value="margin" className="h-auto min-h-11 rounded-xl border border-transparent bg-transparent px-3 py-2 text-sm text-gray-600 data-[state=active]:border-blue-200 data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-sm"><Scale className="mr-2 h-4 w-4 shrink-0" />Margin</TabsTrigger>
+          <TabsTrigger value="production-profitability" className="h-auto min-h-11 rounded-xl border border-transparent bg-transparent px-3 py-2 text-sm text-gray-600 data-[state=active]:border-blue-200 data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-sm"><Factory className="mr-2 h-4 w-4 shrink-0" />Production profitability</TabsTrigger>
+          <TabsTrigger value="returns" className="h-auto min-h-11 rounded-xl border border-transparent bg-transparent px-3 py-2 text-sm text-gray-600 data-[state=active]:border-blue-200 data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-sm"><RotateCcw className="mr-2 h-4 w-4 shrink-0" />Customer returns</TabsTrigger>
+          <TabsTrigger value="journals" className="h-auto min-h-11 rounded-xl border border-transparent bg-transparent px-3 py-2 text-sm text-gray-600 data-[state=active]:border-blue-200 data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-sm"><FileText className="mr-2 h-4 w-4 shrink-0" />Journals</TabsTrigger>
+          <TabsTrigger value="valuation" className="h-auto min-h-11 rounded-xl border border-transparent bg-transparent px-3 py-2 text-sm text-gray-600 data-[state=active]:border-blue-200 data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-sm"><Calculator className="mr-2 h-4 w-4 shrink-0" />Valuation</TabsTrigger>
         </TabsList>
 
         <TabsContent value="margin"><Card><CardHeader><CardTitle>Gross margin by item</CardTitle><CardDescription>Margin is based on immutable shipped-line revenue and stock-unit COGS snapshots.</CardDescription></CardHeader><CardContent><Rows loading={margin.isLoading} error={margin.error} rows={margin.data?.products || []} /></CardContent></Card></TabsContent>
@@ -145,7 +151,7 @@ export default function AccountingWorkspace() {
         <TabsContent value="journals"><Card><CardHeader><CardTitle>Journal entries</CardTitle><CardDescription>Double-entry records created by sales and customer-return workflows.</CardDescription></CardHeader><CardContent>{journals.isLoading ? <p className="text-sm text-gray-500">Loading journal entries...</p> : journals.isError ? <p className="text-sm text-red-600">{errorMessage(journals.error)}</p> : <div className="space-y-3">{(journals.data || []).map((entry) => <div key={String(entry.id)} className="rounded-2xl border border-gray-200 bg-gray-50 p-4"><div className="flex flex-wrap justify-between gap-2"><p className="font-semibold text-gray-900">{entry.entry_type} · {entry.reference_type}</p><span className="text-sm text-gray-500">{entry.entry_date}</span></div><p className="mt-1 text-sm text-gray-600">{entry.memo || "No memo"}</p><div className="mt-3 grid gap-2 sm:grid-cols-2">{entry.lines.map((line) => <div key={String(line.id)} className="flex justify-between rounded-xl bg-white px-3 py-2 text-sm"><span>{line.account_code}</span><span>{Number(line.debit) ? `Dr ${money(line.debit, entry.currency_code)}` : `Cr ${money(line.credit, entry.currency_code)}`}</span></div>)}</div></div>)}{!journals.data?.length ? <p className="text-sm text-gray-500">No journal entries recorded yet.</p> : null}</div>}</CardContent></Card></TabsContent>
 
         <TabsContent value="valuation"><Card><CardHeader><CardTitle>Inventory valuation snapshots</CardTitle><CardDescription>Capture a repeat-safe period-end snapshot using the selected costing method.</CardDescription></CardHeader><CardContent><div className="mb-5 flex flex-wrap items-end gap-3"><Field label="Snapshot date" value={snapshotDate} onChange={setSnapshotDate} type="date" /><Button onClick={captureSnapshot} disabled={captureValuationState.isLoading}>{captureValuationState.isLoading ? "Capturing..." : "Capture snapshot"}</Button></div>{valuations.isLoading ? <p className="text-sm text-gray-500">Loading valuation snapshots...</p> : valuations.isError ? <p className="text-sm text-red-600">{errorMessage(valuations.error)}</p> : <div className="overflow-x-auto"><table className="app-table w-full text-left text-sm"><thead><tr><th className="px-3 py-3">Item</th><th className="px-3 py-3">Location</th><th className="px-3 py-3">Method</th><th className="px-3 py-3 text-right">Quantity</th><th className="px-3 py-3 text-right">Value</th></tr></thead><tbody>{(valuations.data || []).map((snapshot) => <tr key={String(snapshot.id)}><td className="px-3 py-3">{snapshot.inventory_item_name || snapshot.inventory_item}</td><td className="px-3 py-3">{snapshot.stock_location_name || snapshot.stock_location}</td><td className="px-3 py-3">{snapshot.costing_method}</td><td className="px-3 py-3 text-right">{snapshot.quantity_on_hand}</td><td className="px-3 py-3 text-right">{money(snapshot.total_value, snapshot.currency_code)}</td></tr>)}</tbody></table>{!valuations.data?.length ? <p className="py-4 text-sm text-gray-500">No valuation snapshots captured yet.</p> : null}</div>}</CardContent></Card></TabsContent>
-      </Tabs>
+      </UrlTabs>
     </div>
   )
 }
