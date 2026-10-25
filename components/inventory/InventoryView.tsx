@@ -25,16 +25,16 @@ import { Pagination } from '@/components/ui/pagination';
 import { TableImageHover } from '../common/table-image-render';
 
 const renderInventoryThumbnail = (imageUrl: string | null | undefined, name: string) => (
-  <div className="h-11 w-11 shrink-0">
+  <div className="h-14 w-14 shrink-0">
     {imageUrl ? (
       <TableImageHover
         src={imageUrl}
         alt={name}
         productName={name}
-        className="h-11 w-11 rounded-xl object-cover"
+        className="h-14 w-14 rounded-xl object-contain"
       />
     ) : (
-      <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 bg-gray-100 text-[10px] font-semibold uppercase tracking-wide text-gray-500">
+      <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-gray-200 bg-gray-100 text-[10px] font-semibold uppercase tracking-wide text-gray-500">
         Inv
       </div>
     )}
@@ -52,7 +52,7 @@ const renderInventoryCard = (row: InventoryData, rowIndex: number) => (
           src={row.display_image || row.product_variant_image_url || ""}
           alt={row.name}
           productName={row.name}
-          className="h-36 w-36 rounded-2xl object-contain"
+        className="h-44 w-44 rounded-2xl object-contain"
         />
       ) : (
         <div className="flex h-24 w-24 items-center justify-center rounded-2xl border border-border bg-card text-xs font-semibold uppercase tracking-wide text-muted-foreground">Inv</div>

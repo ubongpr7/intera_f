@@ -741,10 +741,10 @@ function VariantCard({
     <div className="rounded-3xl border border-gray-200 bg-gray-50 p-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex min-w-0 gap-4">
-          <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-white">
+          <div className="h-28 w-28 shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-white p-2">
             {variant.display_image ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={variant.display_image} alt={variant.display_name} className="h-full w-full object-cover" />
+              <img src={variant.display_image} alt={variant.display_name} className="h-full w-full object-contain" />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-gray-400">
                 <Shapes className="h-5 w-5" />
@@ -1240,10 +1240,10 @@ export default function GlobalCatalogAdminWorkspace() {
                 <div key={product.id} className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex min-w-0 gap-4">
-                      <div className="h-24 w-24 shrink-0 overflow-hidden rounded-3xl border border-gray-200 bg-gray-100">
+                      <div className="h-32 w-32 shrink-0 overflow-hidden rounded-3xl border border-gray-200 bg-gray-100 p-2">
                         {product.display_image ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={product.display_image} alt={product.name} className="h-full w-full object-cover" />
+                          <img src={product.display_image} alt={product.name} className="h-full w-full object-contain" />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center text-gray-400">
                             <Boxes className="h-6 w-6" />

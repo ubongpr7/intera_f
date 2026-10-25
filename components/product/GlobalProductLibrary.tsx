@@ -235,10 +235,10 @@ function ProductLibraryCard({
             <Checkbox checked={selected} onCheckedChange={() => onToggleSelect(product.id)} aria-label={`Select ${product.name}`} />
           </div>
         ) : null}
-        <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-gray-100">
+        <div className="h-28 w-28 shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-gray-100 p-2">
           {product.display_image ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={product.display_image} alt={product.name} className="h-full w-full object-cover" />
+            <img src={product.display_image} alt={product.name} className="h-full w-full object-contain" />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-gray-400">
               <ImageIcon className="h-6 w-6" />
@@ -364,10 +364,10 @@ export function GlobalProductPreviewSheet({
           <div className="mt-6 space-y-6">
             <div className="rounded-3xl border border-gray-200 bg-gray-50 p-5">
               <div className="flex flex-wrap items-start gap-4">
-                <div className="h-28 w-28 overflow-hidden rounded-3xl border border-gray-200 bg-white">
+                <div className="h-40 w-40 overflow-hidden rounded-3xl border border-gray-200 bg-white p-3">
                   {product.display_image ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={product.display_image} alt={product.name} className="h-full w-full object-cover" />
+                    <img src={product.display_image} alt={product.name} className="h-full w-full object-contain" />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-gray-400">
                       <ImageIcon className="h-7 w-7" />
@@ -437,10 +437,10 @@ export function GlobalProductPreviewSheet({
               {(product.variants || []).map((variant) => (
                 <div key={variant.id} className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm">
                   <div className="flex items-start gap-4">
-                    <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-gray-100">
+                    <div className="h-28 w-28 shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-gray-100 p-2">
                       {variant.display_image ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={variant.display_image} alt={variant.display_name} className="h-full w-full object-cover" />
+                        <img src={variant.display_image} alt={variant.display_name} className="h-full w-full object-contain" />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-gray-400">
                           <ImageIcon className="h-5 w-5" />
@@ -826,10 +826,10 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
                               onCheckedChange={() => toggleBarcodeProduct(match.global_product_id)}
                               aria-label={`Select ${product.name}`}
                             />
-                            <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-gray-100">
+                            <div className="h-24 w-24 shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-gray-100 p-2">
                               {product.display_image ? (
                                 // eslint-disable-next-line @next/next/no-img-element
-                                <img src={product.display_image} alt={product.name} className="h-full w-full object-cover" />
+                                <img src={product.display_image} alt={product.name} className="h-full w-full object-contain" />
                               ) : (
                                 <div className="flex h-full w-full items-center justify-center text-gray-400">
                                   <ImageIcon className="h-5 w-5" />

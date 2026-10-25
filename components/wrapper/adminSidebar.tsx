@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
 import { Activity, ChevronLeft, ChevronRight, FileSearch, Gift, LayoutDashboard, Link2, Settings, ShieldCheck, UserRound, Users, X } from 'lucide-react'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { SidebarLink } from './SideBarLinks'
@@ -21,18 +21,6 @@ export default function AdminSidebar({ user, mobileOpen, onMobileClose }: AdminS
   const dispatch = useAppDispatch()
   const sidebarRef = useRef<HTMLElement>(null)
   const navigationCollapsed = collapsed && !mobileOpen
-
-  useEffect(() => {
-    if (collapsed) return
-    const closeOnDesktopClickAway = (event: MouseEvent) => {
-      if (!window.matchMedia('(min-width: 768px)').matches) return
-      if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
-        dispatch(setIsSidebarCollapsed(true))
-      }
-    }
-    document.addEventListener('mousedown', closeOnDesktopClickAway)
-    return () => document.removeEventListener('mousedown', closeOnDesktopClickAway)
-  }, [collapsed, dispatch])
 
   const sidebarClasses = `dashboard-sidebar fixed inset-y-0 left-0 z-50 flex min-h-screen w-72 flex-col border-r border-slate-800 bg-slate-950 text-slate-100 shadow-xl transition-[transform,width] duration-300 ease-out md:z-40 md:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} ${collapsed ? 'md:w-16' : 'md:w-64'}`
 

@@ -55,7 +55,7 @@ const inventoryColumns: Column<ProductData>[] = [
       <TableImageHover
         src={value}
         alt="Product Image"
-        className="hover:ring-2 hover:ring-blue-500 hover:ring-opacity-50"
+        className="h-14 w-14 object-contain hover:ring-2 hover:ring-blue-500 hover:ring-opacity-50"
       />
     ),
   },
@@ -91,7 +91,7 @@ const renderProductCard = (row: ProductData, rowIndex: number) => (
           src={row.display_image}
           alt={row.name}
           productName={row.name}
-          className="h-40 w-40 rounded-2xl object-contain"
+        className="h-48 w-48 rounded-2xl object-contain"
         />
       ) : (
         <div className="flex h-28 w-28 items-center justify-center rounded-2xl border border-border bg-card text-xs font-semibold uppercase tracking-wide text-muted-foreground">Product</div>

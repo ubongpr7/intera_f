@@ -19,7 +19,7 @@ export function TableImageHover({ src, alt, productName, className = "" }: Table
       <img
         src={src || "/placeholder.png"}
         alt={alt}
-        className={`w-10 h-10 object-cover rounded border-2 border-gray-200 hover:border-blue-400 transition-all duration-200 cursor-pointer ${className}`}
+        className={`w-12 h-12 object-contain rounded border-2 border-gray-200 hover:border-blue-400 transition-all duration-200 cursor-pointer ${className}`}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       />
