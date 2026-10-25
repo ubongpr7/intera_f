@@ -59,12 +59,15 @@ export interface ReferralDashboard {
 export interface AffiliatePartner {
   id: number | string;
   name: string;
+  email: string;
   code: string;
   commission_rate: string | number;
   is_active: boolean;
   notes?: string;
   created_at?: string;
   updated_at?: string;
+  invitation_status?: string;
+  invitation_expires_at?: string;
 }
 
 export interface UserSummary {

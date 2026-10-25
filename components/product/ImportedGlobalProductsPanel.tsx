@@ -52,7 +52,7 @@ function ImportedProductRow({
       ? "Checking source..."
       : pendingCount > 0
         ? `${pendingCount} new variant${pendingCount === 1 ? "" : "s"}`
-        : "Up to date"
+          : "Ready to resync"
   const sourceStatusClassName = !shouldPreview
     ? "border-slate-200 bg-slate-50 text-slate-700"
     : pendingCount > 0
@@ -76,7 +76,7 @@ function ImportedProductRow({
             </Badge>
           </div>
           <p className="mt-2 text-sm text-gray-600">
-            {entry.imported_variant_count} variant{entry.imported_variant_count === 1 ? "" : "s"} linked to your workspace product.
+            {entry.imported_variant_count} variant{entry.imported_variant_count === 1 ? "" : "s"} linked to your workspace product. Sync refreshes product details, UOM settings, variant data, and inherited media.
           </p>
           <p className="mt-1 text-xs text-gray-500">
             Last source version: {entry.last_source_version}
@@ -108,11 +108,11 @@ function ImportedProductRow({
           <Button
             type="button"
             onClick={() => onSync(entry.id, entry.global_product_name)}
-            disabled={syncing || !shouldPreview || isFetching || pendingCount === 0}
+            disabled={syncing || !shouldPreview || isFetching}
             className="rounded-full"
           >
             <RefreshCw className="mr-2 h-4 w-4" />
-            {syncing ? "Syncing..." : !shouldPreview ? "Not checked" : isFetching ? "Checking..." : pendingCount === 0 ? "No changes" : "Sync now"}
+            {syncing ? "Syncing..." : !shouldPreview ? "Not checked" : isFetching ? "Checking..." : "Sync now"}
           </Button>
         </div>
       </div>
@@ -127,8 +127,9 @@ export default function ImportedGlobalProductsPanel() {
   const handleSync = async (importId: string, productName: string) => {
     try {
       const result = await syncImport(importId).unwrap()
+      const updatedFields = result.updated_product_fields?.length ?? 0
       toast.success(
-        `${productName} sync completed. ${result.imported_variants} new variant${result.imported_variants === 1 ? "" : "s"} added.`,
+        `${productName} sync completed. ${result.imported_variants} new variant${result.imported_variants === 1 ? "" : "s"} added, ${result.updated_variants ?? 0} existing variant${result.updated_variants === 1 ? "" : "s"} refreshed, and ${result.inherited_images} image${result.inherited_images === 1 ? "" : "s"} synced${updatedFields ? ` across ${updatedFields} product field${updatedFields === 1 ? "" : "s"}` : ""}.`,
       )
       if (result.barcode_conflicts.length > 0 || result.sku_conflicts.length > 0) {
         toast.info("Some incoming source codes were skipped because they already exist in the catalog service.")

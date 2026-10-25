@@ -38,6 +38,7 @@ export default function AffiliatePartnersPage() {
   const [updateUser, { isLoading: isUpdatingUser }] = useUpdateUserMutation()
   const [updatePayout] = useUpdateReferralPayoutMutation()
   const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
   const [code, setCode] = useState("")
   const [rate, setRate] = useState(DEFAULT_RATE)
   const [notes, setNotes] = useState("")
@@ -52,19 +53,21 @@ export default function AffiliatePartnersPage() {
 
   const create = async () => {
     const commissionRate = toRate(rate)
-    if (!name.trim() || !code.trim() || commissionRate === null) {
-      toast.error("Enter a partner name, unique code, and a rate from 0 to 100%.")
+    if (!name.trim() || !email.trim() || !code.trim() || commissionRate === null) {
+      toast.error("Enter a partner name, email, unique code, and a rate from 0 to 100%.")
       return
     }
     try {
       await createPartner({
         name: name.trim(),
+        email: email.trim().toLowerCase(),
         code: code.trim().toUpperCase(),
         commission_rate: commissionRate,
         is_active: true,
         notes: notes.trim(),
       }).unwrap()
       setName("")
+      setEmail("")
       setCode("")
       setRate(DEFAULT_RATE)
       setNotes("")
@@ -173,10 +176,14 @@ export default function AffiliatePartnersPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-[1fr_1fr_180px_1fr_auto] xl:items-end">
+        <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_180px_1fr_auto] xl:items-end">
           <div className="space-y-2">
             <Label htmlFor="affiliate-name">Partner name</Label>
             <Input id="affiliate-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Gibonet" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="affiliate-email">Partner email</Label>
+            <Input id="affiliate-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="partner@example.com" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="affiliate-code">Unique code</Label>
@@ -276,7 +283,7 @@ export default function AffiliatePartnersPage() {
                       <h3 className="font-semibold text-slate-950">{partner.name}</h3>
                       <Badge variant="outline" className={partner.is_active ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-gray-200 text-gray-500"}>{partner.is_active ? "Active" : "Inactive"}</Badge>
                     </div>
-                    <p className="mt-1 text-sm text-slate-600">Code: <span className="font-semibold text-slate-900">{partner.code}</span> · Commission: <span className="font-semibold text-slate-900">{Number(partner.commission_rate) * 100}%</span></p>
+                    <p className="mt-1 text-sm text-slate-600">{partner.email} · Code: <span className="font-semibold text-slate-900">{partner.code}</span> · Commission: <span className="font-semibold text-slate-900">{Number(partner.commission_rate) * 100}%</span></p>
                     {partner.notes ? <p className="mt-1 text-xs text-slate-500">{partner.notes}</p> : null}
                   </div>
                   </div>

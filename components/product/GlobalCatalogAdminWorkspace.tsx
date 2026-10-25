@@ -30,6 +30,7 @@ import {
   useGetGlobalCatalogAdminCategoriesQuery,
   useGetGlobalCatalogAdminStatsQuery,
   usePublishGlobalCatalogAdminProductMutation,
+  useResolveGlobalCatalogBarcodesMutation,
   useSetPrimaryAttachmentMutation,
   useUpdateGlobalCatalogAdminProductMutation,
   useUpdateGlobalCatalogAdminVariantMutation,
@@ -477,9 +478,10 @@ function VariantDialog({
   const [form, setForm] = useState<VariantFormState>(buildVariantForm(variant))
   const [createVariant, { isLoading: isCreating }] = useCreateGlobalCatalogAdminVariantMutation()
   const [updateVariant, { isLoading: isUpdating }] = useUpdateGlobalCatalogAdminVariantMutation()
+  const [resolveBarcodes, { isLoading: isResolving }] = useResolveGlobalCatalogBarcodesMutation()
 
   const isEditing = Boolean(variant)
-  const isLoading = isCreating || isUpdating
+  const isLoading = isCreating || isUpdating || isResolving
 
   const submit = async () => {
     if (!product) {
@@ -488,6 +490,20 @@ function VariantDialog({
     }
 
     try {
+      if (!isEditing && form.barcode.trim()) {
+        const normalizedBarcode = form.barcode.trim().toLowerCase().replace(/[\s_-]/g, "")
+        const resolution = await resolveBarcodes({ barcodes: [form.barcode.trim()], fetch_missing: false }).unwrap()
+        const existingMatch = resolution.matches.find(
+          (match) => match.matched_variant_barcode.trim().toLowerCase().replace(/[\s_-]/g, "") === normalizedBarcode,
+        )
+        if (existingMatch) {
+          toast.error(
+            `Barcode ${form.barcode.trim()} already belongs to ${existingMatch.global_product.name} / ${existingMatch.matched_variant_name}.`,
+          )
+          return
+        }
+      }
+
       const payload = {
         global_product: product.id,
         display_name: form.display_name,

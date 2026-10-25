@@ -467,6 +467,8 @@ export interface GlobalCatalogImportResult {
   created_workspace_product: boolean;
   imported_variants: number;
   skipped_variants: number;
+  updated_variants?: number;
+  updated_product_fields?: string[];
   inherited_images: number;
   barcode_conflicts: string[];
   sku_conflicts: string[];

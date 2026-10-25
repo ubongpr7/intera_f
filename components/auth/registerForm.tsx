@@ -62,6 +62,7 @@ export default function RegisterForm() {
   const socialSignupRequired = searchParams.get('social') === 'signup_required';
   const lockedEmail = searchParams.get("email")?.trim() || "";
   const referralCodeFromUrl = (searchParams.get("ref") || searchParams.get("referral_code") || "").trim().toUpperCase();
+  const affiliateInviteToken = searchParams.get("affiliate_invite")?.trim() || "";
   const isEmailLocked = searchParams.get("locked") === "1" && Boolean(lockedEmail);
   const [password, setPassword] = useState('');
   const [showPassWord,setShowPassword]=useState(false)
@@ -103,6 +104,7 @@ export default function RegisterForm() {
       const userData = await registerUser({
         ...formData,
         referral_code: formData.referral_code?.trim().toUpperCase() || undefined,
+        affiliate_invite_token: affiliateInviteToken || undefined,
         last_name: formData.last_name ?? "",
         terms_accepted: legalAccepted.terms,
         privacy_accepted: legalAccepted.privacy,

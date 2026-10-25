@@ -162,7 +162,7 @@ export const userApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    createAffiliatePartner: builder.mutation<AffiliatePartner, Pick<AffiliatePartner, "name" | "code" | "commission_rate" | "is_active" | "notes">>({
+    createAffiliatePartner: builder.mutation<AffiliatePartner, Pick<AffiliatePartner, "name" | "email" | "code" | "commission_rate" | "is_active" | "notes">>({
       query: (body) => ({
         url: `/${accountsApi}/affiliate-partners/`,
         method: "POST",
