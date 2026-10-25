@@ -90,6 +90,9 @@ const customStyles: StylesConfig<SelectOption, boolean> = {
   menuList: (provided) => ({
     ...provided,
     padding: 6,
+    maxHeight: 280,
+    overflowY: "auto",
+    overscrollBehavior: "contain",
   }),
   menuPortal: (provided) => ({
     ...provided,
@@ -150,6 +153,10 @@ export const ReactSelectField = forwardRef<any, ReactSelectFieldProps>(
           menuPortalTarget={resolvedPortalTarget}
           menuPosition={menuPosition ?? (resolvedPortalTarget ? "fixed" : "absolute")}
           menuPlacement={menuPlacement ?? "auto"}
+          closeMenuOnScroll
+          closeMenuOnSelect
+          captureMenuScroll
+          menuShouldScrollIntoView
           onMenuOpen={() => {
             setIsMenuOpen(true)
             onMenuOpen?.()

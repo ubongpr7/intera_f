@@ -48,11 +48,11 @@ type ProductFormState = {
   short_description: string
   description: string
   base_price: string
-  unit: string
   base_uom_code: string
   purchase_uom_code: string
   sales_uom_code: string
-  uom_conversion_factor: string
+  purchase_uom_conversion_factor: string
+  sales_uom_conversion_factor: string
 }
 
 type VariantFormState = {
@@ -75,11 +75,11 @@ const initialProductForm: ProductFormState = {
   short_description: "",
   description: "",
   base_price: "0",
-  unit: "",
   base_uom_code: "unit",
   purchase_uom_code: "unit",
   sales_uom_code: "unit",
-  uom_conversion_factor: "1",
+  purchase_uom_conversion_factor: "1",
+  sales_uom_conversion_factor: "1",
 }
 
 const initialVariantForm: VariantFormState = {
@@ -265,11 +265,11 @@ function buildProductForm(product?: GlobalCatalogAdminProduct | null): ProductFo
     short_description: product.short_description || "",
     description: product.description || "",
     base_price: String(product.base_price ?? 0),
-    unit: product.unit || "",
     base_uom_code: product.base_uom_code || product.unit || "unit",
     purchase_uom_code: product.purchase_uom_code || product.unit || "unit",
     sales_uom_code: product.sales_uom_code || product.unit || "unit",
-    uom_conversion_factor: String(product.uom_conversion_factor ?? 1),
+    purchase_uom_conversion_factor: String(product.purchase_uom_conversion_factor ?? product.uom_conversion_factor ?? 1),
+    sales_uom_conversion_factor: String(product.sales_uom_conversion_factor ?? product.uom_conversion_factor ?? 1),
   }
 }
 
@@ -311,6 +311,12 @@ const uomHelpText: Record<string, string> = {
   sales_uom_code: "How this product is sold to a customer. Example: 1 pack.",
 }
 
+const uomLabels: Record<string, string> = {
+  base_uom_code: "Base unit",
+  purchase_uom_code: "Purchase unit",
+  sales_uom_code: "Sales unit",
+}
+
 function ProductDialog({
   open,
   onOpenChange,
@@ -339,7 +345,8 @@ function ProductDialog({
       const payload = {
         ...form,
         base_price: Number(form.base_price || 0),
-        uom_conversion_factor: Number(form.uom_conversion_factor || 1),
+        purchase_uom_conversion_factor: Number(form.purchase_uom_conversion_factor || 1),
+        sales_uom_conversion_factor: Number(form.sales_uom_conversion_factor || 1),
         track_stock: true,
         allow_backorder: false,
         low_stock_threshold: 10,
@@ -403,21 +410,6 @@ function ProductDialog({
             formatCreateLabel={(inputValue: string) => `Use "${inputValue}"`}
             menuPortalTarget={selectMenuPortalTarget}
           />
-          <ReactSelectField
-            label="Unit"
-            value={resolveSelectValue(form.unit, unitOptions)}
-            options={unitOptions}
-            onChange={(option) => {
-              const selected = Array.isArray(option) ? null : (option as SelectOption | null)
-              setForm((current) => ({ ...current, unit: selected ? String(selected.value) : "" }))
-            }}
-            placeholder="Select or type a unit"
-            isClearable
-            isSearchable
-            creatable
-            formatCreateLabel={(inputValue: string) => `Use "${inputValue}"`}
-            menuPortalTarget={selectMenuPortalTarget}
-          />
           <div className="grid gap-2">
             <label className="text-sm font-medium text-gray-700">Base price</label>
             <Input value={form.base_price} onChange={(e) => setForm((current) => ({ ...current, base_price: e.target.value }))} placeholder="0.00" type="number" />
@@ -425,7 +417,7 @@ function ProductDialog({
           {(["base_uom_code", "purchase_uom_code", "sales_uom_code"] as const).map((key) => (
             <ReactSelectField
               key={key}
-              label={key.replaceAll("_", " ")}
+              label={uomLabels[key]}
               value={resolveSelectValue(form[key], unitOptions)}
               options={unitOptions}
               onChange={(option) => {
@@ -442,9 +434,14 @@ function ProductDialog({
             />
           ))}
           <div className="grid gap-2">
-            <label className="text-sm font-medium text-gray-700">UOM conversion factor</label>
-            <Input value={form.uom_conversion_factor} onChange={(e) => setForm((current) => ({ ...current, uom_conversion_factor: e.target.value }))} placeholder="1" type="number" min="0.000001" step="0.000001" />
-            <p className="text-xs text-gray-400">How many base units are represented by one product unit. Example: 1 carton = 24 pieces.</p>
+            <label className="text-sm font-medium text-gray-700">Purchase conversion</label>
+            <Input value={form.purchase_uom_conversion_factor} onChange={(e) => setForm((current) => ({ ...current, purchase_uom_conversion_factor: e.target.value }))} placeholder="1" type="number" min="0.000001" step="0.000001" />
+            <p className="text-xs text-gray-500">How many base units are inside one purchase unit. Example: 1 carton = 24 pieces.</p>
+          </div>
+          <div className="grid gap-2">
+            <label className="text-sm font-medium text-gray-700">Sales conversion</label>
+            <Input value={form.sales_uom_conversion_factor} onChange={(e) => setForm((current) => ({ ...current, sales_uom_conversion_factor: e.target.value }))} placeholder="1" type="number" min="0.000001" step="0.000001" />
+            <p className="text-xs text-gray-500">How many base units are inside one sales unit. Example: 1 pack = 6 pieces.</p>
           </div>
           <div className="grid gap-2">
             <label className="text-sm font-medium text-gray-700">Short description</label>

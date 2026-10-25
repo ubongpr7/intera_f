@@ -355,6 +355,8 @@ export interface GlobalCatalogAdminProduct {
   base_uom_code?: string;
   purchase_uom_code?: string;
   sales_uom_code?: string;
+  purchase_uom_conversion_factor?: number;
+  sales_uom_conversion_factor?: number;
   uom_conversion_factor?: number;
   labeling_status?: "draft" | "ai_proposed" | "verified";
   regulatory_metadata?: Record<string, unknown>;
