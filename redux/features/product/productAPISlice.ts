@@ -11,6 +11,8 @@ import type {
   GlobalCatalogAdminListResponse,
   GlobalCatalogAdminProduct,
   GlobalCatalogAdminStats,
+  GlobalCatalogBrandOption,
+  GlobalCatalogCategoryOption,
   GlobalProductCaptureListResponse,
   GlobalProductCapture,
   GlobalCatalogProduct,
@@ -245,6 +247,26 @@ export const productApiSlice = apiSlice.injectEndpoints({
       query: () => ({
         url: `/${product_api}/global-catalog/admin/products/stats/`,
         method: "GET",
+        service: service,
+      }),
+      providesTags: ["GlobalCatalog"],
+    }),
+
+    getGlobalCatalogAdminBrands: builder.query<GlobalCatalogBrandOption[], void>({
+      query: () => ({
+        url: `/${product_api}/global-catalog/admin/brands/`,
+        method: "GET",
+        params: { page_size: 1000 },
+        service: service,
+      }),
+      providesTags: ["GlobalCatalog"],
+    }),
+
+    getGlobalCatalogAdminCategories: builder.query<GlobalCatalogCategoryOption[], void>({
+      query: () => ({
+        url: `/${product_api}/global-catalog/admin/categories/`,
+        method: "GET",
+        params: { page_size: 1000 },
         service: service,
       }),
       providesTags: ["GlobalCatalog"],
@@ -1188,6 +1210,8 @@ export const {
   usePreviewGlobalCatalogImportSyncQuery,
   useGetGlobalCatalogAdminProductsQuery,
   useGetGlobalCatalogAdminStatsQuery,
+  useGetGlobalCatalogAdminBrandsQuery,
+  useGetGlobalCatalogAdminCategoriesQuery,
   useGetGlobalProductCapturesQuery,
   useAnnotateGlobalProductCaptureMutation,
   usePromoteGlobalProductCaptureMutation,

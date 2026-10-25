@@ -26,6 +26,8 @@ import {
   useDeleteGlobalCatalogAdminVariantMutation,
   useGetAttachmentsQuery,
   useGetGlobalCatalogAdminProductsQuery,
+  useGetGlobalCatalogAdminBrandsQuery,
+  useGetGlobalCatalogAdminCategoriesQuery,
   useGetGlobalCatalogAdminStatsQuery,
   usePublishGlobalCatalogAdminProductMutation,
   useSetPrimaryAttachmentMutation,
@@ -293,7 +295,20 @@ function resolveSelectValue(value: string, options: SelectOption[]) {
   if (!value) {
     return null
   }
-  return options.find((option) => String(option.value) === value) ?? { label: value, value }
+  return options.find((option) => String(option.value) === value || option.label === value) ?? { label: value, value }
+}
+
+function formatUnitDimension(dimensionType?: string) {
+  if (dimensionType === "CUSTOM") {
+    return "Packaging"
+  }
+  return dimensionType ? formatMachineLabel(dimensionType) : ""
+}
+
+const uomHelpText: Record<string, string> = {
+  base_uom_code: "The smallest stock-counting unit. Example: 1 piece or 1 bottle.",
+  purchase_uom_code: "How this product is bought from a supplier. Example: 1 carton.",
+  sales_uom_code: "How this product is sold to a customer. Example: 1 pack.",
 }
 
 function ProductDialog({
@@ -423,11 +438,13 @@ function ProductDialog({
               creatable
               formatCreateLabel={(inputValue: string) => `Use "${inputValue}"`}
               menuPortalTarget={selectMenuPortalTarget}
+              helperText={uomHelpText[key]}
             />
           ))}
           <div className="grid gap-2">
             <label className="text-sm font-medium text-gray-700">UOM conversion factor</label>
             <Input value={form.uom_conversion_factor} onChange={(e) => setForm((current) => ({ ...current, uom_conversion_factor: e.target.value }))} placeholder="1" type="number" min="0.000001" step="0.000001" />
+            <p className="text-xs text-gray-400">How many base units are represented by one product unit. Example: 1 carton = 24 pieces.</p>
           </div>
           <div className="grid gap-2">
             <label className="text-sm font-medium text-gray-700">Short description</label>
@@ -933,6 +950,8 @@ export default function GlobalCatalogAdminWorkspace() {
     { skip: !isStaff },
   )
   const { data: adminStats, isLoading: loadingStats } = useGetGlobalCatalogAdminStatsQuery(undefined, { skip: !isStaff })
+  const { data: catalogBrands = [] } = useGetGlobalCatalogAdminBrandsQuery(undefined, { skip: !isStaff })
+  const { data: catalogCategories = [] } = useGetGlobalCatalogAdminCategoriesQuery(undefined, { skip: !isStaff })
   const { data: units = [] } = useGetUnitsQuery()
   const [publishProduct, { isLoading: publishing }] = usePublishGlobalCatalogAdminProductMutation()
   const [archiveProduct, { isLoading: archiving }] = useArchiveGlobalCatalogAdminProductMutation()
@@ -944,18 +963,20 @@ export default function GlobalCatalogAdminWorkspace() {
   const pageNumbers = useMemo(() => buildVisiblePageNumbers(currentPage, totalPages), [currentPage, totalPages])
   const filterOptions = catalogPage?.filters ?? adminStats?.filters
   const brandOptions = useMemo<SelectOption[]>(
-    () => (filterOptions?.brands ?? []).map((value) => ({ label: value, value })),
-    [filterOptions?.brands],
+    () => (catalogBrands.length ? catalogBrands.map((brand) => ({ label: brand.name, value: brand.name })) : (filterOptions?.brands ?? []).map((value) => ({ label: value, value }))),
+    [catalogBrands, filterOptions?.brands],
   )
   const categoryOptions = useMemo<SelectOption[]>(
-    () => (filterOptions?.categories ?? []).map((value) => ({ label: value, value })),
-    [filterOptions?.categories],
+    () => (catalogCategories.length ? catalogCategories.map((category) => ({ label: category.path || category.name, value: category.name })) : (filterOptions?.categories ?? []).map((value) => ({ label: value, value }))),
+    [catalogCategories, filterOptions?.categories],
   )
   const unitOptions = useMemo<SelectOption[]>(
     () =>
       units.map((unit) => ({
-        label: unit.dimension_type ? `${unit.name} (${unit.dimension_type})` : unit.name,
-        value: unit.name,
+        label: unit.dimension_type
+          ? `${unit.name} (${unit.code}) · ${formatUnitDimension(unit.dimension_type)}`
+          : `${unit.name} (${unit.code})`,
+        value: unit.code,
       })),
     [units],
   )

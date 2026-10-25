@@ -94,6 +94,7 @@ const customStyles: StylesConfig<SelectOption, boolean> = {
   menuPortal: (provided) => ({
     ...provided,
     zIndex: 9999,
+    pointerEvents: "auto",
   }),
 }
 

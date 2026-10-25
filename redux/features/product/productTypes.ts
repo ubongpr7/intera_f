@@ -371,6 +371,22 @@ export interface GlobalCatalogAdminProduct {
   updated_at: string;
 }
 
+export interface GlobalCatalogBrandOption {
+  id: string;
+  name: string;
+  slug: string;
+  is_active: boolean;
+}
+
+export interface GlobalCatalogCategoryOption {
+  id: string;
+  name: string;
+  slug: string;
+  parent?: string | null;
+  path?: string;
+  is_active: boolean;
+}
+
 export interface GlobalProductCapture {
   id: string;
   barcode: string;
