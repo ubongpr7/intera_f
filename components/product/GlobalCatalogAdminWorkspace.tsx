@@ -368,7 +368,7 @@ function ProductDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl text-inherit">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto overscroll-contain text-inherit">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Edit global source product" : "Create global source product"}</DialogTitle>
           <DialogDescription>
