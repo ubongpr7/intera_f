@@ -377,6 +377,7 @@ export interface GlobalProductCapture {
   name_hint?: string;
   original_image?: string;
   image_url?: string | null;
+  attachments?: Attachment[];
   image_content_type?: string;
   captured_at?: string | null;
   device_id?: string;

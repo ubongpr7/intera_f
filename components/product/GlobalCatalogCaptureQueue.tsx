@@ -133,8 +133,9 @@ export default function GlobalCatalogCaptureQueue() {
           {data?.results?.map((capture) => (
             <article key={capture.id} className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <div className="flex gap-4">
-                <div className="h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-white">
-                  {capture.image_url ? <img src={capture.image_url} alt={capture.name_hint || capture.barcode} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-gray-400"><ImageIcon className="h-6 w-6" /></div>}
+                <div className="grid h-24 w-24 shrink-0 grid-cols-2 gap-1 overflow-hidden rounded-xl border border-gray-200 bg-white p-1">
+                  {[capture.image_url, ...(capture.attachments?.map((attachment) => attachment.file_url) || [])].filter(Boolean).slice(0, 4).map((url, index) => <img key={`${url}-${index}`} src={url as string} alt={`${capture.name_hint || capture.barcode} ${index + 1}`} className="h-full w-full rounded object-cover" />)}
+                  {!capture.image_url && !capture.attachments?.length ? <div className="col-span-2 flex h-full items-center justify-center text-gray-400"><ImageIcon className="h-6 w-6" /></div> : null}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
