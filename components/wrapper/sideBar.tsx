@@ -177,7 +177,7 @@ const SideBar = ({ user, workspace, mobileOpen, onMobileClose }:SideBarDataProps
               {profileMenuOpen && !navigationCollapsed ? (
                 <div className="dashboard-profile-menu">
                   <Link href="/user/settings" onClick={() => setProfileMenuOpen(false)}><UserRound className="h-4 w-4" />Account settings</Link>
-                  <Link href="/profile" onClick={() => setProfileMenuOpen(false)}><Building2 className="h-4 w-4" />Company profile</Link>
+                  <Link href="/profile" onClick={() => setProfileMenuOpen(false)}><Building2 className="h-4 w-4" />Workspace profile</Link>
                 </div>
               ) : null}
             </div>

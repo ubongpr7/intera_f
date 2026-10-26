@@ -427,7 +427,7 @@ const Navbar = ({
     { href: '/audit', label: 'Audit trail', icon: ShieldCheck },
   ] : hasWorkspaceProfile ? [
     { href: '/settings', label: 'Workspace settings', icon: SettingsIcon },
-    { href: '/subscription', label: 'Institution billing', icon: CreditCard },
+    { href: '/subscription', label: 'Workspace billing', icon: CreditCard },
     { href: '/agent/settings', label: 'Agent settings', icon: Bot },
     {
       href: '/profile/support-access',

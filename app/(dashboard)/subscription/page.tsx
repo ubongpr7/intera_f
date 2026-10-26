@@ -846,24 +846,32 @@ export default function SubscriptionPage() {
                       </div>
                     ) : null}
                     <div className="mt-4 grid gap-2">
-                      <Button
-                        variant={selected ? "outline" : "default"}
-                        disabled={(selected && !subscriptionPendingCancellation) || paymentPendingForPlan || busy || blockedByUsage || blockedByLoadingUsage}
-                        onClick={() => openBillingConfirmation(plan.slug, true)}
-                      >
-                        {paymentPendingForPlan
-                          ? latestPlanPaymentStatus === "processing" ? "Payment processing" : "Activation pending"
-                          : selected
-                          ? subscriptionPendingCancellation ? "Resume renewal" : "Current plan"
-                          : blockedByLoadingUsage ? "Checking usage..."
-                          : blockedByUsage ? "Usage too high" : `Start ${plan.trial_days}-day free trial`}
-                      </Button>
-                      {!selected && !paymentPendingForPlan && !blockedByUsage && !blockedByLoadingUsage ? (
+                      {selected || paymentPendingForPlan || !activePlan ? (
+                        <Button
+                          variant={selected ? "outline" : "default"}
+                          className={selected ? "border-emerald-600 bg-emerald-100 text-emerald-950 hover:bg-emerald-200 dark:border-emerald-500 dark:bg-emerald-950/50 dark:text-emerald-50 dark:hover:bg-emerald-900/60" : undefined}
+                          disabled={(selected && !subscriptionPendingCancellation) || paymentPendingForPlan || busy || blockedByUsage || blockedByLoadingUsage}
+                          onClick={() => openBillingConfirmation(plan.slug, true)}
+                        >
+                          {paymentPendingForPlan
+                            ? latestPlanPaymentStatus === "processing" ? "Payment processing" : "Activation pending"
+                            : selected
+                            ? subscriptionPendingCancellation ? "Resume renewal" : "Current plan"
+                            : blockedByLoadingUsage ? "Checking usage..."
+                            : blockedByUsage ? "Usage too high" : `Start ${plan.trial_days}-day free trial`}
+                        </Button>
+                      ) : (
                         <Button
                           variant="outline"
-                          disabled={busy}
+                          className="border-blue-300 bg-blue-50 text-blue-800 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-950/40 dark:text-blue-100 dark:hover:bg-blue-900/60"
+                          disabled={busy || blockedByUsage || blockedByLoadingUsage}
                           onClick={() => openBillingConfirmation(plan.slug, false)}
                         >
+                          {blockedByLoadingUsage ? "Checking usage..." : blockedByUsage ? "Usage too high" : `Switch to ${plan.name}`}
+                        </Button>
+                      )}
+                      {!activePlan && !selected && !paymentPendingForPlan && !blockedByUsage && !blockedByLoadingUsage ? (
+                        <Button variant="outline" disabled={busy} onClick={() => openBillingConfirmation(plan.slug, false)}>
                           Subscribe immediately
                         </Button>
                       ) : null}
