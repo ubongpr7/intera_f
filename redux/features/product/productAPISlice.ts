@@ -1031,6 +1031,15 @@ export const productApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: ["GlobalCatalog"],
     }),
 
+    optimizeAttachment: builder.mutation<Attachment, string>({
+      query: (id) => ({
+        url: `/${product_api}/attachments/${id}/optimize/`,
+        method: "POST",
+        service: service,
+      }),
+      invalidatesTags: ["GlobalCatalog"],
+    }),
+
     bulkUploadAttachments: builder.mutation({
       query: (uploadData) => ({
         url: `/${product_api}/bulk/attachments/upload/`,
@@ -1327,6 +1336,7 @@ export const {
   useDeleteAttachmentMutation,
   useGetAttachmentsQuery,
   useSetPrimaryAttachmentMutation,
+  useOptimizeAttachmentMutation,
   useBulkUploadAttachmentsMutation,
 
   // POS Configuration

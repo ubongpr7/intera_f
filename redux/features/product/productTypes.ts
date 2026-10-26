@@ -30,6 +30,9 @@ export interface Attachment {
   mime_type?: string;
   content_type?: number | string;
   object_id?: string;
+  processing_status?: "QUEUED" | "PROCESSING" | "COMPLETED" | "FAILED";
+  processing_error?: string;
+  processing_metadata?: Record<string, unknown>;
 }
 
 export interface ProductAttribute extends UUIDBaseModel {

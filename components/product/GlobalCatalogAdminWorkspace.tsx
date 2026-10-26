@@ -29,6 +29,7 @@ import {
   useGetGlobalCatalogAdminBrandsQuery,
   useGetGlobalCatalogAdminCategoriesQuery,
   useGetGlobalCatalogAdminStatsQuery,
+  useOptimizeAttachmentMutation,
   usePublishGlobalCatalogAdminProductMutation,
   useResolveGlobalCatalogBarcodesMutation,
   useSetPrimaryAttachmentMutation,
@@ -592,6 +593,7 @@ function VariantMediaManager({
   const [createAttachment, { isLoading: isUploading }] = useCreateAttachmentMutation()
   const [setPrimaryAttachment, { isLoading: isSettingPrimary }] = useSetPrimaryAttachmentMutation()
   const [deleteAttachment, { isLoading: isDeleting }] = useDeleteAttachmentMutation()
+  const [optimizeAttachment, { isLoading: isOptimizing }] = useOptimizeAttachmentMutation()
 
   const handleUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || [])
@@ -634,6 +636,15 @@ function VariantMediaManager({
       toast.success("Source media deleted.")
     } catch (error: any) {
       toast.error(error?.data?.detail || "Failed to delete the source image.")
+    }
+  }
+
+  const handleOptimize = async (attachmentId: string) => {
+    try {
+      await optimizeAttachment(attachmentId).unwrap()
+      toast.success("Image optimization queued.")
+    } catch (error: any) {
+      toast.error(error?.data?.detail || "Unable to queue image optimization.")
     }
   }
 
@@ -703,6 +714,15 @@ function VariantMediaManager({
                   <p className="mt-3 line-clamp-2 text-sm text-gray-600">
                     {attachment.description || "Curated source media"}
                   </p>
+
+                  {attachment.processing_status === "FAILED" ? (
+                    <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                      Optimization failed. The original image is still being used.
+                      <Button variant="outline" className="mt-2 rounded-full" onClick={() => void handleOptimize(String(attachment.id))} disabled={isOptimizing}>
+                        {isOptimizing ? "Queuing..." : "Optimize image"}
+                      </Button>
+                    </div>
+                  ) : null}
 
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     {!attachment.is_primary ? (
