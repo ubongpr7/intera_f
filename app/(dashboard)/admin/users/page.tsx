@@ -30,6 +30,7 @@ export default function PlatformUsersPage() {
   const [editCommission, setEditCommission] = useState("5")
   const [editIsStaff, setEditIsStaff] = useState(false)
   const [editIsAffiliate, setEditIsAffiliate] = useState(false)
+  const [editIsVerified, setEditIsVerified] = useState(false)
 
   const filteredUsers = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -49,6 +50,7 @@ export default function PlatformUsersPage() {
     setEditCommission(String(Number(user.referral_commission_rate ?? 0.05) * 100))
     setEditIsStaff(Boolean(user.is_staff))
     setEditIsAffiliate(Boolean(user.is_affiliate_marketer))
+    setEditIsVerified(Boolean(user.is_verified))
   }
 
   const cancelEdit = () => setEditingId(null)
@@ -70,6 +72,7 @@ export default function PlatformUsersPage() {
           referral_commission_rate: (commission / 100).toFixed(5),
           is_staff: editIsStaff,
           is_affiliate_marketer: editIsAffiliate,
+          is_verified: editIsVerified,
         },
       }).unwrap()
       await refetch()
@@ -146,6 +149,7 @@ export default function PlatformUsersPage() {
               <div className="space-y-2"><label htmlFor="edit-commission" className="text-sm font-medium text-gray-900">Commission percentage</label><Input id="edit-commission" value={editCommission} onChange={(event) => setEditCommission(event.target.value)} inputMode="decimal" placeholder="Commission %" /></div>
               <label className="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" checked={editIsStaff} onChange={(event) => setEditIsStaff(event.target.checked)} /> Platform staff</label>
               <label className="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" checked={editIsAffiliate} onChange={(event) => setEditIsAffiliate(event.target.checked)} /> Affiliate marketer</label>
+              <label className="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" checked={editIsVerified} onChange={(event) => setEditIsVerified(event.target.checked)} /> Verified account</label>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={cancelEdit}><X className="mr-1 h-4 w-4" />Cancel</Button>
