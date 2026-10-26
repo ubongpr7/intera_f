@@ -719,7 +719,10 @@ function VariantMediaManager({
 
                   {attachment.processing_status === "FAILED" ? (
                     <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-                      Optimization failed. The original image is still being used.
+                      <p>Optimization failed. The original image is still being used.</p>
+                      {attachment.processing_error ? (
+                        <p className="mt-1 break-words font-mono text-[11px]">Reason: {attachment.processing_error}</p>
+                      ) : null}
                       {!readOnly ? <Button variant="outline" className="mt-2 rounded-full" onClick={() => void handleOptimize(String(attachment.id))} disabled={isOptimizing}>
                         {isOptimizing ? "Queuing..." : "Optimize image"}
                       </Button> : null}
