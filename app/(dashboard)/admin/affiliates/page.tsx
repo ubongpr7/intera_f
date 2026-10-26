@@ -30,7 +30,7 @@ const toRate = (value: string) => {
 }
 
 export default function AffiliatePartnersPage() {
-  const { data: partners = [], isLoading, isError } = useListAffiliatePartnersQuery()
+  const { data: partners = [], isLoading, isError, refetch: refetchPartners } = useListAffiliatePartnersQuery()
   const { data: users = [] } = useListUsersQuery()
   const { data: payouts = [] } = useListReferralPayoutsQuery()
   const [createPartner, { isLoading: isCreating }] = useCreateAffiliatePartnerMutation()
@@ -80,6 +80,7 @@ export default function AffiliatePartnersPage() {
   const togglePartner = async (partner: AffiliatePartner) => {
     try {
       await updatePartner({ id: partner.id, is_active: !partner.is_active }).unwrap()
+      await refetchPartners()
       toast.success(`${partner.name} is now ${partner.is_active ? "inactive" : "active"}.`)
     } catch {
       toast.error("Unable to update affiliate partner.")
@@ -110,6 +111,7 @@ export default function AffiliatePartnersPage() {
         commission_rate: commissionRate,
         notes: editNotes.trim(),
       }).unwrap()
+      await refetchPartners()
       setEditingId(null)
       toast.success("Affiliate partner updated.")
     } catch (error: any) {

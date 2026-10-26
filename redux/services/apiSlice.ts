@@ -125,6 +125,7 @@ interface AuthResponsePayload {
   username?: string
   is_staff?: boolean
   is_superuser?: boolean
+  is_affiliate_marketer?: boolean
   profile?: string | number | null
   profile_context?: ProfileContext | null
   currency?: string | null
@@ -143,6 +144,7 @@ interface AuthTokenClaims {
   has_setup_mfa?: boolean
   is_staff?: boolean
   is_superuser?: boolean
+  is_affiliate_marketer?: boolean
 }
 
 const AUTH_RESPONSE_URLS = new Set(["/auth/login/", "/auth/refresh/", "/auth/switch-company/", "/accounts/mfa/verify/"])

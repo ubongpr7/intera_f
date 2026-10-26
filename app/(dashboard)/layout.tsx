@@ -6,6 +6,7 @@ import { RouteAccessGuard } from "@/lib/permissionsGuard";
 import { SubscriptionRequiredGuard } from "@/components/subscription/SubscriptionRequiredGuard";
 import AdminPortalGuard from "@/components/admin/AdminPortalGuard";
 import { useAdminHost } from "@/lib/adminHost";
+import AffiliateMarketerGuard from "@/components/affiliate/AffiliateMarketerGuard"
 
 
 export default function DashboardLayout({
@@ -31,7 +32,9 @@ export default function DashboardLayout({
         <AdminPortalGuard>{children}</AdminPortalGuard>
       ) : (
         <RouteAccessGuard>
-          <SubscriptionRequiredGuard>{children}</SubscriptionRequiredGuard>
+          <AffiliateMarketerGuard>
+            <SubscriptionRequiredGuard>{children}</SubscriptionRequiredGuard>
+          </AffiliateMarketerGuard>
         </RouteAccessGuard>
       )}
     </DashboardHeader>

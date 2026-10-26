@@ -8,6 +8,7 @@ import { AlertTriangle, CalendarClock, CheckCircle2, Coins, CreditCard, Gauge, L
 import { toast } from "react-toastify"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { readCookieValue } from "@/lib/authCookies"
 import { useGetTerminalsQuery } from "@/redux/features/pos/posAPISlice"
 import { useGetProductDataQuery } from "@/redux/features/product/productAPISlice"
@@ -39,6 +40,11 @@ type PlanLimitIssue = {
   usage: number
   limit: number
   message: string
+}
+
+type BillingIntent = {
+  planSlug: string
+  startTrial: boolean
 }
 
 const label = (value: string) => value.replaceAll("-", " ").replace(/\b\w/g, (char) => char.toUpperCase())
@@ -248,6 +254,7 @@ export default function SubscriptionPage() {
   const [cancelSubscription, { isLoading: cancellingSubscription }] = useCancelSubscriptionMutation()
   const [topUpCoins, { isLoading: toppingUpCoins }] = useTopUpCoinsMutation()
   const [coinTopUpAmount, setCoinTopUpAmount] = useState("100")
+  const [billingIntent, setBillingIntent] = useState<BillingIntent | null>(null)
   const activePlan = entitlements?.subscription?.plan
   const activePlanRecord = useMemo(
     () => plans.find((plan) => plan.slug === activePlan?.slug),
@@ -452,7 +459,7 @@ export default function SubscriptionPage() {
       })
   }, [refetch, refetchCoinTransactions, refetchPayments, searchParams, verifyPayment])
 
-  const authorizeBilling = async (planSlug: string) => {
+  const authorizeBilling = async (planSlug: string, startTrial = true) => {
     if (!owner) return
     const plan = plans.find((candidate) => candidate.slug === planSlug)
     const limitIssues = plan ? getPlanLimitIssues(plan) : []
@@ -476,6 +483,7 @@ export default function SubscriptionPage() {
         customer_name: [firstName, lastName].filter(Boolean).join(" ").trim() || customerEmail,
         success_url: `${window.location.origin}/subscription`,
         cancel_url: `${window.location.origin}/subscription`,
+        start_trial: startTrial,
       }).unwrap()
       if (response?.checkout_url) {
         window.location.assign(response.checkout_url)
@@ -485,6 +493,17 @@ export default function SubscriptionPage() {
     } catch {
       toast.error("Unable to initialize secure billing.")
     }
+  }
+
+  const openBillingConfirmation = (planSlug: string, startTrial: boolean) => {
+    setBillingIntent({ planSlug, startTrial })
+  }
+
+  const confirmBillingIntent = async () => {
+    if (!billingIntent) return
+    const intent = billingIntent
+    setBillingIntent(null)
+    await authorizeBilling(intent.planSlug, intent.startTrial)
   }
 
   const cancelActiveSubscription = async () => {
@@ -737,7 +756,7 @@ export default function SubscriptionPage() {
                   {subscriptionPendingCancellation ? (
                     <Button
                       variant="outline"
-                      onClick={() => void authorizeBilling(activePlan.slug)}
+                      onClick={() => openBillingConfirmation(activePlan.slug, false)}
                       disabled={initiatingPayment || verifyingPayment}
                     >
                       {initiatingPayment ? "Opening checkout..." : "Resume renewal"}
@@ -760,7 +779,7 @@ export default function SubscriptionPage() {
                         No card is connected yet. Connect a card to start the seven-day trial. Paystack will process ₦1,000 for 10,000 Intera tokens; the selected plan's monthly billing starts after the trial unless cancelled.
                       </span>
                     </div>
-                    <Button size="sm" onClick={() => authorizeBilling(activePlan.slug)} disabled={initiatingPayment || verifyingPayment}>
+                    <Button size="sm" onClick={() => openBillingConfirmation(activePlan.slug, true)} disabled={initiatingPayment || verifyingPayment}>
                       Connect card
                     </Button>
                   </div>
@@ -826,19 +845,29 @@ export default function SubscriptionPage() {
                         Checking current workspace usage for this plan.
                       </div>
                     ) : null}
-                    <Button
-                      className="mt-4 w-full"
-                      variant={selected ? "outline" : "default"}
-                      disabled={(selected && !subscriptionPendingCancellation) || paymentPendingForPlan || busy || blockedByUsage || blockedByLoadingUsage}
-                      onClick={() => authorizeBilling(plan.slug)}
-                    >
-                      {paymentPendingForPlan
-                        ? latestPlanPaymentStatus === "processing" ? "Payment processing" : "Activation pending"
-                        : selected
-                        ? subscriptionPendingCancellation ? "Resume renewal" : "Current plan"
-                        : blockedByLoadingUsage ? "Checking usage..."
-                        : blockedByUsage ? "Usage too high" : activePlan ? "Switch to this plan" : "Choose plan"}
-                    </Button>
+                    <div className="mt-4 grid gap-2">
+                      <Button
+                        variant={selected ? "outline" : "default"}
+                        disabled={(selected && !subscriptionPendingCancellation) || paymentPendingForPlan || busy || blockedByUsage || blockedByLoadingUsage}
+                        onClick={() => openBillingConfirmation(plan.slug, true)}
+                      >
+                        {paymentPendingForPlan
+                          ? latestPlanPaymentStatus === "processing" ? "Payment processing" : "Activation pending"
+                          : selected
+                          ? subscriptionPendingCancellation ? "Resume renewal" : "Current plan"
+                          : blockedByLoadingUsage ? "Checking usage..."
+                          : blockedByUsage ? "Usage too high" : `Start ${plan.trial_days}-day free trial`}
+                      </Button>
+                      {!selected && !paymentPendingForPlan && !blockedByUsage && !blockedByLoadingUsage ? (
+                        <Button
+                          variant="outline"
+                          disabled={busy}
+                          onClick={() => openBillingConfirmation(plan.slug, false)}
+                        >
+                          Subscribe immediately
+                        </Button>
+                      ) : null}
+                    </div>
                   </div>
                 )
               })}
@@ -1009,6 +1038,45 @@ export default function SubscriptionPage() {
           ))}
         </CardContent>
       </Card>
+      <Dialog open={Boolean(billingIntent)} onOpenChange={(open) => !open && setBillingIntent(null)}>
+        <DialogContent className="text-gray-900">
+          <DialogHeader>
+            <DialogTitle>
+              {billingIntent?.startTrial ? "Confirm your free trial" : "Confirm your subscription"}
+            </DialogTitle>
+            <DialogDescription>
+              {billingIntent?.startTrial
+                ? "Review the card authorization and trial terms before continuing to Paystack."
+                : "Review the monthly billing terms before continuing to Paystack."}
+            </DialogDescription>
+          </DialogHeader>
+          {(() => {
+            const plan = plans.find((candidate) => candidate.slug === billingIntent?.planSlug)
+            if (!plan || !billingIntent) return null
+            const trialEnd = new Date()
+            trialEnd.setDate(trialEnd.getDate() + Number(plan.trial_days || 7))
+            return billingIntent.startTrial ? (
+              <div className="space-y-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950">
+                <p>You will authorize a <strong>₦{Number(plan.trial_authorization_amount ?? 1000).toLocaleString()}</strong> Paystack charge to connect your card and receive the trial token allocation.</p>
+                <p>Your <strong>{plan.trial_days || 7}-day free trial</strong> ends on <strong>{formatDate(trialEnd.toISOString())}</strong>.</p>
+                <p>After the trial ends, your card will be charged <strong>{formatPrice(plan)}</strong> per {plan.billing_cycle === "YEARLY" ? "year" : plan.billing_cycle === "QUARTERLY" ? "quarter" : "month"} automatically unless you cancel before the trial ends.</p>
+              </div>
+            ) : (
+              <div className="space-y-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950">
+                <p>You are subscribing to <strong>{plan.name}</strong> immediately.</p>
+                <p>Your card will be charged <strong>{formatPrice(plan)}</strong> per {plan.billing_cycle === "YEARLY" ? "year" : plan.billing_cycle === "QUARTERLY" ? "quarter" : "month"}.</p>
+                <p>No free-trial period will be applied to this checkout.</p>
+              </div>
+            )
+          })()}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBillingIntent(null)}>Go back</Button>
+            <Button onClick={() => void confirmBillingIntent()} disabled={initiatingPayment || verifyingPayment}>
+              {initiatingPayment ? "Opening Paystack..." : "Continue to Paystack"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

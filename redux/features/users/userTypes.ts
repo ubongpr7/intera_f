@@ -13,6 +13,7 @@ export interface UserData {
   sex?: "male" | "female" | "not_to_mention" | null;
   is_verified: boolean;
   is_staff: boolean;
+  is_affiliate_marketer?: boolean;
   mfa_enabled?: boolean;
   has_setup_mfa?: boolean;
   date_of_birth?: Date | string | null;
@@ -79,6 +80,7 @@ export interface UserSummary {
   role?: string | null;
   is_staff?: boolean;
   is_superuser?: boolean;
+  is_affiliate_marketer?: boolean;
   is_verified?: boolean;
   mfa_enabled?: boolean;
   date_joined?: Date | string;
