@@ -74,7 +74,7 @@ export function SubscriptionsTab() {
   const formatAmount = (payment: PaymentRecord) =>
     new Intl.NumberFormat("en-NG", {
       style: "currency",
-      currency: String(payment.metadata?.currency ?? "NGN"),
+      currency: String(payment.currency ?? payment.metadata?.currency ?? "NGN"),
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
     }).format(Number(payment.amount ?? 0))

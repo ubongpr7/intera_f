@@ -30,6 +30,8 @@ import { useGetPaymentAnalyticsQuery, useGetSubscriptionAnalyticsQuery } from "@
 import { useGetPaymentAppsQuery, useGetPaymentProvidersQuery, useGetSubscriptionPlansQuery, useGetPaymentsQuery, useGetSubscriptionsQuery } from "@/redux/features/payment/paymentAPISlice"
 
 const formatNumber = (value: number) => new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(value)
+const formatCurrency = (value: number, currency = "NGN") =>
+  new Intl.NumberFormat("en-NG", { style: "currency", currency, minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(value)
 
 export default function PaymentAdminPage() {
   const { data: paymentAnalytics } = useGetPaymentAnalyticsQuery({ period: "30d" })
@@ -44,7 +46,7 @@ export default function PaymentAdminPage() {
     () => [
       {
         label: "Revenue",
-        value: formatNumber(paymentAnalytics?.total_revenue ?? 0),
+        value: formatCurrency(paymentAnalytics?.total_revenue ?? 0, paymentAnalytics?.currency ?? "NGN"),
         description: "Tracked across the selected period",
         icon: CreditCard,
         tone: "green" as const,
@@ -113,9 +115,10 @@ export default function PaymentAdminPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3">
-                <span className="text-sm text-slate-600">Payment success</span>
+                <span className="text-sm text-slate-600">Payment success rate</span>
                 <span className="text-sm font-semibold text-slate-950">{formatNumber(paymentAnalytics?.conversion_rate ?? 0)}%</span>
               </div>
+              <p className="text-xs text-slate-500">Completed payments divided by all payment attempts in the selected period.</p>
               <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3">
                 <span className="text-sm text-slate-600">Providers configured</span>
                 <span className="text-sm font-semibold text-slate-950">{formatNumber(providers.length)}</span>

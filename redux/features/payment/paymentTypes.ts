@@ -33,6 +33,7 @@ export interface PaymentRecord {
   reference?: string;
   external_payment_id?: string;
   amount: string | number;
+  currency?: string;
   status: PaymentStatus;
   provider_name?: string;
   application_name?: string;
@@ -73,6 +74,7 @@ export interface SubscriptionRecord {
 
 export interface PaymentAnalyticsResponse {
   total_revenue: number;
+  currency?: string;
   revenue_change: number;
   successful_payments: number;
   payment_change: number;
@@ -80,6 +82,7 @@ export interface PaymentAnalyticsResponse {
   conversion_change: number;
   recent_payments: Array<{
     amount: string | number;
+    currency?: string;
     provider: string;
     created_at: string;
   }>;

@@ -58,6 +58,8 @@ const adminLinks = [
 ]
 
 const formatNumber = (value: number) => new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(value)
+const formatCurrency = (value: number, currency = "NGN") =>
+  new Intl.NumberFormat("en-NG", { style: "currency", currency, minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(value)
 
 const insightTone = {
   green: "border-emerald-200 bg-emerald-50 text-emerald-950",
@@ -136,7 +138,7 @@ export default function AdminPage() {
   const topLineStats = [
     {
       label: "Revenue",
-      value: formatNumber(paymentAnalytics?.total_revenue ?? 0),
+      value: formatCurrency(paymentAnalytics?.total_revenue ?? 0, paymentAnalytics?.currency ?? "NGN"),
       description: `${formatNumber(paymentAnalytics?.successful_payments ?? 0)} successful payments tracked`,
       tone: "green" as const,
       icon: CreditCard,
@@ -201,9 +203,10 @@ export default function AdminPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3">
-                <span className="text-sm text-slate-600 dark:text-slate-300">Payment conversion</span>
+                <span className="text-sm text-slate-600 dark:text-slate-300">Payment success rate</span>
                 <span className="text-sm font-semibold text-slate-950 dark:text-white">{formatNumber(paymentAnalytics?.conversion_rate ?? 0)}%</span>
               </div>
+              <p className="pt-1 text-xs text-slate-500">Completed payments divided by all payment attempts in the selected period.</p>
               <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3">
                 <span className="text-sm text-slate-600 dark:text-slate-300">Subscription change</span>
                 <span className="text-sm font-semibold text-slate-950 dark:text-white">{formatNumber(subscriptionAnalytics?.subscription_change ?? 0)}%</span>
