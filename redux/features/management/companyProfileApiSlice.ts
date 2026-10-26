@@ -137,6 +137,22 @@ export const companyApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
+    verifyCompanyProfile: builder.mutation<CompanyProfileListItem, string>({
+      query: (id) => ({
+        url: `/${managementApi}/profiles/${id}/verify/`,
+        method: "POST",
+        service,
+      }),
+    }),
+
+    unverifyCompanyProfile: builder.mutation<CompanyProfileListItem, string>({
+      query: (id) => ({
+        url: `/${managementApi}/profiles/${id}/unverify/`,
+        method: "POST",
+        service,
+      }),
+    }),
+
     getCompanyProfileStaffAssignments: builder.query<StaffAssignment[], string>({
       query: (profileId) => ({
         url: `/${managementApi}/profiles/${profileId}/staff_active_assignments/`,
@@ -663,6 +679,8 @@ export const {
   useUpdateCompanyProfileMutation,
   useGetCompanyProfileQuery,
   useDeleteCompanyProfileMutation,
+  useVerifyCompanyProfileMutation,
+  useUnverifyCompanyProfileMutation,
   useGetCompanyProfileStaffAssignmentsQuery,
   useAddStaffToCompanyProfileMutation,
   useRemoveStaffFromCompanyProfileMutation,

@@ -35,7 +35,9 @@ export interface CompanyProfileListItem {
   industry?: string;
   employees_count?: number;
   is_verified: boolean;
+  verification_date?: string | null;
   owner_name?: string;
+  owner_email?: string | null;
   staff_count: number;
   created_at: string;
 }

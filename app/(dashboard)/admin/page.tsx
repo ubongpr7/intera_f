@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useMemo, useState } from "react"
-import { AlertTriangle, Boxes, CheckCircle2, CreditCard, FileSearch, Link2, PackageSearch, RefreshCw, Settings, ShieldCheck, Users, Webhook } from "lucide-react"
+import { AlertTriangle, Boxes, Building2, CheckCircle2, CreditCard, FileSearch, Link2, PackageSearch, RefreshCw, Settings, ShieldCheck, Users, Webhook } from "lucide-react"
 
 import StatTile from "@/components/dashboard/StatTile"
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,12 @@ import { useGetGlobalCatalogAdminStatsQuery, useGetGlobalProductCapturesQuery } 
 import { useGetAdminSummaryQuery, useListReferralPayoutsQuery } from "@/redux/features/users/userApiSlice"
 
 const adminLinks = [
+  {
+    href: "/admin/workspaces",
+    title: "Workspace management",
+    description: "Review workspace owners, verify new workspaces, and manage platform workspaces.",
+    icon: Building2,
+  },
   {
     href: "/payment-admin",
     title: "Billing and subscriptions",
