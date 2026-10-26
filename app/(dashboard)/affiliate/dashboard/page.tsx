@@ -27,7 +27,7 @@ const metrics: { label: string; value: string | number; Icon: LucideIcon }[] = [
 
 export default function AffiliateDashboardPage() {
   const { data, isLoading, isError } = useGetReferralDashboardQuery()
-  const commissionRate = useMemo(() => `${Number(data?.commission_rate ?? 0) * 100}%`, [data?.commission_rate])
+  const commissionRate = useMemo(() => data?.commission_rate_display ?? `${Number(data?.commission_rate ?? 0) * 100}%`, [data?.commission_rate, data?.commission_rate_display])
 
   const copyLink = async () => {
     if (!data?.referral_url) return

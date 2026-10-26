@@ -47,6 +47,7 @@ export interface ReferralDashboard {
   referral_code: string;
   referral_url: string;
   commission_rate: string | number;
+  commission_rate_display?: string;
   referred_count: number;
   referred_users: ReferralUser[];
   earnings: {
