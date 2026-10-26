@@ -581,9 +581,11 @@ function VariantDialog({
 function VariantMediaManager({
   variant,
   productName,
+  readOnly = false,
 }: {
   variant: GlobalCatalogVariant
   productName: string
+  readOnly?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const { data: attachments = [], isLoading } = useGetAttachmentsQuery(
@@ -650,10 +652,10 @@ function VariantMediaManager({
 
   return (
     <>
-      <Button variant="outline" className="rounded-full" onClick={() => setOpen(true)}>
+      {!readOnly ? <Button variant="outline" className="rounded-full" onClick={() => setOpen(true)}>
         <ImagePlus className="mr-2 h-4 w-4" />
         Manage media
-      </Button>
+      </Button> : null}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-5xl text-inherit">
@@ -668,11 +670,11 @@ function VariantMediaManager({
             <div className="text-sm text-gray-600">
               {attachments.length} source image{attachments.length === 1 ? "" : "s"} attached to this variant.
             </div>
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50">
+            {!readOnly ? <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50">
               <ImagePlus className="h-4 w-4" />
               {isUploading ? "Uploading..." : "Upload image(s)"}
               <input type="file" accept="image/*" multiple className="hidden" onChange={(event) => void handleUpload(event)} />
-            </label>
+            </label> : null}
           </div>
 
           {isLoading ? (
@@ -718,23 +720,23 @@ function VariantMediaManager({
                   {attachment.processing_status === "FAILED" ? (
                     <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
                       Optimization failed. The original image is still being used.
-                      <Button variant="outline" className="mt-2 rounded-full" onClick={() => void handleOptimize(String(attachment.id))} disabled={isOptimizing}>
+                      {!readOnly ? <Button variant="outline" className="mt-2 rounded-full" onClick={() => void handleOptimize(String(attachment.id))} disabled={isOptimizing}>
                         {isOptimizing ? "Queuing..." : "Optimize image"}
-                      </Button>
+                      </Button> : null}
                     </div>
                   ) : null}
 
                   <div className="mt-4 flex flex-wrap items-center gap-2">
-                    {!attachment.is_primary ? (
+                    {!readOnly && !attachment.is_primary ? (
                       <Button variant="outline" className="rounded-full" onClick={() => void handleSetPrimary(String(attachment.id))} disabled={isSettingPrimary}>
                         <Star className="mr-2 h-4 w-4" />
                         Make primary
                       </Button>
                     ) : null}
-                    <Button variant="outline" className="rounded-full text-red-600 hover:text-red-700" onClick={() => void handleDelete(String(attachment.id))} disabled={isDeleting}>
+                    {!readOnly ? <Button variant="outline" className="rounded-full text-red-600 hover:text-red-700" onClick={() => void handleDelete(String(attachment.id))} disabled={isDeleting}>
                       <Trash2 className="mr-2 h-4 w-4" />
                       Delete
-                    </Button>
+                    </Button> : null}
                   </div>
                 </div>
               ))}
@@ -751,11 +753,13 @@ function VariantCard({
   variant,
   onEdit,
   onDelete,
+  readOnly = false,
 }: {
   product: GlobalCatalogAdminProduct
   variant: GlobalCatalogVariant
   onEdit: (product: GlobalCatalogAdminProduct, variant: GlobalCatalogVariant) => void
   onDelete: (variant: GlobalCatalogVariant) => void
+  readOnly?: boolean
 }) {
   const [updateVariant, { isLoading }] = useUpdateGlobalCatalogAdminVariantMutation()
 
@@ -814,18 +818,18 @@ function VariantCard({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <VariantMediaManager variant={variant} productName={product.name} />
-          <Button variant="outline" className="rounded-full" onClick={() => onEdit(product, variant)}>
+          <VariantMediaManager variant={variant} productName={product.name} readOnly={readOnly} />
+          {!readOnly ? <Button variant="outline" className="rounded-full" onClick={() => onEdit(product, variant)}>
             <Pencil className="mr-2 h-4 w-4" />
             Edit variant
-          </Button>
-          <Button variant="outline" className="rounded-full" onClick={() => void toggleActive()} disabled={isLoading}>
+          </Button> : null}
+          {!readOnly ? <Button variant="outline" className="rounded-full" onClick={() => void toggleActive()} disabled={isLoading}>
             {variant.is_active ? "Deactivate" : "Reactivate"}
-          </Button>
-          <Button variant="outline" className="rounded-full text-red-600 hover:text-red-700" onClick={() => onDelete(variant)}>
+          </Button> : null}
+          {!readOnly ? <Button variant="outline" className="rounded-full text-red-600 hover:text-red-700" onClick={() => onDelete(variant)}>
             <Trash2 className="mr-2 h-4 w-4" />
             Delete
-          </Button>
+          </Button> : null}
         </div>
       </div>
     </div>
@@ -958,6 +962,8 @@ function BulkIngestDialog({
 export default function GlobalCatalogAdminWorkspace() {
   const token = getDecodedToken() as StaffToken | null
   const isStaff = truthyAccessClaim(token?.is_staff) || truthyAccessClaim(token?.is_superuser)
+  const isSuperuser = truthyAccessClaim(token?.is_superuser)
+  const readOnly = !isSuperuser
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<GlobalCatalogAdminProduct | null>(null)
   const [variantProduct, setVariantProduct] = useState<GlobalCatalogAdminProduct | null>(null)
@@ -1131,14 +1137,14 @@ export default function GlobalCatalogAdminWorkspace() {
               </CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Button variant="outline" onClick={() => setIsBulkIngestOpen(true)} className="rounded-full">
+              {!readOnly ? <Button variant="outline" onClick={() => setIsBulkIngestOpen(true)} className="rounded-full">
                 <Boxes className="mr-2 h-4 w-4" />
                 Bulk ingest
-              </Button>
-              <Button onClick={openCreateProduct} className="rounded-full">
+              </Button> : null}
+              {!readOnly ? <Button onClick={openCreateProduct} className="rounded-full">
                 <PackagePlus className="mr-2 h-4 w-4" />
                 New source product
-              </Button>
+              </Button> : null}
             </div>
           </div>
         </CardHeader>
@@ -1311,25 +1317,25 @@ export default function GlobalCatalogAdminWorkspace() {
                         <Eye className="mr-2 h-4 w-4" />
                         Preview
                       </Button>
-                      <Button variant="outline" className="rounded-full" onClick={() => openEditProduct(product)}>
+                      {!readOnly ? <Button variant="outline" className="rounded-full" onClick={() => openEditProduct(product)}>
                         <Pencil className="mr-2 h-4 w-4" />
                         Edit product
-                      </Button>
-                      <Button variant="outline" className="rounded-full" onClick={() => openCreateVariant(product)}>
+                      </Button> : null}
+                      {!readOnly ? <Button variant="outline" className="rounded-full" onClick={() => openCreateVariant(product)}>
                         <Shapes className="mr-2 h-4 w-4" />
                         Add variant
-                      </Button>
-                      {product.source_status !== "published" ? (
+                      </Button> : null}
+                      {!readOnly && product.source_status !== "published" ? (
                         <Button className="rounded-full" onClick={() => void handlePublish(product.id)} disabled={publishing}>
                           <Rocket className="mr-2 h-4 w-4" />
                           Publish
                         </Button>
-                      ) : (
+                      ) : !readOnly ? (
                         <Button variant="outline" className="rounded-full" onClick={() => void handleArchive(product.id)} disabled={archiving}>
                           <Archive className="mr-2 h-4 w-4" />
                           Archive
                         </Button>
-                      )}
+                      ) : null}
                     </div>
                   </div>
 
@@ -1342,6 +1348,7 @@ export default function GlobalCatalogAdminWorkspace() {
                           variant={variant}
                           onEdit={openEditVariant}
                           onDelete={(selectedVariant) => void handleDeleteVariant(selectedVariant)}
+                          readOnly={readOnly}
                         />
                       ))
                     ) : (

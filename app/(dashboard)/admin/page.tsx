@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { useGetPaymentAnalyticsQuery, useGetSubscriptionAnalyticsQuery, useGetWebhookLogsQuery } from "@/redux/features/payment/paymentAPISlice"
 import { useGetGlobalCatalogAdminStatsQuery, useGetGlobalProductCapturesQuery } from "@/redux/features/product/productAPISlice"
 import { useGetAdminSummaryQuery, useListReferralPayoutsQuery } from "@/redux/features/users/userApiSlice"
+import { isSuperuserFromToken } from "@/lib/adminAccess"
 
 const adminLinks = [
   {
@@ -97,16 +98,17 @@ function InsightCard({
 
 export default function AdminPage() {
   const [period, setPeriod] = useState("30d")
-  const { data: paymentAnalytics, isFetching: paymentFetching, refetch: refetchPayments } = useGetPaymentAnalyticsQuery({ period })
-  const { data: subscriptionAnalytics, isFetching: subscriptionFetching, refetch: refetchSubscriptions } = useGetSubscriptionAnalyticsQuery({ period })
+  const isSuperuser = isSuperuserFromToken()
+  const { data: paymentAnalytics, isFetching: paymentFetching, refetch: refetchPayments } = useGetPaymentAnalyticsQuery({ period }, { skip: !isSuperuser })
+  const { data: subscriptionAnalytics, isFetching: subscriptionFetching, refetch: refetchSubscriptions } = useGetSubscriptionAnalyticsQuery({ period }, { skip: !isSuperuser })
   const { data: catalogStats, isFetching: catalogFetching, refetch: refetchCatalog } = useGetGlobalCatalogAdminStatsQuery()
   const { data: pendingCaptureResponse, isFetching: pendingCaptureFetching, refetch: refetchPendingCaptures } = useGetGlobalProductCapturesQuery({ status: "pending", page_size: 1 })
   const { data: processingCaptureResponse, isFetching: processingCaptureFetching, refetch: refetchProcessingCaptures } = useGetGlobalProductCapturesQuery({ status: "processing", page_size: 1 })
   const { data: reviewCaptureResponse, isFetching: reviewCaptureFetching, refetch: refetchReviewCaptures } = useGetGlobalProductCapturesQuery({ status: "review", page_size: 1 })
   const { data: rejectedCaptureResponse, isFetching: rejectedCaptureFetching, refetch: refetchRejectedCaptures } = useGetGlobalProductCapturesQuery({ status: "rejected", page_size: 1 })
-  const { data: payoutResponse, isFetching: payoutFetching, refetch: refetchPayouts } = useListReferralPayoutsQuery()
+  const { data: payoutResponse, isFetching: payoutFetching, refetch: refetchPayouts } = useListReferralPayoutsQuery(undefined, { skip: !isSuperuser })
   const { data: adminSummary, isFetching: summaryFetching, refetch: refetchSummary } = useGetAdminSummaryQuery()
-  const { data: webhookResponse, isFetching: webhookFetching, refetch: refetchWebhooks } = useGetWebhookLogsQuery({ limit: 100, ordering: "-created_at" })
+  const { data: webhookResponse, isFetching: webhookFetching, refetch: refetchWebhooks } = useGetWebhookLogsQuery({ limit: 100, ordering: "-created_at" }, { skip: !isSuperuser })
   const [isRefreshing, setIsRefreshing] = useState(false)
 
   const pendingCaptures = (pendingCaptureResponse?.count ?? 0) + (processingCaptureResponse?.count ?? 0)
@@ -176,9 +178,7 @@ export default function AdminPage() {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <Button asChild className="bg-blue-600 text-white hover:bg-blue-700">
-                <Link href="/payment-admin">Open billing console</Link>
-              </Button>
+              {isSuperuser ? <Button asChild className="bg-blue-600 text-white hover:bg-blue-700"><Link href="/payment-admin">Open billing console</Link></Button> : null}
               <Button asChild variant="outline" className="border-gray-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                 <Link href="/product/global-catalog-admin">Open global catalog</Link>
               </Button>
@@ -203,26 +203,17 @@ export default function AdminPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3">
-                <span className="text-sm text-slate-600 dark:text-slate-300">Payment success rate</span>
-                <span className="text-sm font-semibold text-slate-950 dark:text-white">{formatNumber(paymentAnalytics?.conversion_rate ?? 0)}%</span>
-              </div>
-              <p className="pt-1 text-xs text-slate-500">Completed payments divided by all payment attempts in the selected period.</p>
-              <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3">
-                <span className="text-sm text-slate-600 dark:text-slate-300">Subscription change</span>
-                <span className="text-sm font-semibold text-slate-950 dark:text-white">{formatNumber(subscriptionAnalytics?.subscription_change ?? 0)}%</span>
-              </div>
-              <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3">
                 <span className="text-sm text-slate-600 dark:text-slate-300">Catalog variants</span>
                 <span className="text-sm font-semibold text-slate-950 dark:text-white">{formatNumber(catalogStats?.total_variants ?? 0)}</span>
               </div>
-              <p className="pt-1 text-xs text-slate-500">Data period: {period}. Refreshes query-backed metrics only.</p>
+              <p className="pt-1 text-xs text-slate-500">Read-only operational catalog overview.</p>
             </CardContent>
           </Card>
         </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {topLineStats.map((stat) => (
+        {(isSuperuser ? topLineStats : topLineStats.filter((stat) => stat.label === "Global products")).map((stat) => (
           <StatTile key={stat.label} label={stat.label} value={stat.value} description={stat.description} icon={stat.icon} tone={stat.tone} />
         ))}
         <StatTile label="Needs review" value={formatNumber(reviewCaptures)} description={`${formatNumber(pendingCaptures)} captures still processing`} icon={AlertTriangle} tone="default" />
@@ -237,8 +228,8 @@ export default function AdminPage() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <InsightCard icon={AlertTriangle} title="Catalog capture queue" value={reviewCaptures} detail={`${pendingCaptures} pending or processing · ${rejectedCaptures} rejected`} tone={reviewCaptures ? "amber" : "green"} href="/product/global-catalog-admin" />
-        <InsightCard icon={CreditCard} title="Pending affiliate payouts" value={pendingPayouts.length} detail="Manual review and release required" tone={pendingPayouts.length ? "amber" : "green"} href="/admin/affiliates" />
-        <InsightCard icon={Webhook} title="Webhook failures" value={failedWebhooks} detail={`${webhookLogs.length} recent webhook records inspected`} tone={failedWebhooks ? "red" : "green"} href="/payment-admin" />
+        {isSuperuser ? <InsightCard icon={CreditCard} title="Pending affiliate payouts" value={pendingPayouts.length} detail="Manual review and release required" tone={pendingPayouts.length ? "amber" : "green"} href="/admin/affiliates" /> : null}
+        {isSuperuser ? <InsightCard icon={Webhook} title="Webhook failures" value={failedWebhooks} detail={`${webhookLogs.length} recent webhook records inspected`} tone={failedWebhooks ? "red" : "green"} href="/payment-admin" /> : null}
         <InsightCard icon={CheckCircle2} title="Catalog publication" value={catalogStats?.published_products ?? 0} detail={`${catalogStats?.draft_products ?? 0} drafts · ${catalogStats?.archived_products ?? 0} archived`} tone="blue" href="/product/global-catalog-admin" />
       </div>
 
@@ -249,7 +240,7 @@ export default function AdminPage() {
             <CardDescription>Core control panels grouped by responsibility.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
-            {adminLinks.map((link) => {
+            {adminLinks.filter((link) => isSuperuser || !["/payment-admin", "/admin/affiliates", "/admin/invitations", "/admin/settings"].includes(link.href)).map((link) => {
               const Icon = link.icon
               return (
                 <Link
@@ -272,7 +263,7 @@ export default function AdminPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-sm">
+        {isSuperuser ? <Card className="border-gray-200 shadow-sm">
           <CardHeader>
             <CardTitle>Subscription status</CardTitle>
             <CardDescription>Current subscription breakdown by state.</CardDescription>
@@ -294,7 +285,7 @@ export default function AdminPage() {
               These insights are sourced from the payment, subscription, catalog, capture, referral, and webhook APIs. They are not workspace inventory estimates.
             </div>
           </CardContent>
-        </Card>
+        </Card> : null}
       </div>
     </div>
   )

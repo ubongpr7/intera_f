@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useDeleteUserMutation, useListUsersQuery, useUpdateUserMutation } from "@/redux/features/users/userApiSlice"
 import type { UserSummary } from "@/redux/features/users/userTypes"
+import { isSuperuserFromToken } from "@/lib/adminAccess"
 
 const formatDate = (value?: Date | string | null) => {
   if (!value) return "Never"
@@ -19,6 +20,7 @@ const formatDate = (value?: Date | string | null) => {
 }
 
 export default function PlatformUsersPage() {
+  const isSuperuser = isSuperuserFromToken()
   const { data: users = [], isLoading, isError, refetch } = useListUsersQuery()
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation()
   const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation()
@@ -126,8 +128,8 @@ export default function PlatformUsersPage() {
                   {user.is_affiliate_marketer ? <Badge className="bg-cyan-600 text-white">Affiliate marketer</Badge> : null}
                   {user.is_verified ? <Badge variant="outline" className="border-emerald-300 text-emerald-700">Verified</Badge> : <Badge variant="outline" className="border-amber-300 text-amber-700">Unverified</Badge>}
                   {user.mfa_enabled ? <Badge variant="outline" className="border-blue-300 text-blue-700">MFA enabled</Badge> : null}
-                  <Button size="sm" variant="outline" onClick={() => startEdit(user)}><Pencil className="mr-1 h-4 w-4" />Edit</Button>
-                  {!user.is_superuser ? <Button size="sm" variant="outline" className="text-red-700 hover:text-red-800" onClick={() => void removeUser(user)} disabled={isDeleting}><Trash2 className="mr-1 h-4 w-4" />Delete</Button> : null}
+                  {isSuperuser ? <Button size="sm" variant="outline" onClick={() => startEdit(user)}><Pencil className="mr-1 h-4 w-4" />Edit</Button> : null}
+                  {isSuperuser && !user.is_superuser ? <Button size="sm" variant="outline" className="text-red-700 hover:text-red-800" onClick={() => void removeUser(user)} disabled={isDeleting}><Trash2 className="mr-1 h-4 w-4" />Delete</Button> : null}
                 </div>
               </div>
             ))}

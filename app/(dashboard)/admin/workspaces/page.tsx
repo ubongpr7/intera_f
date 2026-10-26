@@ -16,10 +16,12 @@ import {
   useVerifyCompanyProfileMutation,
 } from "@/redux/features/management/companyProfileApiSlice"
 import type { CompanyProfileListItem } from "@/redux/features/management/companyProfileTypes"
+import { isSuperuserFromToken } from "@/lib/adminAccess"
 
 const formatDate = (value?: string | null) => value ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(value)) : "Unknown"
 
 export default function WorkspaceManagementPage() {
+  const isSuperuser = isSuperuserFromToken()
   const { data: workspaces = [], isLoading, isError, refetch } = useListCompanyProfilesQuery()
   const [verifyWorkspace, { isLoading: isVerifying }] = useVerifyCompanyProfileMutation()
   const [unverifyWorkspace, { isLoading: isUnverifying }] = useUnverifyCompanyProfileMutation()
@@ -114,12 +116,12 @@ export default function WorkspaceManagementPage() {
           <div className="space-y-3">
             {filteredWorkspaces.map((workspace) => (
               <div key={workspace.id} className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-4 lg:flex-row lg:items-center lg:justify-between">
-                {editingId === workspace.id ? <div className="grid min-w-0 flex-1 gap-3 md:grid-cols-2"><Input value={editName} onChange={(event) => setEditName(event.target.value)} placeholder="Workspace name" aria-label="Workspace name" /><Input value={editIndustry} onChange={(event) => setEditIndustry(event.target.value)} placeholder="Industry" aria-label="Industry" /></div> : <div className="min-w-0"><p className="font-semibold text-slate-950">{workspace.name}</p><p className="mt-1 text-sm text-slate-600">Owner: {workspace.owner_name || "Unnamed owner"}{workspace.owner_email ? ` · ${workspace.owner_email}` : ""}</p><p className="mt-1 text-xs text-slate-500">{workspace.industry || "Industry not set"} · {workspace.staff_count} active staff · Created {formatDate(workspace.created_at)}</p></div>}
+                {editingId === workspace.id && isSuperuser ? <div className="grid min-w-0 flex-1 gap-3 md:grid-cols-2"><Input value={editName} onChange={(event) => setEditName(event.target.value)} placeholder="Workspace name" aria-label="Workspace name" /><Input value={editIndustry} onChange={(event) => setEditIndustry(event.target.value)} placeholder="Industry" aria-label="Industry" /></div> : <div className="min-w-0"><p className="font-semibold text-slate-950">{workspace.name}</p><p className="mt-1 text-sm text-slate-600">Owner: {workspace.owner_name || "Unnamed owner"}{workspace.owner_email ? ` · ${workspace.owner_email}` : ""}</p><p className="mt-1 text-xs text-slate-500">{workspace.industry || "Industry not set"} · {workspace.staff_count} active staff · Created {formatDate(workspace.created_at)}</p></div>}
                 <div className="flex flex-wrap items-center gap-2">
                   {workspace.is_verified ? <Badge className="bg-emerald-600 text-white">Verified</Badge> : <Badge variant="outline" className="border-amber-300 text-amber-700">Awaiting verification</Badge>}
-                  {editingId === workspace.id ? <><Button size="sm" onClick={() => void saveEdit(workspace)} disabled={isUpdating}><Save className="mr-1 h-4 w-4" />Save</Button><Button size="sm" variant="outline" onClick={() => setEditingId(null)}><X className="mr-1 h-4 w-4" />Cancel</Button></> : <Button size="sm" variant="outline" onClick={() => startEdit(workspace)}><Pencil className="mr-1 h-4 w-4" />Edit</Button>}
+                  {isSuperuser ? <>{editingId === workspace.id ? <><Button size="sm" onClick={() => void saveEdit(workspace)} disabled={isUpdating}><Save className="mr-1 h-4 w-4" />Save</Button><Button size="sm" variant="outline" onClick={() => setEditingId(null)}><X className="mr-1 h-4 w-4" />Cancel</Button></> : <Button size="sm" variant="outline" onClick={() => startEdit(workspace)}><Pencil className="mr-1 h-4 w-4" />Edit</Button>}
                   <Button size="sm" variant="outline" onClick={() => void toggleVerification(workspace)} disabled={isVerifying || isUnverifying}>{workspace.is_verified ? "Revoke verification" : "Verify workspace"}</Button>
-                  <Button size="sm" variant="outline" className="text-red-700 hover:text-red-800" onClick={() => void removeWorkspace(workspace)} disabled={isDeleting}><Trash2 className="mr-1 h-4 w-4" />Delete</Button>
+                  <Button size="sm" variant="outline" className="text-red-700 hover:text-red-800" onClick={() => void removeWorkspace(workspace)} disabled={isDeleting}><Trash2 className="mr-1 h-4 w-4" />Delete</Button></> : null}
                 </div>
               </div>
             ))}

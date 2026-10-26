@@ -9,6 +9,7 @@ import { SidebarLink } from './SideBarLinks'
 import { useAppDispatch, useAppSelector } from '../../redux/store'
 import { setIsSidebarCollapsed } from '../../redux/state'
 import type { UserData } from '@/redux/features/users/userTypes'
+import { isSuperuserFromToken } from '@/lib/adminAccess'
 
 interface AdminSidebarProps {
   user?: UserData
@@ -21,6 +22,7 @@ export default function AdminSidebar({ user, mobileOpen, onMobileClose }: AdminS
   const dispatch = useAppDispatch()
   const sidebarRef = useRef<HTMLElement>(null)
   const navigationCollapsed = collapsed && !mobileOpen
+  const isSuperuser = Boolean(user?.is_superuser) || isSuperuserFromToken()
 
   const sidebarClasses = `dashboard-sidebar fixed inset-y-0 left-0 z-50 flex min-h-screen w-72 flex-col border-r border-slate-800 bg-slate-950 text-slate-100 shadow-xl transition-[transform,width] duration-300 ease-out md:z-40 md:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} ${collapsed ? 'md:w-16' : 'md:w-64'}`
 
@@ -46,14 +48,16 @@ export default function AdminSidebar({ user, mobileOpen, onMobileClose }: AdminS
           <div className={`my-4 border-t border-slate-800 ${navigationCollapsed ? 'mx-1' : 'mx-3'}`} />
           <div className={`px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 ${navigationCollapsed ? 'hidden' : ''}`}>Administration</div>
           <SidebarLink href="/product/global-catalog-admin" icon={Gift} label="Global Products" isCollapsed={navigationCollapsed} />
-          <SidebarLink href="/admin/affiliates" icon={Link2} label="Affiliates" isCollapsed={navigationCollapsed} />
           <SidebarLink href="/admin/users" icon={UserRound} label="Platform Users" isCollapsed={navigationCollapsed} />
           <SidebarLink href="/admin/workspaces" icon={Building2} label="Workspaces" isCollapsed={navigationCollapsed} />
-          <SidebarLink href="/admin/invitations" icon={Users} label="Staff Invitations" isCollapsed={navigationCollapsed} />
-          <SidebarLink href="/payment-admin" icon={ShieldCheck} label="Billing & Plans" isCollapsed={navigationCollapsed} />
           <SidebarLink href="/audit" icon={FileSearch} label="Audit Trail" isCollapsed={navigationCollapsed} />
           <SidebarLink href="/admin/service-health" icon={Activity} label="Service Health" isCollapsed={navigationCollapsed} />
-          <SidebarLink href="/admin/settings" icon={Settings} label="Admin Settings" isCollapsed={navigationCollapsed} />
+          {isSuperuser ? <>
+            <SidebarLink href="/admin/affiliates" icon={Link2} label="Affiliates" isCollapsed={navigationCollapsed} />
+            <SidebarLink href="/admin/invitations" icon={Users} label="Staff Invitations" isCollapsed={navigationCollapsed} />
+            <SidebarLink href="/payment-admin" icon={ShieldCheck} label="Billing & Plans" isCollapsed={navigationCollapsed} />
+            <SidebarLink href="/admin/settings" icon={Settings} label="Admin Settings" isCollapsed={navigationCollapsed} />
+          </> : null}
         </nav>
 
         <div className={`border-t border-slate-800 ${navigationCollapsed ? 'p-2' : 'p-3'}`}>
