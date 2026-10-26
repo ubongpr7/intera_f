@@ -6,6 +6,7 @@ import { toast } from "react-toastify"
 
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useDeleteUserMutation, useListUsersQuery, useUpdateUserMutation } from "@/redux/features/users/userApiSlice"
@@ -34,6 +35,7 @@ export default function PlatformUsersPage() {
 
   const staffCount = users.filter((user) => user.is_staff || user.is_superuser).length
   const verifiedCount = users.filter((user) => user.is_verified).length
+  const editingUser = users.find((user) => user.id === editingId) ?? null
 
   const startEdit = (user: UserSummary) => {
     setEditingId(user.id)
@@ -111,24 +113,13 @@ export default function PlatformUsersPage() {
           <div className="space-y-3">
             {filteredUsers.map((user) => (
               <div key={user.id} className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-4 lg:flex-row lg:items-center lg:justify-between">
-                {editingId === user.id ? (
-                  <div className="grid min-w-0 flex-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
-                    <Input value={editFirstName} onChange={(event) => setEditFirstName(event.target.value)} placeholder="First name" aria-label="First name" />
-                    <Input value={editLastName} onChange={(event) => setEditLastName(event.target.value)} placeholder="Last name" aria-label="Last name" />
-                    <Input value={editReferralCode} onChange={(event) => setEditReferralCode(event.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ""))} placeholder="Referral code" aria-label="Referral code" />
-                    <Input value={editCommission} onChange={(event) => setEditCommission(event.target.value)} inputMode="decimal" placeholder="Commission %" aria-label="Commission percentage" />
-                    <label className="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" checked={editIsStaff} onChange={(event) => setEditIsStaff(event.target.checked)} /> Platform staff</label>
-                    <label className="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" checked={editIsAffiliate} onChange={(event) => setEditIsAffiliate(event.target.checked)} /> Affiliate marketer</label>
-                  </div>
-                ) : (
-                  <div className="min-w-0"><p className="font-semibold text-slate-950">{user.get_full_name || [user.first_name, user.last_name].filter(Boolean).join(" ") || user.email}</p><p className="mt-1 text-sm text-slate-600">{user.email} · Joined {formatDate(user.date_joined)} · Last login {formatDate(user.last_login)}</p><p className="mt-1 text-xs text-slate-500">Referral code: {user.referral_code || "Not set"} · Commission: {Number(user.referral_commission_rate ?? 0.05) * 100}%</p></div>
-                )}
+                <div className="min-w-0"><p className="font-semibold text-slate-950">{user.get_full_name || [user.first_name, user.last_name].filter(Boolean).join(" ") || user.email}</p><p className="mt-1 text-sm text-slate-600">{user.email} · Joined {formatDate(user.date_joined)} · Last login {formatDate(user.last_login)}</p><p className="mt-1 text-xs text-slate-500">Referral code: {user.referral_code || "Not set"} · Commission: {Number(user.referral_commission_rate ?? 0.05) * 100}%</p></div>
                 <div className="flex flex-wrap items-center gap-2">
                   {user.is_superuser ? <Badge className="bg-blue-600 text-white">Superuser</Badge> : user.is_staff ? <Badge className="bg-emerald-600 text-white">Staff</Badge> : <Badge variant="outline">User</Badge>}
                   {user.is_affiliate_marketer ? <Badge className="bg-cyan-600 text-white">Affiliate marketer</Badge> : null}
                   {user.is_verified ? <Badge variant="outline" className="border-emerald-300 text-emerald-700">Verified</Badge> : <Badge variant="outline" className="border-amber-300 text-amber-700">Unverified</Badge>}
                   {user.mfa_enabled ? <Badge variant="outline" className="border-blue-300 text-blue-700">MFA enabled</Badge> : null}
-                  {editingId === user.id ? <><Button size="sm" onClick={() => void saveEdit(user)} disabled={isUpdating}><Save className="mr-1 h-4 w-4" />Save</Button><Button size="sm" variant="outline" onClick={cancelEdit}><X className="mr-1 h-4 w-4" />Cancel</Button></> : <Button size="sm" variant="outline" onClick={() => startEdit(user)}><Pencil className="mr-1 h-4 w-4" />Edit</Button>}
+                  <Button size="sm" variant="outline" onClick={() => startEdit(user)}><Pencil className="mr-1 h-4 w-4" />Edit</Button>
                   {!user.is_superuser ? <Button size="sm" variant="outline" className="text-red-700 hover:text-red-800" onClick={() => void removeUser(user)} disabled={isDeleting}><Trash2 className="mr-1 h-4 w-4" />Delete</Button> : null}
                 </div>
               </div>
@@ -136,6 +127,29 @@ export default function PlatformUsersPage() {
           </div>
         </CardContent>
       </Card>
+
+      {editingUser ? (
+        <Dialog open onOpenChange={(open) => { if (!open) cancelEdit() }}>
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Edit platform user</DialogTitle>
+              <DialogDescription>Update the account profile, referral settings, and platform access flags for {editingUser.email}.</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-2 md:grid-cols-2">
+              <div className="space-y-2"><label htmlFor="edit-first-name" className="text-sm font-medium text-gray-900">First name</label><Input id="edit-first-name" value={editFirstName} onChange={(event) => setEditFirstName(event.target.value)} placeholder="First name" /></div>
+              <div className="space-y-2"><label htmlFor="edit-last-name" className="text-sm font-medium text-gray-900">Last name</label><Input id="edit-last-name" value={editLastName} onChange={(event) => setEditLastName(event.target.value)} placeholder="Last name" /></div>
+              <div className="space-y-2"><label htmlFor="edit-referral-code" className="text-sm font-medium text-gray-900">Referral code</label><Input id="edit-referral-code" value={editReferralCode} onChange={(event) => setEditReferralCode(event.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ""))} placeholder="Referral code" /></div>
+              <div className="space-y-2"><label htmlFor="edit-commission" className="text-sm font-medium text-gray-900">Commission percentage</label><Input id="edit-commission" value={editCommission} onChange={(event) => setEditCommission(event.target.value)} inputMode="decimal" placeholder="Commission %" /></div>
+              <label className="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" checked={editIsStaff} onChange={(event) => setEditIsStaff(event.target.checked)} /> Platform staff</label>
+              <label className="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" checked={editIsAffiliate} onChange={(event) => setEditIsAffiliate(event.target.checked)} /> Affiliate marketer</label>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={cancelEdit}><X className="mr-1 h-4 w-4" />Cancel</Button>
+              <Button onClick={() => void saveEdit(editingUser)} disabled={isUpdating}><Save className="mr-1 h-4 w-4" />Save changes</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      ) : null}
     </section>
   )
 }
