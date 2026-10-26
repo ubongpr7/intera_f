@@ -1,18 +1,30 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Search, ShieldCheck, UserRound, Users } from "lucide-react"
+import { Pencil, Save, Search, ShieldCheck, Trash2, UserRound, Users, X } from "lucide-react"
+import { toast } from "react-toastify"
 
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { useListUsersQuery } from "@/redux/features/users/userApiSlice"
+import { Button } from "@/components/ui/button"
+import { useDeleteUserMutation, useListUsersQuery, useUpdateUserMutation } from "@/redux/features/users/userApiSlice"
+import type { UserSummary } from "@/redux/features/users/userTypes"
 
 const formatDate = (value?: Date | string | null) => value ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(value)) : "Never"
 
 export default function PlatformUsersPage() {
-  const { data: users = [], isLoading, isError } = useListUsersQuery()
+  const { data: users = [], isLoading, isError, refetch } = useListUsersQuery()
+  const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation()
+  const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation()
   const [search, setSearch] = useState("")
+  const [editingId, setEditingId] = useState<UserSummary["id"] | null>(null)
+  const [editFirstName, setEditFirstName] = useState("")
+  const [editLastName, setEditLastName] = useState("")
+  const [editReferralCode, setEditReferralCode] = useState("")
+  const [editCommission, setEditCommission] = useState("5")
+  const [editIsStaff, setEditIsStaff] = useState(false)
+  const [editIsAffiliate, setEditIsAffiliate] = useState(false)
 
   const filteredUsers = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -22,6 +34,56 @@ export default function PlatformUsersPage() {
 
   const staffCount = users.filter((user) => user.is_staff || user.is_superuser).length
   const verifiedCount = users.filter((user) => user.is_verified).length
+
+  const startEdit = (user: UserSummary) => {
+    setEditingId(user.id)
+    setEditFirstName(user.first_name || "")
+    setEditLastName(user.last_name || "")
+    setEditReferralCode(user.referral_code || "")
+    setEditCommission(String(Number(user.referral_commission_rate ?? 0.05) * 100))
+    setEditIsStaff(Boolean(user.is_staff))
+    setEditIsAffiliate(Boolean(user.is_affiliate_marketer))
+  }
+
+  const cancelEdit = () => setEditingId(null)
+
+  const saveEdit = async (user: UserSummary) => {
+    const commission = Number(editCommission)
+    const code = editReferralCode.trim().toUpperCase()
+    if (!code || !/^[A-Z0-9_-]{3,16}$/.test(code) || !Number.isFinite(commission) || commission < 0 || commission > 100) {
+      toast.error("Enter a valid referral code and a commission between 0 and 100%.")
+      return
+    }
+    try {
+      await updateUser({
+        id: user.id,
+        data: {
+          first_name: editFirstName.trim(),
+          last_name: editLastName.trim(),
+          referral_code: code,
+          referral_commission_rate: (commission / 100).toFixed(5),
+          is_staff: editIsStaff,
+          is_affiliate_marketer: editIsAffiliate,
+        },
+      }).unwrap()
+      await refetch()
+      setEditingId(null)
+      toast.success("User updated.")
+    } catch (error: any) {
+      toast.error(error?.data?.referral_code?.[0] || error?.data?.detail || "Unable to update user.")
+    }
+  }
+
+  const removeUser = async (user: UserSummary) => {
+    if (!window.confirm(`Delete ${user.email}? This cannot be undone.`)) return
+    try {
+      await deleteUser(user.id).unwrap()
+      await refetch()
+      toast.success("User deleted.")
+    } catch (error: any) {
+      toast.error(error?.data?.detail || "Unable to delete user.")
+    }
+  }
 
   return (
     <section className="admin-portal-surface mx-auto w-full max-w-[1500px] space-y-6 px-4 py-6 lg:px-8">
@@ -49,11 +111,25 @@ export default function PlatformUsersPage() {
           <div className="space-y-3">
             {filteredUsers.map((user) => (
               <div key={user.id} className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-4 lg:flex-row lg:items-center lg:justify-between">
-                <div className="min-w-0"><p className="font-semibold text-slate-950">{user.get_full_name || [user.first_name, user.last_name].filter(Boolean).join(" ") || user.email}</p><p className="mt-1 text-sm text-slate-600">{user.email} · Joined {formatDate(user.date_joined)} · Last login {formatDate(user.last_login)}</p></div>
-                <div className="flex flex-wrap gap-2">
+                {editingId === user.id ? (
+                  <div className="grid min-w-0 flex-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
+                    <Input value={editFirstName} onChange={(event) => setEditFirstName(event.target.value)} placeholder="First name" aria-label="First name" />
+                    <Input value={editLastName} onChange={(event) => setEditLastName(event.target.value)} placeholder="Last name" aria-label="Last name" />
+                    <Input value={editReferralCode} onChange={(event) => setEditReferralCode(event.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ""))} placeholder="Referral code" aria-label="Referral code" />
+                    <Input value={editCommission} onChange={(event) => setEditCommission(event.target.value)} inputMode="decimal" placeholder="Commission %" aria-label="Commission percentage" />
+                    <label className="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" checked={editIsStaff} onChange={(event) => setEditIsStaff(event.target.checked)} /> Platform staff</label>
+                    <label className="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" checked={editIsAffiliate} onChange={(event) => setEditIsAffiliate(event.target.checked)} /> Affiliate marketer</label>
+                  </div>
+                ) : (
+                  <div className="min-w-0"><p className="font-semibold text-slate-950">{user.get_full_name || [user.first_name, user.last_name].filter(Boolean).join(" ") || user.email}</p><p className="mt-1 text-sm text-slate-600">{user.email} · Joined {formatDate(user.date_joined)} · Last login {formatDate(user.last_login)}</p><p className="mt-1 text-xs text-slate-500">Referral code: {user.referral_code || "Not set"} · Commission: {Number(user.referral_commission_rate ?? 0.05) * 100}%</p></div>
+                )}
+                <div className="flex flex-wrap items-center gap-2">
                   {user.is_superuser ? <Badge className="bg-blue-600 text-white">Superuser</Badge> : user.is_staff ? <Badge className="bg-emerald-600 text-white">Staff</Badge> : <Badge variant="outline">User</Badge>}
+                  {user.is_affiliate_marketer ? <Badge className="bg-cyan-600 text-white">Affiliate marketer</Badge> : null}
                   {user.is_verified ? <Badge variant="outline" className="border-emerald-300 text-emerald-700">Verified</Badge> : <Badge variant="outline" className="border-amber-300 text-amber-700">Unverified</Badge>}
                   {user.mfa_enabled ? <Badge variant="outline" className="border-blue-300 text-blue-700">MFA enabled</Badge> : null}
+                  {editingId === user.id ? <><Button size="sm" onClick={() => void saveEdit(user)} disabled={isUpdating}><Save className="mr-1 h-4 w-4" />Save</Button><Button size="sm" variant="outline" onClick={cancelEdit}><X className="mr-1 h-4 w-4" />Cancel</Button></> : <Button size="sm" variant="outline" onClick={() => startEdit(user)}><Pencil className="mr-1 h-4 w-4" />Edit</Button>}
+                  {!user.is_superuser ? <Button size="sm" variant="outline" className="text-red-700 hover:text-red-800" onClick={() => void removeUser(user)} disabled={isDeleting}><Trash2 className="mr-1 h-4 w-4" />Delete</Button> : null}
                 </div>
               </div>
             ))}
