@@ -17,6 +17,14 @@ import { confirmAction } from "@/components/common/confirmAction"
 import { QueryStateBoundary } from "@/components/common/QueryStateBoundary"
 import type { SubscriptionPlanRecord } from "@/redux/features/payment/paymentTypes"
 
+const formatNaira = (value: string | number) =>
+  new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(Number(value ?? 0))
+
 export function SubscriptionPlansTab() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isFeatureDialogOpen, setIsFeatureDialogOpen] = useState(false)
@@ -152,7 +160,7 @@ export function SubscriptionPlansTab() {
                     <div>
                       <p className="mb-2 text-sm text-gray-500">{plan.description}</p>
                       <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-bold">${plan.price}</span>
+                        <span className="text-2xl font-bold">{Number(plan.price) <= 0 ? "Custom" : formatNaira(plan.price)}</span>
                         <span className="text-sm text-gray-500">/{plan.billing_cycle}</span>
                       </div>
                       {plan.intera_coins_reward && (
