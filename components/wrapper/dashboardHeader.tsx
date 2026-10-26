@@ -17,6 +17,8 @@ import A2AChat from '../agents/ai-chat-widget';
 import { readCookieValue } from '@/lib/authCookies';
 import PermissionHydrator from '@/components/auth/PermissionHydrator';
 import { useAdminHost } from '@/lib/adminHost';
+import { getDecodedToken } from '@/lib/utils';
+import { truthyAccessClaim } from '@/lib/permissionsGuard';
 
 const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
 
@@ -33,6 +35,7 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
   const pathname = usePathname();
   const isPublic = isPublicAuthRoute(pathname);
   const accessToken = readCookieValue("accessToken", getCookie);
+  const isAffiliate = truthyAccessClaim((getDecodedToken() as { is_affiliate_marketer?: boolean | string | number } | null)?.is_affiliate_marketer);
 
   const { data: user } = useGetLoggedInUserQuery(undefined, {
     skip: isPublic || !isAdminHostReady,
@@ -44,7 +47,7 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
     isFetching: companyMembershipsFetching,
     isError: companyMembershipsError,
   } = useGetUserCompaniesQuery(undefined, {
-    skip: isPublic || !isAdminHostReady || isAdminHost || !accessToken,
+    skip: isPublic || !isAdminHostReady || isAdminHost || isAffiliate || !accessToken,
   });
   const hasWorkspaceProfile = isAdminHost || Boolean(companyMemberships?.profiles?.length);
   const workspaceContextResolved =
@@ -52,7 +55,7 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
     companyMembershipsError ||
     (Boolean(companyMemberships) && !companyMembershipsLoading && !companyMembershipsFetching);
   const showWorkspaceNavigation =
-    isAdminHost || (workspaceContextResolved && hasWorkspaceProfile);
+    !isAffiliate && (isAdminHost || (workspaceContextResolved && hasWorkspaceProfile));
   const activeProfileId = companyMemberships?.active_profile_id ?? null;
   const permissionReady =
     permissionState.status === "succeeded" &&
@@ -63,6 +66,7 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
     isAdminHostReady &&
     !isPublic &&
     !isAdminHost &&
+    !isAffiliate &&
     Boolean(accessToken) &&
     Boolean(activeProfileId) &&
     permissionReady &&

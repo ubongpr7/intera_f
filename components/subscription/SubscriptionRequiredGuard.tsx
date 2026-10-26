@@ -19,7 +19,7 @@ type Claims = {
   role?: string
 }
 
-const EXEMPT_PATHS = ["/subscription", "/profile/create", "/companies"]
+const EXEMPT_PATHS = ["/subscription", "/profile/create", "/companies", "/affiliate/dashboard"]
 
 const readOwnerStatus = () => {
   const token = readCookieValue("accessToken", (name) => getCookie(name))

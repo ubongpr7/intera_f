@@ -775,7 +775,7 @@ const Navbar = ({
                     </div>
                   </Link>
                   <Link
-                    href="/user/settings?tab=profile#refer-and-earn"
+                    href="/affiliate/dashboard"
                     onClick={() => setUserMenuOpen(false)}
                   >
                     <div className="flex items-center gap-2 px-4 py-2 text-sm text-gray-900 hover:bg-gray-100">
