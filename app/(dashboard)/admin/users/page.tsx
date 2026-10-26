@@ -12,7 +12,11 @@ import { Button } from "@/components/ui/button"
 import { useDeleteUserMutation, useListUsersQuery, useUpdateUserMutation } from "@/redux/features/users/userApiSlice"
 import type { UserSummary } from "@/redux/features/users/userTypes"
 
-const formatDate = (value?: Date | string | null) => value ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(value)) : "Never"
+const formatDate = (value?: Date | string | null) => {
+  if (!value) return "Never"
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? "Unknown" : new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(date)
+}
 
 export default function PlatformUsersPage() {
   const { data: users = [], isLoading, isError, refetch } = useListUsersQuery()

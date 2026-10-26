@@ -180,6 +180,14 @@ export const userApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
+    deleteAffiliatePartner: builder.mutation<void, string | number>({
+      query: (id) => ({
+        url: `/${accountsApi}/affiliate-partners/${id}/`,
+        method: "DELETE",
+        service,
+      }),
+    }),
+
     listReferralPayouts: builder.query<ReferralPayoutAdmin[], void>({
       query: () => ({
         url: `/${accountsApi}/referral-payouts/`,
@@ -425,6 +433,7 @@ export const {
   useListAffiliatePartnersQuery,
   useCreateAffiliatePartnerMutation,
   useUpdateAffiliatePartnerMutation,
+  useDeleteAffiliatePartnerMutation,
   useListReferralPayoutsQuery,
   useUpdateReferralPayoutMutation,
   useSendVerificationCodeMutation,

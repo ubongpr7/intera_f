@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Copy, Link2, Pencil, Plus, Save, Users, X } from "lucide-react"
+import { Copy, Link2, Pencil, Plus, Save, Trash2, Users, X } from "lucide-react"
 import { toast } from "react-toastify"
 
 import { Badge } from "@/components/ui/badge"
@@ -17,6 +17,7 @@ import {
   useListAffiliatePartnersQuery,
   useUpdateReferralPayoutMutation,
   useUpdateAffiliatePartnerMutation,
+  useDeleteAffiliatePartnerMutation,
   useUpdateUserMutation,
 } from "@/redux/features/users/userApiSlice"
 import type { AffiliatePartner, UserSummary } from "@/redux/features/users/userTypes"
@@ -35,6 +36,7 @@ export default function AffiliatePartnersPage() {
   const { data: payouts = [] } = useListReferralPayoutsQuery()
   const [createPartner, { isLoading: isCreating }] = useCreateAffiliatePartnerMutation()
   const [updatePartner, { isLoading: isUpdating }] = useUpdateAffiliatePartnerMutation()
+  const [deletePartner, { isLoading: isDeleting }] = useDeleteAffiliatePartnerMutation()
   const [updateUser, { isLoading: isUpdatingUser }] = useUpdateUserMutation()
   const [updatePayout] = useUpdateReferralPayoutMutation()
   const [name, setName] = useState("")
@@ -84,6 +86,17 @@ export default function AffiliatePartnersPage() {
       toast.success(`${partner.name} is now ${partner.is_active ? "inactive" : "active"}.`)
     } catch {
       toast.error("Unable to update affiliate partner.")
+    }
+  }
+
+  const removePartner = async (partner: AffiliatePartner) => {
+    if (!window.confirm(`Delete affiliate partner ${partner.name} (${partner.code})? This cannot be undone.`)) return
+    try {
+      await deletePartner(partner.id).unwrap()
+      await refetchPartners()
+      toast.success("Affiliate partner deleted.")
+    } catch (error: any) {
+      toast.error(error?.data?.detail || "Unable to delete affiliate partner.")
     }
   }
 
@@ -301,6 +314,7 @@ export default function AffiliatePartnersPage() {
                       <Button type="button" variant="outline" onClick={() => startEdit(partner)}><Pencil className="mr-2 h-4 w-4" />Edit</Button>
                       <Button type="button" variant="outline" onClick={() => void copyLink(partner)}><Copy className="mr-2 h-4 w-4" />Copy link</Button>
                       <Button type="button" variant="outline" onClick={() => void togglePartner(partner)} disabled={isUpdating}><Save className="mr-2 h-4 w-4" />{partner.is_active ? "Deactivate" : "Activate"}</Button>
+                      <Button type="button" variant="outline" className="text-red-700 hover:text-red-800" onClick={() => void removePartner(partner)} disabled={isDeleting}><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
                     </>
                   )}
                 </div>
