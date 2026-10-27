@@ -12,7 +12,7 @@ type ContainerStatus = "healthy" | "unhealthy" | "stopped" | "running_unmonitore
 type ContainerHealth = { id: string; name: string; compose_service?: string; group: string; status: ContainerStatus; state?: string; restart_count?: number; healthcheck_configured?: boolean }
 
 const serviceGroups: Array<{ name: HealthGroup; keys: string[] }> = [
-  { name: "Core APIs", keys: ["users-web", "inventory-web", "product-web", "pos-web", "subscriptions-web", "notifications-web", "audit-web"] },
+  { name: "Core APIs", keys: ["users-web", "inventory-web", "product-web", "pos-web", "subscriptions-web", "notifications-web", "audit-web", "chat-api"] },
   { name: "MCP services", keys: ["users-mcp", "inventory-mcp", "product-mcp", "pos-mcp", "subscriptions-mcp", "notifications-mcp", "audit-mcp"] },
 ]
 const agentGroup: { name: HealthGroup; keys: string[] } = { name: "Agent runtime", keys: ["a2a-gateway", "a2a-proxy"] }
