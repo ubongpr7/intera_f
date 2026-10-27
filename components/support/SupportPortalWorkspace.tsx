@@ -73,7 +73,9 @@ export default function SupportPortalWorkspace() {
     if (!selectedId && inbox[0]) setSelectedId(inbox[0].id)
   }, [inbox, selectedId])
 
-  useEffect(() => setMessages(loadedMessages), [loadedMessages, selectedId])
+  useEffect(() => {
+    setMessages(loadedMessages)
+  }, [loadedMessages, selectedId])
 
   useEffect(() => {
     if (!selectedId || !accessToken) return
@@ -101,10 +103,14 @@ export default function SupportPortalWorkspace() {
     }
   }, [accessToken, selectedId])
 
-  useEffect(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), [messages])
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
 
-  useEffect(() => () => {
-    if (mediaRecorderRef.current?.state === "recording") mediaRecorderRef.current.stop()
+  useEffect(() => {
+    return () => {
+      if (mediaRecorderRef.current?.state === "recording") mediaRecorderRef.current.stop()
+    }
   }, [])
 
   if (!allowed) {
