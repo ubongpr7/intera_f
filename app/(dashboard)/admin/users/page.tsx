@@ -32,6 +32,7 @@ export default function PlatformUsersPage() {
   const [editCommission, setEditCommission] = useState("5")
   const [editIsStaff, setEditIsStaff] = useState(false)
   const [editIsAffiliate, setEditIsAffiliate] = useState(false)
+  const [editIsSupport, setEditIsSupport] = useState(false)
   const [editIsVerified, setEditIsVerified] = useState(false)
 
   const filteredUsers = useMemo(() => {
@@ -52,6 +53,7 @@ export default function PlatformUsersPage() {
     setEditCommission(String(Number(user.referral_commission_rate ?? 0.05) * 100))
     setEditIsStaff(Boolean(user.is_staff))
     setEditIsAffiliate(Boolean(user.is_affiliate_marketer))
+    setEditIsSupport(Boolean(user.is_support))
     setEditIsVerified(Boolean(user.is_verified))
   }
 
@@ -74,6 +76,7 @@ export default function PlatformUsersPage() {
           referral_commission_rate: (commission / 100).toFixed(5),
           is_staff: editIsStaff,
           is_affiliate_marketer: editIsAffiliate,
+          is_support: editIsSupport,
           is_verified: editIsVerified,
         },
       }).unwrap()
@@ -126,6 +129,7 @@ export default function PlatformUsersPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   {user.is_superuser ? <Badge className="bg-blue-600 text-white">Superuser</Badge> : user.is_staff ? <Badge className="bg-emerald-600 text-white">Staff</Badge> : <Badge variant="outline">User</Badge>}
                   {user.is_affiliate_marketer ? <Badge className="bg-cyan-600 text-white">Affiliate marketer</Badge> : null}
+                  {user.is_support ? <Badge className="bg-violet-600 text-white">Support</Badge> : null}
                   {user.is_verified ? <Badge variant="outline" className="border-emerald-300 text-emerald-700">Verified</Badge> : <Badge variant="outline" className="border-amber-300 text-amber-700">Unverified</Badge>}
                   {user.mfa_enabled ? <Badge variant="outline" className="border-blue-300 text-blue-700">MFA enabled</Badge> : null}
                   {isSuperuser ? <Button size="sm" variant="outline" onClick={() => startEdit(user)}><Pencil className="mr-1 h-4 w-4" />Edit</Button> : null}
@@ -151,6 +155,7 @@ export default function PlatformUsersPage() {
               <div className="space-y-2"><label htmlFor="edit-commission" className="text-sm font-medium text-gray-900">Commission percentage</label><Input id="edit-commission" value={editCommission} onChange={(event) => setEditCommission(event.target.value)} inputMode="decimal" placeholder="Commission %" /></div>
               <label className="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" checked={editIsStaff} onChange={(event) => setEditIsStaff(event.target.checked)} /> Platform staff</label>
               <label className="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" checked={editIsAffiliate} onChange={(event) => setEditIsAffiliate(event.target.checked)} /> Affiliate marketer</label>
+              <label className="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" checked={editIsSupport} onChange={(event) => setEditIsSupport(event.target.checked)} /> Support agent</label>
               <label className="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" checked={editIsVerified} onChange={(event) => setEditIsVerified(event.target.checked)} /> Verified account</label>
             </div>
             <DialogFooter>

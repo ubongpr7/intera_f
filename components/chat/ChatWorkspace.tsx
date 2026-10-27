@@ -9,12 +9,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { readCookieValue } from "@/lib/authCookies"
 import { chatBackendUrl } from "@/redux/services/apiSlice"
 import { useLazySearchUsersQuery } from "@/redux/features/users/userApiSlice"
+import { useGetUserCompaniesQuery, useSwitchCompanyMutation } from "@/redux/features/auth/authApiSlice"
 import {
   useCreateChatConversationMutation,
   useCreateChatMessageMutation,
   useListChatConversationsQuery,
   useListChatMessagesQuery,
   useSupportAssistMutation,
+  useRequestSupportAgentMutation,
   useUploadChatAttachmentMutation,
 } from "@/redux/features/chat/chatApiSlice"
 import type { ChatConversation, ChatMessage } from "@/redux/features/chat/chatTypes"
@@ -58,7 +60,17 @@ export default function ChatWorkspace() {
   const chunksRef = useRef<Blob[]>([])
 
   const { data: conversations = [], isLoading: conversationsLoading, refetch: refetchConversations } = useListChatConversationsQuery()
+  const { data: companyMemberships } = useGetUserCompaniesQuery()
+  const [switchCompany, { isLoading: switchingWorkspace }] = useSwitchCompanyMutation()
   const selectedConversation = conversations.find((item) => item.id === selectedId)
+  const conversationWorkspace = selectedConversation?.context_workspace_id
+    ? companyMemberships?.profiles?.find((profile) => `${profile.id}` === `${selectedConversation.context_workspace_id}`)
+    : undefined
+  const isConversationOutsideActiveWorkspace = Boolean(
+    selectedConversation?.context_workspace_id &&
+      workspaceId &&
+      `${selectedConversation.context_workspace_id}` !== `${workspaceId}`,
+  )
   const humanSupportActive = Boolean(
     supportMode && selectedConversation?.participants.some((participant) => participant.is_active && participant.role === "support_agent"),
   )
@@ -70,6 +82,7 @@ export default function ChatWorkspace() {
   const [createMessage, { isLoading: sendingMessage }] = useCreateChatMessageMutation()
   const [uploadAttachment, { isLoading: uploadingAttachment }] = useUploadChatAttachmentMutation()
   const [supportAssist, { isLoading: askingSupport }] = useSupportAssistMutation()
+  const [requestSupportAgent, { isLoading: requestingSupportAgent }] = useRequestSupportAgentMutation()
   const [searchUsers, { data: userSearchResults = [], isFetching: searchingUsers }] = useLazySearchUsersQuery()
 
   useEffect(() => {
@@ -180,6 +193,17 @@ export default function ChatWorkspace() {
     }
   }
 
+  const requestHumanAgent = async () => {
+    if (!selectedId || requestingSupportAgent) return
+    try {
+      await requestSupportAgent(selectedId).unwrap()
+      setActionError("Your request is in the support queue. A support agent will join shortly.")
+      await refetchConversations()
+    } catch {
+      setActionError("The support handoff could not be requested. Please try again.")
+    }
+  }
+
   const sendFile = async (file: File, kind?: "voice" | "file") => {
     if (supportTextOnly || !selectedId || uploadingAttachment) {
       if (supportTextOnly) setActionError("Support AI accepts text messages only. File and voice sharing becomes available after human handoff.")
@@ -252,6 +276,16 @@ export default function ChatWorkspace() {
       await refetchConversations()
     } catch {
       setActionError("The conversation could not be created. Confirm that this teammate is available to chat.")
+    }
+  }
+
+  const switchToConversationWorkspace = async () => {
+    if (!conversationWorkspace?.company_code || switchingWorkspace) return
+    try {
+      await switchCompany({ company_code: conversationWorkspace.company_code }).unwrap()
+      window.location.reload()
+    } catch {
+      setActionError("This workspace could not be opened. Please try again.")
     }
   }
 
@@ -330,7 +364,17 @@ export default function ChatWorkspace() {
         <div className="flex min-h-[620px] min-w-0 flex-col">
           <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-slate-800 md:px-7">
             <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">{supportMode ? "Support centre" : "Workspace chat"}</p><h2 className="mt-1 truncate text-xl font-black text-slate-900 dark:text-white">{supportMode ? "How can we help?" : selectedConversation ? conversationName(selectedConversation) : "Select a conversation"}</h2></div>
+            {supportMode && supportTextOnly && selectedId ? <Button variant="outline" size="sm" onClick={() => void requestHumanAgent()} disabled={requestingSupportAgent}>{requestingSupportAgent ? <Loader2 className="h-4 w-4 animate-spin" /> : <Headphones className="h-4 w-4" />} Request a human agent</Button> : null}
           </div>
+
+          {isConversationOutsideActiveWorkspace ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100 md:px-7">
+              <span>This conversation belongs to {conversationWorkspace?.name || "another workspace"}. Switch workspace to reply.</span>
+              <Button size="sm" variant="outline" onClick={() => void switchToConversationWorkspace()} disabled={!conversationWorkspace || switchingWorkspace}>
+                {switchingWorkspace ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Switch workspace
+              </Button>
+            </div>
+          ) : null}
 
           <div className="flex-1 space-y-4 overflow-y-auto bg-[radial-gradient(circle_at_top_right,rgba(60,131,247,.08),transparent_35%),#f8fbff] p-5 dark:bg-[radial-gradient(circle_at_top_right,rgba(152,252,194,.08),transparent_35%),#0b1220] md:p-7">
             {supportTextOnly && messages.length === 0 ? <div className="mx-auto mt-12 max-w-md text-center"><div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-[#091321] text-[#98fcc2]"><Sparkles className="h-7 w-7" /></div><h3 className="mt-5 text-2xl font-black text-slate-900 dark:text-white">Start with a question</h3><p className="mt-2 text-sm leading-6 text-slate-500">Support AI accepts text questions. File and voice sharing will be available after a human agent takes over.</p></div> : null}
@@ -347,7 +391,7 @@ export default function ChatWorkspace() {
               <label className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-white hover:text-blue-600 dark:hover:bg-slate-800 ${supportTextOnly || uploadingAttachment ? "cursor-not-allowed opacity-40" : "cursor-pointer"}`} title={supportTextOnly ? "Available after human handoff" : "Attach a file"}><Paperclip className="h-5 w-5" /><input type="file" className="hidden" disabled={supportTextOnly || uploadingAttachment} onChange={(event) => { const file = event.target.files?.[0]; if (file) void sendFile(file); event.currentTarget.value = "" }} /></label>
               <button type="button" onClick={() => void toggleRecording()} disabled={supportTextOnly || !selectedId || uploadingAttachment} className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition ${recording ? "bg-red-100 text-red-600" : "text-slate-500 hover:bg-white hover:text-blue-600 dark:hover:bg-slate-800"}`} aria-label={recording ? "Stop voice note" : supportTextOnly ? "Available after human handoff" : "Record voice note"}>{recording ? <Square className="h-4 w-4" /> : <Mic className="h-5 w-5" />}</button>
               <textarea value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void sendText() } }} placeholder={supportTextOnly ? "Ask support anything..." : "Write a message..."} rows={1} className="max-h-32 min-h-10 flex-1 resize-none bg-transparent px-2 py-2 text-sm outline-none placeholder:text-slate-400" />
-              <Button size="icon" onClick={() => void sendText()} disabled={!draft.trim() || sendingMessage || askingSupport || uploadingAttachment} aria-label="Send message">{sendingMessage || askingSupport || uploadingAttachment ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}</Button>
+              <Button size="icon" onClick={() => void sendText()} disabled={isConversationOutsideActiveWorkspace || !draft.trim() || sendingMessage || askingSupport || uploadingAttachment} aria-label="Send message">{sendingMessage || askingSupport || uploadingAttachment ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}</Button>
             </div>
             <p className="mt-2 px-1 text-[11px] text-slate-400">Enter to send · Shift + Enter for a new line · {supportTextOnly ? "Support AI accepts text only" : "Files up to 15 MB and voice notes are available"}</p>
           </div>

@@ -16,6 +16,7 @@ import {
   Lock,
   LogOut,
   MailOpen,
+  MessageCircle,
   Menu,
   Monitor,
   MonitorSpeaker,
@@ -722,6 +723,17 @@ const Navbar = ({
               </div>
             ) : null}
           </div>
+
+          {!isAdminHost ? (
+            <Link
+              href="/chat"
+              aria-label="Open messages and support"
+              title="Messages and support"
+              className="dashboard-header-icon-button inline-flex h-10 w-10 items-center justify-center rounded-xl p-2 text-gray-500 transition hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              <MessageCircle size={23} />
+            </Link>
+          ) : null}
 
           <hr className="hidden h-6 w-0 border border-solid border-l bg-gray-300 md:block" />
 

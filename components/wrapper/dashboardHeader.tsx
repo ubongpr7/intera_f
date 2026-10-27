@@ -19,6 +19,7 @@ import PermissionHydrator from '@/components/auth/PermissionHydrator';
 import { useAdminHost } from '@/lib/adminHost';
 import { getDecodedToken } from '@/lib/utils';
 import { truthyAccessClaim } from '@/lib/permissionsGuard';
+import { useSupportHost } from '@/lib/supportHost';
 
 const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
 
@@ -32,6 +33,7 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
   }));
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const { isAdminHost, isReady: isAdminHostReady } = useAdminHost();
+  const { isSupportHost, isReady: isSupportHostReady } = useSupportHost();
   const pathname = usePathname();
   const isPublic = isPublicAuthRoute(pathname);
   const accessToken = readCookieValue("accessToken", getCookie);
@@ -55,7 +57,7 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
     companyMembershipsError ||
     (Boolean(companyMemberships) && !companyMembershipsLoading && !companyMembershipsFetching);
   const showWorkspaceNavigation =
-    !isAffiliate && (isAdminHost || (workspaceContextResolved && hasWorkspaceProfile));
+    !isAffiliate && !isSupportHost && (isAdminHost || (workspaceContextResolved && hasWorkspaceProfile));
   const activeProfileId = companyMemberships?.active_profile_id ?? null;
   const permissionReady =
     permissionState.status === "succeeded" &&
@@ -83,7 +85,7 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
   
 
   const shouldHideDashboardUI = (path: string) => {
-    return path.startsWith('/accounts') || path === '/';
+    return path.startsWith('/accounts') || path === '/' || path.startsWith('/support-portal') || isSupportHost;
   };
 
   const hasCompleteWorkspaceAiSetup = Boolean(
@@ -107,7 +109,7 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
   
   return (
     <div className={`dashboard-shell ${SidebarCollapsed ? "sidebar-is-collapsed" : "sidebar-is-expanded"} flex w-full min-h-screen bg-gray-50 text-gray-900`}>
-    <PermissionHydrator disabled={isPublic || !isAdminHostReady || isAdminHost} />
+    <PermissionHydrator disabled={isPublic || !isAdminHostReady || isAdminHost || !isSupportHostReady || isSupportHost} />
     
     <ToastContainer position="top-right" autoClose={3000} />
     

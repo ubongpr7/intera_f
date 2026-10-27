@@ -51,12 +51,20 @@ export interface ChatConversation {
   last_message_at?: string | null
   participants: ChatParticipant[]
   latest_message?: ChatMessage | null
+  support_status?: "ai" | "waiting" | "assigned" | "resolved" | null
+  assigned_support_user_id?: string | null
+  handoff_requested_at?: string | null
 }
 
 export interface SupportAssistResponse {
   conversation_id: string
   user_message: ChatMessage
   assistant_message: ChatMessage
+}
+
+export interface SupportHumanRequestResponse {
+  conversation_id: string
+  status: "waiting" | "assigned"
 }
 
 export interface CallSession {

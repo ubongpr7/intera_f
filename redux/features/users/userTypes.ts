@@ -15,6 +15,7 @@ export interface UserData {
   is_staff: boolean;
   is_superuser?: boolean;
   is_affiliate_marketer?: boolean;
+  is_support?: boolean;
   mfa_enabled?: boolean;
   has_setup_mfa?: boolean;
   date_of_birth?: Date | string | null;
@@ -83,6 +84,7 @@ export interface UserSummary {
   is_staff?: boolean;
   is_superuser?: boolean;
   is_affiliate_marketer?: boolean;
+  is_support?: boolean;
   is_verified?: boolean;
   mfa_enabled?: boolean;
   date_joined?: Date | string;

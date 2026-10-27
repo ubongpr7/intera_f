@@ -15,9 +15,16 @@ export function proxy(request: NextRequest) {
   const isAdminDevHost = hostname === "admin.dev.interaims.com" || hostname === "www.admin.dev.interaims.com"
   const isAdminProdHost = hostname === "admin.interaims.com" || hostname === "www.admin.interaims.com"
   const isAdminHost = isAdminDevHost || isAdminProdHost
+  const isSupportHost = hostname === "support.interaims.com" || hostname === "www.support.interaims.com"
   const adminSiteUrl = isAdminDevHost
     ? "https://admin.dev.interaims.com"
     : "https://admin.interaims.com"
+
+  if (isSupportHost && (path === "/" || path === "/dashboard")) {
+    const supportUrl = request.nextUrl.clone()
+    supportUrl.pathname = "/support-portal"
+    return NextResponse.rewrite(supportUrl)
+  }
 
   if (isAdminHost && (path === "/" || path === "/dashboard" || path === "/admin-portal")) {
     const adminUrl = request.nextUrl.clone()

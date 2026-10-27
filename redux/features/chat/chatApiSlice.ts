@@ -5,6 +5,7 @@ import type {
   ChatConversation,
   ChatMessage,
   SupportAssistResponse,
+  SupportHumanRequestResponse,
   UploadAttachmentResponse,
 } from "./chatTypes"
 
@@ -65,6 +66,18 @@ export const chatApiSlice = apiSlice.injectEndpoints({
       query: (body) => ({ url: "/api/v1/support/assist", method: "POST", body, service: "chat" }),
       invalidatesTags: ["ChatConversations"],
     }),
+    requestSupportAgent: builder.mutation<SupportHumanRequestResponse, string>({
+      query: (conversationId) => ({ url: `/api/v1/support/${conversationId}/request-human`, method: "POST", body: {}, service: "chat" }),
+      invalidatesTags: ["ChatConversations"],
+    }),
+    listSupportInbox: builder.query<ChatConversation[], void>({
+      query: () => ({ url: "/api/v1/support/inbox", service: "chat" }),
+      providesTags: ["ChatConversations"],
+    }),
+    claimSupportConversation: builder.mutation<ChatConversation, { conversationId: string; display_name?: string; email?: string }>({
+      query: ({ conversationId, ...body }) => ({ url: `/api/v1/support/${conversationId}/claim`, method: "POST", body, service: "chat" }),
+      invalidatesTags: ["ChatConversations"],
+    }),
     startChatCall: builder.mutation<CallSession, { conversation_id?: string; call_type: "support" | "internal"; workspace_id?: string }>({
       query: (body) => ({ url: "/api/v1/calls/token", method: "POST", body, service: "chat" }),
     }),
@@ -84,6 +97,9 @@ export const {
   useCreateChatMessageMutation,
   useUploadChatAttachmentMutation,
   useSupportAssistMutation,
+  useRequestSupportAgentMutation,
+  useListSupportInboxQuery,
+  useClaimSupportConversationMutation,
   useStartChatCallMutation,
   useJoinChatCallMutation,
   useEndChatCallMutation,
