@@ -25,7 +25,8 @@ const checks: HealthCheck[] = [
 ]
 
 export async function GET() {
-  const host = (await headers()).get("host")?.split(":")[0] || ""
+  const requestHeaders = await headers()
+  const host = (requestHeaders.get("x-forwarded-host") || requestHeaders.get("host"))?.split(",")[0]?.split(":")[0]?.trim().toLowerCase() || ""
   const production = host === "admin.interaims.com" || host === "www.admin.interaims.com" || host === "support.interaims.com" || host === "www.support.interaims.com" || host === "interaims.com" || host === "www.interaims.com"
   const results = await Promise.all(checks.map(async (check) => {
     const started = Date.now()

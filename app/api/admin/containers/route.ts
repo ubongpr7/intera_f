@@ -2,8 +2,9 @@ import { headers } from "next/headers"
 import { NextResponse } from "next/server"
 
 export async function GET() {
-  const host = (await headers()).get("host")?.split(":")[0] || ""
-  const production = host === "admin.interaims.com"
+  const requestHeaders = await headers()
+  const host = (requestHeaders.get("x-forwarded-host") || requestHeaders.get("host"))?.split(",")[0]?.split(":")[0]?.trim().toLowerCase() || ""
+  const production = host === "admin.interaims.com" || host === "www.admin.interaims.com" || host === "support.interaims.com" || host === "www.support.interaims.com" || host === "interaims.com" || host === "www.interaims.com"
   const endpoint = process.env.CONTAINER_HEALTH_URL || (production ? "https://health.api.interaims.com/health/containers" : "https://health.dev.interaims.com/health/containers")
   const token = process.env.CONTAINER_HEALTH_TOKEN
   const controller = new AbortController()
