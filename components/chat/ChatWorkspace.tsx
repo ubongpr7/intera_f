@@ -1,0 +1,358 @@
+"use client"
+
+import { useEffect, useMemo, useRef, useState } from "react"
+import { getCookie } from "cookies-next"
+import { AlertCircle, Check, Headphones, Loader2, Mic, Paperclip, Plus, Search, Send, Sparkles, Square, Users, Wifi, WifiOff, X } from "lucide-react"
+
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { readCookieValue } from "@/lib/authCookies"
+import { chatBackendUrl } from "@/redux/services/apiSlice"
+import { useLazySearchUsersQuery } from "@/redux/features/users/userApiSlice"
+import {
+  useCreateChatConversationMutation,
+  useCreateChatMessageMutation,
+  useListChatConversationsQuery,
+  useListChatMessagesQuery,
+  useSupportAssistMutation,
+  useUploadChatAttachmentMutation,
+} from "@/redux/features/chat/chatApiSlice"
+import type { ChatConversation, ChatMessage } from "@/redux/features/chat/chatTypes"
+
+const toWebSocketUrl = (baseUrl: string) => baseUrl.replace(/^http/i, "ws").replace(/\/$/, "")
+
+const formatTime = (value: string) =>
+  new Date(value).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+
+const conversationName = (conversation: ChatConversation) => {
+  if (conversation.kind === "support") return "Intera IMS Support"
+  if (conversation.title) return conversation.title
+  const participant = conversation.participants.find((item) => item.is_active)
+  return participant?.display_name || participant?.email || "Workspace conversation"
+}
+
+const mergeMessage = (messages: ChatMessage[], incoming: ChatMessage) => {
+  if (messages.some((item) => item.id === incoming.id)) return messages
+  return [...messages, incoming].sort((a, b) => a.message_seq - b.message_seq)
+}
+
+const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024
+
+export default function ChatWorkspace() {
+  const userId = readCookieValue("userID", getCookie) || ""
+  const workspaceId = readCookieValue("profileId", getCookie) || undefined
+  const accessToken = readCookieValue("accessToken", getCookie)
+  const [selectedId, setSelectedId] = useState<string>()
+  const [supportMode, setSupportMode] = useState(false)
+  const [draft, setDraft] = useState("")
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [participantId, setParticipantId] = useState("")
+  const [participantSearch, setParticipantSearch] = useState("")
+  const [showNewChat, setShowNewChat] = useState(false)
+  const [recording, setRecording] = useState(false)
+  const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "reconnecting" | "offline">("offline")
+  const [actionError, setActionError] = useState<string | null>(null)
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const chunksRef = useRef<Blob[]>([])
+
+  const { data: conversations = [], isLoading: conversationsLoading, refetch: refetchConversations } = useListChatConversationsQuery()
+  const selectedConversation = conversations.find((item) => item.id === selectedId)
+  const humanSupportActive = Boolean(
+    supportMode && selectedConversation?.participants.some((participant) => participant.is_active && participant.role === "support_agent"),
+  )
+  const supportTextOnly = supportMode && !humanSupportActive
+  const { data: loadedMessages = [], isFetching: messagesLoading } = useListChatMessagesQuery(selectedId || "", {
+    skip: !selectedId,
+  })
+  const [createConversation, { isLoading: creatingConversation }] = useCreateChatConversationMutation()
+  const [createMessage, { isLoading: sendingMessage }] = useCreateChatMessageMutation()
+  const [uploadAttachment, { isLoading: uploadingAttachment }] = useUploadChatAttachmentMutation()
+  const [supportAssist, { isLoading: askingSupport }] = useSupportAssistMutation()
+  const [searchUsers, { data: userSearchResults = [], isFetching: searchingUsers }] = useLazySearchUsersQuery()
+
+  useEffect(() => {
+    if (selectedId) setMessages(loadedMessages)
+  }, [loadedMessages, selectedId])
+
+  useEffect(() => {
+    if (!selectedId && conversations[0]) setSelectedId(conversations[0].id)
+  }, [conversations, selectedId])
+
+  useEffect(() => {
+    if (!selectedId || !accessToken) return
+    let disposed = false
+    let socket: WebSocket | null = null
+    let attempt = 0
+
+    const connect = () => {
+      if (disposed) return
+      setConnectionStatus(attempt === 0 ? "connecting" : "reconnecting")
+      socket = new WebSocket(`${toWebSocketUrl(chatBackendUrl)}/ws/conversations/${selectedId}?token=${encodeURIComponent(accessToken)}`)
+      socket.onopen = () => {
+        attempt = 0
+        setConnectionStatus("connected")
+      }
+      socket.onmessage = (event) => {
+        try {
+          const envelope = JSON.parse(event.data) as { type?: string; data?: ChatMessage | { message?: ChatMessage } }
+          const incoming = envelope.type === "support.assist.completed"
+            ? (envelope.data as { message?: ChatMessage } | undefined)?.message
+            : envelope.data as ChatMessage | undefined
+          if ((envelope.type === "message.created" || envelope.type === "support.assist.completed") && incoming?.id) {
+            setMessages((current) => mergeMessage(current, incoming))
+          }
+        } catch {
+          // Ignore malformed realtime frames; the REST query remains authoritative.
+        }
+      }
+      socket.onclose = () => {
+        if (disposed) return
+        setConnectionStatus("reconnecting")
+        const delay = Math.min(1000 * (2 ** attempt), 15000)
+        attempt += 1
+        reconnectTimerRef.current = setTimeout(connect, delay)
+      }
+      socket.onerror = () => setConnectionStatus("reconnecting")
+    }
+
+    connect()
+    return () => {
+      disposed = true
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current)
+      socket?.close()
+      setConnectionStatus("offline")
+    }
+  }, [accessToken, selectedId])
+
+  useEffect(() => {
+    const query = participantSearch.trim()
+    if (query.length < 2) return
+    const timer = setTimeout(() => void searchUsers(query), 300)
+    return () => clearTimeout(timer)
+  }, [participantSearch, searchUsers])
+
+  useEffect(() => {
+    return () => {
+      if (mediaRecorderRef.current?.state === "recording") mediaRecorderRef.current.stop()
+    }
+  }, [])
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
+
+  const supportConversation = useMemo(
+    () => conversations.find((conversation) => conversation.kind === "support"),
+    [conversations],
+  )
+
+  const openSupport = () => {
+    setSupportMode(true)
+    if (supportConversation) setSelectedId(supportConversation.id)
+    setMessages([])
+  }
+
+  const selectConversation = (conversation: ChatConversation) => {
+    setSupportMode(conversation.kind === "support")
+    setSelectedId(conversation.id)
+  }
+
+  const sendText = async () => {
+    const body = draft.trim()
+    if (!body || sendingMessage || askingSupport) return
+    setDraft("")
+    try {
+      if (supportTextOnly) {
+        const response = await supportAssist({ conversation_id: selectedId, body }).unwrap()
+        setSelectedId(response.conversation_id)
+        setMessages((current) => mergeMessage(mergeMessage(current, response.user_message), response.assistant_message))
+        await refetchConversations()
+        return
+      }
+      if (!selectedId) return
+      const response = await createMessage({ conversationId: selectedId, body, workspace_id: workspaceId }).unwrap()
+      setMessages((current) => mergeMessage(current, response))
+    } catch {
+      setDraft(body)
+      setActionError("Your message could not be sent. Check the connection and try again.")
+    }
+  }
+
+  const sendFile = async (file: File, kind?: "voice" | "file") => {
+    if (supportTextOnly || !selectedId || uploadingAttachment) {
+      if (supportTextOnly) setActionError("Support AI accepts text messages only. File and voice sharing becomes available after human handoff.")
+      return
+    }
+    if (file.size > MAX_ATTACHMENT_BYTES) {
+      setActionError("That file is larger than the 15 MB limit.")
+      return
+    }
+    try {
+      const response = await uploadAttachment({ conversationId: selectedId, file }).unwrap()
+      const message = await createMessage({
+        conversationId: selectedId,
+        kind: kind || (file.type.startsWith("image/") ? "image" : "file"),
+        attachment_ids: [response.attachment.id],
+        workspace_id: workspaceId,
+      }).unwrap()
+      setMessages((current) => mergeMessage(current, message))
+    } catch {
+      setActionError("The attachment could not be uploaded. Please try again.")
+    }
+  }
+
+  const toggleRecording = async () => {
+    if (supportTextOnly) {
+      setActionError("Support AI accepts text messages only. Voice notes become available after human handoff.")
+      return
+    }
+    if (recording && mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop()
+      setRecording(false)
+      return
+    }
+    if (!selectedId) return
+    let stream: MediaStream
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    } catch {
+      setActionError("Microphone access is required to record a voice note.")
+      return
+    }
+    const recorder = new MediaRecorder(stream)
+    chunksRef.current = []
+    recorder.ondataavailable = (event) => chunksRef.current.push(event.data)
+    recorder.onstop = async () => {
+      stream.getTracks().forEach((track) => track.stop())
+      const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" })
+      await sendFile(new File([blob], `voice-note-${Date.now()}.webm`, { type: blob.type }), "voice")
+    }
+    mediaRecorderRef.current = recorder
+    recorder.start()
+    setRecording(true)
+  }
+
+  const createDirectChat = async () => {
+    const target = participantId.trim()
+    if (!target) return
+    try {
+      const conversation = await createConversation({
+        kind: "direct",
+        context_workspace_id: workspaceId,
+        context_label: "Workspace chat",
+        participants: [{ user_id: target }],
+      }).unwrap()
+      setParticipantId("")
+      setParticipantSearch("")
+      setShowNewChat(false)
+      setSupportMode(false)
+      setSelectedId(conversation.id)
+      await refetchConversations()
+    } catch {
+      setActionError("The conversation could not be created. Confirm that this teammate is available to chat.")
+    }
+  }
+
+  return (
+    <main className="chat-workspace mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-[1500px] flex-col gap-5 p-4 md:p-7">
+      <header className="relative overflow-hidden rounded-[2rem] bg-[#091321] px-6 py-7 text-white shadow-[0_24px_70px_-38px_rgba(9,19,33,.9)] md:px-9">
+        <div className="absolute -right-12 -top-20 h-64 w-64 rounded-full bg-[#98fcc2]/10 blur-2xl" />
+        <div className="relative flex flex-wrap items-end justify-between gap-5">
+          <div>
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#98fcc2]/30 bg-[#98fcc2]/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-[#98fcc2]">
+              <Sparkles className="h-3.5 w-3.5" /> Connected support
+            </div>
+            <h1 className="text-3xl font-black tracking-tight md:text-5xl">Conversations that keep work moving.</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 md:text-base">Chat with your workspace team, attach files and voice notes, or start a text conversation with Intera IMS support.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs text-slate-200">
+              {connectionStatus === "connected" ? <Wifi className="h-3.5 w-3.5 text-[#98fcc2]" /> : <WifiOff className="h-3.5 w-3.5 text-amber-300" />}
+              {connectionStatus === "connected" ? "Live" : connectionStatus === "reconnecting" ? "Reconnecting" : connectionStatus === "connecting" ? "Connecting" : "Offline"}
+            </span>
+            <Button variant="secondary" onClick={() => setShowNewChat((value) => !value)}><Plus className="h-4 w-4" /> New chat</Button>
+          </div>
+        </div>
+      </header>
+
+      {actionError ? (
+        <div role="alert" className="flex items-center justify-between gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <span className="flex items-center gap-2"><AlertCircle className="h-4 w-4 shrink-0" />{actionError}</span>
+          <button type="button" onClick={() => setActionError(null)} aria-label="Dismiss error"><X className="h-4 w-4" /></button>
+        </div>
+      ) : null}
+
+      {showNewChat ? (
+        <Card className="border-blue-200 bg-blue-50/70">
+          <CardContent className="flex flex-wrap items-end gap-3 p-4">
+            <div className="relative min-w-[260px] flex-1 text-sm font-semibold text-slate-700">
+              <label htmlFor="chat-teammate-search">Find a teammate</label>
+              <div className="relative mt-2">
+                <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                <input id="chat-teammate-search" value={participantSearch} onChange={(event) => { setParticipantSearch(event.target.value); setParticipantId("") }} placeholder="Search by name or email" className="h-11 w-full rounded-xl border border-blue-200 bg-white pl-9 pr-3 outline-none focus:ring-2 focus:ring-blue-400" />
+              </div>
+              {participantSearch.trim().length >= 2 && !participantId ? (
+                <div className="absolute left-0 right-0 top-[4.5rem] z-20 overflow-hidden rounded-xl border border-blue-200 bg-white shadow-xl">
+                  {searchingUsers ? <p className="flex items-center gap-2 p-3 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> Searching...</p> : userSearchResults.length ? userSearchResults.slice(0, 6).map((user) => {
+                    const name = user.get_full_name || `${user.first_name} ${user.last_name}`.trim() || user.email
+                    return <button key={user.id} type="button" onClick={() => { setParticipantId(String(user.id)); setParticipantSearch(name) }} className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-blue-50"><span className="font-semibold text-slate-800">{name}</span><span className="truncate text-xs text-slate-500">{user.email}</span></button>
+                  }) : <p className="p-3 text-sm text-slate-500">No matching teammate found.</p>}
+                </div>
+              ) : null}
+              {participantId ? <p className="mt-1 flex items-center gap-1 text-xs text-emerald-700"><Check className="h-3 w-3" /> Teammate selected</p> : null}
+            </div>
+            <Button onClick={createDirectChat} disabled={!participantId || creatingConversation}>{creatingConversation ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Start conversation</Button>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <section className="grid min-h-[620px] flex-1 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_80px_-52px_rgba(15,23,42,.55)] dark:border-slate-800 dark:bg-slate-950 lg:grid-cols-[320px_1fr]">
+        <aside className="border-b border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/60 lg:border-b-0 lg:border-r">
+          <button type="button" onClick={openSupport} className={`mb-4 flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition ${supportMode ? "border-[#3c83f7] bg-blue-50 dark:bg-blue-950/40" : "border-slate-200 bg-white hover:border-blue-300 dark:border-slate-800 dark:bg-slate-950"}`}>
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#091321] text-[#98fcc2]"><Headphones className="h-5 w-5" /></span>
+            <span><span className="block font-bold text-slate-900 dark:text-white">Intera IMS Support</span><span className="block text-xs text-slate-500">Text support with AI assistance</span></span>
+          </button>
+          <div className="mb-3 flex items-center justify-between px-1"><p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Your conversations</p><Users className="h-4 w-4 text-slate-400" /></div>
+          <div className="space-y-2 overflow-y-auto lg:max-h-[500px]">
+            {conversationsLoading ? <p className="p-3 text-sm text-slate-500">Loading conversations...</p> : null}
+            {conversations.map((conversation) => (
+              <button key={conversation.id} type="button" onClick={() => selectConversation(conversation)} className={`w-full rounded-2xl border p-3 text-left transition ${selectedId === conversation.id && !supportMode ? "border-blue-400 bg-blue-50 dark:bg-blue-950/40" : "border-transparent hover:border-slate-200 hover:bg-white dark:hover:border-slate-700 dark:hover:bg-slate-950"}`}>
+                <div className="flex items-center justify-between gap-3"><span className="truncate font-semibold text-slate-900 dark:text-white">{conversationName(conversation)}</span>{conversation.latest_message ? <span className="text-[11px] text-slate-400">{formatTime(conversation.latest_message.created_at)}</span> : null}</div>
+                <p className="mt-1 truncate text-xs text-slate-500">{conversation.latest_message?.body || "No messages yet"}</p>
+              </button>
+            ))}
+            {!conversationsLoading && conversations.length === 0 ? <p className="rounded-2xl border border-dashed border-slate-300 p-4 text-sm leading-6 text-slate-500">No conversations yet. Start with support or create a direct chat.</p> : null}
+          </div>
+        </aside>
+
+        <div className="flex min-h-[620px] min-w-0 flex-col">
+          <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-slate-800 md:px-7">
+            <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">{supportMode ? "Support centre" : "Workspace chat"}</p><h2 className="mt-1 truncate text-xl font-black text-slate-900 dark:text-white">{supportMode ? "How can we help?" : selectedConversation ? conversationName(selectedConversation) : "Select a conversation"}</h2></div>
+          </div>
+
+          <div className="flex-1 space-y-4 overflow-y-auto bg-[radial-gradient(circle_at_top_right,rgba(60,131,247,.08),transparent_35%),#f8fbff] p-5 dark:bg-[radial-gradient(circle_at_top_right,rgba(152,252,194,.08),transparent_35%),#0b1220] md:p-7">
+            {supportTextOnly && messages.length === 0 ? <div className="mx-auto mt-12 max-w-md text-center"><div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-[#091321] text-[#98fcc2]"><Sparkles className="h-7 w-7" /></div><h3 className="mt-5 text-2xl font-black text-slate-900 dark:text-white">Start with a question</h3><p className="mt-2 text-sm leading-6 text-slate-500">Support AI accepts text questions. File and voice sharing will be available after a human agent takes over.</p></div> : null}
+            {messagesLoading ? <p className="text-sm text-slate-500">Loading messages...</p> : null}
+            {messages.map((message) => {
+              const mine = message.sender_user_id === userId
+              return <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}><div className={`max-w-[min(720px,88%)] rounded-3xl px-4 py-3 shadow-sm ${mine ? "rounded-br-md bg-[#3c83f7] text-white" : "rounded-bl-md border border-slate-200 bg-white text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"}`}><div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide opacity-70"><span>{mine ? "You" : message.sender_role === "support_ai" ? "Support AI" : "Teammate"}</span><span>·</span><span>{formatTime(message.created_at)}</span></div>{message.body ? <p className="mt-1 whitespace-pre-wrap text-sm leading-6">{message.body}</p> : null}{message.attachments?.map((attachment) => <a key={attachment.id} href={attachment.access_url || "#"} target="_blank" rel="noreferrer" className="mt-2 block rounded-xl bg-black/10 px-3 py-2 text-xs underline">{attachment.original_filename}</a>)}</div></div>
+            })}
+            <div ref={bottomRef} />
+          </div>
+
+          <div className="border-t border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 md:p-5">
+            <div className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-2 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 dark:border-slate-800 dark:bg-slate-900">
+              <label className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-white hover:text-blue-600 dark:hover:bg-slate-800 ${supportTextOnly || uploadingAttachment ? "cursor-not-allowed opacity-40" : "cursor-pointer"}`} title={supportTextOnly ? "Available after human handoff" : "Attach a file"}><Paperclip className="h-5 w-5" /><input type="file" className="hidden" disabled={supportTextOnly || uploadingAttachment} onChange={(event) => { const file = event.target.files?.[0]; if (file) void sendFile(file); event.currentTarget.value = "" }} /></label>
+              <button type="button" onClick={() => void toggleRecording()} disabled={supportTextOnly || !selectedId || uploadingAttachment} className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition ${recording ? "bg-red-100 text-red-600" : "text-slate-500 hover:bg-white hover:text-blue-600 dark:hover:bg-slate-800"}`} aria-label={recording ? "Stop voice note" : supportTextOnly ? "Available after human handoff" : "Record voice note"}>{recording ? <Square className="h-4 w-4" /> : <Mic className="h-5 w-5" />}</button>
+              <textarea value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void sendText() } }} placeholder={supportTextOnly ? "Ask support anything..." : "Write a message..."} rows={1} className="max-h-32 min-h-10 flex-1 resize-none bg-transparent px-2 py-2 text-sm outline-none placeholder:text-slate-400" />
+              <Button size="icon" onClick={() => void sendText()} disabled={!draft.trim() || sendingMessage || askingSupport || uploadingAttachment} aria-label="Send message">{sendingMessage || askingSupport || uploadingAttachment ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}</Button>
+            </div>
+            <p className="mt-2 px-1 text-[11px] text-slate-400">Enter to send · Shift + Enter for a new line · {supportTextOnly ? "Support AI accepts text only" : "Files up to 15 MB and voice notes are available"}</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  )
+}

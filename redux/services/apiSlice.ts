@@ -81,8 +81,13 @@ const SUBSCRIPTIONS_BACKEND_URL = resolveBaseUrl(
   process.env.NEXT_PUBLIC_SUBSCRIPTIONS_BACKEND_URL ?? "http://localhost:8550",
   process.env.SUBSCRIPTIONS_INTERNAL_URL ?? "http://subscriptions:8550",
 )
+const CHAT_BACKEND_URL = resolveBaseUrl(
+  process.env.NEXT_PUBLIC_CHAT_BACKEND_URL ?? (process.env.NODE_ENV === "production" ? "https://chat.api.interaims.com" : "http://localhost:7020"),
+  process.env.CHAT_INTERNAL_URL ?? "http://chat_api:7020",
+)
+export const chatBackendUrl = CHAT_BACKEND_URL
 
-export type serviceType = "users" | "inventory"| "common"|"product"|'pos'| "agent"|'payment' | "audit" | "notification" | "subscriptions"
+export type serviceType = "users" | "inventory"| "common"|"product"|'pos'| "agent"|'payment' | "audit" | "notification" | "subscriptions" | "chat"
 const accessAge = 60*60*24
 const refreshAge = 60*60*24
 export const serviceMap: Record<serviceType, string> = {
@@ -96,6 +101,7 @@ export const serviceMap: Record<serviceType, string> = {
   audit: AUDIT_BACKEND_URL,
   notification: NOTIFICATION_BACKEND_URL,
   subscriptions: SUBSCRIPTIONS_BACKEND_URL,
+  chat: CHAT_BACKEND_URL,
 }
 
 const mutex = new Mutex()
@@ -388,6 +394,7 @@ const baseQueries = {
   audit: createBaseQuery(serviceMap.audit),
   notification: createBaseQuery(serviceMap.notification),
   subscriptions: createBaseQuery(serviceMap.subscriptions),
+  chat: createBaseQuery(serviceMap.chat),
 }
 
 const fileUploadQueries = {
@@ -401,6 +408,7 @@ const fileUploadQueries = {
   audit: createBaseQuery(serviceMap.audit, true),
   notification: createBaseQuery(serviceMap.notification, true),
   subscriptions: createBaseQuery(serviceMap.subscriptions, true),
+  chat: createBaseQuery(serviceMap.chat, true),
 
 }
 
@@ -574,7 +582,7 @@ export const apiSlice = createApi({
   refetchOnFocus: true,
   refetchOnReconnect: true,
   refetchOnMountOrArgChange: true,
-  tagTypes: ["User", "Inventory", "Category", "Agent", "AgentConversation", "GlobalCatalog", "Product", "Manufacturing"], // Add tag types for caching
+  tagTypes: ["User", "Inventory", "Category", "Agent", "AgentConversation", "GlobalCatalog", "Product", "Manufacturing", "ChatConversations", "ChatMessages"], // Add tag types for caching
   endpoints: (builder) => ({}),
 })
 
