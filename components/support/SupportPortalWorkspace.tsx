@@ -43,8 +43,9 @@ const displayName = (conversation: ChatConversation) => {
 }
 
 export default function SupportPortalWorkspace() {
-  const allowed = isSupportClaim()
   const accessToken = readCookieValue("accessToken", getCookie)
+  const authenticated = Boolean(accessToken)
+  const allowed = authenticated && isSupportClaim()
   const [selectedId, setSelectedId] = useState<string>()
   const [draft, setDraft] = useState("")
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -113,8 +114,12 @@ export default function SupportPortalWorkspace() {
     }
   }, [])
 
+  if (!authenticated) {
+    return <main className="mx-auto flex min-h-[70vh] max-w-3xl items-center justify-center p-6"><Card className="w-full border-blue-200"><CardContent className="flex items-start gap-4 p-6"><ShieldAlert className="mt-1 h-6 w-6 text-blue-600" /><div><h1 className="text-xl font-bold">Sign in to the support portal</h1><p className="mt-2 text-sm text-slate-600">Sign in with your Intera IMS account. Support agents, platform staff, and superusers can continue after authentication.</p><a href="/accounts/signin?next=%2Fdashboard" className="mt-5 inline-flex rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">Sign in</a></div></CardContent></Card></main>
+  }
+
   if (!allowed) {
-    return <main className="mx-auto flex min-h-[70vh] max-w-3xl items-center justify-center p-6"><Card className="w-full border-red-200"><CardContent className="flex items-start gap-4 p-6"><ShieldAlert className="mt-1 h-6 w-6 text-red-600" /><div><h1 className="text-xl font-bold">Support portal access required</h1><p className="mt-2 text-sm text-slate-600">Your account is not marked as a support agent or platform administrator.</p></div></CardContent></Card></main>
+    return <main className="mx-auto flex min-h-[70vh] max-w-3xl items-center justify-center p-6"><Card className="w-full border-red-200"><CardContent className="flex items-start gap-4 p-6"><ShieldAlert className="mt-1 h-6 w-6 text-red-600" /><div><h1 className="text-xl font-bold">Support portal access required</h1><p className="mt-2 text-sm text-slate-600">Your account is signed in, but it is not marked as a support agent or platform administrator.</p></div></CardContent></Card></main>
   }
 
   const sendMessage = async () => {
