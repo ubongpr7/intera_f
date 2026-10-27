@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { getCookie } from "cookies-next"
 import { AlertCircle, Check, Headphones, Loader2, Mic, Paperclip, Plus, Search, Send, Sparkles, Square, Users, Wifi, WifiOff, X } from "lucide-react"
 
@@ -156,10 +156,7 @@ export default function ChatWorkspace() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
-  const supportConversation = useMemo(
-    () => conversations.find((conversation) => conversation.kind === "support"),
-    [conversations],
-  )
+  const supportConversation = conversations.find((conversation) => conversation.kind === "support")
 
   const openSupport = () => {
     setSupportMode(true)
