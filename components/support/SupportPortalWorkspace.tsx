@@ -37,7 +37,8 @@ const mergeMessage = (messages: ChatMessage[], incoming: ChatMessage) => {
 const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024
 
 const displayName = (conversation: ChatConversation) => {
-  const customer = conversation.participants.find((participant) => participant.role !== "support_ai" && participant.user_id !== "support-ai")
+  const participants = Array.isArray(conversation?.participants) ? conversation.participants : []
+  const customer = participants.find((participant) => participant.role !== "support_ai" && participant.user_id !== "support-ai")
   return customer?.display_name || customer?.email || "Support customer"
 }
 
@@ -53,15 +54,17 @@ export default function SupportPortalWorkspace() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
 
-  const { data: inbox = [], isLoading, refetch } = useListSupportInboxQuery(undefined, {
+  const { data: inboxData, isLoading, refetch } = useListSupportInboxQuery(undefined, {
     skip: !allowed,
     pollingInterval: 5000,
   })
+  const inbox = Array.isArray(inboxData) ? inboxData : []
   const selectedConversation = inbox.find((conversation) => conversation.id === selectedId)
-  const { data: loadedMessages = [], isFetching: messagesLoading } = useListChatMessagesQuery(selectedId || "", {
+  const { data: loadedMessagesData, isFetching: messagesLoading } = useListChatMessagesQuery(selectedId || "", {
     skip: !selectedId,
     pollingInterval: 5000,
   })
+  const loadedMessages = Array.isArray(loadedMessagesData) ? loadedMessagesData : []
   const [claimConversation, { isLoading: claiming }] = useClaimSupportConversationMutation()
   const [createMessage, { isLoading: sending }] = useCreateChatMessageMutation()
   const [uploadAttachment, { isLoading: uploading }] = useUploadChatAttachmentMutation()

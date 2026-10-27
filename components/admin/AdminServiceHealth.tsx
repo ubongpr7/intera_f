@@ -35,9 +35,9 @@ export default function AdminServiceHealth() {
       ])
       if (!serviceResponse.ok) throw new Error(`HTTP ${serviceResponse.status}`)
       const servicePayload = await serviceResponse.json() as { services?: ServiceHealth[] }
-      setHealth(servicePayload.services ?? initialHealth())
+      setHealth(Array.isArray(servicePayload.services) ? servicePayload.services : initialHealth())
       const containerPayload = await containerResponse.json() as { containers?: ContainerHealth[]; error?: string }
-      setContainers(containerPayload.containers ?? [])
+      setContainers(Array.isArray(containerPayload.containers) ? containerPayload.containers : [])
       setContainerError(containerResponse.ok ? null : containerPayload.error || `HTTP ${containerResponse.status}`)
     } catch {
       setHealth(initialHealth().map((item) => ({ ...item, state: "unhealthy" as const, detail: "Health proxy unavailable" })))
