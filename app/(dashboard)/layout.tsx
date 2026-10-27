@@ -31,7 +31,7 @@ export default function DashboardLayout({
   // Support is a separate operational surface and must not run workspace
   // subscription, affiliate, or permission guards before it can render.
   if (isSupportHost) {
-    return <DashboardHeader>{children}</DashboardHeader>
+    return <main className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">{children}</main>
   }
 
   return (
