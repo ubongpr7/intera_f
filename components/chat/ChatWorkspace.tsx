@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { readCookieValue } from "@/lib/authCookies"
 import { chatBackendUrl } from "@/redux/services/apiSlice"
-import { useLazySearchUsersQuery } from "@/redux/features/users/userApiSlice"
+import { useLazySearchUsersQuery, useGetCompanyUsersQuery } from "@/redux/features/users/userApiSlice"
 import { useGetUserCompaniesQuery, useSwitchCompanyMutation } from "@/redux/features/auth/authApiSlice"
 import {
   useCreateChatConversationMutation,
@@ -29,8 +29,13 @@ const formatTime = (value: string) =>
 const conversationName = (conversation: ChatConversation) => {
   if (conversation.kind === "support") return "Intera IMS Support"
   if (conversation.title) return conversation.title
-  const participant = conversation.participants.find((item) => item.is_active)
+  const participant = conversation.participants.find((item) => item.is_active && item.user_id !== readCookieValue("userID", getCookie))
   return participant?.display_name || participant?.email || "Workspace conversation"
+}
+
+const participantName = (conversation: ChatConversation | undefined, userId: string) => {
+  const participant = conversation?.participants.find((item) => item.user_id === userId)
+  return participant?.display_name || participant?.email || "Teammate"
 }
 
 const mergeMessage = (messages: ChatMessage[], incoming: ChatMessage) => {
@@ -61,6 +66,7 @@ export default function ChatWorkspace() {
 
   const { data: conversations = [], isLoading: conversationsLoading, refetch: refetchConversations } = useListChatConversationsQuery()
   const { data: companyMemberships } = useGetUserCompaniesQuery()
+  const { data: companyUsers = [] } = useGetCompanyUsersQuery()
   const [switchCompany, { isLoading: switchingWorkspace }] = useSwitchCompanyMutation()
   const selectedConversation = conversations.find((item) => item.id === selectedId)
   const conversationWorkspace = selectedConversation?.context_workspace_id
@@ -156,11 +162,25 @@ export default function ChatWorkspace() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
-  const supportConversation = conversations.find((conversation) => conversation.kind === "support")
+  const supportConversation = conversations.find((conversation) => conversation.kind === "support" && conversation.status === "active" && conversation.support_status !== "resolved")
+
+  const teammates = companyUsers
+    .map((assignment) => assignment.user)
+    .filter((user): user is NonNullable<typeof user> => Boolean(user && `${user.id}` !== `${userId}`))
+    .filter((user, index, all) => all.findIndex((candidate) => `${candidate.id}` === `${user.id}`) === index)
+    .filter((user) => {
+      const query = participantSearch.trim().toLowerCase()
+      if (!query) return true
+      const name = `${user.first_name || ""} ${user.last_name || ""}`.trim().toLowerCase()
+      return name.includes(query) || `${user.email || ""}`.toLowerCase().includes(query)
+    })
+  const teammateIds = new Set(teammates.map((user) => `${user.id}`))
+  const searchedTeammates = userSearchResults.filter((user) => teammateIds.has(`${user.id}`))
 
   const openSupport = () => {
     setSupportMode(true)
     if (supportConversation) setSelectedId(supportConversation.id)
+    else setSelectedId(undefined)
     setMessages([])
   }
 
@@ -316,24 +336,35 @@ export default function ChatWorkspace() {
       ) : null}
 
       {showNewChat ? (
-        <Card className="border-blue-200 bg-blue-50/70">
-          <CardContent className="flex flex-wrap items-end gap-3 p-4">
-            <div className="relative min-w-[260px] flex-1 text-sm font-semibold text-slate-700">
+        <Card className="border-blue-200 bg-blue-50/70 dark:border-slate-700 dark:bg-slate-900">
+          <CardContent className="space-y-4 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div><p className="text-sm font-bold text-slate-900 dark:text-white">Start a conversation</p><p className="text-xs text-slate-500 dark:text-slate-400">Choose AI support or a teammate in this workspace.</p></div>
+              <Button variant="outline" onClick={openSupport}><Sparkles className="h-4 w-4" /> Start AI support</Button>
+            </div>
+            <div className="relative min-w-[260px] text-sm font-semibold text-slate-700 dark:text-slate-200">
               <label htmlFor="chat-teammate-search">Find a teammate</label>
               <div className="relative mt-2">
                 <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                <input id="chat-teammate-search" value={participantSearch} onChange={(event) => { setParticipantSearch(event.target.value); setParticipantId("") }} placeholder="Search by name or email" className="h-11 w-full rounded-xl border border-blue-200 bg-white pl-9 pr-3 outline-none focus:ring-2 focus:ring-blue-400" />
+                <input id="chat-teammate-search" value={participantSearch} onChange={(event) => { setParticipantSearch(event.target.value); setParticipantId("") }} placeholder="Search by name or email" className="h-11 w-full rounded-xl border border-blue-200 bg-white pl-9 pr-3 text-slate-900 outline-none focus:ring-2 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
               </div>
-              {participantSearch.trim().length >= 2 && !participantId ? (
-                <div className="absolute left-0 right-0 top-[4.5rem] z-20 overflow-hidden rounded-xl border border-blue-200 bg-white shadow-xl">
-                  {searchingUsers ? <p className="flex items-center gap-2 p-3 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> Searching...</p> : userSearchResults.length ? userSearchResults.slice(0, 6).map((user) => {
+              <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {teammates.slice(0, 9).map((user) => {
+                  const name = `${user.first_name || ""} ${user.last_name || ""}`.trim() || user.email || "Teammate"
+                  return <button key={user.id} type="button" onClick={() => { setParticipantId(String(user.id)); setParticipantSearch(name) }} className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-left text-sm transition ${participantId === String(user.id) ? "border-blue-500 bg-blue-100 dark:bg-blue-950/50" : "border-slate-200 bg-white hover:border-blue-300 dark:border-slate-700 dark:bg-slate-950"}`}><span className="min-w-0"><span className="block truncate font-semibold text-slate-800 dark:text-slate-100">{name}</span><span className="block truncate text-xs text-slate-500">{user.email}</span></span><Users className="h-4 w-4 shrink-0 text-slate-400" /></button>
+                })}
+              </div>
+              {participantSearch.trim().length >= 2 && !participantId && searchedTeammates.length ? (
+                <div className="mt-2 overflow-hidden rounded-xl border border-blue-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-950">
+                  {searchingUsers ? <p className="flex items-center gap-2 p-3 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> Searching...</p> : searchedTeammates.slice(0, 6).map((user) => {
                     const name = user.get_full_name || `${user.first_name} ${user.last_name}`.trim() || user.email
-                    return <button key={user.id} type="button" onClick={() => { setParticipantId(String(user.id)); setParticipantSearch(name) }} className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-blue-50"><span className="font-semibold text-slate-800">{name}</span><span className="truncate text-xs text-slate-500">{user.email}</span></button>
-                  }) : <p className="p-3 text-sm text-slate-500">No matching teammate found.</p>}
+                    return <button key={user.id} type="button" onClick={() => { setParticipantId(String(user.id)); setParticipantSearch(name) }} className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-blue-50 dark:hover:bg-slate-800"><span className="font-semibold text-slate-800 dark:text-slate-100">{name}</span><span className="truncate text-xs text-slate-500">{user.email}</span></button>
+                  })}
                 </div>
               ) : null}
               {participantId ? <p className="mt-1 flex items-center gap-1 text-xs text-emerald-700"><Check className="h-3 w-3" /> Teammate selected</p> : null}
             </div>
+            {!teammates.length && !searchingUsers ? <p className="text-sm text-amber-700 dark:text-amber-300">No active teammates are available in this workspace yet.</p> : null}
             <Button onClick={createDirectChat} disabled={!participantId || creatingConversation}>{creatingConversation ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Start conversation</Button>
           </CardContent>
         </Card>
@@ -378,7 +409,7 @@ export default function ChatWorkspace() {
             {messagesLoading ? <p className="text-sm text-slate-500">Loading messages...</p> : null}
             {messages.map((message) => {
               const mine = message.sender_user_id === userId
-              return <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}><div className={`max-w-[min(720px,88%)] rounded-3xl px-4 py-3 shadow-sm ${mine ? "rounded-br-md bg-[#3c83f7] text-white" : "rounded-bl-md border border-slate-200 bg-white text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"}`}><div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide opacity-70"><span>{mine ? "You" : message.sender_role === "support_ai" ? "Support AI" : "Teammate"}</span><span>·</span><span>{formatTime(message.created_at)}</span></div>{message.body ? <p className="mt-1 whitespace-pre-wrap text-sm leading-6">{message.body}</p> : null}{message.attachments?.map((attachment) => <a key={attachment.id} href={attachment.access_url || "#"} target="_blank" rel="noreferrer" className="mt-2 block rounded-xl bg-black/10 px-3 py-2 text-xs underline">{attachment.original_filename}</a>)}</div></div>
+              return <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}><div className={`max-w-[min(720px,88%)] rounded-3xl px-4 py-3 shadow-sm ${mine ? "rounded-br-md bg-[#3c83f7] text-white" : "rounded-bl-md border border-slate-200 bg-white text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"}`}><div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide opacity-70"><span>{mine ? "You" : message.sender_role === "support_ai" ? "Support AI" : participantName(selectedConversation, message.sender_user_id)}</span><span>·</span><span>{formatTime(message.created_at)}</span></div>{message.body ? <p className="mt-1 whitespace-pre-wrap text-sm leading-6">{message.body}</p> : null}{message.attachments?.map((attachment) => <a key={attachment.id} href={attachment.access_url || "#"} target="_blank" rel="noreferrer" className="mt-2 block rounded-xl bg-black/10 px-3 py-2 text-xs underline">{attachment.original_filename}</a>)}</div></div>
             })}
             <div ref={bottomRef} />
           </div>

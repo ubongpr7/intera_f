@@ -78,6 +78,10 @@ export const chatApiSlice = apiSlice.injectEndpoints({
       query: ({ conversationId, ...body }) => ({ url: `/api/v1/support/${conversationId}/claim`, method: "POST", body, service: "chat" }),
       invalidatesTags: ["ChatConversations"],
     }),
+    resolveSupportConversation: builder.mutation<ChatConversation, string>({
+      query: (conversationId) => ({ url: `/api/v1/support/${conversationId}/resolve`, method: "POST", body: {}, service: "chat" }),
+      invalidatesTags: ["ChatConversations"],
+    }),
     startChatCall: builder.mutation<CallSession, { conversation_id?: string; call_type: "support" | "internal"; workspace_id?: string }>({
       query: (body) => ({ url: "/api/v1/calls/token", method: "POST", body, service: "chat" }),
     }),
@@ -100,6 +104,7 @@ export const {
   useRequestSupportAgentMutation,
   useListSupportInboxQuery,
   useClaimSupportConversationMutation,
+  useResolveSupportConversationMutation,
   useStartChatCallMutation,
   useJoinChatCallMutation,
   useEndChatCallMutation,
