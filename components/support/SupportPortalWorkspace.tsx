@@ -42,14 +42,14 @@ const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024
 const displayName = (conversation: ChatConversation) => {
   const participants = Array.isArray(conversation?.participants) ? conversation.participants : []
   const customer = participants.find((participant) => participant.role !== "support_ai" && participant.user_id !== "support-ai")
-  return customer?.display_name || customer?.email || "Support customer"
+  return customer?.display_name || "Customer"
 }
 
 const senderName = (conversation: ChatConversation | undefined, message: ChatMessage, currentUserId: string) => {
   if (message.sender_user_id === currentUserId) return "You"
   if (message.sender_role === "support_ai") return "Intera IMS Support AI"
   const participant = conversation?.participants.find((item) => item.user_id === message.sender_user_id)
-  return participant?.display_name || participant?.email || "Customer"
+  return participant?.display_name || "Customer"
 }
 
 const formatFileSize = (bytes: number) => {
@@ -258,7 +258,7 @@ export default function SupportPortalWorkspace() {
         <Link href="/service-health" className="rounded-xl px-3 py-2 text-sm font-semibold text-blue-300">Health</Link>
       </nav>
       <header className="shrink-0 overflow-hidden rounded-[1.5rem] bg-[radial-gradient(circle_at_top_right,rgba(60,131,247,.18),transparent_40%),#111f36] px-6 py-6 text-slate-200 shadow-[0_20px_50px_-32px_rgba(9,19,33,.9)] md:px-8">
-        <div className="flex flex-wrap items-end justify-between gap-4"><div><div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-emerald-200"><Headphones className="h-3.5 w-3.5" /> Support centre</div><h1 className="mt-3 text-3xl font-black tracking-tight text-white md:text-5xl">Help customers move forward.</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">Claim AI-escalated conversations, reply to customers, and keep the support queue moving.</p></div><span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs text-slate-200">{connection === "connected" ? <Wifi className="h-3.5 w-3.5 text-emerald-300" /> : <WifiOff className="h-3.5 w-3.5 text-amber-300" />}{connection === "connected" ? "Live" : "Connecting"}</span></div>
+        <div className="flex flex-wrap items-end justify-between gap-4"><div><div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-emerald-200"><Headphones className="h-3.5 w-3.5" /> Support centre</div><h1 className="!text-slate-100 mt-3 text-3xl font-black tracking-tight md:text-5xl">Help customers move forward.</h1><p className="!text-slate-300 mt-3 max-w-2xl text-sm leading-6">Claim AI-escalated conversations, reply to customers, and keep the support queue moving.</p></div><span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs text-slate-200">{connection === "connected" ? <Wifi className="h-3.5 w-3.5 text-emerald-300" /> : <WifiOff className="h-3.5 w-3.5 text-amber-300" />}{connection === "connected" ? "Live" : "Connecting"}</span></div>
       </header>
       <section className="grid min-h-0 flex-1 overflow-hidden rounded-[1.5rem] border border-slate-800 bg-[#0b1220] shadow-[0_18px_50px_-36px_rgba(0,0,0,.85)] lg:grid-cols-[340px_1fr]">
         <aside className="min-h-0 overflow-y-auto border-b border-slate-800 bg-[#0f1b2e] p-4 lg:border-b-0 lg:border-r"><div className="mb-3 flex items-center justify-between"><p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Open queue</p><span className="rounded-full bg-blue-500/15 px-2 py-1 text-xs font-bold text-blue-300">{inbox.length}</span></div>{isLoading ? <p className="p-3 text-sm text-[#71809a]">Loading queue...</p> : null}{inbox.map((conversation) => <button key={conversation.id} type="button" onClick={() => setSelectedId(conversation.id)} className={`mb-2 w-full rounded-2xl border p-4 text-left transition ${selectedId === conversation.id ? "border-blue-500/70 bg-blue-500/10" : "border-transparent bg-[#111f36] hover:border-slate-700"}`}><div className="flex items-center justify-between gap-2"><span className="truncate font-bold text-slate-100">{displayName(conversation)}</span><span className="text-[11px] text-[#71809a]">{conversation.support_status === "assigned" ? "Assigned" : "Waiting"}</span></div><p className="mt-1 truncate text-xs text-[#71809a]">{conversation.latest_message?.body || "No messages yet"}</p></button>)}{!isLoading && !inbox.length ? <div className="rounded-2xl border border-dashed border-slate-700 p-5 text-sm leading-6 text-[#71809a]">No conversations are waiting for support.</div> : null}</aside>

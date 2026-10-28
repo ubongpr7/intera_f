@@ -49,12 +49,12 @@ const conversationName = (conversation: ChatConversation) => {
   if (conversation.kind === "support") return "Intera IMS Support"
   if (conversation.title) return conversation.title
   const participant = conversation.participants.find((item) => item.is_active && item.user_id !== readCookieValue("userID", getCookie))
-  return participant?.display_name || participant?.email || "Workspace conversation"
+  return participant?.display_name || "Workspace conversation"
 }
 
 const participantName = (conversation: ChatConversation | undefined, userId: string) => {
   const participant = conversation?.participants.find((item) => item.user_id === userId)
-  return participant?.display_name || participant?.email || "Teammate"
+  return participant?.display_name || "Teammate"
 }
 
 const isImageAttachment = (attachment: ChatMessage["attachments"][number], message: ChatMessage) =>
