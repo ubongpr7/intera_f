@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { getCookie } from "cookies-next"
 import { AlertCircle, Check, Headphones, Loader2, Mic, Paperclip, Plus, Search, Send, Sparkles, Square, Users, Wifi, WifiOff, X } from "lucide-react"
 
@@ -25,6 +25,25 @@ const toWebSocketUrl = (baseUrl: string) => baseUrl.replace(/^http/i, "ws").repl
 
 const formatTime = (value: string) =>
   new Date(value).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+
+const formatRelativeTime = (value?: string | null) => {
+  if (!value) return ""
+  const minutes = Math.max(0, Math.round((Date.now() - new Date(value).getTime()) / 60000))
+  if (minutes < 1) return "now"
+  if (minutes < 60) return `${minutes}m`
+  if (minutes < 1440) return `${Math.round(minutes / 60)}h`
+  return new Date(value).toLocaleDateString([], { month: "short", day: "numeric" })
+}
+
+const buildInitials = (value: string) => value.split(" ").filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase() || "").join("") || "?"
+
+const conversationPreview = (conversation: ChatConversation) => {
+  const latest = conversation.latest_message
+  if (!latest) return "No messages yet"
+  if (latest.body) return latest.body
+  if (latest.attachments?.length) return latest.attachments.length === 1 ? "Attachment" : `${latest.attachments.length} attachments`
+  return "New message"
+}
 
 const conversationName = (conversation: ChatConversation) => {
   if (conversation.kind === "support") return "Intera IMS Support"
@@ -67,6 +86,7 @@ export default function ChatWorkspace() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [participantId, setParticipantId] = useState("")
   const [participantSearch, setParticipantSearch] = useState("")
+  const [conversationSearch, setConversationSearch] = useState("")
   const [showNewChat, setShowNewChat] = useState(false)
   const [recording, setRecording] = useState(false)
   const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "reconnecting" | "offline">("offline")
@@ -188,6 +208,11 @@ export default function ChatWorkspace() {
     })
   const teammateIds = new Set(teammates.map((user) => `${user.id}`))
   const searchedTeammates = userSearchResults.filter((user) => teammateIds.has(`${user.id}`))
+  const filteredConversations = useMemo(() => {
+    const query = conversationSearch.trim().toLowerCase()
+    if (!query) return conversations
+    return conversations.filter((conversation) => `${conversationName(conversation)} ${conversationPreview(conversation)}`.toLowerCase().includes(query))
+  }, [conversationSearch, conversations])
 
   const openSupport = () => {
     setSupportMode(true)
@@ -389,15 +414,15 @@ export default function ChatWorkspace() {
             <span><span className="block font-bold text-slate-900 dark:text-white">Intera IMS Support</span><span className="block text-xs text-slate-500">Text support with AI assistance</span></span>
           </button>
           <div className="mb-3 flex items-center justify-between px-1"><p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Your conversations</p><Users className="h-4 w-4 text-slate-400" /></div>
+          <label className="mb-3 flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-950"><Search className="h-4 w-4 shrink-0 text-slate-400" /><input value={conversationSearch} onChange={(event) => setConversationSearch(event.target.value)} placeholder="Search conversations" className="min-w-0 flex-1 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-white" /></label>
           <div className="space-y-2 overflow-y-auto lg:max-h-[500px]">
             {conversationsLoading ? <p className="p-3 text-sm text-slate-500">Loading conversations...</p> : null}
-            {conversations.map((conversation) => (
+            {filteredConversations.map((conversation) => (
               <button key={conversation.id} type="button" onClick={() => selectConversation(conversation)} className={`w-full rounded-2xl border p-3 text-left transition ${selectedId === conversation.id && !supportMode ? "border-blue-400 bg-blue-50 dark:bg-blue-950/40" : "border-transparent hover:border-slate-200 hover:bg-white dark:hover:border-slate-700 dark:hover:bg-slate-950"}`}>
-                <div className="flex items-center justify-between gap-3"><span className="truncate font-semibold text-slate-900 dark:text-white">{conversationName(conversation)}</span>{conversation.latest_message ? <span className="text-[11px] text-slate-400">{formatTime(conversation.latest_message.created_at)}</span> : null}</div>
-                <p className="mt-1 truncate text-xs text-slate-500">{conversation.latest_message?.body || "No messages yet"}</p>
+                <div className="flex items-center gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700 dark:bg-blue-950 dark:text-blue-200">{buildInitials(conversationName(conversation))}</span><span className="min-w-0 flex-1"><span className="flex items-center justify-between gap-2"><span className="truncate font-semibold text-slate-900 dark:text-white">{conversationName(conversation)}</span>{conversation.latest_message ? <span className="shrink-0 text-[11px] text-slate-400">{formatRelativeTime(conversation.latest_message.created_at)}</span> : null}</span><span className="mt-1 block truncate text-xs text-slate-500 dark:text-slate-400">{conversationPreview(conversation)}</span></span></div>
               </button>
             ))}
-            {!conversationsLoading && conversations.length === 0 ? <p className="rounded-2xl border border-dashed border-slate-300 p-4 text-sm leading-6 text-slate-500">No conversations yet. Start with support or create a direct chat.</p> : null}
+            {!conversationsLoading && !filteredConversations.length ? <p className="rounded-2xl border border-dashed border-slate-300 p-4 text-sm leading-6 text-slate-500 dark:border-slate-700 dark:text-slate-400">{conversationSearch ? "No conversations match that search." : "No conversations yet. Start with support or create a direct chat."}</p> : null}
           </div>
         </aside>
 
