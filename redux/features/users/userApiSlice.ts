@@ -36,6 +36,17 @@ const accountsApi = "accounts";
 const managementApi = "management";
 const service = "users";
 
+const asArrayResponse = <T>(response: unknown, keys: string[]): T[] => {
+  if (Array.isArray(response)) return response as T[];
+  if (!response || typeof response !== "object") return [];
+
+  const record = response as Record<string, unknown>;
+  for (const key of keys) {
+    if (Array.isArray(record[key])) return record[key] as T[];
+  }
+  return [];
+};
+
 const getActiveProfileId = () =>
   readCookieValue("profileId", getCookie) ?? readCookieValue("profile", getCookie);
 
@@ -139,6 +150,7 @@ export const userApiSlice = apiSlice.injectEndpoints({
         params: { q },
         service,
       }),
+      transformResponse: (response: unknown) => asArrayResponse<UserSummary>(response, ["results", "users", "data"]),
     }),
 
     getQuotaMetadata: builder.query<UserQuotaMetadata, void>({
@@ -342,6 +354,7 @@ export const userApiSlice = apiSlice.injectEndpoints({
           service,
         };
       },
+      transformResponse: (response: unknown) => asArrayResponse<StaffAssignment>(response, ["results", "users", "assignments", "data"]),
     }),
 
     getPendingInvitations: builder.query<CompanyInvitation[], void>({

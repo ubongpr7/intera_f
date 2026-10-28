@@ -9,14 +9,27 @@ import type {
   UploadAttachmentResponse,
 } from "./chatTypes"
 
+const asArrayResponse = <T>(response: unknown, keys: string[]): T[] => {
+  if (Array.isArray(response)) return response as T[]
+  if (!response || typeof response !== "object") return []
+
+  const record = response as Record<string, unknown>
+  for (const key of keys) {
+    if (Array.isArray(record[key])) return record[key] as T[]
+  }
+  return []
+}
+
 export const chatApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     listChatConversations: builder.query<ChatConversation[], void>({
       query: () => ({ url: "/api/v1/conversations", service: "chat" }),
+      transformResponse: (response: unknown) => asArrayResponse<ChatConversation>(response, ["results", "conversations", "data"]),
       providesTags: ["ChatConversations"],
     }),
     listChatMessages: builder.query<ChatMessage[], string>({
       query: (conversationId) => ({ url: `/api/v1/conversations/${conversationId}/messages`, service: "chat" }),
+      transformResponse: (response: unknown) => asArrayResponse<ChatMessage>(response, ["results", "messages", "data"]),
       providesTags: (_result, _error, conversationId) => [{ type: "ChatMessages", id: conversationId }],
     }),
     createChatConversation: builder.mutation<ChatConversation, {
@@ -72,6 +85,7 @@ export const chatApiSlice = apiSlice.injectEndpoints({
     }),
     listSupportInbox: builder.query<ChatConversation[], void>({
       query: () => ({ url: "/api/v1/support/inbox", service: "chat" }),
+      transformResponse: (response: unknown) => asArrayResponse<ChatConversation>(response, ["results", "conversations", "data"]),
       providesTags: ["ChatConversations"],
     }),
     claimSupportConversation: builder.mutation<ChatConversation, { conversationId: string; display_name?: string; email?: string }>({
