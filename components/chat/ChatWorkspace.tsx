@@ -38,6 +38,18 @@ const participantName = (conversation: ChatConversation | undefined, userId: str
   return participant?.display_name || participant?.email || "Teammate"
 }
 
+const isImageAttachment = (attachment: ChatMessage["attachments"][number], message: ChatMessage) =>
+  attachment.content_type?.startsWith("image/") || message.kind === "image"
+
+const isAudioAttachment = (attachment: ChatMessage["attachments"][number], message: ChatMessage) =>
+  attachment.content_type?.startsWith("audio/") || message.kind === "voice"
+
+const formatFileSize = (bytes: number) => {
+  if (!bytes) return "Attachment"
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
 const mergeMessage = (messages: ChatMessage[], incoming: ChatMessage) => {
   if (messages.some((item) => item.id === incoming.id)) return messages
   return [...messages, incoming].sort((a, b) => a.message_seq - b.message_seq)
@@ -409,7 +421,7 @@ export default function ChatWorkspace() {
             {messagesLoading ? <p className="text-sm text-slate-500">Loading messages...</p> : null}
             {messages.map((message) => {
               const mine = message.sender_user_id === userId
-              return <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}><div className={`max-w-[min(720px,88%)] rounded-3xl px-4 py-3 shadow-sm ${mine ? "rounded-br-md bg-[#3c83f7] text-white" : "rounded-bl-md border border-slate-200 bg-white text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"}`}><div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide opacity-70"><span>{mine ? "You" : message.sender_role === "support_ai" ? "Support AI" : participantName(selectedConversation, message.sender_user_id)}</span><span>·</span><span>{formatTime(message.created_at)}</span></div>{message.body ? <p className="mt-1 whitespace-pre-wrap text-sm leading-6">{message.body}</p> : null}{message.attachments?.map((attachment) => <a key={attachment.id} href={attachment.access_url || "#"} target="_blank" rel="noreferrer" className="mt-2 block rounded-xl bg-black/10 px-3 py-2 text-xs underline">{attachment.original_filename}</a>)}</div></div>
+              return <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}><div className={`max-w-[min(720px,88%)] rounded-3xl px-4 py-3 shadow-sm ${mine ? "rounded-br-md bg-[#3c83f7] text-white" : "rounded-bl-md border border-slate-200 bg-white text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"}`}><div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide opacity-70"><span>{mine ? "You" : message.sender_role === "support_ai" ? "Support AI" : participantName(selectedConversation, message.sender_user_id)}</span><span>·</span><span>{formatTime(message.created_at)}</span></div>{message.body ? <p className="mt-1 whitespace-pre-wrap text-sm leading-6">{message.body}</p> : null}{message.attachments?.length ? <div className="mt-3 space-y-2">{message.attachments.map((attachment) => isImageAttachment(attachment, message) && attachment.access_url ? <img key={attachment.id} src={attachment.access_url} alt={attachment.original_filename} className="max-h-80 w-full rounded-2xl object-contain" /> : isAudioAttachment(attachment, message) && attachment.access_url ? <div key={attachment.id} className="rounded-2xl border border-current/10 bg-black/10 p-3"><div className="mb-2 flex items-center justify-between gap-2 text-xs opacity-80"><span className="truncate">{attachment.original_filename}</span><span>{formatFileSize(attachment.size_bytes)}</span></div><audio controls preload="metadata" src={attachment.access_url} className="w-full" /></div> : <a key={attachment.id} href={attachment.access_url || "#"} download={attachment.original_filename} className="flex items-center gap-3 rounded-2xl border border-current/10 bg-black/10 px-3 py-3 text-xs underline"><span className="truncate">{attachment.original_filename}</span><span className="shrink-0 opacity-70">{formatFileSize(attachment.size_bytes)}</span></a>)}</div> : null}</div></div>
             })}
             <div ref={bottomRef} />
           </div>
