@@ -7,7 +7,8 @@ import { Headphones, Loader2, MessageSquare, Mic, Paperclip, Send, ShieldAlert, 
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { chatBackendUrl } from "@/redux/services/apiSlice"
+import { apiSlice, chatBackendUrl } from "@/redux/services/apiSlice"
+import { useAppDispatch } from "@/redux/store"
 import {
   useClaimSupportConversationMutation,
   useCreateChatMessageMutation,
@@ -46,6 +47,7 @@ export default function SupportPortalWorkspace() {
   const accessToken = readCookieValue("accessToken", getCookie)
   const authenticated = Boolean(accessToken)
   const allowed = authenticated && isSupportClaim()
+  const dispatch = useAppDispatch()
   const [selectedId, setSelectedId] = useState<string>()
   const [draft, setDraft] = useState("")
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -55,16 +57,10 @@ export default function SupportPortalWorkspace() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
 
-  const { data: inboxData, isLoading, refetch } = useListSupportInboxQuery(undefined, {
-    skip: !allowed,
-    pollingInterval: 5000,
-  })
+  const { data: inboxData, isLoading, refetch } = useListSupportInboxQuery(undefined, { skip: !allowed })
   const inbox = Array.isArray(inboxData) ? inboxData : []
   const selectedConversation = inbox.find((conversation) => conversation.id === selectedId)
-  const { data: loadedMessagesData, isFetching: messagesLoading } = useListChatMessagesQuery(selectedId || "", {
-    skip: !selectedId,
-    pollingInterval: 5000,
-  })
+  const { data: loadedMessagesData, isFetching: messagesLoading } = useListChatMessagesQuery(selectedId || "", { skip: !selectedId })
   const loadedMessages = Array.isArray(loadedMessagesData) ? loadedMessagesData : []
   const [claimConversation, { isLoading: claiming }] = useClaimSupportConversationMutation()
   const [createMessage, { isLoading: sending }] = useCreateChatMessageMutation()
@@ -103,6 +99,40 @@ export default function SupportPortalWorkspace() {
       setConnection("offline")
     }
   }, [accessToken, selectedId])
+
+  useEffect(() => {
+    if (!allowed || !accessToken) return
+    let disposed = false
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+    let socket: WebSocket | null = null
+
+    const connect = () => {
+      if (disposed) return
+      socket = new WebSocket(`${toWebSocketUrl(chatBackendUrl)}/ws/me/chat?token=${encodeURIComponent(accessToken)}`)
+      socket.onmessage = (event) => {
+        try {
+          const envelope = JSON.parse(event.data) as { type?: string }
+          if (envelope.type === "chat.summary.updated") {
+            dispatch(apiSlice.util.invalidateTags(["ChatConversations"]))
+            if (selectedId) dispatch(apiSlice.util.invalidateTags([{ type: "ChatMessages", id: selectedId }]))
+          }
+        } catch {
+          // Ignore malformed realtime frames; the next valid event will refresh the cache.
+        }
+      }
+      socket.onclose = () => {
+        if (!disposed) reconnectTimer = setTimeout(connect, 1500)
+      }
+      socket.onerror = () => socket?.close()
+    }
+
+    connect()
+    return () => {
+      disposed = true
+      if (reconnectTimer) clearTimeout(reconnectTimer)
+      socket?.close()
+    }
+  }, [accessToken, allowed, dispatch, selectedId])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -184,24 +214,32 @@ export default function SupportPortalWorkspace() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col gap-5 bg-[#f6f8fc] p-4 text-[#172642] md:p-7">
-      <nav className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#dce5f2] bg-white px-5 py-3 shadow-[0_12px_35px_-28px_rgba(24,45,82,0.45)]">
-        <Link href="/dashboard" className="flex items-center gap-3 text-sm font-extrabold tracking-tight text-[#172642]">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#172642] text-lg font-black text-[#98fcc2]">i</span>
-          <span>Intera IMS <span className="font-medium text-[#71809a]">Support</span></span>
+    <main className="mx-auto flex min-h-screen w-full max-w-[1600px] gap-5 bg-[#f6f8fc] p-4 text-[#172642] md:p-7">
+      <aside className="hidden w-60 shrink-0 flex-col rounded-2xl border border-[#dce5f2] bg-white p-4 shadow-[0_12px_35px_-28px_rgba(24,45,82,0.45)] lg:flex">
+        <Link href="/dashboard" className="flex items-center gap-3 border-b border-[#edf1f7] px-2 pb-5 text-sm font-extrabold tracking-tight text-[#172642]">
+          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#172642] text-lg font-black text-[#98fcc2]">i</span>
+          <span>Intera IMS <span className="block text-xs font-medium text-[#71809a]">Support portal</span></span>
         </Link>
-        <div className="flex items-center gap-2 text-sm font-semibold">
-          <Link href="/dashboard" className="rounded-xl bg-[#e8f0ff] px-3 py-2 text-[#28549a]">Inbox</Link>
-          <Link href="/service-health" className="rounded-xl px-3 py-2 text-[#5e6d86] hover:bg-[#f1f5fb] hover:text-[#172642]">Service health</Link>
-        </div>
+        <p className="mt-7 px-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#9aa8bd]">Support</p>
+        <nav className="mt-3 space-y-1 text-sm font-semibold">
+          <Link href="/dashboard" className="block rounded-xl bg-[#e8f0ff] px-3 py-3 text-[#28549a]">Inbox</Link>
+          <Link href="/service-health" className="block rounded-xl px-3 py-3 text-[#5e6d86] hover:bg-[#f1f5fb] hover:text-[#172642]">Service health</Link>
+        </nav>
+        <div className="mt-auto border-t border-[#edf1f7] px-2 pt-4 text-xs leading-5 text-[#71809a]">Real-time support operations for Intera IMS.</div>
+      </aside>
+      <div className="flex min-w-0 flex-1 flex-col gap-5">
+      <nav className="flex items-center justify-between gap-4 rounded-2xl border border-[#dce5f2] bg-white px-5 py-3 shadow-[0_12px_35px_-28px_rgba(24,45,82,0.45)] lg:hidden">
+        <Link href="/dashboard" className="flex items-center gap-3 text-sm font-extrabold tracking-tight text-[#172642]"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#172642] text-lg font-black text-[#98fcc2]">i</span><span>Intera IMS <span className="font-medium text-[#71809a]">Support</span></span></Link>
+        <Link href="/service-health" className="rounded-xl px-3 py-2 text-sm font-semibold text-[#28549a]">Health</Link>
       </nav>
       <header className="rounded-[1.5rem] bg-[#172642] px-6 py-6 text-white shadow-[0_20px_50px_-32px_rgba(23,38,66,0.75)] md:px-8">
-        <div className="flex flex-wrap items-end justify-between gap-4"><div><div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-emerald-200"><Headphones className="h-3.5 w-3.5" /> Support centre</div><h1 className="mt-3 text-3xl font-black tracking-tight md:text-5xl">Help customers move forward.</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">Claim AI-escalated conversations, reply to customers, and keep the support queue moving.</p></div><span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs text-slate-200">{connection === "connected" ? <Wifi className="h-3.5 w-3.5 text-emerald-300" /> : <WifiOff className="h-3.5 w-3.5 text-amber-300" />}{connection === "connected" ? "Live" : "Polling queue"}</span></div>
+        <div className="flex flex-wrap items-end justify-between gap-4"><div><div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-emerald-200"><Headphones className="h-3.5 w-3.5" /> Support centre</div><h1 className="mt-3 text-3xl font-black tracking-tight text-white md:text-5xl">Help customers move forward.</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">Claim AI-escalated conversations, reply to customers, and keep the support queue moving.</p></div><span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs text-slate-200">{connection === "connected" ? <Wifi className="h-3.5 w-3.5 text-emerald-300" /> : <WifiOff className="h-3.5 w-3.5 text-amber-300" />}{connection === "connected" ? "Live" : "Connecting"}</span></div>
       </header>
       <section className="grid h-[calc(100vh-250px)] min-h-[560px] flex-1 overflow-hidden rounded-[1.5rem] border border-[#dce5f2] bg-white shadow-[0_18px_50px_-36px_rgba(24,45,82,0.65)] lg:grid-cols-[340px_1fr]">
         <aside className="min-h-0 overflow-y-auto border-b border-[#e4ebf5] bg-[#f8fafd] p-4 lg:border-b-0 lg:border-r"><div className="mb-3 flex items-center justify-between"><p className="text-xs font-bold uppercase tracking-[0.16em] text-[#71809a]">Open queue</p><span className="rounded-full bg-[#e8f0ff] px-2 py-1 text-xs font-bold text-[#28549a]">{inbox.length}</span></div>{isLoading ? <p className="p-3 text-sm text-[#71809a]">Loading queue...</p> : null}{inbox.map((conversation) => <button key={conversation.id} type="button" onClick={() => setSelectedId(conversation.id)} className={`mb-2 w-full rounded-2xl border p-4 text-left transition ${selectedId === conversation.id ? "border-[#8fb7fb] bg-[#edf4ff]" : "border-transparent bg-white hover:border-[#cbdaf5]"}`}><div className="flex items-center justify-between gap-2"><span className="truncate font-bold text-[#172642]">{displayName(conversation)}</span><span className="text-[11px] text-[#71809a]">{conversation.support_status === "assigned" ? "Assigned" : "Waiting"}</span></div><p className="mt-1 truncate text-xs text-[#71809a]">{conversation.latest_message?.body || "No messages yet"}</p></button>)}{!isLoading && !inbox.length ? <div className="rounded-2xl border border-dashed border-[#cbdaf5] p-5 text-sm leading-6 text-[#71809a]">No conversations are waiting for support.</div> : null}</aside>
         <div className="flex min-h-0 min-w-0 flex-col"><div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#e4ebf5] px-5 py-4 md:px-7"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-[#3c83f7]">Human support</p><h2 className="mt-1 truncate text-xl font-black text-[#172642]">{selectedConversation ? displayName(selectedConversation) : "Select a conversation"}</h2></div>{selectedConversation?.support_status === "waiting" ? <Button onClick={() => void claim()} disabled={claiming}>{claiming ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserCheck className="h-4 w-4" />} Claim conversation</Button> : null}</div><div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain bg-[#f8fafd] p-5 md:p-7">{messagesLoading ? <p className="text-sm text-[#71809a]">Loading messages...</p> : null}{messages.map((message) => <div key={message.id} className={`flex ${message.sender_user_id === readCookieValue("userID", getCookie) ? "justify-end" : "justify-start"}`}><div className={`max-w-[min(720px,88%)] rounded-3xl px-4 py-3 shadow-sm ${message.sender_user_id === readCookieValue("userID", getCookie) ? "rounded-br-md bg-[#3c83f7] text-white" : "rounded-bl-md border border-[#dce5f2] bg-white text-[#263b5d]"}`}><div className="text-[11px] font-bold uppercase tracking-wide opacity-70">{message.sender_role === "support_agent" ? "Support" : "Customer"}</div>{message.body ? <p className="mt-1 whitespace-pre-wrap text-sm leading-6">{message.body}</p> : null}{message.attachments?.map((attachment) => <a key={attachment.id} href={attachment.access_url || "#"} target="_blank" rel="noreferrer" className="mt-2 block rounded-xl bg-black/10 px-3 py-2 text-xs underline">{attachment.original_filename}</a>)}</div></div>)}<div ref={bottomRef} /></div><div className="shrink-0 border-t border-[#e4ebf5] bg-white p-4"><div className="flex items-end gap-2 rounded-2xl border border-[#dce5f2] bg-[#f8fafd] p-2"><label className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[#71809a] ${!selectedConversation || selectedConversation.support_status !== "assigned" || uploading ? "cursor-not-allowed opacity-40" : "cursor-pointer hover:bg-white hover:text-[#3c83f7]"}`} title="Attach a file"><Paperclip className="h-5 w-5" /><input type="file" className="hidden" disabled={!selectedConversation || selectedConversation.support_status !== "assigned" || uploading} onChange={(event) => { const file = event.target.files?.[0]; if (file) void sendFile(file); event.currentTarget.value = "" }} /></label><button type="button" onClick={() => void toggleRecording()} disabled={!selectedConversation || selectedConversation.support_status !== "assigned" || uploading} className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${recording ? "bg-red-100 text-red-600" : "text-[#71809a] hover:bg-white hover:text-[#3c83f7]"}`} aria-label={recording ? "Stop voice note" : "Record voice note"}>{recording ? <Square className="h-4 w-4" /> : <Mic className="h-5 w-5" />}</button><textarea value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void sendMessage() } }} disabled={!selectedConversation || selectedConversation.support_status !== "assigned"} placeholder={selectedConversation?.support_status === "assigned" ? "Reply to the customer..." : "Claim the conversation to reply"} rows={2} className="min-h-12 flex-1 resize-none bg-transparent px-2 py-2 text-sm outline-none" /><Button size="icon" onClick={() => void sendMessage()} disabled={!draft.trim() || !selectedConversation || selectedConversation.support_status !== "assigned" || sending || uploading} aria-label="Send reply">{sending || uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}</Button></div><p className="mt-2 flex items-center gap-1 px-1 text-[11px] text-[#71809a]"><MessageSquare className="h-3 w-3" /> Text, files, and voice notes are available after claiming.</p></div></div>
       </section>
+      </div>
     </main>
   )
 }
