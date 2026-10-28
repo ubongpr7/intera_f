@@ -26,6 +26,12 @@ export function proxy(request: NextRequest) {
     return NextResponse.rewrite(supportUrl)
   }
 
+  if (isSupportHost && path === "/service-health") {
+    const supportUrl = request.nextUrl.clone()
+    supportUrl.pathname = "/support-portal/health"
+    return NextResponse.rewrite(supportUrl)
+  }
+
   if (isAdminHost && (path === "/" || path === "/dashboard" || path === "/admin-portal")) {
     const adminUrl = request.nextUrl.clone()
     adminUrl.pathname = "/admin"
