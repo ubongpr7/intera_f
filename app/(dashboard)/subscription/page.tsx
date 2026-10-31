@@ -735,7 +735,7 @@ export default function SubscriptionPage() {
               <CalendarClock className="h-5 w-5 text-blue-600" />
               Set up subscription billing
             </CardTitle>
-            <CardDescription>Select the plan that matches the current workspace size. Card details are handled by secure billing; Intera stores provider references, not raw card data. The ₦1,000 trial-entry payment buys 10,000 Intera tokens, and monthly plan billing starts after the seven-day trial.</CardDescription>
+            <CardDescription>Select the plan that matches the current workspace size. Card details are handled by secure billing; Intera stores provider references, not raw card data. The ₦1,000 trial-entry payment verifies your card and the selected plan grants its trial allocation, while monthly plan billing starts after the seven-day trial.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {loadingEntitlements ? (
@@ -776,7 +776,7 @@ export default function SubscriptionPage() {
                     <div className="flex items-start gap-2">
                       <AlertTriangle className="mt-0.5 h-4 w-4" />
                       <span>
-                        No card is connected yet. Connect a card to start the seven-day trial. Paystack will process ₦1,000 for 10,000 Intera tokens; the selected plan's monthly billing starts after the trial unless cancelled.
+                        No card is connected yet. Connect a card to start the seven-day trial. Paystack will process ₦1,000 to verify the card; the selected plan's trial allocation is granted once, and monthly billing starts after the trial unless cancelled.
                       </span>
                     </div>
                     <Button size="sm" onClick={() => openBillingConfirmation(activePlan.slug, true)} disabled={initiatingPayment || verifyingPayment}>
