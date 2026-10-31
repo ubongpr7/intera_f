@@ -723,9 +723,24 @@ function VariantMediaManager({
                       {attachment.processing_error ? (
                         <p className="mt-1 break-words font-mono text-[11px]">Reason: {attachment.processing_error}</p>
                       ) : null}
-                      {!readOnly ? <Button variant="outline" className="mt-2 rounded-full" onClick={() => void handleOptimize(String(attachment.id))} disabled={isOptimizing}>
-                        {isOptimizing ? "Queuing..." : "Optimize image"}
-                      </Button> : null}
+                    </div>
+                  ) : null}
+
+                  {!readOnly ? (
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {attachment.processing_status === "QUEUED" || attachment.processing_status === "PROCESSING" ? (
+                        <Badge variant="outline" className="rounded-full px-3 py-1 text-gray-600">
+                          {attachment.processing_status === "PROCESSING" ? "Processing" : "Queued"}
+                        </Badge>
+                      ) : null}
+                      <Button
+                        variant="outline"
+                        className="rounded-full"
+                        onClick={() => void handleOptimize(String(attachment.id))}
+                        disabled={isOptimizing || attachment.processing_status === "QUEUED" || attachment.processing_status === "PROCESSING"}
+                      >
+                        {isOptimizing ? "Queuing..." : attachment.processing_status === "COMPLETED" ? "Re-optimize image" : "Optimize image"}
+                      </Button>
                     </div>
                   ) : null}
 
