@@ -1,12 +1,13 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useRef, useState } from "react"
-import { ArrowRight, RefreshCw } from "lucide-react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { ArrowRight, ChevronLeft, ChevronRight, RefreshCw, Search } from "lucide-react"
 import { toast } from "react-toastify"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import {
   useListGlobalCatalogImportsQuery,
   usePreviewGlobalCatalogImportSyncQuery,
@@ -123,6 +124,23 @@ function ImportedProductRow({
 export default function ImportedGlobalProductsPanel() {
   const { data: imports = [], isLoading, refetch, isFetching } = useListGlobalCatalogImportsQuery()
   const [syncImport, { isLoading: syncing }] = useSyncGlobalCatalogImportMutation()
+  const [search, setSearch] = useState("")
+  const [modeFilter, setModeFilter] = useState<"all" | "initial_import" | "sync">("all")
+  const [page, setPage] = useState(1)
+  const pageSize = 12
+
+  const filteredImports = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase()
+    return imports.filter((entry) => {
+      const matchesSearch = !normalizedSearch || entry.global_product_name.toLowerCase().includes(normalizedSearch)
+      const matchesMode = modeFilter === "all" || entry.import_mode === modeFilter
+      return matchesSearch && matchesMode
+    })
+  }, [imports, modeFilter, search])
+
+  const totalPages = Math.max(1, Math.ceil(filteredImports.length / pageSize))
+  const currentPage = Math.min(page, totalPages)
+  const visibleImports = filteredImports.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
   const handleSync = async (importId: string, productName: string) => {
     try {
@@ -165,11 +183,85 @@ export default function ImportedGlobalProductsPanel() {
             <p className="mt-2 text-sm text-gray-600">Import a curated family above and it will appear here for later synchronization.</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {imports.map((entry) => (
+          <>
+            <div className="rounded-3xl border border-gray-200 bg-gray-50 p-4">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                <div className="relative min-w-0 flex-1">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <Input
+                    value={search}
+                    onChange={(event) => {
+                      setSearch(event.target.value)
+                      setPage(1)
+                    }}
+                    placeholder="Search imported products..."
+                    className="h-11 rounded-full border-gray-200 bg-white pl-10 text-gray-900"
+                    aria-label="Search imported products"
+                  />
+                </div>
+                <select
+                  value={modeFilter}
+                  onChange={(event) => {
+                    setModeFilter(event.target.value as typeof modeFilter)
+                    setPage(1)
+                  }}
+                  className="h-11 rounded-full border border-gray-200 bg-white px-4 text-sm text-gray-700 outline-none focus:border-blue-500"
+                  aria-label="Filter imported products by import mode"
+                >
+                  <option value="all">All import states</option>
+                  <option value="initial_import">Initial imports</option>
+                  <option value="sync">Synced products</option>
+                </select>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
+                <span>
+                  Showing {visibleImports.length ? (currentPage - 1) * pageSize + 1 : 0}-{Math.min(currentPage * pageSize, filteredImports.length)} of {filteredImports.length} imported products
+                </span>
+                {search || modeFilter !== "all" ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearch("")
+                      setModeFilter("all")
+                      setPage(1)
+                    }}
+                    className="font-medium text-blue-700 hover:text-blue-800"
+                  >
+                    Clear filters
+                  </button>
+                ) : null}
+              </div>
+            </div>
+
+            {visibleImports.length === 0 ? (
+              <div className="rounded-3xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center">
+                <p className="text-base font-semibold text-gray-900">No imported products match these filters.</p>
+                <p className="mt-2 text-sm text-gray-600">Try another product name or clear the filters.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {visibleImports.map((entry) => (
               <ImportedProductRow key={entry.id} entry={entry} syncing={syncing} onSync={(importId, productName) => void handleSync(importId, productName)} />
-            ))}
-          </div>
+                ))}
+              </div>
+            )}
+
+            {filteredImports.length > pageSize ? (
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4">
+                <p className="text-sm text-gray-500">Page {currentPage} of {totalPages}</p>
+                <div className="flex items-center gap-2">
+                  <Button type="button" variant="outline" className="rounded-full" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={currentPage === 1}>
+                    <ChevronLeft className="mr-1 h-4 w-4" />
+                    Previous
+                  </Button>
+                  <Button type="button" variant="outline" className="rounded-full" onClick={() => setPage((value) => Math.min(totalPages, value + 1))} disabled={currentPage === totalPages}>
+                    Next
+                    <ChevronRight className="ml-1 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+          </>
         )}
       </CardContent>
     </Card>
