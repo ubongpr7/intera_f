@@ -1205,10 +1205,15 @@ export default function GlobalCatalogAdminWorkspace() {
           </div>
         </CardHeader>
         <CardContent className="min-w-0 space-y-5 p-6">
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Total source products</p>
               <p className="mt-3 text-3xl font-semibold text-gray-950">{loadingStats ? "..." : stats.total}</p>
+            </div>
+            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-blue-700">Total variants</p>
+              <p className="mt-3 text-3xl font-semibold text-blue-950">{loadingStats ? "..." : adminStats?.total_variants ?? 0}</p>
+              <p className="mt-1 text-xs text-blue-700">Active variants in the global catalog</p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Published</p>
