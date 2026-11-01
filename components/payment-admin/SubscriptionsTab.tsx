@@ -2,44 +2,21 @@
 
 import { useMemo, useState } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
-import { Eye, RefreshCw, Ban } from "lucide-react"
+import { Eye, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { useGetPaymentsQuery, useGetSubscriptionsQuery, useCancelSubscriptionMutation } from "@/redux/features/payment/paymentAPISlice"
+import { useGetPaymentsQuery, useGetSubscriptionsQuery } from "@/redux/features/payment/paymentAPISlice"
 import type { PaymentRecord, SubscriptionRecord, SubscriptionStatus } from "@/redux/features/payment/paymentTypes"
-import { toast } from "react-toastify"
 import { formatMachineLabel } from "@/lib/displayLabels"
-import { extractErrorMessage } from "@/lib/utils"
-import { confirmAction } from "@/components/common/confirmAction"
 
 export function SubscriptionsTab() {
   const [filters, setFilters] = useState<Record<string, string>>({})
   const [selectedSubscription, setSelectedSubscription] = useState<SubscriptionRecord | null>(null)
   const { data: subscriptions = [], isLoading, refetch } = useGetSubscriptionsQuery(filters)
   const { data: payments = [] } = useGetPaymentsQuery({})
-  const [cancelSubscription] = useCancelSubscriptionMutation()
-
-  const handleCancel = async (id: string) => {
-    const confirmed = await confirmAction({
-      title: "Cancel subscription?",
-      description: "This cancels the subscription and may stop future billing for the customer.",
-      confirmText: "Cancel subscription",
-      destructive: true,
-    })
-    if (!confirmed) return
-
-    try {
-      await cancelSubscription(id).unwrap()
-      toast.success("Subscription cancelled successfully")
-      refetch()
-    } catch (error) {
-      toast.error(extractErrorMessage(error, ["detail"]) || "Failed to cancel subscription")
-    }
-  }
-
   const getStatusBadge = (status: SubscriptionStatus) => {
     const variants: Record<SubscriptionStatus, "default" | "destructive" | "secondary" | "outline"> = {
       active: "default",
@@ -135,11 +112,6 @@ export function SubscriptionsTab() {
           <Button variant="ghost" size="sm" onClick={() => setSelectedSubscription(row.original)}>
             <Eye className="h-4 w-4" />
           </Button>
-          {row.original.status === "active" && !row.original.pending_cancellation && (
-            <Button variant="ghost" size="sm" onClick={() => handleCancel(row.original.id)}>
-              <Ban className="h-4 w-4" />
-            </Button>
-          )}
         </div>
       ),
     },
