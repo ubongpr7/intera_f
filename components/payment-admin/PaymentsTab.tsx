@@ -57,7 +57,11 @@ export function PaymentsTab() {
     {
       accessorKey: "provider",
       header: "Provider",
-      cell: ({ row }) => <Badge variant="outline">{row.original.provider?.name ?? "Unknown"}</Badge>,
+      cell: ({ row }) => (
+        <Badge variant="outline">
+          {row.original.provider_name ?? row.original.provider?.name ?? "Unknown"}
+        </Badge>
+      ),
     },
     {
       accessorKey: "created_at",
