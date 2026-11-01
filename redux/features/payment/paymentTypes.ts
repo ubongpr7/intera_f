@@ -74,6 +74,9 @@ export interface SubscriptionRecord {
 
 export interface PaymentAnalyticsResponse {
   total_revenue: number;
+  trial_revenue: number;
+  trial_revenue_change: number;
+  successful_trial_payments: number;
   currency?: string;
   revenue_change: number;
   successful_payments: number;

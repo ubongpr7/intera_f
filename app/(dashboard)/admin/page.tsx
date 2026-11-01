@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useMemo, useState } from "react"
-import { AlertTriangle, Boxes, Building2, CheckCircle2, CreditCard, FileSearch, Link2, PackageSearch, RefreshCw, Settings, ShieldCheck, Users, Webhook } from "lucide-react"
+import { AlertTriangle, Boxes, Building2, CalendarClock, CheckCircle2, CreditCard, FileSearch, Link2, PackageSearch, RefreshCw, Settings, ShieldCheck, Users, Webhook } from "lucide-react"
 
 import StatTile from "@/components/dashboard/StatTile"
 import { Button } from "@/components/ui/button"
@@ -144,6 +144,13 @@ export default function AdminPage() {
       description: `${formatNumber(paymentAnalytics?.successful_payments ?? 0)} successful payments tracked`,
       tone: "green" as const,
       icon: CreditCard,
+    },
+    {
+      label: "Trial revenue",
+      value: formatCurrency(paymentAnalytics?.trial_revenue ?? 0, paymentAnalytics?.currency ?? "NGN"),
+      description: `${formatNumber(paymentAnalytics?.successful_trial_payments ?? 0)} trial-entry payments tracked`,
+      tone: "amber" as const,
+      icon: CalendarClock,
     },
     {
       label: "Active subscriptions",
