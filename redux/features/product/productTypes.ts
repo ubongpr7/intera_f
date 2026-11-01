@@ -299,6 +299,7 @@ export interface GlobalCatalogVariant {
   is_active: boolean;
   created_at?: string;
   updated_at?: string;
+  optimization_status?: "optimized" | "partial" | "unoptimized" | "no_image";
 }
 
 export interface GlobalCatalogProduct {
@@ -374,6 +375,7 @@ export interface GlobalCatalogAdminProduct {
   variants?: GlobalCatalogVariant[];
   created_at: string;
   updated_at: string;
+  optimization_status?: "optimized" | "partial" | "unoptimized" | "no_image";
 }
 
 export interface GlobalCatalogBrandOption {
@@ -430,6 +432,7 @@ export interface GlobalCatalogAdminListResponse {
     brands?: string[];
     categories?: string[];
     source_statuses?: string[];
+    image_optimization_statuses?: string[];
   };
 }
 
@@ -443,6 +446,7 @@ export interface GlobalCatalogAdminStats {
     brands?: string[];
     categories?: string[];
     source_statuses?: string[];
+    image_optimization_statuses?: string[];
   };
 }
 

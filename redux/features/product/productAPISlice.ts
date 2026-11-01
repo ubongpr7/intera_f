@@ -232,7 +232,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
 
     getGlobalCatalogAdminProducts: builder.query<
       GlobalCatalogAdminListResponse,
-      { q?: string; brand?: string; category?: string; source_status?: string; page?: number; page_size?: number } | void
+      { q?: string; brand?: string; category?: string; source_status?: string; image_optimization?: string; page?: number; page_size?: number } | void
     >({
       query: (params = {}) => ({
         url: `/${product_api}/global-catalog/admin/products/`,
@@ -330,6 +330,19 @@ export const productApiSlice = apiSlice.injectEndpoints({
       query: (id) => ({
         url: `/${product_api}/global-catalog/admin/products/${id}/publish/`,
         method: "POST",
+        service: service,
+      }),
+      invalidatesTags: ["GlobalCatalog"],
+    }),
+
+    bulkPublishGlobalCatalogAdminProducts: builder.mutation<
+      { published_count: number; missing_product_ids: string[]; products: GlobalCatalogAdminProduct[] },
+      { product_ids: string[] }
+    >({
+      query: (body) => ({
+        url: `/${product_api}/global-catalog/admin/products/bulk-publish/`,
+        method: "POST",
+        body,
         service: service,
       }),
       invalidatesTags: ["GlobalCatalog"],
@@ -1227,6 +1240,7 @@ export const {
   useCreateGlobalCatalogAdminProductMutation,
   useUpdateGlobalCatalogAdminProductMutation,
   usePublishGlobalCatalogAdminProductMutation,
+  useBulkPublishGlobalCatalogAdminProductsMutation,
   useArchiveGlobalCatalogAdminProductMutation,
   useBulkIngestGlobalCatalogAdminProductsMutation,
   useCreateGlobalCatalogAdminVariantMutation,

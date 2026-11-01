@@ -18,6 +18,7 @@ import { GlobalProductPreviewSheet } from "@/components/product/GlobalProductLib
 import { useGetUnitsQuery } from "@/redux/features/common/typeOF"
 import {
   useArchiveGlobalCatalogAdminProductMutation,
+  useBulkPublishGlobalCatalogAdminProductsMutation,
   useBulkIngestGlobalCatalogAdminProductsMutation,
   useCreateAttachmentMutation,
   useCreateGlobalCatalogAdminProductMutation,
@@ -815,6 +816,11 @@ function VariantCard({
               <Badge variant="outline" className="rounded-full px-3 py-1 text-gray-600">
                 Variant {variant.variant_number}
               </Badge>
+              {variant.optimization_status ? (
+                <Badge variant="outline" className="rounded-full px-3 py-1 text-gray-600">
+                  Image {formatMachineLabel(variant.optimization_status)}
+                </Badge>
+              ) : null}
               {!variant.is_active ? (
                 <Badge variant="outline" className="rounded-full px-3 py-1 text-gray-500">
                   Inactive
@@ -994,6 +1000,9 @@ export default function GlobalCatalogAdminWorkspace() {
   const [brand, setBrand] = useState("")
   const [category, setCategory] = useState("")
   const [sourceStatus, setSourceStatus] = useState("")
+  const [imageOptimization, setImageOptimization] = useState("")
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([])
+  const [expandedProductIds, setExpandedProductIds] = useState<string[]>([])
   const deferredQuery = useDeferredValue(query.trim())
   const { data: catalogPage, isLoading, isFetching, error } = useGetGlobalCatalogAdminProductsQuery(
     {
@@ -1003,6 +1012,7 @@ export default function GlobalCatalogAdminWorkspace() {
       brand: brand || undefined,
       category: category || undefined,
       source_status: sourceStatus || undefined,
+      image_optimization: imageOptimization || undefined,
     },
     { skip: !isStaff },
   )
@@ -1011,6 +1021,7 @@ export default function GlobalCatalogAdminWorkspace() {
   const { data: catalogCategories = [] } = useGetGlobalCatalogAdminCategoriesQuery(undefined, { skip: !isStaff })
   const { data: units = [] } = useGetUnitsQuery()
   const [publishProduct, { isLoading: publishing }] = usePublishGlobalCatalogAdminProductMutation()
+  const [bulkPublishProducts, { isLoading: bulkPublishing }] = useBulkPublishGlobalCatalogAdminProductsMutation()
   const [archiveProduct, { isLoading: archiving }] = useArchiveGlobalCatalogAdminProductMutation()
   const [deleteVariant] = useDeleteGlobalCatalogAdminVariantMutation()
 
@@ -1041,6 +1052,10 @@ export default function GlobalCatalogAdminWorkspace() {
     () => (filterOptions?.source_statuses ?? []).map((value) => ({ label: formatMachineLabel(value), value })),
     [filterOptions?.source_statuses],
   )
+  const imageOptimizationOptions = useMemo<SelectOption[]>(
+    () => (filterOptions?.image_optimization_statuses ?? []).map((value) => ({ label: formatMachineLabel(value), value })),
+    [filterOptions?.image_optimization_statuses],
+  )
   const selectedBrandOption = useMemo<SelectOption | null>(
     () => brandOptions.find((option) => option.value === brand) ?? null,
     [brand, brandOptions],
@@ -1052,6 +1067,10 @@ export default function GlobalCatalogAdminWorkspace() {
   const selectedStatusOption = useMemo<SelectOption | null>(
     () => statusOptions.find((option) => option.value === sourceStatus) ?? null,
     [sourceStatus, statusOptions],
+  )
+  const selectedImageOptimizationOption = useMemo<SelectOption | null>(
+    () => imageOptimizationOptions.find((option) => option.value === imageOptimization) ?? null,
+    [imageOptimization, imageOptimizationOptions],
   )
 
   const stats = useMemo(
@@ -1111,6 +1130,21 @@ export default function GlobalCatalogAdminWorkspace() {
     }
   }
 
+  const handleBulkPublish = async () => {
+    if (!selectedProductIds.length) return
+    try {
+      const result = await bulkPublishProducts({ product_ids: selectedProductIds }).unwrap()
+      setSelectedProductIds([])
+      toast.success(`${result.published_count} global product${result.published_count === 1 ? "" : "s"} published.`)
+    } catch (error: any) {
+      toast.error(error?.data?.detail || "Failed to publish the selected global products.")
+    }
+  }
+
+  const toggleProductVariants = (productId: string) => {
+    setExpandedProductIds((current) => current.includes(productId) ? current.filter((id) => id !== productId) : [...current, productId])
+  }
+
   const handleArchive = async (id: string) => {
     try {
       await archiveProduct(id).unwrap()
@@ -1158,6 +1192,10 @@ export default function GlobalCatalogAdminWorkspace() {
               {!readOnly ? <Button variant="outline" onClick={() => setIsBulkIngestOpen(true)} className="rounded-full">
                 <Boxes className="mr-2 h-4 w-4" />
                 Bulk ingest
+              </Button> : null}
+              {!readOnly ? <Button variant="outline" onClick={() => void handleBulkPublish()} disabled={!selectedProductIds.length || bulkPublishing} className="rounded-full">
+                <Rocket className="mr-2 h-4 w-4" />
+                Publish selected{selectedProductIds.length ? ` (${selectedProductIds.length})` : ""}
               </Button> : null}
               {!readOnly ? <Button onClick={openCreateProduct} className="rounded-full">
                 <PackagePlus className="mr-2 h-4 w-4" />
@@ -1259,6 +1297,24 @@ export default function GlobalCatalogAdminWorkspace() {
                 className="text-sm"
               />
             </div>
+            <div className="grid gap-2">
+              <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                <Filter className="h-4 w-4 text-blue-600" />
+                Image optimization
+              </div>
+              <ReactSelectField
+                value={selectedImageOptimizationOption}
+                options={imageOptimizationOptions}
+                onChange={(option) => {
+                  const selected = Array.isArray(option) ? null : (option as SelectOption | null)
+                  setImageOptimization(selected ? String(selected.value) : "")
+                  setPage(1)
+                }}
+                placeholder="All optimization states"
+                isClearable
+                className="text-sm"
+              />
+            </div>
           </div>
 
           {error ? (
@@ -1289,9 +1345,10 @@ export default function GlobalCatalogAdminWorkspace() {
                     setBrand("")
                     setCategory("")
                     setSourceStatus("")
+                    setImageOptimization("")
                     setPage(1)
                   }}
-                  disabled={!query && !brand && !category && !sourceStatus}
+                  disabled={!query && !brand && !category && !sourceStatus && !imageOptimization}
                 >
                   Clear filters
                 </Button>
@@ -1300,6 +1357,15 @@ export default function GlobalCatalogAdminWorkspace() {
                 <div key={product.id} className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex min-w-0 gap-4">
+                      {!readOnly ? (
+                        <input
+                          type="checkbox"
+                          aria-label={`Select ${product.name} for publishing`}
+                          checked={selectedProductIds.includes(product.id)}
+                          onChange={(event) => setSelectedProductIds((current) => event.target.checked ? [...current, product.id] : current.filter((id) => id !== product.id))}
+                          className="mt-2 h-5 w-5 shrink-0 accent-blue-600"
+                        />
+                      ) : null}
                       <div className="h-32 w-32 shrink-0 overflow-hidden rounded-3xl border border-gray-200 bg-gray-100 p-2">
                         {product.display_image ? (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -1354,10 +1420,13 @@ export default function GlobalCatalogAdminWorkspace() {
                           Archive
                         </Button>
                       ) : null}
+                      <Button variant="outline" className="rounded-full" onClick={() => toggleProductVariants(product.id)}>
+                        {expandedProductIds.includes(product.id) ? "Hide variants" : `Show variants (${product.variant_count})`}
+                      </Button>
                     </div>
                   </div>
 
-                  <div className="mt-5 space-y-3">
+                  {expandedProductIds.includes(product.id) ? <div className="mt-5 space-y-3">
                     {product.variants && product.variants.length > 0 ? (
                       product.variants.map((variant) => (
                         <VariantCard
@@ -1374,7 +1443,7 @@ export default function GlobalCatalogAdminWorkspace() {
                         This source product has no variants yet. Add the first source variant before publishing it to workspaces.
                       </div>
                     )}
-                  </div>
+                  </div> : null}
                 </div>
               ))}
             </div>

@@ -166,6 +166,13 @@ export default function AdminPage() {
       tone: "amber" as const,
       icon: PackageSearch,
     },
+    {
+      label: "Global variants",
+      value: formatNumber(catalogStats?.total_variants ?? 0),
+      description: "Active variants grouped in the global catalog",
+      tone: "blue" as const,
+      icon: Boxes,
+    },
   ]
 
   return (
@@ -219,8 +226,8 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {(isSuperuser ? topLineStats : topLineStats.filter((stat) => stat.label === "Global products")).map((stat) => (
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        {(isSuperuser ? topLineStats : topLineStats.filter((stat) => stat.label === "Global products" || stat.label === "Global variants")).map((stat) => (
           <StatTile key={stat.label} label={stat.label} value={stat.value} description={stat.description} icon={stat.icon} tone={stat.tone} />
         ))}
         <StatTile label="Needs review" value={formatNumber(reviewCaptures)} description={`${formatNumber(pendingCaptures)} captures still processing`} icon={AlertTriangle} tone="default" />
