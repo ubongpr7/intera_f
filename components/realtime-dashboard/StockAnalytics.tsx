@@ -134,7 +134,7 @@ const StockAnalyticsDashboard = () => {
         {summaryMetrics.map((metric) => (
           <div 
             key={metric.id} 
-            className={`rounded-xl p-5 text-white ${metric.color} transition-all duration-300 hover:shadow-md`}
+            className={`rounded-xl p-5 text-gray-50 ${metric.color} transition-all duration-300 hover:shadow-md`}
           >
             <div className="flex justify-between items-start mb-4">
               <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">

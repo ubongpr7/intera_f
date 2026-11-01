@@ -440,7 +440,7 @@ export function CompanyBasicInfoForm({ profile, onSuccess, submitLabel = "Save C
       </div>
 
       <div className="flex justify-end">
-        <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white" disabled={isLoading }>
+        <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-gray-50" disabled={isLoading }>
           {isLoading ? "Saving..." : submitLabel}
         </Button>
       </div>

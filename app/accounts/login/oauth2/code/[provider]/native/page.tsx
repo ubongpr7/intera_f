@@ -119,7 +119,7 @@ export default function NativeSocialAuthCallbackPage() {
                 ].map(([title, detail]) => (
                   <div key={title} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur">
                     <CheckCircle2 className="h-4 w-4 text-[#98fcc2]" />
-                    <p className="mt-3 text-sm font-semibold text-white">{title}</p>
+                    <p className="mt-3 text-sm font-semibold text-gray-50">{title}</p>
                     <p className="mt-1 text-xs leading-5 text-[#adbbd1]">{detail}</p>
                   </div>
                 ))}
@@ -145,7 +145,7 @@ export default function NativeSocialAuthCallbackPage() {
                 </div>
               </div>
               {preflightError ? (
-                <a href="/accounts?social=signup_required" className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#3978ed] px-5 py-4 text-sm font-semibold text-white shadow-lg shadow-[#3978ed]/20 transition hover:bg-[#4b87f4]">
+                <a href="/accounts?social=signup_required" className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#3978ed] px-5 py-4 text-sm font-semibold text-gray-50 shadow-lg shadow-[#3978ed]/20 transition hover:bg-[#4b87f4]">
                   Create an Intera IMS account
                   <ArrowRight className="h-4 w-4" />
                 </a>
@@ -156,7 +156,7 @@ export default function NativeSocialAuthCallbackPage() {
                     event.preventDefault();
                     openNativeApp();
                   }}
-                  className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#3978ed] px-5 py-4 text-sm font-semibold text-white shadow-lg shadow-[#3978ed]/20 transition hover:bg-[#4b87f4] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#98fcc2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d192e]"
+                  className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#3978ed] px-5 py-4 text-sm font-semibold text-gray-50 shadow-lg shadow-[#3978ed]/20 transition hover:bg-[#4b87f4] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#98fcc2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d192e]"
                 >
                   Open Intera IMS
                   <ArrowRight className="h-4 w-4" />

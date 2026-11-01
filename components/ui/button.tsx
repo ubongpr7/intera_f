@@ -4,14 +4,14 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl text-sm font-semibold ring-offset-background transition-[background-color,color,border-color,box-shadow,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3c83f7] focus-visible:ring-offset-2 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-100 disabled:!text-white [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-current",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl text-sm font-semibold ring-offset-background transition-[background-color,color,border-color,box-shadow,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3c83f7] focus-visible:ring-offset-2 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-100 disabled:!text-gray-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-current",
   {
     variants: {
       variant: {
         default:
-          "bg-[#3c83f7] text-white shadow-[0_16px_36px_-24px_rgba(60,131,247,0.85)] hover:-translate-y-0.5 hover:bg-[#2f74e6] hover:shadow-[0_20px_42px_-26px_rgba(60,131,247,0.92)] dark:bg-[#98fcc2] dark:text-[#101727] dark:hover:bg-[#b9ffd8] dark:shadow-[0_16px_36px_-24px_rgba(152,252,194,0.55)]",
+          "bg-[#3c83f7] text-gray-50 shadow-[0_16px_36px_-24px_rgba(60,131,247,0.85)] hover:-translate-y-0.5 hover:bg-[#2f74e6] hover:shadow-[0_20px_42px_-26px_rgba(60,131,247,0.92)] dark:bg-[#98fcc2] dark:text-[#101727] dark:hover:bg-[#b9ffd8] dark:shadow-[0_16px_36px_-24px_rgba(152,252,194,0.55)]",
         destructive:
-          "bg-[#ef4444] text-white shadow-[0_16px_36px_-24px_rgba(239,68,68,0.72)] hover:bg-[#dc2626] dark:bg-[#ef4444] dark:hover:bg-[#dc2626]",
+          "bg-[#ef4444] text-gray-50 shadow-[0_16px_36px_-24px_rgba(239,68,68,0.72)] hover:bg-[#dc2626] dark:bg-[#ef4444] dark:hover:bg-[#dc2626]",
         outline:
           "border border-[#cbdaf5] bg-white text-[#1f3963] shadow-[0_10px_24px_-18px_rgba(16,23,39,0.25)] hover:-translate-y-0.5 hover:border-[#8fb7fb] hover:bg-[#f5f9ff] hover:text-[#101727] dark:border-white/15 dark:bg-white/[0.03] dark:text-slate-100 dark:hover:border-[#98fcc2]/40 dark:hover:bg-[#98fcc2]/10 dark:hover:text-[#98fcc2]",
         secondary:

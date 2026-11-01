@@ -127,9 +127,9 @@ export default function PlatformUsersPage() {
               <div key={user.id} className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0"><p className="font-semibold text-slate-950">{user.get_full_name || [user.first_name, user.last_name].filter(Boolean).join(" ") || user.email}</p><p className="mt-1 text-sm text-slate-600">{user.email} · Joined {formatDate(user.date_joined)} · Last login {formatDate(user.last_login)}</p><p className="mt-1 text-xs text-slate-500">Referral code: {user.referral_code || "Not set"} · Commission: {Number(user.referral_commission_rate ?? 0.05) * 100}%</p></div>
                 <div className="flex flex-wrap items-center gap-2">
-                  {user.is_superuser ? <Badge className="bg-blue-600 text-white">Superuser</Badge> : user.is_staff ? <Badge className="bg-emerald-600 text-white">Staff</Badge> : <Badge variant="outline">User</Badge>}
-                  {user.is_affiliate_marketer ? <Badge className="bg-cyan-600 text-white">Affiliate marketer</Badge> : null}
-                  {user.is_support ? <Badge className="bg-violet-600 text-white">Support</Badge> : null}
+                  {user.is_superuser ? <Badge className="bg-blue-600 text-gray-50">Superuser</Badge> : user.is_staff ? <Badge className="bg-emerald-600 text-gray-50">Staff</Badge> : <Badge variant="outline">User</Badge>}
+                  {user.is_affiliate_marketer ? <Badge className="bg-cyan-600 text-gray-50">Affiliate marketer</Badge> : null}
+                  {user.is_support ? <Badge className="bg-violet-600 text-gray-50">Support</Badge> : null}
                   {user.is_verified ? <Badge variant="outline" className="border-emerald-300 text-emerald-700">Verified</Badge> : <Badge variant="outline" className="border-amber-300 text-amber-700">Unverified</Badge>}
                   {user.mfa_enabled ? <Badge variant="outline" className="border-blue-300 text-blue-700">MFA enabled</Badge> : null}
                   {isSuperuser ? <Button size="sm" variant="outline" onClick={() => startEdit(user)}><Pencil className="mr-1 h-4 w-4" />Edit</Button> : null}

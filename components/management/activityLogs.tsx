@@ -165,7 +165,7 @@ export default function ActivityLogs({ userId, refetchData, onRefetchComplete }:
             Showing audit events where this staff member is the actor. New matching events stream in live, with a 15-second fallback refresh.
           </p>
         </div>
-        <Button type="button" variant="outline" onClick={() => void refetch()} disabled={isFetching} className="rounded-full border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800 hover:text-white">
+        <Button type="button" variant="outline" onClick={() => void refetch()} disabled={isFetching} className="rounded-full border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800 hover:text-gray-50">
           <RefreshCw className="mr-2 h-4 w-4" />
           {isFetching ? "Refreshing..." : "Refresh"}
         </Button>

@@ -185,14 +185,14 @@ export default function AdminPage() {
               Admin command center
             </Badge>
             <div className="max-w-3xl space-y-3">
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-950 dark:text-white lg:text-4xl">Oversee billing, catalog, audit, and live operations from one place.</h1>
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-950 dark:text-gray-50 lg:text-4xl">Oversee billing, catalog, audit, and live operations from one place.</h1>
               <p className="max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300 lg:text-base">
                 This hub is reserved for `is_staff` and `is_superuser` users. It exposes the parts of the platform that need governance,
                 monitoring, and intervention without mixing them into normal workspace flows.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              {isSuperuser ? <Button asChild className="bg-blue-600 text-white hover:bg-blue-700"><Link href="/payment-admin">Open billing console</Link></Button> : null}
+              {isSuperuser ? <Button asChild className="bg-blue-600 text-gray-50 hover:bg-blue-700"><Link href="/payment-admin">Open billing console</Link></Button> : null}
               <Button asChild variant="outline" className="border-gray-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                 <Link href="/product/global-catalog-admin">Open global catalog</Link>
               </Button>
@@ -210,7 +210,7 @@ export default function AdminPage() {
 
           <Card className="border-gray-200 bg-gray-50 shadow-none">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-slate-950 dark:text-white">Operational snapshot</CardTitle>
+              <CardTitle className="text-lg text-slate-950 dark:text-gray-50">Operational snapshot</CardTitle>
               <CardDescription className="text-slate-600 dark:text-slate-300">
                 A quick read on billing, subscriptions, and catalog pressure.
               </CardDescription>
@@ -218,7 +218,7 @@ export default function AdminPage() {
             <CardContent className="space-y-3">
               <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3">
                 <span className="text-sm text-slate-600 dark:text-slate-300">Catalog variants</span>
-                <span className="text-sm font-semibold text-slate-950 dark:text-white">{formatNumber(catalogStats?.total_variants ?? 0)}</span>
+                <span className="text-sm font-semibold text-slate-950 dark:text-gray-50">{formatNumber(catalogStats?.total_variants ?? 0)}</span>
               </div>
               <p className="pt-1 text-xs text-slate-500">Read-only operational catalog overview.</p>
             </CardContent>
@@ -263,11 +263,11 @@ export default function AdminPage() {
                 className="group rounded-2xl border border-gray-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
               >
                 <div className="flex items-start gap-3">
-                    <div className="rounded-2xl border border-blue-100 bg-blue-50 p-3 text-blue-700 transition group-hover:border-blue-600 group-hover:bg-blue-600 group-hover:text-white">
+                    <div className="rounded-2xl border border-blue-100 bg-blue-50 p-3 text-blue-700 transition group-hover:border-blue-600 group-hover:bg-blue-600 group-hover:text-gray-50">
                       <Icon className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="font-semibold text-slate-950 dark:text-white">{link.title}</h3>
+                      <h3 className="font-semibold text-slate-950 dark:text-gray-50">{link.title}</h3>
                       <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">{link.description}</p>
                     </div>
                   </div>

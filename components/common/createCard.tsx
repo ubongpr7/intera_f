@@ -340,7 +340,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
       >
         <button
           onClick={onClose}
-          className="absolute right-5 top-5 z-10 rounded-full border border-white/70 bg-white/85 p-2.5 text-slate-500 shadow-sm backdrop-blur transition hover:bg-white hover:text-slate-800 dark:border-slate-700 dark:bg-slate-950/85 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white"
+          className="absolute right-5 top-5 z-10 rounded-full border border-white/70 bg-white/85 p-2.5 text-slate-500 shadow-sm backdrop-blur transition hover:bg-white hover:text-slate-800 dark:border-slate-700 dark:bg-slate-950/85 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-gray-50"
         >
           <X className="h-5 w-5 text-gray-500 dark:text-slate-300" />
         </button>
@@ -700,7 +700,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                 type="button"
                 onClick={onClose}
                 variant="outline"
-                className="h-11 rounded-2xl border-slate-200 px-5 text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900 dark:hover:text-white"
+                className="h-11 rounded-2xl border-slate-200 px-5 text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900 dark:hover:text-gray-50"
               >
                 Cancel
               </Button>

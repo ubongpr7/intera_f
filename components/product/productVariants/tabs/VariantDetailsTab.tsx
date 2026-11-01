@@ -164,7 +164,7 @@ const VariantDetailsTab = ({ variant, onSuccess }: VariantDetailsTabProps) => {
 
           <div className="flex flex-col justify-between gap-4 rounded-2xl border border-slate-800 bg-slate-950 p-4">
             <div className="space-y-2">
-              <h4 className="text-lg font-semibold text-white">
+              <h4 className="text-lg font-semibold text-gray-50">
                 {variant.pos_display_name || variant.display_name || variant.variant_sku || "Variant"}
               </h4>
               <p className="text-sm leading-6 text-slate-300">
@@ -196,7 +196,7 @@ const VariantDetailsTab = ({ variant, onSuccess }: VariantDetailsTabProps) => {
                   type="button"
                   onClick={handleReplaceVariantImage}
                   disabled={!selectedImageFile || isUploadingImage}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-700"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-gray-50 transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-700"
                 >
                   {isUploadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                   <span>{isUploadingImage ? "Updating image..." : "Replace image"}</span>

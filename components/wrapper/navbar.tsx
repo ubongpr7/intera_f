@@ -507,7 +507,7 @@ const Navbar = ({
               >
                 <Avatar className="h-7 w-7 rounded-lg">
                   {activeWorkspaceLogo ? <AvatarImage src={activeWorkspaceLogo} alt="" className="object-cover" /> : null}
-                  <AvatarFallback className="rounded-lg bg-blue-600 text-xs font-bold text-white">
+                  <AvatarFallback className="rounded-lg bg-blue-600 text-xs font-bold text-gray-50">
                     {activeWorkspaceInitials}
                   </AvatarFallback>
                 </Avatar>
@@ -539,7 +539,7 @@ const Navbar = ({
                                 className="object-cover"
                               />
                             ) : null}
-                            <AvatarFallback className="rounded-xl bg-blue-600 text-sm font-bold text-white">
+                            <AvatarFallback className="rounded-xl bg-blue-600 text-sm font-bold text-gray-50">
                               {buildWorkspaceInitials(profile.name, profile.company_code)}
                             </AvatarFallback>
                           </Avatar>
@@ -553,7 +553,7 @@ const Navbar = ({
                     })}
                   </div>
                   <div className="mt-2 border-t border-gray-100 pt-2">
-                    <Link href="/profile/create?mode=new" onClick={() => setWorkspaceMenuOpen(false)} className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700">
+                    <Link href="/profile/create?mode=new" onClick={() => setWorkspaceMenuOpen(false)} className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-3 text-sm font-semibold text-gray-50 transition-colors hover:bg-blue-700">
                       <CirclePlus className="h-4 w-4" />
                       Create Another Workspace
                     </Link>
@@ -577,7 +577,7 @@ const Navbar = ({
             >
               <Bell size={24} className="cursor-pointer text-gray-500" />
               {unreadNotificationCount > 0 ? (
-                <div className="absolute -right-2 -top-2 inline-flex min-w-5 justify-center rounded-full bg-blue-500 px-[0.4rem] py-1 text-xs font-semibold leading-none text-white">
+                <div className="absolute -right-2 -top-2 inline-flex min-w-5 justify-center rounded-full bg-blue-500 px-[0.4rem] py-1 text-xs font-semibold leading-none text-gray-50">
                   <span>
                     {unreadNotificationCount > 99
                       ? '99+'
@@ -746,7 +746,7 @@ const Navbar = ({
             >
               <Avatar className="h-9 w-9 border border-gray-200">
                 <AvatarImage src={userImageUrl} alt={userDisplayName} />
-                <AvatarFallback className="bg-slate-900 text-xs font-semibold text-white">
+                <AvatarFallback className="bg-slate-900 text-xs font-semibold text-gray-50">
                   {userInitials}
                 </AvatarFallback>
               </Avatar>

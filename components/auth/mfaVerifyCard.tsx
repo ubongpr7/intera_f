@@ -196,7 +196,7 @@ export default function MfaVerifyCard() {
           {method === "email" ? <MailCheck className="h-4 w-4 text-slate-500 dark:text-slate-300" /> : <Smartphone className="h-4 w-4 text-slate-500 dark:text-slate-300" />}
         </div>
 
-        <h2 className="text-3xl font-semibold text-slate-950 dark:text-white">Verify your code</h2>
+        <h2 className="text-3xl font-semibold text-slate-950 dark:text-gray-50">Verify your code</h2>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
           {method === "email"
             ? "Enter the 6-digit verification code we sent to your email."
@@ -210,7 +210,7 @@ export default function MfaVerifyCard() {
             className={`auth-mfa-tab rounded-xl px-3 py-2 text-sm font-semibold transition ${
               method === "app"
                 ? "auth-mfa-tab-active border border-blue-200 bg-white text-blue-700 shadow-sm dark:border-[#98fcc2]/20 dark:bg-[#101727] dark:text-[#98fcc2]"
-                : "auth-mfa-tab-idle text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
+                : "auth-mfa-tab-idle text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-gray-50"
             }`}
           >
             Authenticator App
@@ -221,7 +221,7 @@ export default function MfaVerifyCard() {
             className={`auth-mfa-tab rounded-xl px-3 py-2 text-sm font-semibold transition ${
               method === "email"
                 ? "auth-mfa-tab-active border border-blue-200 bg-white text-blue-700 shadow-sm dark:border-[#98fcc2]/20 dark:bg-[#101727] dark:text-[#98fcc2]"
-                : "auth-mfa-tab-idle text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
+                : "auth-mfa-tab-idle text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-gray-50"
             }`}
           >
             Email Code
@@ -271,7 +271,7 @@ export default function MfaVerifyCard() {
                 className={`auth-mfa-otp-input h-12 min-w-0 rounded-xl border text-center text-lg font-semibold transition ${
                   code.length === index
                     ? "border-blue-200 bg-blue-50 text-blue-700 shadow-sm dark:border-[#98fcc2]/20 dark:bg-[#98fcc2]/10 dark:text-[#98fcc2]"
-                    : "border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                    : "border-slate-200 bg-white text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-gray-50"
                 }`}
               />
             ))}
@@ -288,7 +288,7 @@ export default function MfaVerifyCard() {
           type="button"
           onClick={() => void handleVerify()}
           disabled={isLoadingAny || code.length < 6}
-          className="auth-action-primary mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="auth-action-primary mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-gray-50 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isLoadingAny ? (
             <>
@@ -305,7 +305,7 @@ export default function MfaVerifyCard() {
             type="button"
             onClick={() => void handleSendEmailCode()}
             disabled={isSendingEmailCode || cooldown > 0}
-            className="auth-action-secondary mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10 dark:hover:text-white"
+            className="auth-action-secondary mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10 dark:hover:text-gray-50"
           >
             {isSendingEmailCode ? (
               <>
@@ -336,7 +336,7 @@ export default function MfaVerifyCard() {
         <button
           type="button"
           onClick={() => void handleUseAnotherAccount()}
-          className="auth-action-link mt-4 block w-full text-center text-sm font-semibold text-blue-700 underline underline-offset-4 transition hover:text-blue-800 dark:text-[#98fcc2] dark:hover:text-white"
+          className="auth-action-link mt-4 block w-full text-center text-sm font-semibold text-blue-700 underline underline-offset-4 transition hover:text-blue-800 dark:text-[#98fcc2] dark:hover:text-gray-50"
         >
           Use another account
         </button>

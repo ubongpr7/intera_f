@@ -212,7 +212,7 @@ export default function AffiliatePartnersPage() {
             <Label htmlFor="affiliate-notes">Agreement notes</Label>
             <Textarea id="affiliate-notes" value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Optional internal note" rows={1} />
           </div>
-          <Button type="button" onClick={() => void create()} disabled={isCreating} className="bg-blue-600 text-white hover:bg-blue-700">
+          <Button type="button" onClick={() => void create()} disabled={isCreating} className="bg-blue-600 text-gray-50 hover:bg-blue-700">
             <Plus className="mr-2 h-4 w-4" />
             Create link
           </Button>

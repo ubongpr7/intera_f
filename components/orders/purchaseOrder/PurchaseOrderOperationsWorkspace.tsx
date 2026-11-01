@@ -935,7 +935,7 @@ export default function PurchaseOrderOperationsWorkspace({ purchaseOrderId }: Pu
             </p>
           </div>
           {canEditLineItems && (
-            <Button onClick={openCreateLineItemSheet} className="rounded-2xl bg-gray-900 text-white hover:bg-gray-800">
+            <Button onClick={openCreateLineItemSheet} className="rounded-2xl bg-gray-900 text-gray-50 hover:bg-gray-800">
               <PackagePlus className="mr-2 h-4 w-4" />
               Add line item
             </Button>

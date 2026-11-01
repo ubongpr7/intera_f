@@ -234,7 +234,7 @@ export default function RealtimeComparisonChart({
               key={value}
               type="button"
               onClick={() => setStudioView(value)}
-              className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${studioView === value ? "bg-blue-600 text-white shadow-sm" : "text-gray-600 hover:bg-white hover:text-gray-900"}`}
+              className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${studioView === value ? "bg-blue-600 text-gray-50 shadow-sm" : "text-gray-600 hover:bg-white hover:text-gray-900"}`}
             >
               {value === "compare" ? <Activity className="mr-2 inline h-4 w-4" /> : <BarChart3 className="mr-2 inline h-4 w-4" />}
               {value === "overview" ? "At a glance" : value === "revenue" ? "Revenue detail" : "Compare"}
@@ -257,7 +257,7 @@ export default function RealtimeComparisonChart({
             </div>
             <div className="rounded-3xl border border-gray-200 bg-gray-50 p-5">
               <div className="flex items-start justify-between gap-3"><div><div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">Revenue by hour</div><div className="mt-1 text-sm text-gray-600">Each bar is paid revenue during that hour.</div></div><Badge variant="outline" className="border-blue-200 bg-white text-blue-700">{trendDirection === "up" ? <TrendingUp className="mr-1 h-3.5 w-3.5" /> : trendDirection === "down" ? <TrendingDown className="mr-1 h-3.5 w-3.5" /> : null}{trendDirection === "up" ? "Trending up" : trendDirection === "down" ? "Trending down" : "Live window"}</Badge></div>
-              {overviewPoints.length ? <div className="mt-5 flex h-44 items-end gap-2">{overviewPoints.map((point) => { const value = Number(point.value) || 0; return <div key={point.bucket} className="group flex min-w-0 flex-1 flex-col items-center gap-2" title={`${new Date(point.bucket).toLocaleString()} · ${formatCurrencyCompact(currencyCode, value)}`}><div className="relative flex h-32 w-full items-end"><div className="w-full rounded-t-xl bg-gradient-to-t from-blue-600 to-cyan-400 transition-all group-hover:from-blue-700" style={{ height: `${Math.max((value / overviewMax) * 100, value > 0 ? 8 : 0)}%` }} /><span className="absolute -top-5 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-[10px] font-semibold text-white group-hover:block">{formatCurrencyCompact(currencyCode, value)}</span></div><span className="text-[10px] text-gray-500">{new Date(point.bucket).toLocaleTimeString([], { hour: "numeric" })}</span></div> })}</div> : <div className="mt-5 flex h-44 items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-white text-sm text-gray-500">Waiting for sales activity.</div>}
+              {overviewPoints.length ? <div className="mt-5 flex h-44 items-end gap-2">{overviewPoints.map((point) => { const value = Number(point.value) || 0; return <div key={point.bucket} className="group flex min-w-0 flex-1 flex-col items-center gap-2" title={`${new Date(point.bucket).toLocaleString()} · ${formatCurrencyCompact(currencyCode, value)}`}><div className="relative flex h-32 w-full items-end"><div className="w-full rounded-t-xl bg-gradient-to-t from-blue-600 to-cyan-400 transition-all group-hover:from-blue-700" style={{ height: `${Math.max((value / overviewMax) * 100, value > 0 ? 8 : 0)}%` }} /><span className="absolute -top-5 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-[10px] font-semibold text-gray-50 group-hover:block">{formatCurrencyCompact(currencyCode, value)}</span></div><span className="text-[10px] text-gray-500">{new Date(point.bucket).toLocaleTimeString([], { hour: "numeric" })}</span></div> })}</div> : <div className="mt-5 flex h-44 items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-white text-sm text-gray-500">Waiting for sales activity.</div>}
               <div className="mt-4 grid gap-2 text-xs text-gray-600 sm:grid-cols-2"><div className="rounded-xl border border-gray-200 bg-white px-3 py-2"><span className="font-semibold text-gray-900">Peak hour:</span> {peakPoint ? `${new Date(peakPoint.bucket).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} · ${formatCurrencyCompact(currencyCode, peakPoint.value)}` : "No sales yet"}</div><div className="rounded-xl border border-gray-200 bg-white px-3 py-2"><span className="font-semibold text-gray-900">Window:</span> trailing 24 hours · refreshed live</div></div>
             </div>
           </div>
@@ -285,7 +285,7 @@ export default function RealtimeComparisonChart({
                 onClick={() => {
                   setMode(value)
                 }}
-                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${mode === value ? "bg-blue-600 text-white shadow-sm" : "text-gray-600 hover:bg-white hover:text-gray-900"}`}
+                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${mode === value ? "bg-blue-600 text-gray-50 shadow-sm" : "text-gray-600 hover:bg-white hover:text-gray-900"}`}
               >
                 {value === "products" ? <PackageSearch className="mr-2 inline h-4 w-4" /> : <MapPin className="mr-2 inline h-4 w-4" />}
                 {value === "products" ? "Products" : "Locations"}
@@ -298,7 +298,7 @@ export default function RealtimeComparisonChart({
                 key={value}
                 type="button"
                 onClick={() => setComparisonMetric(value)}
-                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${comparisonMetric === value ? "bg-emerald-600 text-white shadow-sm" : "text-gray-600 hover:bg-white hover:text-gray-900"}`}
+                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${comparisonMetric === value ? "bg-emerald-600 text-gray-50 shadow-sm" : "text-gray-600 hover:bg-white hover:text-gray-900"}`}
               >
                 {value === "units" ? "Units sold" : "Revenue"}
               </button>

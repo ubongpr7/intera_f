@@ -46,7 +46,7 @@ export default function AuthSplitShell({
     : "/assets/img/logos/verticals/no-bg/INTERA-PRIMARY-LOGO-VERTICAL-BLACK-3.png";
 
   return (
-    <div className="auth-page min-h-screen text-[#101727] dark:text-white">
+    <div className="auth-page min-h-screen text-[#101727] dark:text-gray-50">
       <div className="grid min-h-screen lg:grid-cols-[1.08fr_0.92fr]">
         <aside className={`auth-showcase relative hidden overflow-hidden px-10 py-10 lg:flex lg:flex-col ${layout === "reversed" ? "lg:order-2" : ""}`}>
           <div className="pointer-events-none absolute inset-0">
@@ -64,7 +64,7 @@ export default function AuthSplitShell({
                 <Sparkles className="h-3.5 w-3.5" />
                 {eyebrow}
               </span>
-              <h1 className="mt-5 max-w-2xl text-5xl font-semibold leading-[1.08] tracking-[-0.04em] text-[#101727] dark:text-white">
+              <h1 className="mt-5 max-w-2xl text-5xl font-semibold leading-[1.08] tracking-[-0.04em] text-[#101727] dark:text-gray-50">
                 Built for the people who keep work moving.
               </h1>
               <p className="auth-showcase-copy mt-4 max-w-xl text-lg leading-8 text-slate-600 dark:text-slate-300">
@@ -80,7 +80,7 @@ export default function AuthSplitShell({
                       className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-[0_16px_32px_-28px_rgba(16,23,39,0.35)] backdrop-blur dark:border-white/10 dark:bg-white/5"
                     >
                       <Icon className="h-4 w-4 text-[#3c83f7] dark:text-[#98fcc2]" />
-                      <p className="auth-highlight-title mt-3 text-sm font-semibold text-[#101727] dark:text-white">{item.title}</p>
+                      <p className="auth-highlight-title mt-3 text-sm font-semibold text-[#101727] dark:text-gray-50">{item.title}</p>
                       <p className="auth-highlight-copy mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">{item.description}</p>
                     </div>
                   );
@@ -111,7 +111,7 @@ export default function AuthSplitShell({
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#3c83f7] dark:text-[#98fcc2]">
                 {eyebrow}
               </p>
-              <h2 className="text-3xl font-semibold tracking-[-0.03em] text-[#101727] dark:text-white">{title}</h2>
+              <h2 className="text-3xl font-semibold tracking-[-0.03em] text-[#101727] dark:text-gray-50">{title}</h2>
             </div>
 
             <div className="auth-description text-sm leading-7 text-slate-600 dark:text-slate-300">{description}</div>

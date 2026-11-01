@@ -99,7 +99,7 @@ export default function PaymentAdminPage() {
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Button asChild className="bg-blue-600 text-white hover:bg-blue-700">
+              <Button asChild className="bg-blue-600 text-gray-50 hover:bg-blue-700">
                 <Link href="#analytics">Open analytics</Link>
               </Button>
               <Button asChild variant="outline" className="border-gray-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">

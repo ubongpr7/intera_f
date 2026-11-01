@@ -135,7 +135,7 @@ export default function ProductMedia({ productId }: ProductMediaProps) {
         <h2 className="text-2xl font-bold text-gray-900">Product Media</h2>
         <button
           onClick={() => setShowUploadModal(true)}
-          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          className="px-4 py-2 bg-green-600 text-gray-50 rounded-lg hover:bg-green-700 transition-colors"
         >
           Upload Media
         </button>
@@ -175,7 +175,7 @@ export default function ProductMedia({ productId }: ProductMediaProps) {
 
                   {attachment.is_primary && (
                     <div className="absolute top-2 left-2">
-                      <span className="px-2 py-1 bg-blue-600 text-white text-xs rounded-full">Primary</span>
+                      <span className="px-2 py-1 bg-blue-600 text-gray-50 text-xs rounded-full">Primary</span>
                     </div>
                   )}
                 </div>
@@ -194,20 +194,20 @@ export default function ProductMedia({ productId }: ProductMediaProps) {
                     {!attachment.is_primary && (
                       <button
                         onClick={() => handleSetPrimary(attachment.id)}
-                        className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+                        className="px-2 py-1 bg-blue-600 text-gray-50 rounded text-xs hover:bg-blue-700"
                       >
                         Set Primary
                       </button>
                     )}
                     <button
                       onClick={() => setEditingAttachment(attachment)}
-                      className="px-2 py-1 bg-gray-600 text-white rounded text-xs hover:bg-gray-700"
+                      className="px-2 py-1 bg-gray-600 text-gray-50 rounded text-xs hover:bg-gray-700"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDeleteAttachment(attachment.id)}
-                      className="px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700"
+                      className="px-2 py-1 bg-red-600 text-gray-50 rounded text-xs hover:bg-red-700"
                     >
                       Delete
                     </button>
@@ -224,7 +224,7 @@ export default function ProductMedia({ productId }: ProductMediaProps) {
           <p className="text-gray-500 mb-4">No media files found for this product.</p>
           <button
             onClick={() => setShowUploadModal(true)}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            className="px-4 py-2 bg-green-600 text-gray-50 rounded-lg hover:bg-green-700"
           >
             Upload First Media
           </button>
@@ -297,7 +297,7 @@ function MediaUploadForm({
           onClick={() => setUploadMode("bulk")}
           className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
             uploadMode === "bulk"
-              ? "bg-blue-600 text-white shadow-lg shadow-blue-900/30"
+              ? "bg-blue-600 text-gray-50 shadow-lg shadow-blue-900/30"
               : "border border-slate-700 bg-slate-900/70 text-slate-200 hover:border-slate-500 hover:bg-slate-800"
           }`}
         >
@@ -307,7 +307,7 @@ function MediaUploadForm({
           onClick={() => setUploadMode("single")}
           className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
             uploadMode === "single"
-              ? "bg-blue-600 text-white shadow-lg shadow-blue-900/30"
+              ? "bg-blue-600 text-gray-50 shadow-lg shadow-blue-900/30"
               : "border border-slate-700 bg-slate-900/70 text-slate-200 hover:border-slate-500 hover:bg-slate-800"
           }`}
         >
@@ -370,7 +370,7 @@ function MediaUploadForm({
         <button
           onClick={uploadMode === "bulk" ? handleBulkUpload : handleSingleUpload}
           disabled={!selectedFiles || isLoading}
-          className="flex items-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex items-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-gray-50 transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isLoading && <LoadingAnimation text="" ringColor="#ffffff" size={14} />}
           Upload {uploadMode === "bulk" ? "Files" : "File"}
@@ -477,7 +477,7 @@ function AttachmentEditForm({
         <button
           type="submit"
           disabled={isLoading}
-          className="flex items-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex items-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-gray-50 transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isLoading && <LoadingAnimation text="" ringColor="#ffffff" size={14} />}
           Update Attachment

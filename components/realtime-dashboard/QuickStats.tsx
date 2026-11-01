@@ -78,7 +78,7 @@ const QuickStats = () => {
         {stats.map((stat, index) => (
           <div 
             key={stat.id}
-            className={`relative rounded-2xl p-6 text-white shadow-md transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl cursor-pointer ${stat.color} ${stat.hoverColor}`}
+            className={`relative rounded-2xl p-6 text-gray-50 shadow-md transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl cursor-pointer ${stat.color} ${stat.hoverColor}`}
             onMouseEnter={() => setExpandedCard(stat.id)}
             onMouseLeave={() => setExpandedCard(null)}
           >
@@ -155,7 +155,7 @@ const QuickStats = () => {
                       <Box className="w-10 h-10 text-gray-400" />
                     </div>
                   )}
-                  <div className="absolute top-3 right-3 bg-rose-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                  <div className="absolute top-3 right-3 bg-rose-500 text-gray-50 text-xs font-bold px-2 py-1 rounded-full">
                     Low Stock
                   </div>
                 </div>

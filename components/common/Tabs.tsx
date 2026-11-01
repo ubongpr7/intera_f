@@ -37,7 +37,7 @@ const Tabs = ({ items, defaultActive, className, children }: TabsProps) => {
               className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2
                 ${
                   activeTab === tab.id
-                    ? 'bg-blue-600 text-white shadow-[0_10px_24px_-15px_rgba(37,99,235,.9)]'
+                    ? 'bg-blue-600 text-gray-50 shadow-[0_10px_24px_-15px_rgba(37,99,235,.9)]'
                     : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800'
                 }`}
               role="tab"

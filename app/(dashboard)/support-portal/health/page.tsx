@@ -10,7 +10,7 @@ export default function SupportServiceHealthPage() {
         </a>
         <a href="/dashboard" className="rounded-xl px-3 py-2 text-sm font-semibold text-[#28549a] hover:bg-[#e8f0ff]">Back to inbox</a>
       </nav>
-      <div className="mb-5 rounded-[1.5rem] bg-[#172642] px-6 py-6 text-white md:px-8">
+      <div className="mb-5 rounded-[1.5rem] bg-[#172642] px-6 py-6 text-gray-50 md:px-8">
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#98fcc2]">Operations</p>
         <h1 className="mt-2 text-3xl font-black tracking-tight">Service health</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[#c5d0e2]">Monitor APIs, MCP services, agent runtimes, and background workers without mixing operational diagnostics into the support queue.</p>

@@ -325,7 +325,7 @@ export default function RegisterForm() {
                 aria-checked={accepted}
                 aria-label={`Read and agree to the ${label}`}
                 onClick={() => accepted ? setLegalAccepted((current) => ({ ...current, [policy]: false })) : setLegalDialog(policy)}
-                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border transition ${accepted ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-400 bg-white text-transparent hover:border-blue-500'}`}
+                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border transition ${accepted ? 'border-blue-600 bg-blue-600 text-gray-50' : 'border-slate-400 bg-white text-transparent hover:border-blue-500'}`}
               >
                 <Check className="h-3.5 w-3.5" />
               </button>

@@ -635,7 +635,7 @@ function BulkTaskPanel({
           <button
             type="button"
             onClick={onNewUpload}
-            className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-gray-50 hover:bg-blue-700"
           >
             Upload images
           </button>
@@ -736,7 +736,7 @@ function BulkTaskRow({
             <button
               type="button"
               onClick={() => onRetry(task)}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-gray-50 hover:bg-blue-700 disabled:opacity-60"
               disabled={isRetrying}
             >
               <RefreshCw className={`h-4 w-4 ${isRetrying ? "animate-spin" : ""}`} />

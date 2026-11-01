@@ -669,7 +669,7 @@ export default function SubscriptionPage() {
             ) : activePlan && activeSubscriptionId ? (
               <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm dark:border-slate-800 dark:bg-slate-900/60">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <span>
+                  <span className="text-sm text-gray-700 ">
                     Current plan: <strong>{activePlan.name}</strong>.{" "}
                     {subscriptionPendingCancellation
                       ? `Renewal is paused and access ends on ${formatDate(subscriptionAccessUntil)}. Resume billing before that date to keep the workspace active.`

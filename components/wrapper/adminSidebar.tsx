@@ -40,7 +40,7 @@ export default function AdminSidebar({ user, mobileOpen, onMobileClose }: AdminS
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-900 ring-1 ring-slate-700">
             <Image src="/assets/intera/intera-mark-light.png" alt="Intera IMS" width={32} height={32} className="h-8 w-8 object-contain" priority />
           </div>
-          {!navigationCollapsed ? <div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-300">Platform</p><h1 className="truncate text-sm font-extrabold text-white">Intera IMS Admin Portal</h1></div> : null}
+          {!navigationCollapsed ? <div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-300">Platform</p><h1 className="truncate text-sm font-extrabold text-gray-50">Intera IMS Admin Portal</h1></div> : null}
         </Link>
 
         <nav className="dashboard-sidebar-nav mt-8 flex-grow space-y-1 overflow-y-auto px-2 pb-4" onClick={(event) => { if ((event.target as HTMLElement).closest('a')) onMobileClose() }}>
@@ -63,7 +63,7 @@ export default function AdminSidebar({ user, mobileOpen, onMobileClose }: AdminS
         <div className={`border-t border-slate-800 ${navigationCollapsed ? 'p-2' : 'p-3'}`}>
           <div className={`flex items-center gap-3 rounded-xl bg-slate-900/80 ${navigationCollapsed ? 'justify-center p-2' : 'px-3 py-3'}`}>
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-400/15 text-sm font-bold text-emerald-300">{(user?.first_name || user?.email || 'A').charAt(0).toUpperCase()}</span>
-            {!navigationCollapsed ? <div className="min-w-0"><p className="truncate text-sm font-semibold text-white">{user?.get_full_name || user?.email || 'Administrator'}</p><p className="truncate text-xs text-slate-400">Platform staff</p></div> : null}
+            {!navigationCollapsed ? <div className="min-w-0"><p className="truncate text-sm font-semibold text-gray-50">{user?.get_full_name || user?.email || 'Administrator'}</p><p className="truncate text-xs text-slate-400">Platform staff</p></div> : null}
           </div>
         </div>
       </aside>

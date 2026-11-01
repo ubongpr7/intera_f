@@ -81,7 +81,7 @@ export default function LegalConsentDialog({ policy, onClose, onAgree }: LegalCo
             type="button"
             disabled={!hasReachedEnd}
             onClick={() => onAgree(policy)}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-3 font-semibold text-gray-50 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
           >
             <Check className="h-4 w-4" />
             I agree

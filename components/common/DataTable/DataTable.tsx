@@ -497,13 +497,13 @@ export function DataTable<T>({
       "inline-flex items-center rounded-xl border px-3 py-1.5 text-xs font-semibold shadow-sm transition-[background-color,color,border-color,box-shadow,transform] duration-200 hover:-translate-y-px focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
     switch (variant) {
       case "primary":
-        return `${baseClasses} text-white bg-blue-600 border-blue-600 hover:bg-blue-700 focus:ring-blue-500`
+        return `${baseClasses} text-gray-50 bg-blue-600 border-blue-600 hover:bg-blue-700 focus:ring-blue-500`
       case "danger":
-        return `${baseClasses} !text-white bg-red-600 border-red-600 hover:bg-red-700 focus:ring-red-500 dark:!text-white dark:bg-red-500 dark:border-red-500 dark:hover:bg-red-600`
+        return `${baseClasses} !text-gray-50 bg-red-600 border-red-600 hover:bg-red-700 focus:ring-red-500 dark:!text-gray-50 dark:bg-red-500 dark:border-red-500 dark:hover:bg-red-600`
       case "success":
-        return `${baseClasses} text-white bg-green-600 border-green-600 hover:bg-green-700 focus:ring-green-500`
+        return `${baseClasses} text-gray-50 bg-green-600 border-green-600 hover:bg-green-700 focus:ring-green-500`
       case "warning":
-        return `${baseClasses} text-white bg-yellow-600 border-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500`
+        return `${baseClasses} text-gray-50 bg-yellow-600 border-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500`
       case "secondary":
       default:
         return `${baseClasses} text-gray-700 bg-white border-gray-300 hover:bg-gray-50 focus:ring-blue-500`

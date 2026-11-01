@@ -233,7 +233,7 @@ export function CompanySocialLinksForm({ profile, onUpdate, submitLabel = "Save 
       </div>
 
       <div className="flex justify-end">
-        <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white" disabled={isSaving}>
+        <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-gray-50" disabled={isSaving}>
           {isSaving ? "Saving..." : submitLabel}
         </Button>
       </div>

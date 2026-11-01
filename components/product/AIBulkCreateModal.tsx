@@ -312,7 +312,7 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
                         />
                         {/* Hover overlay */}
                         <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
-                          <span className="text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <span className="text-gray-50 text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                             Preview
                           </span>
                         </div>
@@ -326,7 +326,7 @@ export function AIBulkCreateModal({ isOpen, onClose }: AIBulkCreateModalProps) {
                       >
                         ×
                       </Button>
-                      <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 rounded-b">
+                      <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-gray-50 text-xs p-1 rounded-b">
                         {(image.size / 1024 / 1024).toFixed(1)}MB
                       </div>
                     </div>

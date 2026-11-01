@@ -494,7 +494,7 @@ export default function CustomUpdateForm<T extends Record<string, any>>({
               
               <button
                 type="submit"
-                className="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 focus:ring-2 focus:ring-blue-500/40"
+                className="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-gray-50 hover:bg-blue-500 focus:ring-2 focus:ring-blue-500/40"
               >
                 {isLoading ? (
                   <LoadingAnimation text="Updating..." ringColor="#3b82f6" />

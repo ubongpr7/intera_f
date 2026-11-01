@@ -34,7 +34,7 @@ const VariantDetailsModal = ({ variantId, onClose, onSuccess }: VariantDetailsMo
           <p className="text-gray-700 mb-4">
             Failed to load variant details: {extractErrorMessage(error, ["detail", "error"])}
           </p>
-          <button onClick={onClose} className="w-full bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+          <button onClick={onClose} className="w-full bg-gray-500 text-gray-50 px-4 py-2 rounded hover:bg-gray-600">
             Close
           </button>
         </div>

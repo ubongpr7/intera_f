@@ -173,7 +173,7 @@ export default function ProductPage() {
             {nextProductStep ? (
               <a
                 href={`#${nextProductStep.id}`}
-                className="flex w-full items-center justify-between rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                className="flex w-full items-center justify-between rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-gray-50 transition-colors hover:bg-blue-700"
               >
                 Continue with {nextProductStep.title}
                 <ArrowRight className="h-4 w-4" />

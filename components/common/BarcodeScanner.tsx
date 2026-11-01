@@ -177,13 +177,13 @@ export function BarcodeScanner({ onDetected, disabled = false, className, label 
             if (event.target === event.currentTarget) closeScanner()
           }}
         >
-          <div className="w-full max-w-xl overflow-hidden rounded-3xl border border-slate-700 bg-slate-950 text-white shadow-2xl" onMouseDown={(event) => event.stopPropagation()}>
+          <div className="w-full max-w-xl overflow-hidden rounded-3xl border border-slate-700 bg-slate-950 text-gray-50 shadow-2xl" onMouseDown={(event) => event.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
               <div>
                 <p className="flex items-center gap-2 text-base font-semibold"><Camera className="h-5 w-5 text-blue-300" /> Scan a variant barcode</p>
                 <p className="mt-1 text-xs text-slate-400">Hold the barcode inside the frame. The result will be applied to the current search.</p>
               </div>
-              <Button type="button" variant="ghost" size="icon" className="rounded-full text-slate-300 hover:bg-slate-800 hover:text-white" onClick={closeScanner} aria-label="Close scanner">
+              <Button type="button" variant="ghost" size="icon" className="rounded-full text-slate-300 hover:bg-slate-800 hover:text-gray-50" onClick={closeScanner} aria-label="Close scanner">
                 <X className="h-5 w-5" />
               </Button>
             </div>
@@ -194,7 +194,7 @@ export function BarcodeScanner({ onDetected, disabled = false, className, label 
                 {isStarting ? <div className="absolute inset-0 flex items-center justify-center bg-slate-950/60"><Loader2 className="h-8 w-8 animate-spin text-blue-300" /></div> : null}
               </div>
               {error ? <p className="mt-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">{error}</p> : null}
-              <Button type="button" variant="outline" className="mt-4 w-full rounded-full border-slate-700 bg-transparent text-white hover:bg-slate-800" onClick={closeScanner}>Close scanner</Button>
+              <Button type="button" variant="outline" className="mt-4 w-full rounded-full border-slate-700 bg-transparent text-gray-50 hover:bg-slate-800" onClick={closeScanner}>Close scanner</Button>
             </div>
           </div>
         </div>
