@@ -10,8 +10,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { readCookieValue } from "@/lib/authCookies"
-import { useGetTerminalsQuery } from "@/redux/features/pos/posAPISlice"
-import { useGetProductDataQuery } from "@/redux/features/product/productAPISlice"
 import {
   useGetCurrentEntitlementsQuery,
   useGetPaymentsQuery,
@@ -22,10 +20,7 @@ import {
   useGetCoinTransactionsQuery,
   useTopUpCoinsMutation,
 } from "@/redux/features/payment/paymentAPISlice"
-import { useListStockLocationsQuery } from "@/redux/features/stock/stockAPISlice"
 import type { EntitlementUsageRow, PaymentRecord, SubscriptionPlanRecord } from "@/redux/features/payment/paymentTypes"
-import { useGetCompanyUsersQuery, useGetPendingInvitationsQuery } from "@/redux/features/users/userApiSlice"
-import type { CompanyInvitation } from "@/redux/features/management/companyProfileTypes"
 
 type Claims = {
   user_id?: string | number
@@ -233,11 +228,6 @@ export default function SubscriptionPage() {
     { refetchOnMountOrArgChange: true },
   )
   const { data: coinTransactions = [], refetch: refetchCoinTransactions } = useGetCoinTransactionsQuery(undefined, { refetchOnMountOrArgChange: true })
-  const { data: companyUsers = [], isLoading: loadingCompanyUsers } = useGetCompanyUsersQuery()
-  const { data: pendingInvitations = [], isLoading: loadingPendingInvitations } = useGetPendingInvitationsQuery()
-  const { data: stockLocations = [], isLoading: loadingStockLocations } = useListStockLocationsQuery()
-  const { data: terminals = [], isLoading: loadingTerminals } = useGetTerminalsQuery()
-  const { data: products = [], isLoading: loadingProducts } = useGetProductDataQuery()
   const { data: plans = [], isLoading: loadingPlans } = useGetSubscriptionPlansQuery(
     { application__slug: "intera-ims" },
     { refetchOnMountOrArgChange: true },
@@ -277,61 +267,9 @@ export default function SubscriptionPage() {
   const canTopUpCoins = Boolean(owner && activePlan && coinPurchaseRate)
   const coinTopUpQuantity = Math.max(Number(coinTopUpAmount) || 0, 0)
   const coinTopUpCost = coinPurchaseRate ? coinTopUpQuantity * coinPurchaseRate : 0
-  const localUsageCounts = useMemo(() => {
-    const activeUserIds = new Set<string>()
-    const activeEmails = new Set<string>()
-
-    companyUsers.forEach((assignment) => {
-      const userId = assignment.user?.id
-      if (userId !== undefined && userId !== null) {
-        activeUserIds.add(String(userId))
-      }
-      const email = `${assignment.user?.email ?? ""}`.trim().toLowerCase()
-      if (email) {
-        activeEmails.add(email)
-      }
-    })
-
-    const ownerId = tokenClaims?.owner_id
-    if (ownerId !== undefined && ownerId !== null) {
-      activeUserIds.add(String(ownerId))
-    }
-
-    const distinctPendingEmails = new Set<string>()
-    pendingInvitations.forEach((invite: CompanyInvitation) => {
-      const email = `${invite.email ?? ""}`.trim().toLowerCase()
-      const status = `${invite.status ?? ""}`.trim().toLowerCase()
-      if (!email || status !== "pending" || activeEmails.has(email)) {
-        return
-      }
-      distinctPendingEmails.add(email)
-    })
-
-    return {
-      "staff-users": activeUserIds.size + distinctPendingEmails.size,
-      "structural-locations": stockLocations.filter((location) => Boolean(location.structural)).length,
-      "pos-terminals": terminals.length,
-      products: products.length,
-      "product-variants": products.reduce((total, product) => total + Number(product.variant_count ?? 0), 0),
-    } as Record<string, number>
-  }, [companyUsers, pendingInvitations, products, stockLocations, terminals, tokenClaims?.owner_id])
-  const localUsageLoadingByFeature = useMemo<Record<string, boolean>>(
-    () => ({
-      "staff-users": loadingCompanyUsers || loadingPendingInvitations,
-      "structural-locations": loadingStockLocations,
-      "pos-terminals": loadingTerminals,
-      products: loadingProducts,
-      "product-variants": loadingProducts,
-    }),
-    [loadingCompanyUsers, loadingPendingInvitations, loadingProducts, loadingStockLocations, loadingTerminals],
-  )
   const usageCountsByFeature = useMemo(() => {
     const rawCounts = entitlements?.usage_counts ?? {}
-    const featuresWithUsage = new Set([
-      ...Object.keys(rawCounts),
-      ...Object.keys(localUsageCounts),
-      ...usageRows.map((row) => row.feature),
-    ])
+    const featuresWithUsage = new Set([...Object.keys(rawCounts), ...usageRows.map((row) => row.feature)])
     return new Map<string, number | null>(
       Array.from(featuresWithUsage, (feature) => {
         const serviceUsage = rawCounts[feature]
@@ -339,16 +277,11 @@ export default function SubscriptionPage() {
           return [feature, Number(serviceUsage)]
         }
 
-        const localUsage = localUsageCounts[feature]
-        if (!localUsageLoadingByFeature[feature] && Number.isFinite(Number(localUsage))) {
-          return [feature, Number(localUsage)]
-        }
-
         const entitlementUsage = usageRows.find((row) => row.feature === feature)?.usage
         return [feature, entitlementUsage === null || entitlementUsage === undefined ? null : Number(entitlementUsage)]
       }),
     )
-  }, [entitlements?.usage_counts, localUsageCounts, localUsageLoadingByFeature, usageRows])
+  }, [entitlements?.usage_counts, usageRows])
   const workspaceUsageLoading = useMemo(
     () => plans.some((plan) => plan.features.some((feature) => (
       feature.limit_type === "COUNT" &&
@@ -357,17 +290,6 @@ export default function SubscriptionPage() {
       usageCountsByFeature.get(feature.slug) === null
     ))),
     [plans, usageCountsByFeature],
-  )
-  const workspaceFootprintRows = useMemo(
-    () =>
-      Array.from(usageCountsByFeature.entries())
-        .sort(([left], [right]) => left.localeCompare(right))
-        .map(([feature, usage]) => ({
-          feature,
-          name: label(feature),
-          usage,
-        })),
-    [usageCountsByFeature],
   )
   const billingHistory = useMemo(
     () =>
@@ -1021,17 +943,7 @@ export default function SubscriptionPage() {
                 )}
               </div>
             )
-          }) : workspaceFootprintRows.length > 0 ? workspaceFootprintRows.map((row) => (
-            <div key={row.feature} className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
-              <div className="flex items-center justify-between gap-3">
-                <p className="font-semibold">{row.name}</p>
-                <ShieldCheck className="h-4 w-4 text-emerald-600" />
-              </div>
-              <p className="mt-2 text-sm text-slate-500">
-                {row.usage === null ? "Usage unavailable" : `${Number(row.usage).toLocaleString()} currently in workspace`}
-              </p>
-            </div>
-          )) : features.length === 0 ? (
+          }) : features.length === 0 ? (
             <p className="text-sm text-slate-500">No entitlement is active until a plan trial is selected.</p>
           ) : features.map(([slug, feature]) => (
             <div key={slug} className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
