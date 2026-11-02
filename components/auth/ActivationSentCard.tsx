@@ -39,9 +39,9 @@ export default function ActivationSentCard({ email, nextPath }: ActivationSentCa
           <MailCheck className="h-6 w-6" />
         </div>
         <div className="space-y-2">
-          <CardTitle className="activation-sent-title text-3xl text-[#101727] dark:text-white">Check your email</CardTitle>
+          <CardTitle className="activation-sent-title text-3xl text-[#101727] dark:text-gray-50">Check your email</CardTitle>
           <CardDescription className="text-base leading-7 text-gray-600 dark:text-slate-300">
-            We sent an account activation link to <span className="activation-sent-email font-semibold text-gray-800 dark:text-white">{email}</span>.
+            We sent an account activation link to <span className="activation-sent-email font-semibold text-gray-800 dark:text-gray-50">{email}</span>.
             Open the email and click the activation button to finish setting up your account.
           </CardDescription>
         </div>

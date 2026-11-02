@@ -21,7 +21,8 @@ type PromotionDraft = {
   base_uom_code: string
   purchase_uom_code: string
   sales_uom_code: string
-  uom_conversion_factor: string
+  purchase_uom_conversion_factor: string
+  sales_uom_conversion_factor: string
   variant_name: string
   variant_uom_code: string
   pack_quantity: string
@@ -36,7 +37,8 @@ function draftFromCapture(capture: GlobalProductCapture): PromotionDraft {
     base_uom_code: "unit",
     purchase_uom_code: "unit",
     sales_uom_code: "unit",
-    uom_conversion_factor: "1",
+    purchase_uom_conversion_factor: "1",
+    sales_uom_conversion_factor: "1",
     variant_name: suggestedName,
     variant_uom_code: "unit",
     pack_quantity: "1",
@@ -84,7 +86,8 @@ export default function GlobalCatalogCaptureQueue() {
           base_uom_code: draft.base_uom_code,
           purchase_uom_code: draft.purchase_uom_code,
           sales_uom_code: draft.sales_uom_code,
-          uom_conversion_factor: Number(draft.uom_conversion_factor || 1),
+          purchase_uom_conversion_factor: Number(draft.purchase_uom_conversion_factor || 1),
+          sales_uom_conversion_factor: Number(draft.sales_uom_conversion_factor || 1),
           source_status: "draft",
         },
         variant: {
@@ -133,8 +136,9 @@ export default function GlobalCatalogCaptureQueue() {
           {data?.results?.map((capture) => (
             <article key={capture.id} className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <div className="flex gap-4">
-                <div className="h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-white">
-                  {capture.image_url ? <img src={capture.image_url} alt={capture.name_hint || capture.barcode} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-gray-400"><ImageIcon className="h-6 w-6" /></div>}
+                <div className="grid h-24 w-24 shrink-0 grid-cols-2 gap-1 overflow-hidden rounded-xl border border-gray-200 bg-white p-1">
+                  {[capture.image_url, ...(capture.attachments?.map((attachment) => attachment.file_url) || [])].filter(Boolean).slice(0, 4).map((url, index) => <img key={`${url}-${index}`} src={url as string} alt={`${capture.name_hint || capture.barcode} ${index + 1}`} className="h-full w-full rounded object-cover" />)}
+                  {!capture.image_url && !capture.attachments?.length ? <div className="col-span-2 flex h-full items-center justify-center text-gray-400"><ImageIcon className="h-6 w-6" /></div> : null}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
@@ -161,8 +165,9 @@ export default function GlobalCatalogCaptureQueue() {
             </div>
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               {(["name", "brand", "category_name", "variant_name"] as const).map((key) => <label key={key} className="grid gap-2 text-sm font-medium text-gray-700">{key === "category_name" ? "Category" : key === "variant_name" ? "Variant name" : key === "name" ? "Product name" : "Brand"}<Input value={draft[key]} onChange={(event) => updateDraft(key, event.target.value)} /></label>)}
-              {(["base_uom_code", "purchase_uom_code", "sales_uom_code", "variant_uom_code"] as const).map((key) => <label key={key} className="grid gap-2 text-sm font-medium text-gray-700">{key.replaceAll("_", " ")}<select value={draft[key]} onChange={(event) => updateDraft(key, event.target.value)} className="h-10 rounded-xl border border-gray-200 bg-white px-3 text-sm"><option value="unit">unit</option>{units.map((unit: any) => <option key={unit.code || unit.id} value={unit.code || unit.id}>{unit.name || unit.label || unit.code}</option>)}</select></label>)}
-              <label className="grid gap-2 text-sm font-medium text-gray-700">Product conversion factor<Input type="number" min="0.000001" step="0.000001" value={draft.uom_conversion_factor} onChange={(event) => updateDraft("uom_conversion_factor", event.target.value)} /></label>
+              {(["base_uom_code", "purchase_uom_code", "sales_uom_code", "variant_uom_code"] as const).map((key) => <label key={key} className="grid gap-2 text-sm font-medium text-gray-700">{key.replaceAll("_", " ")}<select value={draft[key]} onChange={(event) => updateDraft(key, event.target.value)} className="h-10 rounded-xl border border-gray-200 bg-white px-3 text-sm"><option value="unit">Unit (unit)</option>{units.map((unit: any) => <option key={unit.code || unit.id} value={unit.code || unit.id}>{unit.name || unit.label || unit.code} ({unit.code || unit.id})</option>)}</select></label>)}
+              <label className="grid gap-2 text-sm font-medium text-gray-700">Purchase conversion<Input type="number" min="0.000001" step="0.000001" value={draft.purchase_uom_conversion_factor} onChange={(event) => updateDraft("purchase_uom_conversion_factor", event.target.value)} /><span className="text-xs font-normal text-gray-500">Base units inside one purchase unit, for example 24 pieces per carton.</span></label>
+              <label className="grid gap-2 text-sm font-medium text-gray-700">Sales conversion<Input type="number" min="0.000001" step="0.000001" value={draft.sales_uom_conversion_factor} onChange={(event) => updateDraft("sales_uom_conversion_factor", event.target.value)} /><span className="text-xs font-normal text-gray-500">Base units inside one sales unit, for example 6 pieces per pack.</span></label>
               <label className="grid gap-2 text-sm font-medium text-gray-700">Variant pack quantity<Input type="number" min="0.000001" step="0.000001" value={draft.pack_quantity} onChange={(event) => updateDraft("pack_quantity", event.target.value)} /></label>
             </div>
             <div className="mt-6 flex justify-end gap-2"><Button variant="outline" onClick={() => setSelectedCapture(null)}>Cancel</Button><Button onClick={() => void submitPromotion()} disabled={isPromoting}>{isPromoting ? "Promoting..." : "Create draft global product"}</Button></div>

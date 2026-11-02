@@ -130,7 +130,7 @@ const AgentEditorDialog = ({
   <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto border-gray-800 bg-gray-950 text-gray-50">
       <DialogHeader>
-        <DialogTitle className="text-white">{title}</DialogTitle>
+        <DialogTitle className="text-gray-50">{title}</DialogTitle>
         <DialogDescription className="text-gray-300">{description}</DialogDescription>
       </DialogHeader>
       <div className="grid gap-4 md:grid-cols-2">
@@ -747,7 +747,7 @@ export default function AgentWorkspaceManager({
                   <div className="rounded-[26px] border border-gray-800 bg-gray-900/80 p-4">
                     <div className="flex items-center gap-2">
                       <BrainCircuit className="h-4 w-4 text-blue-300" />
-                      <p className="text-sm font-semibold text-white">Agent profile</p>
+                      <p className="text-sm font-semibold text-gray-50">Agent profile</p>
                     </div>
                     <div className="mt-3 grid gap-2 text-sm text-gray-300 md:grid-cols-2">
                       <div className="rounded-2xl border border-gray-800 bg-gray-950 px-3 py-2">Visibility: {selectedAgent.visibility}</div>
@@ -769,7 +769,7 @@ export default function AgentWorkspaceManager({
                     <div className="rounded-[26px] border border-gray-800 bg-gray-900/80 p-4">
                       <div className="flex items-center gap-2">
                         <Wrench className="h-4 w-4 text-emerald-300" />
-                        <p className="text-sm font-semibold text-white">Tool bindings</p>
+                        <p className="text-sm font-semibold text-gray-50">Tool bindings</p>
                       </div>
                       {canManageAgent ? (
                         <div className="mt-3 flex flex-col gap-3 sm:flex-row">
@@ -821,7 +821,7 @@ export default function AgentWorkspaceManager({
                     <div className="rounded-[26px] border border-gray-800 bg-gray-900/80 p-4">
                       <div className="flex items-center gap-2">
                         <Sparkles className="h-4 w-4 text-violet-300" />
-                        <p className="text-sm font-semibold text-white">Skill bindings</p>
+                        <p className="text-sm font-semibold text-gray-50">Skill bindings</p>
                       </div>
                       {canManageAgent ? (
                         <div className="mt-3 flex flex-col gap-3 sm:flex-row">
@@ -925,7 +925,7 @@ export default function AgentWorkspaceManager({
                 <Sparkles className="h-4 w-4 text-blue-300" />
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-400">Default Templates</p>
-                  <h3 className="mt-1 text-lg font-semibold text-white">
+                  <h3 className="mt-1 text-lg font-semibold text-gray-50">
                     {loadingTemplates ? "Loading..." : `${templates.length} available`}
                   </h3>
                 </div>
@@ -937,7 +937,7 @@ export default function AgentWorkspaceManager({
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="text-sm font-semibold text-white">{template.name}</p>
+                            <p className="text-sm font-semibold text-gray-50">{template.name}</p>
                             {template.is_featured ? (
                               <span className="rounded-full bg-blue-500/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-200">
                                 featured

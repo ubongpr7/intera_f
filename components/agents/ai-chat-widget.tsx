@@ -307,7 +307,7 @@ export default function AIChatWidget() {
         id="chat-toggle"
         ref={toggleBtnRef}
         onClick={toggleChat}
-        className="bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all transform hover:scale-110"
+        className="bg-blue-600 text-gray-50 p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all transform hover:scale-110"
         aria-label={isOpen ? "Close AI Assistant" : "Open AI Assistant"}
       >
         {isOpen ? <X className="h-6 w-6" /> : <MessageSquareText className="h-6 w-6" />}

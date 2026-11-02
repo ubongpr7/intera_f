@@ -221,7 +221,7 @@ function ProductLibraryCard({
   canImport: boolean
   onImport: (productIds: string[]) => Promise<void>
   onPreview: (productId: string) => void
-  onToggleSelect: (productId: string) => void
+  onToggleSelect: () => void
 }) {
   const importedVariantCount = getImportedVariantCount(product)
   const hasImportedVariants = importedVariantCount > 0
@@ -232,13 +232,13 @@ function ProductLibraryCard({
       <div className="flex items-start gap-4">
         {canImport ? (
           <div className="pt-1">
-            <Checkbox checked={selected} onCheckedChange={() => onToggleSelect(product.id)} aria-label={`Select ${product.name}`} />
+            <Checkbox checked={selected} onCheckedChange={onToggleSelect} aria-label={`Select ${product.name}`} />
           </div>
         ) : null}
-        <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-gray-100">
+        <div className="h-28 w-28 shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-gray-100 p-2">
           {product.display_image ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={product.display_image} alt={product.name} className="h-full w-full object-cover" />
+            <img src={product.display_image} alt={product.name} className="h-full w-full object-contain" />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-gray-400">
               <ImageIcon className="h-6 w-6" />
@@ -364,10 +364,10 @@ export function GlobalProductPreviewSheet({
           <div className="mt-6 space-y-6">
             <div className="rounded-3xl border border-gray-200 bg-gray-50 p-5">
               <div className="flex flex-wrap items-start gap-4">
-                <div className="h-28 w-28 overflow-hidden rounded-3xl border border-gray-200 bg-white">
+                <div className="h-40 w-40 overflow-hidden rounded-3xl border border-gray-200 bg-white p-3">
                   {product.display_image ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={product.display_image} alt={product.name} className="h-full w-full object-cover" />
+                    <img src={product.display_image} alt={product.name} className="h-full w-full object-contain" />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-gray-400">
                       <ImageIcon className="h-7 w-7" />
@@ -437,10 +437,10 @@ export function GlobalProductPreviewSheet({
               {(product.variants || []).map((variant) => (
                 <div key={variant.id} className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm">
                   <div className="flex items-start gap-4">
-                    <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-gray-100">
+                    <div className="h-28 w-28 shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-gray-100 p-2">
                       {variant.display_image ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={variant.display_image} alt={variant.display_name} className="h-full w-full object-cover" />
+                        <img src={variant.display_image} alt={variant.display_name} className="h-full w-full object-contain" />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-gray-400">
                           <ImageIcon className="h-5 w-5" />
@@ -538,7 +538,8 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
   const canImportBulk = isWorkspaceMode && importQuotaBulk.canCreate
   const importLocked = isWorkspaceMode && !canImport
 
-  const toggleSelected = (productId: string) => {
+  const toggleSelected = (product: GlobalCatalogProduct) => {
+    const productId = product.id
     setSelectedProductIds((current) => (current.includes(productId) ? current.filter((id) => id !== productId) : [...current, productId]))
   }
 
@@ -826,10 +827,10 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
                               onCheckedChange={() => toggleBarcodeProduct(match.global_product_id)}
                               aria-label={`Select ${product.name}`}
                             />
-                            <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-gray-100">
+                            <div className="h-24 w-24 shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-gray-100 p-2">
                               {product.display_image ? (
                                 // eslint-disable-next-line @next/next/no-img-element
-                                <img src={product.display_image} alt={product.name} className="h-full w-full object-cover" />
+                                <img src={product.display_image} alt={product.name} className="h-full w-full object-contain" />
                               ) : (
                                 <div className="flex h-full w-full items-center justify-center text-gray-400">
                                   <ImageIcon className="h-5 w-5" />
@@ -986,12 +987,16 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs text-gray-500">Selection stays intact while you move across pages.</span>
                 {!canImportBulk ? (
-                  <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">{importQuotaBulk.message}</span>
+                  <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
+                    {importQuotaBulk.message}
+                  </span>
                 ) : null}
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setSelectedProductIds([])}
+                  onClick={() => {
+                    setSelectedProductIds([])
+                  }}
                   disabled={selectedCount === 0 || importing}
                   className="rounded-full"
                 >
@@ -1038,7 +1043,7 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
                     canImport={canImport}
                     onImport={handleImport}
                     onPreview={setPreviewProductId}
-                    onToggleSelect={toggleSelected}
+                    onToggleSelect={() => toggleSelected(product)}
                   />
                 ))}
               </div>

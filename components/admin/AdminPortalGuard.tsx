@@ -6,16 +6,14 @@ import { usePathname } from "next/navigation"
 import { useGetAdminContextQuery } from "@/redux/features/users/userApiSlice"
 import { useAdminHost } from "@/lib/adminHost"
 import { getDecodedToken } from "@/lib/utils"
+import { truthyAdminClaim } from "@/lib/adminAccess"
 
 type AdminTokenClaims = {
   is_staff?: boolean | string | number | null
   is_superuser?: boolean | string | number | null
 }
 
-const truthyClaim = (value: unknown) => {
-  if (value === true || value === 1) return true
-  return typeof value === "string" && ["true", "1", "yes"].includes(value.trim().toLowerCase())
-}
+const SUPERUSER_ONLY_PATHS = [/^\/payment-admin(?:\/|$)/, /^\/admin\/(?:affiliates|invitations|settings)(?:\/|$)/]
 
 export default function AdminPortalGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -25,8 +23,10 @@ export default function AdminPortalGuard({ children }: { children: React.ReactNo
     skip: !isAdminHostReady,
   })
   const tokenClaims = getDecodedToken() as AdminTokenClaims | null
-  const tokenHasAdminClaim = truthyClaim(tokenClaims?.is_staff) || truthyClaim(tokenClaims?.is_superuser)
+  const tokenHasAdminClaim = truthyAdminClaim(tokenClaims?.is_staff) || truthyAdminClaim(tokenClaims?.is_superuser)
   const hasAdminAccess = Boolean(data?.is_staff || tokenHasAdminClaim)
+  const isSuperuser = Boolean(data?.is_superuser || truthyAdminClaim(tokenClaims?.is_superuser))
+  const superuserOnly = SUPERUSER_ONLY_PATHS.some((pattern) => pattern.test(pathname || ""))
 
   useEffect(() => {
     // Do not turn an authenticated admin API failure into a sign-in/dashboard
@@ -38,6 +38,7 @@ export default function AdminPortalGuard({ children }: { children: React.ReactNo
   }, [data, hasAdminAccess, isError, isLoading, pathname, router])
 
   if (!isAdminHostReady || isLoading) return <main className="min-h-screen bg-slate-950 p-10 text-slate-200">Checking staff access...</main>
+  if (superuserOnly && !isSuperuser) return <main className="min-h-screen bg-slate-950 p-10 text-slate-200"><h1 className="text-2xl font-semibold">Superuser access required</h1><p className="mt-2 text-slate-400">This area contains sensitive financial or access-management controls.</p></main>
   if (isError && tokenHasAdminClaim) return <>{children}</>
   if (isError || !hasAdminAccess) return <main className="min-h-screen bg-slate-950 p-10 text-slate-200">Staff access required.</main>
   return <>{children}</>

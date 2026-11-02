@@ -11,6 +11,8 @@ import type {
   GlobalCatalogAdminListResponse,
   GlobalCatalogAdminProduct,
   GlobalCatalogAdminStats,
+  GlobalCatalogBrandOption,
+  GlobalCatalogCategoryOption,
   GlobalProductCaptureListResponse,
   GlobalProductCapture,
   GlobalCatalogProduct,
@@ -230,7 +232,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
 
     getGlobalCatalogAdminProducts: builder.query<
       GlobalCatalogAdminListResponse,
-      { q?: string; brand?: string; category?: string; source_status?: string; page?: number; page_size?: number } | void
+      { q?: string; brand?: string; category?: string; source_status?: string; image_optimization?: string; page?: number; page_size?: number } | void
     >({
       query: (params = {}) => ({
         url: `/${product_api}/global-catalog/admin/products/`,
@@ -245,6 +247,26 @@ export const productApiSlice = apiSlice.injectEndpoints({
       query: () => ({
         url: `/${product_api}/global-catalog/admin/products/stats/`,
         method: "GET",
+        service: service,
+      }),
+      providesTags: ["GlobalCatalog"],
+    }),
+
+    getGlobalCatalogAdminBrands: builder.query<GlobalCatalogBrandOption[], void>({
+      query: () => ({
+        url: `/${product_api}/global-catalog/admin/brands/`,
+        method: "GET",
+        params: { page_size: 1000 },
+        service: service,
+      }),
+      providesTags: ["GlobalCatalog"],
+    }),
+
+    getGlobalCatalogAdminCategories: builder.query<GlobalCatalogCategoryOption[], void>({
+      query: () => ({
+        url: `/${product_api}/global-catalog/admin/categories/`,
+        method: "GET",
+        params: { page_size: 1000 },
         service: service,
       }),
       providesTags: ["GlobalCatalog"],
@@ -308,6 +330,19 @@ export const productApiSlice = apiSlice.injectEndpoints({
       query: (id) => ({
         url: `/${product_api}/global-catalog/admin/products/${id}/publish/`,
         method: "POST",
+        service: service,
+      }),
+      invalidatesTags: ["GlobalCatalog"],
+    }),
+
+    bulkPublishGlobalCatalogAdminProducts: builder.mutation<
+      { published_count: number; missing_product_ids: string[]; products: GlobalCatalogAdminProduct[] },
+      { product_ids: string[] }
+    >({
+      query: (body) => ({
+        url: `/${product_api}/global-catalog/admin/products/bulk-publish/`,
+        method: "POST",
+        body,
         service: service,
       }),
       invalidatesTags: ["GlobalCatalog"],
@@ -1009,6 +1044,15 @@ export const productApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: ["GlobalCatalog"],
     }),
 
+    optimizeAttachment: builder.mutation<Attachment, string>({
+      query: (id) => ({
+        url: `/${product_api}/attachments/${id}/optimize/`,
+        method: "POST",
+        service: service,
+      }),
+      invalidatesTags: ["GlobalCatalog"],
+    }),
+
     bulkUploadAttachments: builder.mutation({
       query: (uploadData) => ({
         url: `/${product_api}/bulk/attachments/upload/`,
@@ -1188,12 +1232,15 @@ export const {
   usePreviewGlobalCatalogImportSyncQuery,
   useGetGlobalCatalogAdminProductsQuery,
   useGetGlobalCatalogAdminStatsQuery,
+  useGetGlobalCatalogAdminBrandsQuery,
+  useGetGlobalCatalogAdminCategoriesQuery,
   useGetGlobalProductCapturesQuery,
   useAnnotateGlobalProductCaptureMutation,
   usePromoteGlobalProductCaptureMutation,
   useCreateGlobalCatalogAdminProductMutation,
   useUpdateGlobalCatalogAdminProductMutation,
   usePublishGlobalCatalogAdminProductMutation,
+  useBulkPublishGlobalCatalogAdminProductsMutation,
   useArchiveGlobalCatalogAdminProductMutation,
   useBulkIngestGlobalCatalogAdminProductsMutation,
   useCreateGlobalCatalogAdminVariantMutation,
@@ -1303,6 +1350,7 @@ export const {
   useDeleteAttachmentMutation,
   useGetAttachmentsQuery,
   useSetPrimaryAttachmentMutation,
+  useOptimizeAttachmentMutation,
   useBulkUploadAttachmentsMutation,
 
   // POS Configuration

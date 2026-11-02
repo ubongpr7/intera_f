@@ -377,7 +377,7 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
             </div>
             <button
               type="button"
-              className="absolute right-6 top-6 rounded-full border border-white/70 bg-white/85 p-2 text-slate-500 shadow-sm transition hover:bg-white hover:text-slate-800 dark:border-slate-700 dark:bg-slate-950/85 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white"
+              className="absolute right-6 top-6 rounded-full border border-white/70 bg-white/85 p-2 text-slate-500 shadow-sm transition hover:bg-white hover:text-slate-800 dark:border-slate-700 dark:bg-slate-950/85 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-gray-50"
               onClick={() => setIsInviteOpen(false)}
             >
               <X size={18} />

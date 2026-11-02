@@ -16,6 +16,7 @@ import {
   Lock,
   LogOut,
   MailOpen,
+  MessageCircle,
   Menu,
   Monitor,
   MonitorSpeaker,
@@ -427,7 +428,7 @@ const Navbar = ({
     { href: '/audit', label: 'Audit trail', icon: ShieldCheck },
   ] : hasWorkspaceProfile ? [
     { href: '/settings', label: 'Workspace settings', icon: SettingsIcon },
-    { href: '/subscription', label: 'Institution billing', icon: CreditCard },
+    { href: '/subscription', label: 'Workspace billing', icon: CreditCard },
     { href: '/agent/settings', label: 'Agent settings', icon: Bot },
     {
       href: '/profile/support-access',
@@ -506,7 +507,7 @@ const Navbar = ({
               >
                 <Avatar className="h-7 w-7 rounded-lg">
                   {activeWorkspaceLogo ? <AvatarImage src={activeWorkspaceLogo} alt="" className="object-cover" /> : null}
-                  <AvatarFallback className="rounded-lg bg-blue-600 text-xs font-bold text-white">
+                  <AvatarFallback className="rounded-lg bg-blue-600 text-xs font-bold text-gray-50">
                     {activeWorkspaceInitials}
                   </AvatarFallback>
                 </Avatar>
@@ -538,7 +539,7 @@ const Navbar = ({
                                 className="object-cover"
                               />
                             ) : null}
-                            <AvatarFallback className="rounded-xl bg-blue-600 text-sm font-bold text-white">
+                            <AvatarFallback className="rounded-xl bg-blue-600 text-sm font-bold text-gray-50">
                               {buildWorkspaceInitials(profile.name, profile.company_code)}
                             </AvatarFallback>
                           </Avatar>
@@ -552,7 +553,7 @@ const Navbar = ({
                     })}
                   </div>
                   <div className="mt-2 border-t border-gray-100 pt-2">
-                    <Link href="/profile/create?mode=new" onClick={() => setWorkspaceMenuOpen(false)} className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700">
+                    <Link href="/profile/create?mode=new" onClick={() => setWorkspaceMenuOpen(false)} className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-3 text-sm font-semibold text-gray-50 transition-colors hover:bg-blue-700">
                       <CirclePlus className="h-4 w-4" />
                       Create Another Workspace
                     </Link>
@@ -576,7 +577,7 @@ const Navbar = ({
             >
               <Bell size={24} className="cursor-pointer text-gray-500" />
               {unreadNotificationCount > 0 ? (
-                <div className="absolute -right-2 -top-2 inline-flex min-w-5 justify-center rounded-full bg-blue-500 px-[0.4rem] py-1 text-xs font-semibold leading-none text-white">
+                <div className="absolute -right-2 -top-2 inline-flex min-w-5 justify-center rounded-full bg-blue-500 px-[0.4rem] py-1 text-xs font-semibold leading-none text-gray-50">
                   <span>
                     {unreadNotificationCount > 99
                       ? '99+'
@@ -723,6 +724,17 @@ const Navbar = ({
             ) : null}
           </div>
 
+          {!isAdminHost ? (
+            <Link
+              href="/chat"
+              aria-label="Open messages and support"
+              title="Messages and support"
+              className="dashboard-header-icon-button inline-flex h-10 w-10 items-center justify-center rounded-xl p-2 text-gray-500 transition hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              <MessageCircle size={23} />
+            </Link>
+          ) : null}
+
           <hr className="hidden h-6 w-0 border border-solid border-l bg-gray-300 md:block" />
 
           <div className="relative shrink-0" ref={userMenuRef}>
@@ -734,7 +746,7 @@ const Navbar = ({
             >
               <Avatar className="h-9 w-9 border border-gray-200">
                 <AvatarImage src={userImageUrl} alt={userDisplayName} />
-                <AvatarFallback className="bg-slate-900 text-xs font-semibold text-white">
+                <AvatarFallback className="bg-slate-900 text-xs font-semibold text-gray-50">
                   {userInitials}
                 </AvatarFallback>
               </Avatar>
@@ -775,7 +787,7 @@ const Navbar = ({
                     </div>
                   </Link>
                   <Link
-                    href="/user/settings?tab=profile#refer-and-earn"
+                    href="/affiliate/dashboard"
                     onClick={() => setUserMenuOpen(false)}
                   >
                     <div className="flex items-center gap-2 px-4 py-2 text-sm text-gray-900 hover:bg-gray-100">

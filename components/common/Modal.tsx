@@ -38,7 +38,7 @@ export default function Modal({ isOpen, onClose, title, children, size = "md" }:
           </div>
           <button
             onClick={onClose}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-800 bg-slate-900/80 text-slate-300 transition-colors hover:border-slate-700 hover:bg-slate-800 hover:text-white"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-800 bg-slate-900/80 text-slate-300 transition-colors hover:border-slate-700 hover:bg-slate-800 hover:text-gray-50"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />

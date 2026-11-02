@@ -54,7 +54,7 @@ export function CookieConsentNotice() {
       <section
         role="region"
         aria-labelledby="cookie-consent-title"
-        className="mx-auto flex w-full max-w-6xl flex-col gap-4 text-slate-900 sm:flex-row sm:items-center sm:justify-between dark:text-white"
+        className="mx-auto flex w-full max-w-6xl flex-col gap-4 text-slate-900 sm:flex-row sm:items-center sm:justify-between dark:text-gray-50"
       >
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600 dark:text-blue-300">Before you continue</p>
@@ -68,7 +68,7 @@ export function CookieConsentNotice() {
         <button
           type="button"
           onClick={acceptCookies}
-          className="shrink-0 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950"
+          className="shrink-0 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-gray-50 transition hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950"
         >
           Agree and continue
         </button>

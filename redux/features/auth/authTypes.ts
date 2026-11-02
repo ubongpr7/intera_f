@@ -42,6 +42,7 @@ export interface AuthSessionResponse {
   is_verified?: boolean;
   is_staff?: boolean;
   is_superuser?: boolean;
+  is_affiliate_marketer?: boolean;
   profile?: string | null;
   profile_context?: CompanyProfileContext | null;
   profiles?: CompanyProfileContext[];

@@ -19,7 +19,17 @@ type Claims = {
   role?: string
 }
 
-const EXEMPT_PATHS = ["/subscription", "/profile/create", "/companies"]
+// Support must remain reachable when billing is unavailable or an activation
+// webhook is still being reconciled. A customer must always have a way to
+// contact Intera support about a subscription problem.
+const EXEMPT_PATHS = [
+  "/subscription",
+  "/profile/create",
+  "/companies",
+  "/affiliate/dashboard",
+  "/chat",
+  "/support-portal",
+]
 
 const readOwnerStatus = () => {
   const token = readCookieValue("accessToken", (name) => getCookie(name))

@@ -44,7 +44,7 @@ export function PaymentsTab() {
       cell: ({ row }) =>
         new Intl.NumberFormat("en-NG", {
           style: "currency",
-          currency: String(row.original.metadata?.currency ?? "NGN"),
+          currency: String(row.original.currency ?? row.original.metadata?.currency ?? "NGN"),
           minimumFractionDigits: 0,
           maximumFractionDigits: 2,
         }).format(Number(row.getValue("amount") ?? 0)),
@@ -57,7 +57,11 @@ export function PaymentsTab() {
     {
       accessorKey: "provider",
       header: "Provider",
-      cell: ({ row }) => <Badge variant="outline">{row.original.provider?.name ?? "Unknown"}</Badge>,
+      cell: ({ row }) => (
+        <Badge variant="outline">
+          {row.original.provider_name ?? row.original.provider?.name ?? "Unknown"}
+        </Badge>
+      ),
     },
     {
       accessorKey: "created_at",

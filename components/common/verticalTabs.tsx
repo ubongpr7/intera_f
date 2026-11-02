@@ -58,7 +58,7 @@ const VerticalTabs = ({ items, defaultActive, className, onClose }: VerticalTabs
 
             <button
               onClick={onClose}
-              className="rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+              className="rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-800 hover:text-gray-50"
               aria-label="Close"
             >
               <X className="h-5 w-5" />

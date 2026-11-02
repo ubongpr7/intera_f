@@ -227,7 +227,7 @@ const PurchaseOrderDashboard = () => {
             {summaryMetrics.map((metric) => (
               <div 
                 key={metric.id} 
-                className={`rounded-xl p-4 text-white ${metric.color} transition-all duration-300 hover:shadow-md`}
+                className={`rounded-xl p-4 text-gray-50 ${metric.color} transition-all duration-300 hover:shadow-md`}
               >
                 <div className="flex justify-between items-start mb-2">
                   <div className="bg-white/20 p-1.5 rounded-md backdrop-blur-sm">

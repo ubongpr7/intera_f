@@ -317,7 +317,7 @@ export default function ProductAttributes({ mode = "embedded" }: ProductAttribut
         <button
           type="button"
           onClick={openLibrary}
-          className="inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+          className="inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 px-4 py-2.5 text-sm font-semibold text-gray-50 shadow-sm transition hover:bg-blue-700"
         >
           <Settings2 className="h-4 w-4" />
           Manage platform templates
@@ -408,7 +408,7 @@ function AttributeLibraryPanel({
           <button
             type="button"
             onClick={onCreateAttribute}
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-gray-50 hover:bg-blue-700"
           >
             <Plus className="h-4 w-4" />
             New template
@@ -522,7 +522,7 @@ function AttributeValuesPanel({
           <button
             type="button"
             onClick={() => onCreateValue(attribute)}
-            className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-gray-50 hover:bg-blue-700"
           >
             <Plus className="h-4 w-4" />
             Add value
@@ -882,7 +882,7 @@ function FormActions({
       <button
         type="submit"
         disabled={isLoading}
-        className="inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
+        className="inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-gray-50 transition hover:bg-blue-700 disabled:opacity-60"
       >
         {isLoading ? <LoadingAnimation text="" ringColor="#ffffff" size={14} /> : null}
         {submitLabel}

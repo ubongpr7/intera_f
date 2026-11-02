@@ -146,8 +146,8 @@ export default function UserSettingsPage() {
     [user?.first_name, user?.last_name].filter(Boolean).join(" ").trim() ||
     user?.email ||
     "User"
-  const commissionRate =
-    Number(referralDashboard?.commission_rate ?? 0.05) * 100
+  const commissionRate = referralDashboard?.commission_rate_display ??
+    `${Number(referralDashboard?.commission_rate ?? 0.05) * 100}%`
   const mfaEnabled = Boolean(user?.mfa_enabled || user?.has_setup_mfa)
 
   const handleProfileFieldChange = (
@@ -236,7 +236,7 @@ export default function UserSettingsPage() {
             <div className="flex items-center gap-4">
               <Avatar className="h-20 w-20 border border-gray-200">
                 <AvatarImage src={avatarUrl ?? undefined} alt={displayName} />
-                <AvatarFallback className="bg-slate-900 text-xl font-semibold text-white">
+                <AvatarFallback className="bg-slate-900 text-xl font-semibold text-gray-50">
                   {initials}
                 </AvatarFallback>
               </Avatar>
@@ -292,7 +292,7 @@ export default function UserSettingsPage() {
                       Refer and earn
                     </CardTitle>
                     <CardDescription>
-                      Earn {commissionRate}% of each referred customer&apos;s
+                      Earn {commissionRate} of each referred customer&apos;s
                       subscription payment for life.
                     </CardDescription>
                   </CardHeader>
@@ -372,7 +372,7 @@ export default function UserSettingsPage() {
                             src={avatarUrl ?? undefined}
                             alt={displayName}
                           />
-                          <AvatarFallback className="bg-slate-900 text-lg font-semibold text-white">
+                          <AvatarFallback className="bg-slate-900 text-lg font-semibold text-gray-50">
                             {initials}
                           </AvatarFallback>
                   </Avatar>

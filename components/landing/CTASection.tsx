@@ -1,7 +1,7 @@
 // components/landing/CTASection.tsx
 export default function CTASection() {
     return (
-      <section className="py-20 px-4 bg-gray-900 text-white">
+      <section className="py-20 px-4 bg-gray-900 text-gray-50">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl font-bold mb-6">Ready to Revolutionize Your Inventory?</h2>
           <p className="text-xl mb-8">Join hundreds of businesses optimizing their operations with Intera</p>

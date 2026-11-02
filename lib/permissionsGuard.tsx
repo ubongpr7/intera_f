@@ -130,8 +130,8 @@ const ROUTE_GUARDS: RouteGuardRule[] = [
   {
     pattern: /^\/subscription(?:\/|$)/,
     ownerOnly: true,
-    message: "Only the workspace owner can manage institution billing and subscription limits.",
-    resource: "Institution subscription",
+    message: "Only the workspace owner can manage workspace billing and subscription limits.",
+    resource: "Workspace subscription",
   },
   {
     pattern: /^\/profile\/staff(?:\/|$)/,
@@ -142,8 +142,8 @@ const ROUTE_GUARDS: RouteGuardRule[] = [
   {
     pattern: /^\/profile(?:\/|$)/,
     anyPermissions: ["read_company"],
-    message: "You do not have access to the company profile workspace.",
-    resource: "Company profile",
+    message: "You do not have access to the workspace profile.",
+    resource: "Workspace profile",
   },
   {
     pattern: /^\/agent\/settings(?:\/|$)/,

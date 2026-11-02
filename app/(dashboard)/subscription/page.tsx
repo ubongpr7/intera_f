@@ -8,9 +8,8 @@ import { AlertTriangle, CalendarClock, CheckCircle2, Coins, CreditCard, Gauge, L
 import { toast } from "react-toastify"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { readCookieValue } from "@/lib/authCookies"
-import { useGetTerminalsQuery } from "@/redux/features/pos/posAPISlice"
-import { useGetProductDataQuery } from "@/redux/features/product/productAPISlice"
 import {
   useGetCurrentEntitlementsQuery,
   useGetPaymentsQuery,
@@ -21,10 +20,7 @@ import {
   useGetCoinTransactionsQuery,
   useTopUpCoinsMutation,
 } from "@/redux/features/payment/paymentAPISlice"
-import { useListStockLocationsQuery } from "@/redux/features/stock/stockAPISlice"
 import type { EntitlementUsageRow, PaymentRecord, SubscriptionPlanRecord } from "@/redux/features/payment/paymentTypes"
-import { useGetCompanyUsersQuery, useGetPendingInvitationsQuery } from "@/redux/features/users/userApiSlice"
-import type { CompanyInvitation } from "@/redux/features/management/companyProfileTypes"
 
 type Claims = {
   user_id?: string | number
@@ -39,6 +35,11 @@ type PlanLimitIssue = {
   usage: number
   limit: number
   message: string
+}
+
+type BillingIntent = {
+  planSlug: string
+  startTrial: boolean
 }
 
 const label = (value: string) => value.replaceAll("-", " ").replace(/\b\w/g, (char) => char.toUpperCase())
@@ -227,11 +228,6 @@ export default function SubscriptionPage() {
     { refetchOnMountOrArgChange: true },
   )
   const { data: coinTransactions = [], refetch: refetchCoinTransactions } = useGetCoinTransactionsQuery(undefined, { refetchOnMountOrArgChange: true })
-  const { data: companyUsers = [], isLoading: loadingCompanyUsers } = useGetCompanyUsersQuery()
-  const { data: pendingInvitations = [], isLoading: loadingPendingInvitations } = useGetPendingInvitationsQuery()
-  const { data: stockLocations = [], isLoading: loadingStockLocations } = useListStockLocationsQuery()
-  const { data: terminals = [], isLoading: loadingTerminals } = useGetTerminalsQuery()
-  const { data: products = [], isLoading: loadingProducts } = useGetProductDataQuery()
   const { data: plans = [], isLoading: loadingPlans } = useGetSubscriptionPlansQuery(
     { application__slug: "intera-ims" },
     { refetchOnMountOrArgChange: true },
@@ -248,6 +244,7 @@ export default function SubscriptionPage() {
   const [cancelSubscription, { isLoading: cancellingSubscription }] = useCancelSubscriptionMutation()
   const [topUpCoins, { isLoading: toppingUpCoins }] = useTopUpCoinsMutation()
   const [coinTopUpAmount, setCoinTopUpAmount] = useState("100")
+  const [billingIntent, setBillingIntent] = useState<BillingIntent | null>(null)
   const activePlan = entitlements?.subscription?.plan
   const activePlanRecord = useMemo(
     () => plans.find((plan) => plan.slug === activePlan?.slug),
@@ -270,61 +267,9 @@ export default function SubscriptionPage() {
   const canTopUpCoins = Boolean(owner && activePlan && coinPurchaseRate)
   const coinTopUpQuantity = Math.max(Number(coinTopUpAmount) || 0, 0)
   const coinTopUpCost = coinPurchaseRate ? coinTopUpQuantity * coinPurchaseRate : 0
-  const localUsageCounts = useMemo(() => {
-    const activeUserIds = new Set<string>()
-    const activeEmails = new Set<string>()
-
-    companyUsers.forEach((assignment) => {
-      const userId = assignment.user?.id
-      if (userId !== undefined && userId !== null) {
-        activeUserIds.add(String(userId))
-      }
-      const email = `${assignment.user?.email ?? ""}`.trim().toLowerCase()
-      if (email) {
-        activeEmails.add(email)
-      }
-    })
-
-    const ownerId = tokenClaims?.owner_id
-    if (ownerId !== undefined && ownerId !== null) {
-      activeUserIds.add(String(ownerId))
-    }
-
-    const distinctPendingEmails = new Set<string>()
-    pendingInvitations.forEach((invite: CompanyInvitation) => {
-      const email = `${invite.email ?? ""}`.trim().toLowerCase()
-      const status = `${invite.status ?? ""}`.trim().toLowerCase()
-      if (!email || status !== "pending" || activeEmails.has(email)) {
-        return
-      }
-      distinctPendingEmails.add(email)
-    })
-
-    return {
-      "staff-users": activeUserIds.size + distinctPendingEmails.size,
-      "structural-locations": stockLocations.filter((location) => Boolean(location.structural)).length,
-      "pos-terminals": terminals.length,
-      products: products.length,
-      "product-variants": products.reduce((total, product) => total + Number(product.variant_count ?? 0), 0),
-    } as Record<string, number>
-  }, [companyUsers, pendingInvitations, products, stockLocations, terminals, tokenClaims?.owner_id])
-  const localUsageLoadingByFeature = useMemo<Record<string, boolean>>(
-    () => ({
-      "staff-users": loadingCompanyUsers || loadingPendingInvitations,
-      "structural-locations": loadingStockLocations,
-      "pos-terminals": loadingTerminals,
-      products: loadingProducts,
-      "product-variants": loadingProducts,
-    }),
-    [loadingCompanyUsers, loadingPendingInvitations, loadingProducts, loadingStockLocations, loadingTerminals],
-  )
   const usageCountsByFeature = useMemo(() => {
     const rawCounts = entitlements?.usage_counts ?? {}
-    const featuresWithUsage = new Set([
-      ...Object.keys(rawCounts),
-      ...Object.keys(localUsageCounts),
-      ...usageRows.map((row) => row.feature),
-    ])
+    const featuresWithUsage = new Set([...Object.keys(rawCounts), ...usageRows.map((row) => row.feature)])
     return new Map<string, number | null>(
       Array.from(featuresWithUsage, (feature) => {
         const serviceUsage = rawCounts[feature]
@@ -332,16 +277,11 @@ export default function SubscriptionPage() {
           return [feature, Number(serviceUsage)]
         }
 
-        const localUsage = localUsageCounts[feature]
-        if (!localUsageLoadingByFeature[feature] && Number.isFinite(Number(localUsage))) {
-          return [feature, Number(localUsage)]
-        }
-
         const entitlementUsage = usageRows.find((row) => row.feature === feature)?.usage
         return [feature, entitlementUsage === null || entitlementUsage === undefined ? null : Number(entitlementUsage)]
       }),
     )
-  }, [entitlements?.usage_counts, localUsageCounts, localUsageLoadingByFeature, usageRows])
+  }, [entitlements?.usage_counts, usageRows])
   const workspaceUsageLoading = useMemo(
     () => plans.some((plan) => plan.features.some((feature) => (
       feature.limit_type === "COUNT" &&
@@ -350,17 +290,6 @@ export default function SubscriptionPage() {
       usageCountsByFeature.get(feature.slug) === null
     ))),
     [plans, usageCountsByFeature],
-  )
-  const workspaceFootprintRows = useMemo(
-    () =>
-      Array.from(usageCountsByFeature.entries())
-        .sort(([left], [right]) => left.localeCompare(right))
-        .map(([feature, usage]) => ({
-          feature,
-          name: label(feature),
-          usage,
-        })),
-    [usageCountsByFeature],
   )
   const billingHistory = useMemo(
     () =>
@@ -452,7 +381,7 @@ export default function SubscriptionPage() {
       })
   }, [refetch, refetchCoinTransactions, refetchPayments, searchParams, verifyPayment])
 
-  const authorizeBilling = async (planSlug: string) => {
+  const authorizeBilling = async (planSlug: string, startTrial = true) => {
     if (!owner) return
     const plan = plans.find((candidate) => candidate.slug === planSlug)
     const limitIssues = plan ? getPlanLimitIssues(plan) : []
@@ -476,6 +405,7 @@ export default function SubscriptionPage() {
         customer_name: [firstName, lastName].filter(Boolean).join(" ").trim() || customerEmail,
         success_url: `${window.location.origin}/subscription`,
         cancel_url: `${window.location.origin}/subscription`,
+        start_trial: startTrial,
       }).unwrap()
       if (response?.checkout_url) {
         window.location.assign(response.checkout_url)
@@ -485,6 +415,17 @@ export default function SubscriptionPage() {
     } catch {
       toast.error("Unable to initialize secure billing.")
     }
+  }
+
+  const openBillingConfirmation = (planSlug: string, startTrial: boolean) => {
+    setBillingIntent({ planSlug, startTrial })
+  }
+
+  const confirmBillingIntent = async () => {
+    if (!billingIntent) return
+    const intent = billingIntent
+    setBillingIntent(null)
+    await authorizeBilling(intent.planSlug, intent.startTrial)
   }
 
   const cancelActiveSubscription = async () => {
@@ -716,7 +657,7 @@ export default function SubscriptionPage() {
               <CalendarClock className="h-5 w-5 text-blue-600" />
               Set up subscription billing
             </CardTitle>
-            <CardDescription>Select the plan that matches the current workspace size. Card details are handled by secure billing; Intera stores provider references, not raw card data. The ₦1,000 trial-entry payment buys 10,000 Intera tokens, and monthly plan billing starts after the seven-day trial.</CardDescription>
+            <CardDescription>Select the plan that matches the current workspace size. Card details are handled by secure billing; Intera stores provider references, not raw card data. The ₦1,000 trial-entry payment verifies your card and the selected plan grants its trial allocation, while monthly plan billing starts after the seven-day trial.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {loadingEntitlements ? (
@@ -728,7 +669,7 @@ export default function SubscriptionPage() {
             ) : activePlan && activeSubscriptionId ? (
               <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm dark:border-slate-800 dark:bg-slate-900/60">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <span>
+                  <span className="text-sm text-gray-700 ">
                     Current plan: <strong>{activePlan.name}</strong>.{" "}
                     {subscriptionPendingCancellation
                       ? `Renewal is paused and access ends on ${formatDate(subscriptionAccessUntil)}. Resume billing before that date to keep the workspace active.`
@@ -737,7 +678,7 @@ export default function SubscriptionPage() {
                   {subscriptionPendingCancellation ? (
                     <Button
                       variant="outline"
-                      onClick={() => void authorizeBilling(activePlan.slug)}
+                      onClick={() => openBillingConfirmation(activePlan.slug, false)}
                       disabled={initiatingPayment || verifyingPayment}
                     >
                       {initiatingPayment ? "Opening checkout..." : "Resume renewal"}
@@ -757,10 +698,10 @@ export default function SubscriptionPage() {
                     <div className="flex items-start gap-2">
                       <AlertTriangle className="mt-0.5 h-4 w-4" />
                       <span>
-                        No card is connected yet. Connect a card to start the seven-day trial. Paystack will process ₦1,000 for 10,000 Intera tokens; the selected plan's monthly billing starts after the trial unless cancelled.
+                        No card is connected yet. Connect a card to start the seven-day trial. Paystack will process ₦1,000 to verify the card; the selected plan's trial allocation is granted once, and monthly billing starts after the trial unless cancelled.
                       </span>
                     </div>
-                    <Button size="sm" onClick={() => authorizeBilling(activePlan.slug)} disabled={initiatingPayment || verifyingPayment}>
+                    <Button size="sm" onClick={() => openBillingConfirmation(activePlan.slug, true)} disabled={initiatingPayment || verifyingPayment}>
                       Connect card
                     </Button>
                   </div>
@@ -826,19 +767,37 @@ export default function SubscriptionPage() {
                         Checking current workspace usage for this plan.
                       </div>
                     ) : null}
-                    <Button
-                      className="mt-4 w-full"
-                      variant={selected ? "outline" : "default"}
-                      disabled={(selected && !subscriptionPendingCancellation) || paymentPendingForPlan || busy || blockedByUsage || blockedByLoadingUsage}
-                      onClick={() => authorizeBilling(plan.slug)}
-                    >
-                      {paymentPendingForPlan
-                        ? latestPlanPaymentStatus === "processing" ? "Payment processing" : "Activation pending"
-                        : selected
-                        ? subscriptionPendingCancellation ? "Resume renewal" : "Current plan"
-                        : blockedByLoadingUsage ? "Checking usage..."
-                        : blockedByUsage ? "Usage too high" : activePlan ? "Switch to this plan" : "Choose plan"}
-                    </Button>
+                    <div className="mt-4 grid gap-2">
+                      {selected || paymentPendingForPlan || !activePlan ? (
+                        <Button
+                          variant={selected ? "outline" : "default"}
+                          className={selected ? "border-emerald-600 bg-emerald-100 text-emerald-950 hover:bg-emerald-200 dark:border-emerald-500 dark:bg-emerald-950/50 dark:text-emerald-50 dark:hover:bg-emerald-900/60" : undefined}
+                          disabled={(selected && !subscriptionPendingCancellation) || paymentPendingForPlan || busy || blockedByUsage || blockedByLoadingUsage}
+                          onClick={() => openBillingConfirmation(plan.slug, true)}
+                        >
+                          {paymentPendingForPlan
+                            ? latestPlanPaymentStatus === "processing" ? "Payment processing" : "Activation pending"
+                            : selected
+                            ? subscriptionPendingCancellation ? "Resume renewal" : "Current plan"
+                            : blockedByLoadingUsage ? "Checking usage..."
+                            : blockedByUsage ? "Usage too high" : `Start ${plan.trial_days}-day free trial`}
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          className="border-blue-300 bg-blue-50 text-blue-800 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-950/40 dark:text-blue-100 dark:hover:bg-blue-900/60"
+                          disabled={busy || blockedByUsage || blockedByLoadingUsage}
+                          onClick={() => openBillingConfirmation(plan.slug, false)}
+                        >
+                          {blockedByLoadingUsage ? "Checking usage..." : blockedByUsage ? "Usage too high" : `Switch to ${plan.name}`}
+                        </Button>
+                      )}
+                      {!activePlan && !selected && !paymentPendingForPlan && !blockedByUsage && !blockedByLoadingUsage ? (
+                        <Button variant="outline" disabled={busy} onClick={() => openBillingConfirmation(plan.slug, false)}>
+                          Subscribe immediately
+                        </Button>
+                      ) : null}
+                    </div>
                   </div>
                 )
               })}
@@ -984,17 +943,7 @@ export default function SubscriptionPage() {
                 )}
               </div>
             )
-          }) : workspaceFootprintRows.length > 0 ? workspaceFootprintRows.map((row) => (
-            <div key={row.feature} className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
-              <div className="flex items-center justify-between gap-3">
-                <p className="font-semibold">{row.name}</p>
-                <ShieldCheck className="h-4 w-4 text-emerald-600" />
-              </div>
-              <p className="mt-2 text-sm text-slate-500">
-                {row.usage === null ? "Usage unavailable" : `${Number(row.usage).toLocaleString()} currently in workspace`}
-              </p>
-            </div>
-          )) : features.length === 0 ? (
+          }) : features.length === 0 ? (
             <p className="text-sm text-slate-500">No entitlement is active until a plan trial is selected.</p>
           ) : features.map(([slug, feature]) => (
             <div key={slug} className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
@@ -1009,6 +958,45 @@ export default function SubscriptionPage() {
           ))}
         </CardContent>
       </Card>
+      <Dialog open={Boolean(billingIntent)} onOpenChange={(open) => !open && setBillingIntent(null)}>
+        <DialogContent className="text-gray-900">
+          <DialogHeader>
+            <DialogTitle>
+              {billingIntent?.startTrial ? "Confirm your free trial" : "Confirm your subscription"}
+            </DialogTitle>
+            <DialogDescription>
+              {billingIntent?.startTrial
+                ? "Review the card authorization and trial terms before continuing to Paystack."
+                : "Review the monthly billing terms before continuing to Paystack."}
+            </DialogDescription>
+          </DialogHeader>
+          {(() => {
+            const plan = plans.find((candidate) => candidate.slug === billingIntent?.planSlug)
+            if (!plan || !billingIntent) return null
+            const trialEnd = new Date()
+            trialEnd.setDate(trialEnd.getDate() + Number(plan.trial_days || 7))
+            return billingIntent.startTrial ? (
+              <div className="space-y-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950">
+                <p>You will authorize a <strong>₦{Number(plan.trial_authorization_amount ?? 1000).toLocaleString()}</strong> Paystack charge to connect your card and receive the trial token allocation.</p>
+                <p>Your <strong>{plan.trial_days || 7}-day free trial</strong> ends on <strong>{formatDate(trialEnd.toISOString())}</strong>.</p>
+                <p>After the trial ends, your card will be charged <strong>{formatPrice(plan)}</strong> per {plan.billing_cycle === "YEARLY" ? "year" : plan.billing_cycle === "QUARTERLY" ? "quarter" : "month"} automatically unless you cancel before the trial ends.</p>
+              </div>
+            ) : (
+              <div className="space-y-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950">
+                <p>You are subscribing to <strong>{plan.name}</strong> immediately.</p>
+                <p>Your card will be charged <strong>{formatPrice(plan)}</strong> per {plan.billing_cycle === "YEARLY" ? "year" : plan.billing_cycle === "QUARTERLY" ? "quarter" : "month"}.</p>
+                <p>No free-trial period will be applied to this checkout.</p>
+              </div>
+            )
+          })()}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBillingIntent(null)}>Go back</Button>
+            <Button onClick={() => void confirmBillingIntent()} disabled={initiatingPayment || verifyingPayment}>
+              {initiatingPayment ? "Opening Paystack..." : "Continue to Paystack"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

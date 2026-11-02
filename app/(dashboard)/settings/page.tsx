@@ -17,8 +17,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 const settingAreas = [
   {
-    title: "Institution billing and subscription",
-    description: "Owner-only billing setup, active plan, included capabilities, and institution resource limits.",
+    title: "Workspace billing and subscription",
+    description: "Owner-only billing setup, active plan, included capabilities, and workspace resource limits.",
     href: "/subscription",
     icon: CreditCard,
   },
@@ -29,8 +29,8 @@ const settingAreas = [
     icon: Bot,
   },
   {
-    title: "Company profile",
-    description: "Business identity, address, social links, and policy setup for the active workspace.",
+    title: "Workspace profile",
+    description: "Workspace identity, address, social links, and policy setup for the active workspace.",
     href: "/profile",
     icon: Building2,
   },
@@ -58,10 +58,10 @@ export default function SettingsHubPage() {
             Settings Hub
           </div>
           <CardTitle className="text-3xl font-semibold tracking-tight text-gray-900">
-            Institution and application settings
+            Workspace and application settings
           </CardTitle>
           <CardDescription className="max-w-4xl text-sm leading-6 text-gray-600">
-            Use this page as the starting point for institution-level settings. Billing and subscription setup is
+            Use this page as the starting point for workspace-level settings. Billing and subscription setup is
             owner-only, while product, POS, agent, and other operational workspaces keep their own admin pages.
           </CardDescription>
         </CardHeader>

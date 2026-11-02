@@ -74,14 +74,15 @@ export const authApiSlice = apiSlice.injectEndpoints({
         password: string;
         re_password: string;
         referral_code?: string;
+        affiliate_invite_token?: string;
         terms_accepted: boolean;
         privacy_accepted: boolean;
       }
     >({
-      query: ({ first_name, last_name, email, password, re_password, referral_code, terms_accepted, privacy_accepted }) => ({
+      query: ({ first_name, last_name, email, password, re_password, referral_code, affiliate_invite_token, terms_accepted, privacy_accepted }) => ({
         url: "/djoser/users/",
         method: "POST",
-        body: { first_name, last_name, email, password, re_password, referral_code, terms_accepted, privacy_accepted },
+        body: { first_name, last_name, email, password, re_password, referral_code, affiliate_invite_token, terms_accepted, privacy_accepted },
         service: "users",
       }),
     }),

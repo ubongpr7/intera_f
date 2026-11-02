@@ -669,7 +669,7 @@ export default function AuditTrailWorkspace() {
               </SelectContent>
             </Select>
             <div className="flex gap-3">
-              <Button onClick={applyFilters} className="bg-blue-600 text-white hover:bg-blue-700">
+              <Button onClick={applyFilters} className="bg-blue-600 text-gray-50 hover:bg-blue-700">
                 <Search className="mr-2 h-4 w-4" />
                 Search
               </Button>

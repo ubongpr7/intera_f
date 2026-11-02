@@ -26,12 +26,13 @@ import {
   ChevronDown,
   UserRound,
   Building2,
+  MessageCircle,
   X,
 } from 'lucide-react';
 import { UserData } from "@/redux/features/users/userTypes";
 import type { CompanyProfileContext } from "@/redux/features/auth/authTypes";
 import { selectWorkspaceLogo } from "@/lib/workspaceBranding";
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 interface SideBarDataProps{
   user?:UserData
   workspace?: CompanyProfileContext
@@ -46,20 +47,6 @@ const SideBar = ({ user, workspace, mobileOpen, onMobileClose }:SideBarDataProps
     const sidebarRef = useRef<HTMLElement>(null);
     const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
-    useEffect(() => {
-      if (SidebarCollapsed) return;
-
-      const collapseOnDesktopClickAway = (event: MouseEvent) => {
-        if (!window.matchMedia('(min-width: 768px)').matches) return;
-        if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
-          dispatch(setIsSidebarCollapsed(true));
-        }
-      };
-
-      document.addEventListener('mousedown', collapseOnDesktopClickAway);
-      return () => document.removeEventListener('mousedown', collapseOnDesktopClickAway);
-    }, [SidebarCollapsed, dispatch]);
-  
     const sideBarClasses = `dashboard-sidebar fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-white transition-[transform,width] duration-300 ease-out md:z-40 md:translate-x-0 ${
       mobileOpen ? "translate-x-0" : "-translate-x-full"
     } ${SidebarCollapsed ? "md:w-16" : "md:w-64"}
@@ -127,6 +114,7 @@ const SideBar = ({ user, workspace, mobileOpen, onMobileClose }:SideBarDataProps
             >
             <SidebarLink href="/dashboard" icon={Home} label="Dashboard" isCollapsed={navigationCollapsed} />
             <SidebarLink href="/realtime-dashboard" icon={Layout} label="Realtime Dashboard" isCollapsed={navigationCollapsed} />
+            <SidebarLink href="/chat" icon={MessageCircle} label="Chat & Support" isCollapsed={navigationCollapsed} />
             <div className={`dashboard-nav-divider ${navigationCollapsed ? "mx-1" : "mx-3"}`} />
             <div className={`dashboard-nav-group-label ${navigationCollapsed ? "hidden" : ""}`}>Operations</div>
             <SidebarLink href="/inventory" icon={Package} label="Inventory" isCollapsed={navigationCollapsed} />
@@ -191,7 +179,7 @@ const SideBar = ({ user, workspace, mobileOpen, onMobileClose }:SideBarDataProps
               {profileMenuOpen && !navigationCollapsed ? (
                 <div className="dashboard-profile-menu">
                   <Link href="/user/settings" onClick={() => setProfileMenuOpen(false)}><UserRound className="h-4 w-4" />Account settings</Link>
-                  <Link href="/profile" onClick={() => setProfileMenuOpen(false)}><Building2 className="h-4 w-4" />Company profile</Link>
+                  <Link href="/profile" onClick={() => setProfileMenuOpen(false)}><Building2 className="h-4 w-4" />Workspace profile</Link>
                 </div>
               ) : null}
             </div>

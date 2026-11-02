@@ -716,7 +716,7 @@ function DemoWidgetView({ widget }: { widget?: DemoWidget }) {
             </div>
           ))}
         </div>
-        <button className="mt-3 rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm">
+        <button className="mt-3 rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-gray-50 shadow-sm">
           {widget.cta}
         </button>
       </div>
@@ -1157,7 +1157,7 @@ export default function HomePage() {
                 whileHover={liftOnHover}
                 className="flex h-[620px] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-colors hover:border-blue-300 lg:col-span-3 lg:h-[650px]"
               >
-                <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-700 p-4 text-white">
+                <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-700 p-4 text-gray-50">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <Bot className="h-5 w-5 shrink-0" />
@@ -1222,7 +1222,7 @@ export default function HomePage() {
                             <div
                               className={`max-w-[82%] rounded-2xl px-5 py-4 text-sm shadow-sm ${
                                 isUser
-                                  ? "rounded-br-none bg-blue-500 text-white"
+                                  ? "rounded-br-none bg-blue-500 text-gray-50"
                                   : "rounded-bl-none border border-gray-100 bg-white text-gray-800"
                               }`}
                             >
@@ -1269,7 +1269,7 @@ export default function HomePage() {
                             <p className="text-xs text-gray-600">{isDemoCallConnecting ? "Requesting microphone access" : `Live demo preview • ${demoCallTime}`}</p>
                           </div>
                         </div>
-                        <button type="button" onClick={toggleDemoCall} className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700">
+                        <button type="button" onClick={toggleDemoCall} className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-2 text-xs font-semibold text-gray-50 hover:bg-red-700">
                           <PhoneOff className="h-3.5 w-3.5" />
                           End
                         </button>
@@ -1305,7 +1305,7 @@ export default function HomePage() {
                       <button type="button" onClick={toggleDemoCall} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-blue-700 shadow-sm hover:border-blue-300 hover:bg-blue-100" aria-label="Call agent" title="Call agent">
                         <PhoneCall className="h-4 w-4" />
                       </button>
-                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm"><Send className="h-4 w-4" /></span>
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-gray-50 shadow-sm"><Send className="h-4 w-4" /></span>
                     </div>
                   )}
                 </div>
@@ -1420,7 +1420,7 @@ export default function HomePage() {
 
         {waitlistMode ? (
           <section id="waitlist" className="landing-cta bg-blue-700">
-            <div className="landing-cta-inner mx-auto grid max-w-7xl gap-8 px-4 py-14 text-white sm:px-6 lg:grid-cols-[.8fr_1.2fr] lg:items-center lg:px-8">
+            <div className="landing-cta-inner mx-auto grid max-w-7xl gap-8 px-4 py-14 text-gray-50 sm:px-6 lg:grid-cols-[.8fr_1.2fr] lg:items-center lg:px-8">
               <div className="max-w-2xl">
                 <span className="landing-cta-kicker"><Sparkles className="h-3.5 w-3.5" /> Early access</span>
                 <h2 className="mt-5 text-3xl font-semibold sm:text-4xl">The launch date will be announced soon.</h2>
@@ -1433,7 +1433,7 @@ export default function HomePage() {
           </section>
         ) : (
           <section className="landing-cta bg-blue-700">
-          <div className="landing-cta-inner mx-auto grid max-w-7xl gap-8 px-4 py-14 text-white sm:px-6 lg:grid-cols-[1.25fr_.75fr] lg:items-center lg:px-8">
+          <div className="landing-cta-inner mx-auto grid max-w-7xl gap-8 px-4 py-14 text-gray-50 sm:px-6 lg:grid-cols-[1.25fr_.75fr] lg:items-center lg:px-8">
             <div className="max-w-2xl">
               <span className="landing-cta-kicker"><Sparkles className="h-3.5 w-3.5" /> A calmer way to run operations</span>
               <h2 className="mt-5 text-3xl font-semibold sm:text-4xl">Give every stock decision a clearer next move.</h2>

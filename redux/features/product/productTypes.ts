@@ -30,6 +30,9 @@ export interface Attachment {
   mime_type?: string;
   content_type?: number | string;
   object_id?: string;
+  processing_status?: "QUEUED" | "PROCESSING" | "COMPLETED" | "FAILED";
+  processing_error?: string;
+  processing_metadata?: Record<string, unknown>;
 }
 
 export interface ProductAttribute extends UUIDBaseModel {
@@ -296,6 +299,7 @@ export interface GlobalCatalogVariant {
   is_active: boolean;
   created_at?: string;
   updated_at?: string;
+  optimization_status?: "optimized" | "partial" | "unoptimized" | "no_image";
 }
 
 export interface GlobalCatalogProduct {
@@ -355,7 +359,21 @@ export interface GlobalCatalogAdminProduct {
   base_uom_code?: string;
   purchase_uom_code?: string;
   sales_uom_code?: string;
+  purchase_uom_conversion_factor?: number;
+  sales_uom_conversion_factor?: number;
   uom_conversion_factor?: number;
+  measurement_type?: "count" | "weight" | "volume" | "length";
+  uom_definitions?: Array<{
+    code: string;
+    label: string;
+    conversion_to_stock: number;
+    is_stock_unit?: boolean;
+    is_purchase_unit?: boolean;
+    is_sale_unit?: boolean;
+    allows_partial?: boolean;
+    decimal_places?: number;
+    selling_price?: number | null;
+  }>;
   labeling_status?: "draft" | "ai_proposed" | "verified";
   regulatory_metadata?: Record<string, unknown>;
   track_stock: boolean;
@@ -369,6 +387,23 @@ export interface GlobalCatalogAdminProduct {
   variants?: GlobalCatalogVariant[];
   created_at: string;
   updated_at: string;
+  optimization_status?: "optimized" | "partial" | "unoptimized" | "no_image";
+}
+
+export interface GlobalCatalogBrandOption {
+  id: string;
+  name: string;
+  slug: string;
+  is_active: boolean;
+}
+
+export interface GlobalCatalogCategoryOption {
+  id: string;
+  name: string;
+  slug: string;
+  parent?: string | null;
+  path?: string;
+  is_active: boolean;
 }
 
 export interface GlobalProductCapture {
@@ -377,6 +412,7 @@ export interface GlobalProductCapture {
   name_hint?: string;
   original_image?: string;
   image_url?: string | null;
+  attachments?: Attachment[];
   image_content_type?: string;
   captured_at?: string | null;
   device_id?: string;
@@ -408,6 +444,7 @@ export interface GlobalCatalogAdminListResponse {
     brands?: string[];
     categories?: string[];
     source_statuses?: string[];
+    image_optimization_statuses?: string[];
   };
 }
 
@@ -421,6 +458,7 @@ export interface GlobalCatalogAdminStats {
     brands?: string[];
     categories?: string[];
     source_statuses?: string[];
+    image_optimization_statuses?: string[];
   };
 }
 
@@ -448,6 +486,8 @@ export interface GlobalCatalogImportResult {
   created_workspace_product: boolean;
   imported_variants: number;
   skipped_variants: number;
+  updated_variants?: number;
+  updated_product_fields?: string[];
   inherited_images: number;
   barcode_conflicts: string[];
   sku_conflicts: string[];

@@ -6,6 +6,7 @@ import { toast } from "react-toastify"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { ReactSelectField, type SelectOption } from "@/components/ui/react-select-field"
@@ -18,6 +19,7 @@ import { GlobalProductPreviewSheet } from "@/components/product/GlobalProductLib
 import { useGetUnitsQuery } from "@/redux/features/common/typeOF"
 import {
   useArchiveGlobalCatalogAdminProductMutation,
+  useBulkPublishGlobalCatalogAdminProductsMutation,
   useBulkIngestGlobalCatalogAdminProductsMutation,
   useCreateAttachmentMutation,
   useCreateGlobalCatalogAdminProductMutation,
@@ -26,8 +28,12 @@ import {
   useDeleteGlobalCatalogAdminVariantMutation,
   useGetAttachmentsQuery,
   useGetGlobalCatalogAdminProductsQuery,
+  useGetGlobalCatalogAdminBrandsQuery,
+  useGetGlobalCatalogAdminCategoriesQuery,
   useGetGlobalCatalogAdminStatsQuery,
+  useOptimizeAttachmentMutation,
   usePublishGlobalCatalogAdminProductMutation,
+  useResolveGlobalCatalogBarcodesMutation,
   useSetPrimaryAttachmentMutation,
   useUpdateGlobalCatalogAdminProductMutation,
   useUpdateGlobalCatalogAdminVariantMutation,
@@ -46,11 +52,23 @@ type ProductFormState = {
   short_description: string
   description: string
   base_price: string
-  unit: string
   base_uom_code: string
   purchase_uom_code: string
   sales_uom_code: string
-  uom_conversion_factor: string
+  purchase_uom_conversion_factor: string
+  sales_uom_conversion_factor: string
+  measurement_type: "count" | "weight" | "volume" | "length"
+  uom_definitions: Array<{
+    code: string
+    label: string
+    conversion_to_stock: string
+    is_stock_unit: boolean
+    is_purchase_unit: boolean
+    is_sale_unit: boolean
+    allows_partial: boolean
+    decimal_places: string
+    selling_price: string
+  }>
 }
 
 type VariantFormState = {
@@ -73,11 +91,13 @@ const initialProductForm: ProductFormState = {
   short_description: "",
   description: "",
   base_price: "0",
-  unit: "",
   base_uom_code: "unit",
   purchase_uom_code: "unit",
   sales_uom_code: "unit",
-  uom_conversion_factor: "1",
+  purchase_uom_conversion_factor: "1",
+  sales_uom_conversion_factor: "1",
+  measurement_type: "count",
+  uom_definitions: [{ code: "unit", label: "Unit", conversion_to_stock: "1", is_stock_unit: true, is_purchase_unit: true, is_sale_unit: true, allows_partial: false, decimal_places: "0", selling_price: "" }],
 }
 
 const initialVariantForm: VariantFormState = {
@@ -263,11 +283,23 @@ function buildProductForm(product?: GlobalCatalogAdminProduct | null): ProductFo
     short_description: product.short_description || "",
     description: product.description || "",
     base_price: String(product.base_price ?? 0),
-    unit: product.unit || "",
     base_uom_code: product.base_uom_code || product.unit || "unit",
     purchase_uom_code: product.purchase_uom_code || product.unit || "unit",
     sales_uom_code: product.sales_uom_code || product.unit || "unit",
-    uom_conversion_factor: String(product.uom_conversion_factor ?? 1),
+    purchase_uom_conversion_factor: String(product.purchase_uom_conversion_factor ?? product.uom_conversion_factor ?? 1),
+    sales_uom_conversion_factor: String(product.sales_uom_conversion_factor ?? product.uom_conversion_factor ?? 1),
+    measurement_type: product.measurement_type || "count",
+    uom_definitions: (product.uom_definitions || []).map((unit) => ({
+      code: unit.code || "",
+      label: unit.label || unit.code || "",
+      conversion_to_stock: String(unit.conversion_to_stock ?? 1),
+      is_stock_unit: Boolean(unit.is_stock_unit),
+      is_purchase_unit: unit.is_purchase_unit !== false,
+      is_sale_unit: unit.is_sale_unit !== false,
+      allows_partial: Boolean(unit.allows_partial),
+      decimal_places: String(unit.decimal_places ?? 0),
+      selling_price: unit.selling_price == null ? "" : String(unit.selling_price),
+    })),
   }
 }
 
@@ -293,7 +325,26 @@ function resolveSelectValue(value: string, options: SelectOption[]) {
   if (!value) {
     return null
   }
-  return options.find((option) => String(option.value) === value) ?? { label: value, value }
+  return options.find((option) => String(option.value) === value || option.label === value) ?? { label: value, value }
+}
+
+function formatUnitDimension(dimensionType?: string) {
+  if (dimensionType === "CUSTOM") {
+    return "Packaging"
+  }
+  return dimensionType ? formatMachineLabel(dimensionType) : ""
+}
+
+const uomHelpText: Record<string, string> = {
+  base_uom_code: "The smallest stock-counting unit. Example: 1 piece or 1 bottle.",
+  purchase_uom_code: "How this product is bought from a supplier. Example: 1 carton.",
+  sales_uom_code: "How this product is sold to a customer. Example: 1 pack.",
+}
+
+const uomLabels: Record<string, string> = {
+  base_uom_code: "Base unit",
+  purchase_uom_code: "Purchase unit",
+  sales_uom_code: "Sales unit",
 }
 
 function ProductDialog({
@@ -324,7 +375,18 @@ function ProductDialog({
       const payload = {
         ...form,
         base_price: Number(form.base_price || 0),
-        uom_conversion_factor: Number(form.uom_conversion_factor || 1),
+        purchase_uom_conversion_factor: Number(form.purchase_uom_conversion_factor || 1),
+        sales_uom_conversion_factor: Number(form.sales_uom_conversion_factor || 1),
+        measurement_type: form.measurement_type,
+        uom_definitions: form.uom_definitions
+          .filter((unit) => unit.code.trim() && unit.label.trim() && Number(unit.conversion_to_stock) > 0)
+          .map((unit) => ({
+            ...unit,
+            code: unit.code.trim().toLowerCase(),
+            conversion_to_stock: Number(unit.conversion_to_stock),
+            decimal_places: Number(unit.decimal_places || 0),
+            selling_price: unit.selling_price.trim() ? Number(unit.selling_price) : null,
+          })),
         track_stock: true,
         allow_backorder: false,
         low_stock_threshold: 10,
@@ -346,7 +408,7 @@ function ProductDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl text-inherit">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto overscroll-contain text-inherit">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Edit global source product" : "Create global source product"}</DialogTitle>
           <DialogDescription>
@@ -388,29 +450,93 @@ function ProductDialog({
             formatCreateLabel={(inputValue: string) => `Use "${inputValue}"`}
             menuPortalTarget={selectMenuPortalTarget}
           />
-          <ReactSelectField
-            label="Unit"
-            value={resolveSelectValue(form.unit, unitOptions)}
-            options={unitOptions}
-            onChange={(option) => {
-              const selected = Array.isArray(option) ? null : (option as SelectOption | null)
-              setForm((current) => ({ ...current, unit: selected ? String(selected.value) : "" }))
-            }}
-            placeholder="Select or type a unit"
-            isClearable
-            isSearchable
-            creatable
-            formatCreateLabel={(inputValue: string) => `Use "${inputValue}"`}
-            menuPortalTarget={selectMenuPortalTarget}
-          />
           <div className="grid gap-2">
             <label className="text-sm font-medium text-gray-700">Base price</label>
             <Input value={form.base_price} onChange={(e) => setForm((current) => ({ ...current, base_price: e.target.value }))} placeholder="0.00" type="number" />
           </div>
+          <div className="grid gap-2">
+            <label className="text-sm font-medium text-gray-700">Measurement type</label>
+            <select
+              className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900"
+              value={form.measurement_type}
+              onChange={(e) => setForm((current) => ({ ...current, measurement_type: e.target.value as ProductFormState["measurement_type"] }))}
+            >
+              <option value="count">Count — pieces/items</option>
+              <option value="weight">Weight — kg/g</option>
+              <option value="volume">Volume — litres/ml</option>
+              <option value="length">Length — metres/cm</option>
+            </select>
+            <p className="text-xs text-gray-500">Choose the dimension used to store stock. The smallest configured unit is the stock unit.</p>
+          </div>
+          <div className="md:col-span-2 rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Product measurement units</p>
+                <p className="text-xs text-gray-500">Every conversion is specific to this product. Example: 1 derica of this rice = 2.5 kg.</p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setForm((current) => ({
+                  ...current,
+                  uom_definitions: [...current.uom_definitions, { code: "", label: "", conversion_to_stock: "1", is_stock_unit: false, is_purchase_unit: false, is_sale_unit: true, allows_partial: false, decimal_places: "0", selling_price: "" }],
+                }))}
+              >
+                Add unit
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {form.uom_definitions.map((unit, index) => (
+                <div key={index} className="grid gap-3 rounded-md border border-gray-200 bg-white p-3 md:grid-cols-[1fr_1fr_1fr_auto]">
+                  <Input placeholder="Code e.g. derica" value={unit.code} onChange={(e) => setForm((current) => ({ ...current, uom_definitions: current.uom_definitions.map((item, itemIndex) => itemIndex === index ? { ...item, code: e.target.value } : item) }))} />
+                  <Input placeholder="Label e.g. Derica" value={unit.label} onChange={(e) => setForm((current) => ({ ...current, uom_definitions: current.uom_definitions.map((item, itemIndex) => itemIndex === index ? { ...item, label: e.target.value } : item) }))} />
+                  <Input type="number" min="0.000001" step="0.000001" placeholder="Conversion to stock unit" value={unit.conversion_to_stock} onChange={(e) => setForm((current) => ({ ...current, uom_definitions: current.uom_definitions.map((item, itemIndex) => itemIndex === index ? { ...item, conversion_to_stock: e.target.value } : item) }))} />
+                  <div className="flex items-center justify-end">
+                    <Button type="button" variant="ghost" onClick={() => setForm((current) => ({ ...current, uom_definitions: current.uom_definitions.filter((_, itemIndex) => itemIndex !== index) }))}>Remove</Button>
+                  </div>
+                  <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-gray-600 md:col-span-4">
+                    {([
+                      ["is_stock_unit", "Stock unit"],
+                      ["is_purchase_unit", "Purchase unit"],
+                      ["is_sale_unit", "Sales unit"],
+                      ["allows_partial", "Allow partial quantity"],
+                    ] as const).map(([key, label]) => (
+                      <label key={key} className="inline-flex items-center gap-2">
+                        <Checkbox
+                          checked={unit[key]}
+                          onCheckedChange={(checked) => setForm((current) => ({
+                            ...current,
+                            uom_definitions: current.uom_definitions.map((item, itemIndex) => {
+                              if (itemIndex !== index) {
+                                if (key === "is_stock_unit" && checked) {
+                                  return { ...item, is_stock_unit: false }
+                                }
+                                return item
+                              }
+                              return { ...item, [key]: Boolean(checked) }
+                            }),
+                          }))}
+                        />
+                        {label}
+                      </label>
+                    ))}
+                    <label className="inline-flex items-center gap-2">
+                      <span>Decimal places</span>
+                      <Input className="h-8 w-20" type="number" min="0" max="5" step="1" value={unit.decimal_places} onChange={(e) => setForm((current) => ({ ...current, uom_definitions: current.uom_definitions.map((item, itemIndex) => itemIndex === index ? { ...item, decimal_places: e.target.value } : item) }))} />
+                    </label>
+                    <label className="inline-flex items-center gap-2">
+                      <span>Selling price</span>
+                      <Input className="h-8 w-28" type="number" min="0" step="0.01" placeholder="Optional" value={unit.selling_price} onChange={(e) => setForm((current) => ({ ...current, uom_definitions: current.uom_definitions.map((item, itemIndex) => itemIndex === index ? { ...item, selling_price: e.target.value } : item) }))} />
+                    </label>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
           {(["base_uom_code", "purchase_uom_code", "sales_uom_code"] as const).map((key) => (
             <ReactSelectField
               key={key}
-              label={key.replaceAll("_", " ")}
+              label={uomLabels[key]}
               value={resolveSelectValue(form[key], unitOptions)}
               options={unitOptions}
               onChange={(option) => {
@@ -423,11 +549,18 @@ function ProductDialog({
               creatable
               formatCreateLabel={(inputValue: string) => `Use "${inputValue}"`}
               menuPortalTarget={selectMenuPortalTarget}
+              helperText={uomHelpText[key]}
             />
           ))}
           <div className="grid gap-2">
-            <label className="text-sm font-medium text-gray-700">UOM conversion factor</label>
-            <Input value={form.uom_conversion_factor} onChange={(e) => setForm((current) => ({ ...current, uom_conversion_factor: e.target.value }))} placeholder="1" type="number" min="0.000001" step="0.000001" />
+            <label className="text-sm font-medium text-gray-700">Purchase conversion</label>
+            <Input value={form.purchase_uom_conversion_factor} onChange={(e) => setForm((current) => ({ ...current, purchase_uom_conversion_factor: e.target.value }))} placeholder="1" type="number" min="0.000001" step="0.000001" />
+            <p className="text-xs text-gray-500">How many base units are inside one purchase unit. Example: 1 carton = 24 pieces.</p>
+          </div>
+          <div className="grid gap-2">
+            <label className="text-sm font-medium text-gray-700">Sales conversion</label>
+            <Input value={form.sales_uom_conversion_factor} onChange={(e) => setForm((current) => ({ ...current, sales_uom_conversion_factor: e.target.value }))} placeholder="1" type="number" min="0.000001" step="0.000001" />
+            <p className="text-xs text-gray-500">How many base units are inside one sales unit. Example: 1 pack = 6 pieces.</p>
           </div>
           <div className="grid gap-2">
             <label className="text-sm font-medium text-gray-700">Short description</label>
@@ -463,9 +596,10 @@ function VariantDialog({
   const [form, setForm] = useState<VariantFormState>(buildVariantForm(variant))
   const [createVariant, { isLoading: isCreating }] = useCreateGlobalCatalogAdminVariantMutation()
   const [updateVariant, { isLoading: isUpdating }] = useUpdateGlobalCatalogAdminVariantMutation()
+  const [resolveBarcodes, { isLoading: isResolving }] = useResolveGlobalCatalogBarcodesMutation()
 
   const isEditing = Boolean(variant)
-  const isLoading = isCreating || isUpdating
+  const isLoading = isCreating || isUpdating || isResolving
 
   const submit = async () => {
     if (!product) {
@@ -474,6 +608,20 @@ function VariantDialog({
     }
 
     try {
+      if (!isEditing && form.barcode.trim()) {
+        const normalizedBarcode = form.barcode.trim().toLowerCase().replace(/[\s_-]/g, "")
+        const resolution = await resolveBarcodes({ barcodes: [form.barcode.trim()], fetch_missing: false }).unwrap()
+        const existingMatch = resolution.matches.find(
+          (match) => match.matched_variant_barcode.trim().toLowerCase().replace(/[\s_-]/g, "") === normalizedBarcode,
+        )
+        if (existingMatch) {
+          toast.error(
+            `Barcode ${form.barcode.trim()} already belongs to ${existingMatch.global_product.name} / ${existingMatch.matched_variant_name}.`,
+          )
+          return
+        }
+      }
+
       const payload = {
         global_product: product.id,
         display_name: form.display_name,
@@ -550,9 +698,11 @@ function VariantDialog({
 function VariantMediaManager({
   variant,
   productName,
+  readOnly = false,
 }: {
   variant: GlobalCatalogVariant
   productName: string
+  readOnly?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const { data: attachments = [], isLoading } = useGetAttachmentsQuery(
@@ -562,6 +712,7 @@ function VariantMediaManager({
   const [createAttachment, { isLoading: isUploading }] = useCreateAttachmentMutation()
   const [setPrimaryAttachment, { isLoading: isSettingPrimary }] = useSetPrimaryAttachmentMutation()
   const [deleteAttachment, { isLoading: isDeleting }] = useDeleteAttachmentMutation()
+  const [optimizeAttachment, { isLoading: isOptimizing }] = useOptimizeAttachmentMutation()
 
   const handleUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || [])
@@ -607,12 +758,21 @@ function VariantMediaManager({
     }
   }
 
+  const handleOptimize = async (attachmentId: string) => {
+    try {
+      await optimizeAttachment(attachmentId).unwrap()
+      toast.success("Image optimization queued.")
+    } catch (error: any) {
+      toast.error(error?.data?.detail || "Unable to queue image optimization.")
+    }
+  }
+
   return (
     <>
-      <Button variant="outline" className="rounded-full" onClick={() => setOpen(true)}>
+      {!readOnly ? <Button variant="outline" className="rounded-full" onClick={() => setOpen(true)}>
         <ImagePlus className="mr-2 h-4 w-4" />
         Manage media
-      </Button>
+      </Button> : null}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-5xl text-inherit">
@@ -627,11 +787,11 @@ function VariantMediaManager({
             <div className="text-sm text-gray-600">
               {attachments.length} source image{attachments.length === 1 ? "" : "s"} attached to this variant.
             </div>
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50">
+            {!readOnly ? <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50">
               <ImagePlus className="h-4 w-4" />
               {isUploading ? "Uploading..." : "Upload image(s)"}
               <input type="file" accept="image/*" multiple className="hidden" onChange={(event) => void handleUpload(event)} />
-            </label>
+            </label> : null}
           </div>
 
           {isLoading ? (
@@ -674,17 +834,44 @@ function VariantMediaManager({
                     {attachment.description || "Curated source media"}
                   </p>
 
+                  {attachment.processing_status === "FAILED" ? (
+                    <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                      <p>Optimization failed. The original image is still being used.</p>
+                      {attachment.processing_error ? (
+                        <p className="mt-1 break-words font-mono text-[11px]">Reason: {attachment.processing_error}</p>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  {!readOnly ? (
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {attachment.processing_status === "QUEUED" || attachment.processing_status === "PROCESSING" ? (
+                        <Badge variant="outline" className="rounded-full px-3 py-1 text-gray-600">
+                          {attachment.processing_status === "PROCESSING" ? "Processing" : "Queued"}
+                        </Badge>
+                      ) : null}
+                      <Button
+                        variant="outline"
+                        className="rounded-full"
+                        onClick={() => void handleOptimize(String(attachment.id))}
+                        disabled={isOptimizing || attachment.processing_status === "QUEUED" || attachment.processing_status === "PROCESSING"}
+                      >
+                        {isOptimizing ? "Queuing..." : attachment.processing_status === "COMPLETED" ? "Re-optimize image" : "Optimize image"}
+                      </Button>
+                    </div>
+                  ) : null}
+
                   <div className="mt-4 flex flex-wrap items-center gap-2">
-                    {!attachment.is_primary ? (
+                    {!readOnly && !attachment.is_primary ? (
                       <Button variant="outline" className="rounded-full" onClick={() => void handleSetPrimary(String(attachment.id))} disabled={isSettingPrimary}>
                         <Star className="mr-2 h-4 w-4" />
                         Make primary
                       </Button>
                     ) : null}
-                    <Button variant="outline" className="rounded-full text-red-600 hover:text-red-700" onClick={() => void handleDelete(String(attachment.id))} disabled={isDeleting}>
+                    {!readOnly ? <Button variant="outline" className="rounded-full text-red-600 hover:text-red-700" onClick={() => void handleDelete(String(attachment.id))} disabled={isDeleting}>
                       <Trash2 className="mr-2 h-4 w-4" />
                       Delete
-                    </Button>
+                    </Button> : null}
                   </div>
                 </div>
               ))}
@@ -701,11 +888,13 @@ function VariantCard({
   variant,
   onEdit,
   onDelete,
+  readOnly = false,
 }: {
   product: GlobalCatalogAdminProduct
   variant: GlobalCatalogVariant
   onEdit: (product: GlobalCatalogAdminProduct, variant: GlobalCatalogVariant) => void
   onDelete: (variant: GlobalCatalogVariant) => void
+  readOnly?: boolean
 }) {
   const [updateVariant, { isLoading }] = useUpdateGlobalCatalogAdminVariantMutation()
 
@@ -727,10 +916,10 @@ function VariantCard({
     <div className="rounded-3xl border border-gray-200 bg-gray-50 p-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex min-w-0 gap-4">
-          <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-white">
+          <div className="h-28 w-28 shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-white p-2">
             {variant.display_image ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={variant.display_image} alt={variant.display_name} className="h-full w-full object-cover" />
+              <img src={variant.display_image} alt={variant.display_name} className="h-full w-full object-contain" />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-gray-400">
                 <Shapes className="h-5 w-5" />
@@ -743,6 +932,11 @@ function VariantCard({
               <Badge variant="outline" className="rounded-full px-3 py-1 text-gray-600">
                 Variant {variant.variant_number}
               </Badge>
+              {variant.optimization_status ? (
+                <Badge variant="outline" className="rounded-full px-3 py-1 text-gray-600">
+                  Image {formatMachineLabel(variant.optimization_status)}
+                </Badge>
+              ) : null}
               {!variant.is_active ? (
                 <Badge variant="outline" className="rounded-full px-3 py-1 text-gray-500">
                   Inactive
@@ -764,18 +958,18 @@ function VariantCard({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <VariantMediaManager variant={variant} productName={product.name} />
-          <Button variant="outline" className="rounded-full" onClick={() => onEdit(product, variant)}>
+          <VariantMediaManager variant={variant} productName={product.name} readOnly={readOnly} />
+          {!readOnly ? <Button variant="outline" className="rounded-full" onClick={() => onEdit(product, variant)}>
             <Pencil className="mr-2 h-4 w-4" />
             Edit variant
-          </Button>
-          <Button variant="outline" className="rounded-full" onClick={() => void toggleActive()} disabled={isLoading}>
+          </Button> : null}
+          {!readOnly ? <Button variant="outline" className="rounded-full" onClick={() => void toggleActive()} disabled={isLoading}>
             {variant.is_active ? "Deactivate" : "Reactivate"}
-          </Button>
-          <Button variant="outline" className="rounded-full text-red-600 hover:text-red-700" onClick={() => onDelete(variant)}>
+          </Button> : null}
+          {!readOnly ? <Button variant="outline" className="rounded-full text-red-600 hover:text-red-700" onClick={() => onDelete(variant)}>
             <Trash2 className="mr-2 h-4 w-4" />
             Delete
-          </Button>
+          </Button> : null}
         </div>
       </div>
     </div>
@@ -908,6 +1102,8 @@ function BulkIngestDialog({
 export default function GlobalCatalogAdminWorkspace() {
   const token = getDecodedToken() as StaffToken | null
   const isStaff = truthyAccessClaim(token?.is_staff) || truthyAccessClaim(token?.is_superuser)
+  const isSuperuser = truthyAccessClaim(token?.is_superuser)
+  const readOnly = !isSuperuser
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<GlobalCatalogAdminProduct | null>(null)
   const [variantProduct, setVariantProduct] = useState<GlobalCatalogAdminProduct | null>(null)
@@ -920,6 +1116,9 @@ export default function GlobalCatalogAdminWorkspace() {
   const [brand, setBrand] = useState("")
   const [category, setCategory] = useState("")
   const [sourceStatus, setSourceStatus] = useState("")
+  const [imageOptimization, setImageOptimization] = useState("")
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([])
+  const [expandedProductIds, setExpandedProductIds] = useState<string[]>([])
   const deferredQuery = useDeferredValue(query.trim())
   const { data: catalogPage, isLoading, isFetching, error } = useGetGlobalCatalogAdminProductsQuery(
     {
@@ -929,12 +1128,16 @@ export default function GlobalCatalogAdminWorkspace() {
       brand: brand || undefined,
       category: category || undefined,
       source_status: sourceStatus || undefined,
+      image_optimization: imageOptimization || undefined,
     },
     { skip: !isStaff },
   )
   const { data: adminStats, isLoading: loadingStats } = useGetGlobalCatalogAdminStatsQuery(undefined, { skip: !isStaff })
+  const { data: catalogBrands = [] } = useGetGlobalCatalogAdminBrandsQuery(undefined, { skip: !isStaff })
+  const { data: catalogCategories = [] } = useGetGlobalCatalogAdminCategoriesQuery(undefined, { skip: !isStaff })
   const { data: units = [] } = useGetUnitsQuery()
   const [publishProduct, { isLoading: publishing }] = usePublishGlobalCatalogAdminProductMutation()
+  const [bulkPublishProducts, { isLoading: bulkPublishing }] = useBulkPublishGlobalCatalogAdminProductsMutation()
   const [archiveProduct, { isLoading: archiving }] = useArchiveGlobalCatalogAdminProductMutation()
   const [deleteVariant] = useDeleteGlobalCatalogAdminVariantMutation()
 
@@ -944,24 +1147,30 @@ export default function GlobalCatalogAdminWorkspace() {
   const pageNumbers = useMemo(() => buildVisiblePageNumbers(currentPage, totalPages), [currentPage, totalPages])
   const filterOptions = catalogPage?.filters ?? adminStats?.filters
   const brandOptions = useMemo<SelectOption[]>(
-    () => (filterOptions?.brands ?? []).map((value) => ({ label: value, value })),
-    [filterOptions?.brands],
+    () => (catalogBrands.length ? catalogBrands.map((brand) => ({ label: brand.name, value: brand.name })) : (filterOptions?.brands ?? []).map((value) => ({ label: value, value }))),
+    [catalogBrands, filterOptions?.brands],
   )
   const categoryOptions = useMemo<SelectOption[]>(
-    () => (filterOptions?.categories ?? []).map((value) => ({ label: value, value })),
-    [filterOptions?.categories],
+    () => (catalogCategories.length ? catalogCategories.map((category) => ({ label: category.path || category.name, value: category.name })) : (filterOptions?.categories ?? []).map((value) => ({ label: value, value }))),
+    [catalogCategories, filterOptions?.categories],
   )
   const unitOptions = useMemo<SelectOption[]>(
     () =>
       units.map((unit) => ({
-        label: unit.dimension_type ? `${unit.name} (${unit.dimension_type})` : unit.name,
-        value: unit.name,
+        label: unit.dimension_type
+          ? `${unit.name} (${unit.code}) · ${formatUnitDimension(unit.dimension_type)}`
+          : `${unit.name} (${unit.code})`,
+        value: unit.code,
       })),
     [units],
   )
   const statusOptions = useMemo<SelectOption[]>(
     () => (filterOptions?.source_statuses ?? []).map((value) => ({ label: formatMachineLabel(value), value })),
     [filterOptions?.source_statuses],
+  )
+  const imageOptimizationOptions = useMemo<SelectOption[]>(
+    () => (filterOptions?.image_optimization_statuses ?? []).map((value) => ({ label: formatMachineLabel(value), value })),
+    [filterOptions?.image_optimization_statuses],
   )
   const selectedBrandOption = useMemo<SelectOption | null>(
     () => brandOptions.find((option) => option.value === brand) ?? null,
@@ -974,6 +1183,10 @@ export default function GlobalCatalogAdminWorkspace() {
   const selectedStatusOption = useMemo<SelectOption | null>(
     () => statusOptions.find((option) => option.value === sourceStatus) ?? null,
     [sourceStatus, statusOptions],
+  )
+  const selectedImageOptimizationOption = useMemo<SelectOption | null>(
+    () => imageOptimizationOptions.find((option) => option.value === imageOptimization) ?? null,
+    [imageOptimization, imageOptimizationOptions],
   )
 
   const stats = useMemo(
@@ -1033,6 +1246,21 @@ export default function GlobalCatalogAdminWorkspace() {
     }
   }
 
+  const handleBulkPublish = async () => {
+    if (!selectedProductIds.length) return
+    try {
+      const result = await bulkPublishProducts({ product_ids: selectedProductIds }).unwrap()
+      setSelectedProductIds([])
+      toast.success(`${result.published_count} global product${result.published_count === 1 ? "" : "s"} published.`)
+    } catch (error: any) {
+      toast.error(error?.data?.detail || "Failed to publish the selected global products.")
+    }
+  }
+
+  const toggleProductVariants = (productId: string) => {
+    setExpandedProductIds((current) => current.includes(productId) ? current.filter((id) => id !== productId) : [...current, productId])
+  }
+
   const handleArchive = async (id: string) => {
     try {
       await archiveProduct(id).unwrap()
@@ -1077,22 +1305,31 @@ export default function GlobalCatalogAdminWorkspace() {
               </CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Button variant="outline" onClick={() => setIsBulkIngestOpen(true)} className="rounded-full">
+              {!readOnly ? <Button variant="outline" onClick={() => setIsBulkIngestOpen(true)} className="rounded-full">
                 <Boxes className="mr-2 h-4 w-4" />
                 Bulk ingest
-              </Button>
-              <Button onClick={openCreateProduct} className="rounded-full">
+              </Button> : null}
+              {!readOnly ? <Button variant="outline" onClick={() => void handleBulkPublish()} disabled={!selectedProductIds.length || bulkPublishing} className="rounded-full">
+                <Rocket className="mr-2 h-4 w-4" />
+                Publish selected{selectedProductIds.length ? ` (${selectedProductIds.length})` : ""}
+              </Button> : null}
+              {!readOnly ? <Button onClick={openCreateProduct} className="rounded-full">
                 <PackagePlus className="mr-2 h-4 w-4" />
                 New source product
-              </Button>
+              </Button> : null}
             </div>
           </div>
         </CardHeader>
         <CardContent className="min-w-0 space-y-5 p-6">
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Total source products</p>
               <p className="mt-3 text-3xl font-semibold text-gray-950">{loadingStats ? "..." : stats.total}</p>
+            </div>
+            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-blue-700">Total variants</p>
+              <p className="mt-3 text-3xl font-semibold text-blue-950">{loadingStats ? "..." : adminStats?.total_variants ?? 0}</p>
+              <p className="mt-1 text-xs text-blue-700">Active variants in the global catalog</p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Published</p>
@@ -1181,6 +1418,24 @@ export default function GlobalCatalogAdminWorkspace() {
                 className="text-sm"
               />
             </div>
+            <div className="grid gap-2">
+              <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                <Filter className="h-4 w-4 text-blue-600" />
+                Image optimization
+              </div>
+              <ReactSelectField
+                value={selectedImageOptimizationOption}
+                options={imageOptimizationOptions}
+                onChange={(option) => {
+                  const selected = Array.isArray(option) ? null : (option as SelectOption | null)
+                  setImageOptimization(selected ? String(selected.value) : "")
+                  setPage(1)
+                }}
+                placeholder="All optimization states"
+                isClearable
+                className="text-sm"
+              />
+            </div>
           </div>
 
           {error ? (
@@ -1211,9 +1466,10 @@ export default function GlobalCatalogAdminWorkspace() {
                     setBrand("")
                     setCategory("")
                     setSourceStatus("")
+                    setImageOptimization("")
                     setPage(1)
                   }}
-                  disabled={!query && !brand && !category && !sourceStatus}
+                  disabled={!query && !brand && !category && !sourceStatus && !imageOptimization}
                 >
                   Clear filters
                 </Button>
@@ -1222,10 +1478,19 @@ export default function GlobalCatalogAdminWorkspace() {
                 <div key={product.id} className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex min-w-0 gap-4">
-                      <div className="h-24 w-24 shrink-0 overflow-hidden rounded-3xl border border-gray-200 bg-gray-100">
+                      {!readOnly ? (
+                        <input
+                          type="checkbox"
+                          aria-label={`Select ${product.name} for publishing`}
+                          checked={selectedProductIds.includes(product.id)}
+                          onChange={(event) => setSelectedProductIds((current) => event.target.checked ? [...current, product.id] : current.filter((id) => id !== product.id))}
+                          className="mt-2 h-5 w-5 shrink-0 accent-blue-600"
+                        />
+                      ) : null}
+                      <div className="h-32 w-32 shrink-0 overflow-hidden rounded-3xl border border-gray-200 bg-gray-100 p-2">
                         {product.display_image ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={product.display_image} alt={product.name} className="h-full w-full object-cover" />
+                          <img src={product.display_image} alt={product.name} className="h-full w-full object-contain" />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center text-gray-400">
                             <Boxes className="h-6 w-6" />
@@ -1257,29 +1522,32 @@ export default function GlobalCatalogAdminWorkspace() {
                         <Eye className="mr-2 h-4 w-4" />
                         Preview
                       </Button>
-                      <Button variant="outline" className="rounded-full" onClick={() => openEditProduct(product)}>
+                      {!readOnly ? <Button variant="outline" className="rounded-full" onClick={() => openEditProduct(product)}>
                         <Pencil className="mr-2 h-4 w-4" />
                         Edit product
-                      </Button>
-                      <Button variant="outline" className="rounded-full" onClick={() => openCreateVariant(product)}>
+                      </Button> : null}
+                      {!readOnly ? <Button variant="outline" className="rounded-full" onClick={() => openCreateVariant(product)}>
                         <Shapes className="mr-2 h-4 w-4" />
                         Add variant
-                      </Button>
-                      {product.source_status !== "published" ? (
+                      </Button> : null}
+                      {!readOnly && product.source_status !== "published" ? (
                         <Button className="rounded-full" onClick={() => void handlePublish(product.id)} disabled={publishing}>
                           <Rocket className="mr-2 h-4 w-4" />
                           Publish
                         </Button>
-                      ) : (
+                      ) : !readOnly ? (
                         <Button variant="outline" className="rounded-full" onClick={() => void handleArchive(product.id)} disabled={archiving}>
                           <Archive className="mr-2 h-4 w-4" />
                           Archive
                         </Button>
-                      )}
+                      ) : null}
+                      <Button variant="outline" className="rounded-full" onClick={() => toggleProductVariants(product.id)}>
+                        {expandedProductIds.includes(product.id) ? "Hide variants" : `Show variants (${product.variant_count})`}
+                      </Button>
                     </div>
                   </div>
 
-                  <div className="mt-5 space-y-3">
+                  {expandedProductIds.includes(product.id) ? <div className="mt-5 space-y-3">
                     {product.variants && product.variants.length > 0 ? (
                       product.variants.map((variant) => (
                         <VariantCard
@@ -1288,6 +1556,7 @@ export default function GlobalCatalogAdminWorkspace() {
                           variant={variant}
                           onEdit={openEditVariant}
                           onDelete={(selectedVariant) => void handleDeleteVariant(selectedVariant)}
+                          readOnly={readOnly}
                         />
                       ))
                     ) : (
@@ -1295,7 +1564,7 @@ export default function GlobalCatalogAdminWorkspace() {
                         This source product has no variants yet. Add the first source variant before publishing it to workspaces.
                       </div>
                     )}
-                  </div>
+                  </div> : null}
                 </div>
               ))}
             </div>

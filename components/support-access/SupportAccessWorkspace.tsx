@@ -675,7 +675,7 @@ export default function SupportAccessWorkspace() {
               Cancel
             </Button>
             <Button
-              className="bg-red-600 text-white hover:bg-red-700"
+              className="bg-red-600 text-gray-50 hover:bg-red-700"
               onClick={() => void handleRevoke()}
               disabled={revokingGrant}
             >

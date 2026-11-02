@@ -7,6 +7,14 @@ import { TrendingUp, TrendingDown, DollarSign, Users, CreditCard, Activity } fro
 import { useGetPaymentAnalyticsQuery, useGetSubscriptionAnalyticsQuery } from "@/redux/features/payment/paymentAPISlice"
 import type { PaymentAnalyticsResponse, SubscriptionAnalyticsResponse } from "@/redux/features/payment/paymentTypes"
 
+const formatCurrency = (value: number | string, currency = "NGN") =>
+  new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(Number(value ?? 0))
+
 export function AnalyticsTab() {
   const [dateRange, setDateRange] = useState("30d")
   const { data: paymentAnalytics = {} as PaymentAnalyticsResponse, isLoading: paymentLoading } = useGetPaymentAnalyticsQuery({ period: dateRange })
@@ -17,7 +25,7 @@ export function AnalyticsTab() {
   const stats = [
     {
       title: "Total Revenue",
-      value: `$${paymentAnalytics.total_revenue || 0}`,
+      value: formatCurrency(paymentAnalytics.total_revenue || 0, paymentAnalytics.currency || "NGN"),
       change: paymentAnalytics.revenue_change || 0,
       icon: DollarSign,
     },
@@ -34,7 +42,7 @@ export function AnalyticsTab() {
       icon: CreditCard,
     },
     {
-      title: "Conversion Rate",
+      title: "Payment Success Rate",
       value: `${paymentAnalytics.conversion_rate || 0}%`,
       change: paymentAnalytics.conversion_change || 0,
       icon: Activity,
@@ -46,7 +54,7 @@ export function AnalyticsTab() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Analytics Dashboard</h2>
-          <p className="text-gray-500">Overview of payment system performance and metrics.</p>
+          <p className="text-gray-500">Overview of payment performance. Success rate = completed payments divided by all payment attempts in the selected period.</p>
         </div>
       </div>
 
@@ -92,7 +100,7 @@ export function AnalyticsTab() {
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full" />
-                    <span className="text-sm font-medium">${payment.amount}</span>
+                    <span className="text-sm font-medium">{formatCurrency(payment.amount, payment.currency || paymentAnalytics.currency || "NGN")}</span>
                     <Badge variant="outline" className="text-xs">
                       {payment.provider}
                     </Badge>

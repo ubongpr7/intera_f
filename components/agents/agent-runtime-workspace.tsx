@@ -744,7 +744,7 @@ export default function AgentRuntimeWorkspace() {
           {canManageAgentSettings && (
             <Link
               href="/agent/settings?tab=workspace-agents"
-              className="mt-6 inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+              className="mt-6 inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-gray-50 transition hover:bg-blue-700"
             >
               <Settings2 className="h-4 w-4" />
               Open Agent Settings
@@ -803,7 +803,7 @@ export default function AgentRuntimeWorkspace() {
             {canManageAgentSettings && (
               <Link
                 href="/agent/settings?tab=workspace-agents"
-                className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2.5 text-sm font-semibold text-gray-50 transition hover:bg-blue-700"
               >
                 <Settings2 className="h-4 w-4" />
                 Agent Settings
@@ -897,7 +897,7 @@ export default function AgentRuntimeWorkspace() {
                 type="button"
                 onClick={() => void createBlankConversation()}
                 disabled={!resolvedSelectedAgentSlug || isCreatingConversation}
-                className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-3 py-2 text-xs font-semibold text-gray-50 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Plus className="h-3.5 w-3.5" />
                 New
@@ -1166,7 +1166,7 @@ export default function AgentRuntimeWorkspace() {
               type="button"
               onClick={() => void createBlankConversation()}
               disabled={!resolvedSelectedAgentSlug || isCreatingConversation}
-              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-blue-600 px-4 py-3 text-sm font-semibold text-gray-50 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Plus className="h-4 w-4" />
               Start New Conversation

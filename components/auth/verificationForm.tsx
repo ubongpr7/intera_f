@@ -131,7 +131,7 @@ export default function VerificationForm({ email,redirectTo }: VerificationProps
     <div className="mx-auto max-w-md">
       <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50/70 p-4 text-center dark:border-blue-400/15 dark:bg-blue-400/10">
         <MailCheck aria-hidden="true" className="mx-auto h-5 w-5 text-blue-600 dark:text-[#6ee7d2]" />
-        <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Enter the six-digit code sent to <span className="font-semibold text-slate-800 dark:text-white">{email}</span>.</p>
+        <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Enter the six-digit code sent to <span className="font-semibold text-slate-800 dark:text-gray-50">{email}</span>.</p>
       </div>
       
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" onPaste={handlePaste}>
@@ -148,7 +148,7 @@ export default function VerificationForm({ email,redirectTo }: VerificationProps
               onChange={(e) => handleCodeChange(index, e.target.value)}
               ref={(el) => { if (el) inputsRef.current[index] = el; }}
               aria-label={`Verification digit ${index + 1}`}
-              className="h-11 w-10 rounded-xl border border-slate-200 bg-slate-50 text-center text-lg font-semibold text-slate-900 transition focus:border-blue-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:ring-blue-400/15 sm:h-12 sm:w-12"
+              className="h-11 w-10 rounded-xl border border-slate-200 bg-slate-50 text-center text-lg font-semibold text-slate-900 transition focus:border-blue-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 dark:border-white/10 dark:bg-white/5 dark:text-gray-50 dark:focus:ring-blue-400/15 sm:h-12 sm:w-12"
               autoFocus={index === 0 && !codeValue.length}
             />
           ))}

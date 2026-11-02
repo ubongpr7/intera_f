@@ -378,7 +378,7 @@ export function CompanyAddressForm({ profile, onUpdate, submitLabel = "Save Addr
       </div>
 
       <div className="flex justify-end">
-        <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white" disabled={isLoading || isAddressLoading}>
+        <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-gray-50" disabled={isLoading || isAddressLoading}>
           {isLoading || isAddressLoading ? "Saving..." : submitLabel}
         </Button>
       </div>

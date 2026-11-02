@@ -13,6 +13,9 @@ export interface UserData {
   sex?: "male" | "female" | "not_to_mention" | null;
   is_verified: boolean;
   is_staff: boolean;
+  is_superuser?: boolean;
+  is_affiliate_marketer?: boolean;
+  is_support?: boolean;
   mfa_enabled?: boolean;
   has_setup_mfa?: boolean;
   date_of_birth?: Date | string | null;
@@ -46,6 +49,7 @@ export interface ReferralDashboard {
   referral_code: string;
   referral_url: string;
   commission_rate: string | number;
+  commission_rate_display?: string;
   referred_count: number;
   referred_users: ReferralUser[];
   earnings: {
@@ -59,12 +63,15 @@ export interface ReferralDashboard {
 export interface AffiliatePartner {
   id: number | string;
   name: string;
+  email: string;
   code: string;
   commission_rate: string | number;
   is_active: boolean;
   notes?: string;
   created_at?: string;
   updated_at?: string;
+  invitation_status?: string;
+  invitation_expires_at?: string;
 }
 
 export interface UserSummary {
@@ -76,6 +83,8 @@ export interface UserSummary {
   role?: string | null;
   is_staff?: boolean;
   is_superuser?: boolean;
+  is_affiliate_marketer?: boolean;
+  is_support?: boolean;
   is_verified?: boolean;
   mfa_enabled?: boolean;
   date_joined?: Date | string;

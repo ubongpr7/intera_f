@@ -40,7 +40,7 @@ const ActionHeader = ({ items, className }: ActionHeaderProps) => {
               {/* Mobile tooltip - Now positioned below */}
               {!item.disabled && (
                 <div
-                  className={`md:hidden absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-gray-800 text-white text-xs rounded transition-opacity duration-200 ${
+                  className={`md:hidden absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-gray-800 text-gray-50 text-xs rounded transition-opacity duration-200 ${
                     hoveredIndex === index ? 'opacity-100' : 'opacity-0'
                   }`}
                   style={{ zIndex: 50 }}

@@ -284,6 +284,7 @@ getFeatures: builder.query({
       currency?: string;
       success_url?: string;
       cancel_url?: string;
+      start_trial?: boolean;
       metadata?: Record<string, unknown>;
     }>({
       query: (body) => ({
