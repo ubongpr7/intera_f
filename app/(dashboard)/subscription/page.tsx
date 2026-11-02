@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation"
 import { AlertTriangle, CalendarClock, CheckCircle2, Coins, CreditCard, Gauge, LockKeyhole, ShieldCheck } from "lucide-react"
 import { toast } from "react-toastify"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { readCookieValue } from "@/lib/authCookies"
@@ -40,6 +41,7 @@ type PlanLimitIssue = {
 type BillingIntent = {
   planSlug: string
   startTrial: boolean
+  locationQuantity: number
 }
 
 const label = (value: string) => value.replaceAll("-", " ").replace(/\b\w/g, (char) => char.toUpperCase())
@@ -70,6 +72,11 @@ const formatPrice = (plan: SubscriptionPlanRecord) => {
   }).format(Number(plan.price))
 }
 
+const formatPlanTotal = (plan: SubscriptionPlanRecord, locationQuantity: number) => {
+  if (Number(plan.price) <= 0 && plan.slug === "enterprise") return "Custom"
+  return formatNaira(Number(plan.price) * locationQuantity)
+}
+
 const formatNaira = (amount: number) =>
   new Intl.NumberFormat("en-NG", {
     style: "currency",
@@ -95,12 +102,6 @@ const formatSubscriptionStatus = (status?: string | null, pendingCancellation?: 
 const formatFeatureLimit = (feature: SubscriptionPlanRecord["features"][number]) => {
   if (feature.limit_type === "BOOLEAN" || feature.is_unlimited) return feature.name
   return `${Number(feature.limit_value ?? 0).toLocaleString()} ${feature.name.toLowerCase()}`
-}
-
-const calculateIncludedCoinsFromPlanPrice = (price: string | number | undefined) => {
-  const numericPrice = Number(price ?? 0)
-  if (!Number.isFinite(numericPrice) || numericPrice <= 0) return 0
-  return Math.round((numericPrice / 50) / 100) * 100
 }
 
 const fallbackCoinRateByPlanSlug: Record<string, number> = {
@@ -245,6 +246,8 @@ export default function SubscriptionPage() {
   const [topUpCoins, { isLoading: toppingUpCoins }] = useTopUpCoinsMutation()
   const [coinTopUpAmount, setCoinTopUpAmount] = useState("100")
   const [billingIntent, setBillingIntent] = useState<BillingIntent | null>(null)
+  const [locationQuantityInput, setLocationQuantityInput] = useState("1")
+  const locationQuantity = Math.max(1, Math.floor(Number(locationQuantityInput) || 1))
   const activePlan = entitlements?.subscription?.plan
   const activePlanRecord = useMemo(
     () => plans.find((plan) => plan.slug === activePlan?.slug),
@@ -257,9 +260,9 @@ export default function SubscriptionPage() {
   const usageRows = useMemo(() => entitlements?.usage ?? [], [entitlements?.usage])
   const features = useMemo(() => Object.entries(entitlements?.features ?? {}), [entitlements?.features])
   const coinBalance = entitlements?.coins?.balance ?? 0
-  const coinAllocation = activePlanRecord
-    ? calculateIncludedCoinsFromPlanPrice(activePlanRecord.price)
-    : entitlements?.coins?.included_allocation ?? entitlements?.coins?.monthly_allocation ?? 0
+  const coinAllocation = entitlements?.coins?.included_allocation
+    ?? entitlements?.coins?.monthly_allocation
+    ?? (entitlements?.subscription?.location_quantity ?? 1) * 100
   const coinPurchaseRate = entitlements?.coins?.purchase_rate_naira
     ?? activePlanRecord?.coin_purchase_rate_naira
     ?? (activePlan?.slug ? fallbackCoinRateByPlanSlug[activePlan.slug] ?? null : null)
@@ -381,7 +384,7 @@ export default function SubscriptionPage() {
       })
   }, [refetch, refetchCoinTransactions, refetchPayments, searchParams, verifyPayment])
 
-  const authorizeBilling = async (planSlug: string, startTrial = true) => {
+  const authorizeBilling = async (planSlug: string, startTrial = false, requestedLocationQuantity = locationQuantity) => {
     if (!owner) return
     const plan = plans.find((candidate) => candidate.slug === planSlug)
     const limitIssues = plan ? getPlanLimitIssues(plan) : []
@@ -406,6 +409,7 @@ export default function SubscriptionPage() {
         success_url: `${window.location.origin}/subscription`,
         cancel_url: `${window.location.origin}/subscription`,
         start_trial: startTrial,
+        location_quantity: requestedLocationQuantity,
       }).unwrap()
       if (response?.checkout_url) {
         window.location.assign(response.checkout_url)
@@ -417,15 +421,15 @@ export default function SubscriptionPage() {
     }
   }
 
-  const openBillingConfirmation = (planSlug: string, startTrial: boolean) => {
-    setBillingIntent({ planSlug, startTrial })
+  const openBillingConfirmation = (planSlug: string, startTrial = false) => {
+    setBillingIntent({ planSlug, startTrial, locationQuantity })
   }
 
   const confirmBillingIntent = async () => {
     if (!billingIntent) return
     const intent = billingIntent
     setBillingIntent(null)
-    await authorizeBilling(intent.planSlug, intent.startTrial)
+    await authorizeBilling(intent.planSlug, intent.startTrial, intent.locationQuantity)
   }
 
   const cancelActiveSubscription = async () => {
@@ -544,7 +548,7 @@ export default function SubscriptionPage() {
           ) : (
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
               {owner
-                ? "Choose a plan and connect a card for billing after the trial. The workspace gets the configured trial period before regular monthly billing applies."
+                ? "Choose a plan and the number of structural locations you need. Billing starts immediately through Paystack."
                 : "This workspace does not have an active subscription yet. Ask the workspace owner to choose a plan."}
             </div>
           )}
@@ -574,6 +578,11 @@ export default function SubscriptionPage() {
                     ? `Access remains available until ${formatDate(subscriptionAccessUntil)}.`
                     : `Billing status: ${formatSubscriptionStatus(entitlements?.subscription?.status, entitlements?.subscription?.pending_cancellation)}.`}
                 </p>
+                {activePlan && entitlements?.subscription?.location_quantity ? (
+                  <p className="mt-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+                    {entitlements.subscription.location_quantity.toLocaleString()} structural location{entitlements.subscription.location_quantity === 1 ? "" : "s"} · {coinAllocation.toLocaleString()} Intera coins per cycle
+                  </p>
+                ) : null}
               </div>
               <div className="border-t border-slate-200 pt-4 dark:border-slate-800">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Saved card</p>
@@ -657,9 +666,22 @@ export default function SubscriptionPage() {
               <CalendarClock className="h-5 w-5 text-blue-600" />
               Set up subscription billing
             </CardTitle>
-            <CardDescription>Select the plan that matches the current workspace size. Card details are handled by secure billing; Intera stores provider references, not raw card data. The ₦1,000 trial-entry payment verifies your card and the selected plan grants its trial allocation, while monthly plan billing starts after the seven-day trial.</CardDescription>
+            <CardDescription>Select the plan and structural-location quantity. Each structural location is billed as a monthly quantity of the selected Paystack plan; products and variants are not plan-limited.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="max-w-md rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+              <label htmlFor="location-quantity" className="text-sm font-semibold">Structural locations</label>
+              <p className="mt-1 text-sm text-slate-500">Choose how many locations this subscription should cover. Intera coins are allocated at 100 coins per location each cycle.</p>
+              <Input
+                id="location-quantity"
+                type="number"
+                min={1}
+                step={1}
+                value={locationQuantityInput}
+                onChange={(event) => setLocationQuantityInput(event.target.value)}
+                className="mt-3 max-w-40"
+              />
+            </div>
             {loadingEntitlements ? (
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/60">
                 <SkeletonLine className="h-5 w-56" />
@@ -698,7 +720,7 @@ export default function SubscriptionPage() {
                     <div className="flex items-start gap-2">
                       <AlertTriangle className="mt-0.5 h-4 w-4" />
                       <span>
-                        No card is connected yet. Connect a card to start the seven-day trial. Paystack will process ₦1,000 to verify the card; the selected plan's trial allocation is granted once, and monthly billing starts after the trial unless cancelled.
+                        No card is connected yet. Continue to Paystack to authorize monthly billing for this workspace.
                       </span>
                     </div>
                     <Button size="sm" onClick={() => openBillingConfirmation(activePlan.slug, true)} disabled={initiatingPayment || verifyingPayment}>
@@ -736,7 +758,7 @@ export default function SubscriptionPage() {
                       {selected || paymentPendingForPlan ? <CheckCircle2 className="h-5 w-5 text-emerald-600" /> : null}
                     </div>
                     <p className="mt-3 min-h-12 text-sm text-slate-600 dark:text-slate-300">{plan.description || `${plan.name} plan for Intera IMS.`}</p>
-                    <p className="mt-3 text-sm font-medium">{plan.trial_days}-day free trial · ₦{Number(plan.trial_authorization_amount ?? 1000).toLocaleString()} for {Number(plan.trial_token_amount ?? 10000).toLocaleString()} Intera tokens</p>
+                    <p className="mt-3 text-sm font-medium">{formatNaira(Number(plan.price))} per structural location · {locationQuantity.toLocaleString()} location{locationQuantity === 1 ? "" : "s"}: {formatPlanTotal(plan, locationQuantity)} / month</p>
                     <ul className="mt-4 space-y-2 text-sm">
                       {(plan.features ?? []).map((feature) => (
                         <li key={feature.slug} className="flex items-start gap-2 text-slate-700 dark:text-slate-200">
@@ -773,14 +795,14 @@ export default function SubscriptionPage() {
                           variant={selected ? "outline" : "default"}
                           className={selected ? "border-emerald-600 bg-emerald-100 text-emerald-950 hover:bg-emerald-200 dark:border-emerald-500 dark:bg-emerald-950/50 dark:text-emerald-50 dark:hover:bg-emerald-900/60" : undefined}
                           disabled={(selected && !subscriptionPendingCancellation) || paymentPendingForPlan || busy || blockedByUsage || blockedByLoadingUsage}
-                          onClick={() => openBillingConfirmation(plan.slug, true)}
+                          onClick={() => openBillingConfirmation(plan.slug, false)}
                         >
                           {paymentPendingForPlan
                             ? latestPlanPaymentStatus === "processing" ? "Payment processing" : "Activation pending"
                             : selected
                             ? subscriptionPendingCancellation ? "Resume renewal" : "Current plan"
                             : blockedByLoadingUsage ? "Checking usage..."
-                            : blockedByUsage ? "Usage too high" : `Start ${plan.trial_days}-day free trial`}
+                            : blockedByUsage ? "Usage too high" : `Subscribe for ${locationQuantity.toLocaleString()} location${locationQuantity === 1 ? "" : "s"}`}
                         </Button>
                       ) : (
                         <Button
@@ -962,30 +984,20 @@ export default function SubscriptionPage() {
         <DialogContent className="text-gray-900">
           <DialogHeader>
             <DialogTitle>
-              {billingIntent?.startTrial ? "Confirm your free trial" : "Confirm your subscription"}
+              Confirm your subscription
             </DialogTitle>
             <DialogDescription>
-              {billingIntent?.startTrial
-                ? "Review the card authorization and trial terms before continuing to Paystack."
-                : "Review the monthly billing terms before continuing to Paystack."}
+              Review the monthly billing terms before continuing to Paystack.
             </DialogDescription>
           </DialogHeader>
           {(() => {
             const plan = plans.find((candidate) => candidate.slug === billingIntent?.planSlug)
             if (!plan || !billingIntent) return null
-            const trialEnd = new Date()
-            trialEnd.setDate(trialEnd.getDate() + Number(plan.trial_days || 7))
-            return billingIntent.startTrial ? (
-              <div className="space-y-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950">
-                <p>You will authorize a <strong>₦{Number(plan.trial_authorization_amount ?? 1000).toLocaleString()}</strong> Paystack charge to connect your card and receive the trial token allocation.</p>
-                <p>Your <strong>{plan.trial_days || 7}-day free trial</strong> ends on <strong>{formatDate(trialEnd.toISOString())}</strong>.</p>
-                <p>After the trial ends, your card will be charged <strong>{formatPrice(plan)}</strong> per {plan.billing_cycle === "YEARLY" ? "year" : plan.billing_cycle === "QUARTERLY" ? "quarter" : "month"} automatically unless you cancel before the trial ends.</p>
-              </div>
-            ) : (
+            return (
               <div className="space-y-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950">
-                <p>You are subscribing to <strong>{plan.name}</strong> immediately.</p>
-                <p>Your card will be charged <strong>{formatPrice(plan)}</strong> per {plan.billing_cycle === "YEARLY" ? "year" : plan.billing_cycle === "QUARTERLY" ? "quarter" : "month"}.</p>
-                <p>No free-trial period will be applied to this checkout.</p>
+                <p>You are subscribing to <strong>{plan.name}</strong> for <strong>{billingIntent.locationQuantity.toLocaleString()} structural location{billingIntent.locationQuantity === 1 ? "" : "s"}</strong>.</p>
+                <p>Your card will be charged <strong>{formatPlanTotal(plan, billingIntent.locationQuantity)}</strong> per {plan.billing_cycle === "YEARLY" ? "year" : plan.billing_cycle === "QUARTERLY" ? "quarter" : "month"}.</p>
+                <p>You will receive <strong>{(billingIntent.locationQuantity * 100).toLocaleString()} Intera coins</strong> for this cycle. No free-trial period will be applied.</p>
               </div>
             )
           })()}

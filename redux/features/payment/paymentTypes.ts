@@ -53,6 +53,8 @@ export type SubscriptionStatus = "active" | "cancelled" | "expired" | "trial";
 export interface SubscriptionRecord {
   id: string;
   status: SubscriptionStatus;
+  location_quantity?: number;
+  intera_coins_reward?: number;
   created_at: string;
   start_date?: string | null;
   end_date?: string | null;
@@ -120,6 +122,8 @@ export interface EntitlementSnapshot {
   subscription: null | {
     id: string;
     status: "ACTIVE" | "TRIAL";
+    location_quantity?: number;
+    intera_coins_reward?: number;
     start_date: string;
     end_date: string | null;
     trial_end_date: string | null;

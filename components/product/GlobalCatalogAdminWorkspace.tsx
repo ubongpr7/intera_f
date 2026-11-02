@@ -1,7 +1,7 @@
 "use client"
 
 import { useDeferredValue, useMemo, useState, type ChangeEvent } from "react"
-import { Archive, Boxes, ChevronLeft, ChevronRight, Eye, FileUp, Filter, ImagePlus, PackagePlus, Pencil, Rocket, Search, Shapes, Star, Trash2 } from "lucide-react"
+import { Archive, Boxes, ChevronLeft, ChevronRight, Copy, Eye, FileUp, Filter, ImagePlus, PackagePlus, Pencil, Rocket, Search, Shapes, Star, Trash2 } from "lucide-react"
 import { toast } from "react-toastify"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -351,6 +351,7 @@ function ProductDialog({
   open,
   onOpenChange,
   product,
+  isDuplicate = false,
   brandOptions,
   categoryOptions,
   unitOptions,
@@ -358,15 +359,21 @@ function ProductDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
   product?: GlobalCatalogAdminProduct | null
+  isDuplicate?: boolean
   brandOptions: SelectOption[]
   categoryOptions: SelectOption[]
   unitOptions: SelectOption[]
 }) {
-  const [form, setForm] = useState<ProductFormState>(buildProductForm(product))
+  const [form, setForm] = useState<ProductFormState>(() => {
+    const source = buildProductForm(product)
+    return isDuplicate && product
+      ? { ...source, name: `${source.name} copy` }
+      : source
+  })
   const [createProduct, { isLoading: isCreating }] = useCreateGlobalCatalogAdminProductMutation()
   const [updateProduct, { isLoading: isUpdating }] = useUpdateGlobalCatalogAdminProductMutation()
 
-  const isEditing = Boolean(product)
+  const isEditing = Boolean(product) && !isDuplicate
   const isLoading = isCreating || isUpdating
   const selectMenuPortalTarget = typeof document !== "undefined" ? document.body : undefined
 
@@ -397,7 +404,7 @@ function ProductDialog({
         toast.success("Global source product updated.")
       } else {
         await createProduct(payload).unwrap()
-        toast.success("Global source product created.")
+        toast.success(isDuplicate ? "Global source product duplicated." : "Global source product created.")
       }
 
       onOpenChange(false)
@@ -410,9 +417,13 @@ function ProductDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto overscroll-contain text-inherit">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit global source product" : "Create global source product"}</DialogTitle>
+          <DialogTitle>
+            {isEditing ? "Edit global source product" : isDuplicate ? "Duplicate global source product" : "Create global source product"}
+          </DialogTitle>
           <DialogDescription>
-            The product family stays platform-owned and becomes importable by workspaces only after you publish it.
+            {isDuplicate
+              ? "A new editable product family will be created from this product. The original product and its media remain unchanged."
+              : "The product family stays platform-owned and becomes importable by workspaces only after you publish it."}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 md:grid-cols-2">
@@ -1106,6 +1117,7 @@ export default function GlobalCatalogAdminWorkspace() {
   const readOnly = !isSuperuser
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<GlobalCatalogAdminProduct | null>(null)
+  const [isDuplicatingProduct, setIsDuplicatingProduct] = useState(false)
   const [variantProduct, setVariantProduct] = useState<GlobalCatalogAdminProduct | null>(null)
   const [editingVariant, setEditingVariant] = useState<GlobalCatalogVariant | null>(null)
   const [previewProductId, setPreviewProductId] = useState<string | null>(null)
@@ -1214,11 +1226,19 @@ export default function GlobalCatalogAdminWorkspace() {
 
   const openCreateProduct = () => {
     setEditingProduct(null)
+    setIsDuplicatingProduct(false)
     setIsProductDialogOpen(true)
   }
 
   const openEditProduct = (product: GlobalCatalogAdminProduct) => {
     setEditingProduct(product)
+    setIsDuplicatingProduct(false)
+    setIsProductDialogOpen(true)
+  }
+
+  const openDuplicateProduct = (product: GlobalCatalogAdminProduct) => {
+    setEditingProduct(product)
+    setIsDuplicatingProduct(true)
     setIsProductDialogOpen(true)
   }
 
@@ -1526,6 +1546,10 @@ export default function GlobalCatalogAdminWorkspace() {
                         <Pencil className="mr-2 h-4 w-4" />
                         Edit product
                       </Button> : null}
+                      {!readOnly ? <Button variant="outline" className="rounded-full" onClick={() => openDuplicateProduct(product)}>
+                        <Copy className="mr-2 h-4 w-4" />
+                        Duplicate
+                      </Button> : null}
                       {!readOnly ? <Button variant="outline" className="rounded-full" onClick={() => openCreateVariant(product)}>
                         <Shapes className="mr-2 h-4 w-4" />
                         Add variant
@@ -1619,10 +1643,11 @@ export default function GlobalCatalogAdminWorkspace() {
       </div>
 
       <ProductDialog
-        key={`${editingProduct?.id ?? "new-product"}-${isProductDialogOpen ? "open" : "closed"}`}
+        key={`${editingProduct?.id ?? "new-product"}-${isDuplicatingProduct ? "duplicate" : "edit"}-${isProductDialogOpen ? "open" : "closed"}`}
         open={isProductDialogOpen}
         onOpenChange={setIsProductDialogOpen}
         product={editingProduct}
+        isDuplicate={isDuplicatingProduct}
         brandOptions={brandOptions}
         categoryOptions={categoryOptions}
         unitOptions={unitOptions}
