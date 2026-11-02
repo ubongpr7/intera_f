@@ -247,6 +247,7 @@ export default function SubscriptionPage() {
   const [coinTopUpAmount, setCoinTopUpAmount] = useState("100")
   const [billingIntent, setBillingIntent] = useState<BillingIntent | null>(null)
   const [locationQuantityInput, setLocationQuantityInput] = useState("1")
+  const [showPlanSelector, setShowPlanSelector] = useState(false)
   const locationQuantity = Math.max(1, Math.floor(Number(locationQuantityInput) || 1))
   const activePlan = entitlements?.subscription?.plan
   const activePlanRecord = useMemo(
@@ -583,6 +584,11 @@ export default function SubscriptionPage() {
                     {entitlements.subscription.location_quantity.toLocaleString()} structural location{entitlements.subscription.location_quantity === 1 ? "" : "s"} · {coinAllocation.toLocaleString()} Intera coins per cycle
                   </p>
                 ) : null}
+                {activePlan && activeSubscriptionId ? (
+                  <Button className="mt-4" variant="outline" onClick={() => setShowPlanSelector((visible) => !visible)}>
+                    {showPlanSelector ? "Hide plan options" : "Manage plan"}
+                  </Button>
+                ) : null}
               </div>
               <div className="border-t border-slate-200 pt-4 dark:border-slate-800">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Saved card</p>
@@ -730,7 +736,7 @@ export default function SubscriptionPage() {
                 ) : null}
               </div>
             ) : null}
-            {loadingPlans || loadingEntitlements ? (
+            {activePlan && activeSubscriptionId && !showPlanSelector ? null : loadingPlans || loadingEntitlements ? (
               <PlanCardsSkeleton />
             ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -745,9 +751,9 @@ export default function SubscriptionPage() {
                   <div
                     key={plan.id}
                     className={`subscription-plan-card rounded-3xl border p-5 ${ 
-                      selected
-                        ? "border-emerald-400 bg-emerald-50 text-emerald-950 dark:border-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-50"
-                        : "border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/60"
+                        selected
+                        ? "border-blue-400 bg-blue-50 text-slate-950 dark:border-blue-500 dark:bg-blue-950/30 dark:text-slate-50"
+                        : "border-slate-200 bg-slate-50 text-slate-900 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-50"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -793,7 +799,7 @@ export default function SubscriptionPage() {
                       {selected || paymentPendingForPlan || !activePlan ? (
                         <Button
                           variant={selected ? "outline" : "default"}
-                          className={selected ? "border-emerald-600 bg-emerald-100 text-emerald-950 hover:bg-emerald-200 dark:border-emerald-500 dark:bg-emerald-950/50 dark:text-emerald-50 dark:hover:bg-emerald-900/60" : undefined}
+                          className={selected ? "border-blue-600 bg-blue-100 text-blue-950 hover:bg-blue-200 dark:border-blue-500 dark:bg-blue-950/50 dark:text-blue-50 dark:hover:bg-blue-900/60" : undefined}
                           disabled={(selected && !subscriptionPendingCancellation) || paymentPendingForPlan || busy || blockedByUsage || blockedByLoadingUsage}
                           onClick={() => openBillingConfirmation(plan.slug, false)}
                         >
