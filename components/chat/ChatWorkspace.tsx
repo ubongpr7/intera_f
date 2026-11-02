@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { getCookie } from "cookies-next"
 import { AlertCircle, Check, Headphones, Loader2, Mic, Paperclip, Plus, Search, Send, Sparkles, Square, Users, Wifi, WifiOff, X } from "lucide-react"
 
@@ -208,11 +208,10 @@ export default function ChatWorkspace() {
     })
   const teammateIds = new Set(teammates.map((user) => `${user.id}`))
   const searchedTeammates = userSearchResults.filter((user) => teammateIds.has(`${user.id}`))
-  const filteredConversations = useMemo(() => {
-    const query = conversationSearch.trim().toLowerCase()
-    if (!query) return conversations
-    return conversations.filter((conversation) => `${conversationName(conversation)} ${conversationPreview(conversation)}`.toLowerCase().includes(query))
-  }, [conversationSearch, conversations])
+  const query = conversationSearch.trim().toLowerCase()
+  const filteredConversations = query
+    ? conversations.filter((conversation) => `${conversationName(conversation)} ${conversationPreview(conversation)}`.toLowerCase().includes(query))
+    : conversations
 
   const openSupport = () => {
     setSupportMode(true)
