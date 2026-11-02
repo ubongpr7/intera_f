@@ -6,6 +6,7 @@ import { toast } from "react-toastify"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { ReactSelectField, type SelectOption } from "@/components/ui/react-select-field"
@@ -56,6 +57,18 @@ type ProductFormState = {
   sales_uom_code: string
   purchase_uom_conversion_factor: string
   sales_uom_conversion_factor: string
+  measurement_type: "count" | "weight" | "volume" | "length"
+  uom_definitions: Array<{
+    code: string
+    label: string
+    conversion_to_stock: string
+    is_stock_unit: boolean
+    is_purchase_unit: boolean
+    is_sale_unit: boolean
+    allows_partial: boolean
+    decimal_places: string
+    selling_price: string
+  }>
 }
 
 type VariantFormState = {
@@ -83,6 +96,8 @@ const initialProductForm: ProductFormState = {
   sales_uom_code: "unit",
   purchase_uom_conversion_factor: "1",
   sales_uom_conversion_factor: "1",
+  measurement_type: "count",
+  uom_definitions: [{ code: "unit", label: "Unit", conversion_to_stock: "1", is_stock_unit: true, is_purchase_unit: true, is_sale_unit: true, allows_partial: false, decimal_places: "0", selling_price: "" }],
 }
 
 const initialVariantForm: VariantFormState = {
@@ -273,6 +288,18 @@ function buildProductForm(product?: GlobalCatalogAdminProduct | null): ProductFo
     sales_uom_code: product.sales_uom_code || product.unit || "unit",
     purchase_uom_conversion_factor: String(product.purchase_uom_conversion_factor ?? product.uom_conversion_factor ?? 1),
     sales_uom_conversion_factor: String(product.sales_uom_conversion_factor ?? product.uom_conversion_factor ?? 1),
+    measurement_type: product.measurement_type || "count",
+    uom_definitions: (product.uom_definitions || []).map((unit) => ({
+      code: unit.code || "",
+      label: unit.label || unit.code || "",
+      conversion_to_stock: String(unit.conversion_to_stock ?? 1),
+      is_stock_unit: Boolean(unit.is_stock_unit),
+      is_purchase_unit: unit.is_purchase_unit !== false,
+      is_sale_unit: unit.is_sale_unit !== false,
+      allows_partial: Boolean(unit.allows_partial),
+      decimal_places: String(unit.decimal_places ?? 0),
+      selling_price: unit.selling_price == null ? "" : String(unit.selling_price),
+    })),
   }
 }
 
@@ -350,6 +377,16 @@ function ProductDialog({
         base_price: Number(form.base_price || 0),
         purchase_uom_conversion_factor: Number(form.purchase_uom_conversion_factor || 1),
         sales_uom_conversion_factor: Number(form.sales_uom_conversion_factor || 1),
+        measurement_type: form.measurement_type,
+        uom_definitions: form.uom_definitions
+          .filter((unit) => unit.code.trim() && unit.label.trim() && Number(unit.conversion_to_stock) > 0)
+          .map((unit) => ({
+            ...unit,
+            code: unit.code.trim().toLowerCase(),
+            conversion_to_stock: Number(unit.conversion_to_stock),
+            decimal_places: Number(unit.decimal_places || 0),
+            selling_price: unit.selling_price.trim() ? Number(unit.selling_price) : null,
+          })),
         track_stock: true,
         allow_backorder: false,
         low_stock_threshold: 10,
@@ -416,6 +453,85 @@ function ProductDialog({
           <div className="grid gap-2">
             <label className="text-sm font-medium text-gray-700">Base price</label>
             <Input value={form.base_price} onChange={(e) => setForm((current) => ({ ...current, base_price: e.target.value }))} placeholder="0.00" type="number" />
+          </div>
+          <div className="grid gap-2">
+            <label className="text-sm font-medium text-gray-700">Measurement type</label>
+            <select
+              className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900"
+              value={form.measurement_type}
+              onChange={(e) => setForm((current) => ({ ...current, measurement_type: e.target.value as ProductFormState["measurement_type"] }))}
+            >
+              <option value="count">Count — pieces/items</option>
+              <option value="weight">Weight — kg/g</option>
+              <option value="volume">Volume — litres/ml</option>
+              <option value="length">Length — metres/cm</option>
+            </select>
+            <p className="text-xs text-gray-500">Choose the dimension used to store stock. The smallest configured unit is the stock unit.</p>
+          </div>
+          <div className="md:col-span-2 rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Product measurement units</p>
+                <p className="text-xs text-gray-500">Every conversion is specific to this product. Example: 1 derica of this rice = 2.5 kg.</p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setForm((current) => ({
+                  ...current,
+                  uom_definitions: [...current.uom_definitions, { code: "", label: "", conversion_to_stock: "1", is_stock_unit: false, is_purchase_unit: false, is_sale_unit: true, allows_partial: false, decimal_places: "0", selling_price: "" }],
+                }))}
+              >
+                Add unit
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {form.uom_definitions.map((unit, index) => (
+                <div key={index} className="grid gap-3 rounded-md border border-gray-200 bg-white p-3 md:grid-cols-[1fr_1fr_1fr_auto]">
+                  <Input placeholder="Code e.g. derica" value={unit.code} onChange={(e) => setForm((current) => ({ ...current, uom_definitions: current.uom_definitions.map((item, itemIndex) => itemIndex === index ? { ...item, code: e.target.value } : item) }))} />
+                  <Input placeholder="Label e.g. Derica" value={unit.label} onChange={(e) => setForm((current) => ({ ...current, uom_definitions: current.uom_definitions.map((item, itemIndex) => itemIndex === index ? { ...item, label: e.target.value } : item) }))} />
+                  <Input type="number" min="0.000001" step="0.000001" placeholder="Conversion to stock unit" value={unit.conversion_to_stock} onChange={(e) => setForm((current) => ({ ...current, uom_definitions: current.uom_definitions.map((item, itemIndex) => itemIndex === index ? { ...item, conversion_to_stock: e.target.value } : item) }))} />
+                  <div className="flex items-center justify-end">
+                    <Button type="button" variant="ghost" onClick={() => setForm((current) => ({ ...current, uom_definitions: current.uom_definitions.filter((_, itemIndex) => itemIndex !== index) }))}>Remove</Button>
+                  </div>
+                  <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-gray-600 md:col-span-4">
+                    {([
+                      ["is_stock_unit", "Stock unit"],
+                      ["is_purchase_unit", "Purchase unit"],
+                      ["is_sale_unit", "Sales unit"],
+                      ["allows_partial", "Allow partial quantity"],
+                    ] as const).map(([key, label]) => (
+                      <label key={key} className="inline-flex items-center gap-2">
+                        <Checkbox
+                          checked={unit[key]}
+                          onCheckedChange={(checked) => setForm((current) => ({
+                            ...current,
+                            uom_definitions: current.uom_definitions.map((item, itemIndex) => {
+                              if (itemIndex !== index) {
+                                if (key === "is_stock_unit" && checked) {
+                                  return { ...item, is_stock_unit: false }
+                                }
+                                return item
+                              }
+                              return { ...item, [key]: Boolean(checked) }
+                            }),
+                          }))}
+                        />
+                        {label}
+                      </label>
+                    ))}
+                    <label className="inline-flex items-center gap-2">
+                      <span>Decimal places</span>
+                      <Input className="h-8 w-20" type="number" min="0" max="5" step="1" value={unit.decimal_places} onChange={(e) => setForm((current) => ({ ...current, uom_definitions: current.uom_definitions.map((item, itemIndex) => itemIndex === index ? { ...item, decimal_places: e.target.value } : item) }))} />
+                    </label>
+                    <label className="inline-flex items-center gap-2">
+                      <span>Selling price</span>
+                      <Input className="h-8 w-28" type="number" min="0" step="0.01" placeholder="Optional" value={unit.selling_price} onChange={(e) => setForm((current) => ({ ...current, uom_definitions: current.uom_definitions.map((item, itemIndex) => itemIndex === index ? { ...item, selling_price: e.target.value } : item) }))} />
+                    </label>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
           {(["base_uom_code", "purchase_uom_code", "sales_uom_code"] as const).map((key) => (
             <ReactSelectField

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRef } from 'react'
-import { Activity, Building2, ChevronLeft, ChevronRight, FileSearch, Gift, LayoutDashboard, Link2, Settings, ShieldCheck, UserRound, Users, X } from 'lucide-react'
+import { Activity, Building2, ChevronLeft, ChevronRight, FileSearch, Gift, LayoutDashboard, Link2, MessageCircle, Settings, ShieldCheck, UserRound, Users, X } from 'lucide-react'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { SidebarLink } from './SideBarLinks'
 import { useAppDispatch, useAppSelector } from '../../redux/store'
@@ -50,6 +50,7 @@ export default function AdminSidebar({ user, mobileOpen, onMobileClose }: AdminS
           <SidebarLink href="/product/global-catalog-admin" icon={Gift} label="Global Products" isCollapsed={navigationCollapsed} />
           <SidebarLink href="/admin/users" icon={UserRound} label="Platform Users" isCollapsed={navigationCollapsed} />
           <SidebarLink href="/admin/workspaces" icon={Building2} label="Workspaces" isCollapsed={navigationCollapsed} />
+          <SidebarLink href="/admin/chat" icon={MessageCircle} label="Chat & Support" isCollapsed={navigationCollapsed} />
           <SidebarLink href="/audit" icon={FileSearch} label="Audit Trail" isCollapsed={navigationCollapsed} />
           <SidebarLink href="/admin/service-health" icon={Activity} label="Service Health" isCollapsed={navigationCollapsed} />
           {isSuperuser ? <>

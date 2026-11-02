@@ -362,6 +362,18 @@ export interface GlobalCatalogAdminProduct {
   purchase_uom_conversion_factor?: number;
   sales_uom_conversion_factor?: number;
   uom_conversion_factor?: number;
+  measurement_type?: "count" | "weight" | "volume" | "length";
+  uom_definitions?: Array<{
+    code: string;
+    label: string;
+    conversion_to_stock: number;
+    is_stock_unit?: boolean;
+    is_purchase_unit?: boolean;
+    is_sale_unit?: boolean;
+    allows_partial?: boolean;
+    decimal_places?: number;
+    selling_price?: number | null;
+  }>;
   labeling_status?: "draft" | "ai_proposed" | "verified";
   regulatory_metadata?: Record<string, unknown>;
   track_stock: boolean;

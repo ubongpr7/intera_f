@@ -85,7 +85,7 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
   
 
   const shouldHideDashboardUI = (path: string) => {
-    return path.startsWith('/accounts') || path === '/' || path.startsWith('/support-portal') || isSupportHost;
+    return path.startsWith('/accounts') || path === '/' || path.startsWith('/support-portal') || path.startsWith('/admin/chat') || isSupportHost;
   };
 
   const hasCompleteWorkspaceAiSetup = Boolean(

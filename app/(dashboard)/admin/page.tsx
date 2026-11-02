@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useMemo, useState } from "react"
-import { AlertTriangle, Boxes, Building2, CalendarClock, CheckCircle2, CreditCard, FileSearch, Link2, PackageSearch, RefreshCw, Settings, ShieldCheck, Users, Webhook } from "lucide-react"
+import { AlertTriangle, Boxes, Building2, CalendarClock, CheckCircle2, CreditCard, FileSearch, Link2, MessageCircle, PackageSearch, RefreshCw, Settings, ShieldCheck, Users, Webhook } from "lucide-react"
 
 import StatTile from "@/components/dashboard/StatTile"
 import { Button } from "@/components/ui/button"
@@ -14,6 +14,12 @@ import { useGetAdminSummaryQuery, useListReferralPayoutsQuery } from "@/redux/fe
 import { isSuperuserFromToken } from "@/lib/adminAccess"
 
 const adminLinks = [
+  {
+    href: "/admin/chat",
+    title: "Chat & support",
+    description: "See customer support conversations, claim issues, reply in real time, and close resolved cases.",
+    icon: MessageCircle,
+  },
   {
     href: "/admin/workspaces",
     title: "Workspace management",
