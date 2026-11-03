@@ -482,6 +482,11 @@ export default function SubscriptionPage() {
   }
 
   const openBillingConfirmation = (planSlug: string, startTrial = false) => {
+    const requestedTerminals = Number(terminalsPerLocationInput)
+    if (!Number.isInteger(requestedTerminals) || requestedTerminals < 1 || requestedTerminals > MAX_TERMINALS_PER_LOCATION) {
+      toast.error(`Enter between 1 and ${MAX_TERMINALS_PER_LOCATION} POS terminals per location.`)
+      return
+    }
     if (!billingConfiguration) {
       toast.error("Your billing quote is still being calculated. Please try again shortly.")
       return
@@ -1126,8 +1131,12 @@ export default function SubscriptionPage() {
                 max={MAX_TERMINALS_PER_LOCATION}
                 step={1}
                 value={terminalsPerLocationInput}
-                onChange={(event) => {
-                  const next = Math.min(MAX_TERMINALS_PER_LOCATION, Math.max(1, Math.floor(Number(event.target.value) || 1)))
+                onChange={(event) => setTerminalsPerLocationInput(event.target.value)}
+                onBlur={() => {
+                  const parsed = Math.floor(Number(terminalsPerLocationInput))
+                  const next = Number.isFinite(parsed)
+                    ? Math.min(MAX_TERMINALS_PER_LOCATION, Math.max(1, parsed))
+                    : 1
                   setTerminalsPerLocationInput(String(next))
                 }}
                 className="mt-3"
