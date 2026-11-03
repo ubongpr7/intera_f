@@ -211,9 +211,10 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
     }),
 
     cancelSubscription: builder.mutation({
-      query: (id) => ({
+      query: ({ id, reason }: { id: string; reason: string }) => ({
         url: `subscriptions-to-plans/${id}/cancel/`,
         method: "POST",
+        body: { reason },
         service: "payment",
       }),
     }),

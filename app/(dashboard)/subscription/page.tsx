@@ -47,6 +47,7 @@ type BillingIntent = {
   monthlyTotal: number
   chargeAmount: number
   isUpgrade: boolean
+  isDowngrade: boolean
   manualRefundAmount: number
 }
 
@@ -103,13 +104,15 @@ const formatDate = (value?: string | null) => {
 const formatSubscriptionStatus = (status?: string | null, pendingCancellation?: boolean) => {
   if (pendingCancellation) return "Scheduled to end"
   const value = `${status ?? ""}`.trim().toUpperCase()
-  if (value === "TRIAL") return "Trial"
+  if (value === "TRIAL") return "Active"
   if (value === "ACTIVE") return "Active"
   if (!value) return "Not set"
   return value.charAt(0) + value.slice(1).toLowerCase()
 }
 
-const formatFeatureLimit = (feature: SubscriptionPlanRecord["features"][number]) => {
+const formatFeatureLimit = (feature: SubscriptionPlanRecord["features"][number], locations?: number, terminalsPerLocation?: number) => {
+  if (feature.slug === "structural-locations" && locations) return `${locations.toLocaleString()} ${feature.name.toLowerCase()}`
+  if (feature.slug === "pos-terminals" && locations && terminalsPerLocation) return `${(locations * terminalsPerLocation).toLocaleString()} ${feature.name.toLowerCase()}`
   if (feature.limit_type === "BOOLEAN" || feature.is_unlimited) return feature.name
   return `${Number(feature.limit_value ?? 0).toLocaleString()} ${feature.name.toLowerCase()}`
 }
@@ -272,6 +275,8 @@ export default function SubscriptionPage() {
   const [coinTopUpAmount, setCoinTopUpAmount] = useState("100")
   const [billingIntent, setBillingIntent] = useState<BillingIntent | null>(null)
   const [showBillingConfigurator, setShowBillingConfigurator] = useState(false)
+  const [showCancellationDialog, setShowCancellationDialog] = useState(false)
+  const [cancellationReason, setCancellationReason] = useState("")
   useEffect(() => {
     if (!showBillingConfigurator || !entitlements?.subscription) return
     const locations = Math.max(1, Number(entitlements.subscription.location_quantity ?? 1))
@@ -336,7 +341,12 @@ export default function SubscriptionPage() {
     [payments],
   )
   const refundHistory = useMemo(
-    () => payments.filter((payment) => Boolean(payment.metadata?.manual_refund_amount) && Boolean(payment.metadata?.manual_refund_status)),
+    () => payments.filter((payment) => (
+      normalizePaymentStatus(payment.status) === "completed" &&
+      `${payment.metadata?.payment_kind ?? ""}`.toLowerCase() === "subscription_upgrade" &&
+      Number(payment.metadata?.manual_refund_amount ?? 0) > 0 &&
+      Boolean(payment.metadata?.manual_refund_status)
+    )),
     [payments],
   )
   const latestBillingPayment = useMemo(
@@ -354,6 +364,7 @@ export default function SubscriptionPage() {
   const pendingPlanName = latestPlanPayment?.plan_name || "Your selected plan"
   const pendingPlanSlug = `${latestPlanPayment?.metadata?.plan_slug ?? ""}`.trim().toLowerCase()
   const paymentAwaitingActivation = !activePlan && Boolean(latestPlanPayment)
+  const hasConfiguredBilling = Boolean(activePlan && activeSubscriptionId)
   const clearPaymentRedirectParams = () => {
     if (typeof window === "undefined") return
     const url = new URL(window.location.href)
@@ -477,13 +488,14 @@ export default function SubscriptionPage() {
     }
     const currentMonthlyTotal = Number((entitlements?.subscription as { monthly_total?: number } | undefined)?.monthly_total ?? 0)
     const nextMonthlyTotal = Number(billingConfiguration.quote.monthly_total ?? 0)
+    const isDowngrade = Boolean(activePlan && nextMonthlyTotal < currentMonthlyTotal)
     const periodEnd = entitlements?.subscription?.current_period_end ? new Date(entitlements.subscription.current_period_end).getTime() : 0
     const periodStart = entitlements?.subscription?.start_date ? new Date(entitlements.subscription.start_date).getTime() : 0
     const now = Date.now()
     const isUpgrade = Boolean(activePlan && nextMonthlyTotal > currentMonthlyTotal && periodEnd > now && periodEnd > periodStart)
     const remainingRatio = isUpgrade ? Math.max(0, Math.min(1, (periodEnd - now) / (periodEnd - periodStart))) : 0
     const manualRefundAmount = isUpgrade ? Math.round(currentMonthlyTotal * remainingRatio * 100) / 100 : 0
-    const chargeAmount = nextMonthlyTotal
+    const chargeAmount = isDowngrade ? 0 : nextMonthlyTotal
     setBillingIntent({
       planSlug,
       startTrial,
@@ -492,6 +504,7 @@ export default function SubscriptionPage() {
       monthlyTotal: Number(billingConfiguration?.quote.monthly_total ?? 0),
       chargeAmount,
       isUpgrade,
+      isDowngrade,
       manualRefundAmount,
     })
   }
@@ -504,10 +517,12 @@ export default function SubscriptionPage() {
   }
 
   const cancelActiveSubscription = async () => {
-    if (!owner || !activeSubscriptionId) return
+    if (!owner || !activeSubscriptionId || !cancellationReason.trim()) return
     try {
-      await cancelSubscription(activeSubscriptionId).unwrap()
-      toast.success("Subscription cancelled.")
+      await cancelSubscription({ id: activeSubscriptionId, reason: cancellationReason.trim() }).unwrap()
+      setShowCancellationDialog(false)
+      setCancellationReason("")
+      toast.success("Subscription cancellation scheduled.")
       await refetch()
       await refetchPayments()
       await refetchCoinTransactions()
@@ -556,7 +571,7 @@ export default function SubscriptionPage() {
 
   return (
     <div className="subscription-workspace space-y-6">
-      <Card className="subscription-overview border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      {hasConfiguredBilling ? <Card className="subscription-overview border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <CardHeader>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -624,9 +639,9 @@ export default function SubscriptionPage() {
             </div>
           )}
         </CardContent>
-      </Card>
+      </Card> : null}
 
-      {owner ? (
+      {owner && hasConfiguredBilling ? (
         <Card className="subscription-billing-details border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -728,7 +743,7 @@ export default function SubscriptionPage() {
         </Card>
       ) : null}
 
-      {owner && refundHistory.length > 0 ? (
+      {owner && hasConfiguredBilling && refundHistory.length > 0 ? (
         <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <CardHeader>
             <CardTitle>Refunds</CardTitle>
@@ -763,7 +778,7 @@ export default function SubscriptionPage() {
             Subscription setup is restricted to the workspace owner.
           </CardContent>
         </Card>
-      ) : (
+      ) : !hasConfiguredBilling ? (
         <Card className="subscription-billing border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -814,21 +829,6 @@ export default function SubscriptionPage() {
                       ? `Renewal is paused and access ends on ${formatDate(subscriptionAccessUntil)}. Resume billing before that date to keep the workspace active.`
                       : "Switching plans will set up billing for the new plan and replace the current active subscription after confirmation."}
                   </span>
-                  {subscriptionPendingCancellation ? (
-                    <Button
-                      onClick={() => openBillingConfirmation(activePlan.slug, false)}
-                      disabled={initiatingPayment || verifyingPayment}
-                    >
-                      {initiatingPayment ? "Opening checkout..." : "Resume renewal"}
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={cancelActiveSubscription}
-                      disabled={cancellingSubscription || initiatingPayment || verifyingPayment}
-                    >
-                      {cancellingSubscription ? "Cancelling..." : "Cancel subscription"}
-                    </Button>
-                  )}
                 </div>
                 {!billingAuthorized ? (
                   <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-900 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-50">
@@ -877,7 +877,7 @@ export default function SubscriptionPage() {
                       {(plan.features ?? []).map((feature) => (
                         <li key={feature.slug} className="flex items-start gap-2 text-slate-700 dark:text-slate-200">
                           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-                          <span>{formatFeatureLimit(feature)}</span>
+                          <span>{formatFeatureLimit(feature, locationQuantity, terminalsPerLocation)}</span>
                         </li>
                       ))}
                     </ul>
@@ -939,9 +939,9 @@ export default function SubscriptionPage() {
             )}
           </CardContent>
         </Card>
-      )}
+      ) : null}
 
-      <Card className="subscription-coins border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      {hasConfiguredBilling ? <Card className="subscription-coins border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Coins className="h-5 w-5 text-blue-600" />Intera coin balance</CardTitle>
         <CardDescription>Coins power metered AI and catalog operations. Global catalog imports use 1 coin per imported variant; AI image bulk creation uses 5 coins per uploaded image.</CardDescription>
@@ -1042,9 +1042,9 @@ export default function SubscriptionPage() {
             )}
           </div>
         </CardContent>
-      </Card>
+      </Card> : null}
 
-      <Card className="subscription-usage border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      {hasConfiguredBilling ? <Card className="subscription-usage border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Gauge className="h-5 w-5 text-blue-600" />Plan usage and limits</CardTitle>
           <CardDescription>Current workspace consumption against the active plan. Usage is read from the owning services.</CardDescription>
@@ -1078,7 +1078,7 @@ export default function SubscriptionPage() {
               </div>
             )
           }) : features.length === 0 ? (
-            <p className="text-sm text-slate-500">No entitlement is active until a plan trial is selected.</p>
+            <p className="text-sm text-slate-500">No active subscription entitlement is available yet.</p>
           ) : features.map(([slug, feature]) => (
             <div key={slug} className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
               <div className="flex items-center justify-between gap-3">
@@ -1091,7 +1091,7 @@ export default function SubscriptionPage() {
             </div>
           ))}
         </CardContent>
-      </Card>
+      </Card> : null}
       <Dialog open={showBillingConfigurator} onOpenChange={setShowBillingConfigurator}>
         <DialogContent className="max-h-[90vh] max-w-6xl overflow-y-auto p-8 text-gray-900">
           <DialogHeader>
@@ -1184,7 +1184,7 @@ export default function SubscriptionPage() {
                   {billingConfiguration ? <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Locations: {formatNaira(Number(billingConfiguration.quote.location_total))} · Additional terminals: {formatNaira(Number(billingConfiguration.quote.terminal_total))}</p> : null}
                   <ul className="mt-4 space-y-2 text-sm">
                     {(plan.features ?? []).map((feature) => (
-                      <li key={feature.slug} className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" /><span>{formatFeatureLimit(feature)}</span></li>
+                      <li key={feature.slug} className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" /><span>{formatFeatureLimit(feature, locationQuantity, terminalsPerLocation)}</span></li>
                     ))}
                   </ul>
                   <Button
@@ -1199,6 +1199,60 @@ export default function SubscriptionPage() {
             })()}
           </div>
           </div>
+          {activePlan && activeSubscriptionId ? (
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-5 dark:border-slate-800">
+              <p className="text-sm text-slate-500">
+                {subscriptionPendingCancellation
+                  ? "Renewal is currently paused for this subscription."
+                  : ""}
+              </p>
+              {subscriptionPendingCancellation ? (
+                <Button
+                  onClick={() => openBillingConfirmation(activePlan.slug, false)}
+                  disabled={initiatingPayment || verifyingPayment}
+                >
+                  {initiatingPayment ? "Opening checkout..." : "Resume renewal"}
+                </Button>
+              ) : (
+                <Button
+                  variant="secondary"
+                  className="text-red-700 dark:text-red-200"
+                  onClick={() => setShowCancellationDialog(true)}
+                  disabled={cancellingSubscription || initiatingPayment || verifyingPayment}
+                >
+                  Cancel subscription
+                </Button>
+              )}
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+      <Dialog open={showCancellationDialog} onOpenChange={setShowCancellationDialog}>
+        <DialogContent className="text-gray-900">
+          <DialogHeader>
+            <DialogTitle>Before you cancel</DialogTitle>
+            <DialogDescription>
+              Your subscription will remain active until the end of the current billing period. Tell us why you are cancelling before continuing.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <label htmlFor="cancellation-reason" className="text-sm font-semibold">Reason for cancellation</label>
+            <textarea
+              id="cancellation-reason"
+              value={cancellationReason}
+              onChange={(event) => setCancellationReason(event.target.value)}
+              placeholder="Tell us what we could improve..."
+              rows={4}
+              maxLength={1000}
+              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-700 dark:bg-slate-900"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setShowCancellationDialog(false)} disabled={cancellingSubscription}>Keep subscription</Button>
+            <Button variant="destructive" onClick={() => void cancelActiveSubscription()} disabled={cancellingSubscription || !cancellationReason.trim()}>
+              {cancellingSubscription ? "Cancelling..." : "Confirm cancellation"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       <Dialog open={Boolean(billingIntent)} onOpenChange={(open) => !open && setBillingIntent(null)}>
@@ -1214,18 +1268,23 @@ export default function SubscriptionPage() {
           {(() => {
             const plan = plans.find((candidate) => candidate.slug === billingIntent?.planSlug)
             if (!plan || !billingIntent) return null
+            const manualRefundAmount = Number(billingIntent.manualRefundAmount || 0)
             return (
             <div className="space-y-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-                <p>You are subscribing to <strong>{plan.name}</strong> for <strong>{billingIntent.locationQuantity.toLocaleString()} structural location{billingIntent.locationQuantity === 1 ? "" : "s"}</strong> with <strong>{billingIntent.terminalsPerLocation} terminal{billingIntent.terminalsPerLocation === 1 ? "" : "s"} per location</strong>.</p>
-                <p>Your card will be charged <strong>{billingIntent.chargeAmount ? formatNaira(billingIntent.chargeAmount) : "the calculated quote"}</strong> for the new billing cycle.</p>
-                {billingIntent.isUpgrade ? <p>The unused value of your current plan is estimated at <strong>{formatNaira(billingIntent.manualRefundAmount)}</strong>. We will review and process that refund manually within <strong>two business days</strong> after the upgrade is completed.</p> : null}
-                <p>You will receive <strong>{(billingIntent.locationQuantity * 100).toLocaleString()} Intera coins</strong> for this cycle. No free-trial period will be applied.</p>
+                <p>{billingIntent.isDowngrade ? "You are scheduling a downgrade to" : "You are subscribing to"} <strong>{plan.name}</strong> for <strong>{billingIntent.locationQuantity.toLocaleString()} structural location{billingIntent.locationQuantity === 1 ? "" : "s"}</strong> with <strong>{billingIntent.terminalsPerLocation} terminal{billingIntent.terminalsPerLocation === 1 ? "" : "s"} per location</strong>.</p>
+                {billingIntent.isDowngrade ? (
+                  <p>No payment will be taken today. Your current plan remains active until the end of its paid period, then the new plan will begin at the next billing date.</p>
+                ) : (
+                  <p>Your card will be charged <strong>{billingIntent.chargeAmount ? formatNaira(billingIntent.chargeAmount) : "the calculated quote"}</strong> for the new billing cycle.</p>
+                )}
+                {billingIntent.isUpgrade && manualRefundAmount > 0 ? <p>The unused value of your current plan is estimated at <strong>{formatNaira(manualRefundAmount)}</strong>. We will review and process that refund manually within <strong>two business days</strong> after the upgrade is completed.</p> : null}
+                <p>You will receive <strong>{(billingIntent.locationQuantity * 100).toLocaleString()} Intera coins</strong> for this billing cycle.</p>
               </div>
             )
           })()}
           <DialogFooter>
             <Button onClick={() => void confirmBillingIntent()} disabled={initiatingPayment || verifyingPayment}>
-              {initiatingPayment ? "Processing..." : "Continue to Subscribe"}
+              {initiatingPayment ? "Processing..." : billingIntent?.isDowngrade ? "Continue to Downgrade" : "Continue to Subscribe"}
             </Button>
           </DialogFooter>
         </DialogContent>
