@@ -848,12 +848,12 @@ export default function AuditTrailWorkspace() {
                               </Badge>
                             ) : null}
                           </div>
-                          <div className={cn("text-base font-semibold leading-6 text-gray-900", isSelected && "text-gray-950")}>
+                          <div className={cn("text-base font-semibold leading-6 text-gray-900", isSelected && "text-gray-900")}>
                             {event.summary || event.event_name}
                           </div>
                           {eventProductContext.title ? (
                             <div className={cn("rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2", isSelected && "border-blue-100 bg-white")}>
-                              <div className={cn("truncate text-sm font-semibold text-gray-900", isSelected && "text-gray-950")}>{eventProductContext.title}</div>
+                              <div className={cn("truncate text-sm font-semibold text-gray-900", isSelected && "text-gray-900")}>{eventProductContext.title}</div>
                               {eventProductContext.subtitle ? (
                                 <div className={cn("mt-1 truncate text-xs text-gray-500", isSelected && "text-gray-600")}>{eventProductContext.subtitle}</div>
                               ) : null}

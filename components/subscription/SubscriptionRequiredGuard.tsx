@@ -76,7 +76,7 @@ export function SubscriptionRequiredGuard({ children }: { children: ReactNode })
   if (showError) {
     return (
       <div className="mx-auto flex min-h-[50vh] max-w-2xl flex-col items-center justify-center gap-4 p-8 text-center">
-        <div className="rounded-full bg-amber-100 p-4 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
+        <div className="rounded-full bg-amber-100 p-4 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
           <LockKeyhole className="h-8 w-8" />
         </div>
         <div>
@@ -96,7 +96,7 @@ export function SubscriptionRequiredGuard({ children }: { children: ReactNode })
 
   return (
     <div className="mx-auto flex min-h-[50vh] max-w-2xl flex-col items-center justify-center gap-4 p-8 text-center">
-      <div className="rounded-full bg-amber-100 p-4 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
+      <div className="rounded-full bg-amber-100 p-4 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
         <LockKeyhole className="h-8 w-8" />
       </div>
       <div>

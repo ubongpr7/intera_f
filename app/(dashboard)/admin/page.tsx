@@ -69,10 +69,10 @@ const formatCurrency = (value: number, currency = "NGN") =>
   new Intl.NumberFormat("en-NG", { style: "currency", currency, minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(value)
 
 const insightTone = {
-  green: "border-emerald-200 bg-emerald-50 text-emerald-950",
-  amber: "border-amber-200 bg-amber-50 text-amber-950",
-  red: "border-red-200 bg-red-50 text-red-950",
-  blue: "border-blue-200 bg-blue-50 text-blue-950",
+  green: "border-emerald-200 bg-emerald-50 text-emerald-900",
+  amber: "border-amber-200 bg-amber-50 text-amber-900",
+  red: "border-red-200 bg-red-50 text-red-900",
+  blue: "border-blue-200 bg-blue-50 text-blue-900",
 } as const
 
 function InsightCard({
@@ -191,7 +191,7 @@ export default function AdminPage() {
               Admin command center
             </Badge>
             <div className="max-w-3xl space-y-3">
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-950 dark:text-gray-50 lg:text-4xl">Oversee billing, catalog, audit, and live operations from one place.</h1>
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-gray-50 lg:text-4xl">Oversee billing, catalog, audit, and live operations from one place.</h1>
               <p className="max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300 lg:text-base">
                 This hub is reserved for `is_staff` and `is_superuser` users. It exposes the parts of the platform that need governance,
                 monitoring, and intervention without mixing them into normal workspace flows.
@@ -216,7 +216,7 @@ export default function AdminPage() {
 
           <Card className="border-gray-200 bg-gray-50 shadow-none">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-slate-950 dark:text-gray-50">Operational snapshot</CardTitle>
+              <CardTitle className="text-lg text-slate-900 dark:text-gray-50">Operational snapshot</CardTitle>
               <CardDescription className="text-slate-600 dark:text-slate-300">
                 A quick read on billing, subscriptions, and catalog pressure.
               </CardDescription>
@@ -224,7 +224,7 @@ export default function AdminPage() {
             <CardContent className="space-y-3">
               <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3">
                 <span className="text-sm text-slate-600 dark:text-slate-300">Catalog variants</span>
-                <span className="text-sm font-semibold text-slate-950 dark:text-gray-50">{formatNumber(catalogStats?.total_variants ?? 0)}</span>
+                <span className="text-sm font-semibold text-slate-900 dark:text-gray-50">{formatNumber(catalogStats?.total_variants ?? 0)}</span>
               </div>
               <p className="pt-1 text-xs text-slate-500">Read-only operational catalog overview.</p>
             </CardContent>
@@ -273,7 +273,7 @@ export default function AdminPage() {
                       <Icon className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="font-semibold text-slate-950 dark:text-gray-50">{link.title}</h3>
+                      <h3 className="font-semibold text-slate-900 dark:text-gray-50">{link.title}</h3>
                       <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">{link.description}</p>
                     </div>
                   </div>

@@ -128,7 +128,7 @@ const AgentEditorDialog = ({
   isBusy: boolean;
 }) => (
   <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto border-gray-800 bg-gray-950 text-gray-50">
+    <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto border-gray-800 bg-gray-900 text-gray-50">
       <DialogHeader>
         <DialogTitle className="text-gray-50">{title}</DialogTitle>
         <DialogDescription className="text-gray-300">{description}</DialogDescription>
@@ -583,7 +583,7 @@ export default function AgentWorkspaceManager({
           </div>
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-700">Agent Access Required</p>
-            <h2 className="text-xl font-semibold text-amber-950">This workspace does not expose agent setup or chat access for your account.</h2>
+            <h2 className="text-xl font-semibold text-amber-900">This workspace does not expose agent setup or chat access for your account.</h2>
             <p className="max-w-3xl text-sm leading-6 text-amber-900/80">
               Ask a workspace administrator to assign at least <span className="font-semibold">read_agent</span> for setup access or{" "}
               <span className="font-semibold">interact_with_agent</span> for chat access.
@@ -703,7 +703,7 @@ export default function AgentWorkspaceManager({
             </div>
 
             {selectedAgent ? (
-              <div className="rounded-[30px] border border-gray-900 bg-gray-950 p-5 text-gray-50 shadow-[0_20px_55px_rgba(2,6,23,0.35)]">
+              <div className="rounded-[30px] border border-gray-900 bg-gray-900 p-5 text-gray-50 shadow-[0_20px_55px_rgba(2,6,23,0.35)]">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
@@ -750,14 +750,14 @@ export default function AgentWorkspaceManager({
                       <p className="text-sm font-semibold text-gray-50">Agent profile</p>
                     </div>
                     <div className="mt-3 grid gap-2 text-sm text-gray-300 md:grid-cols-2">
-                      <div className="rounded-2xl border border-gray-800 bg-gray-950 px-3 py-2">Visibility: {selectedAgent.visibility}</div>
-                      <div className="rounded-2xl border border-gray-800 bg-gray-950 px-3 py-2">Routing: {humanize(selectedAgent.routing_policy)}</div>
-                      <div className="rounded-2xl border border-gray-800 bg-gray-950 px-3 py-2">Transport: {selectedAgent.preferred_transport}</div>
-                      <div className="rounded-2xl border border-gray-800 bg-gray-950 px-3 py-2">Version: {selectedAgent.version}</div>
-                      <div className="rounded-2xl border border-gray-800 bg-gray-950 px-3 py-2">Tools: {selectedAgent.tool_bindings.length}</div>
-                      <div className="rounded-2xl border border-gray-800 bg-gray-950 px-3 py-2">Skills: {selectedAgent.skill_bindings.length}</div>
+                      <div className="rounded-2xl border border-gray-800 bg-gray-900 px-3 py-2">Visibility: {selectedAgent.visibility}</div>
+                      <div className="rounded-2xl border border-gray-800 bg-gray-900 px-3 py-2">Routing: {humanize(selectedAgent.routing_policy)}</div>
+                      <div className="rounded-2xl border border-gray-800 bg-gray-900 px-3 py-2">Transport: {selectedAgent.preferred_transport}</div>
+                      <div className="rounded-2xl border border-gray-800 bg-gray-900 px-3 py-2">Version: {selectedAgent.version}</div>
+                      <div className="rounded-2xl border border-gray-800 bg-gray-900 px-3 py-2">Tools: {selectedAgent.tool_bindings.length}</div>
+                      <div className="rounded-2xl border border-gray-800 bg-gray-900 px-3 py-2">Skills: {selectedAgent.skill_bindings.length}</div>
                     </div>
-                    <details className="mt-4 rounded-[22px] border border-gray-800 bg-gray-950/80 p-4">
+                    <details className="mt-4 rounded-[22px] border border-gray-800 bg-gray-900/80 p-4">
                       <summary className="cursor-pointer text-sm font-semibold text-gray-200">Agent details JSON</summary>
                       <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-words text-xs leading-5 text-gray-400">
                         {JSON.stringify(selectedAgent.card_payload, null, 2)}
@@ -797,7 +797,7 @@ export default function AgentWorkspaceManager({
                           selectedAgent.tool_bindings.map((binding) => (
                             <div
                               key={binding.id}
-                              className="inline-flex items-center gap-2 rounded-full border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-gray-200"
+                              className="inline-flex items-center gap-2 rounded-full border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-gray-200"
                             >
                               <span>{binding.tool.display_name}</span>
                               {canManageAgent ? (
@@ -849,7 +849,7 @@ export default function AgentWorkspaceManager({
                           selectedAgent.skill_bindings.map((binding) => (
                             <div
                               key={binding.id}
-                              className="inline-flex items-center gap-2 rounded-full border border-gray-700 bg-gray-950 px-3 py-2 text-xs text-gray-200"
+                              className="inline-flex items-center gap-2 rounded-full border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-gray-200"
                             >
                               <span>{binding.skill.name}</span>
                               {canManageAgent ? (
@@ -920,7 +920,7 @@ export default function AgentWorkspaceManager({
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-gray-900 bg-gray-950 p-4 text-gray-50 shadow-[0_20px_55px_rgba(2,6,23,0.35)]">
+            <div className="rounded-[28px] border border-gray-900 bg-gray-900 p-4 text-gray-50 shadow-[0_20px_55px_rgba(2,6,23,0.35)]">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-blue-300" />
                 <div>
@@ -946,7 +946,7 @@ export default function AgentWorkspaceManager({
                           </div>
                           <p className="mt-2 text-sm leading-6 text-gray-300">{template.description || "No description yet."}</p>
                         </div>
-                        <div className="rounded-2xl bg-gray-950 p-2 text-gray-300">
+                        <div className="rounded-2xl bg-gray-900 p-2 text-gray-300">
                           <Bot className="h-4 w-4" />
                         </div>
                       </div>

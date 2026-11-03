@@ -234,7 +234,7 @@ export default function AffiliatePartnersPage() {
                 </div>
               ) : (
                 <div>
-                  <p className="font-semibold text-slate-950">{user.first_name || user.email}</p>
+                  <p className="font-semibold text-slate-900">{user.first_name || user.email}</p>
                   <p className="text-sm text-slate-600">{user.email} · Code: <span className="font-semibold text-slate-900">{user.referral_code}</span> · Commission: <span className="font-semibold text-slate-900">{Number(user.referral_commission_rate ?? 0.05) * 100}%</span></p>
                 </div>
               )}
@@ -261,7 +261,7 @@ export default function AffiliatePartnersPage() {
           {payouts.map((payout) => (
             <div key={payout.id} className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <p className="font-semibold text-slate-950">{payout.referrer_email || payout.affiliate_name || "Affiliate"}</p>
+                <p className="font-semibold text-slate-900">{payout.referrer_email || payout.affiliate_name || "Affiliate"}</p>
                 <p className="text-sm text-slate-600">{payout.referred_email || "Referred customer"} · {payout.currency} {payout.payout_amount} · {payout.status}</p>
                 <p className="text-xs text-slate-500">Reference: {payout.payment_reference}</p>
               </div>
@@ -295,7 +295,7 @@ export default function AffiliatePartnersPage() {
                   <div className="rounded-xl bg-white p-2 text-blue-700 shadow-sm"><Users className="h-5 w-5" /></div>
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-semibold text-slate-950">{partner.name}</h3>
+                      <h3 className="font-semibold text-slate-900">{partner.name}</h3>
                       <Badge variant="outline" className={partner.is_active ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-gray-200 text-gray-500"}>{partner.is_active ? "Active" : "Inactive"}</Badge>
                     </div>
                     <p className="mt-1 text-sm text-slate-600">{partner.email} · Code: <span className="font-semibold text-slate-900">{partner.code}</span> · Commission: <span className="font-semibold text-slate-900">{Number(partner.commission_rate) * 100}%</span></p>

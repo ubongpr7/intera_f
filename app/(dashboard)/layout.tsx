@@ -21,7 +21,7 @@ export default function DashboardLayout({
   if (!isReady || !isSupportHostReady) {
     return (
       <DashboardHeader>
-        <main className="min-h-screen bg-slate-950 p-10 text-slate-200">
+        <main className="min-h-screen bg-slate-900 p-10 text-slate-200">
           Loading Intera IMS...
         </main>
       </DashboardHeader>
@@ -31,7 +31,7 @@ export default function DashboardLayout({
   // Support is a separate operational surface and must not run workspace
   // subscription, affiliate, or permission guards before it can render.
   if (isSupportHost) {
-    return <main className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">{children}</main>
+    return <main className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100">{children}</main>
   }
 
   return (

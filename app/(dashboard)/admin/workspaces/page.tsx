@@ -91,14 +91,14 @@ export default function WorkspaceManagementPage() {
     <section className="admin-portal-surface mx-auto w-full max-w-[1500px] space-y-6 px-4 py-6 lg:px-8">
       <div>
         <p className="text-sm font-semibold uppercase tracking-[.2em] text-emerald-700">Platform governance</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">Workspace management</h1>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">Workspace management</h1>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">Review every workspace created on Intera IMS, verify new workspaces, and maintain their platform-level details.</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Card><CardContent className="flex items-center gap-3 p-5"><Building2 className="h-5 w-5 text-blue-600" /><div><p className="text-sm text-slate-600">Total workspaces</p><p className="text-2xl font-semibold text-slate-950">{workspaces.length}</p></div></CardContent></Card>
-        <Card><CardContent className="flex items-center gap-3 p-5"><CheckCircle2 className="h-5 w-5 text-emerald-600" /><div><p className="text-sm text-slate-600">Verified</p><p className="text-2xl font-semibold text-slate-950">{verifiedCount}</p></div></CardContent></Card>
-        <Card><CardContent className="flex items-center gap-3 p-5"><Clock3 className="h-5 w-5 text-amber-600" /><div><p className="text-sm text-slate-600">Awaiting verification</p><p className="text-2xl font-semibold text-slate-950">{workspaces.length - verifiedCount}</p></div></CardContent></Card>
+        <Card><CardContent className="flex items-center gap-3 p-5"><Building2 className="h-5 w-5 text-blue-600" /><div><p className="text-sm text-slate-600">Total workspaces</p><p className="text-2xl font-semibold text-slate-900">{workspaces.length}</p></div></CardContent></Card>
+        <Card><CardContent className="flex items-center gap-3 p-5"><CheckCircle2 className="h-5 w-5 text-emerald-600" /><div><p className="text-sm text-slate-600">Verified</p><p className="text-2xl font-semibold text-slate-900">{verifiedCount}</p></div></CardContent></Card>
+        <Card><CardContent className="flex items-center gap-3 p-5"><Clock3 className="h-5 w-5 text-amber-600" /><div><p className="text-sm text-slate-600">Awaiting verification</p><p className="text-2xl font-semibold text-slate-900">{workspaces.length - verifiedCount}</p></div></CardContent></Card>
       </div>
 
       <Card>
@@ -116,7 +116,7 @@ export default function WorkspaceManagementPage() {
           <div className="space-y-3">
             {filteredWorkspaces.map((workspace) => (
               <div key={workspace.id} className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-4 lg:flex-row lg:items-center lg:justify-between">
-                {editingId === workspace.id && isSuperuser ? <div className="grid min-w-0 flex-1 gap-3 md:grid-cols-2"><Input value={editName} onChange={(event) => setEditName(event.target.value)} placeholder="Workspace name" aria-label="Workspace name" /><Input value={editIndustry} onChange={(event) => setEditIndustry(event.target.value)} placeholder="Industry" aria-label="Industry" /></div> : <div className="min-w-0"><p className="font-semibold text-slate-950">{workspace.name}</p><p className="mt-1 text-sm text-slate-600">Owner: {workspace.owner_name || "Unnamed owner"}{workspace.owner_email ? ` · ${workspace.owner_email}` : ""}</p><p className="mt-1 text-xs text-slate-500">{workspace.industry || "Industry not set"} · {workspace.staff_count} active staff · Created {formatDate(workspace.created_at)}</p></div>}
+                {editingId === workspace.id && isSuperuser ? <div className="grid min-w-0 flex-1 gap-3 md:grid-cols-2"><Input value={editName} onChange={(event) => setEditName(event.target.value)} placeholder="Workspace name" aria-label="Workspace name" /><Input value={editIndustry} onChange={(event) => setEditIndustry(event.target.value)} placeholder="Industry" aria-label="Industry" /></div> : <div className="min-w-0"><p className="font-semibold text-slate-900">{workspace.name}</p><p className="mt-1 text-sm text-slate-600">Owner: {workspace.owner_name || "Unnamed owner"}{workspace.owner_email ? ` · ${workspace.owner_email}` : ""}</p><p className="mt-1 text-xs text-slate-500">{workspace.industry || "Industry not set"} · {workspace.staff_count} active staff · Created {formatDate(workspace.created_at)}</p></div>}
                 <div className="flex flex-wrap items-center gap-2">
                   {workspace.is_verified ? <Badge className="bg-emerald-600 text-gray-50">Verified</Badge> : <Badge variant="outline" className="border-amber-300 text-amber-700">Awaiting verification</Badge>}
                   {isSuperuser ? <>{editingId === workspace.id ? <><Button size="sm" onClick={() => void saveEdit(workspace)} disabled={isUpdating}><Save className="mr-1 h-4 w-4" />Save</Button><Button size="sm" variant="outline" onClick={() => setEditingId(null)}><X className="mr-1 h-4 w-4" />Cancel</Button></> : <Button size="sm" variant="outline" onClick={() => startEdit(workspace)}><Pencil className="mr-1 h-4 w-4" />Edit</Button>}

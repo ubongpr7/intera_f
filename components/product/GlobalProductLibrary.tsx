@@ -248,7 +248,7 @@ function ProductLibraryCard({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="truncate text-lg font-semibold text-gray-950">{product.name}</p>
+              <p className="truncate text-lg font-semibold text-gray-900">{product.name}</p>
               <p className="mt-1 text-sm text-gray-600">
                 {[product.brand, product.category_name].filter(Boolean).join(" · ") || "Curated global catalog product"}
               </p>
@@ -393,19 +393,19 @@ export function GlobalProductPreviewSheet({
               <div className="grid gap-3 md:grid-cols-3">
                 <div className="rounded-2xl border border-gray-200 bg-white p-4">
                   <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Import status</p>
-                  <p className="mt-2 text-lg font-semibold text-gray-950">
+                  <p className="mt-2 text-lg font-semibold text-gray-900">
                     {loadingPreview ? "Checking..." : importPreview?.imported ? "Already imported" : "Ready"}
                   </p>
                 </div>
                 <div className="rounded-2xl border border-gray-200 bg-white p-4">
                   <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Variants to add</p>
-                  <p className="mt-2 text-lg font-semibold text-gray-950">
+                  <p className="mt-2 text-lg font-semibold text-gray-900">
                     {loadingPreview ? "..." : importPreview?.missing_variant_count ?? product.variant_count}
                   </p>
                 </div>
                 <div className="rounded-2xl border border-gray-200 bg-white p-4">
                   <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Source version</p>
-                  <p className="mt-2 text-lg font-semibold text-gray-950">
+                  <p className="mt-2 text-lg font-semibold text-gray-900">
                     {loadingPreview ? "..." : importPreview?.source_version ?? "-"}
                   </p>
                 </div>
@@ -414,15 +414,15 @@ export function GlobalProductPreviewSheet({
               <div className="grid gap-3 md:grid-cols-3">
                 <div className="rounded-2xl border border-gray-200 bg-white p-4">
                   <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Catalog status</p>
-                  <p className="mt-2 text-lg font-semibold text-gray-950">{formatMachineLabel(sourceStatus || "published")}</p>
+                  <p className="mt-2 text-lg font-semibold text-gray-900">{formatMachineLabel(sourceStatus || "published")}</p>
                 </div>
                 <div className="rounded-2xl border border-gray-200 bg-white p-4">
                   <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Active variants</p>
-                  <p className="mt-2 text-lg font-semibold text-gray-950">{product.variant_count}</p>
+                  <p className="mt-2 text-lg font-semibold text-gray-900">{product.variant_count}</p>
                 </div>
                 <div className="rounded-2xl border border-gray-200 bg-white p-4">
                   <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Brand group</p>
-                  <p className="mt-2 text-lg font-semibold text-gray-950">{product.brand || "Unbranded"}</p>
+                  <p className="mt-2 text-lg font-semibold text-gray-900">{product.brand || "Unbranded"}</p>
                 </div>
               </div>
             )}
@@ -448,7 +448,7 @@ export function GlobalProductPreviewSheet({
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-gray-950">{variant.display_name}</p>
+                      <p className="font-semibold text-gray-900">{variant.display_name}</p>
                       <div className="mt-2 flex flex-wrap gap-2 text-xs text-gray-500">
                         {variant.barcode ? <span className="rounded-full bg-gray-100 px-3 py-1">{variant.barcode}</span> : null}
                         {variant.sku ? <span className="rounded-full bg-gray-100 px-3 py-1">{variant.sku}</span> : null}
@@ -839,7 +839,7 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-center gap-2">
-                                <p className="min-w-0 flex-1 truncate font-semibold text-gray-950">{product.name}</p>
+                                <p className="min-w-0 flex-1 truncate font-semibold text-gray-900">{product.name}</p>
                                 {product.imported ? (
                                   <Badge className="rounded-full border-green-200 bg-green-50 text-green-700 hover:bg-green-50">Already imported</Badge>
                                 ) : null}
@@ -873,7 +873,7 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
                 ) : null}
 
                 {barcodeResolution.duplicates.length > 0 ? (
-                  <div className="rounded-3xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-950">
+                  <div className="rounded-3xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-900">
                     <div className="mb-2 flex items-center gap-2 font-semibold">
                       <AlertCircle className="h-4 w-4" />
                       Already in this workspace
@@ -889,7 +889,7 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
                 ) : null}
 
                 {barcodeResolution.misses.length > 0 ? (
-                  <div className="rounded-3xl border border-red-100 bg-red-50 p-4 text-sm text-red-950">
+                  <div className="rounded-3xl border border-red-100 bg-red-50 p-4 text-sm text-red-900">
                     <div className="mb-2 flex items-center gap-2 font-semibold">
                       <AlertCircle className="h-4 w-4" />
                       Not resolved
@@ -1049,7 +1049,7 @@ export default function GlobalProductLibrary({ mode = "workspace" }: GlobalProdu
               </div>
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-gray-200 bg-white p-4">
                 <p className="text-sm text-gray-600">
-                  Page <span className="font-semibold text-gray-950">{currentPage}</span> of <span className="font-semibold text-gray-950">{totalPages}</span> · Showing up to {pageSize} families per page
+                  Page <span className="font-semibold text-gray-900">{currentPage}</span> of <span className="font-semibold text-gray-900">{totalPages}</span> · Showing up to {pageSize} families per page
                 </p>
                 <div className="flex flex-wrap items-center gap-2">
                   <Button

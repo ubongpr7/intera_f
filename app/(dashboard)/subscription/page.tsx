@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation"
 import { AlertTriangle, CalendarClock, CheckCircle2, Coins, CreditCard, Gauge, LockKeyhole, ShieldCheck } from "lucide-react"
 import { toast } from "react-toastify"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { readCookieValue } from "@/lib/authCookies"
@@ -14,6 +15,7 @@ import {
   useGetCurrentEntitlementsQuery,
   useGetPaymentsQuery,
   useGetSubscriptionPlansQuery,
+  useGetBillingConfigurationQuery,
   useInitiatePaymentMutation,
   useVerifyPaymentMutation,
   useCancelSubscriptionMutation,
@@ -40,6 +42,21 @@ type PlanLimitIssue = {
 type BillingIntent = {
   planSlug: string
   startTrial: boolean
+  locationQuantity: number
+  terminalsPerLocation: number
+  monthlyTotal: number
+  chargeAmount: number
+  isUpgrade: boolean
+  manualRefundAmount: number
+}
+
+const MAX_TERMINALS_PER_LOCATION = 10
+
+const planSlugForLocation = (locations: number) => {
+  if (locations <= 3) return "basic"
+  if (locations <= 9) return "starter"
+  if (locations <= 15) return "growth"
+  return "scale"
 }
 
 const label = (value: string) => value.replaceAll("-", " ").replace(/\b\w/g, (char) => char.toUpperCase())
@@ -95,12 +112,6 @@ const formatSubscriptionStatus = (status?: string | null, pendingCancellation?: 
 const formatFeatureLimit = (feature: SubscriptionPlanRecord["features"][number]) => {
   if (feature.limit_type === "BOOLEAN" || feature.is_unlimited) return feature.name
   return `${Number(feature.limit_value ?? 0).toLocaleString()} ${feature.name.toLowerCase()}`
-}
-
-const calculateIncludedCoinsFromPlanPrice = (price: string | number | undefined) => {
-  const numericPrice = Number(price ?? 0)
-  if (!Number.isFinite(numericPrice) || numericPrice <= 0) return 0
-  return Math.round((numericPrice / 50) / 100) * 100
 }
 
 const fallbackCoinRateByPlanSlug: Record<string, number> = {
@@ -232,6 +243,8 @@ export default function SubscriptionPage() {
     { application__slug: "intera-ims" },
     { refetchOnMountOrArgChange: true },
   )
+  const [locationQuantityInput, setLocationQuantityInput] = useState("1")
+  const locationQuantity = Math.max(1, Math.floor(Number(locationQuantityInput) || 1))
   const orderedPlans = useMemo(
     () => plans
       .filter((plan) => plan.slug !== "enterprise")
@@ -239,12 +252,35 @@ export default function SubscriptionPage() {
       .sort((left, right) => Number(left.price) - Number(right.price)),
     [plans],
   )
+  const [terminalsPerLocationInput, setTerminalsPerLocationInput] = useState("1")
+  const terminalsPerLocation = Math.min(
+    MAX_TERMINALS_PER_LOCATION,
+    Math.max(1, Math.floor(Number(terminalsPerLocationInput) || 1)),
+  )
+  const { data: billingConfiguration, isLoading: loadingBillingConfiguration, isError: billingConfigurationError } = useGetBillingConfigurationQuery(
+    {
+      locations: String(locationQuantity),
+      terminals_per_location: String(terminalsPerLocation),
+    },
+    { refetchOnMountOrArgChange: true },
+  )
+  const selectedPlanSlug = planSlugForLocation(locationQuantity)
   const [initiatePayment, { isLoading: initiatingPayment }] = useInitiatePaymentMutation()
   const [verifyPayment, { isLoading: verifyingPayment }] = useVerifyPaymentMutation()
   const [cancelSubscription, { isLoading: cancellingSubscription }] = useCancelSubscriptionMutation()
   const [topUpCoins, { isLoading: toppingUpCoins }] = useTopUpCoinsMutation()
   const [coinTopUpAmount, setCoinTopUpAmount] = useState("100")
   const [billingIntent, setBillingIntent] = useState<BillingIntent | null>(null)
+  const [showBillingConfigurator, setShowBillingConfigurator] = useState(false)
+  useEffect(() => {
+    if (!showBillingConfigurator || !entitlements?.subscription) return
+    const locations = Math.max(1, Number(entitlements.subscription.location_quantity ?? 1))
+    const configuredTerminalLimit = Number(entitlements.features?.["pos-terminals"]?.limit_value ?? 0)
+    const terminalsPerLocation = entitlements.subscription.terminals_per_location
+      ?? (configuredTerminalLimit > 0 ? Math.max(1, Math.round(configuredTerminalLimit / locations)) : 1)
+    setLocationQuantityInput(String(locations))
+    setTerminalsPerLocationInput(String(Math.min(MAX_TERMINALS_PER_LOCATION, Math.max(1, terminalsPerLocation))))
+  }, [entitlements?.features, entitlements?.subscription?.id, entitlements?.subscription?.location_quantity, entitlements?.subscription?.terminals_per_location, showBillingConfigurator])
   const activePlan = entitlements?.subscription?.plan
   const activePlanRecord = useMemo(
     () => plans.find((plan) => plan.slug === activePlan?.slug),
@@ -257,9 +293,9 @@ export default function SubscriptionPage() {
   const usageRows = useMemo(() => entitlements?.usage ?? [], [entitlements?.usage])
   const features = useMemo(() => Object.entries(entitlements?.features ?? {}), [entitlements?.features])
   const coinBalance = entitlements?.coins?.balance ?? 0
-  const coinAllocation = activePlanRecord
-    ? calculateIncludedCoinsFromPlanPrice(activePlanRecord.price)
-    : entitlements?.coins?.included_allocation ?? entitlements?.coins?.monthly_allocation ?? 0
+  const coinAllocation = entitlements?.coins?.included_allocation
+    ?? entitlements?.coins?.monthly_allocation
+    ?? (entitlements?.subscription?.location_quantity ?? 1) * 100
   const coinPurchaseRate = entitlements?.coins?.purchase_rate_naira
     ?? activePlanRecord?.coin_purchase_rate_naira
     ?? (activePlan?.slug ? fallbackCoinRateByPlanSlug[activePlan.slug] ?? null : null)
@@ -297,6 +333,10 @@ export default function SubscriptionPage() {
         const status = normalizePaymentStatus(payment.status)
         return ["completed", "processing", "failed", "cancelled", "refunded"].includes(status)
       }),
+    [payments],
+  )
+  const refundHistory = useMemo(
+    () => payments.filter((payment) => Boolean(payment.metadata?.manual_refund_amount) && Boolean(payment.metadata?.manual_refund_status)),
     [payments],
   )
   const latestBillingPayment = useMemo(
@@ -381,7 +421,12 @@ export default function SubscriptionPage() {
       })
   }, [refetch, refetchCoinTransactions, refetchPayments, searchParams, verifyPayment])
 
-  const authorizeBilling = async (planSlug: string, startTrial = true) => {
+  const authorizeBilling = async (
+    planSlug: string,
+    startTrial = false,
+    requestedLocationQuantity = locationQuantity,
+    requestedTerminalsPerLocation = terminalsPerLocation,
+  ) => {
     if (!owner) return
     const plan = plans.find((candidate) => candidate.slug === planSlug)
     const limitIssues = plan ? getPlanLimitIssues(plan) : []
@@ -406,7 +451,15 @@ export default function SubscriptionPage() {
         success_url: `${window.location.origin}/subscription`,
         cancel_url: `${window.location.origin}/subscription`,
         start_trial: startTrial,
+        location_quantity: requestedLocationQuantity,
+        terminals_per_location: requestedTerminalsPerLocation,
       }).unwrap()
+      if (response?.scheduled_downgrade) {
+        toast.success("Your downgrade is scheduled for the next billing date.")
+        await refetch()
+        await refetchPayments()
+        return
+      }
       if (response?.checkout_url) {
         window.location.assign(response.checkout_url)
         return
@@ -417,15 +470,37 @@ export default function SubscriptionPage() {
     }
   }
 
-  const openBillingConfirmation = (planSlug: string, startTrial: boolean) => {
-    setBillingIntent({ planSlug, startTrial })
+  const openBillingConfirmation = (planSlug: string, startTrial = false) => {
+    if (!billingConfiguration) {
+      toast.error("Your billing quote is still being calculated. Please try again shortly.")
+      return
+    }
+    const currentMonthlyTotal = Number((entitlements?.subscription as { monthly_total?: number } | undefined)?.monthly_total ?? 0)
+    const nextMonthlyTotal = Number(billingConfiguration.quote.monthly_total ?? 0)
+    const periodEnd = entitlements?.subscription?.current_period_end ? new Date(entitlements.subscription.current_period_end).getTime() : 0
+    const periodStart = entitlements?.subscription?.start_date ? new Date(entitlements.subscription.start_date).getTime() : 0
+    const now = Date.now()
+    const isUpgrade = Boolean(activePlan && nextMonthlyTotal > currentMonthlyTotal && periodEnd > now && periodEnd > periodStart)
+    const remainingRatio = isUpgrade ? Math.max(0, Math.min(1, (periodEnd - now) / (periodEnd - periodStart))) : 0
+    const manualRefundAmount = isUpgrade ? Math.round(currentMonthlyTotal * remainingRatio * 100) / 100 : 0
+    const chargeAmount = nextMonthlyTotal
+    setBillingIntent({
+      planSlug,
+      startTrial,
+      locationQuantity,
+      terminalsPerLocation,
+      monthlyTotal: Number(billingConfiguration?.quote.monthly_total ?? 0),
+      chargeAmount,
+      isUpgrade,
+      manualRefundAmount,
+    })
   }
 
   const confirmBillingIntent = async () => {
     if (!billingIntent) return
     const intent = billingIntent
     setBillingIntent(null)
-    await authorizeBilling(intent.planSlug, intent.startTrial)
+    await authorizeBilling(intent.planSlug, intent.startTrial, intent.locationQuantity, intent.terminalsPerLocation)
   }
 
   const cancelActiveSubscription = async () => {
@@ -481,7 +556,7 @@ export default function SubscriptionPage() {
 
   return (
     <div className="subscription-workspace space-y-6">
-      <Card className="subscription-overview border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <Card className="subscription-overview border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <CardHeader>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -528,8 +603,8 @@ export default function SubscriptionPage() {
               </div>
               <div className={`subscription-stat rounded-2xl border p-4 ${ 
                 billingAuthorized
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-50"
-                  : "border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-50"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-50"
+                  : "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-50"
               }`}>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] opacity-70">Card</p>
                 <p className="mt-2 text-lg font-semibold">{billingAuthorized ? "Connected" : "Not connected"}</p>
@@ -544,7 +619,7 @@ export default function SubscriptionPage() {
           ) : (
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
               {owner
-                ? "Choose a plan and connect a card for billing after the trial. The workspace gets the configured trial period before regular monthly billing applies."
+                ? "Choose a plan and the number of structural locations you need. Billing starts immediately after confirmation."
                 : "This workspace does not have an active subscription yet. Ask the workspace owner to choose a plan."}
             </div>
           )}
@@ -552,7 +627,7 @@ export default function SubscriptionPage() {
       </Card>
 
       {owner ? (
-        <Card className="subscription-billing-details border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <Card className="subscription-billing-details border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ShieldCheck className="h-5 w-5 text-blue-600" />
@@ -574,6 +649,16 @@ export default function SubscriptionPage() {
                     ? `Access remains available until ${formatDate(subscriptionAccessUntil)}.`
                     : `Billing status: ${formatSubscriptionStatus(entitlements?.subscription?.status, entitlements?.subscription?.pending_cancellation)}.`}
                 </p>
+                {activePlan && entitlements?.subscription?.location_quantity ? (
+                  <p className="mt-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+                    {entitlements.subscription.location_quantity.toLocaleString()} structural location{entitlements.subscription.location_quantity === 1 ? "" : "s"} · {coinAllocation.toLocaleString()} Intera coins per cycle
+                  </p>
+                ) : null}
+                {activePlan && activeSubscriptionId ? (
+                  <Button className="mt-4" onClick={() => setShowBillingConfigurator(true)}>
+                    Manage plan
+                  </Button>
+                ) : null}
               </div>
               <div className="border-t border-slate-200 pt-4 dark:border-slate-800">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Saved card</p>
@@ -626,7 +711,7 @@ export default function SubscriptionPage() {
                         <div className="text-right">
                           <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
                             paid
-                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
+                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200"
                               : "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200"
                           }`}>
                             {status ? status.charAt(0).toUpperCase() + status.slice(1) : "Unknown"}
@@ -643,23 +728,77 @@ export default function SubscriptionPage() {
         </Card>
       ) : null}
 
+      {owner && refundHistory.length > 0 ? (
+        <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <CardHeader>
+            <CardTitle>Refunds</CardTitle>
+            <CardDescription>Track subscription refunds for this workspace.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {refundHistory.map((payment) => {
+              const refundStatus = `${payment.metadata?.manual_refund_status ?? ""}`.toUpperCase()
+              const label = refundStatus === "REFUNDED" || refundStatus === "PROCESSED" ? "Refunded" : refundStatus === "PENDING_REVIEW" ? "Under review" : "Processing"
+              return (
+                <div key={payment.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
+                  <div>
+                    <p className="font-medium">Subscription refund</p>
+                    <p className="text-sm text-slate-500">{payment.external_payment_id || payment.reference || "Payment"} · {formatDate(payment.created_at)}</p>
+                    {refundStatus !== "REFUNDED" && refundStatus !== "PROCESSED" && payment.metadata?.manual_refund_due_at ? <p className="text-sm text-slate-500">Expected by {formatDate(String(payment.metadata.manual_refund_due_at))}</p> : null}
+                  </div>
+                  <div className="text-right">
+                    <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">{label}</span>
+                    <p className="mt-2 text-base font-semibold">{formatNaira(Number(payment.metadata?.manual_refund_amount ?? 0))}</p>
+                  </div>
+                </div>
+              )
+            })}
+          </CardContent>
+        </Card>
+      ) : null}
+
       {!owner ? (
-        <Card className="subscription-restricted border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <Card className="subscription-restricted border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <CardContent className="flex items-center gap-3 p-6 text-sm text-slate-600 dark:text-slate-300">
             <LockKeyhole className="h-5 w-5 text-amber-500" />
             Subscription setup is restricted to the workspace owner.
           </CardContent>
         </Card>
       ) : (
-        <Card className="subscription-billing border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <Card className="subscription-billing border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CalendarClock className="h-5 w-5 text-blue-600" />
               Set up subscription billing
             </CardTitle>
-            <CardDescription>Select the plan that matches the current workspace size. Card details are handled by secure billing; Intera stores provider references, not raw card data. The ₦1,000 trial-entry payment verifies your card and the selected plan grants its trial allocation, while monthly plan billing starts after the seven-day trial.</CardDescription>
+            <CardDescription>Tell us how many physical stores and checkout terminals you need. One terminal per store is included by default; additional terminals are priced separately.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="grid gap-4 xl:grid-cols-2">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/60 xl:col-start-1 xl:row-start-1">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold">Plan configuration</p>
+                <p className="mt-1 text-sm text-slate-500">{locationQuantity.toLocaleString()} physical store{locationQuantity === 1 ? "" : "s"} · {terminalsPerLocation} terminal{terminalsPerLocation === 1 ? "" : "s"} per store</p>
+                <p className="mt-1 text-xs text-slate-500">One terminal per location is included by default.</p>
+              </div>
+              <Button onClick={() => setShowBillingConfigurator(true)}>
+                {activePlan && activeSubscriptionId ? "Manage plan" : "Configure plan"}
+              </Button>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 xl:col-start-1 xl:row-start-2">
+              {billingConfiguration ? (
+                <>
+                  <p className="font-semibold ">Estimated monthly total: {formatNaira(Number(billingConfiguration.quote.monthly_total))}</p>
+                  {Number(billingConfiguration.quote.extra_terminal_quantity) > 0 ? (
+                    <p className="mt-1 text-xs text-blue-800">Includes {Number(billingConfiguration.quote.extra_terminal_quantity).toLocaleString()} additional terminal{Number(billingConfiguration.quote.extra_terminal_quantity) === 1 ? "" : "s"} at {formatNaira(Number(billingConfiguration.quote.terminal_unit_price))} each.</p>
+                  ) : <p className="mt-1 text-xs text-blue-800">The default one terminal per location is included.</p>}
+                </>
+              ) : loadingBillingConfiguration ? (
+                <p className="text-sm text-slate-500">Calculating your monthly quote…</p>
+              ) : billingConfigurationError ? (
+                <p className="text-sm text-amber-800">The pricing service is not available with this configuration yet. Please deploy the updated subscription service before choosing a plan.</p>
+              ) : <p className="text-sm text-slate-500">Enter your configuration to calculate a quote.</p>}
+            </div>
             {loadingEntitlements ? (
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/60">
                 <SkeletonLine className="h-5 w-56" />
@@ -677,7 +816,6 @@ export default function SubscriptionPage() {
                   </span>
                   {subscriptionPendingCancellation ? (
                     <Button
-                      variant="outline"
                       onClick={() => openBillingConfirmation(activePlan.slug, false)}
                       disabled={initiatingPayment || verifyingPayment}
                     >
@@ -685,7 +823,6 @@ export default function SubscriptionPage() {
                     </Button>
                   ) : (
                     <Button
-                      variant="outline"
                       onClick={cancelActiveSubscription}
                       disabled={cancellingSubscription || initiatingPayment || verifyingPayment}
                     >
@@ -694,11 +831,11 @@ export default function SubscriptionPage() {
                   )}
                 </div>
                 {!billingAuthorized ? (
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-50">
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-900 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-50">
                     <div className="flex items-start gap-2">
                       <AlertTriangle className="mt-0.5 h-4 w-4" />
                       <span>
-                        No card is connected yet. Connect a card to start the seven-day trial. Paystack will process ₦1,000 to verify the card; the selected plan's trial allocation is granted once, and monthly billing starts after the trial unless cancelled.
+                        No card is connected yet. Continue to secure checkout to authorize monthly billing for this workspace.
                       </span>
                     </div>
                     <Button size="sm" onClick={() => openBillingConfirmation(activePlan.slug, true)} disabled={initiatingPayment || verifyingPayment}>
@@ -708,14 +845,13 @@ export default function SubscriptionPage() {
                 ) : null}
               </div>
             ) : null}
-            {loadingPlans || loadingEntitlements ? (
-              <PlanCardsSkeleton />
-            ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {orderedPlans.map((plan) => {
+            {/* The plan preview is rendered inside the configuration modal. */}
+            {false && (
+            <div className="grid gap-4 md:grid-cols-2 xl:col-start-2 xl:row-start-1 xl:grid-cols-1">
+              {orderedPlans.filter((plan) => plan.slug === selectedPlanSlug).map((plan) => {
                 const selected = activePlan?.slug === plan.slug
                 const paymentPendingForPlan = !activePlan && pendingPlanSlug === plan.slug
-                const busy = initiatingPayment || verifyingPayment || cancellingSubscription
+                const busy = initiatingPayment || verifyingPayment || cancellingSubscription || loadingBillingConfiguration
                 const limitIssues = getPlanLimitIssues(plan)
                 const blockedByUsage = limitIssues.length > 0
                 const blockedByLoadingUsage = !selected && workspaceUsageLoading
@@ -723,20 +859,20 @@ export default function SubscriptionPage() {
                   <div
                     key={plan.id}
                     className={`subscription-plan-card rounded-3xl border p-5 ${ 
-                      selected
-                        ? "border-emerald-400 bg-emerald-50 text-emerald-950 dark:border-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-50"
-                        : "border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/60"
+                        selected
+                        ? "border-blue-400 bg-blue-50 text-slate-900 dark:border-blue-500 dark:bg-blue-900/30 dark:text-slate-50"
+                        : "border-slate-200 bg-slate-50 text-slate-900 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-50"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-lg font-semibold">{plan.name}</p>
-                        <p className="mt-1 text-3xl font-bold">{formatPrice(plan)}</p>
+                        <p className="mt-1 text-3xl font-bold">{billingConfiguration ? formatNaira(Number(billingConfiguration.quote.monthly_total)) : formatPrice(plan)}</p>
                       </div>
                       {selected || paymentPendingForPlan ? <CheckCircle2 className="h-5 w-5 text-emerald-600" /> : null}
                     </div>
                     <p className="mt-3 min-h-12 text-sm text-slate-600 dark:text-slate-300">{plan.description || `${plan.name} plan for Intera IMS.`}</p>
-                    <p className="mt-3 text-sm font-medium">{plan.trial_days}-day free trial · ₦{Number(plan.trial_authorization_amount ?? 1000).toLocaleString()} for {Number(plan.trial_token_amount ?? 10000).toLocaleString()} Intera tokens</p>
+                    <p className="mt-3 text-sm font-medium">{label(plan.slug)} tier for {locationQuantity.toLocaleString()} location{locationQuantity === 1 ? "" : "s"} and {terminalsPerLocation} terminal{terminalsPerLocation === 1 ? "" : "s"} per location · {billingConfiguration ? formatNaira(Number(billingConfiguration.quote.monthly_total)) : "Calculating…"} / month</p>
                     <ul className="mt-4 space-y-2 text-sm">
                       {(plan.features ?? []).map((feature) => (
                         <li key={feature.slug} className="flex items-start gap-2 text-slate-700 dark:text-slate-200">
@@ -746,7 +882,7 @@ export default function SubscriptionPage() {
                       ))}
                     </ul>
                     {blockedByUsage ? (
-                      <details className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-50">
+                      <details className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-50">
                         <summary className="cursor-pointer list-none font-semibold">
                           Why can&apos;t I choose this plan?
                         </summary>
@@ -770,22 +906,20 @@ export default function SubscriptionPage() {
                     <div className="mt-4 grid gap-2">
                       {selected || paymentPendingForPlan || !activePlan ? (
                         <Button
-                          variant={selected ? "outline" : "default"}
-                          className={selected ? "border-emerald-600 bg-emerald-100 text-emerald-950 hover:bg-emerald-200 dark:border-emerald-500 dark:bg-emerald-950/50 dark:text-emerald-50 dark:hover:bg-emerald-900/60" : undefined}
+                          className={selected ? "border-blue-600 bg-blue-100 text-gray-50 hover:bg-blue-200 " : undefined}
                           disabled={(selected && !subscriptionPendingCancellation) || paymentPendingForPlan || busy || blockedByUsage || blockedByLoadingUsage}
-                          onClick={() => openBillingConfirmation(plan.slug, true)}
+                          onClick={() => openBillingConfirmation(plan.slug, false)}
                         >
                           {paymentPendingForPlan
                             ? latestPlanPaymentStatus === "processing" ? "Payment processing" : "Activation pending"
                             : selected
                             ? subscriptionPendingCancellation ? "Resume renewal" : "Current plan"
                             : blockedByLoadingUsage ? "Checking usage..."
-                            : blockedByUsage ? "Usage too high" : `Start ${plan.trial_days}-day free trial`}
+                            : blockedByUsage ? "Usage too high" : `Subscribe for ${locationQuantity.toLocaleString()} location${locationQuantity === 1 ? "" : "s"}`}
                         </Button>
                       ) : (
                         <Button
-                          variant="outline"
-                          className="border-blue-300 bg-blue-50 text-blue-800 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-950/40 dark:text-blue-100 dark:hover:bg-blue-900/60"
+                          className="border-blue-300 bg-blue-50 text-blue-800 hover:bg-blue-100 "
                           disabled={busy || blockedByUsage || blockedByLoadingUsage}
                           onClick={() => openBillingConfirmation(plan.slug, false)}
                         >
@@ -793,7 +927,7 @@ export default function SubscriptionPage() {
                         </Button>
                       )}
                       {!activePlan && !selected && !paymentPendingForPlan && !blockedByUsage && !blockedByLoadingUsage ? (
-                        <Button variant="outline" disabled={busy} onClick={() => openBillingConfirmation(plan.slug, false)}>
+                        <Button disabled={busy} onClick={() => openBillingConfirmation(plan.slug, false)}>
                           Subscribe immediately
                         </Button>
                       ) : null}
@@ -807,7 +941,7 @@ export default function SubscriptionPage() {
         </Card>
       )}
 
-      <Card className="subscription-coins border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <Card className="subscription-coins border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Coins className="h-5 w-5 text-blue-600" />Intera coin balance</CardTitle>
         <CardDescription>Coins power metered AI and catalog operations. Global catalog imports use 1 coin per imported variant; AI image bulk creation uses 5 coins per uploaded image.</CardDescription>
@@ -860,7 +994,7 @@ export default function SubscriptionPage() {
                       ? `Your current plan buys coins at ${formatNaira(coinPurchaseRate ?? 0)} per coin.`
                       : "Choose an active subscription plan before buying Intera coins."}
                   </p>
-                  <div className="mt-2 flex overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950">
+                  <div className="mt-2 flex overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
                     <input
                       value={coinTopUpAmount}
                       onChange={(event) => setCoinTopUpAmount(event.target.value)}
@@ -910,7 +1044,7 @@ export default function SubscriptionPage() {
         </CardContent>
       </Card>
 
-      <Card className="subscription-usage border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <Card className="subscription-usage border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Gauge className="h-5 w-5 text-blue-600" />Plan usage and limits</CardTitle>
           <CardDescription>Current workspace consumption against the active plan. Usage is read from the owning services.</CardDescription>
@@ -958,41 +1092,140 @@ export default function SubscriptionPage() {
           ))}
         </CardContent>
       </Card>
+      <Dialog open={showBillingConfigurator} onOpenChange={setShowBillingConfigurator}>
+        <DialogContent className="max-h-[90vh] max-w-6xl overflow-y-auto p-8 text-gray-900">
+          <DialogHeader>
+            <DialogTitle>{activePlan && activeSubscriptionId ? "Manage your plan" : "Configure your plan"}</DialogTitle>
+            <DialogDescription>
+              Enter the number of physical stores and checkout terminals you need. One terminal per location is included by default; additional terminals are optional.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-5">
+            <div>
+              <label htmlFor="location-quantity" className="text-sm font-semibold">Structural locations</label>
+              <p className="mt-1 text-sm text-slate-500">A structural location means one physical store, branch, or shop.</p>
+              <Input
+                id="location-quantity"
+                type="number"
+                min={1}
+                max={10000}
+                step={1}
+                value={locationQuantityInput}
+                onChange={(event) => setLocationQuantityInput(event.target.value)}
+                className="mt-3"
+              />
+            </div>
+            <div>
+              <label htmlFor="terminals-per-location" className="text-sm font-semibold">POS terminals per location</label>
+              <p className="mt-1 text-sm text-slate-500">Use 1 for the default setup, or configure up to {MAX_TERMINALS_PER_LOCATION} terminals per physical store.</p>
+              <Input
+                id="terminals-per-location"
+                type="number"
+                min={1}
+                max={MAX_TERMINALS_PER_LOCATION}
+                step={1}
+                value={terminalsPerLocationInput}
+                onChange={(event) => {
+                  const next = Math.min(MAX_TERMINALS_PER_LOCATION, Math.max(1, Math.floor(Number(event.target.value) || 1)))
+                  setTerminalsPerLocationInput(String(next))
+                }}
+                className="mt-3"
+              />
+            </div>
+            {billingConfiguration ? (
+              <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+                <p className="font-semibold">Estimated monthly total: {formatNaira(Number(billingConfiguration.quote.monthly_total))}</p>
+                <p className="mt-1">{label(selectedPlanSlug)} tier · {locationQuantity.toLocaleString()} location{locationQuantity === 1 ? "" : "s"} · {terminalsPerLocation} terminal{terminalsPerLocation === 1 ? "" : "s"} per location</p>
+                <p className="mt-1 text-xs text-blue-800">Locations: {formatNaira(Number(billingConfiguration.quote.location_total))} · Additional terminals: {formatNaira(Number(billingConfiguration.quote.terminal_total))}</p>
+              </div>
+            ) : billingConfigurationError ? (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">The pricing service must be updated before a plan can be selected.</div>
+            ) : null}
+          </div>
+          <div>
+            <p className="text-sm font-semibold">Your recommended plan</p>
+            <p className="mt-1 text-sm text-slate-500">The tier is selected automatically from your structural-location count.</p>
+            {loadingPlans ? (
+              <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <SkeletonLine className="h-5 w-32" />
+                <SkeletonLine className="mt-4 h-8 w-36" />
+                <SkeletonLine className="mt-4 h-4 w-full" />
+              </div>
+            ) : (() => {
+              const plan = orderedPlans.find((candidate) => candidate.slug === selectedPlanSlug)
+              if (!plan) return <p className="mt-4 text-sm text-slate-500">No plan is available for this configuration yet.</p>
+              const planLimitIssues = getPlanLimitIssues(plan)
+              const configurationLimitIssues = [
+                Number(usageCountsByFeature.get("structural-locations") ?? 0) > locationQuantity
+                  ? { featureSlug: "structural-locations", message: `This workspace currently uses ${Number(usageCountsByFeature.get("structural-locations")).toLocaleString()} structural locations.` }
+                  : null,
+                Number(usageCountsByFeature.get("pos-terminals") ?? 0) > locationQuantity * terminalsPerLocation
+                  ? { featureSlug: "pos-terminals", message: `This workspace currently uses ${Number(usageCountsByFeature.get("pos-terminals")).toLocaleString()} POS terminals.` }
+                  : null,
+              ].filter(Boolean) as PlanLimitIssue[]
+              const limitIssues = [...planLimitIssues, ...configurationLimitIssues]
+              const activeLocations = Number(entitlements?.subscription?.location_quantity ?? 0)
+              const activeTerminalLimit = Number(entitlements?.features?.["pos-terminals"]?.limit_value ?? 0)
+              const activeTerminalsPerLocation = Number(entitlements?.subscription?.terminals_per_location ?? (activeLocations > 0 && activeTerminalLimit > 0 ? Math.round(activeTerminalLimit / activeLocations) : 0))
+              const isCurrentConfiguration = Boolean(
+                activePlan &&
+                activeSubscriptionId &&
+                activePlan.slug === plan.slug &&
+                activeLocations === locationQuantity &&
+                activeTerminalsPerLocation === terminalsPerLocation,
+              )
+              const busy = initiatingPayment || verifyingPayment || cancellingSubscription || loadingBillingConfiguration
+              return (
+                <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-slate-900 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-50">
+                  <p className="text-lg font-semibold">{plan.name}</p>
+                  <p className="mt-2 text-3xl font-bold">{billingConfiguration ? formatNaira(Number(billingConfiguration.quote.monthly_total)) : billingConfigurationError ? "Unavailable" : "Calculating…"}</p>
+                  <p className="mt-2 text-sm">{label(plan.slug)} tier · {locationQuantity.toLocaleString()} location{locationQuantity === 1 ? "" : "s"} · {terminalsPerLocation} terminal{terminalsPerLocation === 1 ? "" : "s"} per location</p>
+                  {billingConfiguration ? <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Locations: {formatNaira(Number(billingConfiguration.quote.location_total))} · Additional terminals: {formatNaira(Number(billingConfiguration.quote.terminal_total))}</p> : null}
+                  <ul className="mt-4 space-y-2 text-sm">
+                    {(plan.features ?? []).map((feature) => (
+                      <li key={feature.slug} className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" /><span>{formatFeatureLimit(feature)}</span></li>
+                    ))}
+                  </ul>
+                  <Button
+                    className="mt-5 w-full"
+                    disabled={busy || isCurrentConfiguration || billingConfigurationError || !billingConfiguration || limitIssues.length > 0 || workspaceUsageLoading}
+                    onClick={() => openBillingConfirmation(plan.slug, false)}
+                  >
+                    {isCurrentConfiguration ? "Current plan" : limitIssues.length > 0 ? "Usage too high" : workspaceUsageLoading ? "Checking usage…" : activePlan ? "Update plan" : "Choose this plan"}
+                  </Button>
+                </div>
+              )
+            })()}
+          </div>
+          </div>
+        </DialogContent>
+      </Dialog>
       <Dialog open={Boolean(billingIntent)} onOpenChange={(open) => !open && setBillingIntent(null)}>
         <DialogContent className="text-gray-900">
           <DialogHeader>
             <DialogTitle>
-              {billingIntent?.startTrial ? "Confirm your free trial" : "Confirm your subscription"}
+              Confirm your subscription
             </DialogTitle>
             <DialogDescription>
-              {billingIntent?.startTrial
-                ? "Review the card authorization and trial terms before continuing to Paystack."
-                : "Review the monthly billing terms before continuing to Paystack."}
+              Review the monthly billing terms before continuing with your subscription.
             </DialogDescription>
           </DialogHeader>
           {(() => {
             const plan = plans.find((candidate) => candidate.slug === billingIntent?.planSlug)
             if (!plan || !billingIntent) return null
-            const trialEnd = new Date()
-            trialEnd.setDate(trialEnd.getDate() + Number(plan.trial_days || 7))
-            return billingIntent.startTrial ? (
-              <div className="space-y-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950">
-                <p>You will authorize a <strong>₦{Number(plan.trial_authorization_amount ?? 1000).toLocaleString()}</strong> Paystack charge to connect your card and receive the trial token allocation.</p>
-                <p>Your <strong>{plan.trial_days || 7}-day free trial</strong> ends on <strong>{formatDate(trialEnd.toISOString())}</strong>.</p>
-                <p>After the trial ends, your card will be charged <strong>{formatPrice(plan)}</strong> per {plan.billing_cycle === "YEARLY" ? "year" : plan.billing_cycle === "QUARTERLY" ? "quarter" : "month"} automatically unless you cancel before the trial ends.</p>
-              </div>
-            ) : (
-              <div className="space-y-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950">
-                <p>You are subscribing to <strong>{plan.name}</strong> immediately.</p>
-                <p>Your card will be charged <strong>{formatPrice(plan)}</strong> per {plan.billing_cycle === "YEARLY" ? "year" : plan.billing_cycle === "QUARTERLY" ? "quarter" : "month"}.</p>
-                <p>No free-trial period will be applied to this checkout.</p>
+            return (
+            <div className="space-y-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+                <p>You are subscribing to <strong>{plan.name}</strong> for <strong>{billingIntent.locationQuantity.toLocaleString()} structural location{billingIntent.locationQuantity === 1 ? "" : "s"}</strong> with <strong>{billingIntent.terminalsPerLocation} terminal{billingIntent.terminalsPerLocation === 1 ? "" : "s"} per location</strong>.</p>
+                <p>Your card will be charged <strong>{billingIntent.chargeAmount ? formatNaira(billingIntent.chargeAmount) : "the calculated quote"}</strong> for the new billing cycle.</p>
+                {billingIntent.isUpgrade ? <p>The unused value of your current plan is estimated at <strong>{formatNaira(billingIntent.manualRefundAmount)}</strong>. We will review and process that refund manually within <strong>two business days</strong> after the upgrade is completed.</p> : null}
+                <p>You will receive <strong>{(billingIntent.locationQuantity * 100).toLocaleString()} Intera coins</strong> for this cycle. No free-trial period will be applied.</p>
               </div>
             )
           })()}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setBillingIntent(null)}>Go back</Button>
             <Button onClick={() => void confirmBillingIntent()} disabled={initiatingPayment || verifyingPayment}>
-              {initiatingPayment ? "Opening Paystack..." : "Continue to Paystack"}
+              {initiatingPayment ? "Processing..." : "Continue to Subscribe"}
             </Button>
           </DialogFooter>
         </DialogContent>

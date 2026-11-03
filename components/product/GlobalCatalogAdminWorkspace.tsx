@@ -1,7 +1,7 @@
 "use client"
 
 import { useDeferredValue, useMemo, useState, type ChangeEvent } from "react"
-import { Archive, Boxes, ChevronLeft, ChevronRight, Eye, FileUp, Filter, ImagePlus, PackagePlus, Pencil, Rocket, Search, Shapes, Star, Trash2 } from "lucide-react"
+import { Archive, Boxes, ChevronLeft, ChevronRight, Copy, Eye, FileUp, Filter, ImagePlus, PackagePlus, Pencil, Rocket, Search, Shapes, Star, Trash2 } from "lucide-react"
 import { toast } from "react-toastify"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -351,6 +351,7 @@ function ProductDialog({
   open,
   onOpenChange,
   product,
+  isDuplicate = false,
   brandOptions,
   categoryOptions,
   unitOptions,
@@ -358,15 +359,21 @@ function ProductDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
   product?: GlobalCatalogAdminProduct | null
+  isDuplicate?: boolean
   brandOptions: SelectOption[]
   categoryOptions: SelectOption[]
   unitOptions: SelectOption[]
 }) {
-  const [form, setForm] = useState<ProductFormState>(buildProductForm(product))
+  const [form, setForm] = useState<ProductFormState>(() => {
+    const source = buildProductForm(product)
+    return isDuplicate && product
+      ? { ...source, name: `${source.name} copy` }
+      : source
+  })
   const [createProduct, { isLoading: isCreating }] = useCreateGlobalCatalogAdminProductMutation()
   const [updateProduct, { isLoading: isUpdating }] = useUpdateGlobalCatalogAdminProductMutation()
 
-  const isEditing = Boolean(product)
+  const isEditing = Boolean(product) && !isDuplicate
   const isLoading = isCreating || isUpdating
   const selectMenuPortalTarget = typeof document !== "undefined" ? document.body : undefined
 
@@ -397,7 +404,7 @@ function ProductDialog({
         toast.success("Global source product updated.")
       } else {
         await createProduct(payload).unwrap()
-        toast.success("Global source product created.")
+        toast.success(isDuplicate ? "Global source product duplicated." : "Global source product created.")
       }
 
       onOpenChange(false)
@@ -410,9 +417,13 @@ function ProductDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto overscroll-contain text-inherit">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit global source product" : "Create global source product"}</DialogTitle>
+          <DialogTitle>
+            {isEditing ? "Edit global source product" : isDuplicate ? "Duplicate global source product" : "Create global source product"}
+          </DialogTitle>
           <DialogDescription>
-            The product family stays platform-owned and becomes importable by workspaces only after you publish it.
+            {isDuplicate
+              ? "A new editable product family will be created from this product. The original product and its media remain unchanged."
+              : "The product family stays platform-owned and becomes importable by workspaces only after you publish it."}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 md:grid-cols-2">
@@ -928,7 +939,7 @@ function VariantCard({
           </div>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="truncate text-base font-semibold text-gray-950">{variant.display_name}</p>
+              <p className="truncate text-base font-semibold text-gray-900">{variant.display_name}</p>
               <Badge variant="outline" className="rounded-full px-3 py-1 text-gray-600">
                 Variant {variant.variant_number}
               </Badge>
@@ -1106,6 +1117,7 @@ export default function GlobalCatalogAdminWorkspace() {
   const readOnly = !isSuperuser
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<GlobalCatalogAdminProduct | null>(null)
+  const [isDuplicatingProduct, setIsDuplicatingProduct] = useState(false)
   const [variantProduct, setVariantProduct] = useState<GlobalCatalogAdminProduct | null>(null)
   const [editingVariant, setEditingVariant] = useState<GlobalCatalogVariant | null>(null)
   const [previewProductId, setPreviewProductId] = useState<string | null>(null)
@@ -1203,7 +1215,7 @@ export default function GlobalCatalogAdminWorkspace() {
     return (
       <Card className="border-amber-200 bg-amber-50 shadow-sm">
         <CardHeader className="p-6 text-left text-inherit">
-          <CardTitle className="text-xl text-amber-950">Global catalog admin requires a staff session</CardTitle>
+          <CardTitle className="text-xl text-amber-900">Global catalog admin requires a staff session</CardTitle>
           <CardDescription className="mt-2 text-sm leading-6 text-amber-900">
             This page is restricted to Intera IMS platform staff. If your account should have access, refresh your session so the latest staff claims are loaded into the frontend.
           </CardDescription>
@@ -1214,11 +1226,19 @@ export default function GlobalCatalogAdminWorkspace() {
 
   const openCreateProduct = () => {
     setEditingProduct(null)
+    setIsDuplicatingProduct(false)
     setIsProductDialogOpen(true)
   }
 
   const openEditProduct = (product: GlobalCatalogAdminProduct) => {
     setEditingProduct(product)
+    setIsDuplicatingProduct(false)
+    setIsProductDialogOpen(true)
+  }
+
+  const openDuplicateProduct = (product: GlobalCatalogAdminProduct) => {
+    setEditingProduct(product)
+    setIsDuplicatingProduct(true)
     setIsProductDialogOpen(true)
   }
 
@@ -1324,24 +1344,24 @@ export default function GlobalCatalogAdminWorkspace() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Total source products</p>
-              <p className="mt-3 text-3xl font-semibold text-gray-950">{loadingStats ? "..." : stats.total}</p>
+              <p className="mt-3 text-3xl font-semibold text-gray-900">{loadingStats ? "..." : stats.total}</p>
             </div>
             <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-blue-700">Total variants</p>
-              <p className="mt-3 text-3xl font-semibold text-blue-950">{loadingStats ? "..." : adminStats?.total_variants ?? 0}</p>
+              <p className="mt-3 text-3xl font-semibold text-blue-900">{loadingStats ? "..." : adminStats?.total_variants ?? 0}</p>
               <p className="mt-1 text-xs text-blue-700">Active variants in the global catalog</p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Published</p>
-              <p className="mt-3 text-3xl font-semibold text-gray-950">{loadingStats ? "..." : stats.published}</p>
+              <p className="mt-3 text-3xl font-semibold text-gray-900">{loadingStats ? "..." : stats.published}</p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Drafts</p>
-              <p className="mt-3 text-3xl font-semibold text-gray-950">{loadingStats ? "..." : stats.drafts}</p>
+              <p className="mt-3 text-3xl font-semibold text-gray-900">{loadingStats ? "..." : stats.drafts}</p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Archived</p>
-              <p className="mt-3 text-3xl font-semibold text-gray-950">{loadingStats ? "..." : stats.archived}</p>
+              <p className="mt-3 text-3xl font-semibold text-gray-900">{loadingStats ? "..." : stats.archived}</p>
             </div>
           </div>
 
@@ -1499,7 +1519,7 @@ export default function GlobalCatalogAdminWorkspace() {
                       </div>
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="truncate text-lg font-semibold text-gray-950">{product.name}</p>
+                          <p className="truncate text-lg font-semibold text-gray-900">{product.name}</p>
                           <Badge variant="outline" className="rounded-full px-3 py-1 text-gray-600">
                             {formatMachineLabel(product.source_status)}
                           </Badge>
@@ -1525,6 +1545,10 @@ export default function GlobalCatalogAdminWorkspace() {
                       {!readOnly ? <Button variant="outline" className="rounded-full" onClick={() => openEditProduct(product)}>
                         <Pencil className="mr-2 h-4 w-4" />
                         Edit product
+                      </Button> : null}
+                      {!readOnly ? <Button variant="outline" className="rounded-full" onClick={() => openDuplicateProduct(product)}>
+                        <Copy className="mr-2 h-4 w-4" />
+                        Duplicate
                       </Button> : null}
                       {!readOnly ? <Button variant="outline" className="rounded-full" onClick={() => openCreateVariant(product)}>
                         <Shapes className="mr-2 h-4 w-4" />
@@ -1573,7 +1597,7 @@ export default function GlobalCatalogAdminWorkspace() {
           {products.length > 0 ? (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-gray-200 bg-white p-4">
               <p className="text-sm text-gray-600">
-                Admin page <span className="font-semibold text-gray-950">{currentPage}</span> of <span className="font-semibold text-gray-950">{totalPages}</span>
+                Admin page <span className="font-semibold text-gray-900">{currentPage}</span> of <span className="font-semibold text-gray-900">{totalPages}</span>
                 {isFetching && !isLoading ? <span className="ml-2 rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-700">Refreshing...</span> : null}
               </p>
               <div className="flex flex-wrap items-center gap-2">
@@ -1619,10 +1643,11 @@ export default function GlobalCatalogAdminWorkspace() {
       </div>
 
       <ProductDialog
-        key={`${editingProduct?.id ?? "new-product"}-${isProductDialogOpen ? "open" : "closed"}`}
+        key={`${editingProduct?.id ?? "new-product"}-${isDuplicatingProduct ? "duplicate" : "edit"}-${isProductDialogOpen ? "open" : "closed"}`}
         open={isProductDialogOpen}
         onOpenChange={setIsProductDialogOpen}
         product={editingProduct}
+        isDuplicate={isDuplicatingProduct}
         brandOptions={brandOptions}
         categoryOptions={categoryOptions}
         unitOptions={unitOptions}

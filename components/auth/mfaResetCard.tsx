@@ -88,7 +88,7 @@ export default function MfaResetCard() {
           <MailCheck className="h-4 w-4 text-slate-700" />
         </div>
 
-        <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-950 dark:text-gray-50">Reset your MFA</h2>
+        <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-900 dark:text-gray-50">Reset your MFA</h2>
         <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
           We will email a 6-digit recovery code to the address on this account. Verify it to remove the current MFA setup.
         </p>

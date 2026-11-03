@@ -85,7 +85,7 @@ function OrderDetail({ order }: { order: ProductionOrder }) {
           <h3 className="mb-2 text-sm font-semibold">Material requirements</h3>
           {isLoading ? <p className="text-sm text-muted-foreground">Loading requirements...</p> : <div className="space-y-2">{requirements.map((requirement) => <div key={requirement.id} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm"><span>{String(requirement.component)}</span><span>{requirement.issued_quantity} / {requirement.required_quantity} {requirement.quantity_uom_code} · {label(requirement.status)}</span></div>)}</div>}
         </div>
-        <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/60 dark:bg-amber-950/20">
+        <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/60 dark:bg-amber-900/20">
           <div className="mb-3 flex items-center gap-2"><Trash2 className="h-4 w-4" /><h3 className="text-sm font-semibold">Record waste or process loss</h3></div>
           <div className="grid gap-3 md:grid-cols-3">
             <div><Label htmlFor={`waste-item-${order.id}`}>Inventory item ID</Label><Input id={`waste-item-${order.id}`} value={item} onChange={(event) => setItem(event.target.value)} placeholder="Source item" /></div>
@@ -94,12 +94,12 @@ function OrderDetail({ order }: { order: ProductionOrder }) {
           </div>
           <Button className="mt-3" size="sm" variant="outline" disabled={recordingWaste || !item || !quantity} onClick={() => action(() => recordWaste({ orderId: order.id, data: { inventory_item: item, quantity, reason_code: reason, waste_type: "scrap", disposition: "discarded" } }).unwrap(), "Waste recorded")}>Record waste</Button>
         </div>
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/20">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-900/60 dark:bg-emerald-900/20">
           <div className="mb-3 flex items-center gap-2"><PackageOpen className="h-4 w-4" /><h3 className="text-sm font-semibold">Record co-product or by-product</h3></div>
           <div className="grid gap-3 md:grid-cols-4"><Input placeholder="Output item ID" value={outputItem} onChange={(event) => setOutputItem(event.target.value)} /><Input placeholder="Quantity" value={outputQuantity} onChange={(event) => setOutputQuantity(event.target.value)} /><Input type="number" min="0" max="100" placeholder="Cost allocation %" value={outputAllocation} onChange={(event) => setOutputAllocation(event.target.value)} /><Button variant="outline" disabled={recordingOutput || !outputItem || !outputQuantity || !outputAllocation} onClick={() => action(() => recordOutput({ orderId: order.id, data: { output_item: outputItem, quantity: outputQuantity, output_kind: "by_product", cost_allocation_percent: Number(outputAllocation), idempotency_key: `output-${order.id}-${outputItem}-${outputQuantity}` } }).unwrap(), "Output recorded")}>Record output</Button></div>
           <p className="mt-2 text-xs text-muted-foreground">Allocations are capped at 100% across all outputs and are included in the production cost report.</p>
         </div>
-        <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-4 dark:border-blue-900/60 dark:bg-blue-950/20">
+        <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-4 dark:border-blue-900/60 dark:bg-blue-900/20">
           <div className="mb-3 flex items-center gap-2"><ShieldAlert className="h-4 w-4" /><h3 className="text-sm font-semibold">Quality inspection</h3></div>
           <div className="flex flex-wrap items-end gap-3"><div><Label htmlFor={`inspection-quantity-${order.id}`}>Inspected quantity</Label><Input id={`inspection-quantity-${order.id}`} value={inspectionQuantity} onChange={(event) => setInspectionQuantity(event.target.value)} placeholder={String(order.actual_quantity || order.planned_quantity)} /></div><Button size="sm" variant="outline" disabled={creatingInspection || !inspectionQuantity} onClick={() => action(() => createInspection({ orderId: order.id, data: { inspected_quantity: inspectionQuantity, defect_quantity: 0, measurements: {} } }).unwrap(), "Inspection created")}>Create inspection</Button></div>
         </div>
@@ -197,7 +197,7 @@ export default function ManufacturingWorkspace() {
 
   return (
     <main className="manufacturing-workspace mx-auto w-full max-w-[1800px] space-y-6 p-4 md:p-6">
-      <Card className="overflow-hidden border-blue-200 bg-gradient-to-br from-blue-50 via-white to-emerald-50 dark:border-blue-900/50 dark:from-blue-950/40 dark:via-slate-950 dark:to-emerald-950/30">
+      <Card className="overflow-hidden border-blue-200 bg-gradient-to-br from-blue-50 via-white to-emerald-50 dark:border-blue-900/50 dark:from-blue-900/40 dark:via-slate-900 dark:to-emerald-900/30">
         <CardContent className="flex flex-wrap items-center justify-between gap-5 p-6">
           <div><div className="mb-2 flex items-center gap-2 text-sm font-semibold text-blue-700 dark:text-blue-300"><Factory className="h-4 w-4" /> Manufacturing control room</div><h1 className="text-2xl font-bold tracking-tight">Recipes, production, materials, and waste</h1><p className="mt-1 max-w-2xl text-sm text-muted-foreground">Track production orders from planned materials through finished output, costing, quality, and loss recording.</p></div>
           <Button variant="outline" onClick={() => refetch()}><RefreshCw className="mr-2 h-4 w-4" />Refresh</Button>

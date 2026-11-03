@@ -72,7 +72,7 @@ const PermissionMetricTile = ({
   <Card className="border-red-200 bg-red-50 shadow-sm">
     <CardContent className="space-y-3 p-5">
       <div className="text-[11px] font-semibold uppercase tracking-wide text-red-600">Access restricted</div>
-      <div className="text-lg font-semibold text-red-950">{label}</div>
+      <div className="text-lg font-semibold text-red-900">{label}</div>
       <div className="text-sm text-red-800">You do not have access to this dashboard metric.</div>
       <div className="inline-flex items-center rounded-xl border border-red-200 bg-white px-3 py-2 font-mono text-xs font-semibold text-red-700">
         {requiredPermission}
@@ -92,7 +92,7 @@ const PermissionSectionCard = ({
 }) => (
   <Card className="border-red-200 bg-red-50 shadow-sm">
     <CardHeader className="border-b border-red-100 p-5 text-left text-inherit">
-      <CardTitle className="text-xl tracking-tight text-red-950">{title}</CardTitle>
+      <CardTitle className="text-xl tracking-tight text-red-900">{title}</CardTitle>
       <CardDescription className="text-sm leading-6 text-red-800">{description}</CardDescription>
     </CardHeader>
     <CardContent className="p-5">
@@ -121,7 +121,7 @@ const PermissionLaunchCard = ({
       <div className="rounded-full border border-red-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-red-600">
         Restricted
       </div>
-      <CardTitle className="mt-4 text-2xl tracking-tight text-red-950">{title}</CardTitle>
+      <CardTitle className="mt-4 text-2xl tracking-tight text-red-900">{title}</CardTitle>
       <CardDescription className="mt-2 text-sm leading-6 text-red-800">{description}</CardDescription>
     </CardHeader>
     <CardContent className="p-6 pt-0">

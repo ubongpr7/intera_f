@@ -141,7 +141,7 @@ const RoleManager = ({ userId, roles, refetch,closeTab }: RoleManagerProps) => {
               Every active role is already assigned to this user. Deactivate an existing assignment before adding it again.
             </div>
           ) : (
-            <div className="space-y-5 rounded-3xl border border-slate-800 bg-slate-950/70 p-5">
+            <div className="space-y-5 rounded-3xl border border-slate-800 bg-slate-900/70 p-5">
               <div>
                 <label className="mb-2 block text-sm font-semibold text-slate-200">Role</label>
                 <ReactSelectField
@@ -168,7 +168,7 @@ const RoleManager = ({ userId, roles, refetch,closeTab }: RoleManagerProps) => {
                   onClick={() => setIsTemporary((current) => !current)}
                   className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${!isTemporary ? "bg-[#98fcc2]" : "bg-slate-700"}`}
                 >
-                  <span className={`absolute top-1 h-5 w-5 rounded-full bg-slate-950 transition-transform ${!isTemporary ? "left-6" : "left-1"}`} />
+                  <span className={`absolute top-1 h-5 w-5 rounded-full bg-slate-900 transition-transform ${!isTemporary ? "left-6" : "left-1"}`} />
                 </button>
               </div>
 

@@ -93,7 +93,7 @@ export default function PaymentAdminPage() {
               Payment administration
             </div>
             <div className="max-w-3xl space-y-3">
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-950 lg:text-4xl">Billing, subscriptions, and payment operations in one control center.</h1>
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-900 lg:text-4xl">Billing, subscriptions, and payment operations in one control center.</h1>
               <p className="max-w-2xl text-sm leading-6 text-slate-600 lg:text-base">
                 Manage providers, plans, apps, payments, subscriptions, and webhook activity with the same operational clarity used elsewhere in the platform.
               </p>
@@ -110,22 +110,22 @@ export default function PaymentAdminPage() {
 
           <Card className="border-gray-200 bg-gray-50 shadow-none">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-slate-950">Payment admin snapshot</CardTitle>
+              <CardTitle className="text-lg text-slate-900">Payment admin snapshot</CardTitle>
               <CardDescription className="text-slate-600">A quick operational read before you drill into the tabs.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3">
                 <span className="text-sm text-slate-600">Payment success rate</span>
-                <span className="text-sm font-semibold text-slate-950">{formatNumber(paymentAnalytics?.conversion_rate ?? 0)}%</span>
+                <span className="text-sm font-semibold text-slate-900">{formatNumber(paymentAnalytics?.conversion_rate ?? 0)}%</span>
               </div>
               <p className="text-xs text-slate-500">Completed payments divided by all payment attempts in the selected period.</p>
               <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3">
                 <span className="text-sm text-slate-600">Providers configured</span>
-                <span className="text-sm font-semibold text-slate-950">{formatNumber(providers.length)}</span>
+                <span className="text-sm font-semibold text-slate-900">{formatNumber(providers.length)}</span>
               </div>
               <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3">
                 <span className="text-sm text-slate-600">Registered payment apps</span>
-                <span className="text-sm font-semibold text-slate-950">{formatNumber(apps.length)}</span>
+                <span className="text-sm font-semibold text-slate-900">{formatNumber(apps.length)}</span>
               </div>
             </CardContent>
           </Card>
@@ -142,7 +142,7 @@ export default function PaymentAdminPage() {
         <CardHeader className="border-b border-gray-100 bg-gray-50/70">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <CardTitle className="text-xl text-slate-950">Billing workspace</CardTitle>
+              <CardTitle className="text-xl text-slate-900">Billing workspace</CardTitle>
               <CardDescription className="text-slate-600">
                 Admin tabs for finance, subscription governance, and webhook inspection.
               </CardDescription>

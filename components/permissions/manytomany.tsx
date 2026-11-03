@@ -86,7 +86,7 @@ const UserGroupSelectionWorkspace = ({
 
   return (
     <div className="space-y-5">
-      <div className="rounded-[28px] border border-slate-800 bg-slate-950/80 p-4 shadow-[0_20px_55px_rgba(2,6,23,0.35)]">
+      <div className="rounded-[28px] border border-slate-800 bg-slate-900/80 p-4 shadow-[0_20px_55px_rgba(2,6,23,0.35)]">
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div className="space-y-2">
             <div>
@@ -128,7 +128,7 @@ const UserGroupSelectionWorkspace = ({
             return (
               <label
                 key={group.id}
-                className="flex cursor-pointer items-start gap-3 rounded-[24px] border border-slate-800 bg-slate-950/72 px-4 py-4 transition hover:border-slate-700 hover:bg-slate-950"
+                className="flex cursor-pointer items-start gap-3 rounded-[24px] border border-slate-800 bg-slate-900/72 px-4 py-4 transition hover:border-slate-700 hover:bg-slate-900"
               >
                 <input
                   type="checkbox"
@@ -150,14 +150,14 @@ const UserGroupSelectionWorkspace = ({
             );
           })
         ) : (
-          <div className="rounded-[28px] border border-dashed border-slate-700 bg-slate-950/60 px-4 py-8 text-center">
+          <div className="rounded-[28px] border border-dashed border-slate-700 bg-slate-900/60 px-4 py-8 text-center">
             <p className="text-base font-semibold text-slate-100">No groups matched this search.</p>
             <p className="mt-2 text-sm text-slate-400">Try a different group name or clear the filter.</p>
           </div>
         )}
       </div>
 
-      <div className="sticky bottom-0 flex items-center justify-between gap-3 rounded-[28px] border border-slate-800 bg-slate-950/95 p-3 backdrop-blur">
+      <div className="sticky bottom-0 flex items-center justify-between gap-3 rounded-[28px] border border-slate-800 bg-slate-900/95 p-3 backdrop-blur">
         <p className="text-sm text-slate-300">
           {selectedCount} group{selectedCount === 1 ? '' : 's'} will be assigned to this user.
         </p>
@@ -213,7 +213,7 @@ const UserGroupManager: React.FC<UserGroupManagerProps> = ({ userId, setRefetchD
 
   if (isError) {
     return (
-      <div className="rounded-[24px] border border-rose-200 bg-rose-50 p-6 text-center dark:border-rose-500/30 dark:bg-rose-950/20">
+      <div className="rounded-[24px] border border-rose-200 bg-rose-50 p-6 text-center dark:border-rose-500/30 dark:bg-rose-900/20">
         <AlertTriangle className="mx-auto h-8 w-8 text-rose-500" />
         <p className="mt-3 text-base font-semibold text-rose-900 dark:text-rose-100">Unable to load user groups</p>
         <p className="mt-2 text-sm text-rose-700 dark:text-rose-200">
@@ -228,7 +228,7 @@ const UserGroupManager: React.FC<UserGroupManagerProps> = ({ userId, setRefetchD
 
   if (userGroups.length === 0) {
     return (
-      <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-6 text-center dark:border-slate-800 dark:bg-slate-950/50">
+      <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-6 text-center dark:border-slate-800 dark:bg-slate-900/50">
         <p className="text-base font-semibold text-slate-900 dark:text-slate-100">No groups available for this user.</p>
         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
           Create staff groups first, then return here to assign them.

@@ -136,7 +136,7 @@ export default function POSInventorySheet({
             </div>
           </div>
 
-          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950">
+          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
             <div className="font-semibold">How this flow works</div>
             <div className="mt-2 space-y-1 text-blue-900">
               <p>1. Press <span className="font-semibold">Request</span> to ask inventory to reserve the stock.</p>
@@ -144,7 +144,7 @@ export default function POSInventorySheet({
               <p>3. Once stock is reserved, press <span className="font-semibold">Fulfill</span> to complete the deduction.</p>
               <p><span className="font-semibold">Release</span> undoes an existing reservation. <span className="font-semibold">Fail</span> keeps the line marked as failed.</p>
               {currentOrder?.payment_status === "paid" ? (
-                <p className="pt-1 font-medium text-blue-950">Payment is already recorded for this order. Do not pay again. Finish the inventory step instead.</p>
+                <p className="pt-1 font-medium text-blue-900">Payment is already recorded for this order. Do not pay again. Finish the inventory step instead.</p>
               ) : null}
             </div>
           </div>

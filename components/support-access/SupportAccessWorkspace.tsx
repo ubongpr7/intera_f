@@ -474,7 +474,7 @@ export default function SupportAccessWorkspace() {
 
           <Card className="border-amber-200 bg-amber-50 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10">
             <CardHeader className="p-6 text-left">
-              <CardTitle className="flex items-center gap-2 text-xl text-amber-950 dark:text-amber-200">
+              <CardTitle className="flex items-center gap-2 text-xl text-amber-900 dark:text-amber-200">
                 <AlertTriangle className="h-5 w-5 text-amber-700 dark:text-amber-400" />
                 Phase-one guardrails
               </CardTitle>
@@ -527,7 +527,7 @@ export default function SupportAccessWorkspace() {
                   id="support-membership-role"
                   value={createForm.membership_role}
                   onChange={(event) => setCreateForm((current) => ({ ...current, membership_role: event.target.value as "member" | "admin" }))}
-                  className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm ring-offset-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:ring-offset-slate-950"
+                  className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm ring-offset-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:ring-offset-slate-900"
                 >
                   {ROLE_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -542,7 +542,7 @@ export default function SupportAccessWorkspace() {
                   id="support-permission-mode"
                   value={createForm.permission_mode}
                   onChange={(event) => setCreateForm((current) => ({ ...current, permission_mode: event.target.value }))}
-                  className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm ring-offset-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:ring-offset-slate-950"
+                  className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm ring-offset-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:ring-offset-slate-900"
                 >
                   {presets.map((preset) => (
                     <option key={preset.key} value={preset.key}>
