@@ -27,6 +27,7 @@ import {
   UserRound,
   Building2,
   MessageCircle,
+  Download,
   X,
 } from 'lucide-react';
 import { UserData } from "@/redux/features/users/userTypes";
@@ -115,6 +116,7 @@ const SideBar = ({ user, workspace, mobileOpen, onMobileClose }:SideBarDataProps
             <SidebarLink href="/dashboard" icon={Home} label="Dashboard" isCollapsed={navigationCollapsed} />
             <SidebarLink href="/realtime-dashboard" icon={Layout} label="Realtime Dashboard" isCollapsed={navigationCollapsed} />
             <SidebarLink href="/chat" icon={MessageCircle} label="Chat & Support" isCollapsed={navigationCollapsed} />
+            <SidebarLink href="/downloads" icon={Download} label="Download apps" isCollapsed={navigationCollapsed} />
             <div className={`dashboard-nav-divider ${navigationCollapsed ? "mx-1" : "mx-3"}`} />
             <div className={`dashboard-nav-group-label ${navigationCollapsed ? "hidden" : ""}`}>Operations</div>
             <SidebarLink href="/inventory" icon={Package} label="Inventory" isCollapsed={navigationCollapsed} />
