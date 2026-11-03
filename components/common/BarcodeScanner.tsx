@@ -169,7 +169,7 @@ export function BarcodeScanner({ onDetected, disabled = false, className, label 
 
       {isOpen ? (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/75 p-4 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-label={label}
@@ -177,7 +177,7 @@ export function BarcodeScanner({ onDetected, disabled = false, className, label 
             if (event.target === event.currentTarget) closeScanner()
           }}
         >
-          <div className="w-full max-w-xl overflow-hidden rounded-3xl border border-slate-700 bg-slate-950 text-gray-50 shadow-2xl" onMouseDown={(event) => event.stopPropagation()}>
+          <div className="w-full max-w-xl overflow-hidden rounded-3xl border border-slate-700 bg-slate-900 text-gray-50 shadow-2xl" onMouseDown={(event) => event.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
               <div>
                 <p className="flex items-center gap-2 text-base font-semibold"><Camera className="h-5 w-5 text-blue-300" /> Scan a variant barcode</p>
@@ -191,7 +191,7 @@ export function BarcodeScanner({ onDetected, disabled = false, className, label 
               <div className="relative aspect-video overflow-hidden rounded-2xl border border-blue-400/60 bg-slate-900">
                 <video ref={videoRef} className="h-full w-full object-cover" playsInline muted />
                 <div className="pointer-events-none absolute inset-[15%] rounded-2xl border-2 border-blue-300 shadow-[0_0_0_999px_rgba(2,6,23,0.32)]" />
-                {isStarting ? <div className="absolute inset-0 flex items-center justify-center bg-slate-950/60"><Loader2 className="h-8 w-8 animate-spin text-blue-300" /></div> : null}
+                {isStarting ? <div className="absolute inset-0 flex items-center justify-center bg-slate-900/60"><Loader2 className="h-8 w-8 animate-spin text-blue-300" /></div> : null}
               </div>
               {error ? <p className="mt-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">{error}</p> : null}
               <Button type="button" variant="outline" className="mt-4 w-full rounded-full border-slate-700 bg-transparent text-gray-50 hover:bg-slate-800" onClick={closeScanner}>Close scanner</Button>

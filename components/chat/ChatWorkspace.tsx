@@ -382,16 +382,16 @@ export default function ChatWorkspace() {
               <label htmlFor="chat-teammate-search">Find a teammate</label>
               <div className="relative mt-2">
                 <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                <input id="chat-teammate-search" value={participantSearch} onChange={(event) => { setParticipantSearch(event.target.value); setParticipantId("") }} placeholder="Search by name or email" className="h-11 w-full rounded-xl border border-blue-200 bg-white pl-9 pr-3 text-slate-900 outline-none focus:ring-2 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-950 dark:text-gray-50" />
+                <input id="chat-teammate-search" value={participantSearch} onChange={(event) => { setParticipantSearch(event.target.value); setParticipantId("") }} placeholder="Search by name or email" className="h-11 w-full rounded-xl border border-blue-200 bg-white pl-9 pr-3 text-slate-900 outline-none focus:ring-2 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-50" />
               </div>
               <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {teammates.slice(0, 9).map((user) => {
                   const name = `${user.first_name || ""} ${user.last_name || ""}`.trim() || user.email || "Teammate"
-                  return <button key={user.id} type="button" onClick={() => { setParticipantId(String(user.id)); setParticipantSearch(name) }} className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-left text-sm transition ${participantId === String(user.id) ? "border-blue-500 bg-blue-100 dark:bg-blue-950/50" : "border-slate-200 bg-white hover:border-blue-300 dark:border-slate-700 dark:bg-slate-950"}`}><span className="min-w-0"><span className="block truncate font-semibold text-slate-800 dark:text-slate-100">{name}</span><span className="block truncate text-xs text-slate-500">{user.email}</span></span><Users className="h-4 w-4 shrink-0 text-slate-400" /></button>
+                  return <button key={user.id} type="button" onClick={() => { setParticipantId(String(user.id)); setParticipantSearch(name) }} className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-left text-sm transition ${participantId === String(user.id) ? "border-blue-500 bg-blue-100 dark:bg-blue-900/50" : "border-slate-200 bg-white hover:border-blue-300 dark:border-slate-700 dark:bg-slate-900"}`}><span className="min-w-0"><span className="block truncate font-semibold text-slate-800 dark:text-slate-100">{name}</span><span className="block truncate text-xs text-slate-500">{user.email}</span></span><Users className="h-4 w-4 shrink-0 text-slate-400" /></button>
                 })}
               </div>
               {participantSearch.trim().length >= 2 && !participantId && searchedTeammates.length ? (
-                <div className="mt-2 overflow-hidden rounded-xl border border-blue-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-950">
+                <div className="mt-2 overflow-hidden rounded-xl border border-blue-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
                   {searchingUsers ? <p className="flex items-center gap-2 p-3 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> Searching...</p> : searchedTeammates.slice(0, 6).map((user) => {
                     const name = user.get_full_name || `${user.first_name} ${user.last_name}`.trim() || user.email
                     return <button key={user.id} type="button" onClick={() => { setParticipantId(String(user.id)); setParticipantSearch(name) }} className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-blue-50 dark:hover:bg-slate-800"><span className="font-semibold text-slate-800 dark:text-slate-100">{name}</span><span className="truncate text-xs text-slate-500">{user.email}</span></button>
@@ -406,19 +406,19 @@ export default function ChatWorkspace() {
         </Card>
       ) : null}
 
-      <section className="grid min-h-[620px] flex-1 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_80px_-52px_rgba(15,23,42,.55)] dark:border-slate-800 dark:bg-slate-950 lg:grid-cols-[320px_1fr]">
+      <section className="grid min-h-[620px] flex-1 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_80px_-52px_rgba(15,23,42,.55)] dark:border-slate-800 dark:bg-slate-900 lg:grid-cols-[320px_1fr]">
         <aside className="border-b border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/60 lg:border-b-0 lg:border-r">
-          <button type="button" onClick={openSupport} className={`mb-4 flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition ${supportMode ? "border-[#3c83f7] bg-blue-50 dark:bg-blue-950/40" : "border-slate-200 bg-white hover:border-blue-300 dark:border-slate-800 dark:bg-slate-950"}`}>
+          <button type="button" onClick={openSupport} className={`mb-4 flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition ${supportMode ? "border-[#3c83f7] bg-blue-50 dark:bg-blue-900/40" : "border-slate-200 bg-white hover:border-blue-300 dark:border-slate-800 dark:bg-slate-900"}`}>
             <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#091321] text-[#98fcc2]"><Headphones className="h-5 w-5" /></span>
             <span><span className="block font-bold text-slate-900 dark:text-gray-50">Intera IMS Support</span><span className="block text-xs text-slate-500">Text support with AI assistance</span></span>
           </button>
           <div className="mb-3 flex items-center justify-between px-1"><p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Your conversations</p><Users className="h-4 w-4 text-slate-400" /></div>
-          <label className="mb-3 flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-950"><Search className="h-4 w-4 shrink-0 text-slate-400" /><input value={conversationSearch} onChange={(event) => setConversationSearch(event.target.value)} placeholder="Search conversations" className="min-w-0 flex-1 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-gray-50" /></label>
+          <label className="mb-3 flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-900"><Search className="h-4 w-4 shrink-0 text-slate-400" /><input value={conversationSearch} onChange={(event) => setConversationSearch(event.target.value)} placeholder="Search conversations" className="min-w-0 flex-1 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-gray-50" /></label>
           <div className="space-y-2 overflow-y-auto lg:max-h-[500px]">
             {conversationsLoading ? <p className="p-3 text-sm text-slate-500">Loading conversations...</p> : null}
             {filteredConversations.map((conversation) => (
-              <button key={conversation.id} type="button" onClick={() => selectConversation(conversation)} className={`w-full rounded-2xl border p-3 text-left transition ${selectedId === conversation.id && !supportMode ? "border-blue-400 bg-blue-50 dark:bg-blue-950/40" : "border-transparent hover:border-slate-200 hover:bg-white dark:hover:border-slate-700 dark:hover:bg-slate-950"}`}>
-                <div className="flex items-center gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700 dark:bg-blue-950 dark:text-blue-200">{buildInitials(conversationName(conversation))}</span><span className="min-w-0 flex-1"><span className="flex items-center justify-between gap-2"><span className="truncate font-semibold text-slate-900 dark:text-gray-50">{conversationName(conversation)}</span>{conversation.latest_message ? <span className="shrink-0 text-[11px] text-slate-400">{formatRelativeTime(conversation.latest_message.created_at)}</span> : null}</span><span className="mt-1 block truncate text-xs text-slate-500 dark:text-slate-400">{conversationPreview(conversation)}</span></span></div>
+              <button key={conversation.id} type="button" onClick={() => selectConversation(conversation)} className={`w-full rounded-2xl border p-3 text-left transition ${selectedId === conversation.id && !supportMode ? "border-blue-400 bg-blue-50 dark:bg-blue-900/40" : "border-transparent hover:border-slate-200 hover:bg-white dark:hover:border-slate-700 dark:hover:bg-slate-900"}`}>
+                <div className="flex items-center gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700 dark:bg-blue-900 dark:text-blue-200">{buildInitials(conversationName(conversation))}</span><span className="min-w-0 flex-1"><span className="flex items-center justify-between gap-2"><span className="truncate font-semibold text-slate-900 dark:text-gray-50">{conversationName(conversation)}</span>{conversation.latest_message ? <span className="shrink-0 text-[11px] text-slate-400">{formatRelativeTime(conversation.latest_message.created_at)}</span> : null}</span><span className="mt-1 block truncate text-xs text-slate-500 dark:text-slate-400">{conversationPreview(conversation)}</span></span></div>
               </button>
             ))}
             {!conversationsLoading && !filteredConversations.length ? <p className="rounded-2xl border border-dashed border-slate-300 p-4 text-sm leading-6 text-slate-500 dark:border-slate-700 dark:text-slate-400">{conversationSearch ? "No conversations match that search." : "No conversations yet. Start with support or create a direct chat."}</p> : null}
@@ -432,7 +432,7 @@ export default function ChatWorkspace() {
           </div>
 
           {isConversationOutsideActiveWorkspace ? (
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100 md:px-7">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-900/30 dark:text-amber-100 md:px-7">
               <span>This conversation belongs to {conversationWorkspace?.name || "another workspace"}. Switch workspace to reply.</span>
               <Button size="sm" variant="outline" onClick={() => void switchToConversationWorkspace()} disabled={!conversationWorkspace || switchingWorkspace}>
                 {switchingWorkspace ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Switch workspace
@@ -450,7 +450,7 @@ export default function ChatWorkspace() {
             <div ref={bottomRef} />
           </div>
 
-          <div className="border-t border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950 md:p-5">
+          <div className="border-t border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 md:p-5">
             <div className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-2 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 dark:border-slate-800 dark:bg-slate-900">
               <label className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-white hover:text-blue-600 dark:hover:bg-slate-800 ${supportTextOnly || uploadingAttachment ? "cursor-not-allowed opacity-40" : "cursor-pointer"}`} title={supportTextOnly ? "Available after human handoff" : "Attach a file"}><Paperclip className="h-5 w-5" /><input type="file" className="hidden" disabled={supportTextOnly || uploadingAttachment} onChange={(event) => { const file = event.target.files?.[0]; if (file) void sendFile(file); event.currentTarget.value = "" }} /></label>
               <button type="button" onClick={() => void toggleRecording()} disabled={supportTextOnly || !selectedId || uploadingAttachment} className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition ${recording ? "bg-red-100 text-red-600" : "text-slate-500 hover:bg-white hover:text-blue-600 dark:hover:bg-slate-800"}`} aria-label={recording ? "Stop voice note" : supportTextOnly ? "Available after human handoff" : "Record voice note"}>{recording ? <Square className="h-4 w-4" /> : <Mic className="h-5 w-5" />}</button>

@@ -37,9 +37,9 @@ export default function AdminPortalGuard({ children }: { children: React.ReactNo
     }
   }, [data, hasAdminAccess, isError, isLoading, pathname, router])
 
-  if (!isAdminHostReady || isLoading) return <main className="min-h-screen bg-slate-950 p-10 text-slate-200">Checking staff access...</main>
-  if (superuserOnly && !isSuperuser) return <main className="min-h-screen bg-slate-950 p-10 text-slate-200"><h1 className="text-2xl font-semibold">Superuser access required</h1><p className="mt-2 text-slate-400">This area contains sensitive financial or access-management controls.</p></main>
+  if (!isAdminHostReady || isLoading) return <main className="min-h-screen bg-slate-900 p-10 text-slate-200">Checking staff access...</main>
+  if (superuserOnly && !isSuperuser) return <main className="min-h-screen bg-slate-900 p-10 text-slate-200"><h1 className="text-2xl font-semibold">Superuser access required</h1><p className="mt-2 text-slate-400">This area contains sensitive financial or access-management controls.</p></main>
   if (isError && tokenHasAdminClaim) return <>{children}</>
-  if (isError || !hasAdminAccess) return <main className="min-h-screen bg-slate-950 p-10 text-slate-200">Staff access required.</main>
+  if (isError || !hasAdminAccess) return <main className="min-h-screen bg-slate-900 p-10 text-slate-200">Staff access required.</main>
   return <>{children}</>
 }

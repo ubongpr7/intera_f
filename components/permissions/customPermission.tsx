@@ -176,7 +176,7 @@ const PermissionEditor = ({ permissions, permissionLoading, onSubmit, readOnly =
           <p className="mt-1 text-amber-100/80">This definition is view-only. Only Intera staff can change its permissions.</p>
         </div>
       ) : null}
-      <div className="rounded-[28px] border border-slate-800 bg-slate-950/80 p-4 shadow-[0_20px_55px_rgba(2,6,23,0.35)]">
+      <div className="rounded-[28px] border border-slate-800 bg-slate-900/80 p-4 shadow-[0_20px_55px_rgba(2,6,23,0.35)]">
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div className="space-y-2">
             <div>
@@ -260,7 +260,7 @@ const PermissionEditor = ({ permissions, permissionLoading, onSubmit, readOnly =
             return (
               <section
                 key={group.category}
-                className="rounded-[30px] border border-slate-800 bg-slate-950/70 p-4 shadow-[0_16px_48px_rgba(2,6,23,0.28)]"
+                className="rounded-[30px] border border-slate-800 bg-slate-900/70 p-4 shadow-[0_16px_48px_rgba(2,6,23,0.28)]"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <label className={`flex items-start gap-3 ${readOnly ? "cursor-not-allowed" : "cursor-pointer"}`}>
@@ -304,7 +304,7 @@ const PermissionEditor = ({ permissions, permissionLoading, onSubmit, readOnly =
                         checked={selectedPermissions.has(permission.codename)}
                         onChange={() => handlePermissionChange(permission.codename)}
                         disabled={readOnly}
-                        className="mt-1 h-4 w-4 rounded border-slate-600 bg-slate-950 text-blue-500 focus:ring-blue-500"
+                        className="mt-1 h-4 w-4 rounded border-slate-600 bg-slate-900 text-blue-500 focus:ring-blue-500"
                       />
                       <span className="min-w-0">
                         <span className="block text-sm font-semibold text-slate-100">
@@ -321,7 +321,7 @@ const PermissionEditor = ({ permissions, permissionLoading, onSubmit, readOnly =
             );
           })
         ) : (
-          <div className="rounded-[28px] border border-dashed border-slate-700 bg-slate-950/60 px-4 py-8 text-center">
+          <div className="rounded-[28px] border border-dashed border-slate-700 bg-slate-900/60 px-4 py-8 text-center">
             <p className="text-base font-semibold text-slate-100">No permissions matched this search.</p>
             <p className="mt-2 text-sm text-slate-400">
               Try another category name, action word, or clear the current filter.
@@ -330,7 +330,7 @@ const PermissionEditor = ({ permissions, permissionLoading, onSubmit, readOnly =
         )}
       </div>
 
-      <div className="sticky bottom-0 flex items-center justify-between gap-3 rounded-[28px] border border-slate-800 bg-slate-950/95 p-3 backdrop-blur">
+      <div className="sticky bottom-0 flex items-center justify-between gap-3 rounded-[28px] border border-slate-800 bg-slate-900/95 p-3 backdrop-blur">
         <p className="text-sm text-slate-300">
           {selectedVisiblePermissionCount} of {visiblePermissionCount} visible permissions currently enabled.
         </p>

@@ -2013,7 +2013,7 @@ export default function AgentChat({
 
       {exportDownload && (
         <div
-          className="fixed inset-0 z-[10000] flex items-center justify-center bg-gray-950/45 px-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-gray-900/45 px-4 backdrop-blur-sm"
           data-ai-chat-export-panel="true"
           onMouseDown={(event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}

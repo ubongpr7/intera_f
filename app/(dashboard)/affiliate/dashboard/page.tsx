@@ -44,7 +44,7 @@ export default function AffiliateDashboardPage() {
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-6 p-4 md:p-8">
-      <section className="overflow-hidden rounded-[2rem] bg-slate-950 p-6 text-gray-50 shadow-xl md:p-9">
+      <section className="overflow-hidden rounded-[2rem] bg-slate-900 p-6 text-gray-50 shadow-xl md:p-9">
         <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end">
           <div>
             <Badge className="border-emerald-300/30 bg-emerald-400/15 text-emerald-200">Affiliate centre</Badge>

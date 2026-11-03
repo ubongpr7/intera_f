@@ -112,7 +112,7 @@ export default function GlobalCatalogCaptureQueue() {
     <Card className="border-gray-200 bg-white shadow-sm">
       <CardHeader className="gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <CardTitle className="text-xl text-gray-950">Field capture review</CardTitle>
+          <CardTitle className="text-xl text-gray-900">Field capture review</CardTitle>
           <CardDescription>Turn staff barcode and image captures into labeled global products with explicit UOM settings.</CardDescription>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -142,7 +142,7 @@ export default function GlobalCatalogCaptureQueue() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="truncate font-semibold text-gray-950">{capture.name_hint || "Unnamed capture"}</h3>
+                    <h3 className="truncate font-semibold text-gray-900">{capture.name_hint || "Unnamed capture"}</h3>
                     <Badge variant="outline" className={`rounded-full ${statusTone[capture.status]}`}>{capture.status}</Badge>
                   </div>
                   <p className="mt-2 font-mono text-sm text-gray-700">{capture.barcode}</p>
@@ -157,10 +157,10 @@ export default function GlobalCatalogCaptureQueue() {
       </CardContent>
 
       {selectedCapture && draft ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
           <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-gray-200 bg-white p-6 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
-              <div><h2 className="text-xl font-semibold text-gray-950">Label captured product</h2><p className="mt-1 text-sm text-gray-600">Barcode: <span className="font-mono">{selectedCapture.barcode}</span></p></div>
+              <div><h2 className="text-xl font-semibold text-gray-900">Label captured product</h2><p className="mt-1 text-sm text-gray-600">Barcode: <span className="font-mono">{selectedCapture.barcode}</span></p></div>
               <Button variant="ghost" onClick={() => setSelectedCapture(null)}>Close</Button>
             </div>
             <div className="mt-6 grid gap-4 md:grid-cols-2">

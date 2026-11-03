@@ -255,14 +255,14 @@ function AccessDeniedPanel({ access }: { access: AccessResult }) {
             <ShieldAlert className="h-3.5 w-3.5" />
             Access Restricted
           </div>
-          <CardTitle className="text-3xl font-semibold tracking-tight text-amber-950">You do not have access to this resource.</CardTitle>
+          <CardTitle className="text-3xl font-semibold tracking-tight text-amber-900">You do not have access to this resource.</CardTitle>
           <CardDescription className="max-w-3xl text-sm leading-6 text-amber-900/80">
             {access.message}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 p-6 pt-0 text-sm text-amber-900/80">
           <div className="rounded-2xl border border-amber-200 bg-white/70 p-4">
-            <p className="font-medium text-amber-950">
+            <p className="font-medium text-amber-900">
               User <span className="font-semibold">{principal}</span> does not have access to{" "}
               <span className="font-semibold">{access.resource || "this resource"}</span>.
             </p>

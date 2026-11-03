@@ -135,7 +135,7 @@ const DashboardHeader = ({children}:{children:  React.ReactNode}) => {
           <button
             type="button"
             aria-label="Close navigation menu"
-            className="fixed inset-0 z-40 bg-slate-950/45 backdrop-blur-[2px] md:hidden"
+            className="fixed inset-0 z-40 bg-slate-900/45 backdrop-blur-[2px] md:hidden"
             onClick={() => setMobileSidebarOpen(false)}
           />
         ) : null}

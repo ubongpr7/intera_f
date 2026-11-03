@@ -327,7 +327,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
         useSideFormLayout ? "flex items-stretch justify-end" : "flex items-center justify-center p-4 md:p-8",
       )}
     >
-      <div className="absolute inset-0 bg-slate-950/55 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-slate-900/55 backdrop-blur-sm" onClick={onClose} />
 
       <div
         className={cn(
@@ -340,7 +340,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
       >
         <button
           onClick={onClose}
-          className="absolute right-5 top-5 z-10 rounded-full border border-white/70 bg-white/85 p-2.5 text-slate-500 shadow-sm backdrop-blur transition hover:bg-white hover:text-slate-800 dark:border-slate-700 dark:bg-slate-950/85 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-gray-50"
+          className="absolute right-5 top-5 z-10 rounded-full border border-white/70 bg-white/85 p-2.5 text-slate-500 shadow-sm backdrop-blur transition hover:bg-white hover:text-slate-800 dark:border-slate-700 dark:bg-slate-900/85 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-gray-50"
         >
           <X className="h-5 w-5 text-gray-500 dark:text-slate-300" />
         </button>
@@ -351,7 +351,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
               {isCompanyCreateForm ? "Company directory" : useSideFormLayout ? "Side form workspace" : "Quick create form"}
             </div>
             <div className="pr-14">
-              <h2 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-50">{panelTitle}</h2>
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">{panelTitle}</h2>
               {isCompanyCreateForm ? (
                 <p className="company-create-subtitle mt-2 flex items-center gap-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
                   <Sparkles className="h-4 w-4 shrink-0 text-blue-500" aria-hidden="true" />
@@ -408,7 +408,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
                   <div
                     key={`field-${String(key)}`}
                     className={cn(
-                      "relative z-0 min-w-[220px] rounded-[26px] border border-slate-200/80 bg-white/85 p-4 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.45)] backdrop-blur hover:z-30 focus-within:z-30 dark:border-slate-800 dark:bg-slate-950/72 dark:shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]",
+                      "relative z-0 min-w-[220px] rounded-[26px] border border-slate-200/80 bg-white/85 p-4 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.45)] backdrop-blur hover:z-30 focus-within:z-30 dark:border-slate-800 dark:bg-slate-900/72 dark:shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]",
                       isCheckbox ? "md:col-span-2" : "",
                     )}
                   >
@@ -655,7 +655,7 @@ export default function CustomCreateCard<T extends Record<string, any>>({
             </div>
 
             {hasDescription && (
-              <div className="col-span-full mt-2 rounded-[26px] border border-slate-200/80 bg-white/85 p-4 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.45)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/72 dark:shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <div className="col-span-full mt-2 rounded-[26px] border border-slate-200/80 bg-white/85 p-4 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.45)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/72 dark:shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
                 <div className="space-y-2">
                   <label className="mb-2 flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                     Description
@@ -694,13 +694,13 @@ export default function CustomCreateCard<T extends Record<string, any>>({
 
           </div>
 
-          <div className="sticky bottom-0 border-t border-slate-200/80 bg-white/90 px-7 py-5 backdrop-blur md:px-8 dark:border-slate-800 dark:bg-slate-950/88">
+          <div className="sticky bottom-0 border-t border-slate-200/80 bg-white/90 px-7 py-5 backdrop-blur md:px-8 dark:border-slate-800 dark:bg-slate-900/88">
             <div className="flex flex-col-reverse justify-end gap-3 sm:flex-row">
               <Button
                 type="button"
                 onClick={onClose}
                 variant="outline"
-                className="h-11 rounded-2xl border-slate-200 px-5 text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900 dark:hover:text-gray-50"
+                className="h-11 rounded-2xl border-slate-200 px-5 text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-900 dark:hover:text-gray-50"
               >
                 Cancel
               </Button>

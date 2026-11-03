@@ -52,7 +52,7 @@ interface SidebarLinkProps {
           isCollapsed ? "justify-center px-2 py-3" : "justify-start px-4 py-3"
         } ${
           isActive
-            ? "dashboard-nav-item-active border border-transparent text-gray-950"
+            ? "dashboard-nav-item-active border border-transparent text-gray-900"
             : "border border-transparent text-gray-700"
         }`}
       >
@@ -119,7 +119,7 @@ interface SidebarLinkProps {
                   <div
                     className={`rounded-xl px-3 py-2 text-sm transition-colors ${
                       subActive
-                        ? "dashboard-subnav-item-active font-medium text-gray-950"
+                        ? "dashboard-subnav-item-active font-medium text-gray-900"
                         : "text-gray-600"
                     }`}
                   >

@@ -644,7 +644,7 @@ function DemoWidgetView({ widget }: { widget?: DemoWidget }) {
         {widget.items.map((item) => (
           <div key={item.label} className="rounded-xl border border-blue-100 bg-blue-50/70 p-3">
             <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-blue-700">{item.label}</p>
-            <p className="mt-1 text-lg font-semibold text-gray-950">{item.value}</p>
+            <p className="mt-1 text-lg font-semibold text-gray-900">{item.value}</p>
             <p className="mt-1 text-[11px] text-gray-500">{item.helper}</p>
           </div>
         ))}

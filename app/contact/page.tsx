@@ -20,7 +20,7 @@ export default function ContactPage() {
   return (
     <div className="landing-page min-h-screen">
       <LandingHeader />
-      <main className="landing-hero min-h-screen text-gray-950 dark:text-gray-50">
+      <main className="landing-hero min-h-screen text-gray-900 dark:text-gray-50">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-16">
         <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 transition hover:text-blue-700 dark:text-gray-300 dark:hover:text-blue-300">
           <ArrowLeft className="h-4 w-4" /> Back to Intera IMS

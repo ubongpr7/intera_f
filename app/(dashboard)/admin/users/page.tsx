@@ -103,14 +103,14 @@ export default function PlatformUsersPage() {
     <section className="admin-portal-surface mx-auto w-full max-w-[1500px] space-y-6 px-4 py-6 lg:px-8">
       <div>
         <p className="text-sm font-semibold uppercase tracking-[.2em] text-emerald-700">People and access</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">Platform users</h1>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">Platform users</h1>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">Review every account on Intera IMS separately from staff invitations and workspace membership.</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Card><CardContent className="flex items-center gap-3 p-5"><Users className="h-5 w-5 text-blue-600" /><div><p className="text-sm text-slate-600">Total users</p><p className="text-2xl font-semibold text-slate-950">{users.length}</p></div></CardContent></Card>
-        <Card><CardContent className="flex items-center gap-3 p-5"><ShieldCheck className="h-5 w-5 text-emerald-600" /><div><p className="text-sm text-slate-600">Platform staff</p><p className="text-2xl font-semibold text-slate-950">{staffCount}</p></div></CardContent></Card>
-        <Card><CardContent className="flex items-center gap-3 p-5"><UserRound className="h-5 w-5 text-cyan-600" /><div><p className="text-sm text-slate-600">Verified accounts</p><p className="text-2xl font-semibold text-slate-950">{verifiedCount}</p></div></CardContent></Card>
+        <Card><CardContent className="flex items-center gap-3 p-5"><Users className="h-5 w-5 text-blue-600" /><div><p className="text-sm text-slate-600">Total users</p><p className="text-2xl font-semibold text-slate-900">{users.length}</p></div></CardContent></Card>
+        <Card><CardContent className="flex items-center gap-3 p-5"><ShieldCheck className="h-5 w-5 text-emerald-600" /><div><p className="text-sm text-slate-600">Platform staff</p><p className="text-2xl font-semibold text-slate-900">{staffCount}</p></div></CardContent></Card>
+        <Card><CardContent className="flex items-center gap-3 p-5"><UserRound className="h-5 w-5 text-cyan-600" /><div><p className="text-sm text-slate-600">Verified accounts</p><p className="text-2xl font-semibold text-slate-900">{verifiedCount}</p></div></CardContent></Card>
       </div>
 
       <Card>
@@ -125,7 +125,7 @@ export default function PlatformUsersPage() {
           <div className="space-y-3">
             {filteredUsers.map((user) => (
               <div key={user.id} className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-4 lg:flex-row lg:items-center lg:justify-between">
-                <div className="min-w-0"><p className="font-semibold text-slate-950">{user.get_full_name || [user.first_name, user.last_name].filter(Boolean).join(" ") || user.email}</p><p className="mt-1 text-sm text-slate-600">{user.email} · Joined {formatDate(user.date_joined)} · Last login {formatDate(user.last_login)}</p><p className="mt-1 text-xs text-slate-500">Referral code: {user.referral_code || "Not set"} · Commission: {Number(user.referral_commission_rate ?? 0.05) * 100}%</p></div>
+                <div className="min-w-0"><p className="font-semibold text-slate-900">{user.get_full_name || [user.first_name, user.last_name].filter(Boolean).join(" ") || user.email}</p><p className="mt-1 text-sm text-slate-600">{user.email} · Joined {formatDate(user.date_joined)} · Last login {formatDate(user.last_login)}</p><p className="mt-1 text-xs text-slate-500">Referral code: {user.referral_code || "Not set"} · Commission: {Number(user.referral_commission_rate ?? 0.05) * 100}%</p></div>
                 <div className="flex flex-wrap items-center gap-2">
                   {user.is_superuser ? <Badge className="bg-blue-600 text-gray-50">Superuser</Badge> : user.is_staff ? <Badge className="bg-emerald-600 text-gray-50">Staff</Badge> : <Badge variant="outline">User</Badge>}
                   {user.is_affiliate_marketer ? <Badge className="bg-cyan-600 text-gray-50">Affiliate marketer</Badge> : null}

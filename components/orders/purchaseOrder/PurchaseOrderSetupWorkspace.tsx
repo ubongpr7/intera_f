@@ -705,9 +705,9 @@ export default function PurchaseOrderSetupWorkspace() {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
               <span>
-                Showing <span className="font-semibold text-gray-950">{pageStart}</span> to{" "}
-                <span className="font-semibold text-gray-950">{pageEnd}</span> of{" "}
-                <span className="font-semibold text-gray-950">{totalPurchaseOrders}</span> orders
+                Showing <span className="font-semibold text-gray-900">{pageStart}</span> to{" "}
+                <span className="font-semibold text-gray-900">{pageEnd}</span> of{" "}
+                <span className="font-semibold text-gray-900">{totalPurchaseOrders}</span> orders
               </span>
               <div className="flex items-center gap-2">
                 <span>Rows per page</span>

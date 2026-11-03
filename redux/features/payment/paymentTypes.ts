@@ -123,6 +123,7 @@ export interface EntitlementSnapshot {
     id: string;
     status: "ACTIVE" | "TRIAL";
     location_quantity?: number;
+    terminals_per_location?: number;
     intera_coins_reward?: number;
     start_date: string;
     end_date: string | null;
@@ -183,6 +184,26 @@ export interface SubscriptionPlanRecord {
   app: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface BillingConfiguration {
+  pricing_model: "configuration";
+  currency: "NGN";
+  max_terminals_per_location: number;
+  location_tiers: Array<{ up_to: number | null; unit_price: string }>;
+  terminal_tiers: Array<{ up_to: number | null; unit_price: string }>;
+  quote: {
+    location_quantity: number;
+    terminals_per_location: number;
+    extra_terminal_quantity: number;
+    location_unit_price: string;
+    location_total: string;
+    terminal_unit_price: string;
+    terminal_total: string;
+    monthly_total: string;
+    intera_coins: number;
+    max_terminals_per_location: number;
+  };
 }
 
 export interface StartTrialResponse {

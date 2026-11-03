@@ -26,7 +26,7 @@ const StockAlerts = () => {
 
       <div className="space-y-4">
         {data?.map((alert: any) => (
-          <div key={alert.id} className="flex items-center justify-between rounded-2xl border border-red-200 bg-red-50/80 p-4 text-red-950 dark:border-red-500/30 dark:bg-red-950/30 dark:text-red-100">
+          <div key={alert.id} className="flex items-center justify-between rounded-2xl border border-red-200 bg-red-50/80 p-4 text-red-900 dark:border-red-500/30 dark:bg-red-900/30 dark:text-red-100">
             <div>
               <p className="font-medium mb-1">{alert.product_name}</p>
               <p className="text-sm text-red-800/80 dark:text-red-200/80">{alert.sku}</p>

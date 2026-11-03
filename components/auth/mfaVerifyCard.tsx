@@ -196,7 +196,7 @@ export default function MfaVerifyCard() {
           {method === "email" ? <MailCheck className="h-4 w-4 text-slate-500 dark:text-slate-300" /> : <Smartphone className="h-4 w-4 text-slate-500 dark:text-slate-300" />}
         </div>
 
-        <h2 className="text-3xl font-semibold text-slate-950 dark:text-gray-50">Verify your code</h2>
+        <h2 className="text-3xl font-semibold text-slate-900 dark:text-gray-50">Verify your code</h2>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
           {method === "email"
             ? "Enter the 6-digit verification code we sent to your email."
@@ -210,7 +210,7 @@ export default function MfaVerifyCard() {
             className={`auth-mfa-tab rounded-xl px-3 py-2 text-sm font-semibold transition ${
               method === "app"
                 ? "auth-mfa-tab-active border border-blue-200 bg-white text-blue-700 shadow-sm dark:border-[#98fcc2]/20 dark:bg-[#101727] dark:text-[#98fcc2]"
-                : "auth-mfa-tab-idle text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-gray-50"
+                : "auth-mfa-tab-idle text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-gray-50"
             }`}
           >
             Authenticator App
@@ -221,7 +221,7 @@ export default function MfaVerifyCard() {
             className={`auth-mfa-tab rounded-xl px-3 py-2 text-sm font-semibold transition ${
               method === "email"
                 ? "auth-mfa-tab-active border border-blue-200 bg-white text-blue-700 shadow-sm dark:border-[#98fcc2]/20 dark:bg-[#101727] dark:text-[#98fcc2]"
-                : "auth-mfa-tab-idle text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-gray-50"
+                : "auth-mfa-tab-idle text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-gray-50"
             }`}
           >
             Email Code

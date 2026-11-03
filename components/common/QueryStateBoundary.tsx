@@ -45,14 +45,14 @@ export function QueryStateBoundary({
 
   if (error) {
     return (
-      <div className={cn("rounded-2xl border border-red-200 bg-red-50/80 p-5 text-red-950 dark:border-red-500/30 dark:bg-red-950/30 dark:text-red-100", className)}>
+      <div className={cn("rounded-2xl border border-red-200 bg-red-50/80 p-5 text-red-900 dark:border-red-500/30 dark:bg-red-900/30 dark:text-red-100", className)}>
         <div className="flex items-start gap-3">
           <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600 dark:text-red-300" />
           <div className="min-w-0 flex-1">
             <p className="font-semibold">{errorTitle}</p>
             <p className="mt-1 text-sm text-red-800 dark:text-red-200">{extractErrorMessage(error, errorKeys)}</p>
             {onRetry ? (
-              <Button type="button" variant="outline" size="sm" className="mt-4 rounded-full bg-white/80 dark:bg-red-950/40" onClick={onRetry}>
+              <Button type="button" variant="outline" size="sm" className="mt-4 rounded-full bg-white/80 dark:bg-red-900/40" onClick={onRetry}>
                 <RefreshCw className="h-4 w-4" />
                 Retry
               </Button>

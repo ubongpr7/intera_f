@@ -24,7 +24,7 @@ export default function AdminSidebar({ user, mobileOpen, onMobileClose }: AdminS
   const navigationCollapsed = collapsed && !mobileOpen
   const isSuperuser = Boolean(user?.is_superuser) || isSuperuserFromToken()
 
-  const sidebarClasses = `dashboard-sidebar fixed inset-y-0 left-0 z-50 flex min-h-screen w-72 flex-col border-r border-slate-800 bg-slate-950 text-slate-100 shadow-xl transition-[transform,width] duration-300 ease-out md:z-40 md:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} ${collapsed ? 'md:w-16' : 'md:w-64'}`
+  const sidebarClasses = `dashboard-sidebar fixed inset-y-0 left-0 z-50 flex min-h-screen w-72 flex-col border-r border-slate-800 bg-slate-900 text-slate-100 shadow-xl transition-[transform,width] duration-300 ease-out md:z-40 md:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} ${collapsed ? 'md:w-16' : 'md:w-64'}`
 
   return (
     <TooltipProvider delayDuration={250}>

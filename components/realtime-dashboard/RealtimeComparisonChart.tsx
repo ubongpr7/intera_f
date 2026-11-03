@@ -267,7 +267,7 @@ export default function RealtimeComparisonChart({
           <div className="grid gap-5 xl:grid-cols-[0.72fr_1.28fr]">
             <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5">
               <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">Revenue pulse</div>
-              <div className="mt-3 text-3xl font-semibold tracking-tight text-emerald-950">{formatCurrencyCompact(currencyCode, overviewTotal)}</div>
+              <div className="mt-3 text-3xl font-semibold tracking-tight text-emerald-900">{formatCurrencyCompact(currencyCode, overviewTotal)}</div>
               <div className="mt-2 text-sm leading-6 text-emerald-900">Gross paid-order value from completed checkouts. This is revenue, not profit: product cost and margin are not included in this stream yet.</div>
               <div className="mt-5 grid grid-cols-2 gap-3 text-sm"><div className="rounded-2xl border border-emerald-200 bg-white p-3"><div className="text-xs text-gray-500">Paid revenue</div><div className="mt-1 text-xl font-semibold text-gray-900">{formatCurrencyCompact(currencyCode, overviewTotal)}</div></div><div className="rounded-2xl border border-emerald-200 bg-white p-3"><div className="text-xs text-gray-500">Average order</div><div className="mt-1 text-xl font-semibold text-gray-900">{formatCurrencyCompact(currencyCode, averageOrderValue)}</div></div></div>
             </div>

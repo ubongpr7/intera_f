@@ -203,7 +203,7 @@ function MetricCard({
         <div className="rounded-2xl bg-white p-2.5 text-gray-700 shadow-sm">{icon}</div>
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500">{label}</p>
-          <p className="mt-1 text-lg font-semibold text-gray-950">{value}</p>
+          <p className="mt-1 text-lg font-semibold text-gray-900">{value}</p>
         </div>
       </div>
       <p className="mt-3 text-xs text-gray-500">{hint}</p>
@@ -736,7 +736,7 @@ export default function AgentRuntimeWorkspace() {
             <ShieldCheck className="h-4 w-4" />
             Agent Access Required
           </div>
-          <h1 className="mt-5 text-3xl font-semibold tracking-tight text-gray-950">Agent access is locked for this workspace.</h1>
+          <h1 className="mt-5 text-3xl font-semibold tracking-tight text-gray-900">Agent access is locked for this workspace.</h1>
           <p className="mt-3 max-w-xl text-sm leading-7 text-gray-600">
             You need the workspace owner override or the <code>interact_with_agent</code> permission before chat access
             becomes available.
@@ -795,7 +795,7 @@ export default function AgentRuntimeWorkspace() {
                 void refetchConversations()
                 void refetchGateway()
               }}
-              className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:text-gray-950"
+              className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:text-gray-900"
             >
               <RefreshCcw className={cn("h-4 w-4", (isFetchingRuntimeRegistry || isFetchingConversations || isCheckingGateway) && "animate-spin")} />
               Refresh
@@ -816,7 +816,7 @@ export default function AgentRuntimeWorkspace() {
           <>
             <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-2xl">
-                <h1 className="text-3xl font-semibold tracking-tight text-gray-950">Persistent conversations for the active workspace.</h1>
+                <h1 className="text-3xl font-semibold tracking-tight text-gray-900">Persistent conversations for the active workspace.</h1>
                 <p className="mt-3 text-sm leading-7 text-gray-600">
                   Installed workspace agents are the only chat targets here. Threads are saved for later, and the
                   gateway streams live task progress over the active conversation connection.
@@ -826,7 +826,7 @@ export default function AgentRuntimeWorkspace() {
                 <button
                   type="button"
                   onClick={() => void handleCopyDebugSnapshot()}
-                  className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:text-gray-950"
+                  className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:text-gray-900"
                 >
                   <Copy className="h-4 w-4" />
                   Copy conversation data
@@ -834,7 +834,7 @@ export default function AgentRuntimeWorkspace() {
                 <button
                   type="button"
                   onClick={handleDownloadDebugSnapshot}
-                  className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:text-gray-950"
+                  className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:text-gray-900"
                 >
                   <Download className="h-4 w-4" />
                   Download conversation data
@@ -891,7 +891,7 @@ export default function AgentRuntimeWorkspace() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500">Installed agents</p>
-                <h2 className="mt-2 text-lg font-semibold text-gray-950">Available agents</h2>
+                <h2 className="mt-2 text-lg font-semibold text-gray-900">Available agents</h2>
               </div>
               <button
                 type="button"
@@ -921,7 +921,7 @@ export default function AgentRuntimeWorkspace() {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="text-sm font-semibold text-gray-950">{agent.name}</p>
+                          <p className="text-sm font-semibold text-gray-900">{agent.name}</p>
                           <p className={cn("mt-1 text-xs uppercase tracking-[0.14em]", active ? "text-blue-700" : "text-gray-500")}>{humanize(agent.slug)}</p>
                         </div>
                         <span className={cn(
@@ -947,7 +947,7 @@ export default function AgentRuntimeWorkspace() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500">Conversations</p>
-                <h2 className="mt-2 text-lg font-semibold text-gray-950">Persistent threads</h2>
+                <h2 className="mt-2 text-lg font-semibold text-gray-900">Persistent threads</h2>
               </div>
               <span className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-600">
                 {filteredConversations.length}
@@ -1004,7 +1004,7 @@ export default function AgentRuntimeWorkspace() {
                       <button type="button" onClick={() => setActiveConversationId(conversation.id)} className="w-full text-left">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-gray-950">
+                            <p className="truncate text-sm font-semibold text-gray-900">
                               {conversation.title || `${conversation.agentName} conversation`}
                             </p>
                             <p className={cn("mt-1 text-xs uppercase tracking-[0.14em]", active ? "text-blue-700" : "text-gray-500")}>
@@ -1082,7 +1082,7 @@ export default function AgentRuntimeWorkspace() {
           <div className="shrink-0 flex flex-col gap-3 border-b border-gray-200 pb-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
               <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500">Live Conversation</p>
-              <h2 className="mt-2 truncate text-2xl font-semibold tracking-tight text-gray-950">
+              <h2 className="mt-2 truncate text-2xl font-semibold tracking-tight text-gray-900">
                 {activeConversation?.title || activeAgentDisplayName || "Select or start a conversation"}
               </h2>
               <p className="mt-2 text-sm text-gray-600">
@@ -1140,7 +1140,7 @@ export default function AgentRuntimeWorkspace() {
           <div className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto pr-1">
           <section className="shrink-0 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500">Selected agent</p>
-            <h2 className="mt-2 text-lg font-semibold text-gray-950">{activeRuntimeAgent?.name || selectedAgent?.name || "No agent selected"}</h2>
+            <h2 className="mt-2 text-lg font-semibold text-gray-900">{activeRuntimeAgent?.name || selectedAgent?.name || "No agent selected"}</h2>
             <p className="mt-3 text-sm leading-7 text-gray-600">
               {activeRuntimeAgent?.description || selectedAgent?.description || "Choose an installed agent to start a new conversation."}
             </p>
@@ -1176,7 +1176,7 @@ export default function AgentRuntimeWorkspace() {
           <section className="shrink-0 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500">Current flow</p>
             <div className="mt-4 rounded-[22px] border border-gray-200 bg-white p-4 shadow-[0_10px_24px_-24px_rgba(15,23,42,0.28)]">
-              <p className="text-sm font-semibold text-gray-950">
+              <p className="text-sm font-semibold text-gray-900">
                 {workflowSummary?.title || "Ready for the next message"}
               </p>
               <p className="mt-2 text-sm leading-6 text-gray-600">
@@ -1241,7 +1241,7 @@ export default function AgentRuntimeWorkspace() {
           <section className="shrink-0 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
             <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500">Delegation mode</p>
-            <h2 className="mt-2 text-lg font-semibold text-gray-950">Routing behavior</h2>
+            <h2 className="mt-2 text-lg font-semibold text-gray-900">Routing behavior</h2>
             </div>
             <div className="mt-4 rounded-[20px] border border-gray-200 bg-gray-50/80 p-4">
               <div className="flex items-center gap-2 text-gray-900">
@@ -1261,7 +1261,7 @@ export default function AgentRuntimeWorkspace() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500">Activity feed</p>
-                <h2 className="mt-2 text-lg font-semibold text-gray-950">Latest events</h2>
+                <h2 className="mt-2 text-lg font-semibold text-gray-900">Latest events</h2>
               </div>
               <span className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-600">
                 {activityFeed.length}

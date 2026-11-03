@@ -151,7 +151,7 @@ const AgentSetupAccessDenied = ({ ownerOverride }: { ownerOverride: boolean }) =
       </div>
       <div className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-700">Setup Access Required</p>
-        <h2 className="text-2xl font-semibold text-amber-950">
+        <h2 className="text-2xl font-semibold text-amber-900">
           Only the workspace owner or someone with agent setup permission can manage this area.
         </h2>
         <p className="max-w-3xl text-sm leading-6 text-amber-900/80">
@@ -642,7 +642,7 @@ export default function SettingsPage() {
       <div className="p-6">
         <Card className="border-amber-200 bg-amber-50 shadow-sm">
           <CardHeader className="p-6 text-left">
-            <CardTitle className="text-lg font-semibold text-amber-950">Workspace AI setup is still loading</CardTitle>
+            <CardTitle className="text-lg font-semibold text-amber-900">Workspace AI setup is still loading</CardTitle>
             <CardDescription className="text-sm leading-6 text-amber-900">
               The setup service has not returned yet. Nothing was changed. Retry the setup request or continue once the
               service is available.

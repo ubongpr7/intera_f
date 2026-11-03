@@ -10,7 +10,7 @@ export default function ImportedProductsPage() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">Imported products</p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-gray-950">Manage imported global products</h1>
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-gray-900">Manage imported global products</h1>
             <p className="mt-3 max-w-4xl text-sm leading-6 text-gray-600">
               This page keeps the imported-product sync list separate from the import browser so the workspace can load faster on the main import screen.
             </p>

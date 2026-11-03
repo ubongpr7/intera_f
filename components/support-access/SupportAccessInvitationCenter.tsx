@@ -401,7 +401,7 @@ export default function SupportAccessInvitationCenter({
             <p className="mt-2 text-sm leading-7 text-gray-700">{currentRequest.reason}</p>
           </div>
 
-          <Alert className="rounded-3xl border-amber-100 bg-amber-50 text-amber-950">
+          <Alert className="rounded-3xl border-amber-100 bg-amber-50 text-amber-900">
             <Clock3 className="h-4 w-4" />
             <AlertTitle>Access stays temporary</AlertTitle>
             <AlertDescription>

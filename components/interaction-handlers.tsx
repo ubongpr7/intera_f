@@ -266,7 +266,7 @@ export function FileUploadHandler({ data, onResponse, compact = false }: Interac
 
         <div
           className={`border-2 border-dashed rounded p-4 text-center transition-colors ${
-            dragOver ? "border-blue-500 bg-blue-950/40" : "border-gray-700"
+            dragOver ? "border-blue-500 bg-blue-900/40" : "border-gray-700"
           }`}
           onDragOver={(e) => {
             e.preventDefault()
@@ -333,7 +333,7 @@ export function FileUploadHandler({ data, onResponse, compact = false }: Interac
       <CardContent className="space-y-4">
         <div
           className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-            dragOver ? "border-blue-500 bg-blue-950/40" : "border-gray-700"
+            dragOver ? "border-blue-500 bg-blue-900/40" : "border-gray-700"
           }`}
           onDragOver={(e) => {
             e.preventDefault()
@@ -1089,7 +1089,7 @@ export function CodeReviewHandler({ data, onResponse, compact = false }: Interac
                 {change.old_code && (
                   <div>
                     <h6 className="text-xs font-medium text-red-600">Before:</h6>
-                    <pre className="bg-red-950/40 p-2 rounded text-xs overflow-x-auto">
+                    <pre className="bg-red-900/40 p-2 rounded text-xs overflow-x-auto">
                       <code>{change.old_code}</code>
                     </pre>
                   </div>
@@ -1097,7 +1097,7 @@ export function CodeReviewHandler({ data, onResponse, compact = false }: Interac
 
                 <div>
                   <h6 className="text-xs font-medium text-green-600">After:</h6>
-                  <pre className="bg-green-950/40 p-2 rounded text-xs overflow-x-auto">
+                  <pre className="bg-green-900/40 p-2 rounded text-xs overflow-x-auto">
                     <code>{change.new_code}</code>
                   </pre>
                 </div>
@@ -1153,7 +1153,7 @@ export function CodeReviewHandler({ data, onResponse, compact = false }: Interac
               {change.old_code && (
                 <div>
                   <h5 className="text-sm font-medium text-red-600 mb-2">Before:</h5>
-                  <pre className="bg-red-950/40 p-3 rounded text-sm overflow-x-auto">
+                  <pre className="bg-red-900/40 p-3 rounded text-sm overflow-x-auto">
                     <code>{change.old_code}</code>
                   </pre>
                 </div>
@@ -1161,7 +1161,7 @@ export function CodeReviewHandler({ data, onResponse, compact = false }: Interac
 
               <div>
                 <h5 className="text-sm font-medium text-green-600 mb-2">After:</h5>
-                <pre className="bg-green-950/40 p-3 rounded text-sm overflow-x-auto">
+                <pre className="bg-green-900/40 p-3 rounded text-sm overflow-x-auto">
                   <code>{change.new_code}</code>
                 </pre>
               </div>

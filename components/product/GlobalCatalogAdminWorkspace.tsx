@@ -939,7 +939,7 @@ function VariantCard({
           </div>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="truncate text-base font-semibold text-gray-950">{variant.display_name}</p>
+              <p className="truncate text-base font-semibold text-gray-900">{variant.display_name}</p>
               <Badge variant="outline" className="rounded-full px-3 py-1 text-gray-600">
                 Variant {variant.variant_number}
               </Badge>
@@ -1215,7 +1215,7 @@ export default function GlobalCatalogAdminWorkspace() {
     return (
       <Card className="border-amber-200 bg-amber-50 shadow-sm">
         <CardHeader className="p-6 text-left text-inherit">
-          <CardTitle className="text-xl text-amber-950">Global catalog admin requires a staff session</CardTitle>
+          <CardTitle className="text-xl text-amber-900">Global catalog admin requires a staff session</CardTitle>
           <CardDescription className="mt-2 text-sm leading-6 text-amber-900">
             This page is restricted to Intera IMS platform staff. If your account should have access, refresh your session so the latest staff claims are loaded into the frontend.
           </CardDescription>
@@ -1344,24 +1344,24 @@ export default function GlobalCatalogAdminWorkspace() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Total source products</p>
-              <p className="mt-3 text-3xl font-semibold text-gray-950">{loadingStats ? "..." : stats.total}</p>
+              <p className="mt-3 text-3xl font-semibold text-gray-900">{loadingStats ? "..." : stats.total}</p>
             </div>
             <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-blue-700">Total variants</p>
-              <p className="mt-3 text-3xl font-semibold text-blue-950">{loadingStats ? "..." : adminStats?.total_variants ?? 0}</p>
+              <p className="mt-3 text-3xl font-semibold text-blue-900">{loadingStats ? "..." : adminStats?.total_variants ?? 0}</p>
               <p className="mt-1 text-xs text-blue-700">Active variants in the global catalog</p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Published</p>
-              <p className="mt-3 text-3xl font-semibold text-gray-950">{loadingStats ? "..." : stats.published}</p>
+              <p className="mt-3 text-3xl font-semibold text-gray-900">{loadingStats ? "..." : stats.published}</p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Drafts</p>
-              <p className="mt-3 text-3xl font-semibold text-gray-950">{loadingStats ? "..." : stats.drafts}</p>
+              <p className="mt-3 text-3xl font-semibold text-gray-900">{loadingStats ? "..." : stats.drafts}</p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Archived</p>
-              <p className="mt-3 text-3xl font-semibold text-gray-950">{loadingStats ? "..." : stats.archived}</p>
+              <p className="mt-3 text-3xl font-semibold text-gray-900">{loadingStats ? "..." : stats.archived}</p>
             </div>
           </div>
 
@@ -1519,7 +1519,7 @@ export default function GlobalCatalogAdminWorkspace() {
                       </div>
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="truncate text-lg font-semibold text-gray-950">{product.name}</p>
+                          <p className="truncate text-lg font-semibold text-gray-900">{product.name}</p>
                           <Badge variant="outline" className="rounded-full px-3 py-1 text-gray-600">
                             {formatMachineLabel(product.source_status)}
                           </Badge>
@@ -1597,7 +1597,7 @@ export default function GlobalCatalogAdminWorkspace() {
           {products.length > 0 ? (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-gray-200 bg-white p-4">
               <p className="text-sm text-gray-600">
-                Admin page <span className="font-semibold text-gray-950">{currentPage}</span> of <span className="font-semibold text-gray-950">{totalPages}</span>
+                Admin page <span className="font-semibold text-gray-900">{currentPage}</span> of <span className="font-semibold text-gray-900">{totalPages}</span>
                 {isFetching && !isLoading ? <span className="ml-2 rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-700">Refreshing...</span> : null}
               </p>
               <div className="flex flex-wrap items-center gap-2">

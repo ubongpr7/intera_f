@@ -114,7 +114,7 @@ const QuickStats = () => {
       )}
       
       {lowStockError && (
-        <div className="mt-8 rounded-xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-500/30 dark:bg-rose-950/20">
+        <div className="mt-8 rounded-xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-500/30 dark:bg-rose-900/20">
           <div className="flex items-center">
             <div className="mr-3 rounded-full bg-rose-100 p-2 dark:bg-rose-900/50">
               <AlertTriangle className="h-5 w-5 text-rose-600 dark:text-rose-300" />

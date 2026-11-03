@@ -26,12 +26,12 @@ const VerticalTabs = ({ items, defaultActive, className, onClose }: VerticalTabs
     : defaultActive || items[0]?.id || '';
 
   return (
-    <div onClick={onClose} className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-3 backdrop-blur-md sm:p-6">
+    <div onClick={onClose} className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/75 p-3 backdrop-blur-md sm:p-6">
       <div
         className={`flex max-h-[min(92vh,900px)] w-full max-w-5xl overflow-hidden rounded-[30px] border border-slate-700/80 bg-[#070d1f] text-slate-100 shadow-[0_32px_100px_rgba(0,0,0,0.55)] ${className || ''}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="relative w-44 shrink-0 border-r border-slate-800 bg-slate-950/70 sm:w-56">
+        <div className="relative w-44 shrink-0 border-r border-slate-800 bg-slate-900/70 sm:w-56">
           <div className="flex flex-col gap-1 overflow-y-auto p-3 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
             {items.map((tab) => (
               <Button

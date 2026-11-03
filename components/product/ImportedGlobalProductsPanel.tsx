@@ -65,7 +65,7 @@ function ImportedProductRow({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="truncate text-lg font-semibold text-gray-950">{entry.global_product_name}</p>
+            <p className="truncate text-lg font-semibold text-gray-900">{entry.global_product_name}</p>
             <Badge variant="outline" className="rounded-full px-3 py-1 text-gray-600">
               {entry.import_mode === "initial_import" ? "Initial import" : "Synced"}
             </Badge>

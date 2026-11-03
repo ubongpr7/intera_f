@@ -23,7 +23,7 @@ export function LegalPageLayout({
   return (
     <div className="landing-page min-h-screen">
       <LandingHeader />
-      <main className="landing-hero min-h-screen text-gray-950 dark:text-gray-50">
+      <main className="landing-hero min-h-screen text-gray-900 dark:text-gray-50">
         <section className="mx-auto max-w-7xl px-4 pb-12 pt-16 sm:px-6 lg:px-8 lg:pb-16 lg:pt-24">
           <Link
             href="/"
@@ -52,7 +52,7 @@ export function LegalPageLayout({
         </section>
 
         <article className="mx-auto max-w-5xl px-4 pb-24 sm:px-6 lg:px-8">
-          <div className="legal-document rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-2xl shadow-blue-950/10 backdrop-blur sm:p-10 lg:p-14 dark:border-white/10 dark:bg-[#0d192e]/90">
+          <div className="legal-document rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-2xl shadow-blue-900/10 backdrop-blur sm:p-10 lg:p-14 dark:border-white/10 dark:bg-[#0d192e]/90">
             {children}
           </div>
         </article>

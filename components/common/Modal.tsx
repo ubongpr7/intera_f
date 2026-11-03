@@ -27,9 +27,9 @@ export default function Modal({ isOpen, onClose, title, children, size = "md" }:
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-md" onClick={onClose} />
+      <div className="absolute inset-0 bg-slate-900/75 backdrop-blur-md" onClick={onClose} />
       <div
-        className={`relative mx-4 w-full max-h-[92vh] overflow-hidden rounded-[28px] border border-slate-800 bg-slate-950/95 text-slate-50 shadow-[0_32px_80px_-24px_rgba(2,6,23,0.95)] ${sizeClasses[size]}`}
+        className={`relative mx-4 w-full max-h-[92vh] overflow-hidden rounded-[28px] border border-slate-800 bg-slate-900/95 text-slate-50 shadow-[0_32px_80px_-24px_rgba(2,6,23,0.95)] ${sizeClasses[size]}`}
       >
         <div className="flex items-center justify-between border-b border-slate-800/80 px-6 py-5">
           <div className="space-y-1">

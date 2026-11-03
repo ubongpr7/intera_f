@@ -72,7 +72,7 @@ export default function MfaSetupCard() {
 
   return (
     <div className="auth-card w-full max-w-md space-y-6 p-6 sm:p-8">
-      <h2 className="text-center text-2xl font-bold tracking-[-0.03em] text-slate-950 dark:text-gray-50">Set up your authenticator</h2>
+      <h2 className="text-center text-2xl font-bold tracking-[-0.03em] text-slate-900 dark:text-gray-50">Set up your authenticator</h2>
       <p className="text-center text-sm text-slate-600 dark:text-slate-300">
         MFA is required. Scan the QR code with your authenticator app and continue.
       </p>

@@ -13,7 +13,7 @@ const buttonVariants = cva(
         destructive:
           "bg-[#ef4444] text-gray-50 shadow-[0_16px_36px_-24px_rgba(239,68,68,0.72)] hover:bg-[#dc2626] dark:bg-[#ef4444] dark:hover:bg-[#dc2626]",
         outline:
-          "border border-[#cbdaf5] bg-white text-[#1f3963] shadow-[0_10px_24px_-18px_rgba(16,23,39,0.25)] hover:-translate-y-0.5 hover:border-[#8fb7fb] hover:bg-[#f5f9ff] hover:text-[#101727] dark:border-white/15 dark:bg-white/[0.03] dark:text-slate-100 dark:hover:border-[#98fcc2]/40 dark:hover:bg-[#98fcc2]/10 dark:hover:text-[#98fcc2]",
+          "border border-[#b9cbed] bg-white text-[#24446f] shadow-[0_10px_24px_-18px_rgba(16,23,39,0.25)] hover:-translate-y-0.5 hover:border-[#6f9ff2] hover:bg-[#f2f7ff] hover:text-[#17345d] dark:border-slate-500/75 dark:bg-slate-800/80 dark:text-gray-50 dark:shadow-[0_10px_24px_-18px_rgba(0,0,0,0.55)] dark:hover:border-[#98fcc2]/75 dark:hover:bg-slate-700/90 dark:hover:text-[#b9ffd8]",
         secondary:
           "bg-[#e8f0ff] text-[#28549a] shadow-[0_12px_26px_-22px_rgba(39,83,155,.65)] hover:-translate-y-0.5 hover:bg-[#dce9ff] dark:bg-[#98fcc2]/15 dark:text-[#98fcc2] dark:hover:bg-[#98fcc2]/25",
         ghost: "text-[#263b5d] hover:bg-[#3c83f7]/10 hover:text-[#1d4e9e] dark:text-slate-100 dark:hover:bg-[#98fcc2]/10 dark:hover:text-[#98fcc2]",

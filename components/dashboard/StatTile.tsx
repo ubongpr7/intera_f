@@ -14,9 +14,9 @@ interface StatTileProps {
 
 const toneStyles: Record<NonNullable<StatTileProps["tone"]>, string> = {
   default: "bg-gray-50 text-gray-900 border-gray-200",
-  amber: "bg-amber-50 text-amber-950 border-amber-200",
-  blue: "bg-blue-50 text-blue-950 border-blue-200",
-  green: "bg-emerald-50 text-emerald-950 border-emerald-200",
+  amber: "bg-amber-50 text-amber-900 border-amber-200",
+  blue: "bg-blue-50 text-blue-900 border-blue-200",
+  green: "bg-emerald-50 text-emerald-900 border-emerald-200",
 }
 
 export default function StatTile({

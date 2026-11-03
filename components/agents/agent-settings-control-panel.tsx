@@ -237,7 +237,7 @@ const AgentEditorSheet = ({
         <div className="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(30,41,59,0.96)_0%,rgba(15,23,42,0.98)_52%,rgba(2,6,23,1)_100%)] px-7 py-6 md:px-8">
           <div className="grid gap-4">
             <div className="grid gap-4 md:grid-cols-2">
-              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-900/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Slug</span>
                 <Input
                   className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
@@ -246,7 +246,7 @@ const AgentEditorSheet = ({
                   placeholder="inventory-ops-copilot"
                 />
               </label>
-              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-900/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Name</span>
                 <Input
                   className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
@@ -257,7 +257,7 @@ const AgentEditorSheet = ({
               </label>
             </div>
 
-            <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+            <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-900/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
               <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Description</span>
               <Textarea
                 className="min-h-[120px] rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
@@ -269,7 +269,7 @@ const AgentEditorSheet = ({
             </label>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-900/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Visibility</span>
                 <select
                   value={value.visibility}
@@ -285,7 +285,7 @@ const AgentEditorSheet = ({
                   ))}
                 </select>
               </label>
-              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-900/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Routing policy</span>
                 <select
                   value={value.routing_policy}
@@ -306,7 +306,7 @@ const AgentEditorSheet = ({
               </label>
             </div>
 
-            <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+            <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-900/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
               <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">System instruction</span>
               <Textarea
                 className="min-h-[140px] rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
@@ -317,7 +317,7 @@ const AgentEditorSheet = ({
               />
             </label>
 
-            <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+            <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-900/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
               <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Workflow guidance</span>
               <Textarea
                 className="min-h-[120px] rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
@@ -328,7 +328,7 @@ const AgentEditorSheet = ({
               />
             </label>
 
-            <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+            <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-900/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
               <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Assistant instruction</span>
               <Textarea
                 className="min-h-[120px] rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-blue-400 focus-visible:ring-blue-500/20"
@@ -339,7 +339,7 @@ const AgentEditorSheet = ({
               />
             </label>
 
-            <label className="flex items-start gap-3 rounded-[26px] border border-gray-800 bg-gray-950/72 px-4 py-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+            <label className="flex items-start gap-3 rounded-[26px] border border-gray-800 bg-gray-900/72 px-4 py-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
               <Checkbox
                 checked={value.is_enabled}
                 onCheckedChange={(checked) => onChange({ ...value, is_enabled: Boolean(checked) })}
@@ -352,7 +352,7 @@ const AgentEditorSheet = ({
               </div>
             </label>
 
-            <details className="rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+            <details className="rounded-[26px] border border-gray-800 bg-gray-900/72 p-4 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
               <summary className="cursor-pointer text-sm font-semibold text-gray-100">Advanced settings</summary>
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <label className="grid gap-2 text-sm">
@@ -405,7 +405,7 @@ const AgentEditorSheet = ({
           </div>
         </div>
 
-        <div className="border-t border-gray-800 bg-gray-950/95 px-7 py-4 md:px-8">
+        <div className="border-t border-gray-800 bg-gray-900/95 px-7 py-4 md:px-8">
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
@@ -464,7 +464,7 @@ const AgentBindingsSheet = ({
   <Sheet open={open} onOpenChange={onOpenChange}>
     <SheetContent side="right" className="w-full max-w-3xl border-gray-200 bg-white p-0 text-gray-900 sm:max-w-3xl">
       <div className="flex h-full flex-col">
-        <SheetHeader className="border-b border-gray-200 bg-gray-950 px-6 py-6 text-left">
+        <SheetHeader className="border-b border-gray-200 bg-gray-900 px-6 py-6 text-left">
           <SheetTitle className="text-3xl font-semibold tracking-tight text-gray-100">
             Configure tools and skills
           </SheetTitle>
@@ -629,7 +629,7 @@ const InstallTemplatesSheet = ({
         <div className="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(22,78,99,0.28)_0%,rgba(15,23,42,0.98)_48%,rgba(2,6,23,1)_100%)] px-6 py-6">
           {isLoadingTemplates && templates.length === 0 ? (
             <div className="space-y-4">
-              <div className="rounded-[26px] border border-gray-800 bg-gray-950/72 p-5 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <div className="rounded-[26px] border border-gray-800 bg-gray-900/72 p-5 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
                 <div className="h-4 w-44 animate-pulse rounded-full bg-gray-800" />
                 <div className="mt-4 h-10 w-72 animate-pulse rounded-2xl bg-gray-800/80" />
                 <div className="mt-3 h-4 w-full max-w-xl animate-pulse rounded-full bg-gray-800/70" />
@@ -638,7 +638,7 @@ const InstallTemplatesSheet = ({
                 {Array.from({ length: 3 }).map((_, index) => (
                   <div
                     key={`template-skeleton-${index}`}
-                    className="rounded-[26px] border border-gray-800 bg-gray-950/72 p-5 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]"
+                    className="rounded-[26px] border border-gray-800 bg-gray-900/72 p-5 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1 space-y-3">
@@ -659,7 +659,7 @@ const InstallTemplatesSheet = ({
             </div>
           ) : templates.length ? (
             <div className="space-y-4">
-              <div className="rounded-[26px] border border-gray-800 bg-gray-950/72 p-5 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <div className="rounded-[26px] border border-gray-800 bg-gray-900/72 p-5 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <label className="flex items-center gap-3 text-sm text-gray-200">
                     <Checkbox
@@ -689,7 +689,7 @@ const InstallTemplatesSheet = ({
               </div>
 
               {templates.map((template) => (
-                <Card key={template.id} className="border-gray-800 bg-gray-950/72 text-gray-100 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+                <Card key={template.id} className="border-gray-800 bg-gray-900/72 text-gray-100 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
                   <CardHeader className="p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex min-w-0 items-start gap-3">
@@ -727,7 +727,7 @@ const InstallTemplatesSheet = ({
               ))}
             </div>
           ) : (
-            <div className="rounded-[26px] border border-dashed border-gray-700 bg-gray-950/72 p-6 text-sm text-gray-300 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+            <div className="rounded-[26px] border border-dashed border-gray-700 bg-gray-900/72 p-6 text-sm text-gray-300 shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
               Every default template has already been installed in this workspace.
             </div>
           )}
@@ -793,7 +793,7 @@ const ToolConnectionSheet = ({
 
         <div className="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(22,78,99,0.28)_0%,rgba(15,23,42,0.98)_48%,rgba(2,6,23,1)_100%)] px-7 py-6 md:px-8">
           <div className="grid gap-4">
-            <div className="rounded-[26px] border border-gray-800 bg-gray-950/72 p-5 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+            <div className="rounded-[26px] border border-gray-800 bg-gray-900/72 p-5 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
               <p className="text-sm font-semibold text-gray-100">How this works</p>
               <div className="mt-3 grid gap-3 text-sm text-gray-300 md:grid-cols-2">
                 <div className="rounded-2xl border border-gray-800 bg-gray-900/70 p-4">
@@ -814,7 +814,7 @@ const ToolConnectionSheet = ({
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <div className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-900/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Tool server</span>
                 <ReactSelectField
                   value={toolServerOptions.find((option) => option.value === value.tool_server) ?? null}
@@ -841,7 +841,7 @@ const ToolConnectionSheet = ({
                   </p>
                 )}
               </div>
-              <div className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <div className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-900/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Auth type</span>
                 <ReactSelectField
                   value={toolConnectionAuthTypeOptions.find((option) => option.value === value.auth_type) ?? null}
@@ -862,7 +862,7 @@ const ToolConnectionSheet = ({
             </div>
 
             {selectedServer ? (
-              <div className="rounded-[26px] border border-emerald-900/60 bg-emerald-950/20 p-5 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <div className="rounded-[26px] border border-emerald-900/60 bg-emerald-900/20 p-5 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-base font-semibold text-emerald-100">{selectedServer.name}</p>
                   <span className="rounded-full border border-emerald-700/50 bg-emerald-900/30 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-200">
@@ -915,7 +915,7 @@ const ToolConnectionSheet = ({
             ) : null}
 
             <div className="grid gap-4 md:grid-cols-2">
-              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-900/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Connection name</span>
                 <Input
                   className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
@@ -924,7 +924,7 @@ const ToolConnectionSheet = ({
                   placeholder="Shopify Main Store"
                 />
               </label>
-              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-900/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Slug</span>
                 <Input
                   className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
@@ -935,7 +935,7 @@ const ToolConnectionSheet = ({
               </label>
             </div>
 
-            <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+            <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-900/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
               <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Server URL override</span>
               <Input
                 className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
@@ -949,7 +949,7 @@ const ToolConnectionSheet = ({
               </p>
             </label>
 
-            <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+            <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-900/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
               <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Credential payload JSON</span>
               <Textarea
                 className="min-h-[150px] rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
@@ -964,7 +964,7 @@ const ToolConnectionSheet = ({
               {credentialExample ? (
                 <div className="rounded-2xl border border-gray-800 bg-gray-900/70 p-4">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Example for selected server</p>
-                  <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-words rounded-2xl bg-gray-950/80 p-3 text-xs leading-6 text-gray-200">
+                  <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-words rounded-2xl bg-gray-900/80 p-3 text-xs leading-6 text-gray-200">
                     {stringifyExampleJson(credentialExample)}
                   </pre>
                 </div>
@@ -972,7 +972,7 @@ const ToolConnectionSheet = ({
             </label>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-900/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Access token</span>
                 <Input
                   className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
@@ -981,7 +981,7 @@ const ToolConnectionSheet = ({
                   placeholder={isEditing ? "Leave blank to keep current token" : "Optional bearer or OAuth token"}
                 />
               </label>
-              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-900/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Refresh token</span>
                 <Input
                   className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
@@ -993,7 +993,7 @@ const ToolConnectionSheet = ({
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-900/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Resource label</span>
                 <Input
                   className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
@@ -1002,7 +1002,7 @@ const ToolConnectionSheet = ({
                   placeholder="Merchant Admin Store"
                 />
               </label>
-              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-900/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Resource owner ID</span>
                 <Input
                   className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
@@ -1014,7 +1014,7 @@ const ToolConnectionSheet = ({
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <label className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-900/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Granted scopes</span>
                 <Input
                   className="h-12 rounded-2xl border-gray-700 bg-gray-800/80 text-gray-100 placeholder:text-gray-500 focus-visible:border-emerald-400 focus-visible:ring-emerald-500/20"
@@ -1023,7 +1023,7 @@ const ToolConnectionSheet = ({
                   placeholder="read_products, write_inventory"
                 />
               </label>
-              <div className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-950/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
+              <div className="grid gap-2 rounded-[26px] border border-gray-800 bg-gray-900/72 p-4 text-sm shadow-[0_22px_48px_-30px_rgba(2,6,23,0.9)]">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Status</span>
                 <ReactSelectField
                   value={toolConnectionStatusOptions.find((option) => option.value === value.status) ?? null}
@@ -1041,7 +1041,7 @@ const ToolConnectionSheet = ({
           </div>
         </div>
 
-        <div className="border-t border-gray-800 bg-gray-950/95 px-7 py-4 md:px-8">
+        <div className="border-t border-gray-800 bg-gray-900/95 px-7 py-4 md:px-8">
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
@@ -1455,7 +1455,7 @@ export default function AgentSettingsControlPanel() {
           </div>
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-700">Setup Access Required</p>
-            <h3 className="text-2xl font-semibold text-amber-950">Only the workspace owner or someone with agent setup permission can manage this area.</h3>
+            <h3 className="text-2xl font-semibold text-amber-900">Only the workspace owner or someone with agent setup permission can manage this area.</h3>
             <p className="max-w-3xl text-sm leading-6 text-amber-900/80">
               Agent creation, installation, and binding changes are restricted to the workspace owner or a user assigned the <span className="font-semibold">manage_agent_settings</span> permission.
             </p>
@@ -1634,7 +1634,7 @@ export default function AgentSettingsControlPanel() {
           <CardContent className="p-6 pt-0">
             {selectedAgent ? (
               <div className="space-y-5">
-                <div className="rounded-[28px] border border-gray-900 bg-gray-950 p-5 text-gray-100 shadow-[0_22px_60px_rgba(2,6,23,0.35)]">
+                <div className="rounded-[28px] border border-gray-900 bg-gray-900 p-5 text-gray-100 shadow-[0_22px_60px_rgba(2,6,23,0.35)]">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">

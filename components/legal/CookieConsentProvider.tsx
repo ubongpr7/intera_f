@@ -50,7 +50,7 @@ export function CookieConsentNotice() {
   if (hasConsented || !isAuthEntryPath) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[100] border-t border-slate-200 bg-white/95 p-4 shadow-[0_-12px_40px_rgba(15,23,42,0.16)] backdrop-blur-md dark:border-slate-700 dark:bg-slate-950/95 sm:p-5">
+    <div className="fixed inset-x-0 bottom-0 z-[100] border-t border-slate-200 bg-white/95 p-4 shadow-[0_-12px_40px_rgba(15,23,42,0.16)] backdrop-blur-md dark:border-slate-700 dark:bg-slate-900/95 sm:p-5">
       <section
         role="region"
         aria-labelledby="cookie-consent-title"
@@ -68,7 +68,7 @@ export function CookieConsentNotice() {
         <button
           type="button"
           onClick={acceptCookies}
-          className="shrink-0 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-gray-50 transition hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950"
+          className="shrink-0 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-gray-50 transition hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
         >
           Agree and continue
         </button>

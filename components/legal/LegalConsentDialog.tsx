@@ -41,7 +41,7 @@ export default function LegalConsentDialog({ policy, onClose, onAgree }: LegalCo
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm" role="presentation">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-sm" role="presentation">
       <section
         aria-labelledby="legal-consent-title"
         aria-modal="true"
@@ -51,9 +51,9 @@ export default function LegalConsentDialog({ policy, onClose, onAgree }: LegalCo
         <header className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">Required before signup</p>
-            <h2 id="legal-consent-title" className="mt-1 text-xl font-semibold text-slate-950">{details.title}</h2>
+            <h2 id="legal-consent-title" className="mt-1 text-xl font-semibold text-slate-900">{details.title}</h2>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close policy dialog" className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-950">
+          <button type="button" onClick={onClose} aria-label="Close policy dialog" className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900">
             <X className="h-5 w-5" />
           </button>
         </header>

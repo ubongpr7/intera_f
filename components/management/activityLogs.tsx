@@ -149,7 +149,7 @@ export default function ActivityLogs({ userId, refetchData, onRefetchComplete }:
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-slate-800 bg-slate-950/80 p-4 shadow-[0_20px_55px_rgba(2,6,23,0.28)]">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-slate-800 bg-slate-900/80 p-4 shadow-[0_20px_55px_rgba(2,6,23,0.28)]">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="inline-flex items-center gap-2 rounded-full border border-sky-300/30 bg-sky-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-sky-200">
@@ -172,16 +172,16 @@ export default function ActivityLogs({ userId, refetchData, onRefetchComplete }:
       </div>
 
       {isLoading ? (
-        <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-6 text-sm text-slate-400">Loading audit activity...</div>
+        <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 text-sm text-slate-400">Loading audit activity...</div>
       ) : events.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-slate-700 bg-slate-950/60 p-8 text-center">
+        <div className="rounded-3xl border border-dashed border-slate-700 bg-slate-900/60 p-8 text-center">
           <p className="text-base font-semibold text-slate-100">No audit activity for this staff member yet.</p>
           <p className="mt-2 text-sm text-slate-400">When the user performs catalog, POS, inventory, purchase, or access-control actions, matching audit events will appear here.</p>
         </div>
       ) : (
         <div className="space-y-3">
           {events.map((event) => (
-            <div key={event.id} className="rounded-3xl border border-slate-800 bg-slate-950/70 p-4 shadow-[0_12px_30px_rgba(2,6,23,0.2)]">
+            <div key={event.id} className="rounded-3xl border border-slate-800 bg-slate-900/70 p-4 shadow-[0_12px_30px_rgba(2,6,23,0.2)]">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">

@@ -12,6 +12,7 @@ import type {
   SubscriptionPlanRecord,
   CoinTransactionRecord,
   CoinTopUpResponse,
+  BillingConfiguration,
 } from "./paymentTypes"
 
 export const paymentApiSlice = apiSlice.injectEndpoints({
@@ -92,6 +93,13 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
+    getBillingConfiguration: builder.query<BillingConfiguration, { locations?: string; terminals_per_location?: string } | void>({
+      query: (params = {}) => ({
+        url: `billing/configuration/?${new URLSearchParams(params ?? {}).toString()}`,
+        service: "payment",
+      }),
+    }),
+
     createSubscriptionPlan: builder.mutation({
       query: (data) => ({
         url: "subscriptions/",
@@ -129,6 +137,24 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
     getPaymentById: builder.query({
       query: (id) => ({
         url: `payments/${id}/`,
+        service: "payment",
+      }),
+    }),
+
+    issuePaymentRefund: builder.mutation<{ success: boolean; payment: PaymentRecord; refund: Record<string, unknown> }, { id: string; amount?: number; customer_note?: string; merchant_note?: string }>({
+      query: ({ id, ...body }) => ({
+        url: `payments/${id}/issue-refund/`,
+        method: "POST",
+        body,
+        service: "payment",
+      }),
+    }),
+
+    confirmPaymentRefund: builder.mutation<{ success: boolean; payment: PaymentRecord }, { id: string; note?: string }>({
+      query: ({ id, ...body }) => ({
+        url: `payments/${id}/confirm-refund/`,
+        method: "POST",
+        body,
         service: "payment",
       }),
     }),
@@ -332,6 +358,7 @@ export const {
 
   // Subscription Plans
   useGetSubscriptionPlansQuery,
+  useGetBillingConfigurationQuery,
   useCreateSubscriptionPlanMutation,
   useUpdateSubscriptionPlanMutation,
   useDeleteSubscriptionPlanMutation,
@@ -339,6 +366,8 @@ export const {
   // Payments
   useGetPaymentsQuery,
   useGetPaymentByIdQuery,
+  useIssuePaymentRefundMutation,
+  useConfirmPaymentRefundMutation,
   useInitiatePaymentMutation,
   useVerifyPaymentMutation,
 

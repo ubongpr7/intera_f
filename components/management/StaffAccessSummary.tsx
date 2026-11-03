@@ -72,7 +72,7 @@ const StaffAccessSummary = ({
 
   if (!userId || userId === "0") {
     return (
-      <div className="rounded-[28px] border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
+      <div className="rounded-[28px] border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
         Select a staff member to review their access.
       </div>
     );
@@ -80,13 +80,13 @@ const StaffAccessSummary = ({
 
   return (
     <section className="space-y-5">
-      <div className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <div className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
               Effective access
             </p>
-            <h3 className="mt-2 text-xl font-semibold text-slate-950 dark:text-slate-50">{displayName}</h3>
+            <h3 className="mt-2 text-xl font-semibold text-slate-900 dark:text-slate-50">{displayName}</h3>
             <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">
               Consolidated view of this staff member&apos;s active roles, group memberships, and granted permissions.
             </p>
@@ -102,33 +102,33 @@ const StaffAccessSummary = ({
               <UserCheck className="h-4 w-4 text-blue-600 dark:text-blue-300" />
               Active roles
             </div>
-            <p className="mt-3 text-3xl font-semibold text-slate-950 dark:text-slate-50">{activeRoles.length}</p>
+            <p className="mt-3 text-3xl font-semibold text-slate-900 dark:text-slate-50">{activeRoles.length}</p>
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/60">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
               <Users2 className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />
               Staff groups
             </div>
-            <p className="mt-3 text-3xl font-semibold text-slate-950 dark:text-slate-50">{activeGroups.length}</p>
+            <p className="mt-3 text-3xl font-semibold text-slate-900 dark:text-slate-50">{activeGroups.length}</p>
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/60">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
               <ShieldCheck className="h-4 w-4 text-amber-600 dark:text-amber-300" />
               Permissions
             </div>
-            <p className="mt-3 text-3xl font-semibold text-slate-950 dark:text-slate-50">{grantedPermissions.length}</p>
+            <p className="mt-3 text-3xl font-semibold text-slate-900 dark:text-slate-50">{grantedPermissions.length}</p>
           </div>
         </div>
       </div>
 
       {isLoading ? (
-        <div className="rounded-[28px] border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
+        <div className="rounded-[28px] border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
           <LoadingAnimation text="Loading staff access..." />
         </div>
       ) : (
         <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
           <div className="space-y-5">
-            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Role assignments</h4>
               <div className="mt-4 flex flex-wrap gap-2">
                 {activeRoles.length ? (
@@ -146,7 +146,7 @@ const StaffAccessSummary = ({
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Group memberships</h4>
               <div className="mt-4 flex flex-wrap gap-2">
                 {activeGroups.length ? (
@@ -165,7 +165,7 @@ const StaffAccessSummary = ({
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Granted permissions</h4>
@@ -188,7 +188,7 @@ const StaffAccessSummary = ({
                     <span className="text-sm font-medium capitalize text-slate-800 dark:text-slate-100">
                       {item.category}
                     </span>
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm dark:bg-slate-950 dark:text-slate-300">
+                    <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm dark:bg-slate-900 dark:text-slate-300">
                       {item.count}
                     </span>
                   </div>

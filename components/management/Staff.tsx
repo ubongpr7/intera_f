@@ -361,15 +361,15 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
         }}
       />
 
-      <div className={`fixed inset-0 z-50 items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm ${isInviteOpen ? "flex" : "hidden"}`}>
+      <div className={`fixed inset-0 z-50 items-center justify-center bg-slate-900/55 p-4 backdrop-blur-sm ${isInviteOpen ? "flex" : "hidden"}`}>
         <div className="w-full max-w-3xl overflow-hidden rounded-[30px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] shadow-[0_36px_90px_rgba(15,23,42,0.28)] dark:border-slate-800 dark:bg-[linear-gradient(180deg,#020617_0%,#0f172a_58%,#111827_100%)]">
-          <div className="relative border-b border-slate-200 bg-white/85 px-6 py-5 backdrop-blur dark:border-slate-800 dark:bg-slate-950/72">
+          <div className="relative border-b border-slate-200 bg-white/85 px-6 py-5 backdrop-blur dark:border-slate-800 dark:bg-slate-900/72">
             <div className="mb-3 inline-flex rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200">
               Team workspace
             </div>
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-50">Invite Staff Members</h3>
+                <h3 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">Invite Staff Members</h3>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
                   Add people one by one or upload a CSV of email addresses. Invitations stay inside the active workspace.
                 </p>
@@ -377,7 +377,7 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
             </div>
             <button
               type="button"
-              className="absolute right-6 top-6 rounded-full border border-white/70 bg-white/85 p-2 text-slate-500 shadow-sm transition hover:bg-white hover:text-slate-800 dark:border-slate-700 dark:bg-slate-950/85 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-gray-50"
+              className="absolute right-6 top-6 rounded-full border border-white/70 bg-white/85 p-2 text-slate-500 shadow-sm transition hover:bg-white hover:text-slate-800 dark:border-slate-700 dark:bg-slate-900/85 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-gray-50"
               onClick={() => setIsInviteOpen(false)}
             >
               <X size={18} />
@@ -385,7 +385,7 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
           </div>
 
           <div className="grid gap-4 p-6 md:grid-cols-2">
-            <form onSubmit={handleSingleInvite} className="rounded-[26px] border border-slate-200 bg-white/88 p-5 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.4)] dark:border-slate-800 dark:bg-slate-950/72">
+            <form onSubmit={handleSingleInvite} className="rounded-[26px] border border-slate-200 bg-white/88 p-5 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.4)] dark:border-slate-800 dark:bg-slate-900/72">
               <div className="mb-3 flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
                 <UserPlus size={16} />
                 Invite by email
@@ -411,7 +411,7 @@ const StaffCreateCard = ({ refetchData, setRefetchData }: StaffManagementRefetch
               </div>
             </form>
 
-            <form onSubmit={handleBulkInvite} className="rounded-[26px] border border-slate-200 bg-white/88 p-5 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.4)] dark:border-slate-800 dark:bg-slate-950/72">
+            <form onSubmit={handleBulkInvite} className="rounded-[26px] border border-slate-200 bg-white/88 p-5 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.4)] dark:border-slate-800 dark:bg-slate-900/72">
               <div className="mb-3 flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
                 <UploadCloud size={16} />
                 Invite by CSV (emails only)

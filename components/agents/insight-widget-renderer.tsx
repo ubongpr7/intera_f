@@ -366,7 +366,7 @@ function WidgetCard({
   children: ReactNode
 }) {
   return (
-    <section className="rounded-[24px] border border-gray-200 bg-white p-4 text-gray-700 shadow-[0_18px_44px_-34px_rgba(15,23,42,0.28)] dark:border-gray-800 dark:bg-gray-950/70 dark:text-gray-700">
+    <section className="rounded-[24px] border border-gray-200 bg-white p-4 text-gray-700 shadow-[0_18px_44px_-34px_rgba(15,23,42,0.28)] dark:border-gray-800 dark:bg-gray-900/70 dark:text-gray-700">
       {title ? <h4 className="text-sm font-semibold text-gray-900">{title}</h4> : null}
       {subtitle ? <p className="mt-1 text-xs leading-5 text-gray-500">{subtitle}</p> : null}
       <div className={title || subtitle ? "mt-4" : ""}>{children}</div>
@@ -490,7 +490,7 @@ function renderWidget(
       <WidgetCard key={`${type}-${index}`} title={title} subtitle={subtitle}>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {items.map((item, itemIndex) => (
-            <div key={`${title}-${itemIndex}`} className="rounded-[20px] border border-gray-200 bg-gray-50 px-4 py-3 dark:border-blue-500/30 dark:bg-blue-950/30">
+            <div key={`${title}-${itemIndex}`} className="rounded-[20px] border border-gray-200 bg-gray-50 px-4 py-3 dark:border-blue-500/30 dark:bg-blue-900/30">
               <p className="text-xs font-medium uppercase tracking-[0.14em] text-gray-500">{asString(item.label) || `Metric ${itemIndex + 1}`}</p>
               <p className="mt-2 text-2xl font-semibold text-gray-900">
                 {formatMetricValue(item.value, asString(item.unit) || undefined, {
