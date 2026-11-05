@@ -73,6 +73,51 @@ async function sendWaitlistWelcomeEmail({ email, name }: { email: string; name: 
   }
 }
 
+async function sendWaitlistNotificationEmail({ email, name }: { email: string; name: string }) {
+  const apiKey = getEnvValue("RESEND_API_KEY");
+  const sender = getEnvValue("CONTACT_FROM_EMAIL");
+  const recipient = getEnvValue("WAITLIST_NOTIFY_EMAIL") || "ubongpr7@gmail.com";
+
+  if (!apiKey || !sender) {
+    console.error("Waitlist notification email is not configured: set RESEND_API_KEY and CONTACT_FROM_EMAIL.");
+    return false;
+  }
+
+  const safeName = name ? name.replaceAll("<", "&lt;").replaceAll(">", "&gt;") : "Not provided";
+  const safeEmail = email.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+
+  try {
+    const response = await fetch(RESEND_ENDPOINT, {
+      method: "POST",
+      signal: AbortSignal.timeout(10000),
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: sender,
+        to: [recipient],
+        reply_to: email,
+        subject: "New Intera IMS waitlist signup",
+        html: `
+          <h2>Someone joined the Intera IMS waitlist</h2>
+          <p><strong>Name:</strong> ${safeName}</p>
+          <p><strong>Email:</strong> ${safeEmail}</p>
+          <p>Reply to this email to contact the person directly.</p>
+        `,
+      }),
+    });
+    const providerDetails = await response.json().catch(() => ({}));
+    return response.ok && typeof providerDetails?.id === "string";
+  } catch (error) {
+    console.error("Waitlist notification email request failed:", {
+      error: error instanceof Error ? error.message : "unknown error",
+      recipient,
+    });
+    return false;
+  }
+}
+
 export async function POST(request: Request) {
   const databaseUrl = process.env.WAITLIST_DATABASE_URL?.trim();
 
@@ -144,9 +189,12 @@ export async function POST(request: Request) {
     const emailSent = alreadyRegistered
       ? false
       : await sendWaitlistWelcomeEmail({ email, name });
+    const notificationSent = alreadyRegistered
+      ? false
+      : await sendWaitlistNotificationEmail({ email, name });
 
     return NextResponse.json(
-      { ok: true, accepted: true, alreadyRegistered, emailSent },
+      { ok: true, accepted: true, alreadyRegistered, emailSent, notificationSent },
       { status: 200, headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {

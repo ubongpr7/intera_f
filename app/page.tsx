@@ -39,6 +39,7 @@ import { Button } from "@/components/ui/button";
 // import { useGetSubscriptionPlansQuery } from "@/redux/features/payment/paymentAPISlice";
 import { useAppSelector } from "@/redux/store";
 import { LandingFooter } from "@/components/landing/LandingFooter";
+import { ServiceAwareLink } from "@/components/landing/ServiceAwareLink";
 import { LandingHeader } from "@/components/landing/LandingHeader";
 import { WaitlistForm } from "@/components/landing/WaitlistForm";
 // import { Feature, SubscriptionPlan } from "@/components/interfaces/payment";
@@ -826,7 +827,9 @@ function PlanCard({ plan, highlighted = false }: { plan: SubscriptionPlan; highl
 */
 
 export default function HomePage() {
-  const waitlistMode = process.env.NEXT_PUBLIC_WAITLIST_MODE?.trim().toLowerCase() === "true";
+  // Pre-launch mode: keep account entry points focused on collecting interested users
+  // until the backend is ready for public access.
+  const waitlistMode = true;
   const [activeDemoIndex, setActiveDemoIndex] = useState(() => Math.floor(Math.random() * demoConversations.length));
   const [visibleMessageCount, setVisibleMessageCount] = useState(0);
   const [typedDemoText, setTypedDemoText] = useState("");
@@ -973,7 +976,7 @@ export default function HomePage() {
                   </Button>
                 ) : (
                   <Button asChild size="lg">
-                    <Link href="/accounts">Start free setup <ArrowRight className="h-4 w-4" /></Link>
+                    <ServiceAwareLink href="/accounts">Start free setup <ArrowRight className="h-4 w-4" /></ServiceAwareLink>
                   </Button>
                 )}
                 {/* Pricing is intentionally hidden until after registration. */}
@@ -1453,8 +1456,8 @@ export default function HomePage() {
             <div className="landing-cta-panel rounded-2xl p-5 sm:p-6">
               <div className="flex items-start gap-3"><span className="landing-cta-icon"><ShieldCheck className="h-5 w-5" /></span><div><p className="font-semibold">Start with a secure foundation</p><p className="mt-1 text-sm leading-6 text-blue-100">Invite the right people, set up locations, then grow at your own pace.</p></div></div>
               <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                <Button asChild><Link href="/accounts">Create account <ArrowRight className="h-4 w-4" /></Link></Button>
-                <Button asChild variant="secondary"><Link href="/accounts/signin">Sign in</Link></Button>
+                <Button asChild><ServiceAwareLink href="/accounts">Create account <ArrowRight className="h-4 w-4" /></ServiceAwareLink></Button>
+                <Button asChild variant="secondary"><ServiceAwareLink href="/accounts/signin">Sign in</ServiceAwareLink></Button>
               </div>
             </div>
           </div>

@@ -7,9 +7,10 @@ import { ArrowRight, LogIn, Moon, Menu, Sun, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { setIsDarkMode } from "@/redux/state";
+import { ServiceAwareLink } from "@/components/landing/ServiceAwareLink";
 
 export function LandingHeader() {
-  const waitlistMode = process.env.NEXT_PUBLIC_WAITLIST_MODE?.trim().toLowerCase() === "true";
+  const waitlistMode = true;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
@@ -52,8 +53,8 @@ export function LandingHeader() {
             {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
           {waitlistMode ? <a href="#waitlist" className="text-sm font-semibold text-blue-700">Launch date to be announced</a> : <>
-            <Button variant="secondary" asChild><Link className="landing-nav-secondary" href="/accounts/signin"><LogIn className="h-4 w-4" />Sign in</Link></Button>
-            <Button asChild><Link className="landing-nav-primary" href="/accounts">Get started <ArrowRight className="h-4 w-4" /></Link></Button>
+            <Button variant="secondary" asChild><ServiceAwareLink className="landing-nav-secondary" href="/accounts/signin"><LogIn className="h-4 w-4" />Sign in</ServiceAwareLink></Button>
+            <Button asChild><ServiceAwareLink className="landing-nav-primary" href="/accounts">Get started <ArrowRight className="h-4 w-4" /></ServiceAwareLink></Button>
           </>}
         </div>
         <button type="button" className="landing-menu-trigger inline-flex md:hidden" onClick={() => setIsMobileMenuOpen((currentValue) => !currentValue)} aria-label="Toggle menu" aria-expanded={isMobileMenuOpen} aria-controls="landing-mobile-menu">
@@ -74,8 +75,8 @@ export function LandingHeader() {
                 {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </button>
               {waitlistMode ? <a href="#waitlist" onClick={() => setIsMobileMenuOpen(false)} className="flex-1 text-center text-sm font-semibold text-blue-700">Launch date to be announced</a> : <>
-                <Button variant="ghost" asChild className="flex-1"><Link className="landing-nav-secondary" href="/accounts/signin" onClick={() => setIsMobileMenuOpen(false)}><LogIn className="h-4 w-4" />Sign in</Link></Button>
-                <Button asChild className="flex-1"><Link className="landing-nav-primary" href="/accounts" onClick={() => setIsMobileMenuOpen(false)}>Get started <ArrowRight className="h-4 w-4" /></Link></Button>
+                <Button variant="ghost" asChild className="flex-1"><ServiceAwareLink className="landing-nav-secondary" href="/accounts/signin" onClick={() => setIsMobileMenuOpen(false)}><LogIn className="h-4 w-4" />Sign in</ServiceAwareLink></Button>
+                <Button asChild className="flex-1"><ServiceAwareLink className="landing-nav-primary" href="/accounts" onClick={() => setIsMobileMenuOpen(false)}>Get started <ArrowRight className="h-4 w-4" /></ServiceAwareLink></Button>
               </>}
             </div>
           </div>
