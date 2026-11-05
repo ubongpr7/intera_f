@@ -842,8 +842,8 @@ export default function HomePage() {
   });
   */
   const demoAvatarForRole = {
-    assistant: isDarkMode ? "/assets/img/favicons/favicon-dark.png" : "/assets/img/favicons/favicon-light.png",
-    user: "/assets/intera-logo.png",
+    assistant: isDarkMode ? "/assets/img/favicons/brand-mark-dark-128.png" : "/assets/img/favicons/brand-mark-light-128.png",
+    user: "/assets/intera/intera-mark-dark-128.png",
   } as const;
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -936,8 +936,19 @@ export default function HomePage() {
 
   const demoCallTime = `${Math.floor(demoCallSeconds / 60).toString().padStart(2, "0")}:${(demoCallSeconds % 60).toString().padStart(2, "0")}`;
 
+  const faqStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqItems.map(({ question, answer }) => ({
+      "@type": "Question",
+      name: question,
+      acceptedAnswer: { "@type": "Answer", text: answer },
+    })),
+  };
+
   return (
     <div className="landing-page min-h-screen bg-white text-gray-900">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqStructuredData) }} />
       <LandingHeader />
 
       <main>

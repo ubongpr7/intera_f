@@ -22,6 +22,7 @@ Businesses that manage stock across stores, warehouses, or other structural loca
 - Purchasing and replenishment workflows covering suppliers, purchase orders, approvals, receiving, and returns.
 - Business intelligence and operational reporting for sales, stock, purchasing, and performance.
 - Natural-language questions over operational data so a user can ask about trends, movement, locations, or performance without manually assembling every report.
+- Text and voice interaction with the Intera Operations Agent for supported questions and operational workflows. Availability depends on the current product release and account configuration.
 - Role-based team access, workspace controls, notifications, and audit and traceability records.
 - Configurable workspace agents that can guide users through operational tasks and surface relevant information.
 

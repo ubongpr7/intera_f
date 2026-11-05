@@ -60,15 +60,15 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "/assets/img/favicons/favicon-light.png",
+        url: "/assets/img/favicons/brand-mark-light-128.png",
         type: "image/png",
-        sizes: "2000x2000",
+        sizes: "128x128",
         media: "(prefers-color-scheme: light)",
       },
       {
-        url: "/assets/img/favicons/favicon-dark.png",
+        url: "/assets/img/favicons/brand-mark-dark-128.png",
         type: "image/png",
-        sizes: "2000x2000",
+        sizes: "128x128",
         media: "(prefers-color-scheme: dark)",
       },
     ],
@@ -89,7 +89,7 @@ export default function RootLayout({
       name: "InteraProTech",
       legalName: "InteraProTech Solutions",
       url: "https://www.interapro.tech",
-      logo: "https://www.interaims.com/assets/interapro-gradient-dark.png",
+      logo: "https://www.interaims.com/assets/intera/intera-wordmark-dark.png",
       sameAs: [
         "https://www.linkedin.com/company/interapro-tech",
         "https://x.com/interaprotech",
@@ -104,8 +104,8 @@ export default function RootLayout({
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       url: "https://www.interaims.com",
-      image: "https://www.interaims.com/assets/interapro-gradient-dark.png",
-      description: "An inventory operations platform for businesses that move stock, with inventory control, POS, purchasing, reporting, and AI-assisted workflows.",
+      image: "https://www.interaims.com/assets/intera/intera-wordmark-dark.png",
+      description: "Inventory management and operations software for supermarkets, retailers, distributors, warehouse operators, and other businesses that move stock, with inventory control, POS, purchasing, reporting, and text and voice AI-assisted workflows.",
       isPartOf: {
         "@type": "WebSite",
         name: "InteraProTech",
@@ -117,6 +117,7 @@ export default function RootLayout({
         "Point of sale operations",
         "Purchasing and receiving",
         "Business intelligence",
+        "Text and voice Intera Operations Agent",
         "Operational accountability",
         "Offline-first workflows",
       ],

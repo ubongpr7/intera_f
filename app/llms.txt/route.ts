@@ -16,7 +16,7 @@ const content = `# Intera IMS
 
 Intera IMS brings inventory control, product and variant management, purchasing, receiving, POS workflows, reporting, auditability, and team access into one workspace. It is designed for business owners, inventory managers, store managers, distributors, retailers, and operators managing multiple structural locations.
 
-The platform also provides business intelligence that lets teams ask questions about operational data in natural language and understand trends, product movement, sales, and location performance faster.
+The platform also provides business intelligence that lets teams ask questions about operational data in natural language and understand trends, product movement, sales, and location performance faster. Its Intera Operations Agent is being shaped for both text and voice interaction over supported inventory workflows; availability depends on the current product release and account configuration.
 
 ## Current public pages
 
