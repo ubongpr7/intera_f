@@ -52,7 +52,7 @@ export function LandingHeader() {
           <button type="button" onClick={toggleLandingTheme} className="landing-theme-toggle" aria-label={`Switch to ${isDarkMode ? "light" : "dark"} theme`}>
             {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
-          {waitlistMode ? <a href="#waitlist" className="text-sm font-semibold text-blue-700">Join the waitlist</a> : <>
+          {waitlistMode ? <a href="/#waitlist" className="text-sm font-semibold text-blue-700">Join the waitlist</a> : <>
             <Button variant="secondary" asChild><ServiceAwareLink className="landing-nav-secondary" href="/accounts/signin"><LogIn className="h-4 w-4" />Sign in</ServiceAwareLink></Button>
             <Button asChild><ServiceAwareLink className="landing-nav-primary" href="/accounts">Get started <ArrowRight className="h-4 w-4" /></ServiceAwareLink></Button>
           </>}
@@ -74,7 +74,7 @@ export function LandingHeader() {
               <button type="button" onClick={toggleLandingTheme} className="landing-theme-toggle" aria-label={`Switch to ${isDarkMode ? "light" : "dark"} theme`}>
                 {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </button>
-              {waitlistMode ? <a href="#waitlist" onClick={() => setIsMobileMenuOpen(false)} className="flex-1 text-center text-sm font-semibold text-blue-700">Join the waitlist</a> : <>
+              {waitlistMode ? <a href="/#waitlist" onClick={() => setIsMobileMenuOpen(false)} className="flex-1 text-center text-sm font-semibold text-blue-700">Join the waitlist</a> : <>
                 <Button variant="ghost" asChild className="flex-1"><ServiceAwareLink className="landing-nav-secondary" href="/accounts/signin" onClick={() => setIsMobileMenuOpen(false)}><LogIn className="h-4 w-4" />Sign in</ServiceAwareLink></Button>
                 <Button asChild className="flex-1"><ServiceAwareLink className="landing-nav-primary" href="/accounts" onClick={() => setIsMobileMenuOpen(false)}>Get started <ArrowRight className="h-4 w-4" /></ServiceAwareLink></Button>
               </>}
