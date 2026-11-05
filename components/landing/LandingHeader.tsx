@@ -45,6 +45,7 @@ export function LandingHeader() {
           <Link href="/#capabilities" className="text-sm text-gray-600 md:text-base hover:text-gray-900">Capabilities</Link>
           <Link href="/#demo" className="text-sm text-gray-600 md:text-base hover:text-gray-900">Demo</Link>
           <Link href="/#faq" className="text-sm text-gray-600 md:text-base hover:text-gray-900">FAQ</Link>
+          <Link href="/blog" className="text-sm text-gray-600 md:text-base hover:text-gray-900">Blog</Link>
           <Link href="/contact" className="text-sm text-gray-600 md:text-base hover:text-gray-900">Contact</Link>
         </nav>
         <div className="hidden items-center gap-3 md:flex">
@@ -67,6 +68,7 @@ export function LandingHeader() {
               <Link href="/#capabilities" onClick={() => setIsMobileMenuOpen(false)}>Capabilities <ArrowRight className="h-4 w-4" /></Link>
               <Link href="/#demo" onClick={() => setIsMobileMenuOpen(false)}>Demo <ArrowRight className="h-4 w-4" /></Link>
               <Link href="/#faq" onClick={() => setIsMobileMenuOpen(false)}>FAQ <ArrowRight className="h-4 w-4" /></Link>
+              <Link href="/blog" onClick={() => setIsMobileMenuOpen(false)}>Blog <ArrowRight className="h-4 w-4" /></Link>
               <Link href="/contact" onClick={() => setIsMobileMenuOpen(false)}>Contact <ArrowRight className="h-4 w-4" /></Link>
             </div>
             <div className="landing-mobile-actions">

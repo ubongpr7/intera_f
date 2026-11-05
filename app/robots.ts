@@ -23,7 +23,7 @@ const privatePaths = [
   "/invitations/",
 ];
 
-const publicPaths = ["/", "/contact", "/terms", "/privacy", "/llms.txt", "/llms-full.txt"];
+const publicPaths = ["/", "/blog", "/contact", "/terms", "/privacy", "/llms.txt", "/llms-full.txt"];
 
 const aiCrawlers = [
   "GPTBot",

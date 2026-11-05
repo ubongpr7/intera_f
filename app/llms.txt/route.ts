@@ -1,4 +1,5 @@
 import { isProductionSite } from "@/lib/seo";
+import { getAllBlogPosts } from "@/lib/blog";
 
 const content = `# Intera IMS
 
@@ -34,6 +35,10 @@ InteraProTech is the software agency and company. Intera IMS is its inventory ma
 See https://www.interaims.com/llms-full.txt for the expanded product description.
 `;
 
+const blogLinks = getAllBlogPosts()
+  .map((post) => `- ${post.title}: https://www.interaims.com/blog/${post.slug}`)
+  .join("\n");
+
 export const dynamic = "force-dynamic";
 
 export function GET() {
@@ -41,7 +46,7 @@ export function GET() {
     return new Response("Not Found", { status: 404 });
   }
 
-  return new Response(content, {
+  return new Response(`${content}\n## Inventory management resources\n\nBlog: https://www.interaims.com/blog\n${blogLinks}\n`, {
     headers: { "content-type": "text/plain; charset=utf-8" },
   });
 }
