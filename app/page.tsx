@@ -827,9 +827,6 @@ function PlanCard({ plan, highlighted = false }: { plan: SubscriptionPlan; highl
 */
 
 export default function HomePage() {
-  // Pre-launch mode: keep account entry points focused on collecting interested users
-  // until the backend is ready for public access.
-  const waitlistMode = true;
   const [activeDemoIndex, setActiveDemoIndex] = useState(() => Math.floor(Math.random() * demoConversations.length));
   const [visibleMessageCount, setVisibleMessageCount] = useState(0);
   const [typedDemoText, setTypedDemoText] = useState("");
@@ -970,15 +967,9 @@ export default function HomePage() {
                 noise of fragmented tools.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
-                {waitlistMode ? (
-                  <Button asChild size="lg">
-                    <a href="#waitlist">Join the waitlist <ArrowRight className="h-4 w-4" /></a>
-                  </Button>
-                ) : (
-                  <Button asChild size="lg">
-                    <ServiceAwareLink href="/accounts">Start free setup <ArrowRight className="h-4 w-4" /></ServiceAwareLink>
-                  </Button>
-                )}
+                <Button asChild size="lg">
+                  <ServiceAwareLink href="/accounts">Start free setup <ArrowRight className="h-4 w-4" /></ServiceAwareLink>
+                </Button>
                 {/* Pricing is intentionally hidden until after registration. */}
               </div>
               <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -1432,7 +1423,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {waitlistMode ? (
+        <>
           <section id="waitlist" className="landing-cta bg-blue-700">
             <div className="landing-cta-inner mx-auto grid max-w-7xl gap-8 px-4 py-14 text-gray-50 sm:px-6 lg:grid-cols-[.8fr_1.2fr] lg:items-center lg:px-8">
               <div className="max-w-2xl">
@@ -1445,7 +1436,6 @@ export default function HomePage() {
               </div>
             </div>
           </section>
-        ) : (
           <section className="landing-cta bg-blue-700">
           <div className="landing-cta-inner mx-auto grid max-w-7xl gap-8 px-4 py-14 text-gray-50 sm:px-6 lg:grid-cols-[1.25fr_.75fr] lg:items-center lg:px-8">
             <div className="max-w-2xl">
@@ -1462,7 +1452,7 @@ export default function HomePage() {
             </div>
           </div>
           </section>
-        )}
+        </>
       </main>
 
       <LandingFooter />

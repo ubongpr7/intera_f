@@ -8,7 +8,6 @@ import { SocialIcon } from "@/components/social-icons";
 import { ServiceAwareLink } from "@/components/landing/ServiceAwareLink";
 
 export function LandingFooter() {
-  const waitlistMode = true;
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
   const homepageLogoSrc = isDarkMode
     ? "/assets/img/logos/verticals/no-bg/INTERA-PRIMARY-LOGO-VERTICAL-WHITE-4.png"
@@ -24,7 +23,7 @@ export function LandingFooter() {
             <p className="mt-4 max-w-sm leading-6 text-slate-400">A command center for teams that need inventory, selling, and operational intelligence to move together.</p>
           </div>
           <div className="landing-footer-links text-base"><p className="font-semibold text-gray-50">Explore</p><div className="mt-4 flex flex-col gap-3"><Link href="/#capabilities">Capabilities</Link><Link href="/#demo">Live demo</Link><Link href="/contact">Contact</Link><Link href="/privacy">Privacy Policy</Link></div></div>
-          <div className="landing-footer-links text-base"><p className="font-semibold text-gray-50">{waitlistMode ? "Launch" : "Account"}</p><div className="mt-4 flex flex-col gap-3">{waitlistMode ? <a href="/#waitlist">Join the waitlist</a> : <><ServiceAwareLink href="/accounts">Start free</ServiceAwareLink><ServiceAwareLink href="/accounts/signin">Sign in</ServiceAwareLink></>}<Link href="/#faq">FAQ</Link><Link href="/terms">Terms and Conditions</Link></div></div>
+          <div className="landing-footer-links text-base"><p className="font-semibold text-gray-50">Account</p><div className="mt-4 flex flex-col gap-3"><ServiceAwareLink href="/accounts">Start free</ServiceAwareLink><ServiceAwareLink href="/accounts/signin">Sign in</ServiceAwareLink><Link href="/#waitlist">Join the waitlist</Link><Link href="/#faq">FAQ</Link><Link href="/terms">Terms and Conditions</Link></div></div>
           <div className="landing-footer-links text-base"><p className="font-semibold text-gray-50">Connect</p><div className="mt-4 flex items-center gap-4"><a href="https://www.linkedin.com/company/interapro-tech" target="_blank" rel="noopener noreferrer" aria-label="InteraPro on LinkedIn" title="LinkedIn"><SocialIcon name="linkedin" /></a><a href="https://x.com/interaprotech" target="_blank" rel="noopener noreferrer" aria-label="InteraPro on X" title="X"><SocialIcon name="x" /></a><a href="https://www.facebook.com/interapro.tech" target="_blank" rel="noopener noreferrer" aria-label="InteraPro on Facebook" title="Facebook"><SocialIcon name="facebook" /></a><a href="https://www.instagram.com/interaprotech/" target="_blank" rel="noopener noreferrer" aria-label="InteraPro on Instagram" title="Instagram"><SocialIcon name="instagram" /></a><a href="https://wa.me/message/ATQVXMZQ4MLDI1" target="_blank" rel="noopener noreferrer" aria-label="Contact Intera on WhatsApp" title="WhatsApp"><SocialIcon name="whatsapp" /></a><a href="tel:+2347042042034" aria-label="Call Intera" title="Call Intera"><PhoneCall className="h-[18px] w-[18px]" /></a></div></div>
         </div>
         <div className="flex flex-col gap-2 pt-6 text-slate-500 sm:flex-row sm:items-center sm:justify-between"><p>© 2026 Intera Inventory. Built for dependable operations.</p><p>Inventory clarity, from first scan to final decision.</p></div>
