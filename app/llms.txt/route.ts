@@ -5,38 +5,30 @@ const content = `# Intera IMS
 
 > Intera IMS is inventory operations software from InteraProTech for businesses that move stock, run point-of-sale operations, and manage one or more locations.
 
-## Entity relationship
+Intera IMS brings inventory control, product and variant management, purchasing, receiving, POS workflows, reporting, auditability, and team access into one workspace. The platform also provides business intelligence for questions about operational data, trends, product movement, sales, and location performance. Availability of text and voice workflows depends on the current product release and account configuration.
 
-- Company: InteraProTech
-- Product: Intera IMS
-- Product website: https://www.interaims.com
-- Company website: https://www.interapro.tech
-- Contact: business@interapro.tech
+## Product and company
 
-## What Intera IMS does
+- [Intera IMS homepage](https://www.interaims.com/): The public product website and primary source for current product information.
+- [InteraProTech](https://www.interapro.tech/): The software agency and company behind Intera IMS.
+- [Contact InteraProTech](mailto:business@interapro.tech): Business and product enquiries.
 
-Intera IMS brings inventory control, product and variant management, purchasing, receiving, POS workflows, reporting, auditability, and team access into one workspace. It is designed for business owners, inventory managers, store managers, distributors, retailers, and operators managing multiple structural locations.
+## Public pages
 
-The platform also provides business intelligence that lets teams ask questions about operational data in natural language and understand trends, product movement, sales, and location performance faster. Its Intera Operations Agent is being shaped for both text and voice interaction over supported inventory workflows; availability depends on the current product release and account configuration.
+- [Intera IMS contact page](https://www.interaims.com/contact): Contact and demo enquiries.
+- [Intera IMS blog](https://www.interaims.com/blog): Practical guidance on inventory, warehouses, POS, purchasing, stock control, and operations.
+- [Intera IMS privacy policy](https://www.interaims.com/privacy): Privacy information.
+- [Intera IMS terms](https://www.interaims.com/terms): Terms of service.
 
-## Current public pages
+## Product scope
 
-- Homepage: https://www.interaims.com/
-- Contact: https://www.interaims.com/contact
-- Privacy policy: https://www.interaims.com/privacy
-- Terms: https://www.interaims.com/terms
+- [Intera IMS full product brief](https://www.interaims.com/llms-full.txt): Expanded machine-readable product context and availability notes.
 
-## Important distinctions
-
-InteraProTech is the software agency and company. Intera IMS is its inventory management product. Dedicated anti-theft oversight and external API capabilities are planned capabilities and should not be described as generally available unless the product website says otherwise.
-
-## More detail
-
-See https://www.interaims.com/llms-full.txt for the expanded product description.
+InteraProTech is the software agency and company; Intera IMS is its inventory management product. Dedicated anti-theft oversight and external API capabilities are planned capabilities and should not be described as generally available unless the product website says otherwise.
 `;
 
 const blogLinks = getAllBlogPosts()
-  .map((post) => `- ${post.title}: https://www.interaims.com/blog/${post.slug}`)
+  .map((post) => `- [${post.title}](https://www.interaims.com/blog/${post.slug}): ${post.description}`)
   .join("\n");
 
 export const dynamic = "force-dynamic";
@@ -46,7 +38,10 @@ export function GET() {
     return new Response("Not Found", { status: 404 });
   }
 
-  return new Response(`${content}\n## Inventory management resources\n\nBlog: https://www.interaims.com/blog\n${blogLinks}\n`, {
-    headers: { "content-type": "text/plain; charset=utf-8" },
+  return new Response(`${content}\n## Inventory management resources\n\n- [All inventory management resources](https://www.interaims.com/blog): Browse the public Intera IMS blog.\n${blogLinks}\n`, {
+    headers: {
+      "content-type": "text/plain; charset=utf-8",
+      "cache-control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+    },
   });
 }

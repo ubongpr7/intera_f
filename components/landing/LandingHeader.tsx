@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, LogIn, Moon, Menu, Sun, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
@@ -61,9 +60,8 @@ export function LandingHeader() {
           {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
-      <AnimatePresence>
-        {isMobileMenuOpen ? (
-          <motion.div ref={mobileMenuRef} id="landing-mobile-menu" initial={{ opacity: 0, y: -10, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -10, scale: 0.98 }} transition={{ duration: 0.18, ease: "easeOut" }} className="landing-mobile-menu md:hidden">
+      {isMobileMenuOpen ? (
+          <div ref={mobileMenuRef} id="landing-mobile-menu" className="landing-mobile-menu md:hidden">
             <div className="landing-mobile-links">
               <Link href="/#capabilities" onClick={() => setIsMobileMenuOpen(false)}>Capabilities <ArrowRight className="h-4 w-4" /></Link>
               <Link href="/#demo" onClick={() => setIsMobileMenuOpen(false)}>Demo <ArrowRight className="h-4 w-4" /></Link>
@@ -80,9 +78,8 @@ export function LandingHeader() {
                 <Button asChild className="flex-1"><Link className="landing-nav-primary" href="/accounts" onClick={() => setIsMobileMenuOpen(false)}>Get started <ArrowRight className="h-4 w-4" /></Link></Button>
               </>}
             </div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+          </div>
+      ) : null}
     </header>
   );
 }
