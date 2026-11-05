@@ -108,7 +108,20 @@ async function sendWaitlistNotificationEmail({ email, name }: { email: string; n
       }),
     });
     const providerDetails = await response.json().catch(() => ({}));
-    return response.ok && typeof providerDetails?.id === "string";
+    if (!response.ok || typeof providerDetails?.id !== "string") {
+      console.error("Waitlist notification email was not accepted by Resend:", {
+        status: response.status,
+        details: providerDetails,
+        recipient,
+      });
+      return false;
+    }
+
+    console.info("Intera IMS waitlist notification accepted by Resend:", {
+      messageId: providerDetails.id,
+      recipient,
+    });
+    return true;
   } catch (error) {
     console.error("Waitlist notification email request failed:", {
       error: error instanceof Error ? error.message : "unknown error",
