@@ -436,6 +436,7 @@ const Navbar = ({
       icon: KeyRound
     },
     { href: '/pos/settings', label: 'POS settings', icon: MonitorSpeaker },
+    { href: '/pos/credit', label: 'POS credit sales', icon: CreditCard },
     { href: '/pos/remittances', label: 'POS remittances', icon: Wallet }
   ] : []).map((item) => ({
     ...item,

@@ -21,6 +21,7 @@ export interface POSListParams {
 export type POSSessionStatus = "open" | "closed" | "suspended";
 export type POSOrderStatus = "draft" | "pending" | "completed" | "cancelled" | "refunded";
 export type POSPaymentStatus = "unpaid" | "partially_paid" | "paid" | "refunded";
+export type POSCreditStatus = "open" | "partially_paid" | "paid" | "overdue";
 export type POSInventoryStatus =
   | "not_required"
   | "reservation_pending"
@@ -63,6 +64,7 @@ export interface POSConfiguration extends POSAuditFields {
   receipt_header: string;
   receipt_footer: string;
   allow_split_payment: boolean;
+  allow_credit_sales: boolean;
   max_discount_percent: DecimalValue;
 }
 
@@ -237,6 +239,11 @@ export interface POSOrder extends POSAuditFields {
   order_number: string;
   status: POSOrderStatus;
   payment_status: POSPaymentStatus;
+  is_credit_sale: boolean;
+  credit_status?: POSCreditStatus | "";
+  credit_due_at?: string | null;
+  credit_paid_at?: string | null;
+  credit_notes?: string;
   inventory_status: POSInventoryStatus;
   subtotal: DecimalValue;
   tax_amount: DecimalValue;
@@ -356,6 +363,9 @@ export interface POSPaymentInput {
 }
 
 export interface POSProcessPaymentPayload {
+  idempotency_key?: string;
+  sync_group_id?: string;
+  session_id?: string;
   payments: POSPaymentInput[];
   create_receipt?: boolean;
   print_receipt?: boolean;

@@ -185,6 +185,21 @@ export const posAPISlice = apiSlice.injectEndpoints({
         service,
       }),
     }),
+    sellOrderOnCredit: builder.mutation<POSOrder, { orderId: string; customer_id: string; credit_due_at?: string; credit_notes?: string }>({
+      query: ({ orderId, ...data }) => ({
+        url: `/${pos_api}/orders/${orderId}/sell_on_credit/`,
+        method: "POST",
+        body: data,
+        service,
+      }),
+    }),
+    getCreditSales: builder.query<POSOrder[] | PaginatedPOSResponse<POSOrder>, POSListParams | void>({
+      query: (params) => ({
+        url: `/${pos_api}/orders/credit_sales/`,
+        params: params || undefined,
+        service,
+      }),
+    }),
     holdOrder: builder.mutation<POSHoldOrder, { orderId: string; hold_reason?: string }>({
       query: ({ orderId, ...data }) => ({
         url: `/${pos_api}/orders/${orderId}/hold_order/`,
@@ -710,6 +725,8 @@ export const {
   useUpdateOrderItemMutation,
   useRemoveOrderItemMutation,
   useProcessPaymentMutation,
+  useSellOrderOnCreditMutation,
+  useGetCreditSalesQuery,
   useHoldOrderMutation,
   useGetHeldOrdersQuery,
   useRetrieveHeldOrderMutation,
