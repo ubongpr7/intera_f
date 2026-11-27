@@ -1,5 +1,23 @@
 export type AgentStructuredPayload = Record<string, unknown>
 
+export type WorkflowContractMetadata = {
+  status: "versioned" | "legacy" | "unsupported"
+  schemaVersion?: number
+  contract?: string
+  profileId?: string
+  correlationId?: string
+}
+
+export type ReportContractMetadata = {
+  status: "versioned" | "legacy" | "unsupported" | "invalid"
+  schemaVersion?: number
+  type?: string
+  coverageStatus?: "complete" | "partial" | "unavailable"
+  sourcesAttempted?: number
+  sourcesAvailable?: number
+  reason?: string
+}
+
 export type WorkflowStepStatus = "completed" | "current" | "pending"
 
 export type WorkflowStepSummary = {
@@ -55,6 +73,105 @@ const asRecord = asObject
 const asString = (value: unknown): string => (typeof value === "string" ? value : "")
 
 const asArray = (value: unknown): unknown[] => (Array.isArray(value) ? value : [])
+
+/**
+ * Reads the transport-neutral workflow contract without rejecting older
+ * payloads. Legacy A2A responses remain renderable, while unsupported
+ * versions can be surfaced by richer clients instead of being mistaken for
+ * the current contract.
+ */
+export const readWorkflowContract = (payload?: AgentStructuredPayload): WorkflowContractMetadata | null => {
+  if (!payload || !asString(payload.workflow_id).trim()) {
+    return null
+  }
+  const rawSchemaVersion = payload.schema_version
+  const schemaVersion = typeof rawSchemaVersion === "number"
+    ? rawSchemaVersion
+    : Number(asString(rawSchemaVersion).trim())
+  const contract = asString(payload.contract).trim()
+  const profileId = asString(payload.profile_id).trim()
+  const correlationId = asString(payload.correlation_id).trim()
+  if (!rawSchemaVersion && !contract) {
+    return { status: "legacy", profileId: profileId || undefined, correlationId: correlationId || undefined }
+  }
+  if (schemaVersion === 1 && contract === "intera.workflow.v1") {
+    return {
+      status: "versioned",
+      schemaVersion,
+      contract,
+      profileId: profileId || undefined,
+      correlationId: correlationId || undefined,
+    }
+  }
+  return {
+    status: "unsupported",
+    schemaVersion: Number.isFinite(schemaVersion) ? schemaVersion : undefined,
+    contract: contract || undefined,
+    profileId: profileId || undefined,
+    correlationId: correlationId || undefined,
+  }
+}
+
+/**
+ * Validate the cross-domain report envelope before presenting coverage as
+ * authoritative. Older insight payloads remain renderable, while malformed
+ * or newer report contracts are explicitly treated as unsafe to summarize.
+ */
+export const readReportContract = (payload?: AgentStructuredPayload): ReportContractMetadata | null => {
+  if (!payload) return null
+  const rawSchemaVersion = payload.schema_version
+  const schemaVersion = typeof rawSchemaVersion === "number"
+    ? rawSchemaVersion
+    : Number(asString(rawSchemaVersion).trim())
+  const type = asString(payload.type).trim()
+  const hasContractFields = rawSchemaVersion !== undefined || type !== ""
+  if (!hasContractFields) return { status: "legacy" }
+  if (schemaVersion !== 1 || type !== "cross_domain_business_review") {
+    return {
+      status: "unsupported",
+      schemaVersion: Number.isFinite(schemaVersion) ? schemaVersion : undefined,
+      type: type || undefined,
+      reason: "Unsupported report contract version or type.",
+    }
+  }
+
+  const status = asString(payload.status).trim().toLowerCase()
+  const attempted = payload.sources_attempted
+  const available = payload.sources_available
+  const sections = payload.sections
+  const unavailableSections = payload.unavailable_sections
+  const validCount = (value: unknown): value is number => typeof value === "number" && Number.isInteger(value) && value >= 0
+  const validStatus = status === "complete" || status === "partial" || status === "unavailable"
+  const validSections = (value: unknown): value is unknown[] => Array.isArray(value) && value.every((item) => typeof item === "string")
+  if (!validStatus || !validCount(attempted) || !validCount(available) || available > attempted || !validSections(sections) || !validSections(unavailableSections)) {
+    return {
+      status: "invalid",
+      schemaVersion: 1,
+      type,
+      reason: "Report coverage metadata is malformed.",
+    }
+  }
+  const statusCountsMatch =
+    (status === "complete" && available === attempted) ||
+    (status === "partial" && available > 0 && available < attempted) ||
+    (status === "unavailable" && available === 0)
+  if (!statusCountsMatch) {
+    return {
+      status: "invalid",
+      schemaVersion: 1,
+      type,
+      reason: "Report coverage status does not match its source counts.",
+    }
+  }
+  return {
+    status: "versioned",
+    schemaVersion: 1,
+    type,
+    coverageStatus: status,
+    sourcesAttempted: attempted,
+    sourcesAvailable: available,
+  }
+}
 
 const partKind = (part: Record<string, unknown>): string =>
   asString(part.kind || part.type).trim().toLowerCase()
@@ -882,6 +999,26 @@ export const deriveWorkflowSummary = ({
           steps,
           currentAgentLabel,
           nextAgentLabel,
+        }
+      }
+
+      if (workflowStage === "partial_review") {
+        const retryableAgents = normalizeWorkflowList(workflowPayload.retryable_agents)
+        const retryAgentKey = retryableAgents[0] || nextAgentKey || currentAgentKey
+        const retryAgentLabel = retryAgentKey ? humanizeToken(retryAgentKey) : undefined
+        const completedCount = completedAgents.length
+        const retryCount = retryableAgents.length
+        return {
+          title: "Review partially available",
+          detail:
+            retryCount > 0
+              ? `${completedCount} section${completedCount === 1 ? "" : "s"} ready. ${retryCount} section${retryCount === 1 ? "" : "s"} can be retried${retryAgentLabel ? `, starting with ${retryAgentLabel}` : ""}.`
+              : "Some review sections are unavailable. You can continue with the available data.",
+          statusLabel: awaitingInput ? "Needs recovery choice" : "Partial review",
+          tone: awaitingInput ? "awaiting" : "ready",
+          steps: buildWorkflowSteps(plan, completedAgents, retryAgentKey),
+          currentAgentLabel: retryAgentLabel,
+          nextAgentLabel: retryableAgents.length > 1 ? humanizeToken(retryableAgents[1]) : undefined,
         }
       }
     }

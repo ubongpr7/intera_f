@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,14 +16,17 @@ export default function CreditSalesPage() {
   const { data: currentSession } = useGetCurrentSessionQuery()
   const [processPayment, { isLoading: isPaying }] = useProcessPaymentMutation()
   const [amounts, setAmounts] = useState<Record<string, string>>({})
+  const idempotencyKeys = useRef<Record<string, string>>({})
   const sales = useMemo(() => Array.isArray(data) ? data : data?.results || [], [data])
 
   const pay = async (order: POSOrder) => {
     const amount = Number(amounts[order.id] || order.remaining_balance || 0)
     if (!amount || amount <= 0) return
+    const idempotencyKey = idempotencyKeys.current[order.id] || `web-credit-${order.id}-${crypto.randomUUID()}`
+    idempotencyKeys.current[order.id] = idempotencyKey
     await processPayment({
       orderId: order.id,
-      idempotency_key: `web-credit-${order.id}-${Date.now()}`,
+      idempotency_key: idempotencyKey,
       session_id: currentSession?.sync_identifier,
       payments: [{ payment_method: "cash" as POSPaymentMethod, amount }],
       create_receipt: true,

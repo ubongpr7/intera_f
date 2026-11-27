@@ -3,9 +3,74 @@ import test from "node:test"
 
 import {
   detectInsightResponse,
+  deriveWorkflowSummary,
   isTransportDebugText,
   parseInteractionPayloadFromText,
+  readReportContract,
+  readWorkflowContract,
 } from "../lib/agent-structured-output.ts"
+
+test("workflow contract metadata distinguishes current, legacy, and newer responses", () => {
+  assert.deepEqual(
+    readWorkflowContract({
+      workflow_id: "wf-1",
+      schema_version: 1,
+      contract: "intera.workflow.v1",
+      profile_id: "4",
+      correlation_id: "mcp-workflow:wf-1",
+    }),
+    {
+      status: "versioned",
+      schemaVersion: 1,
+      contract: "intera.workflow.v1",
+      profileId: "4",
+      correlationId: "mcp-workflow:wf-1",
+    },
+  )
+  assert.equal(readWorkflowContract({ workflow_id: "wf-legacy" })?.status, "legacy")
+  assert.equal(readWorkflowContract({ workflow_id: "wf-new", schema_version: 2, contract: "intera.workflow.v2" })?.status, "unsupported")
+})
+
+test("report contract validates coverage before it is rendered as authoritative", () => {
+  assert.equal(
+    readReportContract({
+      schema_version: 1,
+      type: "cross_domain_business_review",
+      status: "partial",
+      sources_attempted: 3,
+      sources_available: 2,
+      sections: ["Sales"],
+      unavailable_sections: ["Inventory"],
+    })?.status,
+    "versioned",
+  )
+  assert.equal(
+    readReportContract({
+      schema_version: 1,
+      type: "cross_domain_business_review",
+      status: "complete",
+      sources_attempted: 1,
+      sources_available: 2,
+      sections: [],
+      unavailable_sections: [],
+    })?.status,
+    "invalid",
+  )
+  assert.equal(
+    readReportContract({
+      schema_version: 1,
+      type: "cross_domain_business_review",
+      status: "unavailable",
+      sources_attempted: 2,
+      sources_available: 1,
+      sections: [],
+      unavailable_sections: ["Sales"],
+    })?.status,
+    "invalid",
+  )
+  assert.equal(readReportContract({ schema_version: 2, type: "cross_domain_business_review" })?.status, "unsupported")
+  assert.equal(readReportContract({ status: "complete" })?.status, "legacy")
+})
 
 test("supplier procurement serialization is converted into typed widgets", () => {
   const payload = parseInteractionPayloadFromText(`insight_response:
@@ -81,4 +146,32 @@ test("data envelopes are unwrapped before insight rendering", () => {
 
   assert.equal(detected?.data.summary, "Unwrapped result")
   assert.equal((detected?.data.widgets as Array<Record<string, unknown>>)[0]?.type, "risk_panel")
+})
+
+test("partial host reviews explain completed and retryable sections", () => {
+  const summary = deriveWorkflowSummary({
+    messages: [{
+      role: "assistant",
+      structuredPayload: {
+        workflow: "host_orchestration",
+        workflow_stage: "partial_review",
+        plan: ["pos", "inventory", "product"],
+        completed_agents: ["pos"],
+        retryable_agents: ["inventory", "product"],
+      },
+    }],
+    activeAgentName: "host",
+    currentTaskState: "input-required",
+    awaitingInput: true,
+  })
+
+  assert.equal(summary?.title, "Review partially available")
+  assert.equal(summary?.statusLabel, "Needs recovery choice")
+  assert.match(summary?.detail || "", /1 section ready/)
+  assert.match(summary?.detail || "", /2 sections can be retried/)
+  assert.deepEqual(summary?.steps.map((step) => [step.key, step.status]), [
+    ["pos", "completed"],
+    ["inventory", "current"],
+    ["product", "pending"],
+  ])
 })

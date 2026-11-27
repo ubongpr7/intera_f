@@ -50,6 +50,7 @@ import MessageContent from "@/components/message-content"
 import ConfirmationDialog from "@/components/confirmation-dialog"
 import InsightWidgetRenderer from "@/components/agents/insight-widget-renderer"
 import { humanizeAgentDisplayName } from "@/lib/agent-display"
+import { formatMachineLabel } from "@/lib/displayLabels"
 import { hasTokenPermission } from "@/lib/agentPermissions"
 import {
   buildChatPdfBlob,
@@ -79,6 +80,7 @@ import {
 } from "@/components/interaction-handlers"
 import {
   SearchableSelectionHandler,
+  ProductImportSelectionHandler,
   HierarchicalSelectionHandler,
   AutocompleteSelectionHandler,
   ComparisonViewHandler,
@@ -102,6 +104,7 @@ import {
   detectInteractionRequest,
   detectInteractionResponseSummary,
   isTransportDebugText,
+  readWorkflowContract,
   type AgentWorkflowSummary,
 } from "@/lib/agent-structured-output"
 import { useState, useRef, useEffect, useMemo } from "react"
@@ -211,7 +214,7 @@ function ChatAvatar({
   return (
     <div
       className={`flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border shadow-sm ${
-        isAssistant ? "border-blue-100 bg-white" : "border-blue-200 bg-blue-600 text-gray-50"
+        isAssistant ? "border-blue-100 bg-white" : "border-blue-200 bg-blue-600 text-white"
       } ${className}`}
       aria-label={isAssistant ? "Intera AI" : "User"}
       title={isAssistant ? "Intera AI" : "User"}
@@ -1202,13 +1205,207 @@ export default function AgentChat({
     return styles[type as keyof typeof styles] || styles.confirmation
   }
 
+  const renderWorkflowResultCard = (type: string, data: any, messageId: string) => {
+    const isCancelled = type === "workflow_cancelled"
+    const isQueued = type === "workflow_queued"
+    const isCancellationRequested = type === "workflow_cancellation_requested"
+    const isFailed = type === "workflow_failed" || type === "workflow_error"
+    const result = asRecord(data?.result)
+    const error = asRecord(data?.error)
+    const history = Array.isArray(data?.workflow_history) ? data.workflow_history : []
+    const tone = isFailed
+      ? { border: "border-red-200", surface: "bg-red-50", icon: "text-red-600", label: "Action failed", labelText: "text-red-900" }
+      : isCancelled
+        ? { border: "border-slate-200", surface: "bg-slate-50", icon: "text-slate-500", label: "Action cancelled", labelText: "text-slate-900" }
+        : isQueued || isCancellationRequested
+          ? { border: "border-amber-200", surface: "bg-amber-50", icon: "text-amber-600", label: isQueued ? "Action queued" : "Cancellation requested", labelText: "text-amber-900" }
+        : { border: "border-emerald-200", surface: "bg-emerald-50", icon: "text-emerald-600", label: "Action completed", labelText: "text-emerald-900" }
+    const Icon = isFailed ? AlertTriangle : isCancelled || isQueued || isCancellationRequested ? Clock : Check
+    const resultEntries = Object.entries(result || {}).filter(([key, value]) =>
+      value !== null && value !== undefined && value !== "" && !["profile_id", "workflow_id"].includes(key),
+    )
+    const workflowItems = Array.isArray(data?.results)
+      ? data.results
+      : Array.isArray(result?.results)
+        ? result.results
+        : []
+    const failedWorkflowItems = workflowItems.filter((item: any) => item?.outcome === "failed" || item?.status === "failed")
+    const successfulWorkflowItems = workflowItems.length - failedWorkflowItems.length
+    const errorMessage = asText(error?.message) || asText(error?.detail) || asText(data?.description)
+    const retryWorkflowId = asText(data?.retry_workflow_id) || asText(data?.workflow_id)
+    const canRetry = isFailed && Boolean(data?.retry_available) && Boolean(retryWorkflowId)
+    const workflowId = asText(data?.workflow_id)
+    const statusTool = asText(data?.status_tool) || "products.get_product_import_workflow_status"
+    const cancelTool = asText(data?.cancel_tool) || "products.cancel_product_import_workflow"
+    const workflowContract = readWorkflowContract(data)
+    const progress = asRecord(data?.progress) || {}
+    const progressTotal = Number(progress?.total || 0)
+    const progressCompleted = Number(progress?.completed || 0)
+    const progressPercent = Math.max(0, Math.min(100, Number(progress?.percent || 0)))
+    const hasProgress = Object.keys(progress).length > 0
+    const progressTitle = asText(data?.workflow_type).includes("product_import") ? "Import progress" : "Workflow progress"
+
+    return (
+      <div key={messageId} className="mb-8 flex items-end justify-start gap-3">
+        <ChatAvatar role="assistant" userInitials={userIdentity.initials} />
+        <div className={`max-w-[95%] rounded-2xl rounded-bl-none border ${tone.border} ${tone.surface} px-4 py-4 shadow-sm`}>
+          <div className="flex items-start gap-3">
+            <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${tone.icon}`} aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className={`text-sm font-semibold ${tone.labelText}`}>{asText(data?.title) || tone.label}</h3>
+                <span className="text-xs text-slate-500">{formatMessageTimestamp(messages.find((message) => message.id === messageId)?.timestamp)}</span>
+              </div>
+              <p className="mt-1 text-sm leading-6 text-slate-700">{errorMessage || (isCancelled ? "No change was applied." : isQueued ? "The workflow is running in the background. Poll its status for progress." : isCancellationRequested ? "The current item will finish safely before the workflow stops." : "The requested workflow has finished.")}</p>
+              {hasProgress && (
+                <div className="mt-3 rounded-xl border border-black/5 bg-white/70 p-3" aria-label="Workflow progress">
+                  <div className="flex items-center justify-between gap-3 text-xs">
+                    <span className="font-semibold text-slate-800">{progressTitle}</span>
+                    <span className="text-slate-500">
+                      {progressTotal > 0 ? `${progressCompleted} of ${progressTotal}` : "Preparing"}
+                    </span>
+                  </div>
+                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progressPercent}>
+                    <div className="h-full rounded-full bg-teal-600 transition-[width]" style={{ width: `${progressTotal > 0 ? progressPercent : 35}%` }} />
+                  </div>
+                  <p className="mt-1.5 text-[11px] text-slate-500">
+                    {asText(progress?.phase) ? formatMachineLabel(progress.phase) : "Workflow update"}
+                    {progress?.succeeded !== undefined ? ` · ${progress.succeeded} succeeded` : ""}
+                    {progress?.failed ? ` · ${progress.failed} failed` : ""}
+                  </p>
+                </div>
+              )}
+              {workflowContract && (
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+                  <span>
+                    Contract: <strong className="font-mono text-slate-700">{workflowContract.contract || "legacy"}</strong>
+                  </span>
+                  {workflowContract.correlationId && (
+                    <span className="truncate">
+                      Trace: <strong className="font-mono text-slate-700">{workflowContract.correlationId}</strong>
+                    </span>
+                  )}
+                  {workflowContract.status === "unsupported" && (
+                    <span className="font-medium text-amber-700">Newer workflow format — review manually.</span>
+                  )}
+                </div>
+              )}
+              {workflowItems.length > 0 && (
+                <div className="mt-3 rounded-xl border border-black/5 bg-white/70 p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <span className="font-semibold text-slate-800">Product outcomes</span>
+                    <span className="text-slate-500">
+                      {successfulWorkflowItems} succeeded · {failedWorkflowItems.length} failed
+                    </span>
+                  </div>
+                  <div className="mt-2 space-y-1.5">
+                    {workflowItems.slice(0, 8).map((item: any, index: number) => {
+                      const failed = item?.outcome === "failed" || item?.status === "failed"
+                      const label = asText(item?.global_product_name) || asText(item?.workspace_product_name) || asText(item?.global_product_id) || `Product ${index + 1}`
+                      const detail = failed ? asText(item?.error?.detail) || asText(item?.error?.message) : asText(item?.status) || "Imported"
+                      return (
+                        <div key={`${item?.global_product_id || index}`} className="flex items-start gap-2 text-xs">
+                          <span className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${failed ? "bg-red-500" : "bg-emerald-500"}`} aria-hidden="true" />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate font-medium text-slate-800">{label}</p>
+                            <p className={`${failed ? "text-red-700" : "text-slate-500"} truncate`}>{detail}</p>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  {workflowItems.length > 8 && <p className="mt-2 text-center text-[11px] text-slate-500">+ {workflowItems.length - 8} more products</p>}
+                </div>
+              )}
+              {canRetry && (
+                <button
+                  type="button"
+                  className="mt-3 inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-800 transition hover:border-red-300 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+                  onClick={() => {
+                    onSend(`Retry the ${asText(data?.workflow_type) || "failed"} workflow with ID ${retryWorkflowId}. Show me the new confirmation before applying anything.`)
+                    onActivity?.()
+                  }}
+                >
+                  <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+                  Retry workflow
+                </button>
+              )}
+              {(isQueued || isCancellationRequested) && workflowId && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-white px-3 py-2 text-xs font-semibold text-amber-900 transition hover:border-amber-300 hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+                    onClick={() => {
+                      onSend(`Use ${statusTool} for workflow ${workflowId} and show me the latest progress.`)
+                      onActivity?.()
+                    }}
+                  >
+                    Check progress
+                  </button>
+                  {isQueued && (
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2"
+                      onClick={() => {
+                        onSend(`Use ${cancelTool} for workflow ${workflowId}. Do not apply any new mutation.`)
+                        onActivity?.()
+                      }}
+                    >
+                      Cancel workflow
+                    </button>
+                  )}
+                </div>
+              )}
+              {resultEntries.length > 0 && (
+                <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 rounded-xl border border-black/5 bg-white/70 p-3 text-xs text-slate-600">
+                  {resultEntries.slice(0, 8).map(([key, value]) => (
+                    <div key={key} className="min-w-0">
+                      <dt className="truncate text-slate-500">{formatMachineLabel(key)}</dt>
+                      <dd className="truncate font-semibold text-slate-900">{typeof value === "object" ? JSON.stringify(value) : String(value)}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+              {history.length > 0 && (
+                <div className="mt-3 rounded-xl border border-black/5 bg-white/60 p-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Activity</p>
+                  <div className="mt-2 space-y-2">
+                    {history.slice(-5).map((event: any, index: number) => {
+                      const metadata = asRecord(event?.metadata)
+                      const metadataEntry = Object.entries(metadata || {}).find(([, value]) =>
+                        ["string", "number", "boolean"].includes(typeof value),
+                      )
+                      return (
+                        <div key={`${event?.created_at || index}-${event?.event_type || "event"}`} className="flex gap-2 text-xs">
+                          <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${index === history.slice(-5).length - 1 ? "bg-emerald-500" : "bg-slate-300"}`} aria-hidden="true" />
+                          <div className="min-w-0">
+                            <p className="font-medium text-slate-800">{formatMachineLabel(event?.event_type || "Workflow update")}</p>
+                            <p className="text-slate-500">
+                              {event?.to_step ? `Moved to ${formatMachineLabel(event.to_step)}` : "Workflow state updated"}
+                              {metadataEntry ? ` · ${formatMachineLabel(metadataEntry[0])}: ${String(metadataEntry[1])}` : ""}
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+              {data?.workflow_id && <p className="mt-3 truncate font-mono text-[10px] text-slate-500">Workflow {data.workflow_id}</p>}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const renderInlineInteraction = (type: string, data: any, messageId: string) => {
     const isDisabled = respondedInteractions.has(messageId)
     const interactionKey = `${messageId}:${JSON.stringify(data?.current_values || {})}:${JSON.stringify(data?.fields || [])}:${JSON.stringify(data?.existing_responses || {})}:${data?.current_step ?? ""}`
 
     const commonProps = {
       data,
-      onResponse: (response: any) => handleInteractionResponse(response, messageId),
+      onResponse: (response: any) => handleInteractionResponse(response, messageId, data),
       compact: true,
       disabled: isDisabled,
     }
@@ -1223,6 +1420,9 @@ export default function AgentChat({
       case "data_table":
         return <DataTableHandler {...commonProps} />
       case "data_table_review":
+        if (Array.isArray(data?.product_rows)) {
+          return <ProductImportSelectionHandler {...commonProps} />
+        }
         return <DataTableReviewHandler {...commonProps} />
       case "dynamic_form":
         return <DynamicFormHandler key={interactionKey} {...commonProps} />
@@ -1279,10 +1479,17 @@ export default function AgentChat({
     }
   }
 
-  const handleInteractionResponse = (response: any, messageId: string) => {
+  const handleInteractionResponse = (response: any, messageId: string, interactionData?: any) => {
     setRespondedInteractions((prev) => new Set(prev).add(messageId))
 
-    const responseText = typeof response === "string" ? response : JSON.stringify(response)
+    const enrichedResponse = interactionData?.workflow_id
+      ? {
+          ...(typeof response === "object" && response ? response : { value: response }),
+          workflow_id: interactionData.workflow_id,
+          workflow_step: interactionData.step,
+        }
+      : response
+    const responseText = typeof enrichedResponse === "string" ? enrichedResponse : JSON.stringify(enrichedResponse)
     acknowledgeVoiceLinkedSubmission(responseText, "I submitted that selection.")
     onSend(responseText)
     onActivity?.()
@@ -1293,7 +1500,15 @@ export default function AgentChat({
       setRespondedInteractions((prev) => new Set(prev).add(confirmationDialog.confirmation_id))
     }
 
-    const responseText = typeof response === "string" ? response : JSON.stringify(response)
+    const enrichedResponse = confirmationDialog?.workflow_id
+      ? {
+          ...(typeof response === "object" && response ? response : { value: response }),
+          workflow_id: confirmationDialog.workflow_id,
+          workflow_step: confirmationDialog.step,
+          confirmation_token: confirmationDialog.confirmation_token,
+        }
+      : response
+    const responseText = typeof enrichedResponse === "string" ? enrichedResponse : JSON.stringify(enrichedResponse)
     acknowledgeVoiceLinkedSubmission(responseText, "I confirmed that request.")
     onSend(responseText)
     onActivity?.()
@@ -1487,7 +1702,7 @@ export default function AgentChat({
                   key={`${entry.timestamp}-${index}`}
                   className={`rounded-2xl px-3 py-2 text-sm leading-6 ${
                     entry.speaker === "user"
-                      ? "ml-auto max-w-[94%] bg-blue-500 text-gray-50"
+                      ? "ml-auto max-w-[94%] bg-blue-500 text-white"
                       : "mr-auto max-w-[94%] bg-gray-100 text-gray-900"
                   }`}
                 >
@@ -1753,6 +1968,10 @@ export default function AgentChat({
               const { type, data } = interactionData
               const style = getInteractionStyle(type)
 
+              if (["workflow_result", "workflow_cancelled", "workflow_failed", "workflow_error", "workflow_queued", "workflow_cancellation_requested"].includes(type)) {
+                return renderWorkflowResultCard(type, data, m.id)
+              }
+
               if (type === "confirmation") {
                 return (
                   <div key={m.id} className="mb-8 flex items-end justify-start gap-3">
@@ -1781,7 +2000,7 @@ export default function AgentChat({
                         {!isInteractionDisabled && (
                           <button
                             onClick={() => setConfirmationDialog(data)}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-gray-50 py-2 px-3 rounded-lg text-sm font-medium transition-colors"
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors"
                           >
                             Review & Respond
                           </button>
@@ -1837,7 +2056,7 @@ export default function AgentChat({
                 <div
                   className={`max-w-[85%] rounded-2xl px-5 py-4 ${
                     isUserMessage
-                      ? "bg-blue-500 text-gray-50 rounded-br-none"
+                      ? "bg-blue-500 text-white rounded-br-none"
                       : "bg-gray-200 text-gray-700 rounded-bl-none shadow-lg border border-gray-300"
                   }`}
                 >
@@ -1904,7 +2123,7 @@ export default function AgentChat({
                   scrollToBottom()
                   onActivity?.()
                 }}
-                className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-blue-600 text-gray-50 text-xs px-3 py-1.5 rounded-full shadow hover:bg-blue-700"
+                className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs px-3 py-1.5 rounded-full shadow hover:bg-blue-700"
               >
                 View {unreadCount} new message{unreadCount > 1 ? "s" : ""}
               </button>
@@ -1989,7 +2208,7 @@ export default function AgentChat({
 
           <button
             type="submit"
-            className="bg-blue-600 text-gray-50 p-3 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="bg-blue-600 text-white p-3 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50"
             disabled={!input.trim() || isResettingChat || isStartingNewChat}
             aria-label="Send message"
             title={sendLabel}
@@ -2104,7 +2323,7 @@ export default function AgentChat({
                   <a
                     href={exportDownload.href}
                     download={exportDownload.filename}
-                    className="inline-flex flex-1 items-center justify-center rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-gray-50 transition hover:bg-blue-700"
+                    className="inline-flex flex-1 items-center justify-center rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
                   >
                     Download {exportDownload.kind.toUpperCase()}
                   </a>

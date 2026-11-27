@@ -9,6 +9,7 @@
     "check:rtk-endpoints": "node ./scripts/check-rtk-endpoint-collisions.mjs",
     "start": "next start",
     "lint": "eslint .",
+    "test:all": "node --test ./tests/*.test.ts",
     "test:agent-export": "node --test ./tests/agent-export.test.ts",
     "test:frontend-origin": "node --test ./tests/frontend-origin.test.ts"
   },

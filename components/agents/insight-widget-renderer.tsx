@@ -24,6 +24,7 @@ import {
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { ReactSelectField, type SelectOption } from "@/components/ui/react-select-field"
 import { formatCurrency, formatCurrencyCompact, getCurrencyCodeForProfile } from "@/lib/currency-utils"
+import { readReportContract } from "@/lib/agent-structured-output"
 
 type InsightRendererProps = {
   payload: Record<string, unknown>
@@ -370,6 +371,90 @@ function WidgetCard({
       {title ? <h4 className="text-sm font-semibold text-gray-900">{title}</h4> : null}
       {subtitle ? <p className="mt-1 text-xs leading-5 text-gray-500">{subtitle}</p> : null}
       <div className={title || subtitle ? "mt-4" : ""}>{children}</div>
+    </section>
+  )
+}
+
+function ReportCoverage({ report }: { report: Record<string, unknown> }) {
+  const contract = readReportContract(report)
+  const invalidContract = contract?.status === "invalid" || contract?.status === "unsupported"
+  const status = contract?.status === "versioned"
+    ? contract.coverageStatus || "unavailable"
+    : contract?.status === "legacy"
+      ? asString(report.status).toLowerCase() || "unavailable"
+      : "unavailable"
+  const attempted = invalidContract
+    ? 0
+    : contract?.status === "versioned"
+      ? contract.sourcesAttempted || 0
+      : asNumber(report.sources_attempted) ?? 0
+  const available = invalidContract
+    ? 0
+    : contract?.status === "versioned"
+      ? contract.sourcesAvailable || 0
+      : asNumber(report.sources_available) ?? 0
+  const sections = invalidContract ? [] : asArray(report.sections).map((item) => asString(item).trim()).filter(Boolean)
+  const unavailable = invalidContract
+    ? [contract?.reason || "Coverage metadata could not be validated."]
+    : asArray(report.unavailable_sections).map((item) => asString(item).trim()).filter(Boolean)
+  const statusConfig =
+    status === "complete"
+      ? {
+          label: "Complete review",
+          detail: "All requested live data checks returned usable results.",
+          icon: <CheckCircle2 className="h-4 w-4 text-emerald-700" aria-hidden />,
+          className: "border-emerald-200 bg-emerald-50",
+          textClassName: "text-emerald-900",
+        }
+      : status === "partial"
+        ? {
+            label: "Partial review",
+            detail: "Some live data checks were unavailable. Review the gaps before acting.",
+            icon: <AlertTriangle className="h-4 w-4 text-amber-700" aria-hidden />,
+            className: "border-amber-200 bg-amber-50",
+            textClassName: "text-amber-950",
+          }
+        : {
+            label: "Data unavailable",
+            detail: "The requested live data checks did not return usable results.",
+            icon: <ShieldAlert className="h-4 w-4 text-rose-700" aria-hidden />,
+            className: "border-rose-200 bg-rose-50",
+            textClassName: "text-rose-950",
+          }
+
+  return (
+    <section className={`rounded-[20px] border px-4 py-3 ${statusConfig.className}`} aria-label="Report coverage">
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5 shrink-0">{statusConfig.icon}</div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className={`text-sm font-semibold ${statusConfig.textClassName}`}>{statusConfig.label}</p>
+            <span className={`text-xs font-medium ${statusConfig.textClassName}`}>
+              {formatNumber(available)} of {formatNumber(attempted)} sources available
+            </span>
+          </div>
+          <p className={`mt-1 text-xs leading-5 ${statusConfig.textClassName}`}>{statusConfig.detail}</p>
+          {contract?.status === "unsupported" || contract?.status === "invalid" ? (
+            <p className="mt-2 text-xs font-semibold text-rose-800">
+              {contract.reason || "Coverage metadata could not be validated. Treat this review as incomplete."}
+            </p>
+          ) : null}
+          {sections.length ? (
+            <div className="mt-3 flex flex-wrap gap-2" aria-label="Report sections">
+              {sections.map((section) => (
+                <span key={section} className="rounded-full border border-current/15 bg-white/70 px-2.5 py-1 text-[11px] font-medium">
+                  {section}
+                </span>
+              ))}
+            </div>
+          ) : null}
+          {unavailable.length ? (
+            <p className={`mt-3 text-xs font-medium ${statusConfig.textClassName}`}>
+              Unavailable: {unavailable.join(", ")}
+            </p>
+          ) : null}
+        </div>
+      </div>
     </section>
   )
 }
@@ -1208,6 +1293,7 @@ export default function InsightWidgetRenderer({ payload, onSend }: InsightRender
   const insights = asArray(payload.insights).map((item) => asRecord(item)).filter(Boolean) as Array<Record<string, unknown>>
   const widgets = asArray(payload.widgets).map((widget) => asRecord(widget)).filter(Boolean) as Array<Record<string, unknown>>
   const suggestedActions = asArray(payload.suggested_actions).map((item) => asRecord(item)).filter(Boolean) as Array<Record<string, unknown>>
+  const report = asRecord(payload.report)
 
   return (
     <div className="space-y-4">
@@ -1233,6 +1319,8 @@ export default function InsightWidgetRenderer({ payload, onSend }: InsightRender
           </div>
         </WidgetCard>
       ) : null}
+
+      {report ? <ReportCoverage report={report} /> : null}
 
       {widgets.map((widget, index) => renderWidget(widget, index, onSend))}
 
