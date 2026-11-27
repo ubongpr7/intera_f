@@ -16,7 +16,12 @@ export function PaymentsTab() {
   const { data: payments = [], isLoading, refetch } = useGetPaymentsQuery(filters)
   const [issuePaymentRefund, { isLoading: issuingRefund }] = useIssuePaymentRefundMutation()
   const [confirmPaymentRefund, { isLoading: confirmingRefund }] = useConfirmPaymentRefundMutation()
-  const refundQueue = payments.filter((payment) => ["PENDING_REVIEW", "INITIATED", "PENDING", "PROCESSING"].includes(`${payment.metadata?.manual_refund_status ?? ""}`.toUpperCase()))
+  const refundQueue = payments.filter((payment) => (
+    `${payment.status ?? ""}`.toLowerCase() === "completed" &&
+    `${payment.metadata?.payment_kind ?? ""}`.toLowerCase() === "subscription_upgrade" &&
+    Number(payment.metadata?.manual_refund_amount ?? 0) > 0 &&
+    ["PENDING_REVIEW", "INITIATED", "PENDING", "PROCESSING"].includes(`${payment.metadata?.manual_refund_status ?? ""}`.toUpperCase())
+  ))
 
   const issueRefund = async (payment: PaymentRecord) => {
     const refundAmount = Number(payment.metadata?.manual_refund_amount ?? 0)
@@ -100,7 +105,7 @@ export function PaymentsTab() {
           <Button variant="ghost" size="sm">
             <Eye className="h-4 w-4" />
           </Button>
-          {`${row.original.metadata?.manual_refund_status ?? ""}`.toUpperCase() === "PENDING_REVIEW" ? (
+          {`${row.original.status ?? ""}`.toLowerCase() === "completed" && `${row.original.metadata?.payment_kind ?? ""}`.toLowerCase() === "subscription_upgrade" && Number(row.original.metadata?.manual_refund_amount ?? 0) > 0 && `${row.original.metadata?.manual_refund_status ?? ""}`.toUpperCase() === "PENDING_REVIEW" ? (
             <Button size="sm" onClick={() => void issueRefund(row.original)} disabled={issuingRefund}>
               <RotateCcw className="mr-1 h-4 w-4" /> Refund
             </Button>

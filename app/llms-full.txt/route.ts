@@ -1,4 +1,5 @@
 import { isProductionSite } from "@/lib/seo";
+import { getAllBlogPosts } from "@/lib/blog";
 
 const content = `# Intera IMS: machine-readable product brief
 
@@ -22,6 +23,7 @@ Businesses that manage stock across stores, warehouses, or other structural loca
 - Purchasing and replenishment workflows covering suppliers, purchase orders, approvals, receiving, and returns.
 - Business intelligence and operational reporting for sales, stock, purchasing, and performance.
 - Natural-language questions over operational data so a user can ask about trends, movement, locations, or performance without manually assembling every report.
+- Text and voice interaction with the Intera Operations Agent for supported questions and operational workflows. Availability depends on the current product release and account configuration.
 - Role-based team access, workspace controls, notifications, and audit and traceability records.
 - Configurable workspace agents that can guide users through operational tasks and surface relevant information.
 
@@ -58,6 +60,10 @@ InteraProTech is a software agency based in Nigeria. It transforms ideas and dig
 - Instagram: https://www.instagram.com/interaprotech/
 `;
 
+const blogLinks = getAllBlogPosts()
+  .map((post) => `- ${post.title}: https://www.interaims.com/blog/${post.slug}`)
+  .join("\n");
+
 export const dynamic = "force-dynamic";
 
 export function GET() {
@@ -65,7 +71,7 @@ export function GET() {
     return new Response("Not Found", { status: 404 });
   }
 
-  return new Response(content, {
+  return new Response(`${content}\n## Inventory management resources\n\nThe public blog contains practical, Nigeria-focused guidance on inventory, warehouses, POS, purchasing, stock control, and business operations.\n\nBlog index: https://www.interaims.com/blog\n${blogLinks}\n`, {
     headers: { "content-type": "text/plain; charset=utf-8" },
   });
 }

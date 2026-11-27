@@ -18,6 +18,7 @@ const columns: Column<POSConfiguration>[] = [
   { header: "Currency", accessor: "currency", render: (value) => `${getCurrencySymbol(String(value))} ${value}` },
   { header: "Tax mode", accessor: "tax_inclusive", render: (value) => (value ? "Inclusive" : "Exclusive") },
   { header: "Split payments", accessor: "allow_split_payment", render: (value) => (value ? "Enabled" : "Disabled") },
+  { header: "Credit sales", accessor: "allow_credit_sales", render: (value) => (value ? "Enabled" : "Disabled") },
   { header: "Default tax", accessor: "default_tax_rate" },
 ]
 
@@ -35,7 +36,7 @@ export default function Configurations() {
   return (
     <POSResourceManager<POSConfiguration>
       title="POS policy"
-      description="Define currency, tax, split-payment, and receipt behavior before cashiers start transacting."
+      description="Define currency, tax, payment, credit-sale, and receipt behavior before cashiers start transacting."
       data={configurations}
       isLoading={isLoading}
       columns={columns}
@@ -52,10 +53,11 @@ export default function Configurations() {
         "receipt_header",
         "receipt_footer",
         "allow_split_payment",
+        "allow_credit_sales",
         "max_discount_percent",
       ]}
       selectOptions={{ currency: currencyOptions }}
-      optionalFields={["receipt_header", "receipt_footer", "default_tax_rate","tax_inclusive", "max_discount_percent", "allow_negative_stock", "require_customer", "auto_print_receipt", "allow_split_payment"]}
+      optionalFields={["receipt_header", "receipt_footer", "default_tax_rate","tax_inclusive", "max_discount_percent", "allow_negative_stock", "require_customer", "auto_print_receipt", "allow_split_payment", "allow_credit_sales"]}
       onCreate={async (data) => {
         await createConfiguration(data).unwrap()
         await refetch()

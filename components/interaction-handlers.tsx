@@ -388,8 +388,18 @@ export function FileUploadHandler({ data, onResponse, compact = false }: Interac
   )
 }
 
-export function ProgressTrackerHandler({ data, onResponse, compact = false }: InteractionHandlerProps) {
+export function ProgressTrackerHandler({ data, onResponse, compact = false, disabled = false }: InteractionHandlerProps) {
+  const [cancelRequested, setCancelRequested] = useState(false)
+  const rawCurrent = Number(data.current)
+  const rawTotal = Number(data.total)
+  const current = Number.isFinite(rawCurrent) ? Math.max(0, rawCurrent) : 0
+  const total = Number.isFinite(rawTotal) && rawTotal > 0 ? rawTotal : 1
+  const percentage = Math.min(100, Math.max(0, (current / total) * 100))
+  const isLocked = disabled || cancelRequested
+
   const handleCancel = () => {
+    if (isLocked) return
+    setCancelRequested(true)
     onResponse({
       type: "progress_response",
       action: "cancel",
@@ -408,19 +418,19 @@ export function ProgressTrackerHandler({ data, onResponse, compact = false }: In
           <div className="flex justify-between text-xs">
             <span>{data.current_step || "Processing..."}</span>
             <span>
-              {data.current}/{data.total}
+              {current}/{Number.isFinite(rawTotal) && rawTotal > 0 ? rawTotal : "—"}
             </span>
           </div>
-          <Progress value={(data.current / data.total) * 100} className="w-full h-2" />
+          <Progress value={percentage} className="w-full h-2" aria-label={`${Math.round(percentage)}% complete`} />
           <div className="flex justify-between text-xs text-gray-300">
-            <span>{Math.round((data.current / data.total) * 100)}% complete</span>
+            <span>{Math.round(percentage)}% complete</span>
             {data.estimated_time && <span>~{data.estimated_time}</span>}
           </div>
         </div>
 
         {data.allow_cancel && (
-          <Button variant="outline" onClick={handleCancel} size="sm" className="w-full bg-transparent">
-            Cancel
+          <Button variant="outline" onClick={handleCancel} size="sm" className="w-full bg-transparent" disabled={isLocked}>
+            {cancelRequested ? "Cancelling…" : "Cancel"}
           </Button>
         )}
       </div>
@@ -440,19 +450,19 @@ export function ProgressTrackerHandler({ data, onResponse, compact = false }: In
           <div className="flex justify-between text-sm">
             <span>{data.current_step || "Processing..."}</span>
             <span>
-              {data.current}/{data.total}
+              {current}/{Number.isFinite(rawTotal) && rawTotal > 0 ? rawTotal : "—"}
             </span>
           </div>
-          <Progress value={(data.current / data.total) * 100} className="w-full" />
+          <Progress value={percentage} className="w-full" aria-label={`${Math.round(percentage)}% complete`} />
           <div className="flex justify-between text-xs text-gray-300">
-            <span>{Math.round((data.current / data.total) * 100)}% complete</span>
+            <span>{Math.round(percentage)}% complete</span>
             {data.estimated_time && <span>~{data.estimated_time} remaining</span>}
           </div>
         </div>
 
         {data.allow_cancel && (
-          <Button variant="outline" onClick={handleCancel} className="w-full bg-transparent">
-            Cancel Operation
+          <Button variant="outline" onClick={handleCancel} className="w-full bg-transparent" disabled={isLocked}>
+            {cancelRequested ? "Cancelling…" : "Cancel Operation"}
           </Button>
         )}
       </CardContent>

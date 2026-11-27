@@ -100,6 +100,48 @@ test("buildInsightReportBodyHtml includes summary, insights, and widget titles",
   assert.doesNotMatch(html, /row_type|chart_point|Traceability|Data sources/)
 })
 
+test("insight exports preserve partial report coverage", () => {
+  const html = buildInsightReportBodyHtml({
+    kind: "insight_response",
+    summary: "Workspace review",
+    report: {
+      schema_version: 1,
+      type: "cross_domain_business_review",
+      status: "partial",
+      sources_attempted: 3,
+      sources_available: 2,
+      sections: ["Sales", "Inventory"],
+      unavailable_sections: ["Product catalog health"],
+    },
+    widgets: [],
+  })
+
+  assert.match(html, /Data coverage/)
+  assert.match(html, /Partial review/)
+  assert.match(html, /2 of 3 sources available/)
+  assert.match(html, /Unavailable: Product catalog health/)
+})
+
+test("insight exports downgrade invalid report coverage metadata", () => {
+  const html = buildInsightReportBodyHtml({
+    kind: "insight_response",
+    report: {
+      schema_version: 1,
+      type: "cross_domain_business_review",
+      status: "complete",
+      sources_attempted: 1,
+      sources_available: 2,
+      sections: ["Sales"],
+      unavailable_sections: [],
+    },
+    widgets: [],
+  })
+
+  assert.match(html, /Data unavailable/)
+  assert.match(html, /Coverage metadata could not be validated/)
+  assert.doesNotMatch(html, /Complete review · 2 of 1 sources available/)
+})
+
 test("buildInsightReportBodyHtml renders ranked products as image cards", () => {
   const html = buildInsightReportBodyHtml({
     kind: "insight_response",

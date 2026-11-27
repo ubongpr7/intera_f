@@ -1,6 +1,7 @@
 "use client"
 
 import * as XLSX from "xlsx"
+import { readReportContract } from "./agent-structured-output.ts"
 
 export type ExportStructuredPayload = Record<string, unknown>
 
@@ -29,6 +30,33 @@ const asRecord = (value: unknown): Record<string, unknown> | undefined => (isRec
 const asArray = (value: unknown): unknown[] => (Array.isArray(value) ? value : [])
 
 const asString = (value: unknown): string => (typeof value === "string" ? value : "")
+
+const normalizedReportCoverage = (report?: Record<string, unknown>) => {
+  if (!report) return null
+  const contract = readReportContract(report)
+  const legacy = contract?.status === "legacy"
+  const invalid = contract?.status === "invalid" || contract?.status === "unsupported"
+  const status = invalid
+    ? "unavailable"
+    : contract?.status === "versioned"
+      ? contract.coverageStatus || "unavailable"
+      : asString(report.status).trim().toLowerCase() || "unknown"
+  const available = invalid ? 0 : contract?.status === "versioned" ? contract.sourcesAvailable : report.sources_available
+  const attempted = invalid ? 0 : contract?.status === "versioned" ? contract.sourcesAttempted : report.sources_attempted
+  const sections = invalid ? [] : asArray(report.sections).map((item) => asString(item).trim()).filter(Boolean)
+  const unavailableSections = invalid ? [] : asArray(report.unavailable_sections).map((item) => asString(item).trim()).filter(Boolean)
+  const warning = invalid
+    ? `Coverage metadata could not be validated${contract?.reason ? `: ${contract.reason}` : "."}`
+    : ""
+  return {
+    status,
+    available: available ?? 0,
+    attempted: attempted ?? 0,
+    sections,
+    unavailableSections: warning ? [...unavailableSections, warning] : unavailableSections,
+    legacy,
+  }
+}
 
 const escapeHtml = (value: string) =>
   value
@@ -769,6 +797,14 @@ export const buildInsightReportBodyHtml = (payload: ExportStructuredPayload): st
   const insights = asArray(payload.insights).filter(isRecord)
   const widgets = asArray(payload.widgets).filter(isRecord)
   const actions = asArray(payload.suggested_actions).filter(isRecord)
+  const report = isRecord(payload.report) ? payload.report : undefined
+  const reportCoverage = normalizedReportCoverage(report)
+  const reportStatus = reportCoverage?.status || "unknown"
+  const reportAvailable = reportCoverage?.available ?? 0
+  const reportAttempted = reportCoverage?.attempted ?? 0
+  const reportSections = reportCoverage?.sections || []
+  const unavailableSections = reportCoverage?.unavailableSections || []
+  const reportLabel = reportStatus === "complete" ? "Complete review" : reportStatus === "partial" ? "Partial review" : "Data unavailable"
 
   return `
     ${
@@ -793,6 +829,24 @@ export const buildInsightReportBodyHtml = (payload: ExportStructuredPayload): st
             </div>`
             : ""
         }
+      </section>
+    `
+        : ""
+    }
+    ${
+      report
+        ? `
+      <section class="card">
+        <div class="section-head">
+          <div>
+            <h3>Data coverage</h3>
+            <p class="muted">${escapeHtml(reportLabel)} · ${escapeHtml(String(reportAvailable || 0))} of ${escapeHtml(String(reportAttempted || 0))} sources available</p>
+          </div>
+          <span class="type-pill">${escapeHtml(reportStatus || "unknown")}</span>
+        </div>
+        ${reportCoverage?.legacy ? `<p class="muted">Legacy report metadata; coverage should be treated as informational.</p>` : ""}
+        ${reportSections.length ? `<p class="muted">Sections: ${escapeHtml(reportSections.join(", "))}</p>` : ""}
+        ${unavailableSections.length ? `<p class="muted">Unavailable: ${escapeHtml(unavailableSections.join(", "))}</p>` : ""}
       </section>
     `
         : ""
@@ -960,7 +1014,7 @@ const openExportWindow = (title: string) => {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>${escapeHtml(title)}</title>
         <style>
-          body { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 32px; background: #f8fafc; color: #0f172a; }
+          body { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 32px; background: #f8fafc; color: #0f172a; }
           .shell { max-width: 960px; margin: 0 auto; background: #fff; border: 1px solid #dbe4f0; border-radius: 24px; padding: 24px; }
           h1 { margin: 0 0 12px; font-size: 24px; }
           p { color: #64748b; line-height: 1.6; }
@@ -994,7 +1048,7 @@ const renderCsvPopup = (popup: Window | null, title: string, csv: string, filena
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>${escapeHtml(title)}</title>
         <style>
-          body { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 32px; background: #f8fafc; color: #0f172a; }
+          body { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 32px; background: #f8fafc; color: #0f172a; }
           .shell { max-width: 1080px; margin: 0 auto; background: #fff; border: 1px solid #dbe4f0; border-radius: 24px; padding: 24px; }
           h1 { margin: 0 0 8px; font-size: 24px; }
           p { color: #64748b; line-height: 1.6; }
@@ -1035,7 +1089,7 @@ const renderPdfPopup = (popup: Window | null, title: string, blob: Blob, filenam
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>${escapeHtml(title)}</title>
         <style>
-          body { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 0; background: #0f172a; color: #fff; }
+          body { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 0; background: #0f172a; color: #fff; }
           .topbar { display: flex; justify-content: space-between; gap: 16px; align-items: center; padding: 16px 20px; background: rgba(15, 23, 42, 0.94); position: sticky; top: 0; }
           .meta h1 { margin: 0; font-size: 18px; }
           .meta p { margin: 4px 0 0; color: #cbd5e1; font-size: 13px; }
@@ -2015,6 +2069,8 @@ const createReactPdfBlob = async (
     const explanation = asString(payload.explanation).trim()
     const insights = asArray(payload.insights).filter(isRecord)
     const widgets = asArray(payload.widgets).filter(isRecord)
+    const report = isRecord(payload.report) ? payload.report : undefined
+    const reportCoverage = normalizedReportCoverage(report)
 
     return [
       summary || explanation || insights.length
@@ -2031,6 +2087,27 @@ const createReactPdfBlob = async (
                 h(Text, { style: styles.paragraph }, exportText(asString(insight?.detail) || asString(insight?.summary) || asString(insight?.description))),
               ),
             ),
+          )
+        : null,
+      report
+        ? h(
+            View,
+            { key: "report-coverage", style: styles.cardSoft, wrap: false },
+            h(Text, { style: styles.cardTitle }, "Data coverage"),
+            h(
+              Text,
+              { style: styles.paragraph },
+            `${asString(reportCoverage?.status).trim() || "unknown"} · ${String(reportCoverage?.available ?? 0)} of ${String(reportCoverage?.attempted ?? 0)} sources available`,
+            ),
+            reportCoverage?.legacy
+              ? h(Text, { style: styles.meta }, "Legacy report metadata; coverage is informational.")
+              : null,
+            reportCoverage?.sections.length
+              ? h(Text, { style: styles.meta }, `Sections: ${reportCoverage.sections.join(", ")}`)
+              : null,
+            reportCoverage?.unavailableSections.length
+              ? h(Text, { style: styles.meta }, `Unavailable: ${reportCoverage.unavailableSections.join(", ")}`)
+              : null,
           )
         : null,
       ...widgets.map((widget, index) => renderPdfWidget(widget, index, "widget", options)),
@@ -2156,7 +2233,7 @@ const reportStyles = `
     --accent: #1d4ed8;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
   body { padding: 24px; }
   .page { max-width: 1080px; margin: 0 auto; display: grid; gap: 20px; }
   .report-header { background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%); border: 1px solid var(--border); border-radius: 28px; padding: 28px; }

@@ -143,6 +143,7 @@ const SideBar = ({ user, workspace, mobileOpen, onMobileClose }:SideBarDataProps
               isCollapsed={navigationCollapsed}
               subLinks={[
                 { href: "/pos/settings", label: "POS Settings" },
+                { href: "/pos/credit", label: "Credit sales" },
                 { href: "/pos/remittances", label: "Remittances" },
               ]}
             />

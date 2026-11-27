@@ -9,6 +9,7 @@ import { Badge } from "./ui/badge"
 import { Checkbox } from "./ui/checkbox"
 import {
   Search,
+  ChevronLeft,
   ChevronDown,
   ChevronRight,
   Filter,
@@ -203,6 +204,201 @@ export function SearchableSelectionHandler({ data, onResponse, disabled = false 
         </Button>
       </CardContent>
     </Card>
+  )
+}
+
+export function ProductImportSelectionHandler({ data, onResponse, disabled = false }: AdvancedInteractionProps) {
+  const [selectedIds, setSelectedIds] = useState<string[]>(() =>
+    Array.isArray(data.selected_product_ids) ? data.selected_product_ids.map((id: any) => String(id)) : [],
+  )
+  const [searchTerm, setSearchTerm] = useState(() => String(data.search_term || ""))
+  const [hasSubmitted, setHasSubmitted] = useState(false)
+  const rows = useMemo(() => (Array.isArray(data.product_rows) ? data.product_rows : []), [data.product_rows])
+  const isLocked = disabled || hasSubmitted
+  const maxSelections = Math.min(Number(data.max_selections) || 30, 30)
+  const pagination = data.pagination && typeof data.pagination === "object" ? data.pagination : undefined
+  const currentPage = Math.max(1, Number(pagination?.page) || 1)
+  const totalPages = Math.max(1, Number(pagination?.total_pages) || 1)
+  const filteredRows = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase()
+    if (!query) return rows
+    return rows.filter((product: any) =>
+      [product.name, product.brand, product.category_name, product.primary_barcode]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query)),
+    )
+  }, [rows, searchTerm])
+
+  const productImage = (product: any) => {
+    const media = product?.media && typeof product.media === "object" ? product.media : undefined
+    const attachments = Array.isArray(product?.attachments) ? product.attachments : []
+    return (
+      product?.display_image ||
+      product?.image_url ||
+      product?.product_image_url ||
+      product?.primary_image_url ||
+      product?.image ||
+      media?.image_url ||
+      media?.url ||
+      attachments.find((attachment: any) => attachment?.file_url || attachment?.url)?.file_url ||
+      attachments.find((attachment: any) => attachment?.file_url || attachment?.url)?.url ||
+      "/placeholder.svg"
+    )
+  }
+  const filteredIds: string[] = filteredRows.map((product: any) => String(product.id))
+  const allVisibleSelected = filteredIds.length > 0 && filteredIds.every((id) => selectedIds.includes(id))
+
+  const toggleProduct = (id: string) => {
+    if (isLocked) return
+    setSelectedIds((current) => {
+      if (current.includes(id)) return current.filter((value) => value !== id)
+      if (current.length >= maxSelections) return current
+      return [...current, id]
+    })
+  }
+
+  const toggleVisibleProducts = () => {
+    if (isLocked || filteredIds.length === 0) return
+    setSelectedIds((current) => {
+      if (allVisibleSelected) return current.filter((id) => !filteredIds.includes(id))
+      const next = [...current]
+      for (const id of filteredIds) {
+        if (next.length >= maxSelections) break
+        if (!next.includes(id)) next.push(id)
+      }
+      return next
+    })
+  }
+
+  const submit = () => {
+    if (isLocked || selectedIds.length === 0) return
+    setHasSubmitted(true)
+    onResponse({
+      type: "product_import_selection_response",
+      product_ids: selectedIds,
+      message: `Selected ${selectedIds.length} product${selectedIds.length === 1 ? "" : "s"}`,
+    })
+  }
+
+  const searchCatalog = (nextSearchTerm = searchTerm) => {
+    if (isLocked) return
+    onResponse({
+      type: "product_import_search",
+      action: "search",
+      search_term: nextSearchTerm.trim(),
+      selected_product_ids: selectedIds,
+    })
+  }
+
+  const goToPage = (page: number) => {
+    if (isLocked || page < 1 || page > totalPages || page === currentPage) return
+    onResponse({ type: "product_import_page_response", action: "page", page, selected_product_ids: selectedIds })
+  }
+
+  return (
+    <div className="space-y-4 rounded-2xl border border-blue-100 bg-white p-4 shadow-sm sm:p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h4 className="text-base font-semibold tracking-tight text-slate-950">{data.title}</h4>
+          {data.description && <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">{data.description}</p>}
+        </div>
+        <span className="shrink-0 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700" aria-live="polite">
+          {selectedIds.length} / {maxSelections} selected
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <label className="relative min-w-0 flex-1">
+          <span className="sr-only">Search products</span>
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+          <Input
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault()
+                searchCatalog()
+              }
+            }}
+            placeholder="Search by product, brand, category, or barcode"
+            className="h-10 border-slate-200 pl-9 text-sm focus-visible:ring-blue-500"
+            disabled={isLocked}
+          />
+        </label>
+        <Button type="button" variant="outline" onClick={() => searchCatalog()} disabled={isLocked} className="h-10 shrink-0 border-slate-200">
+          Search catalog
+        </Button>
+        <Button type="button" variant="outline" onClick={toggleVisibleProducts} disabled={isLocked || filteredRows.length === 0} className="h-10 shrink-0 border-slate-200">
+          {allVisibleSelected ? "Clear visible" : "Select visible"}
+        </Button>
+      </div>
+
+      <div className="flex items-center justify-between text-xs text-slate-500">
+        <span>{filteredRows.length} product{filteredRows.length === 1 ? "" : "s"} on this page{selectedIds.length > 0 ? ` · ${selectedIds.length} selected across pages` : ""}</span>
+        {searchTerm && <button type="button" className="font-medium text-blue-700 hover:underline" onClick={() => { setSearchTerm(""); searchCatalog("") }}>Clear search</button>}
+      </div>
+
+      <div className="grid max-h-[30rem] gap-2 overflow-y-auto pr-1 sm:grid-cols-2" aria-label="Products available to import">
+        {filteredRows.map((product: any) => {
+          const id = String(product.id)
+          const selected = selectedIds.includes(id)
+          return (
+            <div
+              key={id}
+              onClick={() => toggleProduct(id)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault()
+                  toggleProduct(id)
+                }
+              }}
+              role="checkbox"
+              aria-checked={selected}
+              tabIndex={isLocked ? -1 : 0}
+              className={`group flex gap-3 rounded-xl border p-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                selected ? "border-blue-500 bg-blue-50/70" : "border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50"
+              } ${isLocked ? "cursor-not-allowed opacity-70" : ""}`}
+            >
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-slate-100 ring-1 ring-black/5">
+                <Image
+                  src={productImage(product)}
+                  alt={product.name || "Product"}
+                  fill sizes="64px"
+                  className="object-cover"
+                  unoptimized
+                />
+              </div>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold text-slate-950">{product.name}</span>
+                <span className="mt-0.5 block truncate text-xs text-slate-600">{product.brand || "Unbranded"}</span>
+                <span className="mt-1 block text-[11px] text-slate-500">
+                  {product.category_name || "Uncategorized"} · {product.variant_count || 0} variant{product.variant_count === 1 ? "" : "s"}
+                </span>
+              </span>
+              <span onClick={(event) => event.stopPropagation()}>
+                <Checkbox checked={selected} onCheckedChange={() => toggleProduct(id)} disabled={isLocked} aria-label={`Select ${product.name}`} />
+              </span>
+            </div>
+          )
+        })}
+      </div>
+      {rows.length === 0 && <p className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center text-sm text-slate-600">No products are available for this selection.</p>}
+      {rows.length > 0 && filteredRows.length === 0 && <p className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center text-sm text-slate-600">No products match “{searchTerm}”.</p>}
+      {totalPages > 1 && (
+        <nav className="flex items-center justify-between gap-3 border-t border-slate-100 pt-3" aria-label="Product pages">
+          <Button type="button" variant="ghost" size="sm" onClick={() => goToPage(currentPage - 1)} disabled={isLocked || currentPage <= 1}>
+            <ChevronLeft className="mr-1 h-4 w-4" aria-hidden="true" /> Previous
+          </Button>
+          <span className="text-xs font-medium text-slate-600" aria-live="polite">Page {currentPage} of {totalPages}</span>
+          <Button type="button" variant="ghost" size="sm" onClick={() => goToPage(currentPage + 1)} disabled={isLocked || currentPage >= totalPages}>
+            Next <ChevronRight className="ml-1 h-4 w-4" aria-hidden="true" />
+          </Button>
+        </nav>
+      )}
+      <Button onClick={submit} disabled={isLocked || selectedIds.length === 0} className="w-full bg-blue-600 text-white hover:bg-blue-700">
+        Preview {selectedIds.length || "selected"} product{selectedIds.length === 1 ? "" : "s"}
+      </Button>
+    </div>
   )
 }
 
